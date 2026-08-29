@@ -1,10 +1,10 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPUserAgent.cs
 //
 // Description: A "full" SIP user agent that encompasses both client and server 
 // user agents. It is also able to manage in dialog operations after the call 
-// is established (the client and server user agents don't handle in dialog 
-// operations).
+// is established (the individual client and server user agent classes don't handle
+// in dialog operations).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -38,7 +38,7 @@ namespace SIPSorcery.SIP.App
     /// <summary>
     /// A "full" SIP user agent that encompasses both client and server user agents.
     /// It is also able to manage in dialog operations after the call is established 
-    /// (the client and server user agents don't handle in dialog operations).
+    /// (the individual client and server user agent classes don't handle in dialog operations).
     /// 
     /// Unlike other user agents this one also manages its own RTP session object
     /// which means it can handle things like call on and off hold, RTP end point
@@ -364,6 +364,34 @@ namespace SIPSorcery.SIP.App
         /// <summary>	
         /// The remote call party has put us on hold.	
         /// </summary>	
+        /// <summary>
+        /// An INVITE has arrived that replaces this agent's current call, and it is being taken
+        /// over. This is the attended transfer seen from the party being transferred TO.
+        /// </summary>
+        /// <remarks>
+        /// Informational, and raised before the current call is put on hold and the new one
+        /// answered. There is no way to decline from here: RFC 3891 matching has already
+        /// identified the dialog and acceptance is what this agent does with it.
+        ///
+        /// The counterpart on the transferee is <seealso cref="OnTransferRequested"/>. Without
+        /// this the party being replaced is the one side of an attended transfer an application
+        /// cannot observe at all, because the exchange is handled inside this class and
+        /// OnIncomingCall is deliberately not raised for it.
+        /// </remarks>
+        public event Action<SIPRequest> OnAttendedTransferRequested;
+
+        /// <summary>
+        /// The call replacing this agent's current one has been answered. The dialog supplied is
+        /// the one that has been replaced and is about to be hung up.
+        /// </summary>
+        /// <remarks>
+        /// Raised after the new call is answered, so unlike
+        /// <seealso cref="OnAttendedTransferRequested"/> this says the transfer actually
+        /// happened. It does not fire when answering fails, in which case the original call is
+        /// taken back off hold and carries on.
+        /// </remarks>
+        public event Action<SIPDialogue> OnAttendedTransferAccepted;
+
         public event Action RemotePutOnHold;
 
         /// <summary>	
@@ -1529,6 +1557,14 @@ namespace SIPSorcery.SIP.App
             // requests or response (most likely relating to on/off hold) don't get applied to the media session.
             _oldCallID = uas.ClientTransaction.TransactionRequest.Header.CallId;
 
+            OnAttendedTransferRequested?.Invoke(uas.ClientTransaction.TransactionRequest);
+
+            LogHoldState("an attended transfer arrived");
+
+            // Captured before the answer, because answering replaces it and this is the dialog the
+            // application needs named: the one being taken over.
+            SIPDialogue replacedDialogue = m_sipDialogue;
+
             if (!IsOnLocalHold)
             {
                 logger.LogDebug("Current call placed on hold.");
@@ -1558,11 +1594,17 @@ namespace SIPSorcery.SIP.App
             // Get the BYE request for the original dialog so it can be sent if answering the transfer call succeeds.
             SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
 
+            LogHoldState("the call being replaced was put on hold");
+
             bool answerResult = await Answer(uas, MediaSession).ConfigureAwait(false);
+
+            LogHoldState("the replacing call was answered");
 
             if (answerResult)
             {
                 logger.LogDebug("Attended transfer was successfully answered, hanging up original call.");
+
+                OnAttendedTransferAccepted?.Invoke(replacedDialogue);
 
                 // Hanging up original call.
                 SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_transport, byeRequest, m_outboundProxy);
@@ -1988,6 +2030,22 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <returns>The required state of the local media tracks to match the current on
         /// hold conditions.</returns>
+        /// <summary>
+        /// Records the hold state and the send/receive direction it implies.
+        /// </summary>
+        /// <remarks>
+        /// The two flags are what decide whether this agent will send, and they are changed by
+        /// several paths that do not obviously belong together - a hold request either way, an
+        /// answer arriving, a transfer taking a call over. Logging them at each of those points
+        /// is what turns "the call went one way" into a question with an answer.
+        /// </remarks>
+        private void LogHoldState(string context)
+        {
+            logger.LogDebug(
+                "Hold state after {Context}: local hold {LocalHold}, remote hold {RemoteHold}, implies {StreamStatus}.",
+                context, IsOnLocalHold, IsOnRemoteHold, GetStreamStatusForOnHoldState());
+        }
+
         private MediaStreamStatusEnum GetStreamStatusForOnHoldState()
         {
             var streamStatus = MediaStreamStatusEnum.SendRecv;

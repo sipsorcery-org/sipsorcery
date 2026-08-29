@@ -97,6 +97,7 @@ public sealed class SipTransferCommand : CommandBase
         long? CallDurationMs,
         MediaLeg? TransferorMedia,
         MediaLeg? TransfereeMedia,
+        MediaLeg? TargetMedia,
         IReadOnlyList<TimelineEvent> Timeline,
         string? Error,
         TransferOutcome? Transfer = null);
@@ -382,7 +383,7 @@ public sealed class SipTransferCommand : CommandBase
 
                 return WriteResult(asJson,
                     new TransferResult(false, mode, protocol.ToString(), serverUri.ToString(), domain,
-                        roleResults, false, null, null, null, null, timeline.Events,
+                        roleResults, false, null, null, null, null, null, timeline.Events,
                         $"Registration failed for: {failed}."),
                     ExitCodes.Failed);
             }
@@ -416,7 +417,70 @@ public sealed class SipTransferCommand : CommandBase
                 descriptor.Password = parsed[1].Password;
                 descriptor.From = transfereeRole.Aor.ToString();
 
+                Console.Error.WriteLine($"Transferee is calling the target at {descriptor.Uri}.");
                 timeline.Add("transfereeCallingTarget", detail: descriptor.Uri);
+            };
+
+            // The transferee's side of the transfer, which the library does raise events for.
+            transfereeRole.UserAgent.OnTransferRequested += (referTo, referredBy) =>
+            {
+                Console.Error.WriteLine(
+                    $"Transferee was asked to transfer the call to {referTo.URI.ToParameterlessString()}" +
+                    (string.IsNullOrWhiteSpace(referredBy) ? "" : $" by {referredBy}") + " - accepting.");
+
+                timeline.Add("transfereeAcceptedRefer", detail: referTo.URI.ToParameterlessString());
+
+                // Silenced for the transfer: the transferee holds the transferor while it calls
+                // the target, and a tone playing into a session that will not send warns on every
+                // packet.
+                _ = transfereeRole.Media?.PauseAsync();
+
+                // Returning true is what accepts it; with no handler at all the library accepts
+                // anyway, so this changes nothing beyond making the decision visible.
+                return true;
+            };
+
+            transfereeRole.UserAgent.OnTransferToTargetSuccessful += referTo =>
+            {
+                Console.Error.WriteLine(
+                    $"Transferee reached {referTo.URI.ToParameterlessString()}; its call to the transferor is done.");
+                timeline.Add("transfereeReachedTarget");
+
+                _ = transfereeRole.Media?.ResumeAsync();
+            };
+
+            transfereeRole.UserAgent.OnTransferToTargetFailed += referTo =>
+            {
+                Console.Error.WriteLine(
+                    $"Transferee could not reach {referTo.URI.ToParameterlessString()}; the transfer failed.");
+                timeline.Add("transfereeFailedToReachTarget");
+
+                _ = transfereeRole.Media?.ResumeAsync();
+            };
+
+            // The target's side of it. Between these two the call being replaced is on hold, which
+            // is where the RecvOnly warnings from the audio source come from.
+            targetRole.UserAgent.OnAttendedTransferRequested += request =>
+            {
+                var replaced = SIPReplacesParameter.Parse(request.Header.Replaces)?.CallID;
+
+                Console.Error.WriteLine(
+                    $"Target is being asked to replace call {replaced} - putting it on hold and " +
+                    "answering the call taking it over.");
+
+                timeline.Add("targetReplacingCall", detail: replaced);
+
+                _ = targetRole.Media?.PauseAsync();
+            };
+
+            targetRole.UserAgent.OnAttendedTransferAccepted += replaced =>
+            {
+                Console.Error.WriteLine(
+                    $"Target accepted the transfer; its call {replaced.CallId} to the transferor is done.");
+
+                timeline.Add("targetAcceptedTransfer", detail: replaced.CallId);
+
+                _ = targetRole.Media?.ResumeAsync();
             };
 
             // Recorded rather than required. The transferee's own REFER handling in the library
@@ -447,7 +511,14 @@ public sealed class SipTransferCommand : CommandBase
                 failureResponse = resp;
                 Console.Error.WriteLine($"Call failed: {error}.");
             };
-            transferorRole.UserAgent.OnCallHungup += _ => remoteHungup.TrySetResult(true);
+            transferorRole.UserAgent.OnCallHungup += _ =>
+            {
+                // After a transfer this is the transferee letting the transferor go, which is the
+                // half of the outcome the transferor can actually observe.
+                Console.Error.WriteLine("Transferor's call to the transferee has been hung up.");
+                timeline.Add("originalLegHungup");
+                remoteHungup.TrySetResult(true);
+            };
 
             Console.Error.WriteLine($"Transferor calling transferee at {transfereeRole.Aor} ...");
 
@@ -473,7 +544,7 @@ public sealed class SipTransferCommand : CommandBase
 
                 return WriteResult(asJson,
                     new TransferResult(false, mode, protocol.ToString(), serverUri.ToString(), domain,
-                        roleResults, false, connectTimeMs, null, null, null, timeline.Events,
+                        roleResults, false, connectTimeMs, null, null, null, null, timeline.Events,
                         statusCode != null
                             ? $"The transferee did not answer: {statusCode} {failureResponse!.ReasonPhrase}."
                             : $"The transferee did not answer within {timeoutSeconds}s."),
@@ -514,6 +585,8 @@ public sealed class SipTransferCommand : CommandBase
                 // replacement. Nothing else tells the transferor the transfer landed.
                 agent.OnCallHungup += _ =>
                 {
+                    Console.Error.WriteLine(
+                        "Transferor's call to the target has been hung up - the target took the replacement.");
                     timeline.Add("consultationReplaced");
                     consultationReplaced.TrySetResult(true);
                 };
@@ -534,7 +607,8 @@ public sealed class SipTransferCommand : CommandBase
                     return WriteResult(asJson,
                         new TransferResult(false, mode, protocol.ToString(), serverUri.ToString(), domain,
                             roleResults, true, connectTimeMs, callWindow.ElapsedMilliseconds,
-                            Describe(transferorRole.Media), Describe(transfereeRole.Media), timeline.Events,
+                            Describe(transferorRole.Media), Describe(transfereeRole.Media),
+                            Describe(targetRole.Media), timeline.Events,
                             "The consultation call to the target was not answered."),
                         ExitCodes.Failed);
                 }
@@ -596,6 +670,10 @@ public sealed class SipTransferCommand : CommandBase
                 await Task.Delay(TimeSpan.FromSeconds(2), ct).ConfigureAwait(false);
             }
 
+            Console.Error.WriteLine(attended
+                ? "Both of the transferor's calls should now be gone; the transferee and target are talking."
+                : "The transferor's call should now be gone; the transferee and target are talking.");
+
             bool targetAnswered = attended
                 ? consultationReplaced.Task.IsCompletedSuccessfully
                 : targetCalled.Task.IsCompletedSuccessfully;
@@ -633,6 +711,20 @@ public sealed class SipTransferCommand : CommandBase
 
             var transferorLeg = Describe(transferorRole.Media);
             var transfereeLeg = Describe(transfereeRole.Media);
+
+            // The surviving call after a transfer is the transferee and the target, so the
+            // target's side of it is half the evidence for whether the media actually moved.
+            var targetLeg = Describe(targetRole.Media);
+
+            // The consultation is a real leg of an attended transfer and the only place the
+            // target's audio can be seen before the transfer, which separates "the target stopped
+            // sending when it was taken over" from "the target never sent at all".
+            if (attended)
+            {
+                var consultLeg = Describe(transferorRole.ConsultationMedia);
+                Console.Error.WriteLine(
+                    $"  consultation: transferor heard {(consultLeg is null or { Packets: 0 } ? "nothing" : $"{consultLeg.Packets} packets from {consultLeg.RemoteEndPoint}")} from the target.");
+            }
 
             await HangUpAllAsync(roles).ConfigureAwait(false);
 
@@ -675,7 +767,7 @@ public sealed class SipTransferCommand : CommandBase
             return WriteResult(asJson,
                 new TransferResult(transferred, mode, protocol.ToString(), serverUri.ToString(), domain,
                     roleResults, true, connectTimeMs, callWindow.ElapsedMilliseconds,
-                    transferorLeg, transfereeLeg, timeline.Events, error, outcome),
+                    transferorLeg, transfereeLeg, targetLeg, timeline.Events, error, outcome),
                 transferred ? ExitCodes.Ok : ExitCodes.Failed);
         }
         catch (OperationCanceledException)
@@ -796,7 +888,7 @@ public sealed class SipTransferCommand : CommandBase
         bool asJson, string server, string mode, string error, Timeline timeline, int exitCode) =>
         WriteResult(asJson,
             new TransferResult(false, mode, string.Empty, server, string.Empty, Array.Empty<RoleResult>(),
-                false, null, null, null, null, timeline.Events, error),
+                false, null, null, null, null, null, timeline.Events, error),
             exitCode);
 
     private static int WriteResult(bool asJson, TransferResult result, int exitCode)
@@ -820,6 +912,7 @@ public sealed class SipTransferCommand : CommandBase
                 Console.WriteLine($"  call answered in {result.ConnectTimeMs}ms, held {result.CallDurationMs}ms");
                 WriteLeg("transferor heard", result.TransferorMedia);
                 WriteLeg("transferee heard", result.TransfereeMedia);
+        WriteLeg("target     heard", result.TargetMedia);
             }
 
             if (result.Error != null)

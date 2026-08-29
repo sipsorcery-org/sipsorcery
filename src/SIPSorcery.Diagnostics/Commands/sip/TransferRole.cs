@@ -102,6 +102,41 @@ public sealed class RoleMedia : IDisposable
     /// <summary>Every remote end point that has delivered audio, with its packet tally.</summary>
     public IReadOnlyDictionary<string, RtpStreamStats> AudioByRemote => _audioByRemote;
 
+    /// <summary>
+    /// Stops and restarts the tone this role is sending.
+    /// </summary>
+    /// <remarks>
+    /// Used across a transfer. Both parties to one put their existing call on hold for a moment
+    /// while the new call is set up, which leaves the RTP session refusing to send, and a source
+    /// that keeps generating logs a warning for every packet it offers in that window.
+    ///
+    /// Pausing removes the noise without hiding anything: a send refused outside the window still
+    /// warns, and that is the case actually worth seeing.
+    /// </remarks>
+    public Task PauseAsync()
+    {
+        if (_paused)
+        {
+            return Task.CompletedTask;
+        }
+
+        _paused = true;
+        return Session.AudioExtrasSource.PauseAudio();
+    }
+
+    public Task ResumeAsync()
+    {
+        if (!_paused)
+        {
+            return Task.CompletedTask;
+        }
+
+        _paused = false;
+        return Session.AudioExtrasSource.ResumeAudio();
+    }
+
+    private bool _paused;
+
     public int TotalAudioPackets => _audioByRemote.Values.Sum(x => x.Packets);
 
     /// <summary>
@@ -183,6 +218,12 @@ public sealed class TransferRole : IDisposable
         // callee's address of record, which is how a real phone with a configured proxy behaves and
         // keeps the server's routing under test rather than bypassed.
         UserAgent = new SIPUserAgent(Transport, options.OutboundProxy);
+
+        // Being held is the commonest reason this role's session stops accepting sends, and it is
+        // the far end's decision, so it is watched rather than predicted. Covers the transferor
+        // above all: both the transferee and the target hold it during a transfer, and its tone
+        // would otherwise warn on every packet for the whole of both windows.
+        PauseAudioWhileHeld(UserAgent, () => Media);
 
         // IPAddress.Any is substituted with the real send-from address by SIPTransport at send
         // time. The transport parameter has to be set here rather than left to that substitution:
@@ -283,6 +324,8 @@ public sealed class TransferRole : IDisposable
         ConsultationAgent = new SIPUserAgent(Transport, _options.OutboundProxy);
         ConsultationMedia = new RoleMedia($"{Name}-consult", _options.AudioSource, _logger);
 
+        PauseAudioWhileHeld(ConsultationAgent, () => ConsultationMedia);
+
         return (ConsultationAgent, ConsultationMedia);
     }
 
@@ -311,6 +354,29 @@ public sealed class TransferRole : IDisposable
             }
 
             await ua.Answer(uas, CreateMedia().Session).ConfigureAwait(false);
+        };
+    }
+
+    /// <summary>
+    /// Pauses a call's audio for as long as the far end has it on hold.
+    /// </summary>
+    /// <remarks>
+    /// A held session refuses to send, and a source that keeps generating logs a warning for every
+    /// packet it offers. Tying this to the hold itself rather than to a guessed window means a
+    /// send refused for any other reason is still reported, which is the case worth seeing.
+    /// </remarks>
+    private void PauseAudioWhileHeld(SIPUserAgent agent, Func<RoleMedia?> media)
+    {
+        agent.RemotePutOnHold += () =>
+        {
+            _logger.LogDebug("{Role} was put on hold; pausing its audio.", Name);
+            _ = media()?.PauseAsync();
+        };
+
+        agent.RemoteTookOffHold += () =>
+        {
+            _logger.LogDebug("{Role} was taken off hold; resuming its audio.", Name);
+            _ = media()?.ResumeAsync();
         };
     }
 

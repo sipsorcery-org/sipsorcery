@@ -871,7 +871,7 @@ a=sendrecv";
         }
 
         /// <summary>
-        /// Tests that the SIPUserAgent can correctly place be the recipient of an attended transfer
+        /// Tests that the SIPUserAgent can correctly place and be the recipient of an attended transfer
         /// REFER request.
         /// </summary>
         /// <remarks>
