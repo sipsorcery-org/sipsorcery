@@ -38,7 +38,8 @@ internal sealed class Config : ManualConfig
         AddFilter(new SimpleFilter(static benchmark =>
         {
             var methodName = benchmark.Descriptor.WorkloadMethod.Name;
-            var isCurrentOnly = methodName.EndsWith("WriteString", StringComparison.Ordinal);
+            var isCurrentOnly = methodName.EndsWith("WriteString", StringComparison.Ordinal) ||
+                methodName.Equals("JsonContent", StringComparison.Ordinal);
             var isCurrentJob = string.Equals(CurrentJobId, benchmark.Job.Id, StringComparison.Ordinal);
 
             return !isCurrentOnly || isCurrentJob;

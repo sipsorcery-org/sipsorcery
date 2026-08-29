@@ -20,11 +20,14 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -134,7 +137,7 @@ namespace SIPSorcery.Net
                 {
                     // Host candidates are always included in the SDP offer or answer.
                     logger.LogDebug("webrtc-rest onicecandidate: {CandidateStr}.", cand.ToShortString());
-                    await SendToSignalingServer(restClient, cand.toJSON(), WebRTCSignalTypesEnum.ice);
+                    await SendToSignalingServer(restClient, cand.ToRTCIceCandidateInit(), WebRTCSignalTypesEnum.ice);
                 }
             };
 
@@ -154,13 +157,34 @@ namespace SIPSorcery.Net
 
             await _pc.setLocalDescription(offerSdp).ConfigureAwait(false);
 
-            await SendToSignalingServer(httpClient, offerSdp.toJSON(), WebRTCSignalTypesEnum.sdp).ConfigureAwait(false);
+            await SendToSignalingServer(httpClient, offerSdp, WebRTCSignalTypesEnum.sdp).ConfigureAwait(false);
         }
 
-        private async Task SendToSignalingServer(HttpClient httpClient, string jsonStr, WebRTCSignalTypesEnum sendType)
+        private Task SendToSignalingServer(HttpClient httpClient, RTCSessionDescriptionInit offerSdp, WebRTCSignalTypesEnum sendType)
         {
-            var content = new StringContent(jsonStr, Encoding.UTF8, "application/json");
-            var res = await httpClient.PutAsync($"{_restServerUri}/{sendType}/{_ourID}/{_theirID}", content).ConfigureAwait(false);
+            using var content =
+#if NETSTANDARD || NETCOREAPP || NETFRAMEWORK
+                new StringContent(offerSdp.toJSON(), Encoding.UTF8, "application/json");
+#else
+                JsonContent.Create(inputValue: offerSdp, mediaType: null, options: SipSorceryJsonSerializerContext.Default.Options);
+#endif
+            return SendToSignalingServer(httpClient, content, sendType);
+        }
+
+        private Task SendToSignalingServer(HttpClient httpClient, RTCIceCandidateInit offerSdp, WebRTCSignalTypesEnum sendType)
+        {
+            using var content =
+#if NETSTANDARD || NETCOREAPP || NETFRAMEWORK
+                new StringContent(offerSdp.toJSON(), Encoding.UTF8, "application/json");
+#else
+                JsonContent.Create(inputValue: offerSdp, mediaType: null, options: SipSorceryJsonSerializerContext.Default.Options);
+#endif
+            return SendToSignalingServer(httpClient, content, sendType);
+        }
+
+        private async Task SendToSignalingServer(HttpClient httpClient, HttpContent offerSdp, WebRTCSignalTypesEnum sendType)
+        {
+            using var res = await httpClient.PutAsync($"{_restServerUri}/{sendType}/{_ourID}/{_theirID}", offerSdp).ConfigureAwait(false);
 
             logger.LogDebug("webrtc-rest PUT result for {RestServerUri}/{SendType}/{OurID}/{TheirID} {StatusCode}.", _restServerUri, sendType, _ourID, _theirID, res.StatusCode);
         }
@@ -242,10 +266,8 @@ namespace SIPSorcery.Net
             }
         }
 
-        private async Task<string> OnMessage(string signal, RTCPeerConnection pc)
+        private async Task<RTCSessionDescriptionInit> OnMessage(string signal, RTCPeerConnection pc)
         {
-            string sdpAnswer = null;
-
             if (RTCIceCandidateInit.TryParse(signal, out var iceCandidateInit))
             {
                 logger.LogDebug("Got remote ICE candidate, {Candidate}", iceCandidateInit.candidate);
@@ -282,7 +304,7 @@ namespace SIPSorcery.Net
                     var answerSdp = pc.createAnswer(AnswerOptions);
                     await pc.setLocalDescription(answerSdp).ConfigureAwait(false);
 
-                    sdpAnswer = answerSdp.toJSON();
+                    return answerSdp;
                 }
             }
             else
@@ -290,7 +312,7 @@ namespace SIPSorcery.Net
                 logger.LogWarning("webrtc-rest could not parse JSON message. {Signal}", signal);
             }
 
-            return sdpAnswer;
+            return null;
         }
     }
 }

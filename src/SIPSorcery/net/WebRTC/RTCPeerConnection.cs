@@ -36,17 +36,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using SIPSorcery.Net.SharpSRTP.DTLS;
 using SIPSorcery.Net.SharpSRTP.DTLSSRTP;
+using SIPSorcery.SIP.App;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -70,10 +72,15 @@ namespace SIPSorcery.Net
 
         public string toJSON()
         {
+#if NETSTANDARD
             return TinyJson.JSONWriter.ToJson(this);
+#else
+            return SipSorceryJsonSerializer.Serialize(this);
+#endif
         }
 
-        public static bool TryParse(string json, out RTCSessionDescriptionInit init)
+#nullable enable
+        public static bool TryParse(string json, [NotNullWhen(true)] out RTCSessionDescriptionInit? init)
         {
             init = null;
 
@@ -83,24 +90,29 @@ namespace SIPSorcery.Net
             }
             else
             {
+#if NETSTANDARD
                 init = TinyJson.JSONParser.FromJson<RTCSessionDescriptionInit>(json);
+#else
+                init = SipSorceryJsonSerializer.Deserialize<RTCSessionDescriptionInit>(json);
+#endif
 
                 // To qualify as parsed all required fields must be set.
                 return init != null &&
                     init.sdp != null;
             }
         }
-    }
+#nullable restore
+}
 
-    /// <summary>
-    /// Represents a WebRTC RTCPeerConnection.
-    /// </summary>
-    /// <remarks>
-    /// Interface is defined in https://www.w3.org/TR/webrtc/#interface-definition.
-    /// The Session Description offer/answer mechanisms are detailed in
-    /// https://tools.ietf.org/html/rfc8829 "JavaScript Session Establishment Protocol (JSEP)".
-    /// </remarks>
-    public class RTCPeerConnection : RTPSession, IRTCPeerConnection
+/// <summary>
+/// Represents a WebRTC RTCPeerConnection.
+/// </summary>
+/// <remarks>
+/// Interface is defined in https://www.w3.org/TR/webrtc/#interface-definition.
+/// The Session Description offer/answer mechanisms are detailed in
+/// https://tools.ietf.org/html/rfc8829 "JavaScript Session Establishment Protocol (JSEP)".
+/// </remarks>
+public class RTCPeerConnection : RTPSession, IRTCPeerConnection
     {
         // SDP constants.
         //private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
