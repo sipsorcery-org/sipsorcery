@@ -32,9 +32,12 @@ namespace SIPSorcery.SIP
     public enum SIPDialogueTransferModesEnum
     {
         Default = 0,
+        [Obsolete("The user agent classes, such as SIPUserAgent, should always prioritise their own transfer acceptance decisions making this option redundant.")] 
         PassThru = 1,           // REFER requests will be treated as an in-dialogue request and passed through to user agents.
         NotAllowed = 2,         // REFER requests will be blocked.
+        [Obsolete("Use the Allowed option instead. Blind transfers should not be considered more or less secure than attended transfers.")]
         BlindPlaceCall = 3,     // REFER requests without a replaces parameter will initiate a new call.
+        Allowed = 4,            // REFER requests will be allowed (note there is no security advantage for allowing only blind transfers as attended transfers still place an outbound call).
     }
 
     /// <summary>

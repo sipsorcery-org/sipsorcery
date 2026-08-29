@@ -43,6 +43,20 @@ namespace SIPSorcery.SIP.App
     /// Unlike other user agents this one also manages its own RTP session object
     /// which means it can handle things like call on and off hold, RTP end point
     /// changes and sending DTMF events.
+    ///
+    /// Usage: The SIP user agent is designed to only handle a SINGLE outgoing OR incoming
+    /// call. It should NOT be used to place a call and receive a call at the same time. There
+    /// is only a single SIP dialog instance and once that's established the user agent should
+    /// be considered unavailable for placing or receiving any new calls. Up until that point
+    /// it's up to the application as to whether a placed call should be cancelled, new incoming
+    /// call rejected etc. Once a call is established the SIP user agent still has multiple
+    /// functions available including:
+    ///  - placing on and off hold,
+    ///  - initiate a blind transfer for the remote party,
+    ///  - receive a blind transfer request (these can be dangerous in that the remote party could
+    ///    request a transfer to a high cost destination and this user agent will call it),
+    ///  - receiving an attended transfer, and,
+    ///  - hanging up.
     /// </summary>
     public class SIPUserAgent : IDisposable
     {
@@ -50,6 +64,13 @@ namespace SIPSorcery.SIP.App
         private static readonly string m_sipReferContentType = SIPMIMETypes.REFER_CONTENT_TYPE;
         private static int WAIT_ONHOLD_TIMEOUT = SIPTimings.T1;
         private static int WAIT_DIALOG_TIMEOUT = SIPTimings.T6;
+
+        /// <summary>
+        /// The reason phrase used when a new call is refused because this user agent already
+        /// has a call in place.
+        /// </summary>
+        private const string BUSY_REASON_PHRASE = "Already on a call";
+
         private readonly SemaphoreSlim m_semaphoreSlim = new SemaphoreSlim(1, 1);
 
         private static ILogger logger = LogFactory.CreateLogger<SIPUserAgent>();
@@ -328,15 +349,28 @@ namespace SIPSorcery.SIP.App
         /// The difference is whether the REFER request includes a Replaces parameter. If it does 
         /// it's used to inform the transfer target (the transfer destination requested) that 
         /// if they accept our call it should replace an existing one.
+        ///
+        /// CAUTION: The refer to destination is chosen by the remote call party. It could be a high
+        /// cost destination and this user agent will call it. That is why transfers are rejected unless
+        /// they are explicitly permitted, see the result description below.
         /// </summary>
         /// <remarks>
-        /// Parameters for event delegate:
-        /// bool OnTransferRequested(SIPUserField referTo, string referredBy)
-        /// SIPUserField: Is the destination that we are being asked to place a call to.
-        /// string referredBy: The Referred-By header from the REFER request that requested 
-        /// we do the transfer.
-        /// bool: The boolean result can be returned as false to prevent the transfer. By default
-        /// if no event handler is hooked up the transfer will be accepted.
+        /// Handler signature: <c>bool Handler(SIPUserField referTo, string referredBy)</c>
+        /// <list type="bullet">
+        /// <item><term>referTo</term><description>The destination this user agent is being asked to
+        /// place a call to, taken from the REFER request's Refer-To header. A Replaces parameter on it
+        /// means an attended transfer, i.e. the call placed to this destination is intended to replace
+        /// a call the destination already has in place.</description></item>
+        /// <item><term>referredBy</term><description>The Referred-By header from the REFER request that
+        /// requested we do the transfer. Can be null.</description></item>
+        /// <item><term>result</term><description>True to accept the transfer. False to prevent it, in
+        /// which case the REFER request is responded to with a 603 Decline.</description></item>
+        /// </list>
+        /// A handler takes precedence over <see cref="SIPDialogue.TransferMode"/>, it is the more specific
+        /// of the two mechanisms and it can make the decision per REFER request. With no handler set the
+        /// dialog's transfer mode decides and it must explicitly permit transfers, i.e. be set to
+        /// <see cref="SIPDialogueTransferModesEnum.Allowed"/>. That is not the mode a dialog gets
+        /// by default, so if no event handler is hooked up the transfer will be REJECTED.
         /// </remarks>
         public event Func<SIPUserField, string, bool> OnTransferRequested;
 
@@ -478,6 +512,8 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaSession">The RTP session for the call.</param>
         /// <param name="ringTimeout">Optional. If non-zero will be treated as the number of seconds to let the call
         /// ring for before giving up and cancelling.</param>
+        /// <returns>True if the call was answered. False if it failed, including the case where this user
+        /// agent already has a call in place.</returns>
         public Task<bool> Call(string dst, string username, string password, IMediaSession mediaSession, int ringTimeout = 0)
         {
             if (mediaSession == null)
@@ -525,28 +561,77 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaSession">The RTP session for the call.</param>
         /// <param name="ringTimeout">Optional. If non-zero will be treated as the number of seconds to let the call
         /// ring for before giving up and cancelling.</param>
-        public async Task<bool> Call(SIPCallDescriptor callDescriptor, IMediaSession mediaSession, int ringTimeout = 0)
+        /// <returns>True if the call was answered. False if it failed, including the case where this user
+        /// agent already has a call in place.</returns>
+        public Task<bool> Call(SIPCallDescriptor callDescriptor, IMediaSession mediaSession, int ringTimeout = 0)
+        {
+            return Call(callDescriptor, mediaSession, ringTimeout, false);
+        }
+
+        /// <summary>
+        /// Attempts to place a new outgoing call AND waits for the call to be answered or fail.
+        /// </summary>
+        /// <param name="callDescriptor">The full descriptor for the call destination.</param>
+        /// <param name="mediaSession">The RTP session for the call.</param>
+        /// <param name="ringTimeout">Optional. If non-zero will be treated as the number of seconds to let the call
+        /// ring for before giving up and cancelling.</param>
+        /// <param name="isCallingTransferDestination">If true the call is to the Refer-To destination of a
+        /// transfer request (blind or attended) that this user agent has accepted. It is the only case where a
+        /// new call is allowed to replace an established one and the caller is responsible for hanging up the
+        /// call being replaced once this one is answered.</param>
+        private async Task<bool> Call(SIPCallDescriptor callDescriptor, IMediaSession mediaSession, int ringTimeout, bool isCallingTransferDestination)
         {
             TaskCompletionSource<bool> callResult = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             ClientCallAnswered += (uac, resp) => callResult.TrySetResult(true);
             ClientCallFailed += (uac, errorMessage, result) => callResult.TrySetResult(false);
 
-            await InitiateCallAsync(callDescriptor, mediaSession, ringTimeout).ConfigureAwait(false);
+            await InitiateCallAsync(callDescriptor, mediaSession, ringTimeout, isCallingTransferDestination).ConfigureAwait(false);
 
             return await callResult.Task.ConfigureAwait(false);
         }
 
         /// <summary>
         /// Attempts to place a new outgoing call.
+        ///
+        /// This user agent can only handle a single call. If a call is already established the attempt
+        /// will be rejected and the <see cref="ClientCallFailed"/> event fired.
         /// </summary>
         /// <param name="sipCallDescriptor">A call descriptor containing the information about how 
         /// and where to place the call.</param>
         /// <param name="mediaSession">The media session used for this call</param>
         /// <param name="ringTimeout">Optional. If non-zero will be treated as the number of seconds to let the call
         /// ring for before giving up and cancelling.</param>
-        public async Task InitiateCallAsync(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession, int ringTimeout = 0)
+        public Task InitiateCallAsync(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession, int ringTimeout = 0)
         {
+            return InitiateCallAsync(sipCallDescriptor, mediaSession, ringTimeout, false);
+        }
+
+        /// <summary>
+        /// Attempts to place a new outgoing call.
+        /// </summary>
+        /// <param name="sipCallDescriptor">A call descriptor containing the information about how
+        /// and where to place the call.</param>
+        /// <param name="mediaSession">The media session used for this call</param>
+        /// <param name="ringTimeout">Optional. If non-zero will be treated as the number of seconds to let the call
+        /// ring for before giving up and cancelling.</param>
+        /// <param name="isTransfer">If true the call is to the Refer-To destination of a
+        /// blind transfer request that this user agent has accepted. It is the only case where a
+        /// new call is allowed to replace an established one and the caller is responsible for hanging up the
+        /// call being replaced once this one is answered.</param>
+        private async Task InitiateCallAsync(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession, int ringTimeout, bool isTransfer)
+        {
+            if (m_sipDialogue != null && !isTransfer)
+            {
+                // This user agent can only handle a single call. Placing a new one would replace the dialog,
+                // media session and cancellation source for the established call leaving it orphaned, i.e. no
+                // BYE would ever be sent for it.
+                logger.LogWarning("The call could not be placed as this user agent already has a call in place on dialog {DialogCallID}.", m_sipDialogue.CallId);
+                ClientCallFailed?.Invoke(m_uac, "The user agent already has a call in place.", null);
+
+                return;
+            }
+
             m_cts = new CancellationTokenSource();
 
             m_callDescriptor = sipCallDescriptor;
@@ -657,20 +742,52 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// Checks whether an incoming INVITE request is an attended transfer that is attempting to
+        /// replace this user agent's current dialog. Such requests are the only ones that are allowed
+        /// to be accepted or answered while a call is already established, since answering them is what
+        /// completes the transfer and the call being replaced gets hungup immediately afterwards.
+        /// </summary>
+        /// <param name="inviteRequest">The incoming INVITE request to check.</param>
+        /// <returns>True if the request has a Replaces header that matches the current dialog.</returns>
+        private bool IsReplacingCurrentDialog(SIPRequest inviteRequest)
+        {
+            if (m_sipDialogue == null || string.IsNullOrWhiteSpace(inviteRequest?.Header?.Replaces))
+            {
+                return false;
+            }
+
+            SIPReplacesParameter replaces = SIPReplacesParameter.Parse(inviteRequest.Header.Replaces);
+
+            return replaces != null && replaces.CallID == m_sipDialogue.CallId;
+        }
+
+        /// <summary>
         /// This method can be used to start the processing of a new incoming call request.
         /// The user agent will is acting as a server for this operation and it can be considered
         /// the opposite of the Call method. This is only the first step in answering an incoming
         /// call. It can still be rejected or answered after this point.
+        ///
+        /// This user agent can only handle a single call. If a call is already established the
+        /// incoming request will be rejected with a Busy Here response, the only exception being an
+        /// attended transfer that is replacing the established call.
         /// </summary>
         /// <param name="inviteRequest">The invite request representing the incoming call.</param>
-        /// <returns>An ID string that needs to be supplied when the call is answered or rejected 
-        /// (used to manage multiple pending incoming calls).</returns>
+        /// <returns>The server user agent of the accepted or rejected call.</returns>
         public SIPServerUserAgent AcceptCall(SIPRequest inviteRequest)
         {
             UASInviteTransaction uasTransaction = new UASInviteTransaction(m_transport, inviteRequest, m_outboundProxy);
             SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, uasTransaction, m_answerSipAccount);
             uas.ClientTransaction.TransactionStateChanged += (tx) => OnTransactionStateChange?.Invoke(tx);
             uas.ClientTransaction.TransactionTraceMessage += (tx, msg) => OnTransactionTraceMessage?.Invoke(tx, msg);
+
+            if (m_sipDialogue != null && !IsReplacingCurrentDialog(inviteRequest))
+            {
+                logger.LogWarning("The incoming call was rejected as this user agent already has a call in place on dialog {DialogCallID}.", m_sipDialogue.CallId);
+                uas.Reject(SIPResponseStatusCodesEnum.BusyHere, BUSY_REASON_PHRASE);
+
+                return uas;
+            }
+
             uas.CallCancelled += (pendingUas, sipCancelRequest) =>
             {
                 CallEnded(inviteRequest.Header.CallId);
@@ -690,7 +807,10 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Answers the call request contained in the user agent server parameter. Note the
         /// <see cref="AcceptCall(SIPRequest)"/> method should be used to create the user agent server.
-        /// Any existing call will be hungup.
+        ///
+        /// This user agent can only handle a single call. If a call is already established the pending
+        /// call will be rejected with a Busy Here response and false returned, the only exception being
+        /// an attended transfer that is replacing the established call.
         /// </summary>
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
         /// <param name="mediaSession">The media session used for this call</param>
@@ -703,7 +823,10 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Answers the call request contained in the user agent server parameter. Note the
         /// <see cref="AcceptCall(SIPRequest)"/> method should be used to create the user agent server.
-        /// Any existing call will be hungup.
+        ///
+        /// This user agent can only handle a single call. If a call is already established the pending
+        /// call will be rejected with a Busy Here response and false returned, the only exception being
+        /// an attended transfer that is replacing the established call.
         /// </summary>
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
         /// <param name="mediaSession">The media session used for this call</param>
@@ -726,7 +849,20 @@ namespace SIPSorcery.SIP.App
 
         private async Task<bool> AnswerSyncronized(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders, IPAddress publicIpAddress)
         {
-            if (uas.IsCancelled)
+            if (m_sipDialogue != null && !IsReplacingCurrentDialog(uas.ClientTransaction.TransactionRequest))
+            {
+                // Answering would replace the existing established call orphaning it.
+                logger.LogWarning("The incoming call could not be answered as this user agent already has a call in place on dialog {DialogCallID}.", m_sipDialogue.CallId);
+
+                if (!uas.IsUASAnswered)
+                {
+                    // The user agent server will already have been rejected if it was created by AcceptCall.
+                    uas.Reject(SIPResponseStatusCodesEnum.BusyHere, BUSY_REASON_PHRASE);
+                }
+
+                return false;
+            }
+            else if (uas.IsCancelled)
             {
                 logger.LogDebug("The incoming call has been cancelled.");
                 mediaSession?.Close("call cancelled");
@@ -1286,20 +1422,46 @@ namespace SIPSorcery.SIP.App
                 // Check that the REFER destination is valid.
                 var referToUserField = SIPUserField.ParseSIPUserField(referRequest.Header.ReferTo);
                 string referredBy = referRequest.Header.ReferredBy;
+                SIPReplacesParameter replaces = null;
+
+                // Attended transfers will specify a dialog that is being replaced on the transfer Target.
+                // Blind transfers do not include a Replaces header.
+                if (referToUserField.URI.Headers.Has(SIPHeaderAncillary.SIP_REFER_REPLACES))
+                {
+                    string replacesStr = referToUserField.URI.Headers.Get(SIPHeaderAncillary.SIP_REFER_REPLACES);
+                    replaces = SIPReplacesParameter.Parse(replacesStr);
+                }
 
                 logger.LogDebug("Transfer request received, referred by {ReferredBy}, refer to {ReferToUserField}.", referredBy, referToUserField);
 
-                bool acceptTransfer = true;
+                // The calling application MUST decide whether to accept a transfer request or not. The default is to REJECT.
+                // An application handler takes precedence. Without a handler the dialog's transfer mode decides and it must explicitly
+                // permit transfers.
+                bool acceptTransfer = false;
 
-                // The calling application can optionally decide whether to accept transfers or not.
                 if (OnTransferRequested != null)
                 {
                     acceptTransfer = OnTransferRequested(referToUserField, referredBy);
                 }
+                else if(m_sipDialogue.TransferMode is SIPDialogueTransferModesEnum.Allowed)
+                {
+                    // Transfers were flagged as explicitly accepted when the initial call was placed.
+                    acceptTransfer = true;
+                }
+#pragma warning disable CS0618 // Type or member is obsolete
+                else if (replaces == null && m_sipDialogue.TransferMode is SIPDialogueTransferModesEnum.BlindPlaceCall)
+                {
+                    // This is a blind transfer and they were flagged as explicitly acceptable on the initial call. This
+                    // is a legacy mode. Blind transfers should not be considered more or less secure than attended transfers.
+                    // This condition is to support the legacy SIPDialogueTransferModesEnum.BlindPlaceCall option.
+                    acceptTransfer = true;
+                }
+#pragma warning restore CS0618 // Type or member is obsolete
 
                 if (!acceptTransfer)
                 {
-                    logger.LogDebug("Transfer request was rejected by application.");
+                    logger.LogDebug("Transfer request was rejected by the application, or no {EventName} handler was set and the dialog's transfer mode is {TransferMode}.",
+                        nameof(OnTransferRequested), m_sipDialogue.TransferMode);
 
                     SIPResponse rejectXferResponse = SIPResponse.GetResponse(referRequest, SIPResponseStatusCodesEnum.Decline, null);
                     referResponseTx.SendResponse(rejectXferResponse);
@@ -1358,10 +1520,8 @@ namespace SIPSorcery.SIP.App
 
                             // Attended transfers will specify a dialog that is being replaced on the transfer Target.
                             // Blind transfers do not include a Replaces header.
-                            if (referToUserField.URI.Headers.Has(SIPHeaderAncillary.SIP_REFER_REPLACES))
+                            if (replaces != null)
                             {
-                                string replacesStr = referToUserField.URI.Headers.Get(SIPHeaderAncillary.SIP_REFER_REPLACES);
-                                SIPReplacesParameter replaces = SIPReplacesParameter.Parse(replacesStr);
                                 customHeaders = new List<string>
                                 {
                                     $"{SIPHeaders.SIP_HEADER_REPLACES}: {replaces.CallID};to-tag={replaces.ToTag};from-tag={replaces.FromTag}"
@@ -1384,7 +1544,9 @@ namespace SIPSorcery.SIP.App
 
                             OnTransferCallDescriptorCreated?.Invoke(callDescriptor, referRequest);
 
-                            var transferResult = await Call(callDescriptor, MediaSession).ConfigureAwait(false);
+                            // The call to the transfer destination is allowed to replace the established call. If it
+                            // succeeds the call being replaced is hungup with the BYE request captured above.
+                            var transferResult = await Call(callDescriptor, MediaSession, 0, isCallingTransferDestination: true).ConfigureAwait(false);
 
                             logger.LogDebug("Result of calling transfer destination {TransferResult}.", transferResult);
 
@@ -1489,15 +1651,13 @@ namespace SIPSorcery.SIP.App
                     // each one receives the INVITE. Only the agent whose dialog matches should act on it;
                     // the others must silently ignore it. Rejecting with 400 would race against the
                     // correct agent's acceptance (see #1459).
-                    SIPReplacesParameter replaces = SIPReplacesParameter.Parse(sipRequest.Header.Replaces);
-
-                    if (replaces == null || replaces.CallID != m_sipDialogue.CallId)
+                    if (!IsReplacingCurrentDialog(sipRequest))
                     {
-                        logger.LogDebug("Attended transfer INVITE ignored, Replaces CallID {ReplacesCallID} does not match our dialog Call-ID {DialogCallID}.", replaces?.CallID, m_sipDialogue.CallId);
+                        logger.LogDebug("Attended transfer INVITE ignored, Replaces header {ReplacesHeader} does not match our dialog Call-ID {DialogCallID}.", sipRequest.Header.Replaces, m_sipDialogue.CallId);
                         return;
                     }
 
-                    logger.LogDebug("INVITE for attended transfer received, Replaces CallID {ReplacesCallID} matches our dialog Call-ID {DialogCallID}.", replaces.CallID, m_sipDialogue.CallId);
+                    logger.LogDebug("INVITE for attended transfer received, Replaces header {ReplacesHeader} matches our dialog Call-ID {DialogCallID}.", sipRequest.Header.Replaces, m_sipDialogue.CallId);
                     var uas = AcceptCall(sipRequest);
                     logger.LogDebug("Proceeding with attended transfer INVITE received from {RemoteEndPoint}.", remoteEndPoint);
                     await AcceptAttendedTransfer(uas).ConfigureAwait(false);
