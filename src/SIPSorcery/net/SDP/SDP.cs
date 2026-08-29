@@ -104,14 +104,11 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using CommunityToolkit.HighPerformance.Buffers;
+using System.Text;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -1059,68 +1056,69 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            using var writer = new ArrayPoolBufferWriter<char>(4096);
-            WriteString(writer);
-            return writer.ToString();
+            var builder = new StringBuilder();
+            WriteString(builder);
+            return builder.ToString();
         }
 
-        public void WriteString(IBufferWriter<char> writer)
+        public void WriteString(StringBuilder builder)
         {
-            writer
-                .Write("v=").Write(SDP_PROTOCOL_VERSION).Write("\r\no=")
-                .Write(Username).Write(' ')
-                .Write(SessionId).Write(' ')
-                .Write(AnnouncementVersion).Write(' ')
-                .Write(NetworkType).Write(' ')
-                .Write(AddressType).Write(' ')
-                .Write(AddressOrHost).Write("\r\ns=")
-                .Write(SessionName).Write(CRLF);
+            builder
+                .Append("v=").Append(SDP_PROTOCOL_VERSION).Append(CRLF)
+                .Append("o=")
+                .Append(Username).Append(' ')
+                .Append(SessionId).Append(' ')
+                .Append(AnnouncementVersion).Append(' ')
+                .Append(NetworkType).Append(' ')
+                .Append(AddressType).Append(' ')
+                .Append(AddressOrHost).Append(CRLF)
+                .Append("s=").Append(SessionName).Append(CRLF);
 
-            Connection?.WriteString(writer);
+            Connection?.WriteString(builder);
 
             foreach (var bandwidth in BandwidthAttributes)
             {
-                writer.Write("b=").Write(bandwidth).Write(CRLF);
+                builder.Append("b=").Append(bandwidth).Append(CRLF);
             }
 
-            writer.Write("t=").Write(Timing).Write(CRLF);
+            builder.Append("t=").Append(Timing).Append(CRLF);
 
             if (!string.IsNullOrWhiteSpace(IceUfrag))
             {
-                writer.Write("a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":").Write(IceUfrag).Write(CRLF);
+                builder.Append("a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":").Append(IceUfrag).Append(CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(IcePwd))
             {
-                writer.Write("a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":").Write(IcePwd).Write(CRLF);
+                builder.Append("a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":").Append(IcePwd).Append(CRLF);
             }
 
             if (IceRole is { } iceRole)
             {
-                writer.Write("a=" + ICE_SETUP_ATTRIBUTE_PREFIX + ":").Write(GetIceRoleName(iceRole)).Write(CRLF);
+                builder.Append("a=" + ICE_SETUP_ATTRIBUTE_PREFIX + ":").Append(GetIceRoleName(iceRole)).Append(CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(DtlsFingerprint))
             {
-                writer.Write("a=" + DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":").Write(DtlsFingerprint).Write(CRLF);
+                builder.Append("a=" + DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":").Append(DtlsFingerprint).Append(CRLF);
             }
 
             if (IceCandidates?.Count > 0)
             {
                 foreach (var candidate in IceCandidates)
                 {
-                    writer.Write("a=" + ICE_CANDIDATE_ATTRIBUTE_PREFIX + ":").Write(candidate).Write(CRLF);
+                    builder.Append("a=" + ICE_CANDIDATE_ATTRIBUTE_PREFIX + ":").Append(candidate).Append(CRLF);
                 }
             }
 
             if (!string.IsNullOrWhiteSpace(SessionDescription))
             {
-                writer.Write("i=").Write(SessionDescription).Write(CRLF);
+                builder.Append("i=").Append(SessionDescription).Append(CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(URI))
             {
-                writer.Write("u=").Write(URI).Write(CRLF);
+                builder.Append("u=").Append(URI).Append(CRLF);
             }
 
             if (OriginatorEmailAddresses != null && OriginatorEmailAddresses.Length > 0)
@@ -1129,7 +1127,7 @@ namespace SIPSorcery.Net
                 {
                     if (!string.IsNullOrWhiteSpace(originatorAddress))
                     {
-                        writer.Write("e=").Write(originatorAddress).Write(CRLF);
+                        builder.Append("e=").Append(originatorAddress).Append(CRLF);
                     }
                 }
             }
@@ -1140,34 +1138,34 @@ namespace SIPSorcery.Net
                 {
                     if (!string.IsNullOrWhiteSpace(originatorNumber))
                     {
-                        writer.Write("p=").Write(originatorNumber).Write(CRLF);
+                        builder.Append("p=").Append(originatorNumber).Append(CRLF);
                     }
                 }
             }
 
             if (Group != null)
             {
-                writer.Write("a=" + GROUP_ATRIBUTE_PREFIX + ":").Write(Group).Write(CRLF);
+                builder.Append("a=" + GROUP_ATRIBUTE_PREFIX + ":").Append(Group).Append(CRLF);
             }
 
             foreach (var extra in ExtraSessionAttributes)
             {
                 if (!string.IsNullOrWhiteSpace(extra))
                 {
-                    writer.Write(extra).Write(CRLF);
+                    builder.Append(extra).Append(CRLF);
                 }
             }
 
             if (SessionMediaStreamStatus != null)
             {
-                writer.Write(MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus.Value)).Write(CRLF);
+                builder.Append(MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus.Value)).Append(CRLF);
             }
 
             if (IsMediaSorted(Media))
             {
                 foreach (var media in Media)
                 {
-                    media?.WriteString(writer);
+                    media?.WriteString(builder);
                 }
             }
             else
@@ -1177,7 +1175,7 @@ namespace SIPSorcery.Net
 
                 foreach (var media in medias)
                 {
-                    media?.WriteString(writer);
+                    media?.WriteString(builder);
                 }
             }
 

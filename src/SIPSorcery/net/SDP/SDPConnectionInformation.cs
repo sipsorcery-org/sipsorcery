@@ -14,12 +14,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
-using CommunityToolkit.HighPerformance.Buffers;
-using Polyfills;
-using SIPSorcery.Sys;
+using System.Text;
 
 namespace SIPSorcery.Net
 {
@@ -84,21 +81,21 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            using var writer = new ArrayPoolBufferWriter<char>(4096);
-            WriteString(writer);
-            return writer.ToString();
+            var builder = new StringBuilder();
+            WriteString(builder);
+            return builder.ToString();
         }
 
-        public void WriteString(IBufferWriter<char> writer)
+        public void WriteString(StringBuilder builder)
         {
-            writer
-                .Write("c=")
-                .Write(ConnectionNetworkType)
-                .Write(' ')
-                .Write(ConnectionAddressType)
-                .Write(' ')
-                .Write(ConnectionAddress)
-                .Write(m_CRLF);
+            builder
+                .Append("c=")
+                .Append(ConnectionNetworkType)
+                .Append(' ')
+                .Append(ConnectionAddressType)
+                .Append(' ')
+                .Append(ConnectionAddress)
+                .Append(m_CRLF);
         }
     }
 }

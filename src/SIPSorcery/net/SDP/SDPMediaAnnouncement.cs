@@ -27,9 +27,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Buffers;
 using System.Collections.Generic;
-using CommunityToolkit.HighPerformance.Buffers;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 
@@ -294,124 +293,124 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            using var writer = new ArrayPoolBufferWriter<char>(4096);
-            WriteString(writer);
-            return writer.ToString();
+            var builder = new StringBuilder();
+            WriteString(builder);
+            return builder.ToString();
         }
 
-        public void WriteString(IBufferWriter<char> writer)
+        public void WriteString(StringBuilder builder)
         {
-            writer
-                .Write("m=")
-                .Write(GetMediaTypeName(Media))
-                .Write(' ')
-                .Write(Port)
-                .Write(' ')
-                .Write(Transport)
-                .Write(' ');
-            WriteFormatListString(writer);
-            writer.Write(m_CRLF);
+            builder
+                .Append("m=")
+                .Append(GetMediaTypeName(Media))
+                .Append(' ')
+                .Append(Port)
+                .Append(' ')
+                .Append(Transport)
+                .Append(' ');
+            WriteFormatListString(builder);
+            builder.Append(m_CRLF);
 
             if (!string.IsNullOrWhiteSpace(MediaDescription))
             {
-                writer.Write("i=").Write(MediaDescription).Write(m_CRLF);
+                builder.Append("i=").Append(MediaDescription).Append(m_CRLF);
             }
 
             if (Connection != null)
             {
-                Connection.WriteString(writer);
+                Connection.WriteString(builder);
             }
 
             if (TIASBandwidth > 0)
             {
-                writer.Write(TIAS_BANDWIDTH_ATTRIBUE_PREFIX).Write(TIASBandwidth).Write(m_CRLF);
+                builder.Append(TIAS_BANDWIDTH_ATTRIBUE_PREFIX).Append(TIASBandwidth).Append(m_CRLF);
             }
 
             foreach (var bandwidthAttribute in BandwidthAttributes)
             {
-                writer.Write("b=").Write(bandwidthAttribute).Write(m_CRLF);
+                builder.Append("b=").Append(bandwidthAttribute).Append(m_CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(IceUfrag))
             {
-                writer.Write("a=" + SDP.ICE_UFRAG_ATTRIBUTE_PREFIX + ":").Write(IceUfrag).Write(m_CRLF);
+                builder.Append("a=" + SDP.ICE_UFRAG_ATTRIBUTE_PREFIX + ":").Append(IceUfrag).Append(m_CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(IcePwd))
             {
-                writer.Write("a=" + SDP.ICE_PWD_ATTRIBUTE_PREFIX + ":").Write(IcePwd).Write(m_CRLF);
+                builder.Append("a=" + SDP.ICE_PWD_ATTRIBUTE_PREFIX + ":").Append(IcePwd).Append(m_CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(DtlsFingerprint))
             {
-                writer.Write("a=" + SDP.DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":").Write(DtlsFingerprint).Write(m_CRLF);
+                builder.Append("a=" + SDP.DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":").Append(DtlsFingerprint).Append(m_CRLF);
             }
 
             if (IceRole is { } iceRole)
             {
-                writer.Write("a=" + SDP.ICE_SETUP_ATTRIBUTE_PREFIX + ":").Write(GetIceRoleName(iceRole)).Write(m_CRLF);
+                builder.Append("a=" + SDP.ICE_SETUP_ATTRIBUTE_PREFIX + ":").Append(GetIceRoleName(iceRole)).Append(m_CRLF);
             }
 
             if (IceCandidates?.Count > 0)
             {
                 foreach (var candidate in IceCandidates)
                 {
-                    writer.Write("a=" + SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX + ":").Write(candidate).Write(m_CRLF);
+                    builder.Append("a=" + SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX + ":").Append(candidate).Append(m_CRLF);
                 }
             }
 
             if (IceOptions != null)
             {
-                writer.Write("a=" + SDP.ICE_OPTIONS + ":").Write(IceOptions).Write(m_CRLF);
+                builder.Append("a=" + SDP.ICE_OPTIONS + ":").Append(IceOptions).Append(m_CRLF);
             }
 
             if (IceEndOfCandidates)
             {
-                writer.Write("a=" + SDP.END_ICE_CANDIDATES_ATTRIBUTE).Write(m_CRLF);
+                builder.Append("a=" + SDP.END_ICE_CANDIDATES_ATTRIBUTE).Append(m_CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(MediaID))
             {
-                writer.Write("a=" + SDP.MEDIA_ID_ATTRIBUTE_PREFIX + ":").Write(MediaID).Write(m_CRLF);
+                builder.Append("a=" + SDP.MEDIA_ID_ATTRIBUTE_PREFIX + ":").Append(MediaID).Append(m_CRLF);
             }
 
-            WriteFormatListAttributesString(writer);
+            WriteFormatListAttributesString(builder);
 
             foreach (var headerExtension in HeaderExtensions)
             {
-                writer.Write(MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX).Write(headerExtension.Value.Id).Write(' ')
-                    .Write(headerExtension.Value.Uri).Write(m_CRLF);
+                builder.Append(MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX).Append(headerExtension.Value.Id).Append(' ')
+                    .Append(headerExtension.Value.Uri).Append(m_CRLF);
             }
 
             foreach (var extra in ExtraMediaAttributes)
             {
                 if (!string.IsNullOrWhiteSpace(extra))
                 {
-                    writer.Write(extra).Write(m_CRLF);
+                    builder.Append(extra).Append(m_CRLF);
                 }
             }
 
             foreach (var desc in this.SecurityDescriptions)
             {
-                if (desc.WriteString(writer))
+                if (desc.WriteString(builder))
                 {
-                    writer.Write(m_CRLF);
+                    builder.Append(m_CRLF);
                 }
             }
 
             if (MediaStreamStatus != null)
             {
-                writer.Write(MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus.Value)).Write(m_CRLF);
+                builder.Append(MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus.Value)).Append(m_CRLF);
             }
 
             if (SsrcGroupID != null && SsrcAttributes.Count > 0)
             {
-                writer.Write(MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX).Write(SsrcGroupID);
+                builder.Append(MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX).Append(SsrcGroupID);
                 foreach (var ssrcAttr in SsrcAttributes)
                 {
-                    writer.Write(' ').Write(ssrcAttr.SSRC);
+                    builder.Append(' ').Append(ssrcAttr.SSRC);
                 }
-                writer.Write(m_CRLF);
+                builder.Append(m_CRLF);
             }
 
             if (SsrcAttributes.Count > 0)
@@ -420,12 +419,12 @@ namespace SIPSorcery.Net
                 {
                     if (!string.IsNullOrWhiteSpace(ssrcAttr.Cname))
                     {
-                        writer.Write(MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX).Write(ssrcAttr.SSRC).Write(' ')
-                            .Write(SDPSsrcAttribute.MEDIA_CNAME_ATTRIBUE_PREFIX).Write(':').Write(ssrcAttr.Cname).Write(m_CRLF);
+                        builder.Append(MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX).Append(ssrcAttr.SSRC).Append(' ')
+                            .Append(SDPSsrcAttribute.MEDIA_CNAME_ATTRIBUE_PREFIX).Append(':').Append(ssrcAttr.Cname).Append(m_CRLF);
                     }
                     else
                     {
-                        writer.Write(MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX).Write(ssrcAttr.SSRC).Write(m_CRLF);
+                        builder.Append(MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX).Append(ssrcAttr.SSRC).Append(m_CRLF);
                     }
                 }
             }
@@ -435,18 +434,18 @@ namespace SIPSorcery.Net
             // an application sets it then it's likely to be for a specific reason.
             if (SctpMap != null)
             {
-                writer.Write(MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX).Write(SctpMap).Write(m_CRLF);
+                builder.Append(MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX).Append(SctpMap).Append(m_CRLF);
             }
             else
             {
                 if (SctpPort != null)
                 {
-                    writer.Write(MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX).Write(SctpPort).Write(m_CRLF);
+                    builder.Append(MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX).Append(SctpPort).Append(m_CRLF);
                 }
 
                 if (MaxMessageSize != 0)
                 {
-                    writer.Write(MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX).Write(MaxMessageSize).Write(m_CRLF);
+                    builder.Append(MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX).Append(MaxMessageSize).Append(m_CRLF);
                 }
             }
 
@@ -484,12 +483,12 @@ namespace SIPSorcery.Net
                 return null;
             }
 
-            using var writer = new ArrayPoolBufferWriter<char>(4096);
-            WriteFormatListString(writer);
-            return writer.ToString();
+            var builder = new StringBuilder();
+            WriteFormatListString(builder);
+            return builder.ToString();
         }
 
-        public void WriteFormatListString(IBufferWriter<char> writer)
+        public void WriteFormatListString(StringBuilder builder)
         {
             if (Media == SDPMediaTypesEnum.application)
             {
@@ -498,16 +497,16 @@ namespace SIPSorcery.Net
                 {
                     if (writeSparator)
                     {
-                        writer.Write(' ');
+                        builder.Append(' ');
                     }
                     writeSparator = true;
 
-                    writer.Write(appFormat.Key);
+                    builder.Append(appFormat.Key);
                 }
             }
             else if (Media == SDPMediaTypesEnum.message)
             {
-                writer.Write('*');
+                builder.Append('*');
             }
             else
             {
@@ -516,11 +515,11 @@ namespace SIPSorcery.Net
                 {
                     if (writeSparator)
                     {
-                        writer.Write(' ');
+                        builder.Append(' ');
                     }
                     writeSparator = true;
 
-                    writer.Write(mediaFormat.Key);
+                    builder.Append(mediaFormat.Key);
                 }
             }
         }
@@ -534,12 +533,12 @@ namespace SIPSorcery.Net
                 return null;
             }
 
-            using var writer = new ArrayPoolBufferWriter<char>(4096);
-            WriteFormatListAttributesString(writer);
-            return writer.ToString();
+            var builder = new StringBuilder();
+            WriteFormatListAttributesString(builder);
+            return builder.ToString();
         }
 
-        public void WriteFormatListAttributesString(IBufferWriter<char> writer)
+        public void WriteFormatListAttributesString(StringBuilder builder)
         {
             if (Media == SDPMediaTypesEnum.application)
             {
@@ -547,14 +546,14 @@ namespace SIPSorcery.Net
                 {
                     if (appFormat.Value.Rtpmap != null)
                     {
-                        writer.Write(MEDIA_FORMAT_ATTRIBUTE_PREFIX).Write(appFormat.Key).Write(' ')
-                            .Write(appFormat.Value.Rtpmap).Write(m_CRLF);
+                        builder.Append(MEDIA_FORMAT_ATTRIBUTE_PREFIX).Append(appFormat.Key).Append(' ')
+                            .Append(appFormat.Value.Rtpmap).Append(m_CRLF);
                     }
 
                     if (appFormat.Value.Fmtp != null)
                     {
-                        writer.Write(MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX).Write(appFormat.Key).Write(' ')
-                            .Write(appFormat.Value.Fmtp).Write(m_CRLF);
+                        builder.Append(MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX).Append(appFormat.Key).Append(' ')
+                            .Append(appFormat.Value.Fmtp).Append(m_CRLF);
                     }
                 }
             }
@@ -564,19 +563,19 @@ namespace SIPSorcery.Net
                 var acceptTypes = mediaFormat.AcceptTypes;
                 if (acceptTypes != null && acceptTypes.Count > 0)
                 {
-                    writer.Write(MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX);
+                    builder.Append(MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX);
                     foreach (var type in acceptTypes)
                     {
-                        writer.Write(type).Write(' ');
+                        builder.Append(type).Append(' ');
                     }
 
-                    writer.Write(m_CRLF);
+                    builder.Append(m_CRLF);
                 }
 
                 if (mediaFormat.Endpoint != null)
                 {
-                    writer.Write(MEDIA_FORMAT_PATH_MSRP_PREFIX).Write("//").Write(Connection.ConnectionAddress).Write(':')
-                        .Write(Port).Write('/').Write(mediaFormat.Endpoint).Write(m_CRLF);
+                    builder.Append(MEDIA_FORMAT_PATH_MSRP_PREFIX).Append("//").Append(Connection.ConnectionAddress).Append(':')
+                        .Append(Port).Append('/').Append(mediaFormat.Endpoint).Append(m_CRLF);
                 }
             }
             else
@@ -590,13 +589,13 @@ namespace SIPSorcery.Net
                         {
                             // Well known media formats are not required to add an rtpmap but we do so any way as some SIP
                             // stacks don't work without it.
-                            writer.Write(MEDIA_FORMAT_ATTRIBUTE_PREFIX).Write(mediaFormat.ID).Write(' ')
-                                .Write(mediaFormat.Name()).Write('/').Write(mediaFormat.ClockRate()).Write(m_CRLF);
+                            builder.Append(MEDIA_FORMAT_ATTRIBUTE_PREFIX).Append(mediaFormat.ID).Append(' ')
+                                .Append(mediaFormat.Name()).Append('/').Append(mediaFormat.ClockRate()).Append(m_CRLF);
                         }
                         else
                         {
-                            writer.Write(MEDIA_FORMAT_ATTRIBUTE_PREFIX).Write(mediaFormat.ID).Write(' ')
-                                .Write(mediaFormat.Rtpmap).Write(m_CRLF);
+                            builder.Append(MEDIA_FORMAT_ATTRIBUTE_PREFIX).Append(mediaFormat.ID).Append(' ')
+                                .Append(mediaFormat.Rtpmap).Append(m_CRLF);
                         }
 
                         // Leaving out the feedback attribute for now. It should only be added where it's present in a parsed SDP packet or
@@ -606,15 +605,15 @@ namespace SIPSorcery.Net
                         {
                             foreach (var rtcpFeedbackMessage in mediaFormat.SupportedRtcpFeedbackMessages)
                             {
-                                writer.Write(MEDIA_FORMAT_FEEDBACK_PREFIX).Write(mediaFormat.ID).Write(' ')
-                                    .Write(rtcpFeedbackMessage).Write(m_CRLF);
+                                builder.Append(MEDIA_FORMAT_FEEDBACK_PREFIX).Append(mediaFormat.ID).Append(' ')
+                                    .Append(rtcpFeedbackMessage).Append(m_CRLF);
                             }
                         }
 
                         if (mediaFormat.Fmtp != null)
                         {
-                            writer.Write(MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX).Write(mediaFormat.ID).Write(' ')
-                                .Write(mediaFormat.Fmtp).Write(m_CRLF);
+                            builder.Append(MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX).Append(mediaFormat.ID).Append(' ')
+                                .Append(mediaFormat.Fmtp).Append(m_CRLF);
                         }
                     }
                 }

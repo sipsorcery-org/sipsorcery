@@ -14,9 +14,6 @@ using System.Collections.Frozen;
 #endif
 using System.Collections.Generic;
 using System.Text;
-using CommunityToolkit.HighPerformance.Buffers;
-using Polyfills;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -238,26 +235,26 @@ namespace SIPSorcery.Net
 
             public override string ToString()
             {
-                using var writer = new ArrayPoolBufferWriter<char>(4096);
-                WriteString(writer);
-                return writer.ToString();
+                var builder = new StringBuilder();
+                WriteString(builder);
+                return builder.ToString();
             }
 
-            public void WriteString(IBufferWriter<char> writer)
+            public void WriteString(StringBuilder builder)
             {
-                writer.Write(KEY_METHOD + COLON).Write(this.KeySaltBase64);
+                builder.Append(KEY_METHOD + COLON).Append(this.KeySaltBase64);
                 if (!string.IsNullOrWhiteSpace(this.LifeTimeString))
                 {
-                    writer.Write(PIPE).Write(this.LifeTimeString);
+                    builder.Append(PIPE).Append(this.LifeTimeString);
                 }
                 else if (this.LifeTime > 0)
                 {
-                    writer.Write(PIPE).Write(this.LifeTime);
+                    builder.Append(PIPE).Append(this.LifeTime);
                 }
 
                 if (this.MkiLength > 0 && this.MkiValue > 0)
                 {
-                    writer.Write(PIPE).Write(this.MkiValue).Write(COLON).Write(this.MkiLength);
+                    builder.Append(PIPE).Append(this.MkiValue).Append(COLON).Append(this.MkiLength);
                 }
             }
 
@@ -694,32 +691,32 @@ namespace SIPSorcery.Net
             }
             public override string ToString()
             {
-                using var writer = new ArrayPoolBufferWriter<char>(4096);
-                WriteString(writer);
-                return writer.ToString();
+                var builder = new StringBuilder();
+                WriteString(builder);
+                return builder.ToString();
             }
 
-            public void WriteString(IBufferWriter<char> writer)
+            public void WriteString(StringBuilder builder)
             {
                 switch (this.SrtpSessionParam)
                 {
                     case SrtpSessionParams.UNAUTHENTICATED_SRTP:
-                        writer.Write(nameof(SrtpSessionParams.UNAUTHENTICATED_SRTP));
+                        builder.Append(nameof(SrtpSessionParams.UNAUTHENTICATED_SRTP));
                         break;
                     case SrtpSessionParams.UNENCRYPTED_SRTP:
-                        writer.Write(nameof(SrtpSessionParams.UNENCRYPTED_SRTP));
+                        builder.Append(nameof(SrtpSessionParams.UNENCRYPTED_SRTP));
                         break;
                     case SrtpSessionParams.UNENCRYPTED_SRTCP:
-                        writer.Write(nameof(SrtpSessionParams.UNENCRYPTED_SRTCP));
+                        builder.Append(nameof(SrtpSessionParams.UNENCRYPTED_SRTCP));
                         break;
                     case SrtpSessionParams.wsh:
-                        writer.Write(WSH_PREFIX).Write(this.Wsh);
+                        builder.Append(WSH_PREFIX).Append(this.Wsh);
                         break;
                     case SrtpSessionParams.kdr:
-                        writer.Write(KDR_PREFIX).Write(this.Kdr);
+                        builder.Append(KDR_PREFIX).Append(this.Kdr);
                         break;
                     case SrtpSessionParams.fec_order:
-                        writer.Write(FEC_ORDER_PREFIX).Write(this.FecOrder switch
+                        builder.Append(FEC_ORDER_PREFIX).Append(this.FecOrder switch
                         {
                             FecTypes.FEC_SRTP => nameof(FecTypes.FEC_SRTP),
                             FecTypes.SRTP_FEC => nameof(FecTypes.SRTP_FEC),
@@ -727,8 +724,8 @@ namespace SIPSorcery.Net
                         });
                         break;
                     case SrtpSessionParams.fec_key:
-                        writer.Write(FEC_KEY_PREFIX);
-                        this.FecKey?.WriteString(writer);
+                        builder.Append(FEC_KEY_PREFIX);
+                        this.FecKey?.WriteString(builder);
                         break;
                 }
             }
@@ -871,11 +868,11 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            using var writer = new ArrayPoolBufferWriter<char>(4096);
-            return WriteString(writer) ? writer.ToString() : null;
+            var builder = new StringBuilder();
+            return WriteString(builder) ? builder.ToString() : null;
         }
 
-        public bool WriteString(IBufferWriter<char> writer)
+        public bool WriteString(StringBuilder builder)
         {
             if (this.Tag < 1 || this.CryptoSuite == CryptoSuites.unknown || this.KeyParams.Count < 1)
             {
@@ -887,20 +884,20 @@ namespace SIPSorcery.Net
                 ? s_cryptoSuiteNames[cryptoSuiteIndex]
                 : this.CryptoSuite.ToString();
 
-            writer.Write(CRYPTO_ATTRIBUE_PREFIX).Write(this.Tag).Write(WHITE_SPACE).Write(cryptoSuiteName).Write(WHITE_SPACE);
-            for (int i = 0; i < this.KeyParams.Count; i++)
+            builder.Append(CRYPTO_ATTRIBUE_PREFIX).Append(this.Tag).Append(WHITE_SPACE).Append(cryptoSuiteName).Append(WHITE_SPACE);
+            for (var i = 0; i < this.KeyParams.Count; i++)
             {
                 if (i > 0)
                 {
-                    writer.Write(SEMI_COLON);
+                    builder.Append(SEMI_COLON);
                 }
 
-                this.KeyParams[i].WriteString(writer);
+                this.KeyParams[i].WriteString(builder);
             }
             if (this.SessionParam != null)
             {
-                writer.Write(WHITE_SPACE);
-                this.SessionParam.WriteString(writer);
+                builder.Append(WHITE_SPACE);
+                this.SessionParam.WriteString(builder);
             }
 
             return true;
