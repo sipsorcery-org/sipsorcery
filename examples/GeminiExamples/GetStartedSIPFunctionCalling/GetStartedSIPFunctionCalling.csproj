@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <UserSecretsId>ee3a09ce-8fcc-4d7c-98de-e8d8e2cc7398</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LanguageExt.Core" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+  </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\SIPSorcery.Gemini.Realtime\SIPSorcery.Gemini.Realtime.csproj" />
+        <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
+    </ItemGroup>
+
+</Project>

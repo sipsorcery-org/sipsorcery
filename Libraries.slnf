@@ -6,6 +6,7 @@
       "src\\SIPSorceryMedia.FFmpeg\\SIPSorceryMedia.FFmpeg.csproj",
       "src\\SIPSorceryMedia.Windows\\SIPSorceryMedia.Windows.csproj",
       "src\\SIPSorcery\\SIPSorcery.csproj",
+	  "src\\SIPSorcery.Gemini.Realtime\\SIPSorcery.Gemini.Realtime.csproj",
 	  "src\\SIPSorcery.OpenAI.Realtime\\SIPSorcery.OpenAI.Realtime.csproj",
 	  "src\\SIPSorcery.VP8\\SIPSorcery.VP8.csproj",
 	  "src\\SIPSorcery.Cli\\SIPSorcery.Cli.csproj",

@@ -1,0 +1,9 @@
+{
+  "solution": {
+    "path": "SIPSorcery.slnx",
+    "projects": [
+      "src\\SIPSorcery.Gemini.Realtime\\SIPSorcery.Gemini.Realtime.csproj",
+      "test\\SIPSorcery.Gemini.Realtime.UnitTest\\SIPSorcery.Gemini.Realtime.UnitTests.csproj"
+    ]
+  }
+}
