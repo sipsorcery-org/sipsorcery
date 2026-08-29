@@ -1,18 +1,25 @@
 ﻿using System;
+using System.Buffers;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using SIPSorcery.Net;
 
 namespace SIPSorcery.Sys;
 
-internal static partial class SipSorceryJsonSerializer
+internal static class SipSorceryJsonSerializer
 {
-    public static string Serialize<T>(T value) => JsonSerializer.Serialize(value, SipSorceryJsonSerializerContext.Default.Options);
-
-    public static T Deserialize<T>(ReadOnlySpan<char> json) => JsonSerializer.Deserialize<T>(json, SipSorceryJsonSerializerContext.Default.Options);
-
-    [JsonSerializable(typeof(RTCIceCandidateInit))]
-    private partial class SipSorceryJsonSerializerContext : JsonSerializerContext
+    private static readonly JsonWriterOptions jsonWriterOptions = new()
     {
+        Indented = false,
+    };
+
+    public static string Serialize<T>(T value)
+        => JsonSerializer.Serialize(value, SipSorceryJsonSerializerContext.Default.Options);
+
+    public static void Serialize<T>(IBufferWriter<byte> writer, T value)
+    {
+        using var jsonWriter = new Utf8JsonWriter(writer, jsonWriterOptions);
+        JsonSerializer.Serialize<T>(jsonWriter, value, SipSorceryJsonSerializerContext.Default.Options);
     }
+
+    public static T Deserialize<T>(ReadOnlySpan<char> json)
+        => JsonSerializer.Deserialize<T>(json, SipSorceryJsonSerializerContext.Default.Options);
 }

@@ -122,26 +122,29 @@ namespace SIPSorcery.Net
             //     $"  \"candidate\": \"{candidate}\"" +
             //     "}";
 
+#if NETSTANDARD
+            return TinyJson.JSONWriter.ToJson(this);
+#else
             return SipSorceryJsonSerializer.Serialize(this);
+#endif
         }
 
 #nullable enable
         public static bool TryParse(string json, [NotNullWhen(true)] out RTCIceCandidateInit? init)
         {
-            return TryParse(json.AsSpan(), out init);
-        }
-
-        public static bool TryParse(ReadOnlySpan<char> json, [NotNullWhen(true)] out RTCIceCandidateInit? init)
-        {
             init = null;
-            if (json.IsEmptyOrWhiteSpace())
-            {
-                return false;
-            }
-
             try
             {
+                if (json.IsEmptyOrWhiteSpace())
+                {
+                    return false;
+                }
+
+#if NETSTANDARD
+                init = TinyJson.JSONParser.FromJson<RTCIceCandidateInit>(json);
+#else
                 init = SipSorceryJsonSerializer.Deserialize<RTCIceCandidateInit>(json);
+#endif
             }
             catch (JsonException)
             {
@@ -153,8 +156,8 @@ namespace SIPSorcery.Net
                 init.candidate is { } &&
                 init.sdpMid is { };
         }
-    }
 #nullable restore
+    }
 
     /// <summary>
     /// 
