@@ -346,9 +346,8 @@ namespace SIPSorcery.Net
             return (uint)((typePreference << 24) | (localPreference << 8) | (256u - component.GetHashCode()));
         }
 
-        public string toJSON()
-        {
-            var rtcCandInit = new RTCIceCandidateInit
+        public RTCIceCandidateInit ToRTCIceCandidateInit()
+            => new()
             {
                 sdpMid = sdpMid ?? sdpMLineIndex.ToString(),
                 sdpMLineIndex = sdpMLineIndex,
@@ -356,8 +355,7 @@ namespace SIPSorcery.Net
                 candidate = $"{CANDIDATE_PREFIX}:{this}"
             };
 
-            return rtcCandInit.toJSON();
-        }
+        public string toJSON() => ToRTCIceCandidateInit().toJSON();
 
         /// <summary>
         /// Checks the candidate to identify whether it is equivalent to the specified
