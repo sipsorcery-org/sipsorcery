@@ -400,9 +400,6 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public event Action<SIPUserField> OnTransferToTargetFailed;
 
-        /// <summary>	
-        /// The remote call party has put us on hold.	
-        /// </summary>	
         /// <summary>
         /// An INVITE has arrived that replaces this agent's current call, and it is being taken
         /// over. This is the attended transfer seen from the party being transferred TO.
@@ -412,10 +409,9 @@ namespace SIPSorcery.SIP.App
         /// answered. There is no way to decline from here: RFC 3891 matching has already
         /// identified the dialog and acceptance is what this agent does with it.
         ///
-        /// The counterparty on the transferee is <seealso cref="OnTransferRequested"/>. Without
-        /// this the party being replaced is the one side of an attended transfer an application
-        /// cannot observe at all, because the exchange is handled inside this class and
-        /// OnIncomingCall is deliberately not raised for it.
+        /// Without this event the Transfer Target is the one role in an attended transfer that an
+        /// application cannot observe at all, because the exchange is handled inside this class and
+        /// <see cref="OnIncomingCall"/> is deliberately not raised for it.
         /// </remarks>
         public event Action<SIPRequest> OnAttendedTransferRequested;
 
@@ -2050,6 +2046,23 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// Builds the Referred-By header value for a transfer request. RFC3892 uses Referred-By to identify
+        /// the referrer, which for any REFER this class sends is this user agent acting as the Transferor.
+        /// It is taken from the dialogue the REFER is being sent on, so it is the identity the remote call
+        /// party already knows us by, rather than from a consulted call which can present a different one.
+        /// </summary>
+        /// <returns>The Referred-By header value or null if the dialogue does not have a local identity.</returns>
+        private string GetReferredByHeader()
+        {
+            if (m_sipDialogue?.LocalUserField?.URI == null)
+            {
+                return null;
+            }
+
+            return new SIPUserField(m_sipDialogue.LocalUserField.Name, m_sipDialogue.LocalUserField.URI.CopyOf(), null).ToString();
+        }
+
+        /// <summary>
         /// Builds the REFER request to initiate a blind transfer on an established call.
         /// </summary>
         /// <param name="referToUri">The SIP URI to transfer the call to.</param>
@@ -2060,6 +2073,7 @@ namespace SIPSorcery.SIP.App
         {
             SIPRequest referRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.REFER);
             referRequest.Header.ReferTo = referToUri.ToString();
+            referRequest.Header.ReferredBy = GetReferredByHeader();
             referRequest.Header.Supported = SIPExtensionHeaders.NO_REFER_SUB;
             referRequest.Header.Contact = new List<SIPContactHeader> { SIPContactHeader.GetDefaultSIPContactHeader(referRequest.URI.Scheme) };
 
@@ -2089,18 +2103,13 @@ namespace SIPSorcery.SIP.App
 
             SIPParameters replacesHeaders = new SIPParameters();
 
-            if (target.Direction == SIPCallDirection.Out)
-            {
-                replacesHeaders.Set("Replaces", SIPEscape.SIPURIParameterEscape($"{target.CallId};to-tag={target.RemoteTag};from-tag={target.LocalTag}"));
-                var from = new SIPUserField(target.LocalUserField.Name, target.LocalUserField.URI.CopyOf(), null);
-                referRequest.Header.ReferredBy = from.ToString();
-            }
-            else
-            {
-                replacesHeaders.Set("Replaces", SIPEscape.SIPURIParameterEscape($"{target.CallId};to-tag={target.RemoteTag};from-tag={target.LocalTag}"));
-                var from = new SIPUserField(target.RemoteUserField.Name, target.RemoteUserField.URI.CopyOf(), null);
-                referRequest.Header.ReferredBy = from.ToString();
-            }
+            // The Replaces triple is expressed from the Transfer Target's point of view, its local tag is our
+            // remote tag and vice versa. SIPDialogue normalises local and remote to our perspective so the
+            // same expression is correct no matter which way the consulted call was placed.
+            replacesHeaders.Set(SIPHeaderAncillary.SIP_REFER_REPLACES,
+                SIPEscape.SIPURIParameterEscape($"{target.CallId};to-tag={target.RemoteTag};from-tag={target.LocalTag}"));
+
+            referRequest.Header.ReferredBy = GetReferredByHeader();
 
             targetUri.Headers = replacesHeaders;
             var referTo = new SIPUserField(null, targetUri, null);
