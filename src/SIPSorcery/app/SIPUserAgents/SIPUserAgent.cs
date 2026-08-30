@@ -412,7 +412,7 @@ namespace SIPSorcery.SIP.App
         /// answered. There is no way to decline from here: RFC 3891 matching has already
         /// identified the dialog and acceptance is what this agent does with it.
         ///
-        /// The counterpart on the transferee is <seealso cref="OnTransferRequested"/>. Without
+        /// The counterparty on the transferee is <seealso cref="OnTransferRequested"/>. Without
         /// this the party being replaced is the one side of an attended transfer an application
         /// cannot observe at all, because the exchange is handled inside this class and
         /// OnIncomingCall is deliberately not raised for it.
@@ -478,8 +478,8 @@ namespace SIPSorcery.SIP.App
         /// any requests are for it and can handle accordingly. If the transport needs to be shared 
         /// amongst multiple user agents use the alternative constructor.
         ///
-        /// Note that as this class is desgined to only deal with a single call this constructor
-        /// is creating an ephemeral SIP transport that will be closed once the single call is complete.
+        /// Note that as this class is designed to only deal with a single call this constructor
+        /// is creating an ephemeral SIP transport that will be closed once the instance is disposed.
         /// A new instance will create a new SIPTransport most likely on a different port.
         /// </summary>
         public SIPUserAgent()
@@ -584,18 +584,18 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaSession">The RTP session for the call.</param>
         /// <param name="ringTimeout">Optional. If non-zero will be treated as the number of seconds to let the call
         /// ring for before giving up and cancelling.</param>
-        /// <param name="isCallingTransferDestination">If true the call is to the Refer-To destination of a
+        /// <param name="isTransfer">If true the call is to the Refer-To destination of a
         /// transfer request (blind or attended) that this user agent has accepted. It is the only case where a
         /// new call is allowed to replace an established one and the caller is responsible for hanging up the
         /// call being replaced once this one is answered.</param>
-        private async Task<bool> Call(SIPCallDescriptor callDescriptor, IMediaSession mediaSession, int ringTimeout, bool isCallingTransferDestination)
+        private async Task<bool> Call(SIPCallDescriptor callDescriptor, IMediaSession mediaSession, int ringTimeout, bool isTransfer)
         {
             TaskCompletionSource<bool> callResult = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             ClientCallAnswered += (uac, resp) => callResult.TrySetResult(true);
             ClientCallFailed += (uac, errorMessage, result) => callResult.TrySetResult(false);
 
-            await InitiateCallAsync(callDescriptor, mediaSession, ringTimeout, isCallingTransferDestination).ConfigureAwait(false);
+            await InitiateCallAsync(callDescriptor, mediaSession, ringTimeout, isTransfer).ConfigureAwait(false);
 
             return await callResult.Task.ConfigureAwait(false);
         }
@@ -986,8 +986,8 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Initiates a blind transfer by asking the remote call party to call the specified destination.
-        /// If the transfer is accepted the current call will be hungup. From RFC5589's perpesctive this is
-        /// this user agent acting as the Transferor and is straight forward and no risk.
+        /// If the transfer is accepted the current call will be hungup. From RFC5589's perspective this is
+        /// this user agent acting as the Transferor and is straightforward and no risk.
         /// </summary>
         /// <param name="destination">The URI to transfer the call to.</param>
         /// <param name="timeout">Timeout for the transfer request to get accepted.</param>
@@ -1018,10 +1018,10 @@ namespace SIPSorcery.SIP.App
         /// user agent acting as the Transferor. That role is simple and no risk and is essentially
         /// asking the Transferee to call a new destination.
         ///
-        /// Note that this user agent only manages a single simultanteous call. If it wants to request an attended
+        /// Note that this user agent only manages a single simultaneous call. If it wants to request an attended
         /// transfer the calling application is responsible for supplying a second dialogue (the consulted call).
         /// This user agent will put the details of that dialogue in the transfer (REFER) request but it is not
-        /// responsible for establishing or managing that call leg. Typially a second user agent instance is used
+        /// responsible for establishing or managing that call leg. Typically a second user agent instance is used
         /// to establish the consulted call leg and then the application can use it with the first user agent to
         /// attempt the attended transfer.
         /// </summary>
@@ -1564,7 +1564,7 @@ namespace SIPSorcery.SIP.App
 
                             // The call to the transfer destination is allowed to replace the established call. If it
                             // succeeds the call being replaced is hungup with the BYE request captured above.
-                            var transferResult = await Call(callDescriptor, MediaSession, 0, isCallingTransferDestination: true).ConfigureAwait(false);
+                            var transferResult = await Call(callDescriptor, MediaSession, 0, true).ConfigureAwait(false);
 
                             logger.LogDebug("Result of calling transfer destination {TransferResult}.", transferResult);
 
@@ -1669,7 +1669,6 @@ namespace SIPSorcery.SIP.App
                     // each one receives the INVITE. Only the agent whose dialog matches should act on it;
                     // the others must silently ignore it. Rejecting with 400 would race against the
                     // correct agent's acceptance (see #1459).
-
                     if (!IsReplacingCurrentDialog(sipRequest))
                     {
                         logger.LogDebug("Attended transfer INVITE ignored, Replaces header {ReplacesHeader} does not match our dialog Call-ID {DialogCallID}.", sipRequest.Header.Replaces, m_sipDialogue.CallId);
@@ -1723,7 +1722,7 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Accepts and attempts to process an INVITE request from a 3rd party that is asking to use their incoming
-        /// call request to replace the existing call. From RFC5589's perpective this is this user agent acting as the
+        /// call request to replace the existing call. From RFC5589's perspective this is this user agent acting as the
         /// Transfer Target. The Transfer Target's operation is relatively simple. If the new INVITE succeeds in establishing
         /// a call it is used to replace the original call.
         /// </summary>
