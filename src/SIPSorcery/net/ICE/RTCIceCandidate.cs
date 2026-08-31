@@ -433,5 +433,92 @@ namespace SIPSorcery.Net
             return (uint)(c ^ 0xFFFFFFFF);
         }
 
+        /// <summary>
+        /// Determines whether the specified <see cref="IRTCIceCandidate" /> is equal to this instance.
+        /// Two candidates are considered equal if they produce the same string representation.
+        /// </summary>
+        /// <param name="other">The <see cref="IRTCIceCandidate" /> to compare with this instance.</param>
+        /// <returns><see langword="true" /> if the candidates are equal; otherwise, <see langword="false" />.</returns>
+        public bool Equals(IRTCIceCandidate other)
+        {
+            if (other is null)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            // Compare all properties that contribute to the ToString output
+            return foundation == other.foundation &&
+                   component == other.component &&
+                   protocol == other.protocol &&
+                   priority == other.priority &&
+                   address == other.address &&
+                   port == other.port &&
+                   type == other.type &&
+                   tcpType == other.tcpType &&
+                   relatedAddress == other.relatedAddress &&
+                   relatedPort == other.relatedPort;
+        }
+
+        /// <summary>
+        /// Determines whether the specified object is equal to this instance.
+        /// </summary>
+        /// <param name="obj">The object to compare with this instance.</param>
+        /// <returns><see langword="true" /> if the object is an <see cref="IRTCIceCandidate" /> and is equal to this instance; otherwise, <see langword="false" />.</returns>
+        public override bool Equals(object obj)
+        {
+            return obj is IRTCIceCandidate candidate && Equals(candidate);
+        }
+
+        /// <summary>
+        /// Returns a hash code for this instance based on the properties that contribute to equality.
+        /// </summary>
+        /// <returns>A hash code for this instance.</returns>
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            hash.Add(foundation);
+            hash.Add(component);
+            hash.Add(protocol);
+            hash.Add(priority);
+            hash.Add(address);
+            hash.Add(port);
+            hash.Add(type);
+            hash.Add(tcpType);
+            hash.Add(relatedAddress);
+            hash.Add(relatedPort);
+            return hash.ToHashCode();
+        }
+
+        /// <summary>
+        /// Determines whether two <see cref="IRTCIceCandidate" /> instances are equal.
+        /// </summary>
+        /// <param name="left">The first candidate to compare.</param>
+        /// <param name="right">The second candidate to compare.</param>
+        /// <returns><see langword="true" /> if the candidates are equal; otherwise, <see langword="false" />.</returns>
+        public static bool operator ==(RTCIceCandidate left, RTCIceCandidate right)
+        {
+            if (left is null)
+            {
+                return right is null;
+            }
+
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two <see cref="IRTCIceCandidate" /> instances are not equal.
+        /// </summary>
+        /// <param name="left">The first candidate to compare.</param>
+        /// <param name="right">The second candidate to compare.</param>
+        /// <returns><see langword="true" /> if the candidates are not equal; otherwise, <see langword="false" />.</returns>
+        public static bool operator !=(RTCIceCandidate left, RTCIceCandidate right)
+        {
+            return !(left == right);
+        }
     }
 }
