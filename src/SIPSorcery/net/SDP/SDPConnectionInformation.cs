@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -52,28 +53,30 @@ namespace SIPSorcery.Net
         }
 
         public static SDPConnectionInformation ParseConnectionInformation(string connectionLine)
-        {
-            SDPConnectionInformation connectionInfo = new SDPConnectionInformation();
-            var connectionFields = connectionLine.AsSpan(2).Trim();
-            var fieldIndex = 0;
-            foreach (var fieldRange in connectionFields.Split(' '))
-            {
-                var field = connectionFields[fieldRange].Trim().ToString();
-                if (fieldIndex == 0)
-                {
-                    connectionInfo.ConnectionNetworkType = field;
-                }
-                else if (fieldIndex == 1)
-                {
-                    connectionInfo.ConnectionAddressType = field;
-                }
-                else if (fieldIndex == 2)
-                {
-                    connectionInfo.ConnectionAddress = field;
-                    break;
-                }
+            => ParseConnectionInformation(connectionLine.AsSpan());
 
-                fieldIndex++;
+        public static SDPConnectionInformation ParseConnectionInformation(ReadOnlySpan<char> connectionLine)
+        {
+            var connectionInfo = new SDPConnectionInformation();
+
+            connectionLine = connectionLine.Slice(2).Trim();
+
+            Span<Range> fields = stackalloc Range[4];
+            var fieldCount = connectionLine.Split(fields, ' ', StringSplitOptions.RemoveEmptyEntries);
+
+            if (fieldCount > 0)
+            {
+                connectionInfo.ConnectionNetworkType = connectionLine[fields[0]].Trim().ToString();
+            }
+
+            if (fieldCount > 1)
+            {
+                connectionInfo.ConnectionAddressType = connectionLine[fields[1]].Trim().ToString();
+            }
+
+            if (fieldCount > 2)
+            {
+                connectionInfo.ConnectionAddress = connectionLine[fields[2]].Trim().ToString();
             }
 
             return connectionInfo;

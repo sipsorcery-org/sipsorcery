@@ -8,6 +8,10 @@
 // rj2
 
 using System;
+using System.Buffers;
+#if NET9_0_OR_GREATER
+using System.Collections.Frozen;
+#endif
 using System.Collections.Generic;
 using System.Text;
 
@@ -68,17 +72,15 @@ namespace SIPSorcery.Net
         private static readonly Dictionary<string, CryptoSuites> s_cryptoSuiteLookup = CreateCryptoSuiteLookup();
         private static Dictionary<string, CryptoSuites> CreateCryptoSuiteLookup()
         {
-            var values = Enum.GetValues(typeof(CryptoSuites));
-            var lookup = new Dictionary<string, CryptoSuites>(values.Length - 1, StringComparer.Ordinal);
-            foreach (CryptoSuites cs in values)
+            var lookup = new Dictionary<string, CryptoSuites>(s_cryptoSuiteNames.Length - 1, StringComparer.Ordinal);
+            for (var i = 1; i < s_cryptoSuiteNames.Length; i++)
             {
-                if (cs != CryptoSuites.unknown)
-                {
-                    lookup[cs.ToString()] = cs;
-                }
+                lookup.Add(s_cryptoSuiteNames[i], (CryptoSuites)i);
             }
-            return lookup;
+            return lookup.ToFrozenDictionary(StringComparer.Ordinal);
         }
+#endif
+
         public class KeyParameter
         {
             private const string COLON = ":";
@@ -264,6 +266,9 @@ namespace SIPSorcery.Net
             }
 
             public static bool TryParse(string keyParamString, out KeyParameter keyParam, CryptoSuites cryptoSuite = CryptoSuites.AES_CM_128_HMAC_SHA1_80)
+                => TryParse(keyParamString.AsSpan(), out keyParam, cryptoSuite);
+
+            public static bool TryParse(ReadOnlySpan<char> keyParamText, out KeyParameter keyParam, CryptoSuites cryptoSuite = CryptoSuites.AES_CM_128_HMAC_SHA1_80)
             {
                 keyParam = null;
 
@@ -271,7 +276,7 @@ namespace SIPSorcery.Net
                 {
                     foreach (var c in keyInfo)
                     {
-                        if (c < 0x21 || c > 0x7e)
+                        if (c is < (char)0x21 or > (char)0x7e)
                         {
                             return false;
                         }
@@ -335,9 +340,9 @@ namespace SIPSorcery.Net
                     return true;
                 }
 
-                if (!string.IsNullOrWhiteSpace(keyParamString))
+                if (!keyParamText.IsEmptyOrWhiteSpace())
                 {
-                    var p = keyParamString.AsSpan().Trim();
+                    var p = keyParamText.Trim();
                     if (p.StartsWith(KEY_METHOD, StringComparison.Ordinal))
                     {
                         int poscln = p.IndexOf(COLON);
@@ -621,20 +626,23 @@ namespace SIPSorcery.Net
             public const string WSH_PREFIX = "WSH=";
             public const string KDR_PREFIX = "KDR=";
 
-            private static readonly Dictionary<string, FecTypes> s_fecTypesLookup = CreateFecTypesLookup();
-            private static Dictionary<string, FecTypes> CreateFecTypesLookup()
+#if NET9_0_OR_GREATER
+            private static readonly FrozenDictionary<string, FecTypes> s_fecTypesLookup = CreateFecTypesLookup();
+
+            private static FrozenDictionary<string, FecTypes> CreateFecTypesLookup()
             {
-                var values = Enum.GetValues(typeof(FecTypes));
+                var values = Enum.GetValues<FecTypes>();
                 var lookup = new Dictionary<string, FecTypes>(values.Length - 1, StringComparer.Ordinal);
-                foreach (FecTypes ft in values)
+                foreach (var fecType in values)
                 {
-                    if (ft != FecTypes.unknown)
+                    if (fecType != FecTypes.unknown)
                     {
-                        lookup[ft.ToString()] = ft;
+                        lookup.Add(fecType.ToString(), fecType);
                     }
                 }
-                return lookup;
+                return lookup.ToFrozenDictionary(StringComparer.Ordinal);
             }
+#endif
 
             private ulong m_kdr = 0;
             public ulong Kdr
@@ -737,16 +745,18 @@ namespace SIPSorcery.Net
             }
 
             public static bool TryParse(string sessionParam, out SessionParameter result, CryptoSuites cryptoSuite = CryptoSuites.AES_CM_128_HMAC_SHA1_80)
+                => TryParse(sessionParam.AsSpan(), out result, cryptoSuite);
+
+            public static bool TryParse(ReadOnlySpan<char> sessionParam, out SessionParameter result, CryptoSuites cryptoSuite = CryptoSuites.AES_CM_128_HMAC_SHA1_80)
             {
                 result = null;
 
-                if (string.IsNullOrWhiteSpace(sessionParam))
+                if (sessionParam.IsEmptyOrWhiteSpace())
                 {
                     return true;
                 }
 
-                var p = sessionParam.AsSpan().Trim();
-                SessionParameter.SrtpSessionParams paramType = SrtpSessionParams.unknown;
+                var p = sessionParam.Trim();
                 if (p.StartsWith(KDR_PREFIX, StringComparison.Ordinal))
                 {
                     if (uint.TryParse(p.Slice(KDR_PREFIX.Length), out var kdr))
@@ -765,8 +775,7 @@ namespace SIPSorcery.Net
                 }
                 else if (p.StartsWith(FEC_KEY_PREFIX, StringComparison.Ordinal))
                 {
-                    var sFecKey = p.Slice(FEC_KEY_PREFIX.Length).ToString();
-                    if (!KeyParameter.TryParse(sFecKey, out var fecKey, cryptoSuite))
+                    if (!KeyParameter.TryParse(p.Slice(FEC_KEY_PREFIX.Length), out var fecKey, cryptoSuite))
                     {
                         return false;
                     }
@@ -775,31 +784,41 @@ namespace SIPSorcery.Net
                 }
                 else if (p.StartsWith(FEC_ORDER_PREFIX, StringComparison.Ordinal))
                 {
-                    var sFecOrder = p.Slice(FEC_ORDER_PREFIX.Length).ToString();
-                    if (!s_fecTypesLookup.TryGetValue(sFecOrder, out var fecOrder))
+                    var fecOrderSpan = p.Slice(FEC_ORDER_PREFIX.Length);
+#if NET9_0_OR_GREATER
+                    if (!s_fecTypesLookup.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(fecOrderSpan, out var fecOrder))
                     {
                         return false;
                     }
+#else
+                    var fecOrder = fecOrderSpan.SequenceEqual(nameof(FecTypes.FEC_SRTP).AsSpan())
+                        ? FecTypes.FEC_SRTP
+                        : fecOrderSpan.SequenceEqual(nameof(FecTypes.SRTP_FEC).AsSpan())
+                            ? FecTypes.SRTP_FEC
+                            : FecTypes.unknown;
+                    if (fecOrder == FecTypes.unknown)
+                    {
+                        return false;
+                    }
+#endif
 
                     result = new SessionParameter(SrtpSessionParams.fec_order) { FecOrder = fecOrder };
                     return true;
                 }
-                else
+                else if (p.SequenceEqual(nameof(SrtpSessionParams.UNAUTHENTICATED_SRTP).AsSpan()))
                 {
-                    var paramString = p.ToString();
-                    if (!Enum.TryParse<SrtpSessionParams>(paramString, out paramType) || paramType.ToString() != paramString)
-                    {
-                        return false;
-                    }
-
-                    switch (paramType)
-                    {
-                        case SrtpSessionParams.UNAUTHENTICATED_SRTP:
-                        case SrtpSessionParams.UNENCRYPTED_SRTCP:
-                        case SrtpSessionParams.UNENCRYPTED_SRTP:
-                            result = new SessionParameter(paramType);
-                            return true;
-                    }
+                    result = new SessionParameter(SrtpSessionParams.UNAUTHENTICATED_SRTP);
+                    return true;
+                }
+                else if (p.SequenceEqual(nameof(SrtpSessionParams.UNENCRYPTED_SRTCP).AsSpan()))
+                {
+                    result = new SessionParameter(SrtpSessionParams.UNENCRYPTED_SRTCP);
+                    return true;
+                }
+                else if (p.SequenceEqual(nameof(SrtpSessionParams.UNENCRYPTED_SRTP).AsSpan()))
+                {
+                    result = new SessionParameter(SrtpSessionParams.UNENCRYPTED_SRTP);
+                    return true;
                 }
 
                 return false;
@@ -910,19 +929,22 @@ namespace SIPSorcery.Net
         }
 
         public static bool TryParse(string cryptoLine, out SDPSecurityDescription securityDescription)
+            => TryParse(cryptoLine.AsSpan(), out securityDescription);
+
+        public static bool TryParse(ReadOnlySpan<char> cryptoLine, out SDPSecurityDescription securityDescription)
         {
             securityDescription = null;
-            if (string.IsNullOrWhiteSpace(cryptoLine))
+            if (cryptoLine.IsEmptyOrWhiteSpace())
             {
                 return true;
             }
 
-            if (!cryptoLine.StartsWith(CRYPTO_ATTRIBUE_PREFIX))
+            if (!cryptoLine.StartsWith(CRYPTO_ATTRIBUE_PREFIX.AsSpan(), StringComparison.Ordinal))
             {
                 return false;
             }
 
-            var sCryptoValue = cryptoLine.AsSpan(cryptoLine.IndexOf(COLON) + 1);
+            var sCryptoValue = cryptoLine.Slice(cryptoLine.IndexOf(':') + 1);
 
             securityDescription = new SDPSecurityDescription();
             Span<Range> sCryptoPartRanges = stackalloc Range[5];
@@ -943,10 +965,26 @@ namespace SIPSorcery.Net
             }
             securityDescription.Tag = tag;
 
-            if (!s_cryptoSuiteLookup.TryGetValue(sCryptoValue[sCryptoPartRanges[1]].ToString(), out var cryptoSuite))
+            var cryptoSuiteSpan = sCryptoValue[sCryptoPartRanges[1]];
+#if NET9_0_OR_GREATER
+            if (!s_cryptoSuiteLookup.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(cryptoSuiteSpan, out var cryptoSuite))
             {
                 return false;
             }
+#else
+            if (!Enum.TryParse<CryptoSuites>(cryptoSuiteSpan, out var cryptoSuite))
+            {
+                return false;
+            }
+
+            var cryptoSuiteIndex = (int)cryptoSuite;
+            if ((uint)cryptoSuiteIndex >= (uint)s_cryptoSuiteNames.Length ||
+                cryptoSuite == CryptoSuites.unknown ||
+                !cryptoSuiteSpan.SequenceEqual(s_cryptoSuiteNames[cryptoSuiteIndex].AsSpan()))
+            {
+                return false;
+            }
+#endif
             securityDescription.CryptoSuite = cryptoSuite;
 
             if (sCryptoPartCount < 3)
@@ -959,7 +997,7 @@ namespace SIPSorcery.Net
             foreach (var keyParamRange in sKeyParams.Split(SEMI_COLON))
             {
                 hasKeyParam = true;
-                if (!KeyParameter.TryParse(sKeyParams[keyParamRange].ToString(), out var keyParam, securityDescription.CryptoSuite))
+                if (!KeyParameter.TryParse(sKeyParams[keyParamRange], out var keyParam, securityDescription.CryptoSuite))
                 {
                     securityDescription = null;
                     return false;
@@ -975,7 +1013,7 @@ namespace SIPSorcery.Net
 
             if (sCryptoPartCount > 3)
             {
-                if (!SessionParameter.TryParse(sCryptoValue[sCryptoPartRanges[3]].ToString(), out var sessionParam, securityDescription.CryptoSuite))
+                if (!SessionParameter.TryParse(sCryptoValue[sCryptoPartRanges[3]], out var sessionParam, securityDescription.CryptoSuite))
                 {
                     securityDescription = null;
                     return false;

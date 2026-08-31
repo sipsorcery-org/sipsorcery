@@ -24,9 +24,50 @@ namespace SIPSorcery.Net;
 public class SDPMediaTypes
 {
     public static SDPMediaTypesEnum GetSDPMediaType(string mediaType)
+        => GetSDPMediaType(mediaType.AsSpan());
+
+    public static SDPMediaTypesEnum GetSDPMediaType(ReadOnlySpan<char> mediaType)
     {
-        return (SDPMediaTypesEnum)Enum.Parse(typeof(SDPMediaTypesEnum), mediaType, true);
+        if (mediaType.Equals(nameof(SDPMediaTypesEnum.audio).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.audio;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.video).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.video;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.application).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.application;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.data).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.data;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.control).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.control;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.image).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.image;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.message).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.message;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.text).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.text;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.invalid).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.invalid;
+        }
+
+        return (SDPMediaTypesEnum)Enum.Parse(typeof(SDPMediaTypesEnum), mediaType.ToString(), true);
     }
+
     public static SDPMediaTypesEnum GetSDPMediaType(int mediaType)
     {
         return (SDPMediaTypesEnum)mediaType;
@@ -63,33 +104,39 @@ public class MediaStreamStatusType
     /// <param name="mediaStreamStatus">If the attribute was recognised as a media stream attribute this will hold it.</param>
     /// <returns>True if the attribute matched or false if not.</returns>
     public static bool IsMediaStreamStatusAttribute(string attributeString, out MediaStreamStatusEnum mediaStreamStatus)
+        => IsMediaStreamStatusAttribute(attributeString.AsSpan(), out mediaStreamStatus);
+
+    /// <summary>
+    /// Checks whether an SDP attribute is one of the four possible media stream attributes.
+    /// </summary>
+    /// <param name="attribute">The attribute characters to check.</param>
+    /// <param name="mediaStreamStatus">If the attribute was recognised as a media stream attribute this will hold it.</param>
+    /// <returns>True if the attribute matched or false if not.</returns>
+    public static bool IsMediaStreamStatusAttribute(ReadOnlySpan<char> attribute, out MediaStreamStatusEnum mediaStreamStatus)
     {
         mediaStreamStatus = MediaStreamStatusEnum.SendRecv;
 
-        if (string.IsNullOrEmpty(attributeString))
+        if (attribute.Equals(SEND_RECV_ATTRIBUTE.AsSpan(), StringComparison.OrdinalIgnoreCase))
         {
-            return false;
+            return true;
         }
-        else
+        else if (attribute.Equals(SEND_ONLY_ATTRIBUTE.AsSpan(), StringComparison.OrdinalIgnoreCase))
         {
-            switch (attributeString)
-            {
-                case var _ when SEND_RECV_ATTRIBUTE.Equals(attributeString, StringComparison.OrdinalIgnoreCase):
-                    mediaStreamStatus = MediaStreamStatusEnum.SendRecv;
-                    return true;
-                case var _ when SEND_ONLY_ATTRIBUTE.Equals(attributeString, StringComparison.OrdinalIgnoreCase):
-                    mediaStreamStatus = MediaStreamStatusEnum.SendOnly;
-                    return true;
-                case var _ when RECV_ONLY_ATTRIBUTE.Equals(attributeString, StringComparison.OrdinalIgnoreCase):
-                    mediaStreamStatus = MediaStreamStatusEnum.RecvOnly;
-                    return true;
-                case var _ when INACTIVE_ATTRIBUTE.Equals(attributeString, StringComparison.OrdinalIgnoreCase):
-                    mediaStreamStatus = MediaStreamStatusEnum.Inactive;
-                    return true;
-                default:
-                    return false;
-            }
+            mediaStreamStatus = MediaStreamStatusEnum.SendOnly;
+            return true;
         }
+        else if (attribute.Equals(RECV_ONLY_ATTRIBUTE.AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            mediaStreamStatus = MediaStreamStatusEnum.RecvOnly;
+            return true;
+        }
+        else if (attribute.Equals(INACTIVE_ATTRIBUTE.AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            mediaStreamStatus = MediaStreamStatusEnum.Inactive;
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
