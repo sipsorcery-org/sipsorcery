@@ -16,8 +16,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using Polyfills;
-using SIPSorcery.Sys;
+using System.Text;
 
 namespace SIPSorcery.Net
 {
@@ -82,7 +81,21 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            return $"c={ConnectionNetworkType} {ConnectionAddressType} {ConnectionAddress}{m_CRLF}";
+            var builder = new StringBuilder();
+            WriteString(builder);
+            return builder.ToString();
+        }
+
+        public void WriteString(StringBuilder builder)
+        {
+            builder
+                .Append("c=")
+                .Append(ConnectionNetworkType)
+                .Append(' ')
+                .Append(ConnectionAddressType)
+                .Append(' ')
+                .Append(ConnectionAddress)
+                .Append(m_CRLF);
         }
     }
 }
