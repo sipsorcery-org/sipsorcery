@@ -448,11 +448,15 @@ namespace SIPSorcery.SIP.App
                     }
                     else if (transferMode is "p" or "P")
                     {
+#pragma warning disable CS0618 // Type or member is obsolete
                         TransferMode = SIPDialogueTransferModesEnum.PassThru;
+#pragma warning restore CS0618 // Type or member is obsolete
                     }
                     else if (transferMode is "c" or "C")
                     {
+#pragma warning disable CS0618 // Type or member is obsolete
                         TransferMode = SIPDialogueTransferModesEnum.BlindPlaceCall;
+#pragma warning restore CS0618 // Type or member is obsolete
                     }
                     /*else if (transferMode == "o" || transferMode == "O")
                     {

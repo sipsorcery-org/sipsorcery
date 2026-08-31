@@ -53,33 +53,109 @@ namespace SIPSorcery.Net.UnitTests
             }
         }
 
-        private (TurnServer server, int port) CreateTurnServer(bool enableTcp = true, bool enableUdp = false)
+        /// <summary>
+        /// The number of times a free port is looked for, and a server start attempted on it, before
+        /// giving up.
+        /// </summary>
+        private const int PORT_BIND_ATTEMPTS = 10;
+
+        /// <summary>
+        /// Picks a free port and starts a TURN server listening on it.
+        /// </summary>
+        /// <remarks>
+        /// The OS assigns the port on a probe socket which must be closed before the TURN server can bind
+        /// it. That leaves a window where anything else on the machine can take the port, which shows up
+        /// as an intermittent failure when the test suite has a lot of sockets in flight. The window
+        /// cannot be closed, the server does the binding, so the start is retried on a new port when it
+        /// loses the race. The probe also has to use the same protocols the server will, TCP and UDP port
+        /// spaces are independent so a free TCP port says nothing about the same UDP port being free.
+        /// </remarks>
+        private (TurnServer server, int port) CreateTurnServer(
+            bool enableTcp = true,
+            bool enableUdp = false,
+            int defaultLifetimeSeconds = 600)
         {
-            // Use port 0 to let the OS assign a free port, then read it back.
-            // Since TurnServer requires a specific port, find a free one first.
-            int port;
-            var tempSocket = new TcpListener(IPAddress.Loopback, 0);
-            tempSocket.Start();
-            port = ((IPEndPoint)tempSocket.LocalEndpoint).Port;
-            tempSocket.Stop();
-
-            var config = new TurnServerConfig
+            for (int attempt = 1; ; attempt++)
             {
-                ListenAddress = IPAddress.Loopback,
-                Port = port,
-                EnableTcp = enableTcp,
-                EnableUdp = enableUdp,
-                Username = TEST_USERNAME,
-                Password = TEST_PASSWORD,
-                Realm = TEST_REALM,
-                RelayAddress = IPAddress.Loopback,
-                DefaultLifetimeSeconds = 600,
-            };
+                int port = GetFreePort(enableTcp, enableUdp);
 
-            var server = new TurnServer(config);
-            _servers.Add(server);
-            server.Start();
-            return (server, port);
+                var config = new TurnServerConfig
+                {
+                    ListenAddress = IPAddress.Loopback,
+                    Port = port,
+                    EnableTcp = enableTcp,
+                    EnableUdp = enableUdp,
+                    Username = TEST_USERNAME,
+                    Password = TEST_PASSWORD,
+                    Realm = TEST_REALM,
+                    RelayAddress = IPAddress.Loopback,
+                    DefaultLifetimeSeconds = defaultLifetimeSeconds,
+                };
+
+                var server = new TurnServer(config);
+
+                try
+                {
+                    server.Start();
+                }
+                catch (SocketException) when (attempt < PORT_BIND_ATTEMPTS)
+                {
+                    // The port went between the probe closing and the server binding. A fresh instance is
+                    // needed as Start sets its running flag before binding and will not re-run.
+                    try { server.Dispose(); } catch { }
+                    continue;
+                }
+
+                _servers.Add(server);
+
+                return (server, port);
+            }
+        }
+
+        /// <summary>
+        /// Returns a port number that is free on each of the protocols requested.
+        /// </summary>
+        private static int GetFreePort(bool needTcp, bool needUdp)
+        {
+            for (int attempt = 1; ; attempt++)
+            {
+                TcpListener tcpProbe = null;
+                UdpClient udpProbe = null;
+
+                try
+                {
+                    int port;
+
+                    if (needTcp)
+                    {
+                        tcpProbe = new TcpListener(IPAddress.Loopback, 0);
+                        tcpProbe.Start();
+                        port = ((IPEndPoint)tcpProbe.LocalEndpoint).Port;
+
+                        if (needUdp)
+                        {
+                            // Check the same port number is also free for UDP.
+                            udpProbe = new UdpClient(new IPEndPoint(IPAddress.Loopback, port));
+                        }
+                    }
+                    else
+                    {
+                        udpProbe = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+                        port = ((IPEndPoint)udpProbe.Client.LocalEndPoint).Port;
+                    }
+
+                    return port;
+                }
+                catch (SocketException) when (attempt < PORT_BIND_ATTEMPTS)
+                {
+                    // The port was free on one protocol but not the other, try for a different one.
+                }
+                finally
+                {
+                    try { tcpProbe?.Stop(); } catch { }
+                    udpProbe?.Dispose();
+                }
+            }
         }
 
         private static byte[] ComputeHmacKey(string username, string realm, string password)
@@ -605,29 +681,8 @@ namespace SIPSorcery.Net.UnitTests
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
-            // Create server with very short lifetime
-            int testPort;
-            var tempSocket = new TcpListener(IPAddress.Loopback, 0);
-            tempSocket.Start();
-            testPort = ((IPEndPoint)tempSocket.LocalEndpoint).Port;
-            tempSocket.Stop();
-
-            var config = new TurnServerConfig
-            {
-                ListenAddress = IPAddress.Loopback,
-                Port = testPort,
-                EnableTcp = true,
-                EnableUdp = false,
-                Username = TEST_USERNAME,
-                Password = TEST_PASSWORD,
-                Realm = TEST_REALM,
-                RelayAddress = IPAddress.Loopback,
-                DefaultLifetimeSeconds = 1, // Very short for testing
-            };
-
-            var server = new TurnServer(config);
-            _servers.Add(server);
-            server.Start();
+            // Create server with a very short allocation lifetime.
+            var (server, testPort) = CreateTurnServer(enableTcp: true, enableUdp: false, defaultLifetimeSeconds: 1);
 
             using var client = await ConnectTcpClient(testPort);
             var stream = client.GetStream();

@@ -457,6 +457,7 @@ namespace SIPSorcery.SIP.App
                     {
                         m_sipDialogue = new SIPDialogue(m_serverTransaction);
                         m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
+                        m_sipDialogue.TransferMode = m_sipCallDescriptor.TransferMode;
                     }
 
                     CallAnswered?.Invoke(this, sipResponse);

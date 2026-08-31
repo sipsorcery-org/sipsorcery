@@ -920,6 +920,12 @@ a=sendrecv";
                     bool answerResult = await ua.Answer(uas, CreateMediaSession());
                     logger.LogDebug("Answer incoming call result {AnswerResult}.", answerResult);
                 };
+                // Transfer requests are rejected unless the application explicitly permits them.
+                userAgent.OnTransferRequested += (referTo, referredBy) =>
+                {
+                    logger.LogDebug("Transfer requested to {ReferTo}, accepting.", referTo);
+                    return true;
+                };
             }
 
             // Place the two calls from A to C and B to D.
