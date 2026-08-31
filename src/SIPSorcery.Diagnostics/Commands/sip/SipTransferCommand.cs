@@ -52,6 +52,13 @@ public sealed class SipTransferCommand : CommandBase
     private const string BlindMode = "blind";
     private const string AttendedMode = "attended";
 
+    /// <summary>
+    /// Packets an end point must deliver AFTER the REFER before it counts as the party the
+    /// transferee is now hearing. At a 20ms packetisation this is a fifth of a second of audio,
+    /// which is enough to tell a conversation from a straggler off the old leg.
+    /// </summary>
+    private const int MEDIA_SWITCH_MINIMUM_PACKETS = 10;
+
     private const int DEFAULT_CALL_DURATION_SECONDS = 5;
 
     /// <summary>
@@ -118,6 +125,8 @@ public sealed class SipTransferCommand : CommandBase
         string? MediaBefore,
         string? MediaAfter,
         string? MediaSwitched,
+        int PacketsFromNewPartyAfterRefer,
+        int PacketsFromOriginalPartyAfterRefer,
         IReadOnlyList<string> Notifies);
 
     /// <summary>Collects the scenario steps with a millisecond offset from the start of the run.</summary>
@@ -563,6 +572,8 @@ public sealed class SipTransferCommand : CommandBase
             // it is the whole point: the library hands the same media session to the new call, so
             // packet counts carry straight through and only the remote end point actually changes.
             var mediaBefore = transfereeRole.Media?.DominantAudioRemote?.Key;
+            var mediaBaseline = transfereeRole.Media?.SnapshotAudioPacketCounts()
+                ?? new Dictionary<string, int>();
             bool baselineMedia = transferorRole.Media is { TotalAudioPackets: > 0 }
                 && transfereeRole.Media is { TotalAudioPackets: > 0 };
 
@@ -683,7 +694,30 @@ public sealed class SipTransferCommand : CommandBase
                 timeline.Add("targetAnswered");
             }
 
-            var mediaAfter = transfereeRole.Media?.DominantAudioRemote?.Key;
+            // Who the transferee is hearing SINCE the REFER, by differencing the tallies against
+            // the baseline taken above. Cumulative dominance cannot answer this: the media session
+            // is reused across the transfer, so the transferor keeps the packets it sent during
+            // the whole pre-transfer call and a target answering seconds before the end never
+            // overtakes it. Comparing totals therefore reports "the audio did not move" on a
+            // transfer whose media moved perfectly.
+            var mediaNow = transfereeRole.Media?.SnapshotAudioPacketCounts()
+                ?? new Dictionary<string, int>();
+
+            var sinceRefer = mediaNow.ToDictionary(
+                x => x.Key,
+                x => x.Value - (mediaBaseline.TryGetValue(x.Key, out int before) ? before : 0));
+
+            // A handful of packets is a straggler from the old leg or a probe, not a conversation.
+            var busiest = sinceRefer
+                .Where(x => x.Value >= MEDIA_SWITCH_MINIMUM_PACKETS)
+                .OrderByDescending(x => x.Value)
+                .Cast<KeyValuePair<string, int>?>()
+                .FirstOrDefault();
+
+            var mediaAfter = busiest?.Key;
+            int packetsFromNewParty = busiest?.Value ?? 0;
+            int packetsFromOriginalParty =
+                mediaBefore != null && sinceRefer.TryGetValue(mediaBefore, out int original) ? original : 0;
 
             // Three-valued on purpose. "The audio did not move" and "there was never any audio to
             // move" are different findings, and reporting the second as the first would blame the
@@ -747,6 +781,8 @@ public sealed class SipTransferCommand : CommandBase
                 mediaBefore,
                 mediaAfter,
                 mediaSwitched,
+                packetsFromNewParty,
+                packetsFromOriginalParty,
                 notified);
 
             // The transfer is judged on what it achieved, and media only counts against it when
@@ -785,6 +821,16 @@ public sealed class SipTransferCommand : CommandBase
             // ringing on the server. Idempotent with the tidy path above: a role whose call has
             // already ended sends nothing.
             await HangUpAllAsync(roles).ConfigureAwait(false);
+
+            // Removing the bindings has to happen here rather than only on the path that
+            // succeeded. Every role registers a Contact on an ephemeral port that stops existing
+            // when this process does, so a run that returns early - a call that was never
+            // answered, a REFER that was refused, a cancellation - used to leave three live
+            // bindings behind for the full registration expiry. The next run registers from new
+            // ports, and until the stale ones age out the server has a choice of bindings for each
+            // account and some of them are black holes. That made consecutive runs of this command
+            // disagree with each other, which looked like server flakiness and was not.
+            await Task.WhenAll(roles.Select(x => x.UnregisterAsync())).ConfigureAwait(false);
 
             foreach (var role in roles)
             {
@@ -912,7 +958,18 @@ public sealed class SipTransferCommand : CommandBase
                 Console.WriteLine($"  call answered in {result.ConnectTimeMs}ms, held {result.CallDurationMs}ms");
                 WriteLeg("transferor heard", result.TransferorMedia);
                 WriteLeg("transferee heard", result.TransfereeMedia);
-        WriteLeg("target     heard", result.TargetMedia);
+                WriteLeg("target     heard", result.TargetMedia);
+
+                // The lines above are lifetime totals, which for the transferee spans both sides of
+                // the transfer and is dominated by whichever call ran longest. Who it is hearing
+                // after the REFER is the separate - and for a transfer, the deciding - question.
+                if (result.Transfer is { MediaSwitched: not null and not "not-assessed" } transfer)
+                {
+                    Console.WriteLine(
+                        $"  since the REFER   {transfer.PacketsFromNewPartyAfterRefer} packets from " +
+                        $"{transfer.MediaAfter ?? "nobody"} (new), " +
+                        $"{transfer.PacketsFromOriginalPartyAfterRefer} from {transfer.MediaBefore ?? "nobody"} (original)");
+                }
             }
 
             if (result.Error != null)

@@ -146,6 +146,20 @@ public sealed class RoleMedia : IDisposable
     public KeyValuePair<string, RtpStreamStats>? DominantAudioRemote =>
         _audioByRemote.IsEmpty ? null : _audioByRemote.MaxBy(x => x.Value.Packets);
 
+    /// <summary>
+    /// The packet tally for every remote end point at this instant, for comparison against a later
+    /// one.
+    /// </summary>
+    /// <remarks>
+    /// Cumulative totals cannot answer "who is being heard NOW", which is the only question a
+    /// transfer turns on. The library reuses this media session for the call it places after a
+    /// REFER, so the pre-transfer party keeps every packet it ever sent, and a short post-transfer
+    /// window never overtakes a long call: the party that has been dropped stays the largest tally
+    /// indefinitely. Differencing two snapshots gives per end point rates, which do answer it.
+    /// </remarks>
+    public IReadOnlyDictionary<string, int> SnapshotAudioPacketCounts() =>
+        _audioByRemote.ToDictionary(x => x.Key, x => x.Value.Packets);
+
     private void OnRtpPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
     {
         if (mediaType != SDPMediaTypesEnum.audio)
@@ -172,6 +186,10 @@ public sealed class TransferRole : IDisposable
     private readonly TransferRoleOptions _options;
     private readonly ILogger _logger;
     private readonly SIPRegistrationUserAgent _registration;
+    private bool _unregistered;
+
+    /// <summary>How long to let the zero expiry REGISTER get away before the transport closes.</summary>
+    private static readonly TimeSpan UNREGISTER_SETTLE = TimeSpan.FromMilliseconds(600);
     private readonly TaskCompletionSource<(bool Success, string? Error)> _registrationOutcome =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -383,13 +401,24 @@ public sealed class TransferRole : IDisposable
     /// <summary>Removes the registration with a zero expiry re-register and waits briefly for it.</summary>
     public async Task UnregisterAsync()
     {
-        if (!Registered)
+        // Idempotent because this is called from the scenario's finally block, which also runs
+        // after the paths that already unregistered on their way out.
+        if (!Registered || _unregistered)
         {
             return;
         }
 
+        _unregistered = true;
+
+        _logger.LogDebug("Removing the registration for {Role} ({Aor}).", Name, Aor);
+
         _registration.Stop();
-        await Task.Delay(TimeSpan.FromMilliseconds(250), CancellationToken.None).ConfigureAwait(false);
+
+        // Long enough for the zero expiry REGISTER to make it out over a WAN round trip before the
+        // transport is torn down. Leaving a binding behind is not cosmetic: it points at a port
+        // that dies with this process, and the registrar will keep offering it to callers until it
+        // expires, so the NEXT run of this command gets its calls routed into a black hole.
+        await Task.Delay(UNREGISTER_SETTLE, CancellationToken.None).ConfigureAwait(false);
     }
 
     /// <summary>
