@@ -232,7 +232,7 @@ namespace SIPSorcery.Net
     /// libwebrtc which is 4 bytes.
     /// See https://github.com/sipsorcery/sipsorcery/issues/350.
     /// </remarks>
-    public interface IRTCIceCandidate
+    public interface IRTCIceCandidate : System.IEquatable<IRTCIceCandidate>
     {
         //constructor(optional RTCIceCandidateInit candidateInitDict = { });
         string candidate { get; }
