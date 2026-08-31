@@ -22,7 +22,7 @@ public class RTCIceCandidateInitHttpContentBenchmarks
     public void GlobalSetup() => RTCIceCandidateInit.TryParse(Input.Value, out _candidateInit);
 
     [Benchmark]
-    public Stream StringContent()
+    public Stream HttpContent_String()
     {
         using var content = new StringContent(_candidateInit.toJSON());
         var stream = content.ReadAsStream();
@@ -31,7 +31,7 @@ public class RTCIceCandidateInitHttpContentBenchmarks
     }
 
     [Benchmark]
-    public Stream JsonContent()
+    public Stream HttpContent_Json()
     {
 #if LibVersion
         return Stream.Null;
