@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: HepPacketUnitTest.cs
 //
 // Description: Unit tests for the Homer Encapsulation Protocol packet
@@ -195,7 +195,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void OversizePayloadIsTruncatedButStillWellFramedUnitTest()
         {
-            string oversize = SIP_MESSAGE + new string('x', 3000);
+            string oversize = SIP_MESSAGE + new string('x', 65536);
 
             var chunks = Decode(GetPacket(payload: oversize));
 
