@@ -105,27 +105,22 @@ namespace SIPSorcery.SIP.App
         public async Task<SIPEndPoint> GetCallDestination(SIPCallDescriptor sipCallDescriptor)
         {
             SIPURI callURI = SIPURI.ParseSIPURI(sipCallDescriptor.Uri);
-            SIPEndPoint serverEndPoint = null;
 
-            // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
-            if (m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.Address))
+            // A configured outbound proxy takes precedence. ProxySendFrom says which of the
+            // proxy's own sockets it should send from, so it is a hint to the proxy rather than
+            // an address to send to, and it is only used here when there is no configured proxy
+            // to send to instead.
+            SIPEndPoint serverEndPoint = m_outboundProxy;
+
+            if (serverEndPoint == null && !sipCallDescriptor.ProxySendFrom.IsNullOrBlank())
             {
-                serverEndPoint = m_outboundProxy;
-            }
-            else if (!sipCallDescriptor.ProxySendFrom.IsNullOrBlank())
-            {
-                // If the binding has a specific proxy end point sent then the request needs to be forwarded to the proxy's default end point for it to take care of.
+                // If the binding has a specific proxy end point set then the request needs to be forwarded to the proxy's default end point for it to take care of.
                 //SIPEndPoint outboundProxyEndPoint = SIPEndPoint.ParseSIPEndPoint(sipCallDescriptor.ProxySendFrom);
                 //m_outboundProxy = new SIPEndPoint(SIPProtocolsEnum.udp, outboundProxyEndPoint.Address, SIPConstants.DEFAULT_SIP_PORT);
                 //m_serverEndPoint = m_outboundProxy;
                 m_outboundProxy = SIPEndPoint.ParseSIPEndPoint(sipCallDescriptor.ProxySendFrom);
                 serverEndPoint = m_outboundProxy;
                 logger.LogDebug("SIPClientUserAgent Call using alternate outbound proxy of {ServerEndPoint}.", serverEndPoint);
-            }
-            else if (m_outboundProxy != null)
-            {
-                // Using the system outbound proxy only, no additional user routing requirements.
-                serverEndPoint = m_outboundProxy;
             }
 
             // No outbound proxy, determine the forward destination based on the SIP request.
