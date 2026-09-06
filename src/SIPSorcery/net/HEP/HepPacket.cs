@@ -172,7 +172,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class HepPacket
     {
-        private const int MAX_HEP_PACKET_LENGTH = 1460;
+        private const int MAX_HEP_PACKET_LENGTH = 65535;
 
         /// <summary>Vendor, type and length fields that precede every chunk's value.</summary>
         private const int CHUNK_HEADER_LENGTH = 6;
