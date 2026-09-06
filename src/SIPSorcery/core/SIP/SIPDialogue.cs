@@ -350,18 +350,15 @@ namespace SIPSorcery.SIP
             {
                 DialogueState = SIPDialogueStateEnum.Terminated;
 
-                SIPEndPoint byeOutboundProxy = null;
-                if (outboundProxy != null && IPAddress.IsLoopback(outboundProxy.Address))
-                {
-                    byeOutboundProxy = outboundProxy;
-                }
-                else if (!ProxySendFrom.IsNullOrBlank())
+                // A configured outbound proxy takes precedence. ProxySendFrom says which of the
+                // proxy's own sockets it should send from, so it is a hint to the proxy rather than
+                // an address to send to, and it is only used here when there is no configured proxy
+                // to send to instead.
+                SIPEndPoint byeOutboundProxy = outboundProxy;
+
+                if (byeOutboundProxy == null && !ProxySendFrom.IsNullOrBlank())
                 {
                     byeOutboundProxy = SIPEndPoint.ParseSIPEndPoint(ProxySendFrom);
-                }
-                else if (outboundProxy != null)
-                {
-                    byeOutboundProxy = outboundProxy;
                 }
 
                 SIPRequest byeRequest = GetInDialogRequest(SIPMethodsEnum.BYE, target);
