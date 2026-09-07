@@ -133,10 +133,65 @@ namespace SIPSorcery.SIP
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPClientWebSocketChannel.");
             }
 
+            if (TryGetHintedConnection(connectionIDHint, out var hinted))
+            {
+                return SendAsync(hinted, buffer);
+            }
+
             string uriPrefix = (dstEndPoint.Protocol == SIPProtocolsEnum.wss) ? WEB_SOCKET_SECURE_URI_PREFIX : WEB_SOCKET_URI_PREFIX;
             var serverUri = new Uri($"{uriPrefix}{dstEndPoint.GetIPEndPoint()}");
 
             return SendAsync(dstEndPoint, buffer, serverUri);
+        }
+
+        /// <summary>
+        /// The connection a send hint names, when it names one that is still open.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Connections here are keyed on the URI they were dialled with, which is the right key for
+        /// a request: the destination is where the request is going. It is the wrong key for a
+        /// response, whose destination is derived from the top Via and so is an address, where the
+        /// request that produced it used a host name - the name the server's certificate had to
+        /// match. Two keys for one connection.
+        /// </para>
+        /// <para>
+        /// Left to the URI a response therefore opened a SECOND connection to the same server
+        /// rather than replying on the first, and over wss that second connection did not survive
+        /// its TLS handshake: dialled by address, it failed on a certificate name mismatch and the
+        /// response was never sent. A call answered over wss looked to the caller like it had never
+        /// been answered at all.
+        /// </para>
+        /// <para>
+        /// The hint is set from the end point a request arrived on, which is what a response is
+        /// supposed to travel back over, so preferring it is both the fix and the correct routing.
+        /// </para>
+        /// </remarks>
+        private bool TryGetHintedConnection(string connectionIDHint, out ClientWebSocketConnection connection)
+        {
+            connection = null;
+
+            return !string.IsNullOrEmpty(connectionIDHint)
+                && m_egressConnections.TryGetValue(connectionIDHint, out connection);
+        }
+
+        /// <summary>Sends on a connection that is already open.</summary>
+        private async Task<SocketError> SendAsync(ClientWebSocketConnection connection, byte[] buffer)
+        {
+            try
+            {
+                logger.LogDebug("Sending {BufferLength} bytes on the client web socket connection to {ServerUri} the message arrived on.",
+                    buffer.Length, connection.ServerUri);
+
+                await connection.Client.SendAsync(
+                    new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, m_cts.Token).ConfigureAwait(false);
+
+                return SocketError.Success;
+            }
+            catch (SocketException sockExcp)
+            {
+                return sockExcp.SocketErrorCode;
+            }
         }
 
         /// <summary>
@@ -152,6 +207,14 @@ namespace SIPSorcery.SIP
             else if (buffer == null || buffer.Length == 0)
             {
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for SendSecure in SIPClientWebSocketChannel.");
+            }
+
+            // An already open connection is preferred over dialling, and not only to save the
+            // handshake: the certificate name is what the connection was keyed on, so a send that
+            // has a hint but no name would otherwise dial a duplicate by address and fail on it.
+            if (TryGetHintedConnection(connectionIDHint, out var hinted))
+            {
+                return SendAsync(hinted, buffer);
             }
 
             // Without a host name the certificate can never validate. Fall back to the IP address form so that the

@@ -223,7 +223,14 @@ public sealed class TransferRole : IDisposable
         Transport = new SIPTransport();
         var channel = CreateChannel(options.Protocol, options.Port, options.CertificateValidation);
         Transport.AddSIPChannel(channel);
-        Port = channel.ListeningSIPEndPoint.Port;
+
+        // Zero for a web socket role rather than what the channel reports. It binds nothing, so it
+        // has no listening port; the value it carries is the default ws port, which is neither the
+        // port it uses nor the one wss would imply, and printing it in a diagnostic would read as
+        // a fact about the run.
+        Port = options.Protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss
+            ? 0
+            : channel.ListeningSIPEndPoint.Port;
 
         hep?.Attach(Transport);
 
@@ -280,6 +287,14 @@ public sealed class TransferRole : IDisposable
             // The certificate-less overload is a client only TLS channel: this tool always
             // originates connections and never accepts one, so there is no server certificate.
             SIPProtocolsEnum.tls => new SIPTLSChannel(new IPEndPoint(IPAddress.Any, port), false, certificateValidation),
+            // One channel serves both ws and wss - it reports support for each and the destination
+            // decides whether the send is secure - and it binds nothing, because a web socket role
+            // only ever originates connections. Two consequences worth knowing when reading a run:
+            // --base-port cannot apply, and the Contact this role registers names the default web
+            // socket port rather than the real source, so it is only reachable because the server
+            // rewrites it to the socket the REGISTER arrived on. That is the same correction a
+            // browser depends on, which is what makes this transport a fair comparison with one.
+            SIPProtocolsEnum.ws or SIPProtocolsEnum.wss => new SIPClientWebSocketChannel(),
             _ => throw new ArgumentOutOfRangeException(nameof(protocol), protocol, "Unsupported SIP transport.")
         };
 

@@ -50,9 +50,56 @@ public static class SipDestination
         }
         catch
         {
+            // A transport prefix on a host NAME rather than an address, which is the form anyone
+            // reaches for against a real server: "tls:sip.example.com", "wss:sip.example.com:443".
+            // SIPEndPoint.ParseSIPEndPoint above only takes an address, so it threw. Both are worth
+            // supporting, and for tls and wss the name is the more useful one - it is what has to
+            // appear in the server's certificate for the connection to validate.
+            if (TryParseTransportAndHost(destination, out uri))
+            {
+                return true;
+            }
+
             error = $"Could not parse \"{destination}\" as a SIP URI or end point.";
             return false;
         }
+    }
+
+    /// <summary>
+    /// Reads "transport:host" and "transport:host:port" where the host may be a name.
+    /// </summary>
+    /// <remarks>
+    /// The result keeps the sip scheme and carries the transport as a URI parameter rather than
+    /// switching to sips. The scheme travels into the address of record the caller builds from
+    /// this, and an account registered as "sip:alice@domain" is not the same as one registered as
+    /// "sips:alice@domain"; the transport parameter says everything the transport layer needs
+    /// without touching identity.
+    /// </remarks>
+    private static bool TryParseTransportAndHost(string destination, out SIPURI uri)
+    {
+        uri = SIPURI.None;
+
+        int separator = destination.IndexOf(':');
+
+        if (separator <= 0 || separator == destination.Length - 1)
+        {
+            return false;
+        }
+
+        if (!Enum.TryParse<SIPProtocolsEnum>(destination[..separator], true, out var protocol))
+        {
+            return false;
+        }
+
+        string host = destination[(separator + 1)..];
+
+        if (string.IsNullOrWhiteSpace(host) || host.Contains(' '))
+        {
+            return false;
+        }
+
+        uri = new SIPURI(null, host, null, SIPSchemesEnum.sip, protocol);
+        return true;
     }
 
     private static bool HasTransportPrefix(string destination) =>
