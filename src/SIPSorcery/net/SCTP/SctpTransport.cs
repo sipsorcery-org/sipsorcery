@@ -19,13 +19,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
-using TinyJson;
 
 namespace SIPSorcery.Net
 {
@@ -56,6 +56,310 @@ namespace SIPSorcery.Net
         {
             return _isEmpty;
         }
+
+        /// <summary>
+        /// Serialises the cookie to the JSON form carried in the COOKIE ECHO chunk.
+        /// </summary>
+        /// <remarks>
+        /// Written by hand rather than by a reflection-based serialiser, and the
+        /// reason is that this type must survive trimming: under Native AOT the
+        /// members below are removed, TinyJson then produces an empty document,
+        /// and the COOKIE ECHO arrives with a null chunk value. GetCookie throws
+        /// before it can validate anything, the packet is dropped, no COOKIE ACK
+        /// is sent, and the association stalls in CookieEchoed until it times
+        /// out - so data channels never open at all.
+        ///
+        /// It is also deterministic, which this type needs more than most: the
+        /// HMAC in GetCookieHMAC is computed over these exact bytes, so member
+        /// order and formatting are load-bearing rather than cosmetic. Reflection
+        /// order is not guaranteed by the runtime; this is.
+        ///
+        /// The shape matches what TinyJson produced - members in declaration
+        /// order, no whitespace - so the bytes on the wire are unchanged. Nothing
+        /// here is a compatibility concern either way: the cookie is opaque, the
+        /// peer that writes it is the only peer that reads it, and the remote end
+        /// echoes it back verbatim.
+        /// </remarks>
+        public string ToJson()
+        {
+            var json = new StringBuilder(256);
+
+            json.Append('{');
+            Number(json, nameof(SourcePort), SourcePort, first: true);
+            Number(json, nameof(DestinationPort), DestinationPort);
+            Number(json, nameof(RemoteTag), RemoteTag);
+            Number(json, nameof(RemoteTSN), RemoteTSN);
+            Number(json, nameof(RemoteARwnd), RemoteARwnd);
+            Text(json, nameof(RemoteEndPoint), RemoteEndPoint);
+            Number(json, nameof(Tag), Tag);
+            Number(json, nameof(TSN), TSN);
+            Number(json, nameof(ARwnd), ARwnd);
+            Text(json, nameof(CreatedAt), CreatedAt);
+            Number(json, nameof(Lifetime), (ulong)Lifetime);
+            Text(json, nameof(HMAC), HMAC);
+            json.Append('}');
+
+            return json.ToString();
+        }
+
+        /// <summary>
+        /// Parses a cookie from the JSON carried in a COOKIE ECHO chunk.
+        /// </summary>
+        /// <remarks>
+        /// A remote peer controls these bytes, so anything unparseable is an
+        /// empty cookie rather than an exception: the caller already treats an
+        /// empty cookie as a packet to drop, and an exception here lands in the
+        /// receive loop.
+        /// </remarks>
+        /// <summary>How many members a complete cookie has.</summary>
+        private const int MemberCount = 12;
+
+        public static SctpTransportCookie FromJson(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return Empty;
+            }
+
+            var cookie = new SctpTransportCookie();
+            var members = Members(json);
+
+            // EVERY MEMBER, OR NONE. The cookie is written and read by the same
+            // peer - the remote end only echoes it back - so a document missing
+            // a member is malformed rather than a version older than this one,
+            // and a partial parse would build a cookie out of defaults. The
+            // HMAC check below would reject that anyway; refusing it here says
+            // which of the two things went wrong.
+            if (members.Count != MemberCount)
+            {
+                return Empty;
+            }
+
+            cookie.SourcePort = UInt16(members, nameof(SourcePort));
+            cookie.DestinationPort = UInt16(members, nameof(DestinationPort));
+            cookie.RemoteTag = UInt32(members, nameof(RemoteTag));
+            cookie.RemoteTSN = UInt32(members, nameof(RemoteTSN));
+            cookie.RemoteARwnd = UInt32(members, nameof(RemoteARwnd));
+            cookie.RemoteEndPoint = String(members, nameof(RemoteEndPoint));
+            cookie.Tag = UInt32(members, nameof(Tag));
+            cookie.TSN = UInt32(members, nameof(TSN));
+            cookie.ARwnd = UInt32(members, nameof(ARwnd));
+            cookie.CreatedAt = String(members, nameof(CreatedAt));
+            cookie.Lifetime = Int32(members, nameof(Lifetime));
+            cookie.HMAC = String(members, nameof(HMAC));
+
+            return cookie;
+        }
+
+        private static void Number(StringBuilder json, string name, ulong value, bool first = false)
+        {
+            if (!first)
+            {
+                json.Append(',');
+            }
+
+            json.Append('"').Append(name).Append("\":")
+                .Append(value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private static void Text(StringBuilder json, string name, string value)
+        {
+            json.Append(",\"").Append(name).Append("\":");
+
+            if (value == null)
+            {
+                json.Append("null");
+                return;
+            }
+
+            json.Append('"');
+
+            foreach (var c in value)
+            {
+                switch (c)
+                {
+                    case '"': json.Append("\\\""); break;
+                    case '\\': json.Append("\\\\"); break;
+                    case '\n': json.Append("\\n"); break;
+                    case '\r': json.Append("\\r"); break;
+                    case '\t': json.Append("\\t"); break;
+                    default:
+                        if (c < ' ')
+                        {
+                            json.Append("\\u").Append(((int)c).ToString("X4", CultureInfo.InvariantCulture));
+                        }
+                        else
+                        {
+                            json.Append(c);
+                        }
+                        break;
+                }
+            }
+
+            json.Append('"');
+        }
+
+        /// <summary>Splits a flat JSON object into its members. No nesting, by design.</summary>
+        private static Dictionary<string, string> Members(string json)
+        {
+            var members = new Dictionary<string, string>(StringComparer.Ordinal);
+            var i = json.IndexOf('{');
+
+            if (i < 0)
+            {
+                return members;
+            }
+
+            i++;
+
+            while (i < json.Length)
+            {
+                while (i < json.Length && (json[i] == ',' || char.IsWhiteSpace(json[i])))
+                {
+                    i++;
+                }
+
+                if (i >= json.Length || json[i] == '}')
+                {
+                    break;
+                }
+
+                if (json[i] != '"' || !Quoted(json, ref i, out var name))
+                {
+                    return new Dictionary<string, string>(StringComparer.Ordinal);
+                }
+
+                while (i < json.Length && char.IsWhiteSpace(json[i]))
+                {
+                    i++;
+                }
+
+                if (i >= json.Length || json[i] != ':')
+                {
+                    return new Dictionary<string, string>(StringComparer.Ordinal);
+                }
+
+                i++;
+
+                while (i < json.Length && char.IsWhiteSpace(json[i]))
+                {
+                    i++;
+                }
+
+                if (i >= json.Length)
+                {
+                    return new Dictionary<string, string>(StringComparer.Ordinal);
+                }
+
+                if (json[i] == '"')
+                {
+                    if (!Quoted(json, ref i, out var text))
+                    {
+                        return new Dictionary<string, string>(StringComparer.Ordinal);
+                    }
+
+                    members[name] = text;
+                }
+                else
+                {
+                    var start = i;
+
+                    while (i < json.Length && json[i] != ',' && json[i] != '}')
+                    {
+                        i++;
+                    }
+
+                    members[name] = json.Substring(start, i - start).Trim();
+                }
+            }
+
+            return members;
+        }
+
+        private static bool Quoted(string json, ref int i, out string value)
+        {
+            value = null;
+            i++;
+
+            var text = new StringBuilder();
+
+            while (i < json.Length)
+            {
+                var c = json[i];
+
+                if (c == '"')
+                {
+                    i++;
+                    value = text.ToString();
+                    return true;
+                }
+
+                if (c == '\\')
+                {
+                    i++;
+
+                    if (i >= json.Length)
+                    {
+                        return false;
+                    }
+
+                    switch (json[i])
+                    {
+                        case '"': text.Append('"'); break;
+                        case '\\': text.Append('\\'); break;
+                        case 'n': text.Append('\n'); break;
+                        case 'r': text.Append('\r'); break;
+                        case 't': text.Append('\t'); break;
+                        case 'b': text.Append('\b'); break;
+                        case 'f': text.Append('\f'); break;
+                        case 'u':
+                            if (i + 4 >= json.Length
+                                || !ushort.TryParse(
+                                    json.Substring(i + 1, 4),
+                                    NumberStyles.HexNumber,
+                                    CultureInfo.InvariantCulture,
+                                    out var rune))
+                            {
+                                return false;
+                            }
+
+                            text.Append((char)rune);
+                            i += 4;
+                            break;
+                        default: return false;
+                    }
+                }
+                else
+                {
+                    text.Append(c);
+                }
+
+                i++;
+            }
+
+            return false;
+        }
+
+        private static string String(Dictionary<string, string> members, string name) =>
+            members.TryGetValue(name, out var value) ? value : string.Empty;
+
+        private static ushort UInt16(Dictionary<string, string> members, string name) =>
+            members.TryGetValue(name, out var value)
+            && ushort.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+                ? parsed
+                : (ushort)0;
+
+        private static uint UInt32(Dictionary<string, string> members, string name) =>
+            members.TryGetValue(name, out var value)
+            && uint.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+                ? parsed
+                : 0;
+
+        private static int Int32(Dictionary<string, string> members, string name) =>
+            members.TryGetValue(name, out var value)
+            && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+                ? parsed
+                : 0;
     }
 
     /// <summary>
@@ -237,7 +541,24 @@ namespace SIPSorcery.Net
         {
             var cookieEcho = sctpPacket.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
             var cookieBuffer = cookieEcho.ChunkValue;
-            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(cookieBuffer));
+
+            // A REMOTE PEER CONTROLS THIS BUFFER. Without the guard a COOKIE ECHO
+            // carrying no chunk value reaches Encoding.GetString(null), and the
+            // ArgumentNullException lands in the receive loop rather than being
+            // handled as the malformed packet it is.
+            if (cookieBuffer == null || cookieBuffer.Length == 0)
+            {
+                logger.LogWarning("SCTP COOKIE ECHO chunk had no cookie, ignoring.");
+                return SctpTransportCookie.Empty;
+            }
+
+            var cookie = SctpTransportCookie.FromJson(Encoding.UTF8.GetString(cookieBuffer));
+
+            if (cookie.IsEmpty())
+            {
+                logger.LogWarning("SCTP COOKIE ECHO chunk could not be parsed, ignoring.");
+                return SctpTransportCookie.Empty;
+            }
 
             logger.LogDebug("Cookie: {Cookie}", cookie.ToJson());
 
@@ -279,7 +600,7 @@ namespace SIPSorcery.Net
         /// <returns>True if the cookie is determined as valid, false if not.</returns>
         protected string GetCookieHMAC(byte[] buffer)
         {
-            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(buffer));
+            var cookie = SctpTransportCookie.FromJson(Encoding.UTF8.GetString(buffer));
             string hmacCalculated = null;
             cookie.HMAC = string.Empty;
 
