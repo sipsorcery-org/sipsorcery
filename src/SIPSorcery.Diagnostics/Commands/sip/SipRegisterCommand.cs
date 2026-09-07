@@ -181,31 +181,48 @@ public sealed class SipRegisterCommand : CommandBase
             sipTransport.EnableTraceLogs();
         }
 
-        SIPRegistrationUserAgent regUserAgent;
-        if (digestStore != null)
+        SIPURI accountAOR = dstUri.CopyOf();
+        accountAOR.User = username;
+
+        // IPAddress.Any is a placeholder the transport replaces with the real send-from address.
+        //
+        // The transport parameter has to be set here rather than left to that substitution:
+        // SIPTransport stamps the protocol onto a Contact for every method EXCEPT REGISTER, where
+        // it defers to the caller. Without it the binding is stored as "sip:host:port" with no
+        // transport, which a registrar reads as UDP - so an inbound call is sent to a UDP port
+        // this process is not listening on, and the call rings while no INVITE ever arrives. It
+        // matters most for ws and wss, where there is no UDP socket at all, but tls and tcp
+        // bindings were being registered wrong in the same way.
+        SIPURI contactURI = new SIPURI(accountAOR.Scheme, IPAddress.Any, 0)
         {
-            SIPURI sipAccountAOR = dstUri.CopyOf();
-            sipAccountAOR.User = username;
+            Protocol = dstUri.Protocol
+        };
 
-            // Match the simple constructor's default contact: let the transport fill in the actual address at send time.
-            SIPURI contactURI = new SIPURI(sipAccountAOR.Scheme, IPAddress.Any, 0);
-
-            regUserAgent = new SIPRegistrationUserAgent(
+        // The explicit-contact constructor for both paths. The short username and password one
+        // builds its own contact and gives no way to set the transport on it.
+        SIPRegistrationUserAgent regUserAgent = digestStore != null
+            ? new SIPRegistrationUserAgent(
                 sipTransport,
                 null,
-                sipAccountAOR,
+                accountAOR,
                 digestStore.GetHA1Digest,
                 username,
                 null,
                 registrar,
                 contactURI,
                 expiry,
+                null)
+            : new SIPRegistrationUserAgent(
+                sipTransport,
+                null,
+                accountAOR,
+                username,
+                password ?? string.Empty,
+                null,
+                registrar,
+                contactURI,
+                expiry,
                 null);
-        }
-        else
-        {
-            regUserAgent = new SIPRegistrationUserAgent(sipTransport, username, password ?? string.Empty, registrar, expiry);
-        }
 
         var outcome = new TaskCompletionSource<(bool Success, string? Error)>(TaskCreationOptions.RunContinuationsAsynchronously);
 

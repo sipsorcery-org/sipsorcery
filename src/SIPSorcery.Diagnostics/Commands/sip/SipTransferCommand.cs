@@ -181,8 +181,10 @@ public sealed class SipTransferCommand : CommandBase
 
         var transportOption = new Option<string?>("--transport")
         {
-            Description = "The SIP transport for all three roles: tcp, udp or tls. Defaults to the transport on " +
-                          "the server argument, or tcp. With tls and no explicit port, port 5061 is used."
+            Description = "The SIP transport for all three roles: tcp, udp, tls, ws or wss. Defaults to the " +
+                          "transport on the server argument, or tcp. With no explicit port, tls uses 5061, " +
+                          "ws uses 80 and wss uses 443. ws and wss roles bind nothing, so --base-port does " +
+                          "not apply to them."
         };
 
         var insecureOption = new Option<bool>("--insecure")
@@ -286,20 +288,39 @@ public sealed class SipTransferCommand : CommandBase
             return Fail(asJson, serverUri.ToString(), mode, transportError!, timeline, ExitCodes.InvalidArgument);
         }
 
+        // Deliberately not extended to wss: the client web socket channel gives no hook for a
+        // certificate validation callback, so accepting the option there would look like it had
+        // been honoured while the connection still refused a self signed certificate.
         if (insecure && protocol != SIPProtocolsEnum.tls)
         {
             return Fail(asJson, serverUri.ToString(), mode,
                 "Option '--insecure' only applies to '--transport tls'.", timeline, ExitCodes.InvalidArgument);
         }
 
-        // SIPDns picks the default port from the URI SCHEME, so a "sip:" URI carrying
-        // transport=tls resolves to 5060 rather than 5061. Pin the TLS port here instead of
-        // relying on that, and before the URI is used for either resolution or the registrar.
-        if (protocol == SIPProtocolsEnum.tls && serverUri.HostPort == null)
+        // A web socket role originates connections and binds nothing, so there is no local port to
+        // assign. Refused rather than ignored, so a run does not report ports it never used.
+        if (basePort != 0 && protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss)
         {
-            serverUri.Host = $"{serverUri.HostAddress}:{SIPConstants.DEFAULT_SIP_TLS_PORT}";
-            logger.LogDebug("No port on the server argument; using the default TLS port {Port}.",
-                SIPConstants.DEFAULT_SIP_TLS_PORT);
+            return Fail(asJson, serverUri.ToString(), mode,
+                $"Option '--base-port' does not apply to '--transport {protocol}': a web socket role does " +
+                "not listen on a port.", timeline, ExitCodes.InvalidArgument);
+        }
+
+        // SIPDns picks the default port from the URI SCHEME, so a "sip:" URI carrying
+        // transport=tls resolves to 5060 rather than 5061. Pin the port here instead of relying on
+        // that, and before the URI is used for either resolution or the registrar. The web socket
+        // transports need it for the same reason and are further off: their defaults are the HTTP
+        // ones, 80 and 443, which no SIP scheme implies.
+        if (serverUri.HostPort == null &&
+            protocol is SIPProtocolsEnum.tls or SIPProtocolsEnum.ws or SIPProtocolsEnum.wss)
+        {
+            int defaultPort = protocol == SIPProtocolsEnum.tls
+                ? SIPConstants.DEFAULT_SIP_TLS_PORT
+                : SIPConstants.GetDefaultPort(protocol);
+
+            serverUri.Host = $"{serverUri.HostAddress}:{defaultPort}";
+            logger.LogDebug("No port on the server argument; using the default {Protocol} port {Port}.",
+                protocol, defaultPort);
         }
 
         serverUri.Protocol = protocol;
@@ -871,9 +892,10 @@ public sealed class SipTransferCommand : CommandBase
         if (!string.IsNullOrWhiteSpace(transport))
         {
             if (!Enum.TryParse(transport, true, out protocol) ||
-                protocol is not (SIPProtocolsEnum.udp or SIPProtocolsEnum.tcp or SIPProtocolsEnum.tls))
+                protocol is not (SIPProtocolsEnum.udp or SIPProtocolsEnum.tcp or SIPProtocolsEnum.tls
+                    or SIPProtocolsEnum.ws or SIPProtocolsEnum.wss))
             {
-                error = $"Unsupported transport \"{transport}\". Use tcp, udp or tls.";
+                error = $"Unsupported transport \"{transport}\". Use tcp, udp, tls, ws or wss.";
                 return false;
             }
 
