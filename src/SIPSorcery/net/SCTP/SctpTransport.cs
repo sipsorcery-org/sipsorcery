@@ -12,6 +12,8 @@
 // 
 // History:
 // St Patrick's Day 2021	Aaron Clauson	Created, Dublin, Ireland.
+// 08 Sep 2026              Aaron Clauson   Switched from JSON to binary serialisation
+//                                          for the transport cookie.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -19,7 +21,6 @@
 
 using System;
 using System.Buffers.Binary;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
