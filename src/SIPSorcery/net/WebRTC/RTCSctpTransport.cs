@@ -263,9 +263,9 @@ namespace SIPSorcery.Net
                 Tag = RTCSctpAssociation.VerificationTag,
                 TSN = RTCSctpAssociation.TSN,
                 ARwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW,
-                CreatedAt = DateTime.Now.ToString("o"),
+                CreatedAt = DateTime.UtcNow,
                 Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS + lifeTimeExtension,
-                HMAC = string.Empty
+                HMAC = null
             };
 
             return cookie;

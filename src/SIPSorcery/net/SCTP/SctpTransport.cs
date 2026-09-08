@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -25,7 +26,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
-using TinyJson;
 
 namespace SIPSorcery.Net
 {
@@ -33,8 +33,55 @@ namespace SIPSorcery.Net
     /// The opaque cookie structure that will be sent in response to an SCTP INIT
     /// packet.
     /// </summary>
+    /// <remarks>
+    /// The cookie is serialised to a fixed binary layout rather than to JSON. As per
+    /// https://tools.ietf.org/html/rfc4960#section-5.1.3 the state cookie is opaque:
+    /// the peer that creates it is the only peer that ever reads it, the remote party
+    /// echoes it back verbatim in the COOKIE ECHO chunk. There is therefore no
+    /// interoperability requirement on the format and no versioning concern.
+    ///
+    /// A binary layout is used in preference to a serialiser because:
+    ///  - It is deterministic. The HMAC is computed over these exact bytes so the
+    ///    field order and encoding are load bearing rather than cosmetic. Reflection
+    ///    member ordering is not guaranteed by the runtime, a fixed layout is.
+    ///  - It survives trimming. A reflection based serialiser loses the members of
+    ///    this type under Native AOT, which produces an empty cookie, an HMAC that
+    ///    can never match and an association that stalls in CookieEchoed until it
+    ///    times out, so data channels never open.
+    ///  - The HMAC covers the buffer prefix, so validating a received cookie does not
+    ///    require deserialising and re-serialising it first.
+    ///  - It is roughly a quarter of the size, which matters because the cookie is
+    ///    carried in the INIT ACK.
+    /// </remarks>
     public struct SctpTransportCookie
     {
+        /// <summary>
+        /// The length of the HMAC-SHA256 that occupies the tail of the serialised cookie.
+        /// </summary>
+        internal const int HMAC_LENGTH = 32;
+
+        /// <summary>
+        /// The length of the fixed portion of the serialised cookie, i.e. everything
+        /// preceding the variable length remote end point and the trailing HMAC.
+        /// </summary>
+        private const int FIXED_LENGTH = 42;
+
+        /// <summary>
+        /// Field offsets within the serialised cookie.
+        /// </summary>
+        private const int SOURCE_PORT_OFFSET = 0;
+        private const int DESTINATION_PORT_OFFSET = 2;
+        private const int REMOTE_TAG_OFFSET = 4;
+        private const int REMOTE_TSN_OFFSET = 8;
+        private const int REMOTE_ARWND_OFFSET = 12;
+        private const int TAG_OFFSET = 16;
+        private const int TSN_OFFSET = 20;
+        private const int ARWND_OFFSET = 24;
+        private const int CREATED_AT_OFFSET = 28;
+        private const int LIFETIME_OFFSET = 36;
+        private const int REMOTE_END_POINT_LENGTH_OFFSET = 40;
+        private const int REMOTE_END_POINT_OFFSET = 42;
+
         public static SctpTransportCookie Empty = new SctpTransportCookie() { _isEmpty = true };
 
         public ushort SourcePort { get; set; }
@@ -46,15 +93,151 @@ namespace SIPSorcery.Net
         public uint Tag { get; set; }
         public uint TSN { get; set; }
         public uint ARwnd { get; set; }
-        public string CreatedAt { get; set; }
+
+        /// <summary>
+        /// The UTC time the cookie was created. Used together with <see cref="Lifetime"/> to
+        /// determine whether an echoed cookie is stale.
+        /// </summary>
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// The number of seconds after <see cref="CreatedAt"/> that the cookie remains valid for.
+        /// </summary>
         public int Lifetime { get; set; }
-        public string HMAC { get; set; }
+
+        /// <summary>
+        /// The HMAC-SHA256 over the remainder of the serialised cookie. Set by the transport
+        /// once the cookie has been serialised, see <see cref="SctpTransport.GetInitAck"/>.
+        /// </summary>
+        public byte[] HMAC { get; set; }
 
         private bool _isEmpty;
 
         public bool IsEmpty()
         {
             return _isEmpty;
+        }
+
+        /// <summary>
+        /// Serialises the cookie to the opaque buffer that gets carried in the state cookie
+        /// parameter of an INIT ACK chunk.
+        /// </summary>
+        /// <remarks>
+        /// The trailing HMAC bytes are left zeroed. The caller is expected to compute the HMAC
+        /// over the returned buffer, excluding those trailing bytes, and then write it into
+        /// them, see <see cref="SctpTransport.GetInitAck"/>. Doing it that way means the
+        /// pre-image is simply the buffer prefix and never needs to be reconstructed.
+        /// </remarks>
+        /// <returns>The serialised cookie.</returns>
+        public byte[] GetBytes()
+        {
+            byte[] endPoint = string.IsNullOrEmpty(RemoteEndPoint)
+                ? Array.Empty<byte>()
+                : Encoding.UTF8.GetBytes(RemoteEndPoint);
+
+            if (endPoint.Length > ushort.MaxValue)
+            {
+                throw new ApplicationException("The SCTP state cookie remote end point was too long to serialise.");
+            }
+
+            var buffer = new byte[FIXED_LENGTH + endPoint.Length + HMAC_LENGTH];
+            var span = buffer.AsSpan();
+
+            BinaryPrimitives.WriteUInt16BigEndian(span.Slice(SOURCE_PORT_OFFSET), SourcePort);
+            BinaryPrimitives.WriteUInt16BigEndian(span.Slice(DESTINATION_PORT_OFFSET), DestinationPort);
+            BinaryPrimitives.WriteUInt32BigEndian(span.Slice(REMOTE_TAG_OFFSET), RemoteTag);
+            BinaryPrimitives.WriteUInt32BigEndian(span.Slice(REMOTE_TSN_OFFSET), RemoteTSN);
+            BinaryPrimitives.WriteUInt32BigEndian(span.Slice(REMOTE_ARWND_OFFSET), RemoteARwnd);
+            BinaryPrimitives.WriteUInt32BigEndian(span.Slice(TAG_OFFSET), Tag);
+            BinaryPrimitives.WriteUInt32BigEndian(span.Slice(TSN_OFFSET), TSN);
+            BinaryPrimitives.WriteUInt32BigEndian(span.Slice(ARWND_OFFSET), ARwnd);
+            BinaryPrimitives.WriteInt64BigEndian(span.Slice(CREATED_AT_OFFSET), CreatedAt.ToUniversalTime().Ticks);
+            BinaryPrimitives.WriteInt32BigEndian(span.Slice(LIFETIME_OFFSET), Lifetime);
+            BinaryPrimitives.WriteUInt16BigEndian(span.Slice(REMOTE_END_POINT_LENGTH_OFFSET), (ushort)endPoint.Length);
+
+            Buffer.BlockCopy(endPoint, 0, buffer, REMOTE_END_POINT_OFFSET, endPoint.Length);
+
+            if (HMAC != null)
+            {
+                if (HMAC.Length != HMAC_LENGTH)
+                {
+                    throw new ApplicationException("The SCTP state cookie HMAC was not the expected length.");
+                }
+
+                Buffer.BlockCopy(HMAC, 0, buffer, buffer.Length - HMAC_LENGTH, HMAC_LENGTH);
+            }
+
+            return buffer;
+        }
+
+        /// <summary>
+        /// Attempts to deserialise a cookie from the buffer carried in a COOKIE ECHO chunk.
+        /// </summary>
+        /// <remarks>
+        /// A remote peer controls these bytes so anything that does not match the layout is
+        /// rejected rather than throwing. The caller treats a failed parse as a packet to
+        /// drop, whereas an exception here would land in the receive loop.
+        ///
+        /// Note that a successful parse says nothing about authenticity, that is what the
+        /// HMAC check in <see cref="SctpTransport.GetCookie"/> is for.
+        /// </remarks>
+        /// <param name="buffer">The buffer holding the serialised cookie.</param>
+        /// <param name="cookie">If the parse succeeded this holds the deserialised cookie.</param>
+        /// <returns>True if the buffer held a well formed cookie, false if not.</returns>
+        public static bool TryParse(byte[] buffer, out SctpTransportCookie cookie)
+        {
+            cookie = Empty;
+
+            if (buffer == null || buffer.Length < FIXED_LENGTH + HMAC_LENGTH)
+            {
+                return false;
+            }
+
+            var span = buffer.AsSpan();
+            int endPointLength = BinaryPrimitives.ReadUInt16BigEndian(span.Slice(REMOTE_END_POINT_LENGTH_OFFSET));
+
+            if (buffer.Length != FIXED_LENGTH + endPointLength + HMAC_LENGTH)
+            {
+                return false;
+            }
+
+            long createdAtTicks = BinaryPrimitives.ReadInt64BigEndian(span.Slice(CREATED_AT_OFFSET));
+
+            if (createdAtTicks < DateTime.MinValue.Ticks || createdAtTicks > DateTime.MaxValue.Ticks)
+            {
+                return false;
+            }
+
+            var hmac = new byte[HMAC_LENGTH];
+            Buffer.BlockCopy(buffer, buffer.Length - HMAC_LENGTH, hmac, 0, HMAC_LENGTH);
+
+            cookie = new SctpTransportCookie
+            {
+                SourcePort = BinaryPrimitives.ReadUInt16BigEndian(span.Slice(SOURCE_PORT_OFFSET)),
+                DestinationPort = BinaryPrimitives.ReadUInt16BigEndian(span.Slice(DESTINATION_PORT_OFFSET)),
+                RemoteTag = BinaryPrimitives.ReadUInt32BigEndian(span.Slice(REMOTE_TAG_OFFSET)),
+                RemoteTSN = BinaryPrimitives.ReadUInt32BigEndian(span.Slice(REMOTE_TSN_OFFSET)),
+                RemoteARwnd = BinaryPrimitives.ReadUInt32BigEndian(span.Slice(REMOTE_ARWND_OFFSET)),
+                Tag = BinaryPrimitives.ReadUInt32BigEndian(span.Slice(TAG_OFFSET)),
+                TSN = BinaryPrimitives.ReadUInt32BigEndian(span.Slice(TSN_OFFSET)),
+                ARwnd = BinaryPrimitives.ReadUInt32BigEndian(span.Slice(ARWND_OFFSET)),
+                CreatedAt = new DateTime(createdAtTicks, DateTimeKind.Utc),
+                Lifetime = BinaryPrimitives.ReadInt32BigEndian(span.Slice(LIFETIME_OFFSET)),
+                RemoteEndPoint = endPointLength > 0
+                    ? Encoding.UTF8.GetString(buffer, REMOTE_END_POINT_OFFSET, endPointLength)
+                    : string.Empty,
+                HMAC = hmac
+            };
+
+            return true;
+        }
+
+        public override string ToString()
+        {
+            return $"SourcePort={SourcePort}, DestinationPort={DestinationPort}, RemoteTag={RemoteTag}, " +
+                $"RemoteTSN={RemoteTSN}, RemoteARwnd={RemoteARwnd}, RemoteEndPoint={RemoteEndPoint}, " +
+                $"Tag={Tag}, TSN={TSN}, ARwnd={ARwnd}, CreatedAt={CreatedAt:o}, Lifetime={Lifetime}, " +
+                $"HMAC={(HMAC != null ? HMAC.HexStr() : null)}.";
         }
     }
 
@@ -163,9 +346,9 @@ namespace SIPSorcery.Net
                 Tag = Crypto.GetRandomUInt(),
                 TSN = Crypto.GetRandomUInt(),
                 ARwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW,
-                CreatedAt = DateTime.Now.ToString("o"),
+                CreatedAt = DateTime.UtcNow,
                 Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS + lifeTimeExtension,
-                HMAC = string.Empty
+                HMAC = null
             };
 
             return cookie;
@@ -198,17 +381,14 @@ namespace SIPSorcery.Net
                 remoteEP != null ? remoteEP.ToString() : string.Empty,
                 (int)(initChunk.CookiePreservative / 1000));
 
-            var json = cookie.ToJson();
-            var jsonBuffer = Encoding.UTF8.GetBytes(json);
-
-            using (HMACSHA256 hmac = new HMACSHA256(_hmacKey))
-            {
-                var result = hmac.ComputeHash(jsonBuffer);
-                cookie.HMAC = result.HexStr();
-            }
-
-            var jsonWithHMAC = cookie.ToJson();
-            var jsonBufferWithHMAC = Encoding.UTF8.GetBytes(jsonWithHMAC);
+            // The HMAC covers the serialised cookie up to but not including the HMAC itself, so
+            // the buffer is serialised once with the HMAC bytes zeroed and the HMAC is then
+            // written into place. That keeps the pre-image identical to the buffer prefix the
+            // COOKIE ECHO gets validated against and avoids serialising twice.
+            var cookieBuffer = cookie.GetBytes();
+            var cookieHMAC = GetCookieHMAC(cookieBuffer);
+            Buffer.BlockCopy(cookieHMAC, 0, cookieBuffer, cookieBuffer.Length - SctpTransportCookie.HMAC_LENGTH,
+                SctpTransportCookie.HMAC_LENGTH);
 
             SctpInitChunk initAckChunk = new SctpInitChunk(
                 SctpChunkType.INIT_ACK,
@@ -217,7 +397,7 @@ namespace SIPSorcery.Net
                 cookie.ARwnd,
                 SctpAssociation.DEFAULT_NUMBER_OUTBOUND_STREAMS,
                 SctpAssociation.DEFAULT_NUMBER_INBOUND_STREAMS);
-            initAckChunk.StateCookie = jsonBufferWithHMAC;
+            initAckChunk.StateCookie = cookieBuffer;
             initAckChunk.UnrecognizedPeerParameters = initChunk.UnrecognizedPeerParameters;
 
             initAckPacket.AddChunk(initAckChunk);
@@ -237,14 +417,22 @@ namespace SIPSorcery.Net
         {
             var cookieEcho = sctpPacket.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
             var cookieBuffer = cookieEcho.ChunkValue;
-            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(cookieBuffer));
 
-            logger.LogDebug("Cookie: {Cookie}", cookie.ToJson());
-
-            string calculatedHMAC = GetCookieHMAC(cookieBuffer);
-            if (calculatedHMAC != cookie.HMAC)
+            // A remote peer controls this buffer. A COOKIE ECHO chunk with no chunk value, or one
+            // that does not match the cookie layout, is a malformed packet to drop rather than an
+            // exception to let loose in the receive loop.
+            if (!SctpTransportCookie.TryParse(cookieBuffer, out var cookie))
             {
-                logger.LogWarning("SCTP COOKIE ECHO chunk had an invalid HMAC, calculated {calculatedHMAC}, cookie {cookieHMAC}.", calculatedHMAC, cookie.HMAC);
+                logger.LogWarning("SCTP COOKIE ECHO chunk could not be parsed, ignoring.");
+                return SctpTransportCookie.Empty;
+            }
+
+            logger.LogDebug("Cookie: {Cookie}", cookie);
+
+            byte[] calculatedHMAC = GetCookieHMAC(cookieBuffer);
+            if (!FixedTimeEquals(calculatedHMAC, cookie.HMAC))
+            {
+                logger.LogWarning("SCTP COOKIE ECHO chunk had an invalid HMAC, calculated {calculatedHMAC}, cookie {cookieHMAC}.", calculatedHMAC.HexStr(), cookie.HMAC.HexStr());
                 SendError(
                   true,
                   sctpPacket.Header.DestinationPort,
@@ -253,10 +441,10 @@ namespace SIPSorcery.Net
                   new SctpCauseOnlyError(SctpErrorCauseCode.InvalidMandatoryParameter));
                 return SctpTransportCookie.Empty;
             }
-            else if (DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt)).TotalSeconds > cookie.Lifetime)
+            else if (DateTime.UtcNow.Subtract(cookie.CreatedAt).TotalSeconds > cookie.Lifetime)
             {
-                logger.LogWarning("SCTP COOKIE ECHO chunk was stale, created at {CreatedAt}, now {Now}, lifetime {Lifetime}s.", cookie.CreatedAt, DateTime.Now.ToString("o"), cookie.Lifetime);
-                var diff = DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt).AddSeconds(cookie.Lifetime));
+                logger.LogWarning("SCTP COOKIE ECHO chunk was stale, created at {CreatedAt}, now {Now}, lifetime {Lifetime}s.", cookie.CreatedAt.ToString("o"), DateTime.UtcNow.ToString("o"), cookie.Lifetime);
+                var diff = DateTime.UtcNow.Subtract(cookie.CreatedAt.AddSeconds(cookie.Lifetime));
                 SendError(
                   true,
                   sctpPacket.Header.DestinationPort,
@@ -272,26 +460,51 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Checks whether the state cookie that is supplied in a COOKIE ECHO chunk is valid for
-        /// this SCTP transport.
+        /// Calculates the HMAC for a serialised state cookie.
         /// </summary>
+        /// <remarks>
+        /// The pre-image is the whole of the supplied buffer apart from the trailing HMAC. No
+        /// deserialise and re-serialise round trip is needed, which removes any possibility of
+        /// the pre-image differing from the bytes that were originally hashed.
+        /// </remarks>
         /// <param name="buffer">The buffer holding the state cookie.</param>
-        /// <returns>True if the cookie is determined as valid, false if not.</returns>
-        protected string GetCookieHMAC(byte[] buffer)
+        /// <returns>The HMAC calculated over the supplied cookie.</returns>
+        protected byte[] GetCookieHMAC(byte[] buffer)
         {
-            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(buffer));
-            string hmacCalculated = null;
-            cookie.HMAC = string.Empty;
-
-            byte[] cookiePreImage = Encoding.UTF8.GetBytes(cookie.ToJson());
+            if (buffer == null || buffer.Length < SctpTransportCookie.HMAC_LENGTH)
+            {
+                throw new ArgumentException("The buffer was too short to hold an SCTP state cookie.", nameof(buffer));
+            }
 
             using (HMACSHA256 hmac = new HMACSHA256(_hmacKey))
             {
-                var result = hmac.ComputeHash(cookiePreImage);
-                hmacCalculated = result.HexStr();
+                return hmac.ComputeHash(buffer, 0, buffer.Length - SctpTransportCookie.HMAC_LENGTH);
+            }
+        }
+
+        /// <summary>
+        /// Compares two HMAC's in an amount of time that does not depend on how many leading
+        /// bytes they have in common.
+        /// </summary>
+        /// <remarks>
+        /// System.Security.Cryptography.CryptographicOperations.FixedTimeEquals is not available
+        /// on all the frameworks this library targets.
+        /// </remarks>
+        private static bool FixedTimeEquals(byte[] left, byte[] right)
+        {
+            if (left == null || right == null || left.Length != right.Length)
+            {
+                return false;
             }
 
-            return hmacCalculated;
+            int difference = 0;
+
+            for (int i = 0; i < left.Length; i++)
+            {
+                difference |= left[i] ^ right[i];
+            }
+
+            return difference == 0;
         }
 
         /// <summary>
