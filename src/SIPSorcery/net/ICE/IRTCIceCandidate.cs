@@ -13,6 +13,11 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using SIPSorcery.Sys;
+
 namespace SIPSorcery.Net
 {
     /// <summary>
@@ -117,29 +122,41 @@ namespace SIPSorcery.Net
             //     $"  \"candidate\": \"{candidate}\"" +
             //     "}";
 
+#if NETSTANDARD
             return TinyJson.JSONWriter.ToJson(this);
+#else
+            return SipSorceryJsonSerializer.Serialize(this);
+#endif
         }
 
-        public static bool TryParse(string json, out RTCIceCandidateInit init)
+#nullable enable
+        public static bool TryParse(string json, [NotNullWhen(true)] out RTCIceCandidateInit? init)
         {
-            //init = JsonSerializer.Deserialize< RTCIceCandidateInit>(json);
-
             init = null;
+            try
+            {
+                if (json.IsEmptyOrWhiteSpace())
+                {
+                    return false;
+                }
 
-            if (string.IsNullOrWhiteSpace(json))
+#if NETSTANDARD
+                init = TinyJson.JSONParser.FromJson<RTCIceCandidateInit>(json);
+#else
+                init = SipSorceryJsonSerializer.Deserialize<RTCIceCandidateInit>(json);
+#endif
+            }
+            catch (JsonException)
             {
                 return false;
             }
-            else
-            {
-                init = TinyJson.JSONParser.FromJson<RTCIceCandidateInit>(json);
 
-                // To qualify as parsed all required fields must be set.
-                return init != null &&
-                init.candidate != null &&
-                init.sdpMid != null;
-            }
+            // To qualify as parsed all required fields must be set.
+            return init is { } &&
+                init.candidate is { } &&
+                init.sdpMid is { };
         }
+#nullable restore
     }
 
     /// <summary>
