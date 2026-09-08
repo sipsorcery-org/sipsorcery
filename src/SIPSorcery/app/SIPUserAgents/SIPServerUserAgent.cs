@@ -15,6 +15,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -208,6 +210,7 @@ namespace SIPSorcery.SIP.App
                             if (progressResponse.Status != SIPResponseStatusCodesEnum.Trying)
                             {
                                 progressResponse.Header.To.ToTag = m_uasTransaction.LocalTag;
+                                progressResponse.Header.Contact = [ SIPContactHeader.GetDefaultSIPContactHeader(m_uasTransaction.TransactionRequest.URI.Scheme) ];
                             }
 
                             if (!progressBody.IsNullOrBlank())
