@@ -29,7 +29,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using TinyJson;
 
 #nullable enable
 
@@ -150,23 +149,8 @@ public class HttpLoggingHandler : DelegatingHandler
             return body;
         }
 
-        // Try to normalise the body if it looks like JSON. Uses the bundled TinyJson
-        // (JSONParser/JSONWriter) which is available on every target framework, unlike
-        // System.Text.Json that is not present for net462/netstandard2.0. TinyJson
-        // returns null on parse failure rather than throwing, so an invalid body simply
-        // falls through to the raw output below.
-        var trimmedBody = body.AsSpan().TrimStart();
-        if (!trimmedBody.IsEmpty && trimmedBody[0] is '{' or '[')
-        {
-            var parsed = body.FromJson<object>();
-            if (parsed != null)
-            {
-                return parsed.ToJson();
-            }
-        }
-
         const int maxLoggedBodyChars = 500;
-        // For non-JSON or if JSON parsing failed, add some basic formatting
+
         if (body.Length <= maxLoggedBodyChars)
         {
             return body;

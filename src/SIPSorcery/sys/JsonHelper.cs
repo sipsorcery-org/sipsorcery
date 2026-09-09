@@ -1,0 +1,537 @@
+﻿//-----------------------------------------------------------------------------
+// Filename: JsonHelper.cs
+//
+// Description: Minimal JSON writing and reading helpers for the small number of
+// flat objects the library exchanges over WebRTC signalling, specifically
+// RTCIceCandidateInit and RTCSessionDescriptionInit.
+//
+// These replace the previously bundled TinyJson serialiser. A general purpose
+// serialiser is not needed: both types are flat collections of strings, a single
+// integer and a single enum. Avoiding one keeps the library free of any JSON
+// dependency and, because nothing here uses reflection, keeps the signalling
+// helpers working under trimming and Native AOT.
+//
+// The wire format is fixed rather than configurable. It is the shape produced by
+// a browser calling JSON.stringify on RTCIceCandidate.toJSON() or
+// RTCSessionDescription.toJSON(), which is what these types have to interoperate
+// with.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 09 Sep 2026	Aaron Clauson	Created, replaces TinyJson.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System.Globalization;
+using System.Text;
+
+namespace SIPSorcery.Sys
+{
+    /// <summary>
+    /// The kind of JSON value read for an object member.
+    /// </summary>
+    internal enum JsonValueKind
+    {
+        String,
+        Number,
+        Boolean,
+        Null,
+        Object,
+        Array
+    }
+
+    /// <summary>
+    /// Writes a flat JSON object. Members with a null value are omitted, matching the
+    /// behaviour of the TinyJson serialiser this replaced and of a browser serialising
+    /// a dictionary with absent optional members.
+    /// </summary>
+    internal struct JsonObjectWriter
+    {
+        private readonly StringBuilder _builder;
+        private bool _isFirst;
+
+        public JsonObjectWriter(StringBuilder builder)
+        {
+            _builder = builder;
+            _isFirst = true;
+            _builder.Append('{');
+        }
+
+        /// <summary>
+        /// Writes a string member. The member is omitted entirely when the value is null.
+        /// </summary>
+        public void WriteString(string name, string value)
+        {
+            if (value == null)
+            {
+                return;
+            }
+
+            AppendName(name);
+            AppendEscaped(_builder, value);
+        }
+
+        /// <summary>
+        /// Writes an integer member.
+        /// </summary>
+        public void WriteNumber(string name, ushort value)
+        {
+            AppendName(name);
+            _builder.Append(value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        /// <summary>
+        /// Completes the object.
+        /// </summary>
+        public void End()
+        {
+            _builder.Append('}');
+        }
+
+        private void AppendName(string name)
+        {
+            if (_isFirst)
+            {
+                _isFirst = false;
+            }
+            else
+            {
+                _builder.Append(',');
+            }
+
+            _builder.Append('"').Append(name).Append("\":");
+        }
+
+        /// <summary>
+        /// Appends a quoted and escaped JSON string. Control characters, the quote and the
+        /// backslash are escaped; everything else, including non-ASCII, is emitted as is.
+        /// </summary>
+        internal static void AppendEscaped(StringBuilder builder, string value)
+        {
+            builder.Append('"');
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+
+                switch (c)
+                {
+                    case '"':
+                        builder.Append("\\\"");
+                        break;
+                    case '\\':
+                        builder.Append("\\\\");
+                        break;
+                    case '\b':
+                        builder.Append("\\b");
+                        break;
+                    case '\f':
+                        builder.Append("\\f");
+                        break;
+                    case '\n':
+                        builder.Append("\\n");
+                        break;
+                    case '\r':
+                        builder.Append("\\r");
+                        break;
+                    case '\t':
+                        builder.Append("\\t");
+                        break;
+                    default:
+                        if (c < ' ')
+                        {
+                            builder.Append("\\u").Append(((int)c).ToString("X4", CultureInfo.InvariantCulture));
+                        }
+                        else
+                        {
+                            builder.Append(c);
+                        }
+                        break;
+                }
+            }
+
+            builder.Append('"');
+        }
+    }
+
+    /// <summary>
+    /// Reads the members of a flat JSON object one at a time.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately lenient in the ways that matter for interoperating with other WebRTC
+    /// stacks: member order is free, unknown members are skipped (including nested objects
+    /// and arrays), and unescaped control characters inside strings are accepted even though
+    /// RFC 8259 requires them to be escaped.
+    /// </remarks>
+    internal struct JsonObjectParser
+    {
+        private readonly string _json;
+        private int _position;
+        private bool _readAny;
+        private bool _completed;
+        private bool _failed;
+
+        private JsonObjectParser(string json, int position)
+        {
+            _json = json;
+            _position = position;
+            _readAny = false;
+            _completed = false;
+            _failed = false;
+        }
+
+        /// <summary>
+        /// True if the JSON was malformed at any point during reading.
+        /// </summary>
+        public bool Failed => _failed;
+
+        /// <summary>
+        /// Attempts to position a parser at the start of a JSON object.
+        /// </summary>
+        /// <returns>False if the input is not a JSON object, for example a bare null or a
+        /// non-JSON string.</returns>
+        public static bool TryCreate(string json, out JsonObjectParser parser)
+        {
+            parser = default;
+
+            if (json == null)
+            {
+                return false;
+            }
+
+            int position = SkipWhitespace(json, 0);
+
+            if (position >= json.Length || json[position] != '{')
+            {
+                return false;
+            }
+
+            parser = new JsonObjectParser(json, position + 1);
+            return true;
+        }
+
+        /// <summary>
+        /// Reads the next member of the object.
+        /// </summary>
+        /// <returns>False when the end of the object is reached or the JSON is malformed.
+        /// Check <see cref="Failed"/> to tell the two apart.</returns>
+        public bool TryReadMember(out string name, out JsonValueKind kind, out string value)
+        {
+            name = null;
+            kind = JsonValueKind.Null;
+            value = null;
+
+            if (_failed || _completed)
+            {
+                return false;
+            }
+
+            int i = SkipWhitespace(_json, _position);
+
+            if (i >= _json.Length)
+            {
+                return Fail();
+            }
+
+            if (_json[i] == '}')
+            {
+                _completed = true;
+                _position = i + 1;
+                return false;
+            }
+
+            if (_readAny)
+            {
+                if (_json[i] != ',')
+                {
+                    return Fail();
+                }
+
+                i = SkipWhitespace(_json, i + 1);
+            }
+
+            if (i >= _json.Length || _json[i] != '"')
+            {
+                return Fail();
+            }
+
+            if (!TryReadString(_json, ref i, out name))
+            {
+                return Fail();
+            }
+
+            i = SkipWhitespace(_json, i);
+
+            if (i >= _json.Length || _json[i] != ':')
+            {
+                return Fail();
+            }
+
+            i = SkipWhitespace(_json, i + 1);
+
+            if (!TryReadValue(_json, ref i, out kind, out value))
+            {
+                return Fail();
+            }
+
+            _position = i;
+            _readAny = true;
+            return true;
+        }
+
+        private bool Fail()
+        {
+            _failed = true;
+            return false;
+        }
+
+        private static int SkipWhitespace(string json, int i)
+        {
+            while (i < json.Length && (json[i] == ' ' || json[i] == '\t' || json[i] == '\r' || json[i] == '\n'))
+            {
+                i++;
+            }
+
+            return i;
+        }
+
+        private static bool TryReadValue(string json, ref int i, out JsonValueKind kind, out string value)
+        {
+            kind = JsonValueKind.Null;
+            value = null;
+
+            if (i >= json.Length)
+            {
+                return false;
+            }
+
+            switch (json[i])
+            {
+                case '"':
+                    kind = JsonValueKind.String;
+                    return TryReadString(json, ref i, out value);
+
+                case '{':
+                    kind = JsonValueKind.Object;
+                    return TrySkipNested(json, ref i, '{', '}');
+
+                case '[':
+                    kind = JsonValueKind.Array;
+                    return TrySkipNested(json, ref i, '[', ']');
+
+                case 't':
+                    kind = JsonValueKind.Boolean;
+                    value = "true";
+                    return TryReadLiteral(json, ref i, "true");
+
+                case 'f':
+                    kind = JsonValueKind.Boolean;
+                    value = "false";
+                    return TryReadLiteral(json, ref i, "false");
+
+                case 'n':
+                    kind = JsonValueKind.Null;
+                    return TryReadLiteral(json, ref i, "null");
+
+                default:
+                    kind = JsonValueKind.Number;
+                    return TryReadNumber(json, ref i, out value);
+            }
+        }
+
+        private static bool TryReadLiteral(string json, ref int i, string literal)
+        {
+            if (i + literal.Length > json.Length || string.CompareOrdinal(json, i, literal, 0, literal.Length) != 0)
+            {
+                return false;
+            }
+
+            i += literal.Length;
+            return true;
+        }
+
+        private static bool TryReadNumber(string json, ref int i, out string value)
+        {
+            int start = i;
+
+            while (i < json.Length)
+            {
+                char c = json[i];
+
+                if ((c >= '0' && c <= '9') || c == '-' || c == '+' || c == '.' || c == 'e' || c == 'E')
+                {
+                    i++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (i == start)
+            {
+                value = null;
+                return false;
+            }
+
+            value = json.Substring(start, i - start);
+            return true;
+        }
+
+        /// <summary>
+        /// Skips over a nested object or array, respecting strings and escapes so that a
+        /// brace inside a string value does not unbalance the scan.
+        /// </summary>
+        private static bool TrySkipNested(string json, ref int i, char open, char close)
+        {
+            int depth = 0;
+
+            while (i < json.Length)
+            {
+                char c = json[i];
+
+                if (c == '"')
+                {
+                    if (!TryReadString(json, ref i, out _))
+                    {
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                if (c == open)
+                {
+                    depth++;
+                }
+                else if (c == close)
+                {
+                    depth--;
+
+                    if (depth == 0)
+                    {
+                        i++;
+                        return true;
+                    }
+                }
+
+                i++;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Reads a quoted string starting at the opening quote and leaves the index just past
+        /// the closing quote.
+        /// </summary>
+        private static bool TryReadString(string json, ref int i, out string value)
+        {
+            value = null;
+
+            if (i >= json.Length || json[i] != '"')
+            {
+                return false;
+            }
+
+            i++;
+
+            int start = i;
+            StringBuilder builder = null;
+
+            while (i < json.Length)
+            {
+                char c = json[i];
+
+                if (c == '"')
+                {
+                    if (builder == null)
+                    {
+                        value = json.Substring(start, i - start);
+                    }
+                    else
+                    {
+                        builder.Append(json, start, i - start);
+                        value = builder.ToString();
+                    }
+
+                    i++;
+                    return true;
+                }
+
+                if (c != '\\')
+                {
+                    i++;
+                    continue;
+                }
+
+                if (builder == null)
+                {
+                    builder = new StringBuilder(json.Length - start);
+                }
+
+                builder.Append(json, start, i - start);
+                i++;
+
+                if (i >= json.Length)
+                {
+                    return false;
+                }
+
+                char escaped = json[i];
+
+                switch (escaped)
+                {
+                    case '"':
+                        builder.Append('"');
+                        break;
+                    case '\\':
+                        builder.Append('\\');
+                        break;
+                    case '/':
+                        builder.Append('/');
+                        break;
+                    case 'b':
+                        builder.Append('\b');
+                        break;
+                    case 'f':
+                        builder.Append('\f');
+                        break;
+                    case 'n':
+                        builder.Append('\n');
+                        break;
+                    case 'r':
+                        builder.Append('\r');
+                        break;
+                    case 't':
+                        builder.Append('\t');
+                        break;
+                    case 'u':
+                        if (i + 4 >= json.Length ||
+                            !ushort.TryParse(json.Substring(i + 1, 4), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var codePoint))
+                        {
+                            return false;
+                        }
+
+                        builder.Append((char)codePoint);
+                        i += 4;
+                        break;
+                    default:
+                        // Not a recognised escape. Emit it as it appeared rather than failing
+                        // the whole parse.
+                        builder.Append('\\').Append(escaped);
+                        break;
+                }
+
+                i++;
+                start = i;
+            }
+
+            return false;
+        }
+    }
+}

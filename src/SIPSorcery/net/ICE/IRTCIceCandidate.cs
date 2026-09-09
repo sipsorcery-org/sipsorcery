@@ -13,6 +13,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Globalization;
+using System.Text;
+using SIPSorcery.Sys;
+
 namespace SIPSorcery.Net
 {
     /// <summary>
@@ -110,35 +114,63 @@ namespace SIPSorcery.Net
 
         public string toJSON()
         {
-            //return "{" +
-            //     $"  \"sdpMid\": \"{sdpMid ?? sdpMLineIndex.ToString()}\"," +
-            //     $"  \"sdpMLineIndex\": {sdpMLineIndex}," +
-            //     $"  \"usernameFragment\": \"{usernameFragment}\"," +
-            //     $"  \"candidate\": \"{candidate}\"" +
-            //     "}";
+            var builder = new StringBuilder(256);
 
-            return TinyJson.JSONWriter.ToJson(this);
+            var writer = new JsonObjectWriter(builder);
+            writer.WriteString(nameof(candidate), candidate);
+            writer.WriteString(nameof(sdpMid), sdpMid);
+            writer.WriteNumber(nameof(sdpMLineIndex), sdpMLineIndex);
+            writer.WriteString(nameof(usernameFragment), usernameFragment);
+            writer.End();
+
+            return builder.ToString();
         }
 
         public static bool TryParse(string json, out RTCIceCandidateInit init)
         {
-            //init = JsonSerializer.Deserialize< RTCIceCandidateInit>(json);
-
             init = null;
 
-            if (string.IsNullOrWhiteSpace(json))
+            if (string.IsNullOrWhiteSpace(json) || !JsonObjectParser.TryCreate(json, out var parser))
             {
                 return false;
             }
-            else
-            {
-                init = TinyJson.JSONParser.FromJson<RTCIceCandidateInit>(json);
 
-                // To qualify as parsed all required fields must be set.
-                return init != null &&
-                init.candidate != null &&
-                init.sdpMid != null;
+            var parsed = new RTCIceCandidateInit();
+
+            while (parser.TryReadMember(out var name, out var kind, out var value))
+            {
+                switch (name)
+                {
+                    case nameof(candidate):
+                        parsed.candidate = kind == JsonValueKind.String ? value : null;
+                        break;
+                    case nameof(sdpMid):
+                        parsed.sdpMid = kind == JsonValueKind.String ? value : null;
+                        break;
+                    case nameof(sdpMLineIndex):
+                        // Browsers send this as a JSON number but some stacks quote it.
+                        if ((kind == JsonValueKind.Number || kind == JsonValueKind.String) &&
+                            ushort.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var index))
+                        {
+                            parsed.sdpMLineIndex = index;
+                        }
+                        break;
+                    case nameof(usernameFragment):
+                        parsed.usernameFragment = kind == JsonValueKind.String ? value : null;
+                        break;
+                }
             }
+
+            if (parser.Failed)
+            {
+                return false;
+            }
+
+            init = parsed;
+
+            // To qualify as parsed all required fields must be set.
+            return init.candidate != null &&
+                init.sdpMid != null;
         }
     }
 
