@@ -23,7 +23,7 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class SignallingJsonUnitTest
     {
-        private Microsoft.Extensions.Logging.ILogger logger = null;
+        private readonly Microsoft.Extensions.Logging.ILogger logger;
 
         public SignallingJsonUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
@@ -158,6 +158,77 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(
                 "{\"candidate\":\"candidate:1 1 udp 100 192.0.2.1 5000 typ host\",\"sdpMid\":\"0\",\"sdpMLineIndex\":0}",
                 init.toJSON());
+        }
+
+        /// <summary>
+        /// Member names are matched without regard to case, as the TinyJson serialiser this
+        /// replaced did. A peer using PascalCase DTOs must still interoperate.
+        /// </summary>
+        [Theory]
+        [InlineData("{\"Candidate\":\"candidate:1 1 udp 100 192.0.2.1 5000 typ host\",\"SdpMid\":\"0\",\"SdpMLineIndex\":1,\"UsernameFragment\":\"uf\"}")]
+        [InlineData("{\"CANDIDATE\":\"candidate:1 1 udp 100 192.0.2.1 5000 typ host\",\"SDPMID\":\"0\",\"SDPMLINEINDEX\":1,\"USERNAMEFRAGMENT\":\"uf\"}")]
+        public void CandidateInit_MemberNamesAreCaseInsensitive(string json)
+        {
+            Assert.True(RTCIceCandidateInit.TryParse(json, out var init));
+            Assert.Equal("candidate:1 1 udp 100 192.0.2.1 5000 typ host", init.candidate);
+            Assert.Equal("0", init.sdpMid);
+            Assert.Equal(1, init.sdpMLineIndex);
+            Assert.Equal("uf", init.usernameFragment);
+        }
+
+        /// <summary>
+        /// An m line index that is not a valid unsigned 16 bit integer fails the parse rather
+        /// than silently becoming 0. Tokens that are not valid JSON numbers are rejected by the
+        /// reader, and valid JSON numbers that are not an integer in range by the conversion.
+        /// </summary>
+        [Theory]
+        [InlineData("1+2")]
+        [InlineData("+")]
+        [InlineData("+1")]
+        [InlineData("01")]
+        [InlineData("1.")]
+        [InlineData("-")]
+        [InlineData("1e")]
+        [InlineData("1e0")]
+        [InlineData("1.5")]
+        [InlineData("-1")]
+        [InlineData("65536")]
+        [InlineData("999999999999")]
+        [InlineData("\"abc\"")]
+        [InlineData("\"+7\"")]
+        [InlineData("true")]
+        [InlineData("{}")]
+        public void CandidateInit_InvalidLineIndex_ReturnsFalseWithNull(string token)
+        {
+            string json = "{\"candidate\":\"candidate:1 1 udp 100 192.0.2.1 5000 typ host\",\"sdpMid\":\"0\",\"sdpMLineIndex\":" + token + "}";
+
+            Assert.False(RTCIceCandidateInit.TryParse(json, out var init));
+            Assert.Null(init);
+        }
+
+        /// <summary>
+        /// A null m line index is legal and leaves the member at its default.
+        /// </summary>
+        [Fact]
+        public void CandidateInit_NullLineIndex_Parses()
+        {
+            const string json = "{\"candidate\":\"candidate:1 1 udp 100 192.0.2.1 5000 typ host\",\"sdpMid\":\"0\",\"sdpMLineIndex\":null}";
+
+            Assert.True(RTCIceCandidateInit.TryParse(json, out var init));
+            Assert.Equal(0, init.sdpMLineIndex);
+        }
+
+        /// <summary>
+        /// The stricter number grammar must still accept every valid JSON number form in
+        /// members the library does not know about.
+        /// </summary>
+        [Fact]
+        public void CandidateInit_UnknownNumberMembers_Parse()
+        {
+            const string json = "{\"a\":-0.5e+10,\"b\":0,\"c\":1E-3,\"d\":-0,\"e\":10.25,\"candidate\":\"candidate:1 1 udp 100 192.0.2.1 5000 typ host\",\"sdpMid\":\"0\"}";
+
+            Assert.True(RTCIceCandidateInit.TryParse(json, out var init));
+            Assert.Equal("0", init.sdpMid);
         }
 
         #endregion
@@ -316,6 +387,66 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(offer.type, parsed.type);
             Assert.Equal(offer.sdp, parsed.sdp);
             Assert.Equal(json, parsed.toJSON());
+        }
+
+        [Theory]
+        [InlineData("{\"Type\":\"offer\",\"Sdp\":\"v=0\"}")]
+        [InlineData("{\"TYPE\":\"offer\",\"SDP\":\"v=0\"}")]
+        public void SessionDescription_MemberNamesAreCaseInsensitive(string json)
+        {
+            Assert.True(RTCSessionDescriptionInit.TryParse(json, out var init));
+            Assert.Equal(RTCSdpType.offer, init.type);
+            Assert.Equal("v=0", init.sdp);
+        }
+
+        /// <summary>
+        /// A type that is present but not recognised fails the parse rather than silently
+        /// becoming an answer, which is the enum default. The type values themselves are case
+        /// sensitive, as they are in the W3C specification and were with TinyJson.
+        /// </summary>
+        [Theory]
+        [InlineData("\"OFFER\"")]
+        [InlineData("\"Offer\"")]
+        [InlineData("\"\"")]
+        [InlineData("\"bogus\"")]
+        [InlineData("4")]
+        [InlineData("-1")]
+        [InlineData("1e0")]
+        [InlineData("1.0")]
+        [InlineData("1+2")]
+        [InlineData("true")]
+        [InlineData("{}")]
+        public void SessionDescription_InvalidType_ReturnsFalseWithNull(string token)
+        {
+            string json = "{\"type\":" + token + ",\"sdp\":\"v=0\"}";
+
+            Assert.False(RTCSessionDescriptionInit.TryParse(json, out var init));
+            Assert.Null(init);
+        }
+
+        /// <summary>
+        /// An unpaired surrogate cannot be transcoded to UTF-8 so it is written escaped. It can
+        /// only arise from re-serialising a hostile document, since SDP is ASCII, but the output
+        /// must still be valid JSON and must round trip. Valid pairs are left as is.
+        /// </summary>
+        [Fact]
+        public void SessionDescription_UnpairedSurrogates_AreEscaped()
+        {
+            var init = new RTCSessionDescriptionInit
+            {
+                type = RTCSdpType.offer,
+                sdp = "a\uD800b\uDC00c😀d\uD83D"
+            };
+
+            var json = init.toJSON();
+
+            Assert.EndsWith("\"a\\uD800b\\uDC00c😀d\\uD83D\"}", json);
+
+            // Throws on invalid UTF-16.
+            new System.Text.UTF8Encoding(false, true).GetBytes(json);
+
+            Assert.True(RTCSessionDescriptionInit.TryParse(json, out var parsed));
+            Assert.Equal(init.sdp, parsed.sdp);
         }
 
         #endregion

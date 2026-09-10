@@ -139,25 +139,33 @@ namespace SIPSorcery.Net
 
             while (parser.TryReadMember(out var name, out var kind, out var value))
             {
-                switch (name)
+                if (JsonObjectParser.IsMember(name, nameof(candidate)))
                 {
-                    case nameof(candidate):
-                        parsed.candidate = kind == JsonValueKind.String ? value : null;
-                        break;
-                    case nameof(sdpMid):
-                        parsed.sdpMid = kind == JsonValueKind.String ? value : null;
-                        break;
-                    case nameof(sdpMLineIndex):
-                        // Browsers send this as a JSON number but some stacks quote it.
-                        if ((kind == JsonValueKind.Number || kind == JsonValueKind.String) &&
-                            ushort.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var index))
+                    parsed.candidate = kind == JsonValueKind.String ? value : null;
+                }
+                else if (JsonObjectParser.IsMember(name, nameof(sdpMid)))
+                {
+                    parsed.sdpMid = kind == JsonValueKind.String ? value : null;
+                }
+                else if (JsonObjectParser.IsMember(name, nameof(sdpMLineIndex)))
+                {
+                    // Browsers send this as a JSON number but some stacks quote it. A null
+                    // leaves it at the default. Anything else that is not a valid index fails
+                    // the parse rather than silently becoming 0.
+                    if (kind != JsonValueKind.Null)
+                    {
+                        if ((kind != JsonValueKind.Number && kind != JsonValueKind.String) ||
+                            !ushort.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var index))
                         {
-                            parsed.sdpMLineIndex = index;
+                            return false;
                         }
-                        break;
-                    case nameof(usernameFragment):
-                        parsed.usernameFragment = kind == JsonValueKind.String ? value : null;
-                        break;
+
+                        parsed.sdpMLineIndex = index;
+                    }
+                }
+                else if (JsonObjectParser.IsMember(name, nameof(usernameFragment)))
+                {
+                    parsed.usernameFragment = kind == JsonValueKind.String ? value : null;
                 }
             }
 

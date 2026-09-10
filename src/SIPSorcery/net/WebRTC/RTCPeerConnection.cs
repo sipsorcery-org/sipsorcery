@@ -95,17 +95,24 @@ namespace SIPSorcery.Net
 
             while (parser.TryReadMember(out var name, out var kind, out var value))
             {
-                switch (name)
+                if (JsonObjectParser.IsMember(name, nameof(type)))
                 {
-                    case nameof(type):
-                        if (TryParseSdpType(kind, value, out var sdpType))
+                    // A null leaves the type at its default. A value that is not a recognised
+                    // type fails the parse rather than silently becoming an answer, which is
+                    // the enum default. The type values themselves are case sensitive.
+                    if (kind != JsonValueKind.Null)
+                    {
+                        if (!TryParseSdpType(kind, value, out var sdpType))
                         {
-                            parsed.type = sdpType;
+                            return false;
                         }
-                        break;
-                    case nameof(sdp):
-                        parsed.sdp = kind == JsonValueKind.String ? value : null;
-                        break;
+
+                        parsed.type = sdpType;
+                    }
+                }
+                else if (JsonObjectParser.IsMember(name, nameof(sdp)))
+                {
+                    parsed.sdp = kind == JsonValueKind.String ? value : null;
                 }
             }
 

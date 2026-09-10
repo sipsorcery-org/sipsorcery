@@ -26,6 +26,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Globalization;
 using System.Text;
 
@@ -108,7 +109,9 @@ namespace SIPSorcery.Sys
 
         /// <summary>
         /// Appends a quoted and escaped JSON string. Control characters, the quote and the
-        /// backslash are escaped; everything else, including non-ASCII, is emitted as is.
+        /// backslash are escaped; everything else, including non-ASCII, is emitted as is,
+        /// except for an unpaired surrogate which is escaped because it cannot be transcoded
+        /// to UTF-8.
         /// </summary>
         internal static void AppendEscaped(StringBuilder builder, string value)
         {
@@ -142,7 +145,7 @@ namespace SIPSorcery.Sys
                         builder.Append("\\t");
                         break;
                     default:
-                        if (c < ' ')
+                        if (c < ' ' || IsUnpairedSurrogate(value, i))
                         {
                             builder.Append("\\u").Append(((int)c).ToString("X4", CultureInfo.InvariantCulture));
                         }
@@ -155,6 +158,23 @@ namespace SIPSorcery.Sys
             }
 
             builder.Append('"');
+        }
+
+        private static bool IsUnpairedSurrogate(string value, int i)
+        {
+            char c = value[i];
+
+            if (char.IsHighSurrogate(c))
+            {
+                return i + 1 >= value.Length || !char.IsLowSurrogate(value[i + 1]);
+            }
+
+            if (char.IsLowSurrogate(c))
+            {
+                return i == 0 || !char.IsHighSurrogate(value[i - 1]);
+            }
+
+            return false;
         }
     }
 
@@ -188,6 +208,13 @@ namespace SIPSorcery.Sys
         /// True if the JSON was malformed at any point during reading.
         /// </summary>
         public bool Failed => _failed;
+
+        /// <summary>
+        /// Matches a member name without regard to case, which is how the TinyJson serialiser
+        /// this replaced matched them. Peers using PascalCase property names rely on it.
+        /// </summary>
+        public static bool IsMember(string name, string member) =>
+            string.Equals(name, member, StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Attempts to position a parser at the start of a JSON object.
@@ -354,32 +381,72 @@ namespace SIPSorcery.Sys
             return true;
         }
 
+        /// <summary>
+        /// Reads a number token following the RFC 8259 grammar,
+        /// -? (0 | [1-9][0-9]*) (.[0-9]+)? ([eE][+-]?[0-9]+)?
+        /// Tokens such as "+1", "01", "1." or "1+2" are rejected rather than being passed on
+        /// for the caller to misinterpret.
+        /// </summary>
         private static bool TryReadNumber(string json, ref int i, out string value)
         {
+            value = null;
             int start = i;
 
-            while (i < json.Length)
+            if (i < json.Length && json[i] == '-')
             {
-                char c = json[i];
+                i++;
+            }
 
-                if ((c >= '0' && c <= '9') || c == '-' || c == '+' || c == '.' || c == 'e' || c == 'E')
+            if (i >= json.Length || !IsDigit(json[i]))
+            {
+                return false;
+            }
+
+            i = json[i] == '0' ? i + 1 : SkipDigits(json, i);
+
+            if (i < json.Length && json[i] == '.')
+            {
+                i++;
+
+                if (i >= json.Length || !IsDigit(json[i]))
+                {
+                    return false;
+                }
+
+                i = SkipDigits(json, i);
+            }
+
+            if (i < json.Length && (json[i] == 'e' || json[i] == 'E'))
+            {
+                i++;
+
+                if (i < json.Length && (json[i] == '+' || json[i] == '-'))
                 {
                     i++;
                 }
-                else
-                {
-                    break;
-                }
-            }
 
-            if (i == start)
-            {
-                value = null;
-                return false;
+                if (i >= json.Length || !IsDigit(json[i]))
+                {
+                    return false;
+                }
+
+                i = SkipDigits(json, i);
             }
 
             value = json.Substring(start, i - start);
             return true;
+        }
+
+        private static bool IsDigit(char c) => c >= '0' && c <= '9';
+
+        private static int SkipDigits(string json, int i)
+        {
+            while (i < json.Length && IsDigit(json[i]))
+            {
+                i++;
+            }
+
+            return i;
         }
 
         /// <summary>
