@@ -117,10 +117,24 @@ namespace SIPSorcery.Net
             var builder = new StringBuilder(256);
 
             var writer = new JsonObjectWriter(builder);
-            writer.WriteString(nameof(candidate), candidate);
-            writer.WriteString(nameof(sdpMid), sdpMid);
+
+            if (candidate != null)
+            {
+                writer.WriteString(nameof(candidate), candidate);
+            }
+
+            if (sdpMid != null)
+            {
+                writer.WriteString(nameof(sdpMid), sdpMid);
+            }
+
             writer.WriteNumber(nameof(sdpMLineIndex), sdpMLineIndex);
-            writer.WriteString(nameof(usernameFragment), usernameFragment);
+
+            if (usernameFragment != null)
+            {
+                writer.WriteString(nameof(usernameFragment), usernameFragment);
+            }
+
             writer.End();
 
             return builder.ToString();
@@ -141,11 +155,11 @@ namespace SIPSorcery.Net
             {
                 if (JsonObjectParser.IsMember(name, nameof(candidate)))
                 {
-                    parsed.candidate = kind == JsonValueKind.String ? value : null;
+                    parsed.candidate = kind == JsonValueKind.String ? value.ToString() : null;
                 }
                 else if (JsonObjectParser.IsMember(name, nameof(sdpMid)))
                 {
-                    parsed.sdpMid = kind == JsonValueKind.String ? value : null;
+                    parsed.sdpMid = kind == JsonValueKind.String ? value.ToString() : null;
                 }
                 else if (JsonObjectParser.IsMember(name, nameof(sdpMLineIndex)))
                 {
@@ -165,7 +179,7 @@ namespace SIPSorcery.Net
                 }
                 else if (JsonObjectParser.IsMember(name, nameof(usernameFragment)))
                 {
-                    parsed.usernameFragment = kind == JsonValueKind.String ? value : null;
+                    parsed.usernameFragment = kind == JsonValueKind.String ? value.ToString() : null;
                 }
             }
 
