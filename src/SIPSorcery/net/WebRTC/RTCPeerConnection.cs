@@ -76,7 +76,12 @@ namespace SIPSorcery.Net
 
             var writer = new JsonObjectWriter(builder);
             writer.WriteString(nameof(type), ToJsonValue(type));
-            writer.WriteString(nameof(sdp), sdp);
+
+            if (sdp != null)
+            {
+                writer.WriteString(nameof(sdp), sdp);
+            }
+
             writer.End();
 
             return builder.ToString();
@@ -112,7 +117,7 @@ namespace SIPSorcery.Net
                 }
                 else if (JsonObjectParser.IsMember(name, nameof(sdp)))
                 {
-                    parsed.sdp = kind == JsonValueKind.String ? value : null;
+                    parsed.sdp = kind == JsonValueKind.String ? value.ToString() : null;
                 }
             }
 
@@ -153,7 +158,7 @@ namespace SIPSorcery.Net
         /// library emits. A number is also accepted because a peer using a general purpose
         /// serialiser with default settings will serialise the enum as its underlying value.
         /// </summary>
-        private static bool TryParseSdpType(JsonValueKind kind, string value, out RTCSdpType type)
+        private static bool TryParseSdpType(JsonValueKind kind, ReadOnlySpan<char> value, out RTCSdpType type)
         {
             if (kind == JsonValueKind.Number)
             {
@@ -176,16 +181,16 @@ namespace SIPSorcery.Net
 
             switch (value)
             {
-                case "answer":
+                case var _ when value.SequenceEqual("answer"):
                     type = RTCSdpType.answer;
                     return true;
-                case "offer":
+                case var _ when value.SequenceEqual("offer"):
                     type = RTCSdpType.offer;
                     return true;
-                case "pranswer":
+                case var _ when value.SequenceEqual("pranswer"):
                     type = RTCSdpType.pranswer;
                     return true;
-                case "rollback":
+                case var _ when value.SequenceEqual("rollback"):
                     type = RTCSdpType.rollback;
                     return true;
                 default:

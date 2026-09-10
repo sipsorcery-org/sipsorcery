@@ -29,6 +29,7 @@
 using System;
 using System.Globalization;
 using System.Text;
+using Polyfills;
 
 namespace SIPSorcery.Sys
 {
@@ -46,7 +47,7 @@ namespace SIPSorcery.Sys
     }
 
     /// <summary>
-    /// Writes a flat JSON object. Members with a null value are omitted, matching the
+    /// Writes a flat JSON object. Callers omit members with a null value, matching the
     /// behaviour of the TinyJson serialiser this replaced and of a browser serialising
     /// a dictionary with absent optional members.
     /// </summary>
@@ -63,15 +64,10 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
-        /// Writes a string member. The member is omitted entirely when the value is null.
+        /// Writes a string member.
         /// </summary>
-        public void WriteString(string name, string value)
+        public void WriteString(ReadOnlySpan<char> name, ReadOnlySpan<char> value)
         {
-            if (value == null)
-            {
-                return;
-            }
-
             AppendName(name);
             AppendEscaped(_builder, value);
         }
@@ -79,10 +75,10 @@ namespace SIPSorcery.Sys
         /// <summary>
         /// Writes an integer member.
         /// </summary>
-        public void WriteNumber(string name, ushort value)
+        public void WriteNumber(ReadOnlySpan<char> name, ushort value)
         {
             AppendName(name);
-            _builder.Append(value.ToString(CultureInfo.InvariantCulture));
+            _builder.Append(value);
         }
 
         /// <summary>
@@ -93,7 +89,7 @@ namespace SIPSorcery.Sys
             _builder.Append('}');
         }
 
-        private void AppendName(string name)
+        private void AppendName(ReadOnlySpan<char> name)
         {
             if (_isFirst)
             {
@@ -113,13 +109,13 @@ namespace SIPSorcery.Sys
         /// except for an unpaired surrogate which is escaped because it cannot be transcoded
         /// to UTF-8.
         /// </summary>
-        internal static void AppendEscaped(StringBuilder builder, string value)
+        internal static void AppendEscaped(StringBuilder builder, ReadOnlySpan<char> value)
         {
             builder.Append('"');
 
-            for (int i = 0; i < value.Length; i++)
+            for (var i = 0; i < value.Length; i++)
             {
-                char c = value[i];
+                var c = value[i];
 
                 switch (c)
                 {
@@ -160,9 +156,9 @@ namespace SIPSorcery.Sys
             builder.Append('"');
         }
 
-        private static bool IsUnpairedSurrogate(string value, int i)
+        private static bool IsUnpairedSurrogate(ReadOnlySpan<char> value, int i)
         {
-            char c = value[i];
+            var c = value[i];
 
             if (char.IsHighSurrogate(c))
             {
@@ -187,15 +183,15 @@ namespace SIPSorcery.Sys
     /// and arrays), and unescaped control characters inside strings are accepted even though
     /// RFC 8259 requires them to be escaped.
     /// </remarks>
-    internal struct JsonObjectParser
+    internal ref struct JsonObjectParser
     {
-        private readonly string _json;
+        private readonly ReadOnlySpan<char> _json;
         private int _position;
         private bool _readAny;
         private bool _completed;
         private bool _failed;
 
-        private JsonObjectParser(string json, int position)
+        private JsonObjectParser(ReadOnlySpan<char> json, int position)
         {
             _json = json;
             _position = position;
@@ -213,24 +209,19 @@ namespace SIPSorcery.Sys
         /// Matches a member name without regard to case, which is how the TinyJson serialiser
         /// this replaced matched them. Peers using PascalCase property names rely on it.
         /// </summary>
-        public static bool IsMember(string name, string member) =>
-            string.Equals(name, member, StringComparison.OrdinalIgnoreCase);
+        public static bool IsMember(ReadOnlySpan<char> name, ReadOnlySpan<char> member) =>
+            name.Equals(member, StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Attempts to position a parser at the start of a JSON object.
         /// </summary>
         /// <returns>False if the input is not a JSON object, for example a bare null or a
         /// non-JSON string.</returns>
-        public static bool TryCreate(string json, out JsonObjectParser parser)
+        public static bool TryCreate(ReadOnlySpan<char> json, out JsonObjectParser parser)
         {
             parser = default;
 
-            if (json == null)
-            {
-                return false;
-            }
-
-            int position = SkipWhitespace(json, 0);
+            var position = SkipWhitespace(json, 0);
 
             if (position >= json.Length || json[position] != '{')
             {
@@ -246,18 +237,18 @@ namespace SIPSorcery.Sys
         /// </summary>
         /// <returns>False when the end of the object is reached or the JSON is malformed.
         /// Check <see cref="Failed"/> to tell the two apart.</returns>
-        public bool TryReadMember(out string name, out JsonValueKind kind, out string value)
+        public bool TryReadMember(out ReadOnlySpan<char> name, out JsonValueKind kind, out ReadOnlySpan<char> value)
         {
-            name = null;
+            name = default;
             kind = JsonValueKind.Null;
-            value = null;
+            value = default;
 
             if (_failed || _completed)
             {
                 return false;
             }
 
-            int i = SkipWhitespace(_json, _position);
+            var i = SkipWhitespace(_json, _position);
 
             if (i >= _json.Length)
             {
@@ -316,7 +307,7 @@ namespace SIPSorcery.Sys
             return false;
         }
 
-        private static int SkipWhitespace(string json, int i)
+        private static int SkipWhitespace(ReadOnlySpan<char> json, int i)
         {
             while (i < json.Length && (json[i] == ' ' || json[i] == '\t' || json[i] == '\r' || json[i] == '\n'))
             {
@@ -326,10 +317,10 @@ namespace SIPSorcery.Sys
             return i;
         }
 
-        private static bool TryReadValue(string json, ref int i, out JsonValueKind kind, out string value)
+        private static bool TryReadValue(ReadOnlySpan<char> json, scoped ref int i, out JsonValueKind kind, out ReadOnlySpan<char> value)
         {
             kind = JsonValueKind.Null;
-            value = null;
+            value = default;
 
             if (i >= json.Length)
             {
@@ -370,9 +361,9 @@ namespace SIPSorcery.Sys
             }
         }
 
-        private static bool TryReadLiteral(string json, ref int i, string literal)
+        private static bool TryReadLiteral(ReadOnlySpan<char> json, ref int i, ReadOnlySpan<char> literal)
         {
-            if (i + literal.Length > json.Length || string.CompareOrdinal(json, i, literal, 0, literal.Length) != 0)
+            if (i + literal.Length > json.Length || !json.Slice(i, literal.Length).SequenceEqual(literal))
             {
                 return false;
             }
@@ -387,10 +378,10 @@ namespace SIPSorcery.Sys
         /// Tokens such as "+1", "01", "1." or "1+2" are rejected rather than being passed on
         /// for the caller to misinterpret.
         /// </summary>
-        private static bool TryReadNumber(string json, ref int i, out string value)
+        private static bool TryReadNumber(ReadOnlySpan<char> json, scoped ref int i, out ReadOnlySpan<char> value)
         {
-            value = null;
-            int start = i;
+            value = default;
+            var start = i;
 
             if (i < json.Length && json[i] == '-')
             {
@@ -433,13 +424,13 @@ namespace SIPSorcery.Sys
                 i = SkipDigits(json, i);
             }
 
-            value = json.Substring(start, i - start);
+            value = json.Slice(start, i - start);
             return true;
         }
 
-        private static bool IsDigit(char c) => c >= '0' && c <= '9';
+        private static bool IsDigit(char c) => c is >= '0' and <= '9';
 
-        private static int SkipDigits(string json, int i)
+        private static int SkipDigits(ReadOnlySpan<char> json, int i)
         {
             while (i < json.Length && IsDigit(json[i]))
             {
@@ -453,17 +444,17 @@ namespace SIPSorcery.Sys
         /// Skips over a nested object or array, respecting strings and escapes so that a
         /// brace inside a string value does not unbalance the scan.
         /// </summary>
-        private static bool TrySkipNested(string json, ref int i, char open, char close)
+        private static bool TrySkipNested(ReadOnlySpan<char> json, ref int i, char open, char close)
         {
-            int depth = 0;
+            var depth = 0;
 
             while (i < json.Length)
             {
-                char c = json[i];
+                var c = json[i];
 
                 if (c == '"')
                 {
-                    if (!TryReadString(json, ref i, out _))
+                    if (!TrySkipString(json, ref i))
                     {
                         return false;
                     }
@@ -492,13 +483,59 @@ namespace SIPSorcery.Sys
             return false;
         }
 
+        private static bool TrySkipString(ReadOnlySpan<char> json, ref int i)
+        {
+            if (i >= json.Length || json[i] != '"')
+            {
+                return false;
+            }
+
+            i++;
+
+            while (i < json.Length)
+            {
+                var c = json[i];
+
+                if (c == '"')
+                {
+                    i++;
+                    return true;
+                }
+
+                if (c == '\\')
+                {
+                    i++;
+
+                    if (i >= json.Length)
+                    {
+                        return false;
+                    }
+
+                    if (json[i] == 'u')
+                    {
+                        if (i + 4 >= json.Length ||
+                            !ushort.TryParse(json.Slice(i + 1, 4), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out _))
+                        {
+                            return false;
+                        }
+
+                        i += 4;
+                    }
+                }
+
+                i++;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Reads a quoted string starting at the opening quote and leaves the index just past
         /// the closing quote.
         /// </summary>
-        private static bool TryReadString(string json, ref int i, out string value)
+        private static bool TryReadString(ReadOnlySpan<char> json, scoped ref int i, out ReadOnlySpan<char> value)
         {
-            value = null;
+            value = default;
 
             if (i >= json.Length || json[i] != '"')
             {
@@ -507,23 +544,23 @@ namespace SIPSorcery.Sys
 
             i++;
 
-            int start = i;
+            var start = i;
             StringBuilder builder = null;
 
             while (i < json.Length)
             {
-                char c = json[i];
+                var c = json[i];
 
                 if (c == '"')
                 {
                     if (builder == null)
                     {
-                        value = json.Substring(start, i - start);
+                        value = json.Slice(start, i - start);
                     }
                     else
                     {
-                        builder.Append(json, start, i - start);
-                        value = builder.ToString();
+                        builder.Append(json.Slice(start, i - start));
+                        value = builder.ToString().AsSpan();
                     }
 
                     i++;
@@ -541,7 +578,7 @@ namespace SIPSorcery.Sys
                     builder = new StringBuilder(json.Length - start);
                 }
 
-                builder.Append(json, start, i - start);
+                builder.Append(json.Slice(start, i - start));
                 i++;
 
                 if (i >= json.Length)
@@ -549,7 +586,7 @@ namespace SIPSorcery.Sys
                     return false;
                 }
 
-                char escaped = json[i];
+                var escaped = json[i];
 
                 switch (escaped)
                 {
@@ -579,7 +616,7 @@ namespace SIPSorcery.Sys
                         break;
                     case 'u':
                         if (i + 4 >= json.Length ||
-                            !ushort.TryParse(json.Substring(i + 1, 4), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var codePoint))
+                            !ushort.TryParse(json.Slice(i + 1, 4), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var codePoint))
                         {
                             return false;
                         }
