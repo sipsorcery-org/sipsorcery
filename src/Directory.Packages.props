@@ -35,7 +35,7 @@
          the build fails with CS0246. NAudio.WinMM itself targets net9.0-windows7.0, so referencing
          it directly restores those types without forcing every consumer up to 19041. -->
     <PackageVersion Include="NAudio.WinMM"                                  Version="3.0.0" />
-    <PackageVersion Include="Polyfill"                                      Version="11.2.0" />
+    <PackageVersion Include="Polyfill"                                      Version="11.3.0" />
     <PackageVersion Include="Serilog.Extensions.Logging"                    Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console"                         Version="6.1.1" />
     <PackageVersion Include="SIPSorcery.WebSocketSharp"                     Version="0.0.1" />

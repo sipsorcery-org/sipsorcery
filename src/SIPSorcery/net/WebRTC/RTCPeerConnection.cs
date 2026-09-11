@@ -37,7 +37,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Globalization;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -70,24 +72,130 @@ namespace SIPSorcery.Net
 
         public string toJSON()
         {
-            return TinyJson.JSONWriter.ToJson(this);
+            var builder = new StringBuilder(sdp != null ? sdp.Length + 64 : 64);
+
+            var writer = new JsonObjectWriter(builder);
+            writer.WriteString(nameof(type), ToJsonValue(type));
+
+            if (sdp != null)
+            {
+                writer.WriteString(nameof(sdp), sdp);
+            }
+
+            writer.End();
+
+            return builder.ToString();
         }
 
         public static bool TryParse(string json, out RTCSessionDescriptionInit init)
         {
             init = null;
 
-            if (string.IsNullOrWhiteSpace(json))
+            if (string.IsNullOrWhiteSpace(json) || !JsonObjectParser.TryCreate(json, out var parser))
             {
                 return false;
             }
-            else
-            {
-                init = TinyJson.JSONParser.FromJson<RTCSessionDescriptionInit>(json);
 
-                // To qualify as parsed all required fields must be set.
-                return init != null &&
-                    init.sdp != null;
+            var parsed = new RTCSessionDescriptionInit();
+
+            while (parser.TryReadMember(out var name, out var kind, out var value))
+            {
+                if (JsonObjectParser.IsMember(name, nameof(type)))
+                {
+                    // A null leaves the type at its default. A value that is not a recognised
+                    // type fails the parse rather than silently becoming an answer, which is
+                    // the enum default. The type values themselves are case sensitive.
+                    if (kind != JsonValueKind.Null)
+                    {
+                        if (!TryParseSdpType(kind, value, out var sdpType))
+                        {
+                            return false;
+                        }
+
+                        parsed.type = sdpType;
+                    }
+                }
+                else if (JsonObjectParser.IsMember(name, nameof(sdp)))
+                {
+                    parsed.sdp = kind == JsonValueKind.String ? value.ToString() : null;
+                }
+            }
+
+            if (parser.Failed)
+            {
+                return false;
+            }
+
+            init = parsed;
+
+            // To qualify as parsed all required fields must be set.
+            return init.sdp != null;
+        }
+
+        /// <summary>
+        /// The session description type is exchanged as a string, not as the underlying
+        /// integer, which is what a browser produces and expects.
+        /// </summary>
+        private static string ToJsonValue(RTCSdpType type)
+        {
+            switch (type)
+            {
+                case RTCSdpType.answer:
+                    return "answer";
+                case RTCSdpType.offer:
+                    return "offer";
+                case RTCSdpType.pranswer:
+                    return "pranswer";
+                case RTCSdpType.rollback:
+                    return "rollback";
+                default:
+                    return type.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Reads the session description type. A string is what a browser sends and what this
+        /// library emits. A number is also accepted because a peer using a general purpose
+        /// serialiser with default settings will serialise the enum as its underlying value.
+        /// </summary>
+        private static bool TryParseSdpType(JsonValueKind kind, ReadOnlySpan<char> value, out RTCSdpType type)
+        {
+            if (kind == JsonValueKind.Number)
+            {
+                if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var numeric) &&
+                    numeric >= (int)RTCSdpType.answer && numeric <= (int)RTCSdpType.rollback)
+                {
+                    type = (RTCSdpType)numeric;
+                    return true;
+                }
+
+                type = default;
+                return false;
+            }
+
+            if (kind != JsonValueKind.String)
+            {
+                type = default;
+                return false;
+            }
+
+            switch (value)
+            {
+                case var _ when value.SequenceEqual("answer"):
+                    type = RTCSdpType.answer;
+                    return true;
+                case var _ when value.SequenceEqual("offer"):
+                    type = RTCSdpType.offer;
+                    return true;
+                case var _ when value.SequenceEqual("pranswer"):
+                    type = RTCSdpType.pranswer;
+                    return true;
+                case var _ when value.SequenceEqual("rollback"):
+                    type = RTCSdpType.rollback;
+                    return true;
+                default:
+                    type = default;
+                    return false;
             }
         }
     }
