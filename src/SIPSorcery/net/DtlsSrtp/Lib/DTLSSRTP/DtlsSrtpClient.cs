@@ -27,7 +27,6 @@ using SIPSorcery.Net.SharpSRTP.DTLS;
 using SIPSorcery.Net.SharpSRTP.SRTP;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
@@ -42,11 +41,11 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
            this(new BcTlsCrypto(), certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm, session)
         { }
 
-        public DtlsSrtpClient(TlsCrypto crypto, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256, TlsSession session = null) : 
+        public DtlsSrtpClient(TlsCrypto crypto, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256, TlsSession session = null) :
             base(crypto, session, certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm)
         {
             int[] protectionProfiles = GetSupportedProtectionProfiles();
-            
+
             byte[] mki = DtlsSrtpProtocol.GenerateMki(MkiLength);
             this._srtpData = new UseSrtpData(protectionProfiles, mki);
 
@@ -59,10 +58,10 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
             Certificate peerCertificate = e.SecurityParameters.PeerCertificate;
             OnSessionStarted?.Invoke(this, new DtlsSessionStartedEventArgs(context, peerCertificate, base._clientDatagramTransport));
         }
-       
+
         public void SetMKI(byte[] mki)
         {
-            if(mki == null)
+            if (mki == null)
             {
                 MkiLength = 0;
                 mki = new byte[0];
@@ -82,20 +81,20 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 
         protected virtual int[] GetSupportedProtectionProfiles()
         {
-            return new int[] 
+            return new int[]
             {
-                ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_256_GCM_AEAD_AES_256_GCM,
-                ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_128_GCM_AEAD_AES_128_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_AES_256_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_ARIA_256_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_AES_128_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_ARIA_128_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_80,
-                ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80,
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_80,
-                ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32,
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_32,
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_32,
+                SrtpProtectionProfile.DOUBLE_AEAD_AES_256_GCM_AEAD_AES_256_GCM,
+                SrtpProtectionProfile.DOUBLE_AEAD_AES_128_GCM_AEAD_AES_128_GCM,
+                SrtpProtectionProfile.SRTP_AEAD_AES_256_GCM,
+                SrtpProtectionProfile.SRTP_AEAD_ARIA_256_GCM,
+                SrtpProtectionProfile.SRTP_AEAD_AES_128_GCM,
+                SrtpProtectionProfile.SRTP_AEAD_ARIA_128_GCM,
+                SrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_80,
+                SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80,
+                SrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_80,
+                SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32,
+                SrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_32,
+                SrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_32,
 
                 // do not offer NULL profiles to make sure these do not get selected by accident
                 //ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80,
@@ -124,13 +123,13 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 
             // verify that the server has selected a profile we support
             int selectedProfile = serverSrtpExtension.ProtectionProfiles[0];
-            if (!clientSupportedProfiles.Contains(selectedProfile))
+            if (Array.IndexOf(clientSupportedProfiles, selectedProfile) < 0)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
             // verify the mki sent by the server matches our mki
-            if (_srtpData.Mki != null && serverSrtpExtension.Mki != null && !Enumerable.SequenceEqual(_srtpData.Mki, serverSrtpExtension.Mki))
+            if (_srtpData.Mki != null && serverSrtpExtension.Mki != null && !_srtpData.Mki.AsSpan().SequenceEqual(serverSrtpExtension.Mki))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }

@@ -1,0 +1,11 @@
+.git
+.github
+.vs
+.vscode
+**/bin
+**/obj
+**/TestResults
+**/*.user
+examples/WebRTCExamples/WebRTCMaxHeadroom/ggml-base.en.bin
+examples/WebRTCExamples/WebRTCMaxHeadroom/maxheadroom_viseme*.png
+examples/WebRTCExamples/WebRTCMaxHeadroom/tts_test.wav

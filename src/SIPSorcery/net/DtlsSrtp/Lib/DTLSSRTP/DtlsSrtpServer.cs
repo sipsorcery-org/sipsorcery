@@ -27,7 +27,6 @@ using SIPSorcery.Net.SharpSRTP.DTLS;
 using SIPSorcery.Net.SharpSRTP.SRTP;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
@@ -46,11 +45,11 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 
         public event EventHandler<DtlsSessionStartedEventArgs> OnSessionStarted;
 
-        public DtlsSrtpServer(Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256) 
+        public DtlsSrtpServer(Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256)
             : this(new BcTlsCrypto(), certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm)
         { }
 
-        public DtlsSrtpServer(TlsCrypto crypto, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256) 
+        public DtlsSrtpServer(TlsCrypto crypto, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256)
             : base(crypto, certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm)
         {
             this.OnHandshakeCompleted += DtlsSrtpServer_OnHandshakeCompleted;
@@ -65,20 +64,20 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 
         protected virtual int[] GetSupportedProtectionProfiles()
         {
-            return new int[] 
+            return new int[]
             {
-                ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_256_GCM_AEAD_AES_256_GCM,
-                ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_128_GCM_AEAD_AES_128_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_AES_256_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_ARIA_256_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_AES_128_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_ARIA_128_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_80,
-                ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80,
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_80,
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_32,
-                ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32,                
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_32,
+                SrtpProtectionProfile.DOUBLE_AEAD_AES_256_GCM_AEAD_AES_256_GCM,
+                SrtpProtectionProfile.DOUBLE_AEAD_AES_128_GCM_AEAD_AES_128_GCM,
+                SrtpProtectionProfile.SRTP_AEAD_AES_256_GCM,
+                SrtpProtectionProfile.SRTP_AEAD_ARIA_256_GCM,
+                SrtpProtectionProfile.SRTP_AEAD_AES_128_GCM,
+                SrtpProtectionProfile.SRTP_AEAD_ARIA_128_GCM,
+                SrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_80,
+                SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80,
+                SrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_80,
+                SrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_32,
+                SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32,
+                SrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_32,
 
                 // do not offer NULL profiles to make sure these do not get selected by accident
                 //ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80,
@@ -97,15 +96,27 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 
             UseSrtpData clientSrtpExtension = TlsSrtpUtilities.GetUseSrtpExtension(clientExtensions);
 
+            // Choose the highest priority profile supported by the server
             int[] serverSupportedProfiles = GetSupportedProtectionProfiles();
-            int[] mutuallySupportedProfiles = clientSrtpExtension.ProtectionProfiles.Where(x => serverSupportedProfiles.Contains(x)).ToArray();
-            if (mutuallySupportedProfiles.Length == 0)
+            bool found = false;
+            int selectedProfile = int.MinValue;
+            int minIndex = int.MaxValue;
+            for (int i = 0; i < clientSrtpExtension.ProtectionProfiles.Length; i++)
+            {
+                int val = clientSrtpExtension.ProtectionProfiles[i];
+                int idx = Array.IndexOf(serverSupportedProfiles, val);
+                if (idx >= 0 && idx < minIndex)
+                {
+                    minIndex = idx;
+                    selectedProfile = val;
+                    found = true;
+                }
+            }
+            if (!found)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
-
-            int selectedProfile = mutuallySupportedProfiles.OrderBy(x => Array.IndexOf(serverSupportedProfiles, x)).First(); // Choose the highest priority profile supported by the server
-            _srtpData = new UseSrtpData(new int[] { selectedProfile }, ForceDisableMKI ? new byte[0] : clientSrtpExtension.Mki); // Server must return only a single selected profile
+            _srtpData = new UseSrtpData(new int[] { selectedProfile }, ForceDisableMKI ? Array.Empty<byte>() : clientSrtpExtension.Mki); // Server must return only a single selected profile
         }
 
         public override IDictionary<int, byte[]> GetServerExtensions()

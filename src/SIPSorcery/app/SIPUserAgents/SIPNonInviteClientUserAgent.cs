@@ -159,7 +159,7 @@ namespace SIPSorcery.SIP.App
                             {
                                 continue;
                             }
-                            else if (customHeader.Trim().StartsWith(SIPHeaders.SIP_HEADER_USERAGENT))
+                            else if (customHeader.AsSpan().Trim().StartsWith(SIPHeaders.SIP_HEADER_USERAGENT, StringComparison.Ordinal))
                             {
                                 request.Header.UserAgent = customHeader.Substring(customHeader.IndexOf(":") + 1).Trim();
                             }

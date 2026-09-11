@@ -201,7 +201,7 @@ namespace SIPSorcery.Net
             {
                 if (rtpEventInProgress)
                 {
-                    logger.LogWarning(nameof(SendDtmfEvent) + " an RTPEvent is already in progress.");
+                    logger.LogWarning("{Method} an RTPEvent is already in progress.", nameof(SendDtmfEvent));
                     return;
                 }
 
@@ -285,12 +285,12 @@ namespace SIPSorcery.Net
         public void CheckAudioFormatsNegotiation()
         {
             if (LocalTrack != null &&
-                        LocalTrack.Capabilities.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() > 0)
+                        LocalTrack.Capabilities.Where(x => !string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase)).Count() > 0)
             {
                 OnAudioFormatsNegotiatedByIndex?.Invoke(
                             Index,
                             LocalTrack.Capabilities
-                            .Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE)
+                            .Where(x => !string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase))
                             .Select(x => x.ToAudioFormat()).ToList());
             }
         }

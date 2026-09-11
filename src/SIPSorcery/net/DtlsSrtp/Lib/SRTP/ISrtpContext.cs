@@ -19,15 +19,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 // SOFTWARE.
 
+#if NET8_0_OR_GREATER
+using ReadOnlyBytes = System.ReadOnlySpan<byte>;
+using Bytes = System.Span<byte>;
+#else
+using ReadOnlyBytes = System.ArraySegment<byte>;
+using Bytes = byte[];
+#endif
+
 namespace SIPSorcery.Net.SharpSRTP.SRTP
 {
     public interface ISrtpContext
     {
         int CalculateRequiredSrtpPayloadLength(int rtpLen);
-        int ProtectRtp(byte[] payload, int length, out int outputBufferLength);
-        int UnprotectRtp(byte[] payload, int length, out int outputBufferLength);
+        int ProtectRtp(ReadOnlyBytes input, Bytes output, out int outputBufferLength);
+        int UnprotectRtp(ReadOnlyBytes input, Bytes output, out int outputBufferLength);
         int CalculateRequiredSrtcpPayloadLength(int rtpLen);
-        int ProtectRtcp(byte[] payload, int length, out int outputBufferLength);
-        int UnprotectRtcp(byte[] payload, int length, out int outputBufferLength);
+        int ProtectRtcp(ReadOnlyBytes input, Bytes output, out int outputBufferLength);
+        int UnprotectRtcp(ReadOnlyBytes input, Bytes output, out int outputBufferLength);
+    }
+
+    public static class SrtpContextExtensions
+    {
+        public static int ProtectRtp(this ISrtpContext context, Bytes payload, int length, out int outputBufferLength)
+            => context.ProtectRtp(payload.Slice(0, length), payload, out outputBufferLength);
+
+        public static int UnprotectRtp(this ISrtpContext context, Bytes payload, int length, out int outputBufferLength)
+            => context.UnprotectRtp(payload.Slice(0, length), payload, out outputBufferLength);
+
+        public static int ProtectRtcp(this ISrtpContext context, Bytes payload, int length, out int outputBufferLength)
+            => context.ProtectRtcp(payload.Slice(0, length), payload, out outputBufferLength);
+
+        public static int UnprotectRtcp(this ISrtpContext context, Bytes payload, int length, out int outputBufferLength)
+            => context.UnprotectRtcp(payload.Slice(0, length), payload, out outputBufferLength);
     }
 }

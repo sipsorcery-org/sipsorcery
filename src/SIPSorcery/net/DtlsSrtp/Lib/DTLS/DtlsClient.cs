@@ -19,6 +19,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 // SOFTWARE.
 
+using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Tls;
@@ -33,8 +34,9 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
 {
     public class DtlsClient : DefaultTlsClient, IDtlsPeer
     {
-        protected DatagramTransport _clientDatagramTransport; // valid only for the current session
-
+        private readonly object _syncRoot = new object();
+        private static readonly ILogger _logger = LogFactory.CreateLogger<DtlsClient>();
+        protected DatagramTransport _clientDatagramTransport = null;
         private TlsSession _session;
 
         public bool AutogenerateCertificate { get; set; } = true;
@@ -52,7 +54,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
         public event EventHandler<DtlsHandshakeCompletedEventArgs> OnHandshakeCompleted;
         public event EventHandler<DtlsAlertEventArgs> OnAlert;
 
-        public DtlsClient(TlsSession session = null, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256) 
+        public DtlsClient(TlsSession session = null, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256)
             : this(new BcTlsCrypto(), session, certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm)
         { }
 
@@ -112,7 +114,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
                     CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
                 };
             }
-            else if(CertificateSignatureAlgorithm == SignatureAlgorithm.ecdsa)
+            else if (CertificateSignatureAlgorithm == SignatureAlgorithm.ecdsa)
             {
                 // ECDSA certificates require matching cipher suites
                 return new int[]
@@ -136,26 +138,28 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
             }
         }
 
-        public virtual DtlsTransport DoHandshake(out string handshakeError, DatagramTransport datagramTransport, Func<string> getRemoteEndpoint = null, Func<string, DatagramTransport> createClientDatagramTransport = null)
+        public virtual DtlsTransport DoHandshake(out string handshakeError, DatagramTransport datagramTransport, DtlsRequest request = null)
         {
-            DtlsTransport transport = null;
-                        
-            try
+            lock (_syncRoot)
             {
-                DtlsClientProtocol clientProtocol = new DtlsClientProtocol();
+                DtlsTransport transport = null;
 
-                _clientDatagramTransport = datagramTransport;
-                transport = clientProtocol.Connect(this, datagramTransport);
-                _clientDatagramTransport = null;
-            }
-            catch (Exception ex)
-            {
-                handshakeError = ex.Message;
-                return null;
-            }
+                try
+                {
+                    DtlsClientProtocol clientProtocol = new DtlsClientProtocol();
+                    _clientDatagramTransport = datagramTransport;
+                    transport = clientProtocol.Connect(this, datagramTransport);
+                    _clientDatagramTransport = null;
+                }
+                catch (Exception ex)
+                {
+                    handshakeError = ex.Message;
+                    return null;
+                }
 
-            handshakeError = null;
-            return transport;
+                handshakeError = null;
+                return transport;
+            }
         }
 
         public override TlsSession GetSessionToResume()
@@ -167,31 +171,27 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
 
         public override void NotifyAlertRaised(short alertLevel, short alertDescription, string message, Exception cause)
         {
-            if (Log.DebugEnabled)
+            if (_logger.IsEnabled(LogLevel.Debug))
             {
-                Log.Debug("DTLS client raised alert: " + AlertLevel.GetText(alertLevel) + ", " + AlertDescription.GetText(alertDescription));
+                _logger.LogDebug("DTLS client raised alert: {AlertLevel}, {AlertDescription}.",
+                    AlertLevel.GetText(alertLevel), AlertDescription.GetText(alertDescription));
             }
             if (message != null)
             {
-                if (Log.DebugEnabled)
-                {
-                    Log.Debug("> " + message);
-                }
+                _logger.LogDebug("> {Message}", message);
             }
             if (cause != null)
             {
-                if (Log.DebugEnabled)
-                {
-                    Log.Debug("", cause);
-                }
+                _logger.LogDebug("> {Cause}", cause);
             }
         }
 
         public override void NotifyAlertReceived(short level, short alertDescription)
         {
-            if (Log.DebugEnabled)
+            if (_logger.IsEnabled(LogLevel.Debug))
             {
-                Log.Debug("DTLS client received alert: " + AlertLevel.GetText(level) + ", " + AlertDescription.GetText(alertDescription));
+                _logger.LogDebug("DTLS client received alert: {AlertLevel}, {AlertDescription}.",
+                    AlertLevel.GetText(level), AlertDescription.GetText(alertDescription));
             }
 
             TlsAlertTypesEnum alertType = TlsAlertTypesEnum.Unassigned;
@@ -213,10 +213,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
         {
             base.NotifyServerVersion(serverVersion);
 
-            if (Log.DebugEnabled)
-            {
-                Log.Debug("DTLS client negotiated " + serverVersion);
-            }
+            _logger.LogDebug("DTLS client negotiated {ServerVersion}.", serverVersion);
         }
 
         public override TlsAuthentication GetAuthentication()
@@ -231,9 +228,9 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
             ProtocolName protocolName = m_context.SecurityParameters.ApplicationProtocol;
             if (protocolName != null)
             {
-                if (Log.DebugEnabled)
+                if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    Log.Debug("Client ALPN: " + protocolName.GetUtf8Decoding());
+                    _logger.LogDebug("Client ALPN: {ApplicationProtocol}.", protocolName.GetUtf8Decoding());
                 }
             }
 
@@ -247,17 +244,11 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
 
                     if (_session != null && Arrays.AreEqual(_session.SessionID, newSessionID))
                     {
-                        if (Log.DebugEnabled)
-                        {
-                            Log.Debug("Client resumed session: " + hex);
-                        }
+                        _logger.LogDebug("Client resumed session: {SessionIdHex}.", hex);
                     }
                     else
                     {
-                        if (Log.DebugEnabled)
-                        {
-                            Log.Debug("Client established session: " + hex);
-                        }
+                        _logger.LogDebug("Client established session: {SessionIdHex}.", hex);
                     }
 
                     this._session = newSession;
@@ -266,16 +257,16 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
                 byte[] tlsServerEndPoint = m_context.ExportChannelBinding(ChannelBinding.tls_server_end_point);
                 if (null != tlsServerEndPoint)
                 {
-                    if (Log.DebugEnabled)
+                    if (_logger.IsEnabled(LogLevel.Debug))
                     {
-                        Log.Debug("Client 'tls-server-end-point': " + ToHexString(tlsServerEndPoint));
+                        _logger.LogDebug("Client 'tls-server-end-point': {TlsServerEndPoint}.", ToHexString(tlsServerEndPoint));
                     }
                 }
 
                 byte[] tlsUnique = m_context.ExportChannelBinding(ChannelBinding.tls_unique);
-                if (Log.DebugEnabled)
+                if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    Log.Debug("Client 'tls-unique': " + ToHexString(tlsUnique));
+                    _logger.LogDebug("Client 'tls-unique': {TlsUnique}.", ToHexString(tlsUnique));
                 }
             }
 
@@ -322,16 +313,14 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
             {
                 TlsCertificate[] chain = serverCertificate.Certificate.GetCertificateList();
 
-                if (Log.DebugEnabled)
-                {
-                    Log.Debug("DTLS client received server certificate chain of length " + chain.Length);
-                }
+                _logger.LogDebug("DTLS client received server certificate chain of length {CertificateCount}.", chain.Length);
                 for (int i = 0; i != chain.Length; i++)
                 {
                     X509CertificateStructure entry = X509CertificateStructure.GetInstance(chain[i].GetEncoded());
-                    if (Log.DebugEnabled)
+                    if (_logger.IsEnabled(LogLevel.Debug))
                     {
-                        Log.Debug("DTLS client fingerprint:SHA-256 " + DtlsCertificateUtils.Fingerprint(entry) + " (" + entry.Subject + ")");
+                        _logger.LogDebug("DTLS client fingerprint:SHA-256 {Fingerprint} ({Subject}).",
+                            DtlsCertificateUtils.Fingerprint(entry), entry.Subject);
                     }
                 }
 
@@ -358,7 +347,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
                     return null;
                 }
 
-                if(_client.Certificate == null || _client.CertificatePrivateKey == null)
+                if (_client.Certificate == null || _client.CertificatePrivateKey == null)
                 {
                     if (_client.AutogenerateCertificate)
                     {
@@ -385,7 +374,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
                     }
                 }
 
-                if(signatureAndHashAlgorithm == null)
+                if (signatureAndHashAlgorithm == null)
                 {
                     throw new InvalidOperationException("DTLS Client does not support the selected certificate algorithm!");
                 }
@@ -421,7 +410,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
             {
                 return true;
             }
-            
+
             return false;
         }
     }

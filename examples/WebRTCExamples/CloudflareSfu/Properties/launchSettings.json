@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "CloudflareSfu": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:63333;http://localhost:63334"
+    }
+  }
+}

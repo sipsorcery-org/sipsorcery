@@ -33,7 +33,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using SIPSorcery.Sys;
+using System.Buffers.Binary;
 
 namespace SIPSorcery.Net
 {
@@ -113,26 +113,13 @@ namespace SIPSorcery.Net
 
         public ReceptionReportSample(byte[] packet)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 0));
-                FractionLost = packet[4];
-                PacketsLost = NetConvert.DoReverseEndian(BitConverter.ToInt32(new byte[] { 0x00, packet[5], packet[6], packet[7] }, 0));
-                ExtendedHighestSequenceNumber = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 8));
-                Jitter = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 12));
-                LastSenderReportTimestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 16));
-                DelaySinceLastSenderReport = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 20));
-            }
-            else
-            {
-                SSRC = BitConverter.ToUInt32(packet, 4);
-                FractionLost = packet[4];
-                PacketsLost = BitConverter.ToInt32(new byte[] { 0x00, packet[5], packet[6], packet[7] }, 0);
-                ExtendedHighestSequenceNumber = BitConverter.ToUInt32(packet, 8);
-                Jitter = BitConverter.ToUInt32(packet, 12);
-                LastSenderReportTimestamp = BitConverter.ToUInt32(packet, 16);
-                DelaySinceLastSenderReport = BitConverter.ToUInt32(packet, 20);
-            }
+            SSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(0));
+            FractionLost = packet[4];
+            PacketsLost = BinaryPrimitives.ReadInt32BigEndian(new ReadOnlySpan<byte>(new byte[] { 0x00, packet[5], packet[6], packet[7] }));
+            ExtendedHighestSequenceNumber = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(8));
+            Jitter = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(12));
+            LastSenderReportTimestamp = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(16));
+            DelaySinceLastSenderReport = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(20));
         }
 
         /// <summary>
@@ -143,26 +130,15 @@ namespace SIPSorcery.Net
         {
             byte[] payload = new byte[24];
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, payload, 0, 4);
-                payload[4] = FractionLost;
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PacketsLost)), 1, payload, 5, 3);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtendedHighestSequenceNumber)), 0, payload, 8, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Jitter)), 0, payload, 12, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(LastSenderReportTimestamp)), 0, payload, 16, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(DelaySinceLastSenderReport)), 0, payload, 20, 4);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, payload, 0, 4);
-                payload[4] = FractionLost;
-                Buffer.BlockCopy(BitConverter.GetBytes(PacketsLost), 1, payload, 5, 3);
-                Buffer.BlockCopy(BitConverter.GetBytes(ExtendedHighestSequenceNumber), 0, payload, 8, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(Jitter), 0, payload, 12, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(LastSenderReportTimestamp), 0, payload, 16, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(DelaySinceLastSenderReport), 0, payload, 20, 4);
-            }
+            BinaryPrimitives.WriteUInt32BigEndian(payload.AsSpan(0), SSRC);
+            payload[4] = FractionLost;
+            var packetsLostBuf = new byte[4];
+            BinaryPrimitives.WriteInt32BigEndian(packetsLostBuf, PacketsLost);
+            Buffer.BlockCopy(packetsLostBuf, 1, payload, 5, 3);
+            BinaryPrimitives.WriteUInt32BigEndian(payload.AsSpan(8), ExtendedHighestSequenceNumber);
+            BinaryPrimitives.WriteUInt32BigEndian(payload.AsSpan(12), Jitter);
+            BinaryPrimitives.WriteUInt32BigEndian(payload.AsSpan(16), LastSenderReportTimestamp);
+            BinaryPrimitives.WriteUInt32BigEndian(payload.AsSpan(20), DelaySinceLastSenderReport);
 
             return payload;
         }

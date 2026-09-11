@@ -1,7 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   
   <ItemGroup>
-    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="NAudio" />
+    <!-- WaveOutEvent / WaveInEvent. Explicit because NAudio 3.0's meta-package only pulls
+         WinMM in via its net9.0-windows10.0.19041 group, which this project's platform
+         version (17763) cannot select. See the note in Directory.Packages.props. -->
+    <PackageReference Include="NAudio.WinMM" />
   </ItemGroup>
   
   <ItemGroup>
@@ -13,28 +17,40 @@
 	<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
 	<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <PackageId>SIPSorceryMedia.Windows</PackageId>
-    <TargetFrameworks>net8.0-windows10.0.17763.0</TargetFrameworks>
+    <TargetFrameworks>net10.0-windows10.0.17763.0</TargetFrameworks>
 	<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Aaron Clauson</Authors>
-    <Copyright>Copyright © 2020-2025 Aaron Clauson</Copyright>
+    <Copyright>Copyright © 2020-2026 Aaron Clauson</Copyright>
     <Company>SIP Sorcery PTY LTD</Company>
-    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <Title>SIPSorceryMedia.Windows</Title>
     <Summary>Audio and video end points for Windows capture devices.</Summary>
     <Description>Provides audio and video device access for Windows for use with the main SIPSorcery real-time communications library.</Description>
     <Product>SIPSorceryMedia.Windows</Product>
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
-    <RepositoryUrl>https://github.com/sipsorcery-org/SIPSorceryMedia.Windows</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorceryMedia.Windows</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>8.0.14</Version>
-    <AssemblyVersion>8.0.14.0</AssemblyVersion>
-    <FileVersion>8.0.14.0</FileVersion>
+    <Version>10.0.16</Version>
+    <AssemblyVersion>10.0.16</AssemblyVersion>
+    <FileVersion>10.0.16</FileVersion>
 	<RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Audio Video Codecs Encoders Decoders</PackageTags>
-	  <PackageReleaseNotes>-v8.0.14: Improvements to audio sink handling and implemented IAudioEndPoint interface.
+	  <PackageReleaseNotes>-v10.0.16: Updated nuget packages to latest stable versions.
+-v10.0.15: Updated for main sipsorcery library release.
+-v10.0.13: Fix license file.
+-v10.0.12: Updated for main sipsorcery library release.
+-v10.0.11: Updated for main sipsorcery library release.
+-v10.0.10: Updated for main sipsorcery library release.
+-v10.0.9: Updated for main sipsorcery library release.
+-v10.0.8: Full library release.
+-v10.0.7: Updated for main sipsorcery library release.
+-v10.0.6: Updated for main sipsorcery library release.
+-v10.0.5: Updated for main sipsorcery library release. Bumped target framework to net10.0.
+-v8.0.14: Improvements to audio sink handling and implemented IAudioEndPoint interface.
 -v8.0.11: Support more than one audo channel.
 -v8.0.7: Updated for changes to abstractions library.
 -v6.0.5: Updated for changes to abstractions library.
@@ -62,6 +78,7 @@
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
 	<None Include="README.md" Pack="true" PackagePath="" />
+	<None Include="..\..\LICENSE.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <PropertyGroup>

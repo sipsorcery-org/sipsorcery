@@ -54,6 +54,7 @@ using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Windows;
+using SIPSorceryMedia.Abstractions;
 
 namespace demo;
 
@@ -80,7 +81,7 @@ class Program
         bool hasCallFailed = false;
         IPAddress remotePeerIPAddress = IPAddress.None;
 
-        Log = AddConsoleLogger(LogEventLevel.Debug);
+        Log = AddConsoleLogger(LogEventLevel.Verbose);
 
         var turnServerUrl = Environment.GetEnvironmentVariable(TURN_SERVER_URL_ENV_VAR);
         TurnClient turnClient = !string.IsNullOrWhiteSpace(turnServerUrl) ?
@@ -131,9 +132,9 @@ class Program
         sipTransport.PreferIPv6NameResolution = preferIPv6;
         sipTransport.EnableTraceLogs();
 
-        var audioSession = new WindowsAudioEndPoint(new AudioEncoder());
+        var audioSession = new WindowsAudioEndPoint(new AudioEncoder(includeOpus: true));
         //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA || x.Codec == AudioCodecsEnum.PCMU);
-        //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA);
+        //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.OPUS);
         var rtpSession = new VoIPMediaSession(audioSession.ToMediaEndPoints());
 
         if (turnClient != null && remotePeerIPAddress != IPAddress.None)

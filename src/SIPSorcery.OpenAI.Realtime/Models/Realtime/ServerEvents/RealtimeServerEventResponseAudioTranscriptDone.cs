@@ -9,9 +9,10 @@ namespace SIPSorcery.OpenAI.Realtime.Models;
 public class RealtimeServerEventResponseAudioTranscriptDone : RealtimeEventBase
 {
     /// <summary>
-    /// The fixed event type string: "response.audio_transcript.done".
+    /// The fixed event type string: "response.output_audio_transcript.done".
+    /// Renamed in the GA Realtime API from the beta "response.audio_transcript.done".
     /// </summary>
-    public const string TypeName = "response.audio_transcript.done";
+    public const string TypeName = "response.output_audio_transcript.done";
 
     /// <summary>
     /// Overrides the event type property.

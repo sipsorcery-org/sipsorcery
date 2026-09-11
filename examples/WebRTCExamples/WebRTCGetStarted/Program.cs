@@ -1,14 +1,21 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example WebRTC server application that attempts to send and
-// receive audio and video. A web socket is used for signalling.
+// Description: An example WebRTC server application that attempts to send a
+// test pattern to a browser peer and that uses a prototype .NET version of the
+// VP8 encoder. A web socket is used for signalling.
+//
+// The point of this demo is that it does not require any native libraries or
+// audio/video devices. This makes it a good palce to start for checking
+// whether a particular platform can be used to establish WebRTC connections
+// and get a media strem flowing.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 12 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 12 Mar 2025	Aaron Clauson	Created, Dublin, Ireland.
+// 28 Apr 2026  Aaron Clauson   Renamed from WebRTCGetStartedVP8Net to WebRTCGetStarted.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -26,7 +33,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Encoders;
+using Vpx.Net;
 using WebSocketSharp.Server;
 
 namespace demo
@@ -65,7 +72,7 @@ namespace demo
             exitMre.WaitOne();
         }
 
-        private static async Task<RTCPeerConnection> CreatePeerConnection()
+        private static Task<RTCPeerConnection> CreatePeerConnection()
         {
             RTCConfiguration config = new RTCConfiguration
             {
@@ -74,20 +81,27 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            var testPatternSource = new VideoTestPatternSource();
-            var videoEncoderEndPoint = new VideoEncoderEndPoint();
+            // Pass the VP8 codec directly to the test pattern source so the
+            // source's GenerateTestPattern path calls EncodeVideo on the
+            // native I420 buffer and fires OnVideoSourceEncodedSample
+            // directly. Avoids a per-frame I420 -> BGR -> I420 round-trip
+            // that the alternative event-based wiring through a
+            // Vp8NetVideoEncoderEndPoint would incur (~1.4 MB / frame of
+            // throw-away allocations at 640x480, traced as the cause of
+            // ~6 Gen 2 GCs/sec under #1577).
+            var vp8Codec = new VP8Codec();
+            var testPatternSource = new VideoTestPatternSource(vp8Codec);
             var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(videoEncoderEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(videoTrack);
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(audioTrack);
 
-            testPatternSource.OnVideoSourceRawSample += videoEncoderEndPoint.ExternalVideoSourceRawSample;
-            videoEncoderEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
+            testPatternSource.OnVideoSourceEncodedSample += pc.SendVideo;
             audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
 
-            pc.OnVideoFormatsNegotiated += (formats) => videoEncoderEndPoint.SetVideoSourceFormat(formats.First());
+            pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
             pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
             pc.onsignalingstatechange += () =>
             {
@@ -123,14 +137,6 @@ namespace demo
                 }
             };
 
-            // Verify a data channel can be set up.
-            var dc = await pc.createDataChannel("test", null);
-            dc.onopen += () =>
-            {
-                logger.LogDebug($"Data channel {dc.label} opened.");
-                dc.send("Hello from SIPSorcery!");
-            };
-
             // Diagnostics.
             pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
             pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
@@ -149,7 +155,7 @@ namespace demo
             //    pc.Close("normal");
             //});
 
-            return pc;
+            return Task.FromResult(pc);
         }
 
         /// <summary>

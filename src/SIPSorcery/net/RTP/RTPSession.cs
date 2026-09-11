@@ -20,9 +20,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -110,6 +112,7 @@ namespace SIPSorcery.Net
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
         private ulong m_sdpAnnouncementVersion = 0;     // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
         internal int m_rtpChannelsCount = 0;            // Need to know the number of RTP Channels
+        private int m_nextMediaInsertionOrder = 0;      // Need to keep track of insertion order of different media for SDP renegotiation.
 
         // The stream used for the underlying RTP session to create a single RTP channel that will
         // be used to multiplex all required media streams. (see addSingleTrack())
@@ -664,35 +667,36 @@ namespace SIPSorcery.Net
 
         protected void LogRemoteSDPSsrcAttributes()
         {
-            string str = "Audio:[ ";
+            var stringBuilder = new StringBuilder("Audio:[ ");
             foreach (var audioRemoteSDPSsrcAttribute in audioRemoteSDPSsrcAttributes)
             {
                 foreach (var attr in audioRemoteSDPSsrcAttribute)
                 {
-                    str += attr.SSRC + " - ";
+                    stringBuilder.Append(attr.SSRC).Append(" - ");
                 }
             }
-            str += "] \r\n Video: [ ";
+            stringBuilder.Append("] \r\n Video: [ ");
             foreach (var videoRemoteSDPSsrcAttribute in videoRemoteSDPSsrcAttributes)
             {
-                str += " [";
+                stringBuilder.Append(" [");
                 foreach (var attr in videoRemoteSDPSsrcAttribute)
                 {
-                    str += attr.SSRC + " - ";
+                    stringBuilder.Append(attr.SSRC).Append(" - ");
                 }
-                str += "] ";
+                stringBuilder.Append("] ");
             }
-            str += "] \r\n Text: [ ";
+            stringBuilder.Append("] \r\n Text: [ ");
             foreach (var textRemoteSDPSsrcAttribute in textRemoteSDPSsrcAttributes)
             {
-                str += " [";
+                stringBuilder.Append(" [");
                 foreach (var attr in textRemoteSDPSsrcAttribute)
                 {
-                    str += attr.SSRC + " - ";
+                    stringBuilder.Append(attr.SSRC).Append(" - ");
                 }
-                str += "] ";
+                stringBuilder.Append("] ");
             }
-            str += " ]";
+            stringBuilder.Append(" ]");
+            var str = stringBuilder.ToString();
             logger.LogDebug("LogRemoteSDPSsrcAttributes: {RemoteSDPSsrcAttributes}", str);
         }
 
@@ -1032,6 +1036,7 @@ namespace SIPSorcery.Net
             else if (index == AudioStreamList.Count)
             {
                 AudioStream audioStream = new AudioStream(rtpSessionConfig, index);
+                audioStream.MediaInsertionOrder = Interlocked.Increment(ref m_nextMediaInsertionOrder);
                 AudioStreamList.Add(audioStream);
                 return audioStream;
             }
@@ -1048,6 +1053,7 @@ namespace SIPSorcery.Net
             else if (index == VideoStreamList.Count)
             {
                 VideoStream videoStream = new VideoStream(rtpSessionConfig, index);
+                videoStream.MediaInsertionOrder = Interlocked.Increment(ref m_nextMediaInsertionOrder);
                 VideoStreamList.Add(videoStream);
                 return videoStream;
             }
@@ -1063,6 +1069,7 @@ namespace SIPSorcery.Net
             else if (index == TextStreamList.Count)
             {
                 TextStream textStream = new TextStream(rtpSessionConfig, index);
+                textStream.MediaInsertionOrder = Interlocked.Increment(ref m_nextMediaInsertionOrder);
                 TextStreamList.Add(textStream);
                 return textStream;
             }
@@ -1213,8 +1220,10 @@ namespace SIPSorcery.Net
                         capabilities = SDPAudioVideoMediaFormat.GetCompatibleFormats(currentMediaStream.RemoteTrack?.Capabilities, currentMediaStream.LocalTrack?.Capabilities);
 
                         // The offerer gets to set the codec priority.
+                        // When receiving an offer: the REMOTE party is the offerer, so their Capabilities are the priority key.
+                        // When receiving an answer: LOCAL is the offerer (we sent the offer), so our Capabilities are the priority key.
                         SDPAudioVideoMediaFormat.SortMediaCapability(capabilities,
-                            sdpType == SdpType.offer ? currentMediaStream.LocalTrack?.Capabilities : currentMediaStream.RemoteTrack?.Capabilities);
+                            sdpType == SdpType.offer ? currentMediaStream.RemoteTrack?.Capabilities : currentMediaStream.LocalTrack?.Capabilities);
 
                         currentMediaStream.LocalTrack.Capabilities = capabilities;
                         currentMediaStream.RemoteTrack.Capabilities = capabilities;
@@ -1224,16 +1233,16 @@ namespace SIPSorcery.Net
                             // Adjust the local track's RTP event capability if the remote party has specified a different payload ID.
                             var currentLocalTrackCapabilities = currentMediaStream.LocalTrack.Capabilities;
                             SDPAudioVideoMediaFormat? localRTPEventCapabilities = null;
-                            if (currentLocalTrackCapabilities.Any(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE))
+                            if (currentLocalTrackCapabilities.Any(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase)))
                             {
-                                localRTPEventCapabilities = currentLocalTrackCapabilities.First(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                                localRTPEventCapabilities = currentLocalTrackCapabilities.First(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
                             }
                             else
                             {
                                 localRTPEventCapabilities = MediaStream.DefaultRTPEventFormat;
                             }
 
-                            currentMediaStream.LocalTrack.Capabilities = capabilities.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).ToList();
+                            currentMediaStream.LocalTrack.Capabilities = capabilities.Where(x => !string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase)).ToList();
                             if (localRTPEventCapabilities != null)
                             {
                                 currentMediaStream.LocalTrack.Capabilities.Add(localRTPEventCapabilities.Value);
@@ -1244,7 +1253,7 @@ namespace SIPSorcery.Net
                             if (!commonEventFormat.IsEmpty())
                             {
                                 currentMediaStream.NegotiatedRtpEventPayloadID = commonEventFormat.ID;
-                                currentMediaStream.LocalTrack.Capabilities.RemoveAll(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                                currentMediaStream.LocalTrack.Capabilities.RemoveAll(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
                                 currentMediaStream.LocalTrack.Capabilities.Add(commonEventFormat);
                             }
                         }
@@ -1273,15 +1282,22 @@ namespace SIPSorcery.Net
                             remoteRtcpEP = rtpSessionConfig.IsRtcpMultiplexed ? remoteRtpEP : new IPEndPoint(remoteRtpEP.Address, remoteRtpEP.Port + 1);
                         }
 
-                        currentMediaStream.DestinationEndPoint = (remoteRtpEP != null && remoteRtpEP.Port != SDP.IGNORE_RTP_PORT_NUMBER) ? remoteRtpEP : currentMediaStream.DestinationEndPoint;
-                        currentMediaStream.ControlDestinationEndPoint = (remoteRtcpEP != null && remoteRtcpEP.Port != SDP.IGNORE_RTP_PORT_NUMBER) ? remoteRtcpEP : currentMediaStream.ControlDestinationEndPoint;
+                        // When ICE manages the transport (WebRTC/multiplexed), the ICE layer
+                        // sets DestinationEndPoint via SetGlobalDestination when the connection
+                        // is established. Don't overwrite it from SDP during renegotiation.
+                        // For non-ICE (SIP), the SDP address IS the destination.
+                        if (!rtpSessionConfig.IsMediaMultiplexed || currentMediaStream.DestinationEndPoint == null)
+                        {
+                            currentMediaStream.DestinationEndPoint = (remoteRtpEP != null && remoteRtpEP.Port != SDP.IGNORE_RTP_PORT_NUMBER) ? remoteRtpEP : currentMediaStream.DestinationEndPoint;
+                            currentMediaStream.ControlDestinationEndPoint = (remoteRtcpEP != null && remoteRtcpEP.Port != SDP.IGNORE_RTP_PORT_NUMBER) ? remoteRtcpEP : currentMediaStream.ControlDestinationEndPoint;
+                        }
 
                         logger.LogDebug("Setting remote {SdpMediaType} track with sdp destination {DestinationEndPoint} and control destination {ControlDestinationEndPoint}.", currentMediaStream.MediaType, currentMediaStream.DestinationEndPoint, currentMediaStream.ControlDestinationEndPoint);
                     }
 
                     if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                     {
-                        if (capabilities?.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
+                        if (capabilities?.Where(x => !string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase)).Count() == 0)
                         {
                             return SetDescriptionResultEnum.AudioIncompatible;
                         }
@@ -2255,51 +2271,26 @@ namespace SIPSorcery.Net
         /// <returns>A list of the local tracks that have been added to this session.</returns>
         protected List<MediaStream> GetMediaStreams()
         {
-            List<MediaStream> mediaStream = new List<MediaStream>();
+            List<MediaStream> mediaStreams = new List<MediaStream>();
 
-            foreach (var audioStream in AudioStreamList)
+            foreach (var stream in AudioStreamList
+                .Concat<MediaStream>(VideoStreamList)
+                .Concat(TextStreamList))
             {
-                if (audioStream.LocalTrack != null)
+                if (stream.LocalTrack != null)
                 {
-                    mediaStream.Add(audioStream);
+                    mediaStreams.Add(stream);
                 }
-                else if (audioStream.RtcpSession != null && !audioStream.RtcpSession.IsClosed && audioStream.RemoteTrack != null)
+                else if (stream.RtcpSession != null && !stream.RtcpSession.IsClosed && stream.RemoteTrack != null)
                 {
-                    var inactiveAudioTrack = new MediaStreamTrack(audioStream.MediaType, false, audioStream.RemoteTrack.Capabilities, MediaStreamStatusEnum.Inactive);
-                    audioStream.LocalTrack = inactiveAudioTrack;
-                    mediaStream.Add(audioStream);
+                    var inactiveTrack = new MediaStreamTrack(stream.MediaType, false, stream.RemoteTrack.Capabilities, MediaStreamStatusEnum.Inactive);
+                    stream.LocalTrack = inactiveTrack;
+                    mediaStreams.Add(stream);
                 }
             }
 
-            foreach (var videoStream in VideoStreamList)
-            {
-                if (videoStream.LocalTrack != null)
-                {
-                    mediaStream.Add(videoStream);
-                }
-                else if (videoStream.RtcpSession != null && !videoStream.RtcpSession.IsClosed && videoStream.RemoteTrack != null)
-                {
-                    var inactiveAudioTrack = new MediaStreamTrack(videoStream.MediaType, false, videoStream.RemoteTrack.Capabilities, MediaStreamStatusEnum.Inactive);
-                    videoStream.LocalTrack = inactiveAudioTrack;
-                    mediaStream.Add(videoStream);
-                }
-            }
-
-            foreach (var textstram in TextStreamList)
-            {
-                if (textstram.LocalTrack != null)
-                {
-                    mediaStream.Add(textstram);
-                }
-                else if (textstram.RtcpSession != null && !textstram.RtcpSession.IsClosed && textstram.RemoteTrack != null)
-                {
-                    var inactiveTextTrack = new MediaStreamTrack(textstram.MediaType, false, textstram.RemoteTrack.Capabilities, MediaStreamStatusEnum.Inactive);
-                    textstram.LocalTrack = inactiveTextTrack;
-                    mediaStream.Add(textstram);
-                }
-            }
-
-            return mediaStream;
+            mediaStreams.Sort((a, b) => a.MediaInsertionOrder.CompareTo(b.MediaInsertionOrder));
+            return mediaStreams;
         }
 
         /// <summary>
@@ -2498,15 +2489,14 @@ namespace SIPSorcery.Net
 
         private void OnReceiveRTCPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
-            logger.LogTrace("RTCP packet received from {RemoteEndPoint} {Buffer}", remoteEndPoint, buffer.HexStr());
+            //logger.LogTrace("RTCP packet received from {RemoteEndPoint} {Buffer}", remoteEndPoint, buffer.HexStr());
 
             #region RTCP packet.
 
             // Get the SSRC in order to be able to figure out which media type 
             // This will let us choose the apropriate unprotect methods
 
-            uint rawSsrc = BitConverter.ToUInt32(buffer, 4);
-            uint ssrc = BitConverter.IsLittleEndian ? NetConvert.DoReverseEndian(rawSsrc) : rawSsrc;
+            uint ssrc = BinaryPrimitives.ReadUInt32BigEndian(buffer.AsSpan(4));
 
 
             MediaStream mediaStream = GetMediaStream(ssrc);
@@ -2522,7 +2512,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    buffer = buffer.Take(outBufLen).ToArray();
+                    buffer = buffer.AsSpan(0, outBufLen).ToArray();
                 }
             }
 

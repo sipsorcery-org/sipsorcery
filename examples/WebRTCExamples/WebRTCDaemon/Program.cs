@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
 // Description: Main entry point to start the application.
@@ -16,13 +16,13 @@
 //-----------------------------------------------------------------------------
 // To install as a Windows Service (NOTE: make sure to put the full path to the executable) :
 // [project dir]> dotnet publish -c Release
-// [publish dir]> sc create "SIPSorcery WebRtc Daemon" binpath="<publish dir>\WebRTCDaemon.exe" start=auto
+// [publish dir]> sc create "SIPSorcery WebRTC Daemon" binpath="<publish dir>\WebRTCDaemon.exe" start=auto
 //
 // To uninstall Windows Service:
 // [publish dir]>sc delete "SIPSorcery WebRTC Daemon" 
 //
 // For a self contained single file executable:
-// [project dir]> dotnet publish -r win-x64 -p:PublishSIngleFile=true -c Release --self-contained true
+// [project dir]> dotnet publish -r win-x64 -p:PublishSingleFile=true -c Release --self-contained true
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.DependencyInjection;

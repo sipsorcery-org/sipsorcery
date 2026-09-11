@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
 using Xunit;
@@ -21,7 +21,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public void CreateSIPUserAgentTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             SIPTransport transport = new SIPTransport();
             MockSIPChannel channel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));
@@ -40,7 +40,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public void CreateReferRequestTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             // Create a REFER request to test its structure
             var referRequest = SIPRequest.GetRequest(
@@ -67,7 +67,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public void ReferWithoutReferToHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             // Create a REFER request without a Refer-To header
             var referRequest = SIPRequest.GetRequest(
@@ -92,7 +92,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public void ReferRequiresEstablishedDialogTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             SIPTransport transport = new SIPTransport();
             MockSIPChannel channel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));
@@ -121,7 +121,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public void ReferAuthenticationResponseTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             // Create a REFER request
             var referRequest = SIPRequest.GetRequest(
@@ -163,7 +163,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public void ReferAcceptedResponseTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             // Create a REFER request
             var referRequest = SIPRequest.GetRequest(
@@ -194,7 +194,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public void ReferWithAuthenticationTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             // Create a REFER request
             var referRequest = SIPRequest.GetRequest(

@@ -19,6 +19,7 @@ using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
 
@@ -43,8 +44,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void AudioOnlyOfferAnswerTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Create two RTP sessions. First one acts as the local session to generate the offer.
             // Second one acts as the remote session to generate the answer.
@@ -92,8 +93,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void NoLocalTracksTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Create two RTP sessions. First one acts as the local session to generate the offer.
             // Second one acts as the remote session to generate the answer.
@@ -127,8 +128,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void NoRemoteMediaTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPSession localSession = new RTPSession(false, false, false);
             MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
@@ -152,8 +153,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void NoMatchingMediaTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPSession localSession = new RTPSession(false, false, false);
             MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
@@ -181,8 +182,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void InvalidPortInRemoteOfferTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPSession localSession = new RTPSession(false, false, false);
             MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
@@ -218,8 +219,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CheckCreateOfferWithIPv4BindAddressAnswerTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Create two RTP sessions. First one acts as the local session to generate the offer.
             // Second one acts as the remote session to generate the answer.
@@ -245,8 +246,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CheckCreateOfferWithIPv6BindAddressAnswerTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Create two RTP sessions. First one acts as the local session to generate the offer.
             // Second one acts as the remote session to generate the answer.
@@ -272,8 +273,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void AudioVideoOfferNoLocalVideoUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Create two RTP sessions. First one acts as the local session to generate the offer.
             // Second one acts as the remote session to generate the answer.
@@ -316,8 +317,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void AudioVideoOfferNoLocalAudioUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Create two RTP sessions. First one acts as the local session to generate the offer.
             // Second one acts as the remote session to generate the answer.
@@ -359,8 +360,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CheckDuplicateBindPortFailsUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Create two RTP sessions. First one acts as the local session to generate the offer.
             // Second one acts as the remote session to generate the answer.
@@ -389,8 +390,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void MediaOrderMatchesRemoteOfferUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // By default offers made by us always put audio first. Create a remote SDP offer 
             // with the video first.
@@ -449,8 +450,8 @@ a=sendrecv";
         [Fact]
         public void SetRemoteSDPNoMediaStreamAttributeUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string remoteSdp =
             @"v=0
@@ -495,8 +496,8 @@ a=rtpmap:111 OPUS/48000/2";
         [Fact]
         public void CheckSelectedAudioFormatAttributeUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string remoteSdp =
             @"v=0
@@ -567,8 +568,8 @@ a=fmtp:100 98/98";
         [Fact]
         public void ModifiedWellKnownFormatIDUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string remoteSdp =
             @"v=0
@@ -603,6 +604,72 @@ a=rtpmap:12 PCMA/8000";
 
             //Assert.Equal(8, answer.Media.Single().MediaFormats.Single().Key);
             //Assert.Equal("PCMA", answer.Media.Single().MediaFormats.Single().Value.Name());
+
+            rtpSession.Close("normal");
+        }
+
+        /// <summary>
+        /// Tests that when video is added before audio, the SDP offer preserves that order
+        /// (video m-line first, audio m-line second) per RFC 3264 §8.
+        /// </summary>
+        [Fact]
+        public void OfferMLineOrderVideoFirstThenAudio()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            RTPSession rtpSession = new RTPSession(false, false, false);
+
+            // Add video first.
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false,
+                new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
+            rtpSession.addTrack(videoTrack);
+
+            // Add audio second.
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false,
+                new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
+            rtpSession.addTrack(audioTrack);
+
+            var offer = rtpSession.CreateOffer(IPAddress.Loopback);
+
+            logger.LogDebug("Offer SDP:\n{Sdp}", offer);
+
+            Assert.Equal(2, offer.Media.Count);
+            Assert.Equal(SDPMediaTypesEnum.video, offer.Media[0].Media);
+            Assert.Equal(SDPMediaTypesEnum.audio, offer.Media[1].Media);
+
+            rtpSession.Close("normal");
+        }
+
+        /// <summary>
+        /// Tests that the traditional audio-then-video order is preserved when tracks are added
+        /// in that order (backward compatibility).
+        /// </summary>
+        [Fact]
+        public void OfferMLineOrderAudioFirstThenVideo()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            RTPSession rtpSession = new RTPSession(false, false, false);
+
+            // Add audio first.
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false,
+                new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
+            rtpSession.addTrack(audioTrack);
+
+            // Add video second.
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false,
+                new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
+            rtpSession.addTrack(videoTrack);
+
+            var offer = rtpSession.CreateOffer(IPAddress.Loopback);
+
+            logger.LogDebug("Offer SDP:\n{Sdp}", offer);
+
+            Assert.Equal(2, offer.Media.Count);
+            Assert.Equal(SDPMediaTypesEnum.audio, offer.Media[0].Media);
+            Assert.Equal(SDPMediaTypesEnum.video, offer.Media[1].Media);
 
             rtpSession.Close("normal");
         }

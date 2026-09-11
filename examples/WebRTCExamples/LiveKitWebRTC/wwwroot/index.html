@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LiveKit Subscriber</title>
+    <style>
+        body { font-family: sans-serif; margin: 1rem; }
+        button { margin-top: 0.8rem; margin-right: 0.6rem; }
+        #status { margin-top: 0.8rem; white-space: pre-wrap; }
+        #publisher { margin-top: 0.6rem; color: #444; }
+        video { margin-top: 1rem; background: #000; width: 640px; max-width: 100%; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+    <script type="text/javascript">
+        let room;
+
+        function setStatus(msg) {
+            const el = document.querySelector("#status");
+            el.textContent += `${msg}\n`;
+            console.log(msg);
+        }
+
+        // Shows whether the C# publisher's peer connection to LiveKit is up. Polled so the page
+        // reflects the publisher coming online without a manual refresh.
+        // async function refreshStatus() {
+        //     try {
+        //         const r = await fetch("/api/status");
+        //         const info = await r.json();
+        //         document.querySelector("#publisher").textContent =
+        //             `Room: ${info.room} | publisher '${info.publisherIdentity}' peer connection: ${info.publisherState}`;
+        //     } catch (err) {
+        //         document.querySelector("#publisher").textContent = `Could not load publisher status: ${err?.message || err}`;
+        //     }
+        // }
+
+        async function start() {
+            try {
+                document.querySelector("#status").textContent = "";
+
+                if (!window.LivekitClient) {
+                    throw new Error("The LiveKit client SDK failed to load from the CDN.");
+                }
+                const { Room, RoomEvent } = window.LivekitClient;
+
+                // The browser only ever talks to this app for credentials. The app holds the
+                // LiveKit API key and secret and mints a subscribe-only token scoped to the room.
+                const resp = await fetch("/api/join", { method: "POST" });
+                if (!resp.ok) {
+                    throw new Error(`/api/join -> HTTP ${resp.status}: ${await resp.text()}`);
+                }
+                const join = await resp.json();
+                setStatus(`Joining room ${join.room} as ${join.identity}...`);
+
+                room = new Room();
+
+                room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+                    setStatus(`Subscribed to ${track.kind} track from ${participant.identity}.`);
+                    // Attach BOTH the audio and video tracks to the same video element; the SDK
+                    // merges them into the element's MediaStream. If the audio is attached to a
+                    // separate (hidden) audio element instead, the video element has no audio
+                    // track and the browser's native volume control stays permanently disabled.
+                    track.attach(document.querySelector("#videoCtl"));
+                });
+
+                room.on(RoomEvent.TrackUnsubscribed, (track) => {
+                    track.detach();
+                });
+
+                room.on(RoomEvent.ParticipantConnected, (p) => setStatus(`Participant connected: ${p.identity}.`));
+                room.on(RoomEvent.ParticipantDisconnected, (p) => setStatus(`Participant disconnected: ${p.identity}.`));
+                room.on(RoomEvent.ConnectionStateChanged, (state) => setStatus(`Connection state: ${state}.`));
+                room.on(RoomEvent.Disconnected, () => setStatus("Disconnected from room."));
+
+                await room.connect(join.url, join.token);
+
+                setStatus(`Connected to room ${room.name}. Remote participants: ${room.remoteParticipants.size}.`);
+            } catch (err) {
+                setStatus(`Start failed: ${err?.message || err}`);
+            }
+        }
+
+        async function closePeer() {
+            try {
+                if (room) {
+                    await room.disconnect();
+                    room = null;
+                }
+                document.querySelector("#videoCtl").srcObject = null;
+                setStatus("Closed.");
+            } catch (err) {
+                setStatus(`Close failed: ${err?.message || err}`);
+            }
+        }
+
+        // window.addEventListener("load", () => {
+        //     refreshStatus();
+        //     setInterval(refreshStatus, 5000);
+        // });
+    </script>
+</head>
+<body>
+    <h2>LiveKit Subscriber</h2>
+
+    <!--<div id="publisher">Loading status...</div>-->
+
+    <div>
+        <button type="button" onclick="start();">Subscribe</button>
+        <button type="button" onclick="closePeer();">Close</button>
+    </div>
+
+    <div id="status"></div>
+    <!--<video id="videoCtl" autoplay playsinline controls></video>-->
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+</body>
+</html>

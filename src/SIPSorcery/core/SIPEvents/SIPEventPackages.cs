@@ -66,10 +66,11 @@ namespace SIPSorcery.SIP
             {
                 return false;
             }
-            else {
+            else
+            {
                 value = value.Trim();
 
-                return 
+                return
                     string.Equals(value, DIALOG_EVENT_VALUE, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(value, MESSAGE_SUMMARY_EVENT_VALUE, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(value, PRESENCE_EVENT_VALUE, StringComparison.OrdinalIgnoreCase) ||
@@ -85,26 +86,22 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                value = value.Trim().ToLower();
-                switch (value)
+                var valueSpan = value.AsSpan().Trim();
+
+                return valueSpan switch
                 {
-                    case DIALOG_EVENT_VALUE:
-                        return SIPEventPackagesEnum.Dialog;
-                    case MESSAGE_SUMMARY_EVENT_VALUE:
-                        return SIPEventPackagesEnum.MessageSummary;
-                    case PRESENCE_EVENT_VALUE:
-                        return SIPEventPackagesEnum.Presence;
-                    case REFER_EVENT_VALUE:
-                        return SIPEventPackagesEnum.Refer;
-                    default:
-                        return SIPEventPackagesEnum.None;
-                }
+                    _ when DIALOG_EVENT_VALUE.Equals(valueSpan, StringComparison.OrdinalIgnoreCase) => SIPEventPackagesEnum.Dialog,
+                    _ when MESSAGE_SUMMARY_EVENT_VALUE.Equals(valueSpan, StringComparison.OrdinalIgnoreCase) => SIPEventPackagesEnum.MessageSummary,
+                    _ when PRESENCE_EVENT_VALUE.Equals(valueSpan, StringComparison.OrdinalIgnoreCase) => SIPEventPackagesEnum.Presence,
+                    _ when REFER_EVENT_VALUE.Equals(valueSpan, StringComparison.OrdinalIgnoreCase) => SIPEventPackagesEnum.Refer,
+                    _ => SIPEventPackagesEnum.None,
+                };
             }
         }
 
         public static string GetEventHeader(SIPEventPackagesEnum eventPackage)
         {
-            switch(eventPackage)
+            switch (eventPackage)
             {
                 case SIPEventPackagesEnum.Dialog:
                     return DIALOG_EVENT_VALUE;
@@ -163,9 +160,13 @@ namespace SIPSorcery.SIP
             {
                 return false;
             }
-            else if (value.ToLower() == "cancelled" || value.ToLower() == "error" || value.ToLower() == "local-bye" ||
-                value.ToLower() == "rejected" || value.ToLower() == "replaced" || value.ToLower() == "remote-bye" ||
-                value.ToLower() == "timeout")
+            else if ("cancelled".Equals(value, StringComparison.OrdinalIgnoreCase) ||
+                "error".Equals(value, StringComparison.OrdinalIgnoreCase) ||
+                "local-bye".Equals(value, StringComparison.OrdinalIgnoreCase) ||
+                "rejected".Equals(value, StringComparison.OrdinalIgnoreCase) ||
+                "replaced".Equals(value, StringComparison.OrdinalIgnoreCase) ||
+                "remote-bye".Equals(value, StringComparison.OrdinalIgnoreCase) ||
+                "timeout".Equals(value, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -183,26 +184,18 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                string trimmedValue = value.Trim().ToLower();
-                switch (trimmedValue)
+                var trimmedValue = value.AsSpan().Trim();
+                return trimmedValue switch
                 {
-                    case "cancelled":
-                        return SIPEventDialogStateEvent.Cancelled;
-                    case "error":
-                        return SIPEventDialogStateEvent.Error;
-                    case "local-bye":
-                        return SIPEventDialogStateEvent.LocalBye;
-                    case "rejected":
-                        return SIPEventDialogStateEvent.Rejected;
-                    case "replaced":
-                        return SIPEventDialogStateEvent.Replaced;
-                    case "remote-bye":
-                        return SIPEventDialogStateEvent.RemoteBye;
-                    case "timeout":
-                        return SIPEventDialogStateEvent.Timeout;
-                    default:
-                        throw new ArgumentException("The value is not valid for a SIPEventDialogStateEvent.");
-                }
+                    _ when "cancelled".Equals(trimmedValue, StringComparison.OrdinalIgnoreCase) => SIPEventDialogStateEvent.Cancelled,
+                    _ when "error".Equals(trimmedValue, StringComparison.OrdinalIgnoreCase) => SIPEventDialogStateEvent.Error,
+                    _ when "local-bye".Equals(trimmedValue, StringComparison.OrdinalIgnoreCase) => SIPEventDialogStateEvent.LocalBye,
+                    _ when "rejected".Equals(trimmedValue, StringComparison.OrdinalIgnoreCase) => SIPEventDialogStateEvent.Rejected,
+                    _ when "replaced".Equals(trimmedValue, StringComparison.OrdinalIgnoreCase) => SIPEventDialogStateEvent.Replaced,
+                    _ when "remote-bye".Equals(trimmedValue, StringComparison.OrdinalIgnoreCase) => SIPEventDialogStateEvent.RemoteBye,
+                    _ when "timeout".Equals(trimmedValue, StringComparison.OrdinalIgnoreCase) => SIPEventDialogStateEvent.Timeout,
+                    _ => throw new ArgumentException("The value is not valid for a SIPEventDialogStateEvent."),
+                };
             }
         }
 

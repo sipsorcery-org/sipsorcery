@@ -27,14 +27,20 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
     public class DtlsSrtpKeys
     {
         public SrtpProtectionProfileConfiguration ProtectionProfile { get; }
-        public byte[] Mki { get; }
+        public ReadOnlyMemory<byte> Mki { get; }
 
-        public byte[] ClientWriteMasterKey { get; }
-        public byte[] ClientWriteMasterSalt { get; }
-        public byte[] ServerWriteMasterKey { get; }
-        public byte[] ServerWriteMasterSalt { get; }
+        public ReadOnlyMemory<byte> ClientWriteMasterKey { get; }
+        public ReadOnlyMemory<byte> ClientWriteMasterSalt { get; }
+        public ReadOnlyMemory<byte> ServerWriteMasterKey { get; }
+        public ReadOnlyMemory<byte> ServerWriteMasterSalt { get; }
 
-        public DtlsSrtpKeys(SrtpProtectionProfileConfiguration protectionProfile, byte[] mki = null)
+        public DtlsSrtpKeys(
+            SrtpProtectionProfileConfiguration protectionProfile,
+            ReadOnlyMemory<byte> clientWriteMasterKey,
+            ReadOnlyMemory<byte> clientWriteMasterSalt,
+            ReadOnlyMemory<byte> serverWriteMasterKey,
+            ReadOnlyMemory<byte> serverWriteMasterSalt,
+            ReadOnlyMemory<byte> mki = default)
         {
             this.ProtectionProfile = protectionProfile ?? throw new ArgumentNullException(nameof(protectionProfile));
             this.Mki = mki;
@@ -42,10 +48,18 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
             int cipherKeyLen = protectionProfile.CipherKeyLength >> 3;
             int cipherSaltLen = protectionProfile.CipherSaltLength >> 3;
 
-            this.ClientWriteMasterKey = new byte[cipherKeyLen];
-            this.ClientWriteMasterSalt = new byte[cipherSaltLen];
-            this.ServerWriteMasterKey = new byte[cipherKeyLen];
-            this.ServerWriteMasterSalt = new byte[cipherSaltLen];
+            if (clientWriteMasterKey.Length != cipherKeyLen
+                || clientWriteMasterSalt.Length != cipherSaltLen
+                || serverWriteMasterKey.Length != cipherKeyLen
+                || serverWriteMasterSalt.Length != cipherSaltLen)
+            {
+                throw new ArgumentException();
+            }
+
+            this.ClientWriteMasterKey = clientWriteMasterKey;
+            this.ClientWriteMasterSalt = clientWriteMasterSalt;
+            this.ServerWriteMasterKey = serverWriteMasterKey;
+            this.ServerWriteMasterSalt = serverWriteMasterSalt;
         }
     }
 }

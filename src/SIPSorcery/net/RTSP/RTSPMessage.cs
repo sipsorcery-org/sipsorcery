@@ -97,7 +97,7 @@ namespace SIPSorcery.Net
                 {
                     rtspMessage.FirstLine = message.Substring(0, endFistLinePosn);
 
-                    if (rtspMessage.FirstLine.Substring(0, RTSP_RESPONSE_PREFIX.Length) == RTSP_RESPONSE_PREFIX)
+                    if (rtspMessage.FirstLine.AsSpan(0, RTSP_RESPONSE_PREFIX.Length).Equals(RTSP_RESPONSE_PREFIX, StringComparison.Ordinal))
                     {
                         rtspMessage.RTSPMessageType = RTSPMessageTypesEnum.Response;
                     }

@@ -27,8 +27,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Text;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -82,14 +82,7 @@ namespace SIPSorcery.Net
 
             Header = new RTCPHeader(packet);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-            }
-            else
-            {
-                SSRC = BitConverter.ToUInt32(packet, 4);
-            }
+            SSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(4));
 
             if (packet.Length > MIN_PACKET_SIZE)
             {
@@ -116,14 +109,7 @@ namespace SIPSorcery.Net
             Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
             int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, buffer, payloadIndex, 4);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, buffer, payloadIndex, 4);
-            }
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(payloadIndex), SSRC);
 
             if (reasonLength > 0)
             {

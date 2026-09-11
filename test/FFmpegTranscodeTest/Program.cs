@@ -128,7 +128,7 @@ class Program
                     {
                         byte[] arr = new byte[pPacket->size];
                         Marshal.Copy((IntPtr)pPacket->data, arr, 0, pPacket->size);
-                        Console.WriteLine($"VP8 encoded packet size {arr.Length}, sha256: " + Convert.ToBase64String(SHA256.HashData(arr)));
+                        Console.WriteLine($"VP8 encoded packet size {arr.Length}, sha256: {Convert.ToBase64String(SHA256.HashData(arr))}");
                     }
                     else if (error == ffmpeg.AVERROR(ffmpeg.EAGAIN))
                     {

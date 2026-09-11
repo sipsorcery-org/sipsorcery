@@ -28,7 +28,7 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     ["offset_x"] = rect.X.ToString(),
                     ["offset_y"] = rect.Y.ToString(),
-                    ["video_size"] = $"{rect.Width.ToString()}X{rect.Height.ToString()}",
+                    ["video_size"] = $"{rect.Width}X{rect.Height}",
                     ["framerate"] = frameRate.ToString()
                 };
             }
@@ -37,7 +37,7 @@ namespace SIPSorceryMedia.FFmpeg
                 inputFormat = "avfoundation";
                 options = new Dictionary<string, string>()
                 {
-                    ["vf"] = $"crop={rect.Width.ToString()}:{rect.Height.ToString()}:{rect.X.ToString()}:{rect.Y.ToString()}",
+                    ["vf"] = $"crop={rect.Width}:{rect.Height}:{rect.X}:{rect.Y}",
                     ["framerate"] = frameRate.ToString()
                 };
             }
@@ -47,7 +47,7 @@ namespace SIPSorceryMedia.FFmpeg
                 //https://superuser.com/questions/1562228/how-to-specify-the-size-to-record-the-screen-with-ffmpeg
                 options = new Dictionary<string, string>()
                 {
-                    ["video_size"] = $"{rect.Width.ToString()}X{rect.Height.ToString()}",
+                    ["video_size"] = $"{rect.Width}X{rect.Height}",
                     ["grab_x"] = rect.X.ToString(),
                     ["grab_y"] = rect.Y.ToString(),
                     ["framerate"] = frameRate.ToString()

@@ -43,8 +43,8 @@ namespace SIPSorcery.UnitTests.sys.net
         [Fact]
         public void GetSequentialPortUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var portRange = new PortRange(6000, 6005);
             Assert.Equal(6000, portRange.GetNextPort());
@@ -60,8 +60,8 @@ namespace SIPSorcery.UnitTests.sys.net
         [Fact]
         public void GetShuffledPortsEvenlyDistributedUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var portRange = new PortRange(6000, 6011, shuffle: true);
             var portCount = new Dictionary<int, int>();

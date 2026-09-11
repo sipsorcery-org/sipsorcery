@@ -18,19 +18,41 @@ using System.Text.RegularExpressions;
 
 namespace SIPSorcery.SIP
 {
-    public class SIPReplacesParameter
+    public partial class SIPReplacesParameter
     {
         public string CallID;
         public string ToTag;
         public string FromTag;
+        private const string CALL_ID_REGEX_PATTERN = "^(?<callid>.*?);";
+        private const string TO_TAG_REGEX_PATTERN = "to-tag=(?<totag>.*?)(;|$)";
+        private const string FROM_TAG_REGEX_PATTERN = "from-tag=(?<fromtag>.*?)(;|$)";
+
+#if NET7_0_OR_GREATER
+        [GeneratedRegex(CALL_ID_REGEX_PATTERN)]
+        private static partial Regex CallIDRegex();
+
+        [GeneratedRegex(TO_TAG_REGEX_PATTERN, RegexOptions.IgnoreCase)]
+        private static partial Regex ToTagRegex();
+
+        [GeneratedRegex(FROM_TAG_REGEX_PATTERN, RegexOptions.IgnoreCase)]
+        private static partial Regex FromTagRegex();
+#else
+        private static readonly Regex m_callIdRegex = new Regex(CALL_ID_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_toTagRegex = new Regex(TO_TAG_REGEX_PATTERN, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex m_fromTagRegex = new Regex(FROM_TAG_REGEX_PATTERN, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        private static Regex CallIDRegex() => m_callIdRegex;
+        private static Regex ToTagRegex() => m_toTagRegex;
+        private static Regex FromTagRegex() => m_fromTagRegex;
+#endif
 
         public static SIPReplacesParameter Parse(string replaces)
         {
-            var callIDMatch = Regex.Match(replaces, "^(?<callid>.*?);");
+            var callIDMatch = CallIDRegex().Match(replaces);
             if (replaces.IndexOf(';') != -1)
             {
-                var toTagMatch = Regex.Match(replaces, "to-tag=(?<totag>.*?)(;|$)", RegexOptions.IgnoreCase);
-                var fromTagMatch = Regex.Match(replaces, "from-tag=(?<fromtag>.*?)(;|$)", RegexOptions.IgnoreCase);
+                var toTagMatch = ToTagRegex().Match(replaces);
+                var fromTagMatch = FromTagRegex().Match(replaces);
 
                 if (toTagMatch.Success && fromTagMatch.Success)
                 {

@@ -123,6 +123,6 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
         short CertificateHashAlgorithm { get; }
         void SetCertificate(Certificate certificate, AsymmetricKeyParameter privateKey, short signatureAlgorithm, short hashAlgorithm);
 
-        DtlsTransport DoHandshake(out string handshakeError, DatagramTransport datagramTransport, Func<string> getRemoteEndpoint, Func<string, DatagramTransport> createClientDatagramTransport);
+        DtlsTransport DoHandshake(out string handshakeError, DatagramTransport datagramTransport, DtlsRequest request = null);
     }
 }

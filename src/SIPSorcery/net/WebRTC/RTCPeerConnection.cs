@@ -37,7 +37,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Globalization;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -70,24 +72,130 @@ namespace SIPSorcery.Net
 
         public string toJSON()
         {
-            return TinyJson.JSONWriter.ToJson(this);
+            var builder = new StringBuilder(sdp != null ? sdp.Length + 64 : 64);
+
+            var writer = new JsonObjectWriter(builder);
+            writer.WriteString(nameof(type), ToJsonValue(type));
+
+            if (sdp != null)
+            {
+                writer.WriteString(nameof(sdp), sdp);
+            }
+
+            writer.End();
+
+            return builder.ToString();
         }
 
         public static bool TryParse(string json, out RTCSessionDescriptionInit init)
         {
             init = null;
 
-            if (string.IsNullOrWhiteSpace(json))
+            if (string.IsNullOrWhiteSpace(json) || !JsonObjectParser.TryCreate(json, out var parser))
             {
                 return false;
             }
-            else
-            {
-                init = TinyJson.JSONParser.FromJson<RTCSessionDescriptionInit>(json);
 
-                // To qualify as parsed all required fields must be set.
-                return init != null &&
-                    init.sdp != null;
+            var parsed = new RTCSessionDescriptionInit();
+
+            while (parser.TryReadMember(out var name, out var kind, out var value))
+            {
+                if (JsonObjectParser.IsMember(name, nameof(type)))
+                {
+                    // A null leaves the type at its default. A value that is not a recognised
+                    // type fails the parse rather than silently becoming an answer, which is
+                    // the enum default. The type values themselves are case sensitive.
+                    if (kind != JsonValueKind.Null)
+                    {
+                        if (!TryParseSdpType(kind, value, out var sdpType))
+                        {
+                            return false;
+                        }
+
+                        parsed.type = sdpType;
+                    }
+                }
+                else if (JsonObjectParser.IsMember(name, nameof(sdp)))
+                {
+                    parsed.sdp = kind == JsonValueKind.String ? value.ToString() : null;
+                }
+            }
+
+            if (parser.Failed)
+            {
+                return false;
+            }
+
+            init = parsed;
+
+            // To qualify as parsed all required fields must be set.
+            return init.sdp != null;
+        }
+
+        /// <summary>
+        /// The session description type is exchanged as a string, not as the underlying
+        /// integer, which is what a browser produces and expects.
+        /// </summary>
+        private static string ToJsonValue(RTCSdpType type)
+        {
+            switch (type)
+            {
+                case RTCSdpType.answer:
+                    return "answer";
+                case RTCSdpType.offer:
+                    return "offer";
+                case RTCSdpType.pranswer:
+                    return "pranswer";
+                case RTCSdpType.rollback:
+                    return "rollback";
+                default:
+                    return type.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Reads the session description type. A string is what a browser sends and what this
+        /// library emits. A number is also accepted because a peer using a general purpose
+        /// serialiser with default settings will serialise the enum as its underlying value.
+        /// </summary>
+        private static bool TryParseSdpType(JsonValueKind kind, ReadOnlySpan<char> value, out RTCSdpType type)
+        {
+            if (kind == JsonValueKind.Number)
+            {
+                if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var numeric) &&
+                    numeric >= (int)RTCSdpType.answer && numeric <= (int)RTCSdpType.rollback)
+                {
+                    type = (RTCSdpType)numeric;
+                    return true;
+                }
+
+                type = default;
+                return false;
+            }
+
+            if (kind != JsonValueKind.String)
+            {
+                type = default;
+                return false;
+            }
+
+            switch (value)
+            {
+                case var _ when value.SequenceEqual("answer"):
+                    type = RTCSdpType.answer;
+                    return true;
+                case var _ when value.SequenceEqual("offer"):
+                    type = RTCSdpType.offer;
+                    return true;
+                case var _ when value.SequenceEqual("pranswer"):
+                    type = RTCSdpType.pranswer;
+                    return true;
+                case var _ when value.SequenceEqual("rollback"):
+                    type = RTCSdpType.rollback;
+                    return true;
+                default:
+                    type = default;
+                    return false;
             }
         }
     }
@@ -263,11 +371,14 @@ namespace SIPSorcery.Net
                 lock (_renegotiationLock)
                 {
                     _requireRenegotiation = value;
-                    //Remove Remote Description
-                    if (_requireRenegotiation)
-                    {
-                        RemoteDescription = null;
-                    }
+
+                    // RemoteDescription is intentionally preserved during renegotiation.
+                    // createBaseSdp() needs it to maintain the m-line order from the
+                    // previous offer/answer exchange (RFC 3264 §8).
+                    // if (_requireRenegotiation)
+                    // {
+                    //     RemoteDescription = null;
+                    // }
                 }
 
                 //Remove NegotiationTask when state not stable
@@ -316,6 +427,36 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<RTCDataChannel> ondatachannel;
 
+        private Func<IPEndPoint, IPEndPoint> _remoteEndpointTranslator;
+
+        /// <summary>
+        /// Optional hook to normalize the source endpoint of received traffic before it's
+        /// compared against ICE candidates and the nominated pair. Used to reconcile the
+        /// address an in-process TURN relay socket uses when sending to a local destination
+        /// (a local interface IP) with the advertised relay address (typically a public IP
+        /// in <c>XOR-RELAYED-ADDRESS</c>).
+        ///
+        /// The delegate receives the observed source endpoint and returns either a
+        /// translated endpoint (when it recognizes the source as a known relay socket)
+        /// or <c>null</c> / the input unchanged when no translation applies.
+        ///
+        /// Setting this property also propagates the value to the underlying
+        /// <see cref="RtpIceChannel"/> so peer-reflexive candidate creation honours the
+        /// same mapping. When unset, behaviour is identical to prior versions.
+        /// </summary>
+        public Func<IPEndPoint, IPEndPoint> RemoteEndpointTranslator
+        {
+            get => _remoteEndpointTranslator;
+            set
+            {
+                _remoteEndpointTranslator = value;
+                if (_rtpIceChannel != null)
+                {
+                    _rtpIceChannel.RemoteEndpointTranslator = value;
+                }
+            }
+        }
+
         /// <summary>
         /// Constructor to create a new RTC peer connection instance.
         /// </summary>
@@ -343,6 +484,10 @@ namespace SIPSorcery.Net
             if (configuration != null)
             {
                 _configuration = configuration;
+
+                //test turns:
+                //_configuration.iceTransportPolicy = RTCIceTransportPolicy.relay;
+                //_configuration.iceServers = _configuration.iceServers.Where(p => p.urls.StartsWith("turns")).ToList();
 
                 if (!InitializeCertificates(configuration))
                 {
@@ -375,6 +520,12 @@ namespace SIPSorcery.Net
             addSingleTrack(videoAsPrimary);
 
             _rtpIceChannel = GetRtpChannel();
+
+            // Propagate any translator that was set before the channel existed.
+            if (_remoteEndpointTranslator != null)
+            {
+                _rtpIceChannel.RemoteEndpointTranslator = _remoteEndpointTranslator;
+            }
 
             _rtpIceChannel.OnIceCandidate += (candidate) => _onIceCandidate?.Invoke(candidate);
             _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
@@ -619,9 +770,39 @@ namespace SIPSorcery.Net
         /// <param name="init">The answer/offer SDP from the remote party.</param>
         public SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit init)
         {
-            remoteDescription = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
+            SDP remoteSdp = SDP.ParseSDPDescription(init.sdp);
 
-            SDP remoteSdp = remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
+            // The remote DTLS fingerprint is checked before any session state is updated. Once the DTLS
+            // handshake has completed the remote peer's certificate is pinned for the lifetime of the
+            // connection. Changing the certificate requires a new DTLS handshake, and per RFC 8842 an ICE
+            // restart to go with it, neither of which are currently supported. The offer is rejected
+            // instead and it is left to the remote peer to decide whether to close the connection.
+            var fingerprintResult = GetRemoteDtlsFingerprint(remoteSdp, out string remoteFingerprintAttribute);
+            RTCDtlsFingerprint remoteFingerprint = null;
+
+            if (fingerprintResult == SetDescriptionResultEnum.DtlsFingerprintMissing)
+            {
+                logger.LogWarning("The DTLS fingerprint was missing from the remote party's session description.");
+                return SetDescriptionResultEnum.DtlsFingerprintMissing;
+            }
+            else if (fingerprintResult == SetDescriptionResultEnum.DtlsFingerprintConflict)
+            {
+                logger.LogWarning("The remote party's session description contained media announcements with different DTLS fingerprints. Remote description rejected.");
+                return SetDescriptionResultEnum.DtlsFingerprintConflict;
+            }
+            else if (!RTCDtlsFingerprint.TryParse(remoteFingerprintAttribute.Trim().ToLower(), out remoteFingerprint))
+            {
+                logger.LogWarning("The DTLS fingerprint was invalid or not supported.");
+                return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
+            }
+            else if (IsDtlsNegotiationComplete && !IsRemoteDtlsFingerprintMatch(remoteFingerprint))
+            {
+                logger.LogWarning("The DTLS fingerprint in the remote party's session description did not match the certificate from the completed DTLS handshake, expected {ExpectedFingerprint}, actual {RemoteFingerprint}. Remote description rejected.",
+                    RemotePeerDtlsFingerprint, remoteFingerprint);
+                return SetDescriptionResultEnum.DtlsFingerprintChanged;
+            }
+
+            remoteDescription = new RTCSessionDescription { type = init.type, sdp = remoteSdp };
 
             // Need to store uri/id of know extensions
             _rtpExtensionsUsed ??= new Dictionary<string, int>();
@@ -656,16 +837,14 @@ namespace SIPSorcery.Net
             {
                 string remoteIceUser = remoteSdp.IceUfrag;
                 string remoteIcePassword = remoteSdp.IcePwd;
-                string dtlsFingerprint = remoteSdp.DtlsFingerprint;
                 IceRolesEnum? remoteIceRole = remoteSdp.IceRole;
 
                 foreach (var ann in remoteSdp.Media)
                 {
-                    if (remoteIceUser == null || remoteIcePassword == null || dtlsFingerprint == null || remoteIceRole == null)
+                    if (remoteIceUser == null || remoteIcePassword == null || remoteIceRole == null)
                     {
                         remoteIceUser = remoteIceUser ?? ann.IceUfrag;
                         remoteIcePassword = remoteIcePassword ?? ann.IcePwd;
-                        dtlsFingerprint = dtlsFingerprint ?? ann.DtlsFingerprint;
                         remoteIceRole = remoteIceRole ?? ann.IceRole;
                     }
 
@@ -677,7 +856,6 @@ namespace SIPSorcery.Net
                         if (ann.Transport == RTP_MEDIA_DATACHANNEL_DTLS_PROFILE ||
                             ann.Transport == RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE)
                         {
-                            dtlsFingerprint = dtlsFingerprint ?? ann.DtlsFingerprint;
                             remoteIceRole = remoteIceRole ?? remoteSdp.IceRole;
                         }
                         else
@@ -711,24 +889,7 @@ namespace SIPSorcery.Net
                     _rtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
                 }
 
-                if (!string.IsNullOrWhiteSpace(dtlsFingerprint))
-                {
-                    dtlsFingerprint = dtlsFingerprint.Trim().ToLower();
-                    if (RTCDtlsFingerprint.TryParse(dtlsFingerprint, out var remoteFingerprint))
-                    {
-                        RemotePeerDtlsFingerprint = remoteFingerprint;
-                    }
-                    else
-                    {
-                        logger.LogWarning("The DTLS fingerprint was invalid or not supported.");
-                        return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
-                    }
-                }
-                else
-                {
-                    logger.LogWarning("The DTLS fingerprint was missing from the remote party's session description.");
-                    return SetDescriptionResultEnum.DtlsFingerprintMissing;
-                }
+                RemotePeerDtlsFingerprint = remoteFingerprint;
 
                 // All browsers seem to have gone to trickling ICE candidates now but just
                 // in case one or more are given we can start the STUN dance immediately.
@@ -779,6 +940,68 @@ namespace SIPSorcery.Net
             }
 
             return setResult;
+        }
+
+        /// <summary>
+        /// Gets the DTLS fingerprint attribute from a remote session description. The session level
+        /// attribute is used if present with the media announcements used as a fallback.
+        /// </summary>
+        /// <remarks>
+        /// A single DTLS association is used for the whole session so every fingerprint in the session
+        /// description has to agree. A media announcement asking for a different certificate cannot be
+        /// honoured and is rejected rather than silently discarded. Announcements with a port of zero are
+        /// ignored, they have been rejected by the remote party and have no DTLS association of their own.
+        /// </remarks>
+        /// <param name="remoteSdp">The remote session description to extract the fingerprint from.</param>
+        /// <param name="fingerprint">If successful the fingerprint attribute that applies to the session.</param>
+        /// <returns>OK if a single fingerprint was found, otherwise the reason it could not be used.</returns>
+        private static SetDescriptionResultEnum GetRemoteDtlsFingerprint(SDP remoteSdp, out string fingerprint)
+        {
+            fingerprint = !string.IsNullOrWhiteSpace(remoteSdp.DtlsFingerprint) ? remoteSdp.DtlsFingerprint : null;
+
+            foreach (var ann in remoteSdp.Media)
+            {
+                // A port of zero indicates the media announcement has been rejected.
+                if (string.IsNullOrWhiteSpace(ann.DtlsFingerprint) || ann.Port == 0)
+                {
+                    continue;
+                }
+                else if (fingerprint == null)
+                {
+                    fingerprint = ann.DtlsFingerprint;
+                }
+                else if (!string.Equals(fingerprint.Trim(), ann.DtlsFingerprint.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return SetDescriptionResultEnum.DtlsFingerprintConflict;
+                }
+            }
+
+            return fingerprint == null ? SetDescriptionResultEnum.DtlsFingerprintMissing : SetDescriptionResultEnum.OK;
+        }
+
+        /// <summary>
+        /// Checks a fingerprint from a remote session description against the remote peer's certificate
+        /// from the completed DTLS handshake. The fingerprint is recalculated from the certificate rather
+        /// than compared against the previously supplied attribute so that a remote peer changing digest
+        /// algorithm, without changing its certificate, is not treated as a certificate change.
+        /// </summary>
+        /// <param name="fingerprint">The fingerprint from the remote session description.</param>
+        /// <returns>True if the fingerprint matches the remote peer's certificate. False if not.</returns>
+        private bool IsRemoteDtlsFingerprintMatch(RTCDtlsFingerprint fingerprint)
+        {
+            var remoteCertificate = _dtlsHandle?.GetRemoteCertificate();
+
+            if (remoteCertificate == null || remoteCertificate.IsEmpty)
+            {
+                // No verified certificate is available to compare against so fall back to the
+                // fingerprint that was pinned when the remote description was last set.
+                return RemotePeerDtlsFingerprint == null ||
+                    string.Equals(RemotePeerDtlsFingerprint.value, fingerprint.value, StringComparison.OrdinalIgnoreCase);
+            }
+
+            var certificateFingerprint = DtlsUtils.Fingerprint(fingerprint.algorithm, remoteCertificate.GetCertificateAt(0));
+
+            return string.Equals(certificateFingerprint.value, fingerprint.value, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -856,22 +1079,44 @@ namespace SIPSorcery.Net
                     ann.HeaderExtensions.Clear();
 
                     var localHeaderExtensions = AudioStreamList[indexAudioStream].LocalTrack?.HeaderExtensions?.Values;
-                    if (localHeaderExtensions != null)
-                    {
-                        foreach (var localExtension in localHeaderExtensions)
-                        {
-                            // We must ensure to use same Id by extension
-                            if (_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
-                            {
-                                localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
-                            }
-                            else
-                            {
-                                _rtpExtensionsUsed[localExtension.Uri] = localExtension.Id;
-                            }
+                    var remoteHeaderExtensions = AudioStreamList[indexAudioStream].RemoteTrack?.HeaderExtensions?.Values;
 
-                            logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
-                            ann.HeaderExtensions[localExtension.Id] = localExtension;
+                    if (localHeaderExtensions?.Count > 0)
+                    {
+                        // Do we have already some extensions set ?
+                        if (remoteHeaderExtensions is null || remoteHeaderExtensions.Count == 0)
+                        {
+                            foreach (var localExtension in localHeaderExtensions)
+                            {
+                                // We must ensure to use same Id by extension
+                                if (_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
+                                {
+                                    localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
+                                }
+                                else
+                                {
+                                    _rtpExtensionsUsed[localExtension.Uri] = localExtension.Id;
+                                }
+
+                                logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                                ann.HeaderExtensions[localExtension.Id] = localExtension;
+                            }
+                        }
+                        else
+                        {
+                            foreach (var remoteExtension in remoteHeaderExtensions)
+                            {
+                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.MatchesExtension(remoteExtension.Uri));
+                                if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
+                                {
+                                    // We must ensure to use same Id by extension
+                                    localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+                                    localExtension.Uri = remoteExtension.Uri;// Keep same Uri as remote
+
+                                    logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                                    ann.HeaderExtensions.Add(localExtension.Id, localExtension);
+                                }
+                            }
                         }
                     }
                     indexAudioStream++;
@@ -882,22 +1127,43 @@ namespace SIPSorcery.Net
                     ann.HeaderExtensions.Clear();
 
                     var localHeaderExtensions = VideoStreamList[indexVideoStream].LocalTrack?.HeaderExtensions?.Values;
-                    if (localHeaderExtensions != null)
+                    var remoteHeaderExtensions = VideoStreamList[indexVideoStream].RemoteTrack?.HeaderExtensions?.Values;
+                    if (localHeaderExtensions?.Count > 0)
                     {
-                        foreach (var localExtension in localHeaderExtensions)
+                        // Do we have already some extensions set ?
+                        if (remoteHeaderExtensions is null || remoteHeaderExtensions.Count == 0)
                         {
-                            // We must ensure to use same Id by extension
-                            if (_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
+                            foreach (var localExtension in localHeaderExtensions)
                             {
-                                localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
-                            }
-                            else
-                            {
-                                _rtpExtensionsUsed[localExtension.Uri] = localExtension.Id;
-                            }
+                                // We must ensure to use same Id by extension
+                                if (_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
+                                {
+                                    localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
+                                }
+                                else
+                                {
+                                    _rtpExtensionsUsed[localExtension.Uri] = localExtension.Id;
+                                }
 
-                            logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
-                            ann.HeaderExtensions[localExtension.Id] = localExtension;
+                                logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                                ann.HeaderExtensions[localExtension.Id] = localExtension;
+                            }
+                        }
+                        else
+                        {
+                            foreach (var remoteExtension in remoteHeaderExtensions)
+                            {
+                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.MatchesExtension(remoteExtension.Uri));
+                                if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
+                                {
+                                    // We must ensure to use same Id by extension
+                                    localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+                                    localExtension.Uri = remoteExtension.Uri;// Keep same Uri as remote
+
+                                    logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                                    ann.HeaderExtensions.Add(localExtension.Id, localExtension);
+                                }
+                            }
                         }
                     }
                     indexVideoStream++;
@@ -978,7 +1244,8 @@ namespace SIPSorcery.Net
                 }
 
                 bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
-                var answerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates);
+                bool waitForIceGatheringToComplete = options != null && options.X_WaitForIceGatheringToComplete;
+                var answerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates, waitForIceGatheringToComplete);
 
                 int indexAudioStream = 0;
                 int indexVideoStream = 0;
@@ -996,11 +1263,12 @@ namespace SIPSorcery.Net
                         {
                             foreach (var remoteExtension in remoteHeaderExtensions)
                             {
-                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.Uri == remoteExtension.Uri);
+                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.MatchesExtension(remoteExtension.Uri));
                                 if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
                                 {
                                     // We must ensure to use same Id by extension
                                     localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+                                    localExtension.Uri = remoteExtension.Uri;// Keep same Uri as remote
 
                                     logger.LogDebug("[createAnswer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
                                     ann.HeaderExtensions.Add(localExtension.Id, localExtension);
@@ -1020,11 +1288,12 @@ namespace SIPSorcery.Net
                         {
                             foreach (var remoteExtension in remoteHeaderExtensions)
                             {
-                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.Uri == remoteExtension.Uri);
+                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.MatchesExtension(remoteExtension.Uri));
                                 if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
                                 {
                                     // We must ensure to use same Id by extension
                                     localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+                                    localExtension.Uri = remoteExtension.Uri; // Keep same Uri as remote
 
                                     logger.LogDebug("[createAnswer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
                                     ann.HeaderExtensions.Add(localExtension.Id, localExtension);
@@ -1162,9 +1431,13 @@ namespace SIPSorcery.Net
             };
 
             // Media announcements must be in the same order in the offer and answer.
+            // Existing media types reuse their index from the previous answer; new types
+            // (not present in RemoteDescription) are appended after all existing m-lines
+            // per RFC 3264 §8.
             int mediaIndex = 0;
             int audioMediaIndex = 0;
             int videoMediaIndex = 0;
+            int nextNewMLineIndex = RemoteDescription?.Media.Count ?? 0;
             foreach (var mediaStream in mediaStreamList)
             {
                 int mindex = 0;
@@ -1192,9 +1465,14 @@ namespace SIPSorcery.Net
 
                 if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
                 {
-                    logger.LogWarning("Media announcement for {Kind} omitted due to no reciprocal remote announcement.", mediaStream.LocalTrack.Kind);
+                    // New media type added after the initial offer/answer — append it
+                    // after all existing m-lines so the ordering of previously negotiated
+                    // m-lines is preserved (RFC 3264 §8).
+                    mindex = nextNewMLineIndex;
+                    midTag = nextNewMLineIndex.ToString();
+                    nextNewMLineIndex++;
                 }
-                else
+
                 {
                     SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
                      mediaStream.LocalTrack.Kind,
@@ -1311,6 +1589,26 @@ namespace SIPSorcery.Net
 
             if (buffer?.Length > 0)
             {
+                // ICE source-address filter (issues #1559, #1731). Non-STUN packets are only
+                // forwarded to DTLS / RTP if their source matches one of the known remote ICE
+                // candidates (the remote SDP candidates plus peer-reflexive candidates discovered
+                // via authenticated STUN). This blocks an off-path attacker who guesses the local
+                // port from flooding DTLS ClientHello packets to interfere with a genuine handshake,
+                // while still accepting media that legitimately arrives from a valid-but-not-yet-
+                // nominated pair or an asymmetric path during ICE negotiation. STUN packets are
+                // filtered out earlier in the RTP channel and aren't subject to this check (consent
+                // freshness / ICE restart / new pair nomination still happen via the STUN path).
+                if (!(_rtpIceChannel?.IsKnownRemoteEndPoint(remoteEP) ?? false))
+                {
+                    if (logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
+                    {
+                        logger.LogDebug(
+                            "Dropped {ByteCount} byte non-STUN packet from {RemoteEndPoint}; source does not match any known ICE remote candidate (issues #1559, #1731).",
+                            buffer.Length, remoteEP);
+                    }
+                    return;
+                }
+
                 try
                 {
                     if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
@@ -1435,8 +1733,14 @@ namespace SIPSorcery.Net
             }
             return Task.Run(async () =>
             {
-                //Call Renegotiation Delayed
-                await Task.Delay(RENEGOTIATION_CALL_DELAY, token);
+                try
+                {
+                    //Call Renegotiation Delayed
+                    await Task.Delay(RENEGOTIATION_CALL_DELAY, token);
+                }
+                catch (TaskCanceledException)
+                {
+                }
 
                 //Prevent continue with cancellation requested
                 if (token.IsCancellationRequested)
@@ -1468,6 +1772,7 @@ namespace SIPSorcery.Net
                         _cancellationSource.Cancel();
                     }
 
+                    _cancellationSource.Dispose();
                     _cancellationSource = null;
                 }
             }
@@ -1750,12 +2055,13 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogDebug($"RTCPeerConnection DTLS handshake result {handshakeResult}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
+                logger.LogDebug("RTCPeerConnection DTLS handshake result {HandshakeResult}, is handshake complete {IsHandshakeComplete}.",
+                    handshakeResult, dtlsHandle.IsHandshakeComplete());
 
                 var expectedFp = RemotePeerDtlsFingerprint;
                 var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
 
-                if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
+                if (!string.Equals(remoteFingerprint.value, expectedFp.value, StringComparison.OrdinalIgnoreCase))
                 {
                     logger.LogWarning("RTCPeerConnection remote certificate fingerprint mismatch, expected {ExpectedFingerprint}, actual {RemoteFingerprint}.", expectedFp, remoteFingerprint);
                     Close("dtls fingerprint mismatch");
@@ -1788,10 +2094,24 @@ namespace SIPSorcery.Net
         {
             if (alertType == TlsAlertTypesEnum.CloseNotify)
             {
-                logger.LogDebug("SCTP closing transport as a result of DTLS close notification.");
+                logger.LogDebug("Closing peer connection as a result of DTLS close notification.");
 
-                // No point keeping the SCTP association open if there is no DTLS transport available.
-                sctp?.Close();
+                // A DTLS close_notify from the remote peer means the secure
+                // channel is gone -- the entire peer connection is no longer
+                // usable. Per the WebRTC spec the RTCDtlsTransport state moves
+                // to "closed" which propagates to the RTCPeerConnection.
+                // libwebrtc, Firefox and pion all close the whole peer
+                // connection at this point.
+                //
+                // Without this Close() call the SCTP association alone is
+                // closed but the underlying RTP/UDP socket keeps running and
+                // continues to send periodic STUN consent freshness checks +
+                // RTP/RTCP packets at the now-gone remote port. The remote
+                // OS responds with ICMP "port unreachable" for each one,
+                // which surfaces as a tight loop of
+                //   SocketException UdpReceiver.EndReceiveFrom (ConnectionReset)
+                // warnings until the application shuts itself down.
+                Close("Remote DTLS close notification received");
             }
             else
             {

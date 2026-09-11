@@ -259,7 +259,7 @@ namespace SIPSorcery.Examples
                 sw.Write(sdpOffer);
             }
 
-            string ffplayCommand = String.Format(FFPLAY_DEFAULT_COMMAND, FFPLAY_DEFAULT_SDP_PATH);
+            string ffplayCommand = $"ffplay -probesize 32 -protocol_whitelist \"file,rtp,udp\" -i {FFPLAY_DEFAULT_SDP_PATH}";
             Console.WriteLine($"Start ffplay using the command below:");
             Console.WriteLine(ffplayCommand);
             Console.WriteLine($"To request the remote peer to send a video key frame press 'k'");
@@ -312,7 +312,7 @@ namespace SIPSorcery.Examples
                 {
                     logger.LogDebug("ICE Candidate: " + message);
 
-                    if (string.IsNullOrWhiteSpace(message) || message.Trim().ToLower() == SDP.END_ICE_CANDIDATES_ATTRIBUTE)
+                    if (string.IsNullOrWhiteSpace(message) || message.AsSpan().Trim().Equals(SDP.END_ICE_CANDIDATES_ATTRIBUTE, StringComparison.OrdinalIgnoreCase))
                     {
                         logger.LogDebug("End of candidates message received.");
                     }

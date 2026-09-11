@@ -2,20 +2,21 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0-windows10.0.17763</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>9.0</LangVersion>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <PackageReference Include="SIPSorceryMedia.Encoders" Version="8.0.7" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="SIPSorcery.WebSocketSharp" />
+    <PackageReference Include="SIPSorceryMedia.Encoders" />
   </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\src\SIPSOrcery.VP8\SIPSorcery.VP8.csproj" />
         <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
         <ProjectReference Include="..\..\..\src\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
         <ProjectReference Include="..\..\..\src\SIPSorceryMedia.Windows\SIPSorceryMedia.Windows.csproj" />

@@ -248,24 +248,11 @@ namespace SIPSorcery.Net
                 string candidateStr;
                 if (protocol == RTCIceProtocol.tcp)
                 {
-                    candidateStr = String.Format("{0} {1} tcp {2} {3} {4} typ {5} tcptype {6} generation 0",
-                        foundation,
-                        component.GetHashCode(),
-                        priority,
-                        address,
-                        port,
-                        type,
-                        tcpType);
+                    candidateStr = $"{foundation} {component.GetHashCode()} tcp {priority} {address} {port} typ {type} tcptype {tcpType} generation 0";
                 }
                 else
                 {
-                    candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} generation 0",
-                        foundation,
-                        component.GetHashCode(),
-                        priority,
-                        address,
-                        port,
-                        type);
+                    candidateStr = $"{foundation} {component.GetHashCode()} udp {priority} {address} {port} typ {type} generation 0";
                 }
 
                 return candidateStr;
@@ -282,28 +269,11 @@ namespace SIPSorcery.Net
                 string candidateStr;
                 if (protocol == RTCIceProtocol.tcp)
                 {
-                    candidateStr = String.Format("{0} {1} tcp {2} {3} {4} typ {5} tcptype {6} raddr {7} rport {8} generation 0",
-                        foundation,
-                        component.GetHashCode(),
-                        priority,
-                        address,
-                        port,
-                        type,
-                        tcpType,
-                        relAddr,
-                        relatedPort);
+                    candidateStr = $"{foundation} {component.GetHashCode()} tcp {priority} {address} {port} typ {type} tcptype {tcpType} raddr {relAddr} rport {relatedPort} generation 0";
                 }
                 else
                 {
-                    candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} raddr {6} rport {7} generation 0",
-                        foundation,
-                        component.GetHashCode(),
-                        priority,
-                        address,
-                        port,
-                        type,
-                        relAddr,
-                        relatedPort);
+                    candidateStr = $"{foundation} {component.GetHashCode()} udp {priority} {address} {port} typ {type} raddr {relAddr} rport {relatedPort} generation 0";
                 }
 
                 return candidateStr;
@@ -383,7 +353,7 @@ namespace SIPSorcery.Net
                 sdpMid = sdpMid ?? sdpMLineIndex.ToString(),
                 sdpMLineIndex = sdpMLineIndex,
                 usernameFragment = usernameFragment,
-                candidate = CANDIDATE_PREFIX + ":" + this.ToString()
+                candidate = $"{CANDIDATE_PREFIX}:{this}"
             };
 
             return rtcCandInit.toJSON();

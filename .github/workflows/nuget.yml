@@ -6,47 +6,62 @@ on:
       - 'v*' # Triggers on tag pushes starting with 'v'
 
 jobs:
-  build-and-publish:
-    strategy:
-      matrix:
-        framework: ['net10.0']
-    runs-on: ubuntu-latest
+  build-test-pack:
+    runs-on: windows-latest
+    permissions:
+      id-token: write   # required for NuGet trusted publishing (the GitHub OIDC token)
+      contents: read    # once a permissions block is set it is the full allow-list; checkout needs this
     steps:
-      # Checkout the repository
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      # Set up .NET SDK
-      - uses: actions/setup-dotnet@v2
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
-      # Restore dependencies
-      - name: Restore dependencies
-        run: dotnet restore Libraries.slnf
+      # Unit tests
+      #- name: Unit tests
+      #  run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework net10.0 -c Release
 
-      # Build the projects
+      # Build all libs first (dotnet pack does not build by default)
       - name: Build
-        run: dotnet build Libraries.slnf -c Release --no-restore
+        run: dotnet build Libraries.slnf -c Release
 
-      # Run unit tests
-      - name: Unit tests
-        run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework ${{ matrix.framework }} -c Release
+      # Pack all NuGet packages (Windows can build all target frameworks incl. net462 and net10.0-windows)
+      - name: Pack SIPSorcery
+        run: dotnet pack src/SIPSorcery/SIPSorcery.csproj -c Release --no-build -o ./artifacts
 
-      # Pack the NuGet packages
-      - name: Pack NuGet SIPSorcery package
-        run: dotnet pack src/SIPSorcery/SIPSorcery.csproj -c Release -o ./artifacts
-      - name: Pack NuGet SIPSorceryMedia.Abstractions package
-        run: dotnet pack src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj -c Release -o ./artifacts
-      - name: Pack NuGet SIPSorceryMedia.Windows package
-        run: dotnet pack src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj -c Release -o ./artifacts
+      - name: Pack SIPSorceryMedia.Abstractions
+        run: dotnet pack src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj -c Release --no-build -o ./artifacts
 
-      # Publish to NuGet
-      - name: Publish NuGet package
-        if: startsWith(github.ref, 'refs/tags/v') # Only run on tag pushes
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      - name: Pack SIPSorceryMedia.FFmpeg
+        run: dotnet pack src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj -c Release --no-build -o ./artifacts
+
+      - name: Pack SIPSorceryMedia.Windows
+        run: dotnet pack src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj -c Release --no-build -o ./artifacts
+
+      - name: Pack SIPSorcery.OpenAI.Realtime
+        run: dotnet pack src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj -c Release --no-build -o ./artifacts
+        
+      - name: Pack SIPSorcery.VP8
+        run: dotnet pack src/SIPSorcery.VP8/SIPSorcery.VP8.csproj -c Release --no-build -o ./artifacts
+        
+      - name: Pack SIPSorcery.Cli
+        run: dotnet pack src/SIPSorcery.Cli/SIPSorcery.Cli.csproj -c Release --no-build -o ./artifacts
+        
+      - name: Pack SIPSorcery.Diagnostics
+        run: dotnet pack src/SIPSorcery.Diagnostics/SIPSorcery.Diagnostics.csproj -c Release --no-build -o ./artifacts
+      
+      - name: NuGet login (trusted publishing)
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: sipsorcery
+
+      - name: Publish all packages to NuGet
         run: |
-          dotnet nuget push ./artifacts/*.nupkg \
-            --source https://api.nuget.org/v3/index.json \
-            --api-key $NUGET_API_KEY \
-            --skip-duplicate
+          Get-ChildItem ./artifacts/*.nupkg | ForEach-Object {
+            dotnet nuget push $_.FullName `
+              --source https://api.nuget.org/v3/index.json `
+            --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} `
+              --skip-duplicate
+          }

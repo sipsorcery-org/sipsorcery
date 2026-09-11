@@ -390,7 +390,15 @@ public class RTPChannel : IDisposable
     /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
     protected virtual void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
     {
-        if (packet?.Length > 0)
+        // Every protocol multiplexed on the RTP/ICE socket has a minimum size of at least an RTP header:
+        // STUN is >= 20 bytes (STUNHeader.STUN_HEADER_LENGTH), a DTLS record is >= 13 bytes, RTP is >= 12
+        // bytes (RTPHeader.MIN_HEADER_LEN) and secured RTCP (SRTCP, i.e. all WebRTC RTCP) is larger still.
+        // The only smaller case is a bare unprotected RTCP report (8 bytes), which the RTP session layer
+        // (RTPSession.OnReceive) already discards as it also requires more than RTPHeader.MIN_HEADER_LEN
+        // bytes. Dropping anything shorter therefore discards only data that cannot be processed as a valid
+        // packet of any multiplexed type and, crucially, guarantees the discriminator byte reads below
+        // cannot index past the end of the buffer.
+        if (packet != null && packet.Length >= RTPHeader.MIN_HEADER_LEN)
         {
             //logger.LogDebug("RTPChannel received {Length} bytes from {RemoteEndPoint}.", packet.Length, remoteEndPoint);
 
@@ -407,6 +415,16 @@ public class RTPChannel : IDisposable
 
                 var peerAddrAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress).FirstOrDefault();
                 remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
+
+                // The length guard above was applied to the original data indication, not to the relayed
+                // payload extracted from it. A data indication with no DATA attribute, or with a zero length
+                // one (STUNAttribute.ParseMessageAttributes leaves Value null in that case), leaves the
+                // payload null and the discriminator byte reads below would throw. Drop it here instead.
+                if (packet == null || packet.Length == 0)
+                {
+                    logger.LogWarning("RTPChannel dropped a TURN data indication from {RemoteEndPoint} with a missing or empty DATA attribute.", remoteEndPoint);
+                    return;
+                }
             }
 
             LastRtpDestination = remoteEndPoint;

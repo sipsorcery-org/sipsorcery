@@ -42,7 +42,7 @@ namespace SIPSorcery.Sys
         {
             if (explicitIterations.HasValue && explicitIterations.Value < RFC289_MINIMUM_ITERATIONS)
             {
-                throw new ArgumentException("Cannot be less than " + RFC289_MINIMUM_ITERATIONS, "explicitIterations");
+                throw new ArgumentException($"Cannot be less than {RFC289_MINIMUM_ITERATIONS}", "explicitIterations");
             }
 
             byte[] salt = new byte[SALT_SIZE];
@@ -50,7 +50,7 @@ namespace SIPSorcery.Sys
 
             var iterations = (explicitIterations ?? RFC289_MINIMUM_ITERATIONS).ToString("X");
 
-            return iterations + "." + Convert.ToBase64String(salt);
+            return $"{iterations}.{Convert.ToBase64String(salt)}";
         }
 
         /// <summary>

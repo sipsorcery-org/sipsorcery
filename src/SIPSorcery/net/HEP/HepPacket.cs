@@ -28,7 +28,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Linq;
+using System.Buffers.Binary;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -83,18 +83,9 @@ namespace SIPSorcery.Net
         private static byte[] InitBuffer(ChunkTypeEnum chunkType, ushort length)
         {
             byte[] buf = new byte[length];
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(GENERIC_VENDOR_ID)), 0, buf, 0, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)chunkType)), 0, buf, 2, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(length)), 0, buf, 4, 2);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(GENERIC_VENDOR_ID), 0, buf, 0, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes((ushort)chunkType), 0, buf, 2, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(length), 0, buf, 4, 2);
-            }
+            BinaryPrimitives.WriteUInt16BigEndian(buf.AsSpan(0), GENERIC_VENDOR_ID);
+            BinaryPrimitives.WriteUInt16BigEndian(buf.AsSpan(2), (ushort)chunkType);
+            BinaryPrimitives.WriteUInt16BigEndian(buf.AsSpan(4), length);
             return buf;
         }
 
@@ -115,14 +106,7 @@ namespace SIPSorcery.Net
         {
             byte[] buf = InitBuffer(chunkType, MINIMUM_CHUNK_LENGTH + 2);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(val)), 0, buf, MINIMUM_CHUNK_LENGTH, 2);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(val), 0, buf, MINIMUM_CHUNK_LENGTH, 2);
-            }
+            BinaryPrimitives.WriteUInt16BigEndian(buf.AsSpan(MINIMUM_CHUNK_LENGTH), val);
             return buf;
         }
 
@@ -133,14 +117,7 @@ namespace SIPSorcery.Net
         {
             byte[] buf = InitBuffer(chunkType, MINIMUM_CHUNK_LENGTH + 4);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(val)), 0, buf, MINIMUM_CHUNK_LENGTH, 4);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(val), 0, buf, MINIMUM_CHUNK_LENGTH, 4);
-            }
+            BinaryPrimitives.WriteUInt32BigEndian(buf.AsSpan(MINIMUM_CHUNK_LENGTH), val);
             return buf;
         }
 
@@ -195,7 +172,18 @@ namespace SIPSorcery.Net
     /// </summary>
     public class HepPacket
     {
-        private const int MAX_HEP_PACKET_LENGTH = 1460;
+        private const int MAX_HEP_PACKET_LENGTH = 65535;
+
+        /// <summary>Vendor, type and length fields that precede every chunk's value.</summary>
+        private const int CHUNK_HEADER_LENGTH = 6;
+
+        /// <summary>
+        /// HEP carries the Unix address family values, which are not the same as .NET's
+        /// AddressFamily enumeration. IPv4 agrees at 2, but .NET numbers IPv6 as 23 where
+        /// HEP expects AF_INET6, which is 10.
+        /// </summary>
+        private const byte HEP_AF_INET = 2;
+        private const byte HEP_AF_INET6 = 10;
 
         /// <summary>
         /// All the SIP protocols except UDP use TCP as the underlying transport protocol.
@@ -237,8 +225,16 @@ namespace SIPSorcery.Net
 
             offset = 6;
 
+            // Both addresses must be described by the same family. If either is IPv6 the
+            // other is mapped, rather than emitting one chunk of each kind.
+            bool isIPv6 = srcEndPoint.Address.AddressFamily == AddressFamily.InterNetworkV6
+                || dstEndPoint.Address.AddressFamily == AddressFamily.InterNetworkV6;
+
+            IPAddress srcAddress = isIPv6 ? srcEndPoint.Address.MapToIPv6() : srcEndPoint.Address;
+            IPAddress dstAddress = isIPv6 ? dstEndPoint.Address.MapToIPv6() : dstEndPoint.Address;
+
             // IP family.
-            var familyChunkBuffer = HepChunk.GetBytes(ChunkTypeEnum.IPFamily, (byte)srcEndPoint.Address.AddressFamily);
+            var familyChunkBuffer = HepChunk.GetBytes(ChunkTypeEnum.IPFamily, isIPv6 ? HEP_AF_INET6 : HEP_AF_INET);
             Buffer.BlockCopy(familyChunkBuffer, 0, packetBuffer, offset, familyChunkBuffer.Length);
             offset += familyChunkBuffer.Length;
 
@@ -248,14 +244,14 @@ namespace SIPSorcery.Net
             offset += protocolChunkBuffer.Length;
 
             // Source IP address.
-            ChunkTypeEnum srcChunkType = srcEndPoint.Address.AddressFamily == AddressFamily.InterNetwork ? ChunkTypeEnum.IPv4SourceAddress : ChunkTypeEnum.IPv6SourceAddress;
-            var srcIPAddress = HepChunk.GetBytes(srcChunkType, srcEndPoint.Address);
+            ChunkTypeEnum srcChunkType = isIPv6 ? ChunkTypeEnum.IPv6SourceAddress : ChunkTypeEnum.IPv4SourceAddress;
+            var srcIPAddress = HepChunk.GetBytes(srcChunkType, srcAddress);
             Buffer.BlockCopy(srcIPAddress, 0, packetBuffer, offset, srcIPAddress.Length);
             offset += srcIPAddress.Length;
 
             // Destination IP address.
-            ChunkTypeEnum dstChunkType = dstEndPoint.Address.AddressFamily == AddressFamily.InterNetwork ? ChunkTypeEnum.IPv4DesinationAddress : ChunkTypeEnum.IPv6DesinationAddress;
-            var dstIPAddress = HepChunk.GetBytes(dstChunkType, dstEndPoint.Address);
+            ChunkTypeEnum dstChunkType = isIPv6 ? ChunkTypeEnum.IPv6DesinationAddress : ChunkTypeEnum.IPv4DesinationAddress;
+            var dstIPAddress = HepChunk.GetBytes(dstChunkType, dstAddress);
             Buffer.BlockCopy(dstIPAddress, 0, packetBuffer, offset, dstIPAddress.Length);
             offset += dstIPAddress.Length;
 
@@ -297,26 +293,25 @@ namespace SIPSorcery.Net
                 offset += passwordBuffer.Length;
             }
 
-            // Payload
-            var payloadBuffer = HepChunk.GetBytes(ChunkTypeEnum.CapturedPayload, Encoding.UTF8.GetBytes(payload));
+            // Payload. The truncation has to happen before the chunk is built: trimming the
+            // serialised chunk instead leaves its length field describing bytes that are not
+            // in the packet, which a collector reads as a chunk running past the end.
+            byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
+            int room = packetBuffer.Length - offset - CHUNK_HEADER_LENGTH;
 
-            // If we don't have enough space left truncate the payload.
-            int payloadLength = (payloadBuffer.Length > packetBuffer.Length - offset) ? packetBuffer.Length - offset : payloadBuffer.Length;
+            if (payloadBytes.Length > room)
+            {
+                Array.Resize(ref payloadBytes, room > 0 ? room : 0);
+            }
 
-            Buffer.BlockCopy(payloadBuffer, 0, packetBuffer, offset, payloadLength);
-            offset += payloadLength;
+            var payloadBuffer = HepChunk.GetBytes(ChunkTypeEnum.CapturedPayload, payloadBytes);
+            Buffer.BlockCopy(payloadBuffer, 0, packetBuffer, offset, payloadBuffer.Length);
+            offset += payloadBuffer.Length;
 
             // Length
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)offset)), 0, packetBuffer, 4, 2);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes((ushort)offset), 0, packetBuffer, 4, 2);
-            }
+            BinaryPrimitives.WriteUInt16BigEndian(packetBuffer.AsSpan(4), (ushort)offset);
 
-            return packetBuffer.Take(offset).ToArray();
+            return packetBuffer.AsSpan(0, offset).ToArray();
         }
     }
 }

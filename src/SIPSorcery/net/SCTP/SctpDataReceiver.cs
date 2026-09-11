@@ -15,10 +15,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
@@ -523,7 +521,7 @@ namespace SIPSorcery.Net
                     tsn++;
                 }
 
-                frame.UserData = frame.UserData.Take(posn).ToArray();
+                frame.UserData = frame.UserData.AsSpan(0, posn).ToArray();
 
                 return frame;
             }

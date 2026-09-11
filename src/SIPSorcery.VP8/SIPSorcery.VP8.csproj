@@ -1,0 +1,73 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Multi-targeted so consumers such as the net8.0 SIPSorcery.Diagnostics global tool can reference
+         it. Purely additive: the sole dependency (SIPSorceryMedia.Abstractions) already supports
+         all of these frameworks. -->
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);CS1570;CS1573;CS1591;CS1587;CS8981</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Authors>Aaron Clauson</Authors>
+    <Copyright>Copyright © 2026 Aaron Clauson</Copyright>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <Title>SIPSorcery</Title>
+    <Summary>A .NET library that implements the VP8 video codec.</Summary>
+    <Description>
+A .NET library that implements the VP8 video codec. This package is intended to be used as a video encoder and decoder for the SIPSorcery real-time communications library.
+    </Description>
+    <Company>SIP Sorcery PTY LTD</Company>
+    <Product>SIPSorcery.VP8</Product>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorcery.VP8</PackageProjectUrl>
+    <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryBranch>master</RepositoryBranch>
+    <PackageTags>SIPSorcery Video-Encoding VP8</PackageTags>
+    <PackageReleaseNotes>-v10.0.16: Updated nuget packages to latest stable versions.
+-v10.0.15: Updated for main sipsorcery library release.
+-v10.0.13: Fix license file.
+-v10.0.12: Updated for main sipsorcery library release.
+-v10.0.11: Updated for main sipsorcery library release.
+-v10.0.10: Updated for main sipsorcery library release.
+-v10.0.9: Updated for main sipsorcery library release.
+-v10.0.8: Full library release.
+-v10.0.7: Updated for main sipsorcery library release.
+-v10.0.6: Initial release.
+    </PackageReleaseNotes>
+    <NeutralLanguage>en</NeutralLanguage>
+    <Version>10.0.16</Version>
+    <AssemblyVersion>10.0.16</AssemblyVersion>
+    <FileVersion>10.0.16</FileVersion>
+  </PropertyGroup>
+
+    <PropertyGroup Label="SourceLink">
+        <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+        <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+        <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+    
+  <ItemGroup>
+     <None Include="icon.png" Pack="true" PackagePath="" />
+     <None Include="README.md" Pack="true" PackagePath="" />
+     <None Include="..\..\LICENSE.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorceryMedia.Abstractions\SIPSorceryMedia.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

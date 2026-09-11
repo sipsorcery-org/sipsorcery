@@ -19,6 +19,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 // SOFTWARE.
 
+#if NET8_0_OR_GREATER
+using ReadOnlyBytes = System.ReadOnlySpan<byte>;
+using Bytes = System.Span<byte>;
+#else
+using ReadOnlyBytes = System.ArraySegment<byte>;
+using Bytes = byte[];
+#endif
+
 namespace SIPSorcery.Net.SharpSRTP.SRTP
 {
     public class SrtpSessionContext : ISrtpContext
@@ -40,15 +48,14 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         {
             return EncodeRtpContext.CalculateRequiredSrtpPayloadLength(rtpLen);
         }
-
-        public int ProtectRtp(byte[] payload, int length, out int outputBufferLength)
+        public int ProtectRtp(ReadOnlyBytes input, Bytes output, out int outputBufferLength)
         {
-            return EncodeRtpContext.ProtectRtp(payload, length, out outputBufferLength);
+            return EncodeRtpContext.ProtectRtp(input, output, out outputBufferLength);
         }
 
-        public int UnprotectRtp(byte[] payload, int length, out int outputBufferLength)
+        public int UnprotectRtp(ReadOnlyBytes input, Bytes output, out int outputBufferLength)
         {
-            return DecodeRtpContext.UnprotectRtp(payload, length, out outputBufferLength);
+            return DecodeRtpContext.UnprotectRtp(input, output, out outputBufferLength);
         }
 
         public int CalculateRequiredSrtcpPayloadLength(int rtpLen)
@@ -56,14 +63,14 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
             return EncodeRtcpContext.CalculateRequiredSrtcpPayloadLength(rtpLen);
         }
 
-        public int ProtectRtcp(byte[] payload, int length, out int outputBufferLength)
+        public int ProtectRtcp(ReadOnlyBytes input, Bytes output, out int outputBufferLength)
         {
-            return EncodeRtcpContext.ProtectRtcp(payload, length, out outputBufferLength);
+            return EncodeRtcpContext.ProtectRtcp(input, output, out outputBufferLength);
         }
 
-        public int UnprotectRtcp(byte[] payload, int length, out int outputBufferLength)
+        public int UnprotectRtcp(ReadOnlyBytes input, Bytes output, out int outputBufferLength)
         {
-            return DecodeRtcpContext.UnprotectRtcp(payload, length, out outputBufferLength);
+            return DecodeRtcpContext.UnprotectRtcp(input, output, out outputBufferLength);
         }
     }
 }

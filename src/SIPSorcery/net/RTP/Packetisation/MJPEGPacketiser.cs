@@ -23,8 +23,7 @@ using System.Net;
 namespace SIPSorcery.net.RTP.Packetisation
 {
     /// <summary>
-    /// This class offers packetisation of MJPEG to be sent over RTP.
-    /// @author mdr@milestone.dk
+    /// This class offers packetisation of MJPEG to be sent over RTP. @author mdr@milestone.dk
     /// </summary>
     public class MJPEGPacketiser
     {
@@ -157,30 +156,21 @@ namespace SIPSorcery.net.RTP.Packetisation
 
             jmt_SOS = 0xDA,
             jmt_DRI = 0xDD
-        } 
+        }
 
         /// <summary>
-        /// Create an RTP header for an MJPEG frame fragment. Typically it will not be a full frame
-        /// due to the frame size. This method does not support multiple frames in one packet.
+        /// Create an RTP header for an MJPEG frame fragment. Typically it will not be a full frame due to the frame
+        /// size. This method does not support multiple frames in one packet.
         /// </summary>
         /// <remarks>
-        /// Each packet contains a special JPEG header which immediately follows
-        /// the rtp header.the first 8 bytes of this header, called the "main
-        /// jpeg header", are as follows:
-        /// <code>
-        /// 0                   1                   2                   3
-        /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        /// | type-specific |              fragment offset                  |
-        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        /// |      type     |       q       |     width     |     height    |
-        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        /// </code>
-        /// All fields in this header except for the fragment offset field must
-        /// remain the same in all packets that correspond to the same jpeg
-        /// frame.
-        /// A restart marker header and/or quantization table header may follow
-        /// this header, depending on the values of the type and q fields.
+        /// Each packet contains a special JPEG header which immediately follows the rtp header.the first 8 bytes of
+        /// this header, called the "main jpeg header", are as follows: <code> 0 1 2 3 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
+        /// 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ |
+        /// type-specific | fragment offset | +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ | type |
+        /// q | width | height | +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ </code> All fields in
+        /// this header except for the fragment offset field must remain the same in all packets that correspond to the
+        /// same jpeg frame. A restart marker header and/or quantization table header may follow this header, depending
+        /// on the values of the type and q fields.
         /// </remarks>
         /// <param name="customData">The MJPEG header to be written into bytes</param>
         /// <param name="offset">The offset of current RTP package</param>
@@ -232,8 +222,7 @@ namespace SIPSorcery.net.RTP.Packetisation
         }
 
         /// <summary>
-        /// Scans the frame for markers and builds the RTPHeader data.
-        /// Returns the raw frame data.
+        /// Scans the frame for markers and builds the RTPHeader data. Returns the raw frame data.
         /// </summary>
         /// <param name="jpegFrame">The entire frame data</param>
         /// <param name="customData">RTPHeader data in a readable structure</param>
@@ -259,7 +248,12 @@ namespace SIPSorcery.net.RTP.Packetisation
                     {
                         if (currentMarker.StartPosition > 0)
                         {
-                            currentMarker.MarkerBytes = jpegFrame.Skip(currentMarker.StartPosition).Take(index + 1).ToArray();
+                            var markerBytes = jpegFrame.AsSpan(currentMarker.StartPosition);
+                            if (markerBytes.Length > index + 1)
+                            {
+                                markerBytes = markerBytes.Slice(0, index + 1);
+                            }
+                            currentMarker.MarkerBytes = markerBytes.ToArray();
                             markers.Add(currentMarker);
                             currentMarker = new Marker();
                         }
@@ -276,7 +270,12 @@ namespace SIPSorcery.net.RTP.Packetisation
             }
             if (currentMarker.StartPosition > 0)
             {
-                currentMarker.MarkerBytes = jpegFrame.Skip(currentMarker.StartPosition).Take(index).ToArray();
+                var markerBytes = jpegFrame.AsSpan(currentMarker.StartPosition);
+                if (markerBytes.Length > index)
+                {
+                    markerBytes = markerBytes.Slice(0, index);
+                }
+                currentMarker.MarkerBytes = markerBytes.ToArray();
                 markers.Add(currentMarker);
             }
 
@@ -317,7 +316,7 @@ namespace SIPSorcery.net.RTP.Packetisation
         private static MJPEGData ProcessJpegSos(Marker marker, MJPEG mjpeg)
         {
             var hdrLength = (marker.MarkerBytes[0] << 8) | marker.MarkerBytes[1];
-            var bytes = marker.MarkerBytes.Skip(hdrLength).ToArray();
+            var bytes = marker.MarkerBytes.AsSpan(hdrLength).ToArray();
             return new MJPEGData() { Data = bytes };
         }
 
@@ -335,7 +334,7 @@ namespace SIPSorcery.net.RTP.Packetisation
             var qCount = (hdrLength - QTableHeaderLength) / QTableBlockLength8Bit;
             for (var i = 0; i < qCount; i++)
             {
-                var bytes = marker.MarkerBytes.Skip(QTableHeaderLength + i * QTableBlockLength8Bit + QTableParamsLength).Take(QTableLength8Bit).ToArray();
+                var bytes = marker.MarkerBytes.AsSpan(QTableHeaderLength + i * QTableBlockLength8Bit + QTableParamsLength, QTableLength8Bit).ToArray();
                 mjpeg.QTables.Add(bytes);
                 mjpeg.MjpegHeaderQTable.SetLength(mjpeg.MjpegHeaderQTable.GetLength() + bytes.Length);
             }

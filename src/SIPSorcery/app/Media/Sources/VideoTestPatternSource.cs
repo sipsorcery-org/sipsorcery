@@ -40,13 +40,15 @@ namespace SIPSorcery.Media
         private const int TIMER_DISPOSE_WAIT_MILLISECONDS = 1000;
         private const int VP8_SUGGESTED_FORMAT_ID = 96;
         private const int H264_SUGGESTED_FORMAT_ID = 100;
+        private const int AV1_SUGGESTED_FORMAT_ID = 101;
 
         public static readonly ILogger logger = LogFactory.CreateLogger<VideoTestPatternSource>();
 
         public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
         {
             new VideoFormat(VideoCodecsEnum.VP8, VP8_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE),
-            new VideoFormat(VideoCodecsEnum.H264, H264_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE, "packetization-mode=1")
+            new VideoFormat(VideoCodecsEnum.H264, H264_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE, "packetization-mode=1"),
+            new VideoFormat(VideoCodecsEnum.AV1, AV1_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE)
         };
 
         private int _frameSpacing;
@@ -246,7 +248,12 @@ namespace SIPSorcery.Media
                         {
                             uint fps = (_frameSpacing > 0) ? 1000 / (uint)_frameSpacing : DEFAULT_FRAMES_PER_SECOND;
                             uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
-                            OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
+                            // Use ?.Invoke so the null-check and the call are
+                            // a single atomic delegate read. Without this a
+                            // subscriber unsubscribing on another thread
+                            // between the outer null-check and this Invoke
+                            // produced a NullReferenceException.
+                            OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encodedBuffer);
                         }
                     }
 
@@ -265,7 +272,9 @@ namespace SIPSorcery.Media
         /// <param name="i420Buffer">The I420 buffer representing the test pattern.</param>
         private void GenerateRawSample(int width, int height, byte[] i420Buffer)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             var bgr = PixelConverter.I420toBGR(i420Buffer, width, height, out _);
+#pragma warning restore CS0618 // Type or member is obsolete
             OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, width, height, bgr, VideoPixelFormatsEnum.Bgr);
         }
 

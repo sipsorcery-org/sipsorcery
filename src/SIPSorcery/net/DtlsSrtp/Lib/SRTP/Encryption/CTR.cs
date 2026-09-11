@@ -21,6 +21,16 @@
 
 using Org.BouncyCastle.Crypto;
 using System;
+using System.Buffers;
+using System.Buffers.Binary;
+
+#if NET8_0_OR_GREATER
+using Bytes = System.Span<byte>;
+using ReadOnlyBytes = System.ReadOnlySpan<byte>;
+#else
+using Bytes = byte[];
+using ReadOnlyBytes = byte[];
+#endif
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
 {
@@ -28,10 +38,8 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
     {
         public const int BLOCK_SIZE = 16;
 
-        public static byte[] GenerateSessionKeyIV(byte[] masterSalt, ulong index, ulong kdr, byte label)
+        public static void GenerateSessionKeyIV(ReadOnlyMemory<byte> masterSalt, ulong index, ulong kdr, byte label, Span<byte> iv)
         {
-            byte[] iv = new byte[BLOCK_SIZE];
-
             // RFC 3711 - 4.3.1
             // Key derivation SHALL be defined as follows in terms of<label>, an
             // 8 - bit constant(see below), master_salt and key_derivation_rate, as
@@ -39,28 +47,21 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
             // (i.e., the 48 - bit ROC || SEQ for SRTP):
 
             // *Let r = index DIV key_derivation_rate(with DIV as defined above).
-            ulong r = DIV(index, kdr);
+            var r = DIV(index, kdr);
 
             // *Let key_id = < label > || r.
-            ulong keyId = ((ulong)label << 48) | r;
+            var keyId = ((ulong)label << 48) | r;
 
             // *Let x = key_id XOR master_salt, where key_id and master_salt are
             //  aligned so that their least significant bits agree(right-
             //  alignment).
-            Buffer.BlockCopy(masterSalt, 0, iv, 0, masterSalt.Length);
+            masterSalt.Span.CopyTo(iv);
 
-            iv[7] ^= (byte)((keyId >> 48) & 0xFF);
-            iv[8] ^= (byte)((keyId >> 40) & 0xFF);
-            iv[9] ^= (byte)((keyId >> 32) & 0xFF);
-            iv[10] ^= (byte)((keyId >> 24) & 0xFF);
-            iv[11] ^= (byte)((keyId >> 16) & 0xFF);
-            iv[12] ^= (byte)((keyId >> 8) & 0xFF);
-            iv[13] ^= (byte)(keyId & 0xFF);
+            // XOR index at offset 7 (6 bytes for 48-bit index)
+            BinaryExtensions.Xor64(iv.Slice(6, 8), (keyId & 0x00FF_FFFF_FFFF_FFFF));
 
             iv[14] = 0;
             iv[15] = 0;
-
-            return iv;
         }
 
         private static ulong DIV(ulong x, ulong y)
@@ -75,58 +76,53 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
             }
         }
 
-        public static byte[] GenerateMessageKeyIV(byte[] salt, uint ssrc, ulong index)
+        public static void GenerateMessageKeyIV(ReadOnlySpan<byte> salt, uint ssrc, ulong index, Span<byte> iv)
         {
             // RFC 3711 - 4.1.1
             // IV = (k_s * 2 ^ 16) XOR(SSRC * 2 ^ 64) XOR(i * 2 ^ 16)
-            byte[] iv = new byte[16];
+            salt.Slice(0, 14).CopyTo(iv);
 
-            Buffer.BlockCopy(salt, 0, iv, 0, 14);
+            // XOR ssrc at offset 4 (3 bytes for 48-bit index)
+            BinaryExtensions.Xor32(iv.Slice(4, 4), ssrc);
 
-            iv[4] ^= (byte)((ssrc >> 24) & 0xFF);
-            iv[5] ^= (byte)((ssrc >> 16) & 0xFF);
-            iv[6] ^= (byte)((ssrc >> 8) & 0xFF);
-            iv[7] ^= (byte)(ssrc & 0xFF);
-
-            iv[8] ^= (byte)((index >> 40) & 0xFF);
-            iv[9] ^= (byte)((index >> 32) & 0xFF);
-            iv[10] ^= (byte)((index >> 24) & 0xFF);
-            iv[11] ^= (byte)((index >> 16) & 0xFF);
-            iv[12] ^= (byte)((index >> 8) & 0xFF);
-            iv[13] ^= (byte)(index & 0xFF);
+            // XOR index at offset 8 (6 bytes for 48-bit index)
+            BinaryExtensions.Xor64(iv.Slice(6, 8), index & 0x0000_FFFF_FFFF_FFFF);
 
             iv[14] = 0;
             iv[15] = 0;
-
-            return iv;
         }
 
-        public static void Encrypt(IBlockCipher engine, byte[] payload, int offset, int length, byte[] iv)
+        public static void Encrypt(IBlockCipher engine, ReadOnlySpan<byte> input, Span<byte> output, Bytes iv)
         {
-            int payloadSize = length - offset;
-            byte[] cipher = new byte[payloadSize];
+            var payloadSize = input.Length;
+            var cipher = ArrayPool<byte>.Shared.Rent(payloadSize);
 
-            int blockNo = 0;
-            for (int i = 0; i < payloadSize / BLOCK_SIZE; i++)
+            try
             {
-                iv[14] = (byte)((i >> 8) & 0xff);
-                iv[15] = (byte)(i & 0xff);
-                engine.ProcessBlock(iv, 0, cipher, BLOCK_SIZE * blockNo);
-                blockNo++;
+                var blockNo = 0;
+                for (var i = 0; i < payloadSize / BLOCK_SIZE; i++)
+                {
+                    BinaryPrimitives.WriteUInt16BigEndian(iv.Slice(14, 2), (ushort)i);
+                    engine.ProcessBlock(iv, cipher.Slice(BLOCK_SIZE * blockNo, BLOCK_SIZE));
+                    blockNo++;
+                }
+
+                if (payloadSize % BLOCK_SIZE != 0)
+                {
+                    BinaryPrimitives.WriteUInt16BigEndian(iv.Slice(14, 2), (ushort)blockNo);
+                    var lastBlock = GC.AllocateUninitializedArray<byte>(BLOCK_SIZE);
+                    engine.ProcessBlock(iv, lastBlock);
+                    Buffer.BlockCopy(lastBlock, 0, cipher, BLOCK_SIZE * blockNo, payloadSize % BLOCK_SIZE);
+                }
+
+                BinaryExtensions.Xor(
+                    input,
+                    cipher.AsSpan(0, payloadSize),
+                    output);
             }
-
-            if (payloadSize % BLOCK_SIZE != 0)
+            finally
             {
-                iv[14] = (byte)((blockNo >> 8) & 0xff);
-                iv[15] = (byte)(blockNo & 0xff);
-                byte[] lastBlock = new byte[BLOCK_SIZE];
-                engine.ProcessBlock(iv, 0, lastBlock, 0);
-                Buffer.BlockCopy(lastBlock, 0, cipher, BLOCK_SIZE * blockNo, payloadSize % BLOCK_SIZE);
-            }
-
-            for (int i = 0; i < payloadSize; i++)
-            {
-                payload[offset + i] ^= cipher[i];
+                ArrayPool<byte>.Shared.Return(cipher);
             }
         }
     }

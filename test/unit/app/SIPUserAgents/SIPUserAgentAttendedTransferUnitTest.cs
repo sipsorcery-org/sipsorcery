@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPUserAgentAttendedTransferUnitTest.cs
 //
 // Description: Unit tests for SIPUserAgent attended transfer handling, verifying
@@ -113,13 +113,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             // Minimal SDP body so Answer() can process the offer.
             string sdpBody =
-                "v=0\r\n" +
-                $"o=- 0 0 IN IP4 {channelEndPoint.Address}\r\n" +
-                "s=-\r\n" +
-                $"c=IN IP4 {channelEndPoint.Address}\r\n" +
-                "t=0 0\r\n" +
-                "m=audio 49170 RTP/AVP 0\r\n" +
-                "a=rtpmap:0 PCMU/8000\r\n";
+                $"v=0\r\no=- 0 0 IN IP4 {channelEndPoint.Address}\r\ns=-\r\nc=IN IP4 {channelEndPoint.Address}\r\nt=0 0\r\nm=audio 49170 RTP/AVP 0\r\na=rtpmap:0 PCMU/8000\r\n";
 
             request.Body = sdpBody;
 
@@ -182,7 +176,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public async Task NonMatchingAgentIgnoresReplacesInvite()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var channelEndPoint = new IPEndPoint(IPAddress.Loopback, 6060);
             var channel = new RecordingMockSIPChannel(channelEndPoint);
@@ -257,7 +251,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public async Task MatchingAgentProcessesReplacesInvite()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var channelEndPoint = new IPEndPoint(IPAddress.Loopback, 6061);
             var channel = new RecordingMockSIPChannel(channelEndPoint);

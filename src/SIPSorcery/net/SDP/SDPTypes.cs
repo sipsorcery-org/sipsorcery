@@ -72,18 +72,18 @@ public class MediaStreamStatusType
         }
         else
         {
-            switch (attributeString.ToLower())
+            switch (attributeString)
             {
-                case SEND_RECV_ATTRIBUTE:
+                case var _ when SEND_RECV_ATTRIBUTE.Equals(attributeString, StringComparison.OrdinalIgnoreCase):
                     mediaStreamStatus = MediaStreamStatusEnum.SendRecv;
                     return true;
-                case SEND_ONLY_ATTRIBUTE:
+                case var _ when SEND_ONLY_ATTRIBUTE.Equals(attributeString, StringComparison.OrdinalIgnoreCase):
                     mediaStreamStatus = MediaStreamStatusEnum.SendOnly;
                     return true;
-                case RECV_ONLY_ATTRIBUTE:
+                case var _ when RECV_ONLY_ATTRIBUTE.Equals(attributeString, StringComparison.OrdinalIgnoreCase):
                     mediaStreamStatus = MediaStreamStatusEnum.RecvOnly;
                     return true;
-                case INACTIVE_ATTRIBUTE:
+                case var _ when INACTIVE_ATTRIBUTE.Equals(attributeString, StringComparison.OrdinalIgnoreCase):
                     mediaStreamStatus = MediaStreamStatusEnum.Inactive;
                     return true;
                 default:

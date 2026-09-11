@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Linq;
 using System.Numerics;
 using MathNet.Numerics;
 using MathNet.Numerics.IntegralTransforms;
@@ -114,7 +113,7 @@ namespace AudioScope
 
             _timeIndex = (_timeIndex + samples.Length) % FFT_SIZE;
 
-            var freqBuffer = _timeRingBuffer.Skip(_timeIndex).Take(FFT_SIZE).ToArray();
+            var freqBuffer = _timeRingBuffer.AsSpan(_timeIndex, FFT_SIZE).ToArray();
 
             Fourier.Forward(freqBuffer, FourierOptions.NoScaling);
 
@@ -127,7 +126,7 @@ namespace AudioScope
 
             float scale = (float)FFT_SIZE;
 
-            var complexAnalyticBuffer = freqBuffer.Skip(FFT_SIZE - BUFFER_SIZE).Take(BUFFER_SIZE).ToArray();
+            var complexAnalyticBuffer = freqBuffer.AsSpan(FFT_SIZE - BUFFER_SIZE, BUFFER_SIZE).ToArray();
             var data = new float[BUFFER_SIZE * DISPLAY_ARRAY_STRIDE + PREVIOUS_SAMPLES_LENGTH];
 
             for (int k = 0; k < complexAnalyticBuffer.Length; k++)
@@ -148,7 +147,7 @@ namespace AudioScope
             Array.Copy(_previousResults, 0, data, 0, PREVIOUS_SAMPLES_LENGTH);
             _lastSample = data;
 
-            _previousResults = data.Skip(data.Length - PREVIOUS_SAMPLES_LENGTH).ToArray();
+            _previousResults = data.AsSpan(data.Length - PREVIOUS_SAMPLES_LENGTH).ToArray();
         }
 
         public static float GetAngle(Complex v, Complex u)

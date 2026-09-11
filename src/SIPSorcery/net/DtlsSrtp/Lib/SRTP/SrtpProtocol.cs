@@ -98,7 +98,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
             if (useMasterKeySalt == null)
             {
                 // derive the master key + master salt to be sent in SDP crypto: attribute as per RFC 4568
-                masterKeySalt = new byte[masterKeyLen + masterSaltLen];
+                masterKeySalt = GC.AllocateUninitializedArray<byte>(masterKeyLen + masterSaltLen);
                 _rand.NextBytes(masterKeySalt);
             }
             else
@@ -106,8 +106,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 masterKeySalt = useMasterKeySalt;
             }
 
-            SrtpKeys keys = new SrtpKeys(srtpSecurityParams, mki);
-            Buffer.BlockCopy(masterKeySalt, 0, keys.MasterKeySalt, 0, masterKeySalt.Length);
+            SrtpKeys keys = new SrtpKeys(srtpSecurityParams, masterKeySalt, mki);
 
             return keys;
         }
@@ -119,7 +118,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 throw new ArgumentOutOfRangeException(nameof(length));
             }    
 
-            byte[] MKI = new byte[length];
+            byte[] MKI = GC.AllocateUninitializedArray<byte>(length);
             if (length > 0)
             {
                 // ensure positive value of the generated BigInteger

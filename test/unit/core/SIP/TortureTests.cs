@@ -15,6 +15,7 @@ using System.Net.Sockets;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -22,7 +23,7 @@ namespace SIPSorcery.SIP.UnitTests
     /// <summary>
     /// Torture tests from RFC4475 https://tools.ietf.org/html/rfc4475
     /// Tests must be extracted from the base64 blob at the bottom of the RFC:
-    /// $ cat torture.b64 | base64 -d > torture.tar.gz  
+    /// $ cat torture.b64 | base64 -d > torture.tar.gz
     /// $ tar zxvf torture.tar.gz
     /// Which gives the dat files needed.
     /// Cutting and pasting is no good as things like white space getting interpreted as end of line screws up
@@ -45,8 +46,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact(Skip = "Bit trickier to pass than anticipated.")]
         public void ShortTorturousInvite()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             Assert.True(File.Exists("wsinv.dat"), "The wsinv.dat torture test input file was missing.");
 
@@ -76,19 +77,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_1()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-"REGISTER sip:[2001:db8::10] SIP/2.0" + CRLF +
-"To: sip:user@example.com" + CRLF +
-"From: sip:user@example.com;tag=81x2" + CRLF +
-"Via: SIP/2.0/UDP [2001:db8::9:1];branch=z9hG4bKas3-111" + CRLF +
-"Call-ID: SSG9559905523997077@hlau_4100" + CRLF +
-"Max-Forwards: 70" + CRLF +
-"Contact: \"Caller\" <sip:caller@[2001:db8::1]>" + CRLF +
-"CSeq: 98176 REGISTER" + CRLF +
-"Content-Length: 0";
+$"REGISTER sip:[2001:db8::10] SIP/2.0{CRLF}To: sip:user@example.com{CRLF}From: sip:user@example.com;tag=81x2{CRLF}Via: SIP/2.0/UDP [2001:db8::9:1];branch=z9hG4bKas3-111{CRLF}Call-ID: SSG9559905523997077@hlau_4100{CRLF}Max-Forwards: 70{CRLF}Contact: \"Caller\" <sip:caller@[2001:db8::1]>{CRLF}CSeq: 98176 REGISTER{CRLF}Content-Length: 0";
 
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
@@ -120,19 +113,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_2()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-"REGISTER sip:2001:db8::10 SIP/2.0" + CRLF +
-"To: sip:user@example.com" + CRLF +
-"From: sip:user@example.com;tag=81x2" + CRLF +
-"Via: SIP/2.0/UDP [2001:db8::9:1];branch=z9hG4bKas3-111" + CRLF +
-"Call-ID: SSG9559905523997077@hlau_4100" + CRLF +
-"Max-Forwards: 70" + CRLF +
-"Contact: \"Caller\" <sip:caller@[2001:db8::1]>" + CRLF +
-"CSeq: 98176 REGISTER" + CRLF +
-"Content-Length: 0";
+$"REGISTER sip:2001:db8::10 SIP/2.0{CRLF}To: sip:user@example.com{CRLF}From: sip:user@example.com;tag=81x2{CRLF}Via: SIP/2.0/UDP [2001:db8::9:1];branch=z9hG4bKas3-111{CRLF}Call-ID: SSG9559905523997077@hlau_4100{CRLF}Max-Forwards: 70{CRLF}Contact: \"Caller\" <sip:caller@[2001:db8::1]>{CRLF}CSeq: 98176 REGISTER{CRLF}Content-Length: 0";
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
@@ -158,21 +143,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_3()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-"REGISTER sip:[2001:db8::10:5070] SIP/2.0" + CRLF +
-"To: sip:user@example.com" + CRLF +
-"From: sip:user@example.com;tag=81x2" + CRLF +
-"Via: SIP/2.0/UDP [2001:db8::9:1];branch=z9hG4bKas3-111" + CRLF +
-"Call-ID: SSG9559905523997077@hlau_4100" + CRLF +
-"Contact: \"Caller\" <sip:caller@[2001:db8::1]>" + CRLF +
-"Max-Forwards: 70" + CRLF +
-"CSeq: 98176 REGISTER" + CRLF +
-"Content-Length: 0";
+$"REGISTER sip:[2001:db8::10:5070] SIP/2.0{CRLF}To: sip:user@example.com{CRLF}From: sip:user@example.com;tag=81x2{CRLF}Via: SIP/2.0/UDP [2001:db8::9:1];branch=z9hG4bKas3-111{CRLF}Call-ID: SSG9559905523997077@hlau_4100{CRLF}Contact: \"Caller\" <sip:caller@[2001:db8::1]>{CRLF}Max-Forwards: 70{CRLF}CSeq: 98176 REGISTER{CRLF}Content-Length: 0";
 
-            //parsing is correct, but port is ambiguous, 
+            //parsing is correct, but port is ambiguous,
             //intention was to target port 5070
             //but that's nothing a program can find out
 
@@ -204,19 +181,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_4()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-"REGISTER sip:[2001:db8::10]:5070 SIP/2.0" + CRLF +
-"To: sip:user@example.com" + CRLF +
-"From: sip:user@example.com;tag=81x2" + CRLF +
-"Via: SIP/2.0/UDP [2001:db8::9:1];branch=z9hG4bKas3-111" + CRLF +
-"Call-ID: SSG9559905523997077@hlau_4100" + CRLF +
-"Contact: \"Caller\" <sip:caller@[2001:db8::1]>" + CRLF +
-"Max-Forwards: 70" + CRLF +
-"CSeq: 98176 REGISTER" + CRLF +
-"Content-Length: 0";
+$"REGISTER sip:[2001:db8::10]:5070 SIP/2.0{CRLF}To: sip:user@example.com{CRLF}From: sip:user@example.com;tag=81x2{CRLF}Via: SIP/2.0/UDP [2001:db8::9:1];branch=z9hG4bKas3-111{CRLF}Call-ID: SSG9559905523997077@hlau_4100{CRLF}Contact: \"Caller\" <sip:caller@[2001:db8::1]>{CRLF}Max-Forwards: 70{CRLF}CSeq: 98176 REGISTER{CRLF}Content-Length: 0";
 
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
@@ -250,18 +219,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_5_1()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-"BYE sip:[2001:db8::10] SIP/2.0" + CRLF +
-"To: sip:user@example.com;tag=bd76ya" + CRLF +
-"From: sip:user@example.com;tag=81x2" + CRLF +
-"Via: SIP/2.0/UDP [2001:db8::9:1];received=[2001:db8::9:255];branch=z9hG4bKas3-111" + CRLF +
-"Call-ID: SSG9559905523997077@hlau_4100" + CRLF +
-"Max-Forwards: 70" + CRLF +
-"CSeq: 321 BYE" + CRLF +
-"Content-Length: 0";
+$"BYE sip:[2001:db8::10] SIP/2.0{CRLF}To: sip:user@example.com;tag=bd76ya{CRLF}From: sip:user@example.com;tag=81x2{CRLF}Via: SIP/2.0/UDP [2001:db8::9:1];received=[2001:db8::9:255];branch=z9hG4bKas3-111{CRLF}Call-ID: SSG9559905523997077@hlau_4100{CRLF}Max-Forwards: 70{CRLF}CSeq: 321 BYE{CRLF}Content-Length: 0";
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
@@ -289,19 +251,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_5_2()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-"OPTIONS sip:[2001:db8::10] SIP/2.0" + CRLF +
-"To: sip:user @example.com" + CRLF +
-"From: sip:user @example.com; tag=81x2" + CRLF +
-"Via: SIP/2.0/UDP [2001:db8::9:1];received=2001:db8::9:255;branch=z9hG4bKas3" + CRLF +
-"Call-ID: SSG95523997077 @hlau_4100" + CRLF +
-"Max-Forwards: 70" + CRLF +
-"Contact: \"Caller\" <sip:caller@[2001:db8::9:1]>" + CRLF +
-"CSeq: 921 OPTIONS" + CRLF +
-"Content-Length: 0";
+$"OPTIONS sip:[2001:db8::10] SIP/2.0{CRLF}To: sip:user @example.com{CRLF}From: sip:user @example.com; tag=81x2{CRLF}Via: SIP/2.0/UDP [2001:db8::9:1];received=2001:db8::9:255;branch=z9hG4bKas3{CRLF}Call-ID: SSG95523997077 @hlau_4100{CRLF}Max-Forwards: 70{CRLF}Contact: \"Caller\" <sip:caller@[2001:db8::9:1]>{CRLF}CSeq: 921 OPTIONS{CRLF}Content-Length: 0";
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
@@ -332,30 +286,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_6()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-"INVITE sip:user@[2001:db8::10] SIP/2.0" + CRLF +
-"To: sip:user@[2001:db8::10]" + CRLF +
-"From: sip:user@example.com;tag=81x2" + CRLF +
-"Via: SIP/2.0/UDP [2001:db8::20];branch=z9hG4bKas3-111" + CRLF +
-"Call-ID: SSG9559905523997077@hlau_4100" + CRLF +
-"Contact: \"Caller\" <sip:caller@[2001:db8::20]>" + CRLF +
-"CSeq: 8612 INVITE" + CRLF +
-"Max-Forwards: 70" + CRLF +
-"Content-Type: application/sdp" + CRLF +
-"Content-Length: 268" + CRLF +
-CRLF +
-"v=0" + CRLF +
-"o=assistant 971731711378798081 0 IN IP6 2001:db8::20" + CRLF +
-"s=Live video feed for today's meeting" + CRLF +
-"c=IN IP6 2001:db8::20" + CRLF +
-"t=3338481189 3370017201" + CRLF +
-"m=audio 6000 RTP/AVP 2" + CRLF +
-"a=rtpmap:2 G726-32/8000" + CRLF +
-"m=video 6024 RTP/AVP 107" + CRLF +
-"a=rtpmap:107 H263-1998/90000";
+$"INVITE sip:user@[2001:db8::10] SIP/2.0{CRLF}To: sip:user@[2001:db8::10]{CRLF}From: sip:user@example.com;tag=81x2{CRLF}Via: SIP/2.0/UDP [2001:db8::20];branch=z9hG4bKas3-111{CRLF}Call-ID: SSG9559905523997077@hlau_4100{CRLF}Contact: \"Caller\" <sip:caller@[2001:db8::20]>{CRLF}CSeq: 8612 INVITE{CRLF}Max-Forwards: 70{CRLF}Content-Type: application/sdp{CRLF}Content-Length: 268{CRLF}{CRLF}v=0{CRLF}o=assistant 971731711378798081 0 IN IP6 2001:db8::20{CRLF}s=Live video feed for today's meeting{CRLF}c=IN IP6 2001:db8::20{CRLF}t=3338481189 3370017201{CRLF}m=audio 6000 RTP/AVP 2{CRLF}a=rtpmap:2 G726-32/8000{CRLF}m=video 6024 RTP/AVP 107{CRLF}a=rtpmap:107 H263-1998/90000";
 
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
@@ -392,20 +327,11 @@ CRLF +
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_7()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-"BYE sip:user@host.example.net SIP/2.0" + CRLF +
-"Via: SIP/2.0/UDP [2001:db8::9:1]:6050;branch=z9hG4bKas3-111" + CRLF +
-"Via: SIP/2.0/UDP 192.0.2.1;branch=z9hG4bKjhja8781hjuaij65144" + CRLF +
-"Via: SIP/2.0/TCP [2001:db8::9:255];branch=z9hG4bK451jj;received=192.0.2.200" + CRLF +
-"Call-ID: 997077@lau_4100" + CRLF +
-"Max-Forwards: 70" + CRLF +
-"CSeq: 89187 BYE" + CRLF +
-"To: sip:user@example.net;tag=9817--94" + CRLF +
-"From: sip:user@example.com;tag=81x2" + CRLF +
-"Content-Length: 0";
+$"BYE sip:user@host.example.net SIP/2.0{CRLF}Via: SIP/2.0/UDP [2001:db8::9:1]:6050;branch=z9hG4bKas3-111{CRLF}Via: SIP/2.0/UDP 192.0.2.1;branch=z9hG4bKjhja8781hjuaij65144{CRLF}Via: SIP/2.0/TCP [2001:db8::9:255];branch=z9hG4bK451jj;received=192.0.2.200{CRLF}Call-ID: 997077@lau_4100{CRLF}Max-Forwards: 70{CRLF}CSeq: 89187 BYE{CRLF}To: sip:user@example.net;tag=9817--94{CRLF}From: sip:user@example.com;tag=81x2{CRLF}Content-Length: 0";
 
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
@@ -443,30 +369,11 @@ CRLF +
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_8()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-"INVITE sip:user@[2001:db8::10] SIP/2.0" + CRLF +
-"To: sip:user@[2001:db8::10]" + CRLF +
-"From: sip:user@example.com;tag=81x2" + CRLF +
-"Via: SIP/2.0/UDP [2001:db8::9:1];branch=z9hG4bKas3-111" + CRLF +
-"Call-ID: SSG9559905523997077@hlau_4100" + CRLF +
-"Contact: \"Caller\" <sip:caller@[2001:db8::9:1]>" + CRLF +
-"Max-Forwards: 70" + CRLF +
-"CSeq: 8912 INVITE" + CRLF +
-"Content-Type: application/sdp" + CRLF +
-"Content-Length: 181" + CRLF +
-CRLF +
-"v=0" + CRLF +
-"o=bob 280744730 28977631 IN IP4 host.example.com" + CRLF +
-"s=" + CRLF +
-"t=0 0" + CRLF +
-"m=audio 22334 RTP/AVP 0" + CRLF +
-"c=IN IP4 192.0.2.1" + CRLF +
-"m=video 6024 RTP/AVP 107" + CRLF +
-"c=IN IP6 2001:db8::1" + CRLF +
-"a=rtpmap:107 H263-1998/90000";
+$"INVITE sip:user@[2001:db8::10] SIP/2.0{CRLF}To: sip:user@[2001:db8::10]{CRLF}From: sip:user@example.com;tag=81x2{CRLF}Via: SIP/2.0/UDP [2001:db8::9:1];branch=z9hG4bKas3-111{CRLF}Call-ID: SSG9559905523997077@hlau_4100{CRLF}Contact: \"Caller\" <sip:caller@[2001:db8::9:1]>{CRLF}Max-Forwards: 70{CRLF}CSeq: 8912 INVITE{CRLF}Content-Type: application/sdp{CRLF}Content-Length: 181{CRLF}{CRLF}v=0{CRLF}o=bob 280744730 28977631 IN IP4 host.example.com{CRLF}s={CRLF}t=0 0{CRLF}m=audio 22334 RTP/AVP 0{CRLF}c=IN IP4 192.0.2.1{CRLF}m=video 6024 RTP/AVP 107{CRLF}c=IN IP6 2001:db8::1{CRLF}a=rtpmap:107 H263-1998/90000";
 
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
@@ -511,31 +418,11 @@ CRLF +
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_9()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-"INVITE sip:user@example.com SIP/2.0" + CRLF +
-"To: sip:user@example.com" + CRLF +
-"From: sip:user@east.example.com;tag=81x2" + CRLF +
-"Via: SIP/2.0/UDP [::ffff:192.0.2.10]:19823;branch=z9hG4bKbh19" + CRLF +
-"Via: SIP/2.0/UDP [::ffff:192.0.2.2];branch=z9hG4bKas3-111" + CRLF +
-"Call-ID: SSG9559905523997077@hlau_4100" + CRLF +
-"Contact: \"T. desk phone\" <sip:ted@[::ffff:192.0.2.2]>" + CRLF +
-"CSeq: 612 INVITE" + CRLF +
-"Max-Forwards: 70" + CRLF +
-"Content-Type: application/sdp" + CRLF +
-"Content-Length: 236" + CRLF +
-CRLF +
-"v=0" + CRLF +
-"o=assistant 971731711378798081 0 IN IP6 ::ffff:192.0.2.2" + CRLF +
-"s=Call me soon, please!" + CRLF +
-"c=IN IP6 ::ffff:192.0.2.2" + CRLF +
-"t=3338481189 3370017201" + CRLF +
-"m=audio 6000 RTP/AVP 2" + CRLF +
-"a=rtpmap:2 G726-32/8000" + CRLF +
-"m=video 6024 RTP/AVP 107" + CRLF +
-"a=rtpmap:107 H263-1998/90000";
+$"INVITE sip:user@example.com SIP/2.0{CRLF}To: sip:user@example.com{CRLF}From: sip:user@east.example.com;tag=81x2{CRLF}Via: SIP/2.0/UDP [::ffff:192.0.2.10]:19823;branch=z9hG4bKbh19{CRLF}Via: SIP/2.0/UDP [::ffff:192.0.2.2];branch=z9hG4bKas3-111{CRLF}Call-ID: SSG9559905523997077@hlau_4100{CRLF}Contact: \"T. desk phone\" <sip:ted@[::ffff:192.0.2.2]>{CRLF}CSeq: 612 INVITE{CRLF}Max-Forwards: 70{CRLF}Content-Type: application/sdp{CRLF}Content-Length: 236{CRLF}{CRLF}v=0{CRLF}o=assistant 971731711378798081 0 IN IP6 ::ffff:192.0.2.2{CRLF}s=Call me soon, please!{CRLF}c=IN IP6 ::ffff:192.0.2.2{CRLF}t=3338481189 3370017201{CRLF}m=audio 6000 RTP/AVP 2{CRLF}a=rtpmap:2 G726-32/8000{CRLF}m=video 6024 RTP/AVP 107{CRLF}a=rtpmap:107 H263-1998/90000";
 
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
@@ -578,18 +465,11 @@ CRLF +
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_10_1()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-"OPTIONS sip:user@[2001:db8:::192.0.2.1] SIP/2.0" + CRLF +
-"To: sip:user@[2001:db8:::192.0.2.1]" + CRLF +
-"From: sip:user@example.com;tag=810x2" + CRLF +
-"Via: SIP/2.0/UDP lab1.east.example.com;branch=z9hG4bKas3-111" + CRLF +
-"Call-ID: G9559905523997077@hlau_4100" + CRLF +
-"CSeq: 689 OPTIONS" + CRLF +
-"Max-Forwards: 70" + CRLF +
-"Content-Length: 0";
+$"OPTIONS sip:user@[2001:db8:::192.0.2.1] SIP/2.0{CRLF}To: sip:user@[2001:db8:::192.0.2.1]{CRLF}From: sip:user@example.com;tag=810x2{CRLF}Via: SIP/2.0/UDP lab1.east.example.com;branch=z9hG4bKas3-111{CRLF}Call-ID: G9559905523997077@hlau_4100{CRLF}CSeq: 689 OPTIONS{CRLF}Max-Forwards: 70{CRLF}Content-Length: 0";
 
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
@@ -615,18 +495,11 @@ CRLF +
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_10_2()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-"OPTIONS sip:user@[2001:db8::192.0.2.1] SIP/2.0" + CRLF +
-"To: sip:user@[2001:db8::192.0.2.1]" + CRLF +
-"From: sip:user@example.com;tag=810x2" + CRLF +
-"Via: SIP/2.0/UDP lab1.east.example.com;branch=z9hG4bKas3-111" + CRLF +
-"Call-ID: G9559905523997077@hlau_4100" + CRLF +
-"CSeq: 689 OPTIONS" + CRLF +
-"Max-Forwards: 70" + CRLF +
-"Content-Length: 0";
+$"OPTIONS sip:user@[2001:db8::192.0.2.1] SIP/2.0{CRLF}To: sip:user@[2001:db8::192.0.2.1]{CRLF}From: sip:user@example.com;tag=810x2{CRLF}Via: SIP/2.0/UDP lab1.east.example.com;branch=z9hG4bKas3-111{CRLF}Call-ID: G9559905523997077@hlau_4100{CRLF}CSeq: 689 OPTIONS{CRLF}Max-Forwards: 70{CRLF}Content-Length: 0";
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");

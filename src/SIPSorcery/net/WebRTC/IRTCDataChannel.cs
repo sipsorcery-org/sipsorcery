@@ -161,7 +161,7 @@ namespace SIPSorcery.Net
 
         string binaryType { get; set; }
         void send(string data);
-        void send(byte[] data);
+        void send(byte[] data, int offset = 0, int count = -1);
     };
 
     public class RTCDataChannelInit

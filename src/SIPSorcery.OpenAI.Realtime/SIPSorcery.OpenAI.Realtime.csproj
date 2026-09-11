@@ -1,7 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- Multi-targeted so consumers such as the net8.0 SIPSorcery.Diagnostics global tool can reference
+         it. Purely additive: the dependencies (SIPSorcery, LanguageExt.Core, the
+         Microsoft.Extensions.* packages) all support these frameworks. -->
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
@@ -11,40 +14,51 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
+    <PackageReference Include="LanguageExt.Core" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
   </ItemGroup>
 
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Authors>Aaron Clauson</Authors>
-    <Copyright>Copyright © 2025 Aaron Clauson</Copyright>
-    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <Copyright>Copyright © 2025-2026 Aaron Clauson</Copyright>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <Title>SIPSorcery</Title>
     <Summary>A .NET library for interacting with OpenAI's real-time WebRTC API.</Summary>
     <Description>A .NET library for interacting with OpenAI's real-time WebRTC API. It provides helper classes to negotiate peer connections, send and receive Opus audio frames and exchange control messages over a data channel. Not an official OpenAI package and no affiliation with OpenAI.
     </Description>
     <Company>SIP Sorcery PTY LTD</Company>
-    <Product>SIPSorcery.OpenAI.WebRTC</Product>
+    <Product>SIPSorcery.OpenAI.Realtime</Product>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageProjectUrl>https://github.com/sipsorcery-org/SIPSorcery.OpenAI.WebRTC</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorcery.OpenAI.Realtime</PackageProjectUrl>
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
-    <RepositoryUrl>https://github.com/sipsorcery-org/SIPSorcery.OpenAI.WebRTC</RepositoryUrl>
+    <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>main</RepositoryBranch>
     <PackageTags>OpenAI WebRTC SIPSorcery Real-time</PackageTags>
-    <PackageReleaseNotes>-v8.0.4: Added gpt-4o-realtime-preview-2025-06-03 model option.
+    <PackageReleaseNotes>-v10.0.16: Updated nuget packages to latest stable versions.
+-v10.0.15: Updated for main sipsorcery library release.
+-v10.0.13: Fix license file.
+-v10.0.12: Updated for main sipsorcery library release.
+-v10.0.11: Updated for main sipsorcery library release.
+-v10.0.10: Updated for main sipsorcery library release.
+-v10.0.9: Updated for main sipsorcery library release.
+-v10.0.8: Fixes for OpenAI model changes.
+-v10.0.7: Updated for main sipsorcery library release.
+-v10.0.6: Updated for main sipsorcery library release.
+-v10.0.5: Updated for main sipsorcery library release.
+-v8.0.4: Added gpt-4o-realtime-preview-2025-06-03 model option.
 -v8.0.3: Stable release.
 -v8.0.2-pre: Synchronised realtime models with OpenAI spec.
 -v8.0.1-pre: Initial version.
 </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>10.0.1-pre</Version>
-    <AssemblyVersion>10.0.1</AssemblyVersion>
-    <FileVersion>10.0.1</FileVersion>
+    <Version>10.0.16</Version>
+    <AssemblyVersion>10.0.16</AssemblyVersion>
+    <FileVersion>10.0.16</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">
@@ -63,6 +77,7 @@
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
 	<None Include="README.md" Pack="true" PackagePath="" />
+	<None Include="..\..\LICENSE.md" Pack="true" PackagePath="" />
   </ItemGroup>
   
   <ItemGroup>

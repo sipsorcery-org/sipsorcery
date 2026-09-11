@@ -18,6 +18,7 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -51,6 +52,8 @@ namespace demo
         private static Form _form;
         private static PictureBox _sourceVideoPicBox;
         private static PictureBox _echoVideoPicBox;
+        private static Bitmap _sourceVideoBmp;
+        private static Bitmap _echoVideoBmp;
         private static bool _isFormActivated;
 
         static async Task Main()
@@ -97,43 +100,19 @@ namespace demo
 
             testPattern.OnVideoSourceRawSample += (uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
             {
-                if (_isFormActivated)
+                if (_isFormActivated && _form.Handle != IntPtr.Zero)
                 {
-                    _form?.BeginInvoke(new Action(() =>
-                    {
-                        if (_form.Handle != IntPtr.Zero)
-                        {
-                            unsafe
-                            {
-                                fixed (byte* s = sample)
-                                {
-                                    var bmpImage = new Bitmap(width, height, width * 3, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                                    _sourceVideoPicBox.Image = bmpImage;
-                                }
-                            }
-                        }
-                    }));
+                    _form.BeginInvoke(new Action(() =>
+                        _sourceVideoBmp = ShowFrame(_sourceVideoBmp, _sourceVideoPicBox, sample, width, height, width * 3)));
                 }
             };
 
             vp8VideoSink.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
             {
-                if (_isFormActivated)
+                if (_isFormActivated && _form.Handle != IntPtr.Zero)
                 {
-                    _form?.BeginInvoke(new Action(() =>
-                    {
-                        if (_form.Handle != IntPtr.Zero)
-                        {
-                            unsafe
-                            {
-                                fixed (byte* s = bmp)
-                                {
-                                    var bmpImage = new Bitmap((int)width, (int)height, stride, PixelFormat.Format24bppRgb, (IntPtr)s);
-                                    _echoVideoPicBox.Image = bmpImage;
-                                }
-                            }
-                        }
-                    }));
+                    _form.BeginInvoke(new Action(() =>
+                        _echoVideoBmp = ShowFrame(_echoVideoBmp, _echoVideoPicBox, bmp, (int)width, (int)height, stride)));
                 }
             };
 
@@ -170,6 +149,62 @@ namespace demo
             Console.WriteLine("Press any key to exit.");
             Console.ReadLine();
         }
+
+        /// <summary>
+        /// Copies a decoded 24 bits per pixel frame into a bitmap this application owns and displays it,
+        /// returning the bitmap so the caller can re-use it for the next frame.
+        /// </summary>
+        /// <remarks>
+        /// Runs on the UI thread. The byte[] overloads hand over a managed array, which unlike
+        /// RawImage.Sample stays valid after the callback returns, so the frame can simply be
+        /// marshalled across and copied here. Wrapping the array in a Bitmap instead would leave the
+        /// picture box pointing at memory the GC is free to move or reclaim.
+        ///
+        /// The bitmap is allocated once and re-used until the frame size changes. Note GDI+'s
+        /// Format24bppRgb is B,G,R in memory despite the name, which is why a Bgr sample copies in
+        /// verbatim.
+        /// </remarks>
+        private static Bitmap ShowFrame(Bitmap displayBmp, PictureBox picBox, byte[] sample, int width, int height, int stride)
+        {
+            if (displayBmp == null || displayBmp.Width != width || displayBmp.Height != height)
+            {
+                var previous = displayBmp;
+                displayBmp = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+
+                picBox.Width = width;
+                picBox.Height = height;
+                picBox.Image = displayBmp;
+                previous?.Dispose();
+            }
+
+            var bmpData = displayBmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+
+            try
+            {
+                // GDI+ pads each row to a multiple of four bytes, so the strides only agree when the
+                // width is a multiple of four. That covers every standard resolution.
+                if (stride == bmpData.Stride)
+                {
+                    Marshal.Copy(sample, 0, bmpData.Scan0, stride * height);
+                }
+                else
+                {
+                    for (int row = 0; row < height; row++)
+                    {
+                        Marshal.Copy(sample, row * stride, bmpData.Scan0 + row * bmpData.Stride, width * 3);
+                    }
+                }
+            }
+            finally
+            {
+                displayBmp.UnlockBits(bmpData);
+            }
+
+            picBox.Invalidate();
+
+            return displayBmp;
+        }
+
 
         private static Task<RTCPeerConnection> CreatePeerConnection(IVideoSource videoSource, IVideoSink videoSink)
         {

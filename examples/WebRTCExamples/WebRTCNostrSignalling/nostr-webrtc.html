@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>WebRTC Nostr Signalling - Browser Peer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        h2 { margin-top: 0; }
+        input[type="text"] { width: 600px; padding: 5px; font-family: monospace; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #status { padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .connected { background-color: #d4edda; }
+        .disconnected { background-color: #f8d7da; }
+        .connecting { background-color: #fff3cd; }
+        #log {
+            height: 300px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        video { background-color: #000; max-width: 100%; }
+        .id-display {
+            font-family: monospace;
+            background: #eef;
+            padding: 4px 8px;
+            border-radius: 3px;
+            user-select: all;
+        }
+        .id-short { color: #06c; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>WebRTC Nostr Signalling -- Browser Peer</h1>
+
+    <div class="section">
+        <h2>Configuration</h2>
+        <div>
+            <label>Nostr Relay URL: </label>
+            <input type="text" id="relayUrl" value="wss://nos.lol" />
+        </div>
+        <div style="margin-top: 10px;">
+            <label>Your Peer ID (short): </label>
+            <span class="id-short" id="localPeerIdShort"></span>
+        </div>
+        <div style="margin-top: 6px;">
+            <label>Your Peer ID (full):&nbsp; </label>
+            <span class="id-display" id="localPeerIdFull"></span>
+        </div>
+        <small>(give the full Peer ID to the other peer to connect)</small>
+    </div>
+
+    <div class="section">
+        <h2>Connection</h2>
+        <div>
+            <label>Remote Peer ID (full 64 hex chars): </label>
+            <input type="text" id="remotePeerId"
+                   placeholder="64-char hex pubkey of the other peer"
+                   value="64f89d1551ec0d0f541575a8d39db408d18b19208d3f2951972dc3d738c79c96" />
+        </div>
+        <div style="margin-top: 10px;">
+            <button id="connectRelay">Connect to Relay</button>
+            <button id="createOffer" disabled>Create Offer (Start Call)</button>
+            <button id="disconnect" disabled>Disconnect</button>
+        </div>
+        <div id="status" class="disconnected">Status: Disconnected</div>
+    </div>
+
+    <div class="section">
+        <h2>Video</h2>
+        <video id="remoteVideo" autoplay controls></video>
+    </div>
+
+    <div class="section">
+        <h2>Log</h2>
+        <div id="log"></div>
+    </div>
+
+    <script type="module">
+        // ----------------------------------------------------------------------
+        // WebRTC Signalling over Nostr -- browser peer.
+        //
+        // Wire format matches the C# console app in this folder:
+        //   * Custom ephemeral kind 25555 (chosen to avoid colliding with
+        //     NIP-46 NostrConnect on kind 24133).
+        //   * Each peer is identified by its FULL 64-hex secp256k1 pubkey.
+        //   * Routing is done at the Nostr level via a ["p", recipientPubkey]
+        //     tag plus a {"#p":[localPubkey]} subscription filter, so the
+        //     relay only forwards events tagged for us.
+        //   * The signalling JSON uses PascalCase property names and an
+        //     integer Type field (Offer=0, Answer=1, IceCandidate=2) to
+        //     match what System.Text.Json on the C# side produces.
+        //   * Event content is HEX-ENCODED to dodge a canonicalisation bug
+        //     in the .NET NNostr.Client library. The C# code does the same
+        //     so we round-trip bit-exact.
+        //
+        // We use nostr-tools from esm.sh for real BIP-340 Schnorr signing
+        // (the previous version of this file sent fake signatures, which
+        // most public relays reject).
+        // ----------------------------------------------------------------------
+
+        import {
+            getPublicKey,
+            finalizeEvent,
+            verifyEvent,
+        } from 'https://esm.sh/nostr-tools@2.7.2/pure';
+        import { nip44 } from 'https://esm.sh/nostr-tools@2.7.2';
+
+        const WEBRTC_SIGNAL_KIND = 25555;
+
+        // ----------------------------------------------------------------------
+        // DEMO ONLY -- hard-coded keys.
+        //
+        // Both peers (this browser page and the matching C# console app in
+        // Program.cs) use fixed Nostr keypairs so the demo can be launched
+        // without copy/pasting freshly-generated pubkeys back and forth on
+        // every run. Do NOT reuse these keys for anything real -- the
+        // private key is visible to anyone who views the page source.
+        //
+        // The C# app's matching keys are pinned in Program.cs:
+        //   private hex: 3856fd69b3ce60f003e01449bbae71f5a3fdfd8b4ed483910ab6fd16e2dcf8d0
+        //   pubkey  hex: 64f89d1551ec0d0f541575a8d39db408d18b19208d3f2951972dc3d738c79c96
+        // ----------------------------------------------------------------------
+        const BROWSER_PRIVATE_KEY_HEX =
+            'd459231a949d367b79b45b3f5c1670c2aaa30e696b9f4337fa8e9b7900b8e7e3';
+
+        // Integer values match the C# NostrSignalType enum declaration order.
+        const SignalType = { Offer: 0, Answer: 1, IceCandidate: 2 };
+        const signalTypeName = (n) =>
+            ({ 0: 'Offer', 1: 'Answer', 2: 'IceCandidate' }[n] || `Unknown(${n})`);
+
+        // ---- state ----
+        let localSecretKey = null;     // Uint8Array(32)
+        let localPubKeyHex = null;     // 64-char hex (x-only schnorr pubkey)
+        let localPeerIdShort = null;   // first 8 hex chars of localPubKeyHex
+        let remotePubKeyHex = null;    // full hex pubkey of the other peer
+        let remotePeerIdShort = null;
+        let nostrWs = null;
+        let pc = null;
+        // Buffer for ICE candidates that arrive before the remote description
+        // is set. Drained as soon as setRemoteDescription succeeds.
+        let pendingRemoteCandidates = [];
+        let remoteDescriptionApplied = false;
+        // Cached NIP-44 v2 conversation key (ECDH-derived from our secret
+        // and the remote pubkey). Recomputed if the remote pubkey changes.
+        // Format: Uint8Array(32) per the NIP-44 spec.
+        let cachedConversationKey = null;
+        let cachedConversationKeyForRemote = null;
+
+        // ---- helpers ----
+        const enc = new TextEncoder();
+        const dec = new TextDecoder();
+
+        function bytesToHex(bytes) {
+            return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+        }
+        function hexToBytes(hex) {
+            const out = new Uint8Array(hex.length / 2);
+            for (let i = 0; i < out.length; i++) {
+                out[i] = parseInt(hex.substr(i * 2, 2), 16);
+            }
+            return out;
+        }
+        function utf8ToHex(s) { return bytesToHex(enc.encode(s)); }
+        function hexToUtf8(hex) { return dec.decode(hexToBytes(hex)); }
+
+        // Compute (or return cached) NIP-44 v2 ConversationKey for the
+        // current remote pubkey. Throws if either key is missing. The
+        // cache invalidates if the remote pubkey changes — important if
+        // the same page is later reused against a different C# peer.
+        function getConversationKey() {
+            if (!localSecretKey) { throw new Error('Local secret key not loaded.'); }
+            if (!remotePubKeyHex) { throw new Error('Remote pubkey not known yet.'); }
+            if (cachedConversationKey && cachedConversationKeyForRemote === remotePubKeyHex) {
+                return cachedConversationKey;
+            }
+            cachedConversationKey = nip44.v2.utils.getConversationKey(localSecretKey, remotePubKeyHex);
+            cachedConversationKeyForRemote = remotePubKeyHex;
+            return cachedConversationKey;
+        }
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function setStatus(status, className) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = `Status: ${status}`;
+            statusDiv.className = className;
+        }
+
+        // Load the hard-coded demo keypair at startup. (Was generateSecretKey()
+        // -- intentionally replaced with a fixed key so the C# peer can be
+        // pre-configured to address us without a per-run copy/paste step.)
+        function loadNostrIdentity() {
+            localSecretKey = hexToBytes(BROWSER_PRIVATE_KEY_HEX);
+            localPubKeyHex = getPublicKey(localSecretKey);
+            localPeerIdShort = localPubKeyHex.slice(0, 8);
+            document.getElementById('localPeerIdShort').textContent = localPeerIdShort;
+            document.getElementById('localPeerIdFull').textContent = localPubKeyHex;
+            log(`Loaded hard-coded Nostr keypair. Pubkey ${localPubKeyHex}`);
+        }
+        loadNostrIdentity();
+
+        // ----------------------------------------------------------------------
+        // Nostr connection + subscription
+        // ----------------------------------------------------------------------
+
+        document.getElementById('connectRelay').onclick = function () {
+            const relayUrl = document.getElementById('relayUrl').value.trim();
+            log(`Connecting to Nostr relay: ${relayUrl}`);
+            setStatus('Connecting to relay...', 'connecting');
+
+            nostrWs = new WebSocket(relayUrl);
+
+            nostrWs.onopen = function () {
+                log('Connected to Nostr relay');
+                setStatus('Connected to relay', 'connected');
+
+                document.getElementById('createOffer').disabled = false;
+                document.getElementById('disconnect').disabled = false;
+                document.getElementById('connectRelay').disabled = true;
+
+                // Subscribe only to events tagged for us. Without the "#p"
+                // filter the relay would send us every kind-25555 event from
+                // every other client.
+                const subscriptionId = 'webrtc-signal';
+                const filter = {
+                    kinds: [WEBRTC_SIGNAL_KIND],
+                    '#p': [localPubKeyHex],
+                };
+                nostrWs.send(JSON.stringify(['REQ', subscriptionId, filter]));
+                log(`Subscribed to kind ${WEBRTC_SIGNAL_KIND} for our pubkey only.`);
+            };
+
+            nostrWs.onmessage = function (event) {
+                let data;
+                try {
+                    data = JSON.parse(event.data);
+                } catch (e) {
+                    log(`Bad JSON from relay: ${e.message}`);
+                    return;
+                }
+
+                if (data[0] === 'EVENT') {
+                    handleNostrEvent(data[2]);
+                } else if (data[0] === 'NOTICE') {
+                    log(`Nostr notice: ${data[1]}`);
+                } else if (data[0] === 'OK') {
+                    const [, eventId, success, msg] = data;
+                    if (success) {
+                        log(`Event ${eventId.slice(0, 8)}... accepted by relay${msg ? ': ' + msg : ''}`);
+                    } else {
+                        log(`Event ${eventId.slice(0, 8)}... REJECTED by relay: ${msg}`);
+                    }
+                } else if (data[0] === 'EOSE') {
+                    log(`End of stored events for subscription: ${data[1]}`);
+                }
+            };
+
+            nostrWs.onerror = function (error) {
+                log(`WebSocket error: ${error.message || error}`);
+                setStatus('Connection error', 'disconnected');
+            };
+
+            nostrWs.onclose = function () {
+                log('Disconnected from Nostr relay');
+                setStatus('Disconnected', 'disconnected');
+                resetUI();
+            };
+        };
+
+        function handleNostrEvent(nostrEvent) {
+            try {
+                let sigOk = false;
+                try { sigOk = verifyEvent(nostrEvent); } catch { /* ignore */ }
+                if (!sigOk) {
+                    log(`Event ${nostrEvent.id?.slice(0, 8)}... did not verify; processing anyway (relay-side "#p" filter is the trust gate).`);
+                }
+
+                if (typeof nostrEvent.content !== 'string') return;
+
+                // event.content is the NIP-44 v2 base64 ciphertext.
+                if (!remotePubKeyHex && typeof nostrEvent.pubkey === 'string') {
+                    remotePubKeyHex = nostrEvent.pubkey;
+                    remotePeerIdShort = remotePubKeyHex.slice(0, 8);
+                }
+
+                let json;
+                try {
+                    json = nip44.v2.decrypt(nostrEvent.content, getConversationKey());
+                } catch (e) {
+                    log(`NIP-44 decrypt failed for event ${nostrEvent.id?.slice(0, 8)}...: ${e.message}`);
+                    return;
+                }
+
+                let message;
+                try {
+                    message = JSON.parse(json);
+                } catch (e) {
+                    log(`Skipping malformed JSON in event content: ${e.message}`);
+                    return;
+                }
+
+                // Defensive check: relay-side filter should have ensured this
+                // already, but verify the application-level routing too.
+                if (message.TargetPeerId !== localPeerIdShort) {
+                    log(`Skipping message not for us (TargetPeerId=${message.TargetPeerId} localPeerId=${localPeerIdShort}).`);
+                    return;
+                }
+
+                log(`Received ${signalTypeName(message.Type)} from peer ${message.PeerId}`);
+
+                switch (message.Type) {
+                    case SignalType.Offer: handleOffer(message, nostrEvent); break;
+                    case SignalType.Answer: handleAnswer(message); break;
+                    case SignalType.IceCandidate: handleIceCandidate(message); break;
+                    default: log(`Unknown message type: ${message.Type}`);
+                }
+            } catch (e) {
+                log(`Error handling Nostr event: ${e.message}`);
+            }
+        }
+
+        // ----------------------------------------------------------------------
+        // WebRTC handlers
+        // ----------------------------------------------------------------------
+
+        async function handleOffer(message, nostrEvent) {
+            // Learn the offerer's full pubkey from the EVENT pubkey field --
+            // we need it to address our Answer back via the "p" tag.
+            remotePubKeyHex = nostrEvent.pubkey;
+            remotePeerIdShort = remotePubKeyHex.slice(0, 8);
+            document.getElementById('remotePeerId').value = remotePubKeyHex;
+
+            log('Creating peer connection for incoming call...');
+            createPeerConnection();
+
+            await pc.setRemoteDescription({ type: 'offer', sdp: message.Sdp });
+            remoteDescriptionApplied = true;
+            await drainPendingRemoteCandidates();
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            await sendSignalMessage({
+                Type: SignalType.Answer,
+                PeerId: localPeerIdShort,
+                TargetPeerId: remotePeerIdShort,
+                Sdp: answer.sdp,
+            });
+
+            log('Sent answer to peer.');
+        }
+
+        async function handleAnswer(message) {
+            log('Applying answer SDP...');
+            await pc.setRemoteDescription({ type: 'answer', sdp: message.Sdp });
+            remoteDescriptionApplied = true;
+            await drainPendingRemoteCandidates();
+            log('Remote description (answer) applied successfully.');
+        }
+
+        async function handleIceCandidate(message) {
+            if (!pc || !message.Candidate) return;
+
+            const cand = {
+                candidate: message.Candidate,
+                sdpMid: message.SdpMid,
+                sdpMLineIndex: message.SdpMLineIndex ?? 0,
+            };
+
+            if (!remoteDescriptionApplied) {
+                pendingRemoteCandidates.push(cand);
+                log(`Buffered remote ICE candidate (no remote description yet)`);
+                return;
+            }
+
+            try {
+                await pc.addIceCandidate(cand);
+                log('Added remote ICE candidate.');
+            } catch (e) {
+                log(`addIceCandidate failed: ${e.message}`);
+            }
+        }
+
+        async function drainPendingRemoteCandidates() {
+            if (pendingRemoteCandidates.length === 0) return;
+            log(`Draining ${pendingRemoteCandidates.length} buffered remote ICE candidate(s).`);
+            for (const cand of pendingRemoteCandidates) {
+                try { await pc.addIceCandidate(cand); }
+                catch (e) { log(`addIceCandidate failed during drain: ${e.message}`); }
+            }
+            pendingRemoteCandidates = [];
+        }
+
+        // ----------------------------------------------------------------------
+        // Send + sign a signalling message via Nostr
+        // ----------------------------------------------------------------------
+
+        async function sendSignalMessage(message) {
+            if (!nostrWs || nostrWs.readyState !== WebSocket.OPEN) {
+                log('Cannot send: relay socket not open.');
+                return;
+            }
+            if (!remotePubKeyHex) {
+                log('Cannot send: remote pubkey not known.');
+                return;
+            }
+
+            // Encrypt with NIP-44 v2 and put the base64 ciphertext directly
+            // on the wire — standard NIP-44 wire format, decryptable by any
+            // Nostr client that has the right keys.
+            const innerJson = JSON.stringify(message);
+            const hexContent = nip44.v2.encrypt(innerJson, getConversationKey());
+
+            const eventTemplate = {
+                kind: WEBRTC_SIGNAL_KIND,
+                content: hexContent,
+                created_at: Math.floor(Date.now() / 1000),
+                // Address the recipient via the "p" tag so their "#p" filter
+                // accepts the event and the relay forwards it to them.
+                tags: [['p', remotePubKeyHex]],
+            };
+
+            // finalizeEvent computes id, signs with BIP-340 Schnorr, and
+            // returns a complete event object.
+            const evt = finalizeEvent(eventTemplate, localSecretKey);
+
+            log(`Publishing ${signalTypeName(message.Type)} event ${evt.id.slice(0, 8)}...`);
+            nostrWs.send(JSON.stringify(['EVENT', evt]));
+        }
+
+        // ----------------------------------------------------------------------
+        // RTCPeerConnection wiring
+        // ----------------------------------------------------------------------
+
+        function createPeerConnection() {
+            const config = {
+                iceServers: [{ urls: 'stun:stun.cloudflare.com' }],
+            };
+            pc = new RTCPeerConnection(config);
+            pendingRemoteCandidates = [];
+            remoteDescriptionApplied = false;
+
+            pc.ontrack = function (event) {
+                log('Received remote track.');
+                document.getElementById('remoteVideo').srcObject = event.streams[0];
+            };
+
+            pc.onicecandidate = async function (event) {
+                if (!event.candidate || !remotePubKeyHex) return;
+                await sendSignalMessage({
+                    Type: SignalType.IceCandidate,
+                    PeerId: localPeerIdShort,
+                    TargetPeerId: remotePeerIdShort,
+                    Candidate: event.candidate.candidate,
+                    SdpMid: event.candidate.sdpMid,
+                    SdpMLineIndex: event.candidate.sdpMLineIndex,
+                });
+            };
+
+            pc.onconnectionstatechange = function () {
+                log(`Connection state: ${pc.connectionState}`);
+                if (pc.connectionState === 'connected') {
+                    setStatus('WebRTC Connected!', 'connected');
+                } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+                    setStatus('Connection failed/disconnected', 'disconnected');
+                }
+            };
+
+            pc.oniceconnectionstatechange = function () {
+                log(`ICE connection state: ${pc.iceConnectionState}`);
+            };
+
+            pc.onsignalingstatechange = function () {
+                log(`Signalling state: ${pc.signalingState}`);
+            };
+        }
+
+        // ----------------------------------------------------------------------
+        // UI: Create Offer
+        // ----------------------------------------------------------------------
+
+        document.getElementById('createOffer').onclick = async function () {
+            const remoteInput = document.getElementById('remotePeerId').value.trim();
+            if (!remoteInput || remoteInput.length !== 64 || !/^[0-9a-fA-F]{64}$/.test(remoteInput)) {
+                alert('Please enter the remote peer\'s full 64-char hex Peer ID.');
+                return;
+            }
+            remotePubKeyHex = remoteInput.toLowerCase();
+            remotePeerIdShort = remotePubKeyHex.slice(0, 8);
+
+            log(`Creating offer for peer ${remotePeerIdShort} (${remotePubKeyHex})...`);
+            setStatus('Creating offer...', 'connecting');
+
+            createPeerConnection();
+
+            // Receive-only video + audio for the demo.
+            pc.addTransceiver('video', { direction: 'recvonly' });
+            pc.addTransceiver('audio', { direction: 'recvonly' });
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            await sendSignalMessage({
+                Type: SignalType.Offer,
+                PeerId: localPeerIdShort,
+                TargetPeerId: remotePeerIdShort,
+                Sdp: offer.sdp,
+            });
+
+            log(`Sent offer to peer ${remotePeerIdShort}.`);
+            setStatus('Waiting for answer...', 'connecting');
+        };
+
+        // ----------------------------------------------------------------------
+        // UI: Disconnect / reset
+        // ----------------------------------------------------------------------
+
+        document.getElementById('disconnect').onclick = function () {
+            if (pc) { pc.close(); pc = null; }
+            if (nostrWs) { nostrWs.close(); nostrWs = null; }
+            resetUI();
+            log('Disconnected.');
+        };
+
+        function resetUI() {
+            document.getElementById('createOffer').disabled = true;
+            document.getElementById('disconnect').disabled = true;
+            document.getElementById('connectRelay').disabled = false;
+            setStatus('Disconnected', 'disconnected');
+        }
+    </script>
+</body>
+</html>

@@ -9,8 +9,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -27,27 +27,189 @@ namespace SIPSorcery.SIP.UnitTests
 
         private const string m_CRLF = "\r\n";
 
+        /// <summary>
+        /// Regression test for the Route header serialisation bug introduced when SIPHeader.ToString()
+        /// started routing every header through a generic AppendHeader&lt;T&gt; helper. Because
+        /// SIPRouteSet.ToString() was declared with "new" (hiding) rather than "override", the generic
+        /// interpolation dispatched to object.ToString() and emitted the type name
+        /// ("SIPSorcery.SIP.SIPRouteSet") instead of the route list.
+        /// </summary>
+        [Fact]
+        public void RouteHeaderToStringRegressionTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            string headers =
+                $"Via: SIP/2.0/UDP 192.168.1.2:5065;branch=z9hG4bKrouteregression{m_CRLF}" +
+                $"Route: <sip:10.0.0.1:5060;lr>,<sip:10.0.0.2:5060;lr>{m_CRLF}" +
+                $"From: <sip:alice@example.com>;tag=abc123{m_CRLF}" +
+                $"To: <sip:bob@example.com>{m_CRLF}" +
+                $"Call-ID: route-regression@192.168.1.2{m_CRLF}" +
+                $"CSeq: 1 INVITE{m_CRLF}" +
+                $"Content-Length: 0{m_CRLF}";
+
+            SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(SIPHeader.SplitHeaders(headers));
+
+            string serialised = sipHeader.ToString();
+            logger.LogDebug("Serialised headers:\n{Headers}", serialised);
+
+            // The type name must never leak into the serialised header.
+            Assert.DoesNotContain("SIPSorcery.SIP.SIPRouteSet", serialised);
+            Assert.Contains("Route: <sip:10.0.0.1:5060;lr>,<sip:10.0.0.2:5060;lr>", serialised);
+
+            // Round-trip: re-parse the serialised output and confirm both routes survive in order.
+            SIPHeader reparsed = SIPHeader.ParseSIPHeaders(SIPHeader.SplitHeaders(serialised));
+            Assert.Equal(2, reparsed.Routes.Length);
+            Assert.Equal("10.0.0.1:5060", reparsed.Routes.PopRoute().Host);
+            Assert.Equal("10.0.0.2:5060", reparsed.Routes.PopRoute().Host);
+        }
+
+        /// <summary>
+        /// Regression test for the same bug as <see cref="RouteHeaderToStringRegressionTest"/> but for the
+        /// Record-Route header (also backed by a SIPRouteSet).
+        /// </summary>
+        [Fact]
+        public void RecordRouteHeaderToStringRegressionTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            string headers =
+                $"Via: SIP/2.0/UDP 192.168.1.2:5065;branch=z9hG4bKrecordrouteregression{m_CRLF}" +
+                $"Record-Route: <sip:10.0.0.3:5060;lr>,<sip:10.0.0.4:5060;lr>{m_CRLF}" +
+                $"From: <sip:alice@example.com>;tag=abc123{m_CRLF}" +
+                $"To: <sip:bob@example.com>{m_CRLF}" +
+                $"Call-ID: record-route-regression@192.168.1.2{m_CRLF}" +
+                $"CSeq: 1 INVITE{m_CRLF}" +
+                $"Content-Length: 0{m_CRLF}";
+
+            SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(SIPHeader.SplitHeaders(headers));
+
+            string serialised = sipHeader.ToString();
+            logger.LogDebug("Serialised headers:\n{Headers}", serialised);
+
+            Assert.DoesNotContain("SIPSorcery.SIP.SIPRouteSet", serialised);
+            Assert.Contains("Record-Route: <sip:10.0.0.3:5060;lr>,<sip:10.0.0.4:5060;lr>", serialised);
+
+            SIPHeader reparsed = SIPHeader.ParseSIPHeaders(SIPHeader.SplitHeaders(serialised));
+            Assert.Equal(2, reparsed.RecordRoutes.Length);
+            Assert.Equal("10.0.0.3:5060", reparsed.RecordRoutes.PopRoute().Host);
+            Assert.Equal("10.0.0.4:5060", reparsed.RecordRoutes.PopRoute().Host);
+        }
+
+        /// <summary>
+        /// Guards the SplitHeaders rewrite (Regex.Replace folding removed in favour of a hand written
+        /// NormalizeFoldedHeaderLines pass). A header value folded across two lines using a leading tab
+        /// must be unfolded into a single logical header.
+        /// </summary>
+        [Fact]
+        public void SplitHeadersUnfoldsTabContinuationTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            string headers =
+                $"Via: SIP/2.0/UDP 192.168.1.2:5065;branch=z9hG4bKfold{m_CRLF}" +
+                $"Subject: first part{m_CRLF}\tsecond part{m_CRLF}" +
+                $"From: <sip:alice@example.com>;tag=abc123{m_CRLF}" +
+                $"To: <sip:bob@example.com>{m_CRLF}" +
+                $"Call-ID: fold@192.168.1.2{m_CRLF}" +
+                $"CSeq: 1 INVITE{m_CRLF}" +
+                $"Content-Length: 0{m_CRLF}";
+
+            string[] split = SIPHeader.SplitHeaders(headers);
+
+            // The folded continuation must have been merged back onto the Subject line.
+            Assert.Contains(split, h => h.StartsWith("Subject:") && h.Contains("first part") && h.Contains("second part"));
+            Assert.DoesNotContain(split, h => h.TrimStart().StartsWith("second part") && !h.Contains("first part"));
+        }
+
+        /// <summary>
+        /// Guards the NormalizeFoldedHeaderLines handling of the malformed "\r " (bare CR + space) line
+        /// terminator that some user agents emit instead of CRLF.
+        /// </summary>
+        [Fact]
+        public void SplitHeadersNormalisesBareCarriageReturnTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            // Two header lines separated by the malformed "\r " sequence rather than CRLF.
+            string headers = "Max-Forwards: 70\r Content-Length: 0\r ";
+
+            string[] split = SIPHeader.SplitHeaders(headers);
+
+            Assert.Contains(split, h => h.StartsWith("Max-Forwards:"));
+            Assert.Contains(split, h => h.StartsWith("Content-Length:"));
+            // The two headers must not have been collapsed onto a single line.
+            Assert.DoesNotContain(split, h => h.Contains("Max-Forwards") && h.Contains("Content-Length"));
+        }
+
+        /// <summary>
+        /// Guards the move from culture sensitive headerName.ToLower() comparisons to
+        /// string.Equals(..., OrdinalIgnoreCase). Header names supplied in unexpected casing must
+        /// still be recognised.
+        /// </summary>
+        [Fact]
+        public void HeaderNameCaseInsensitiveParsingTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            string headers =
+                $"vIa: SIP/2.0/UDP 192.168.1.2:5065;branch=z9hG4bKcase{m_CRLF}" +
+                $"fRoM: <sip:alice@example.com>;tag=abc123{m_CRLF}" +
+                $"tO: <sip:bob@example.com>{m_CRLF}" +
+                $"CALL-ID: case@192.168.1.2{m_CRLF}" +
+                $"cseq: 42 INVITE{m_CRLF}" +
+                $"CONTENT-LENGTH: 7{m_CRLF}";
+
+            SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(SIPHeader.SplitHeaders(headers));
+
+            Assert.Equal(42, sipHeader.CSeq);
+            Assert.Equal(SIPMethodsEnum.INVITE, sipHeader.CSeqMethod);
+            Assert.Equal(7, sipHeader.ContentLength);
+            Assert.Equal("case@192.168.1.2", sipHeader.CallId);
+            Assert.Single(sipHeader.Vias.Via);
+        }
+
+        /// <summary>
+        /// Guards the CSeq parsing rewrite (string.Split(' ') replaced by the span based
+        /// TryGetSpaceSeparatedToken helper). Both the sequence number and method must be extracted.
+        /// </summary>
+        [Fact]
+        public void CSeqWithMethodParsingTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            string headers =
+                $"Via: SIP/2.0/UDP 192.168.1.2:5065;branch=z9hG4bKcseq{m_CRLF}" +
+                $"From: <sip:alice@example.com>;tag=abc123{m_CRLF}" +
+                $"To: <sip:bob@example.com>{m_CRLF}" +
+                $"Call-ID: cseq@192.168.1.2{m_CRLF}" +
+                $"CSeq: 9876 SUBSCRIBE{m_CRLF}" +
+                $"Content-Length: 0{m_CRLF}";
+
+            SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(SIPHeader.SplitHeaders(headers));
+
+            Assert.Equal(9876, sipHeader.CSeq);
+            Assert.Equal(SIPMethodsEnum.SUBSCRIBE, sipHeader.CSeqMethod);
+        }
+
         [Fact]
         public void ParseXTenHeadersTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string xtenInviteHeaders =
-                "Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" + m_CRLF +
-                "From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136" + m_CRLF +
-                "To: <sip:303@sip.blueface.ie>" + m_CRLF +
-                "Contact: <sip:aaronxten@192.168.1.2:5065>" + m_CRLF +
-                "Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2" + m_CRLF +
-                "CSeq: 49429 INVITE" + m_CRLF +
-                "Max-Forwards: 70" + m_CRLF +
-                "Content-Type: application/sdp" + m_CRLF +
-                "User-Agent: X-PRO release 1103v" + m_CRLF +
-                "Content-Length: 271" + m_CRLF;
+                $"Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>{m_CRLF}Contact: <sip:aaronxten@192.168.1.2:5065>{m_CRLF}Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2{m_CRLF}CSeq: 49429 INVITE{m_CRLF}Max-Forwards: 70{m_CRLF}Content-Type: application/sdp{m_CRLF}User-Agent: X-PRO release 1103v{m_CRLF}Content-Length: 271{m_CRLF}";
 
             logger.LogDebug("Original SIP Headers:\n{Headers}", xtenInviteHeaders);
 
-            string[] headersCollection = Regex.Split(xtenInviteHeaders, "\r\n");
+            string[] headersCollection = xtenInviteHeaders.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
 
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
 
@@ -58,19 +220,19 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.True(sipHeader.Vias.TopViaHeader.Transport == SIPProtocolsEnum.udp, "The Via transport was not parsed correctly.");
             Assert.True(sipHeader.Vias.TopViaHeader.Branch == "z9hG4bKFBB7EAC06934405182D13950BD51F001", "The Via branch was not parsed correctly.");
             Assert.True(sipHeader.Vias.TopViaHeader.ViaParameters.Has("rport"), "The Via rport parameter was not parsed correctly.");
-            Assert.True("SER Test X" == sipHeader.From.FromName, "The From Name value was not parsed correctly, " + sipHeader.From.FromName + ".");
-            Assert.True("sip:aaronxten@sip.blueface.ie:5065" == sipHeader.From.FromURI.ToString(), "The From URI value was not parsed correctly, " + sipHeader.From.FromURI + ".");
-            Assert.True("196468136" == sipHeader.From.FromTag, "The From tag value was not parsed correctly, " + sipHeader.From.FromTag + ".");
-            Assert.True(null == sipHeader.To.ToName, "The To Name value was not parsed correctly, " + sipHeader.To.ToName + ".");
-            Assert.True("sip:303@sip.blueface.ie" == sipHeader.To.ToURI.ToString(), "The To URI value was not parsed correctly, " + sipHeader.To.ToURI + ".");
-            Assert.True(null == sipHeader.To.ToTag, "The To tag value was not parsed correctly, " + sipHeader.To.ToTag + ".");
-            Assert.True("A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2" == sipHeader.CallId, "The Call ID values was not parsed correctly, " + sipHeader.CallId + ".");
-            Assert.True(49429 == sipHeader.CSeq, "The CSeq value was not parsed correctly, " + sipHeader.CSeq + ".");
-            Assert.True(SIPMethodsEnum.INVITE == sipHeader.CSeqMethod, "The CSeq Method value was not parsed correctly, " + sipHeader.CSeqMethod + ".");
-            Assert.True(70 == sipHeader.MaxForwards, "The MaxForwards value was not parsed correctly, " + sipHeader.MaxForwards + ".");
-            Assert.True("X-PRO release 1103v" == sipHeader.UserAgent, "The UserAgent value was not parsed correctly, " + sipHeader.UserAgent + ".");
-            Assert.True("application/sdp" == sipHeader.ContentType, "The ContentType value was not parsed correctly, " + sipHeader.ContentType + ".");
-            Assert.True(271 == sipHeader.ContentLength, "The ContentLength value was not parsed correctly, " + sipHeader.ContentLength + ".");
+            Assert.True("SER Test X" == sipHeader.From.FromName, $"The From Name value was not parsed correctly, {sipHeader.From.FromName}.");
+            Assert.True("sip:aaronxten@sip.blueface.ie:5065" == sipHeader.From.FromURI.ToString(), $"The From URI value was not parsed correctly, {sipHeader.From.FromURI}.");
+            Assert.True("196468136" == sipHeader.From.FromTag, $"The From tag value was not parsed correctly, {sipHeader.From.FromTag}.");
+            Assert.True(null == sipHeader.To.ToName, $"The To Name value was not parsed correctly, {sipHeader.To.ToName}.");
+            Assert.True("sip:303@sip.blueface.ie" == sipHeader.To.ToURI.ToString(), $"The To URI value was not parsed correctly, {sipHeader.To.ToURI}.");
+            Assert.True(null == sipHeader.To.ToTag, $"The To tag value was not parsed correctly, {sipHeader.To.ToTag}.");
+            Assert.True("A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2" == sipHeader.CallId, $"The Call ID values was not parsed correctly, {sipHeader.CallId}.");
+            Assert.True(49429 == sipHeader.CSeq, $"The CSeq value was not parsed correctly, {sipHeader.CSeq}.");
+            Assert.True(SIPMethodsEnum.INVITE == sipHeader.CSeqMethod, $"The CSeq Method value was not parsed correctly, {sipHeader.CSeqMethod}.");
+            Assert.True(70 == sipHeader.MaxForwards, $"The MaxForwards value was not parsed correctly, {sipHeader.MaxForwards}.");
+            Assert.True("X-PRO release 1103v" == sipHeader.UserAgent, $"The UserAgent value was not parsed correctly, {sipHeader.UserAgent}.");
+            Assert.True("application/sdp" == sipHeader.ContentType, $"The ContentType value was not parsed correctly, {sipHeader.ContentType}.");
+            Assert.True(271 == sipHeader.ContentLength, $"The ContentLength value was not parsed correctly, {sipHeader.ContentLength}.");
 
             logger.LogDebug("---------------------------------------------------");
         }
@@ -78,25 +240,14 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAsteriskRecordRouteHeadersTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string xtenInviteHeaders =
-                "Via: SIP/2.0/UDP 213.168.225.135:5060;branch=z9hG4bK8Z4EIWBeY45fRGwC0qIeu/xpw3A=" + m_CRLF +
-                "Via: SIP/2.0/UDP 192.168.1.2:5065;received=220.240.255.198:64091;branch=z9hG4bK4E0728C26A0640E7830D7C9179D08D67" + m_CRLF +
-                "Record-Route: <sip:213.168.225.133:5060;lr>,<sip:220.240.255.198:64091;lr>" + m_CRLF +
-                "From: bluesipd <sip:bluesipd@bluesipd:5065>;tag=457825353" + m_CRLF +
-                "To: <sip:303@bluesipd>;tag=as02a64a42" + m_CRLF +
-                "Call-ID: 8A702FA2-18F0-4DFC-AED5-C1A883EADB84@192.168.1.2" + m_CRLF +
-                "CSeq: 38002 INVITE" + m_CRLF +
-                "User-Agent: asterisk" + m_CRLF +
-                "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY" + m_CRLF +
-                "Contact: <sip:303@213.168.225.133>" + m_CRLF +
-                "Content-Type: application/sdp" + m_CRLF +
-                "Content-Length: 350" + m_CRLF;
+                $"Via: SIP/2.0/UDP 213.168.225.135:5060;branch=z9hG4bK8Z4EIWBeY45fRGwC0qIeu/xpw3A={m_CRLF}Via: SIP/2.0/UDP 192.168.1.2:5065;received=220.240.255.198:64091;branch=z9hG4bK4E0728C26A0640E7830D7C9179D08D67{m_CRLF}Record-Route: <sip:213.168.225.133:5060;lr>,<sip:220.240.255.198:64091;lr>{m_CRLF}From: bluesipd <sip:bluesipd@bluesipd:5065>;tag=457825353{m_CRLF}To: <sip:303@bluesipd>;tag=as02a64a42{m_CRLF}Call-ID: 8A702FA2-18F0-4DFC-AED5-C1A883EADB84@192.168.1.2{m_CRLF}CSeq: 38002 INVITE{m_CRLF}User-Agent: asterisk{m_CRLF}Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY{m_CRLF}Contact: <sip:303@213.168.225.133>{m_CRLF}Content-Type: application/sdp{m_CRLF}Content-Length: 350{m_CRLF}";
             logger.LogDebug("Original SIP Headers:\n{Headers}", xtenInviteHeaders);
 
-            string[] headersCollection = Regex.Split(xtenInviteHeaders, "\r\n");
+            string[] headersCollection = xtenInviteHeaders.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
 
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
 
@@ -111,22 +262,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAMulitLineHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string mulitLineHeader =
-                "Via: SIP/2.0/UDP 213.168.225.135:5060;branch=z9hG4bK8Z4EIWBeY45fRGwC0qIeu/xpw3A=" + m_CRLF +
-                "Via: SIP/2.0/UDP 192.168.1.2:5065;received=220.240.255.198:64091;branch=z9hG4bK4E0728C26A0640E7830D7C9179D08D67" + m_CRLF +
-                "Record-Route: <sip:213.168.225.133:5060;lr>," + m_CRLF +
-                " <sip:220.240.255.198:64091;lr>" + m_CRLF +
-                "From: bluesipd <sip:bluesipd@bluesipd:5065>;tag=457825353" + m_CRLF +
-                "To: <sip:303@bluesipd>;tag=as02a64a42" + m_CRLF +
-                "Call-ID: 8A702FA2-18F0-4DFC-AED5-C1A883EADB84@192.168.1.2" + m_CRLF +
-                "CSeq: 38002 INVITE" + m_CRLF +
-                "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY" + m_CRLF +
-                "Contact: <sip:303@213.168.225.133>" + m_CRLF +
-                "Content-Type: application/sdp" + m_CRLF +
-                "Content-Length: 350" + m_CRLF;
+                $"Via: SIP/2.0/UDP 213.168.225.135:5060;branch=z9hG4bK8Z4EIWBeY45fRGwC0qIeu/xpw3A={m_CRLF}Via: SIP/2.0/UDP 192.168.1.2:5065;received=220.240.255.198:64091;branch=z9hG4bK4E0728C26A0640E7830D7C9179D08D67{m_CRLF}Record-Route: <sip:213.168.225.133:5060;lr>,{m_CRLF} <sip:220.240.255.198:64091;lr>{m_CRLF}From: bluesipd <sip:bluesipd@bluesipd:5065>;tag=457825353{m_CRLF}To: <sip:303@bluesipd>;tag=as02a64a42{m_CRLF}Call-ID: 8A702FA2-18F0-4DFC-AED5-C1A883EADB84@192.168.1.2{m_CRLF}CSeq: 38002 INVITE{m_CRLF}Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY{m_CRLF}Contact: <sip:303@213.168.225.133>{m_CRLF}Content-Type: application/sdp{m_CRLF}Content-Length: 350{m_CRLF}";
 
             logger.LogDebug("Original SIP Headers:\n{Headers}", mulitLineHeader);
 
@@ -144,7 +284,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("Parsed SIP Headers:\n{Headers}", sipHeader.ToString());
 
-            Assert.True(sipHeader.RecordRoutes.Length == 2, "An incorrect number of record route entries was extracted, number was " + sipHeader.RecordRoutes.Length + ".");
+            Assert.True(sipHeader.RecordRoutes.Length == 2, $"An incorrect number of record route entries was extracted, number was {sipHeader.RecordRoutes.Length}.");
 
             SIPRoute topRoute = sipHeader.RecordRoutes.PopRoute();
             Assert.True(topRoute.Host == "213.168.225.133:5060", "The top record route was not parsed correctly.");
@@ -155,25 +295,14 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAuthenticationRequiredHeadersTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string authReqdHeaders =
-                "SIP/2.0 407 Proxy Authentication Required" + m_CRLF +
-                "Via: SIP/2.0/UDP 192.168.1.2:5066;received=220.240.255.198:64066;branch=65cacee9-25b6-405c-8f82-e40427438af7" + m_CRLF +
-                "From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136" + m_CRLF +
-                "To: <sip:303@sip.blueface.ie>;tag=as67b6416e" + m_CRLF +
-                "Contact: <sip:303@213.168.225.133>" + m_CRLF +
-                "Call-ID: 5bcb927f-9571-47d0-a2a1-36226bcf7665@192.168.1.2" + m_CRLF +
-                "CSeq: 908 INVITE" + m_CRLF +
-                "Max-Forwards: 70" + m_CRLF +
-                "User-Agent: asterisk" + m_CRLF +
-                "Proxy-Authenticate: Digest realm=\"asterisk\", nonce=\"15aeff81\"" + m_CRLF +
-                "Record-Route: <sip:213.168.225.135:5060;lr>" + m_CRLF +
-                "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY" + m_CRLF + m_CRLF;
+                $"SIP/2.0 407 Proxy Authentication Required{m_CRLF}Via: SIP/2.0/UDP 192.168.1.2:5066;received=220.240.255.198:64066;branch=65cacee9-25b6-405c-8f82-e40427438af7{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>;tag=as67b6416e{m_CRLF}Contact: <sip:303@213.168.225.133>{m_CRLF}Call-ID: 5bcb927f-9571-47d0-a2a1-36226bcf7665@192.168.1.2{m_CRLF}CSeq: 908 INVITE{m_CRLF}Max-Forwards: 70{m_CRLF}User-Agent: asterisk{m_CRLF}Proxy-Authenticate: Digest realm=\"asterisk\", nonce=\"15aeff81\"{m_CRLF}Record-Route: <sip:213.168.225.135:5060;lr>{m_CRLF}Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY{m_CRLF}{m_CRLF}";
             logger.LogDebug("Original SIP Headers:\n{Headers}", authReqdHeaders);
 
-            string[] headersCollection = Regex.Split(authReqdHeaders, "\r\n");
+            string[] headersCollection = authReqdHeaders.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
 
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
 
@@ -185,24 +314,15 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseNoViaHeadersUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string noViaHeaders =
-                "SIP/2.0 407 Proxy Authentication Required" + m_CRLF +
-                "From: dev <sip:aarondev@84.203.144.70>;tag=0013c339acec050c0635cf7b-48c41caf" + m_CRLF +
-                "To: <sip:303@84.203.144.70>;tag=as019f14fe" + m_CRLF +
-                "Call-ID: 0013c339-acec0011-7181eff5-7cfa0e24@89.100.92.186" + m_CRLF +
-                "CSeq: 101 INVITE" + m_CRLF +
-                "User-Agent: asterisk" + m_CRLF +
-                "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY" + m_CRLF +
-                "Contact: <sip:303@213.168.225.133:5061>" + m_CRLF +
-                "Proxy-Authenticate: Digest algorithm=MD5, realm=\"sip.blueface.ie\", nonce=\"789f00ab\"" + m_CRLF +
-                "Content-Length: 0" + m_CRLF + m_CRLF;
+                $"SIP/2.0 407 Proxy Authentication Required{m_CRLF}From: dev <sip:aarondev@84.203.144.70>;tag=0013c339acec050c0635cf7b-48c41caf{m_CRLF}To: <sip:303@84.203.144.70>;tag=as019f14fe{m_CRLF}Call-ID: 0013c339-acec0011-7181eff5-7cfa0e24@89.100.92.186{m_CRLF}CSeq: 101 INVITE{m_CRLF}User-Agent: asterisk{m_CRLF}Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY{m_CRLF}Contact: <sip:303@213.168.225.133:5061>{m_CRLF}Proxy-Authenticate: Digest algorithm=MD5, realm=\"sip.blueface.ie\", nonce=\"789f00ab\"{m_CRLF}Content-Length: 0{m_CRLF}{m_CRLF}";
 
             logger.LogDebug("Original SIP Headers:\n{Headers}", noViaHeaders);
 
-            string[] headersCollection = Regex.Split(noViaHeaders, "\r\n");
+            string[] headersCollection = noViaHeaders.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
 
             Assert.Throws<SIPValidationException>(() => SIPHeader.ParseSIPHeaders(headersCollection));
 
@@ -212,24 +332,15 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void LowerCaseExpiresUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-                "Via: SIP/2.0/UDP 192.168.1.32:10254;branch=z9hG4bK-d87543-eb7c9f44883c5955-1--d87543-;rport;received=89.100.104.191" + m_CRLF +
-                "To: aaronxten <sip:aaronxten@213.200.94.181>" + m_CRLF +
-                "From: aaronxten <sip:aaronxten@213.200.94.181>;tag=774d2561" + m_CRLF +
-                "Call-ID: MTBhNGZjZmQ2OTc3MWU5MTZjNWUxMDYxOTk1MjdmYzk." + m_CRLF +
-                "CSeq: 2 REGISTER" + m_CRLF +
-                "Contact: <sip:aaronxten@192.168.1.32:10254;rinstance=6d2bbd8014ca7a76>;expires=0" + m_CRLF +
-                "Max-Forwards: 69" + m_CRLF +
-                "expires: 60" + m_CRLF +
-                "User-Agent: X-Lite release 1006e stamp 34025" + m_CRLF +
-                "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY, MESSAGE, SUBSCRIBE, INFO" + m_CRLF + m_CRLF;
+                $"Via: SIP/2.0/UDP 192.168.1.32:10254;branch=z9hG4bK-d87543-eb7c9f44883c5955-1--d87543-;rport;received=89.100.104.191{m_CRLF}To: aaronxten <sip:aaronxten@213.200.94.181>{m_CRLF}From: aaronxten <sip:aaronxten@213.200.94.181>;tag=774d2561{m_CRLF}Call-ID: MTBhNGZjZmQ2OTc3MWU5MTZjNWUxMDYxOTk1MjdmYzk.{m_CRLF}CSeq: 2 REGISTER{m_CRLF}Contact: <sip:aaronxten@192.168.1.32:10254;rinstance=6d2bbd8014ca7a76>;expires=0{m_CRLF}Max-Forwards: 69{m_CRLF}expires: 60{m_CRLF}User-Agent: X-Lite release 1006e stamp 34025{m_CRLF}Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY, MESSAGE, SUBSCRIBE, INFO{m_CRLF}{m_CRLF}";
 
             logger.LogDebug("Original SIP Headers:\n{Headers}", sipMsg);
 
-            string[] headersCollection = Regex.Split(sipMsg, "\r\n");
+            string[] headersCollection = sipMsg.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
 
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
 
@@ -241,20 +352,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void HuaweiRegisterUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-                "From: <sip:10000579@200.170.136.196>;tag=0477183750" + m_CRLF +
-                "To: <sip:10000579@200.170.136.196>;tag=414dedfe" + m_CRLF +
-                "CSeq: 1 REGISTER" + m_CRLF +
-                "Call-ID: 438676792abe47328fc557da2d84d0ee" + m_CRLF +
-                "Via: SIP/2.0/UDP 192.168.1.102:7246;branch=z9hG4bK92460620adf84edab2341899a3453f79;received=124.168.235.200;rport=10552" + m_CRLF +
-                "Server: Huawei SoftX3000 R006B03D" + m_CRLF +
-                "WWW-Authenticate: Digest realm=\"huawei\"," + m_CRLF +
-                " nonce=\"248e4b4457f252ae53c859bfe03c4f93\",domain=\"sip:huawei.com\"," + m_CRLF +
-                " stale=false,algorithm=MD5" + m_CRLF +
-                "Content-Length: 0" + m_CRLF + m_CRLF;
+                $"From: <sip:10000579@200.170.136.196>;tag=0477183750{m_CRLF}To: <sip:10000579@200.170.136.196>;tag=414dedfe{m_CRLF}CSeq: 1 REGISTER{m_CRLF}Call-ID: 438676792abe47328fc557da2d84d0ee{m_CRLF}Via: SIP/2.0/UDP 192.168.1.102:7246;branch=z9hG4bK92460620adf84edab2341899a3453f79;received=124.168.235.200;rport=10552{m_CRLF}Server: Huawei SoftX3000 R006B03D{m_CRLF}WWW-Authenticate: Digest realm=\"huawei\",{m_CRLF} nonce=\"248e4b4457f252ae53c859bfe03c4f93\",domain=\"sip:huawei.com\",{m_CRLF} stale=false,algorithm=MD5{m_CRLF}Content-Length: 0{m_CRLF}{m_CRLF}";
 
             logger.LogDebug("Original SIP Headers:\n{Headers}", sipMsg);
 
@@ -265,7 +367,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("{SipHeader}", sipHeader.ToString());
             logger.LogDebug("{AuthenticationHeader}", sipHeader.AuthenticationHeaders[0].ToString());
 
-            Assert.True(Regex.Match(sipHeader.AuthenticationHeaders[0].ToString(), "nonce").Success, "The WWW-Authenticate header was not correctly parsed across multiple lines.");
+            Assert.True(sipHeader.AuthenticationHeaders[0].ToString().Contains("nonce"), "The WWW-Authenticate header was not correctly parsed across multiple lines.");
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -273,22 +375,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MultipleContactHeadersUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-                "From: <sip:10000579@200.170.136.196>;tag=0477183750" + m_CRLF +
-                "To: <sip:10000579@200.170.136.196>;tag=414dedfe" + m_CRLF +
-                "CSeq: 1 REGISTER" + m_CRLF +
-                "Contact: \"Joe Bloggs\" <sip:joe@bloggs.com>;expires=0" + m_CRLF +
-                "Call-ID: 438676792abe47328fc557da2d84d0ee" + m_CRLF +
-                "Via: SIP/2.0/UDP 192.168.1.102:7246;branch=z9hG4bK92460620adf84edab2341899a3453f79;received=124.168.235.200;rport=10552" + m_CRLF +
-                "Server: Huawei SoftX3000 R006B03D" + m_CRLF +
-                "WWW-Authenticate: Digest realm=\"huawei\"," + m_CRLF +
-                " nonce=\"248e4b4457f252ae53c859bfe03c4f93\",domain=\"sip:huawei.com\"," + m_CRLF +
-                " stale=false,algorithm=MD5" + m_CRLF +
-                "Contact: \"Jane Doe\" <sip:jane@doe.com>" + m_CRLF +
-                "Content-Length: 0" + m_CRLF + m_CRLF;
+                $"From: <sip:10000579@200.170.136.196>;tag=0477183750{m_CRLF}To: <sip:10000579@200.170.136.196>;tag=414dedfe{m_CRLF}CSeq: 1 REGISTER{m_CRLF}Contact: \"Joe Bloggs\" <sip:joe@bloggs.com>;expires=0{m_CRLF}Call-ID: 438676792abe47328fc557da2d84d0ee{m_CRLF}Via: SIP/2.0/UDP 192.168.1.102:7246;branch=z9hG4bK92460620adf84edab2341899a3453f79;received=124.168.235.200;rport=10552{m_CRLF}Server: Huawei SoftX3000 R006B03D{m_CRLF}WWW-Authenticate: Digest realm=\"huawei\",{m_CRLF} nonce=\"248e4b4457f252ae53c859bfe03c4f93\",domain=\"sip:huawei.com\",{m_CRLF} stale=false,algorithm=MD5{m_CRLF}Contact: \"Jane Doe\" <sip:jane@doe.com>{m_CRLF}Content-Length: 0{m_CRLF}{m_CRLF}";
 
             logger.LogDebug("Original SIP Headers:\n{Headers}", sipMsg);
 
@@ -306,22 +397,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ExtractHeadersUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
-                "From: <sip:10000579@200.170.136.196>;tag=0477183750" + m_CRLF +
-                "To: <sip:10000579@200.170.136.196>;tag=414dedfe" + m_CRLF +
-                "CSeq: 1 REGISTER" + m_CRLF +
-                "Call-ID: 438676792abe47328fc557da2d84d0ee" + m_CRLF +
-                "Via: SIP/2.0/UDP 192.168.1.102:7246;branch=z9hG4bK92460620adf84edab2341899a3453f79;received=124.168.235.200;rport=10552" + m_CRLF +
-                "Server: Huawei SoftX3000 R006B03D" + m_CRLF +
-                "Refer-To: Test Refer-To" + m_CRLF +
-                "Authentication-Info: Test Authentication-Info" + m_CRLF +
-                "WWW-Authenticate: Digest realm=\"huawei\"," + m_CRLF +
-                " nonce=\"248e4b4457f252ae53c859bfe03c4f93\",domain=\"sip:huawei.com\"," + m_CRLF +
-                " stale=false,algorithm=MD5" + m_CRLF +
-                "Content-Length: 0" + m_CRLF + m_CRLF;
+                $"From: <sip:10000579@200.170.136.196>;tag=0477183750{m_CRLF}To: <sip:10000579@200.170.136.196>;tag=414dedfe{m_CRLF}CSeq: 1 REGISTER{m_CRLF}Call-ID: 438676792abe47328fc557da2d84d0ee{m_CRLF}Via: SIP/2.0/UDP 192.168.1.102:7246;branch=z9hG4bK92460620adf84edab2341899a3453f79;received=124.168.235.200;rport=10552{m_CRLF}Server: Huawei SoftX3000 R006B03D{m_CRLF}Refer-To: Test Refer-To{m_CRLF}Authentication-Info: Test Authentication-Info{m_CRLF}WWW-Authenticate: Digest realm=\"huawei\",{m_CRLF} nonce=\"248e4b4457f252ae53c859bfe03c4f93\",domain=\"sip:huawei.com\",{m_CRLF} stale=false,algorithm=MD5{m_CRLF}Content-Length: 0{m_CRLF}{m_CRLF}";
 
             logger.LogDebug("Original SIP Headers:\n{Headers}", sipMsg);
 
@@ -338,8 +418,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "\"User\" <sip:user@domain.com>;tag=abcdef";
 
@@ -356,8 +436,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderNoTagTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "User <sip:user@domain.com>";
 
@@ -371,8 +451,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderSocketDomainTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "User <sip:user@127.0.0.1:5090>";
 
@@ -386,8 +466,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderSocketDomainAndTagTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "User <sip:user@127.0.0.1:5090>;tag=abcdef";
 
@@ -401,8 +481,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderNoNameTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "<sip:user@domaintest.com>";
 
@@ -416,8 +496,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderNoAngleBracketsTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "sip:user@domaintest.com";
 
@@ -431,14 +511,14 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderNoSpaceTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "UNAVAILABLE<sip:user@domaintest.com:5060>;tag=abcd";
 
             SIPFromHeader sipFromHeader = SIPFromHeader.ParseFromHeader(testFromHeader);
 
-            Assert.True(sipFromHeader.FromName == "UNAVAILABLE", "The From header name was not parsed correctly, name=" + sipFromHeader.FromName + ".");
+            Assert.True(sipFromHeader.FromName == "UNAVAILABLE", $"The From header name was not parsed correctly, name={sipFromHeader.FromName}.");
             Assert.True(sipFromHeader.FromURI.ToString() == "sip:user@domaintest.com:5060", "The From header URI was not parsed correctly.");
             Assert.True(sipFromHeader.FromTag == "abcd", "The From header Tag was not parsed correctly.");
         }
@@ -446,8 +526,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderNoUserTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "<sip:sip.domain.com>;tag=as6900b876";
 
@@ -461,8 +541,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseToHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testToHeader = "User <sip:user@domain.com>;tag=abcdef";
 
@@ -476,8 +556,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseMSCToHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testToHeader = "sip:xxx@127.0.110.30;tag=AZHf2-ZMfDX0";
 
@@ -493,8 +573,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ToStringToHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testToHeader = "User <sip:user@domain.com>;tag=abcdef";
 
@@ -513,8 +593,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ChangeTagToHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testToHeader = "User <sip:user@domain.com>;tag=abcdef";
 
@@ -534,8 +614,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseByeToHeader()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testHeader = "\"Joe Bloggs\" <sip:joe@sip.blueface.ie>;tag=0013c339acec34652d988c7e-4fddcdef";
 
@@ -551,8 +631,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAuthHeaderUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthenticationHeader authHeader = SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.ProxyAuthorization, "Digest realm=\"o-fone.com\",nonce=\"mv1keFTRX4yYVsHb/E+rviOflIurIw\",algorithm=MD5,qop=\"auth\",username=\"joe.bloggs\", response=\"1234\",uri=\"sip:o-fone.com\"");
 
@@ -569,8 +649,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MissingBracketsRouteTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPRoute newRoute = new SIPRoute("sip:127.0.0.1:5060");
 
@@ -582,8 +662,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRouteTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPRoute route = SIPRoute.ParseSIPRoute("<sip:127.0.0.1:5060;lr>");
 
@@ -597,8 +677,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SetLooseRouteTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPRoute route = SIPRoute.ParseSIPRoute("<sip:127.0.0.1:5060>");
             route.IsStrictRouter = false;
@@ -613,8 +693,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void RemoveLooseRouterTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPRoute route = SIPRoute.ParseSIPRoute("<sip:127.0.0.1:5060;lr>");
             route.IsStrictRouter = true;
@@ -629,8 +709,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRouteWithDisplayNameTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPRoute route = SIPRoute.ParseSIPRoute("12345656 <sip:127.0.0.1:5060;lr>");
 
@@ -646,8 +726,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRouteWithDoubleQuotedDisplayNameTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPRoute route = SIPRoute.ParseSIPRoute("\"Joe Bloggs\" <sip:127.0.0.1:5060;lr>");
 
@@ -661,8 +741,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRouteWithUserPortionTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string routeStr = "<sip:0033820600000@127.0.0.1:5060;lr;transport=udp>";
             SIPRoute route = SIPRoute.ParseSIPRoute(routeStr);
@@ -681,8 +761,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseSIPRouteSetTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string routeSetString = "<sip:127.0.0.1:5434;lr>,<sip:10.0.0.1>,<sip:192.168.0.1;ftag=12345;lr=on>";
             SIPRouteSet routeSet = SIPRouteSet.ParseSIPRouteSet(routeSetString);
@@ -705,8 +785,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AdjustReceivedViaHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string xtenViaHeader = "SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001";
 
@@ -734,8 +814,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AdjustReceivedCorrectAlreadyViaHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string xtenViaHeader = "SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001";
 
@@ -762,24 +842,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRequireAndSupportedExtensionsTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string inviteHeaders =
-                "Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" + m_CRLF +
-                "From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136" + m_CRLF +
-                "To: <sip:303@sip.blueface.ie>" + m_CRLF +
-                "Contact: <sip:aaronxten@192.168.1.2:5065>" + m_CRLF +
-                "Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2" + m_CRLF +
-                "CSeq: 49429 INVITE" + m_CRLF +
-                "Max-Forwards: 70" + m_CRLF +
-                "Content-Type: application/sdp" + m_CRLF +
-                "User-Agent: X-PRO release 1103v" + m_CRLF +
-                "Content-Length: 271" + m_CRLF +
-                "Require: abcd, 100rel, xyz" + m_CRLF +
-                "Supported: 100rel, other" + m_CRLF;
+                $"Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>{m_CRLF}Contact: <sip:aaronxten@192.168.1.2:5065>{m_CRLF}Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2{m_CRLF}CSeq: 49429 INVITE{m_CRLF}Max-Forwards: 70{m_CRLF}Content-Type: application/sdp{m_CRLF}User-Agent: X-PRO release 1103v{m_CRLF}Content-Length: 271{m_CRLF}Require: abcd, 100rel, xyz{m_CRLF}Supported: 100rel, other{m_CRLF}";
 
-            string[] headersCollection = Regex.Split(inviteHeaders, "\r\n");
+            string[] headersCollection = inviteHeaders.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
 
             Assert.True(sipHeader.RequiredExtensions.Contains(SIPExtensions.Prack), "The required header extensions was missing Prack.");
@@ -795,20 +864,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRSeqHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string ringResponse =
-                "SIP/2.0 180 Ringing" + m_CRLF +
-                "Via: SIP/2.0/UDP 0.0.0.0:6060;branch=z9hG4bK299925765f7c4defb20cef3fde520172;rport=6060;received=127.0.0.1" + m_CRLF +
-                "To: <sip:127.0.0.1>" + m_CRLF +
-                "From: <sip:thisis@anonymous.invalid>;tag=NEEBBCYYZR" + m_CRLF +
-                "Call-ID: 9add71138b794dadbd709a2b8c0cfc89" + m_CRLF +
-                "CSeq: 1 INVITE" + m_CRLF +
-                "Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, REFER, REGISTER, SUBSCRIBE" + m_CRLF +
-                "Supported: 100rel" + m_CRLF +
-                "Content-Length: 0" + m_CRLF +
-                "RSeq: 266163001" + m_CRLF + m_CRLF;
+                $"SIP/2.0 180 Ringing{m_CRLF}Via: SIP/2.0/UDP 0.0.0.0:6060;branch=z9hG4bK299925765f7c4defb20cef3fde520172;rport=6060;received=127.0.0.1{m_CRLF}To: <sip:127.0.0.1>{m_CRLF}From: <sip:thisis@anonymous.invalid>;tag=NEEBBCYYZR{m_CRLF}Call-ID: 9add71138b794dadbd709a2b8c0cfc89{m_CRLF}CSeq: 1 INVITE{m_CRLF}Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, REFER, REGISTER, SUBSCRIBE{m_CRLF}Supported: 100rel{m_CRLF}Content-Length: 0{m_CRLF}RSeq: 266163001{m_CRLF}{m_CRLF}";
 
             var sipResponse = SIPResponse.ParseSIPResponse(ringResponse);
 
@@ -823,19 +883,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRAckHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string prackRequest =
-                "PRACK sip:127.0.0.1 SIP/2.0" + m_CRLF +
-                "Via: SIP/2.0/UDP 0.0.0.0:6060;branch=z9hG4bKed0553cb6e4b476990a34d7c98f58a14;rport" + m_CRLF +
-                "To: <sip:127.0.0.1>" + m_CRLF +
-                "From: <sip:thisis@anonymous.invalid>;tag=YPACUCOFBG" + m_CRLF +
-                "Call-ID: c22e9dc218a1423695b1f5ef33020b84" + m_CRLF +
-                "CSeq: 1 ACK" + m_CRLF +
-                "Max-Forwards: 70" + m_CRLF +
-                "Content-Length: 0" + m_CRLF +
-                "RAck: 423501656 1 INVITE" + m_CRLF + m_CRLF;
+                $"PRACK sip:127.0.0.1 SIP/2.0{m_CRLF}Via: SIP/2.0/UDP 0.0.0.0:6060;branch=z9hG4bKed0553cb6e4b476990a34d7c98f58a14;rport{m_CRLF}To: <sip:127.0.0.1>{m_CRLF}From: <sip:thisis@anonymous.invalid>;tag=YPACUCOFBG{m_CRLF}Call-ID: c22e9dc218a1423695b1f5ef33020b84{m_CRLF}CSeq: 1 ACK{m_CRLF}Max-Forwards: 70{m_CRLF}Content-Length: 0{m_CRLF}RAck: 423501656 1 INVITE{m_CRLF}{m_CRLF}";
 
             var sipRequest = SIPRequest.ParseSIPRequest(prackRequest);
 
@@ -850,23 +902,14 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseServerHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
             var expectedServerValue = "SomeServerValue";
 
             string inviteWithServerHeader =
-                "Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" + m_CRLF +
-                "From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136" + m_CRLF +
-                "To: <sip:303@sip.blueface.ie>" + m_CRLF +
-                "Contact: <sip:aaronxten@192.168.1.2:5065>" + m_CRLF +
-                "Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2" + m_CRLF +
-                "CSeq: 49429 INVITE" + m_CRLF +
-                "Max-Forwards: 70" + m_CRLF +
-                "Content-Type: application/sdp" + m_CRLF +
-                "Content-Length: 271" + m_CRLF +
-                "Server: " + expectedServerValue + m_CRLF;
+                $"Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>{m_CRLF}Contact: <sip:aaronxten@192.168.1.2:5065>{m_CRLF}Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2{m_CRLF}CSeq: 49429 INVITE{m_CRLF}Max-Forwards: 70{m_CRLF}Content-Type: application/sdp{m_CRLF}Content-Length: 271{m_CRLF}Server: {expectedServerValue}{m_CRLF}";
 
-            string[] headersCollection = Regex.Split(inviteWithServerHeader, "\r\n");
+            string[] headersCollection = inviteWithServerHeader.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
             Assert.True(sipHeader.Server == expectedServerValue, "The Server value was not parsed properly");
 

@@ -107,7 +107,9 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
 
             var crypto = new BcTlsCrypto();
             var tlsCertificate = crypto.CreateCertificate(x509Certificate.GetEncoded());
-            var certificate = new Certificate(new TlsCertificate[] { tlsCertificate });
+
+            // certificateRequestContext = TlsUtilities.EmptyBytes for TLS/DTLS 1.3, null for TLS/DTLS 1.2
+            var certificate = new Certificate(null, new[] { new CertificateEntry(tlsCertificate, null) });
 
             return (certificate, privateKey);
         }
@@ -166,7 +168,9 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
 
             var crypto = new BcTlsCrypto();
             var tlsCertificate = crypto.CreateCertificate(x509Certificate.GetEncoded());
-            var certificate = new Certificate(new[] { tlsCertificate });
+
+            // certificateRequestContext = TlsUtilities.EmptyBytes for TLS/DTLS 1.3, null for TLS/DTLS 1.2
+            var certificate = new Certificate(null, new[] { new CertificateEntry(tlsCertificate, null) });
 
             return (certificate, privateKey);
         }
@@ -204,7 +208,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
                 // This method has an unfortunate consequence of actually creating the digest, so the call is expensive.
                 digest = DigestUtilities.GetDigest(algStr.ToUpperInvariant());
             }
-            catch(Exception)
+            catch (Exception)
             {
                 return false;
             }

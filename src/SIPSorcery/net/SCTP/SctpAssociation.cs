@@ -396,16 +396,17 @@ namespace SIPSorcery.Net
                             string abortReason = (chunk as SctpAbortChunk).GetAbortReason();
                             logger.LogWarning("SCTP packet ABORT chunk received from remote party, reason {AbortReason}.", abortReason);
                             _wasAborted = true;
+                            _dataSender?.Close();
                             OnAbortReceived?.Invoke(abortReason);
                             break;
 
-                        case var ct when ct == SctpChunkType.COOKIE_ACK && State != SctpAssociationState.CookieEchoed:
+                        case var _ when chunkType == SctpChunkType.COOKIE_ACK && State != SctpAssociationState.CookieEchoed:
                             // https://tools.ietf.org/html/rfc4960#section-5.2.5
                             // At any state other than COOKIE-ECHOED, an endpoint should silently
                             // discard a received COOKIE ACK chunk.
                             break;
 
-                        case var ct when ct == SctpChunkType.COOKIE_ACK && State == SctpAssociationState.CookieEchoed:
+                        case var _ when chunkType == SctpChunkType.COOKIE_ACK && State == SctpAssociationState.CookieEchoed:
                             SetState(SctpAssociationState.Established);
                             CancelTimers();
                             _dataSender.StartSending();
@@ -467,13 +468,13 @@ namespace SIPSorcery.Net
                             SendChunk(chunk);
                             break;
 
-                        case var ct when ct == SctpChunkType.INIT_ACK && State != SctpAssociationState.CookieWait:
+                        case var _ when chunkType == SctpChunkType.INIT_ACK && State != SctpAssociationState.CookieWait:
                             // https://tools.ietf.org/html/rfc4960#section-5.2.3
                             // If an INIT ACK is received by an endpoint in any state other than the
                             // COOKIE - WAIT state, the endpoint should discard the INIT ACK chunk.
                             break;
 
-                        case var ct when ct == SctpChunkType.INIT_ACK && State == SctpAssociationState.CookieWait:
+                        case var _ when chunkType == SctpChunkType.INIT_ACK && State == SctpAssociationState.CookieWait:
 
                             if (_t1Init != null)
                             {
@@ -527,7 +528,7 @@ namespace SIPSorcery.Net
                             }
                             break;
 
-                        case var ct when ct == SctpChunkType.INIT_ACK && State != SctpAssociationState.CookieWait:
+                        case var _ when chunkType == SctpChunkType.INIT_ACK && State != SctpAssociationState.CookieWait:
                             logger.LogWarning("SCTP association received INIT_ACK chunk in wrong state of {State}, ignoring.", State);
                             break;
 
@@ -535,14 +536,15 @@ namespace SIPSorcery.Net
                             _dataSender.GotSack(chunk as SctpSackChunk);
                             break;
 
-                        case var ct when ct == SctpChunkType.SHUTDOWN && State == SctpAssociationState.Established:
+                        case var _ when chunkType == SctpChunkType.SHUTDOWN && State == SctpAssociationState.Established:
                             // TODO: Check outstanding data chunks.
+                            _dataSender?.Close();
                             var shutdownAck = new SctpChunk(SctpChunkType.SHUTDOWN_ACK);
                             SendChunk(shutdownAck);
                             SetState(SctpAssociationState.ShutdownAckSent);
                             break;
 
-                        case var ct when ct == SctpChunkType.SHUTDOWN_ACK && State == SctpAssociationState.ShutdownSent:
+                        case var _ when chunkType == SctpChunkType.SHUTDOWN_ACK && State == SctpAssociationState.ShutdownSent:
                             SetState(SctpAssociationState.Closed);
                             var shutCompleteChunk = new SctpChunk(SctpChunkType.SHUTDOWN_COMPLETE,
                                 (byte)(_remoteVerificationTag != 0 ? SHUTDOWN_CHUNK_TBIT_FLAG : 0x00));
@@ -587,7 +589,9 @@ namespace SIPSorcery.Net
         /// <param name="streamID">The stream ID to sent the data on.</param>
         /// <param name="ppid">The payload protocol ID for the data.</param>
         /// <param name="data">The byte data to send.</param>
-        public void SendData(ushort streamID, uint ppid, byte[] data)
+        /// <param name="offset">The offset in <paramref name="data"/> at which to begin sending. Defaults to 0.</param>
+        /// <param name="count">The number of bytes to send. Defaults to -1, meaning all bytes from <paramref name="offset"/> to the end of the array.</param>
+        public void SendData(ushort streamID, uint ppid, byte[] data, int offset = 0, int count = -1)
         {
             if (_wasAborted)
             {
@@ -601,7 +605,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                _dataSender.SendData(streamID, ppid, data);
+                _dataSender.SendData(streamID, ppid, data, offset, count);
             }
         }
 

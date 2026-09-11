@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using SIPSorcery.SIP.App;
+using SIPSorcery.UnitTests;
 
 namespace SIPSorcery.SIP.UnitTests
 {
@@ -47,8 +48,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void KnownDigestTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "asterisk", "aaronxten2", "password", "sip:303@bluesipd", "17190028", "INVITE");
 
@@ -66,8 +67,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void KnownDigestTestObscureChars()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "sip.blueface.ie", "aaronnetgear", "!\"$%^&*()_-+=}[{]~#@':;?><,.", "sip:sip.blueface.ie:5060", "1430352056", "REGISTER");
 
@@ -84,8 +85,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void KnownDigestTestObscureChars2()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "sip.blueface.ie", "aaronxten", "_*!$%^()\"", "sip:sip.blueface.ie", "1263192143", "REGISTER");
 
@@ -102,8 +103,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void KnownDigestTest2()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "asterisk", "aaronxten2", "password", "sip:303@213.168.225.133", "4a4ad124", "INVITE");
 
@@ -120,8 +121,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void KnownRegisterDigestTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "asterisk", "aaron", "password", "sip:blueface", "1c8192c9", "REGISTER");
 
@@ -138,8 +139,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void KnownRegisterDigestTest2()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "asterisk", "aaron", "password", "sip:blueface", "1c3c7a97", "REGISTER");
 
@@ -156,8 +157,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseWWWAuthenticateDigestTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, @"Digest realm=""aol.com"",nonce=""48e7541d4339e27ee7b520a4bf8a8e3c4fffcb90"",qop=""auth"",opaque=""004533235332435434ffac663e"",algorithm=MD5");
 
@@ -172,8 +173,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void KnownWWWAuthenticateDigestTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, @"Digest realm=""aol.com"",nonce=""48e757f3b95250379d63fe29f777984a93831b80"",qop=""auth"",opaque=""004533235332435434ffac663e"",algorithm=MD5");
             authRequest.SetCredentials("user@aim.com", "password", "sip:01135312222222@sip.aol.com;transport=udp", "INVITE");
@@ -193,8 +194,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AuthenticateHeaderToStringTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, @"Digest realm=""aol.com"",nonce=""48e7541d4339e27ee7b520a4bf8a8e3c4fffcb90"",qop=""auth"",opaque=""004533235332435434ffac663e"",algorithm=MD5");
             authRequest.SetCredentials("user@aim.com", "password", "sip:01135312222222@sip.aol.com;transport=udp", "INVITE");
@@ -214,8 +215,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void KnownQOPUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, "Digest realm=\"jnctn.net\", nonce=\"4a597e1c0000a1636739088e9151ef2f319af257c8f585f1\", qop=\"auth\"");
             authRequest.SetCredentials("user", "password", "sip:user.onsip.com", "REGISTER");
@@ -235,8 +236,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void KnownOpaqueTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, @"digest realm=""Syndeo Corporation"", nonce=""1265068315059e3bbf3052cf13ea5ca22fb71669a7"", opaque=""09c0f23f71f89ce53baab5664c09cbfa"", algorithm=MD5");
             authRequest.SetCredentials("user", "pass", "sip:sip.ribbit.com", "REGISTER");
@@ -254,8 +255,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void GenerateDigestTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, @"digest realm=""sipsorcery.com"", nonce=""1265068315059e3bbf3052cf13ea5ca22fb71669a7"", opaque=""09c0f23f71f89ce53baab5664c09cbfa"", algorithm=MD5");
             authRequest.SetCredentials("username", "password", "sip:sipsorcery.com", "REGISTER");
@@ -273,8 +274,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void KnownHA1Digest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var digest = HTTPDigest.DigestCalcHA1("user", "sipsorcery.cloud", "password");
 
@@ -291,8 +292,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void KnownMD5AndSHA256DigestTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             {
                 SIPAuthorisationDigest authDigest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "asterisk", "aaronxten2", "password", 
@@ -330,8 +331,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void HttpDigestMD5TestVector()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var md5DigestReq = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, 
 @"Digest
@@ -361,8 +362,8 @@ opaque=""FQhe/qaU925kfnzjCev0ciny7QMkPqMAFRtzCUYo5tdS""");
         [Fact]
         public void HttpDigestSHA256TestVector()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var digestReq = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate,
 @"Digest
@@ -399,7 +400,7 @@ opaque=""FQhe/qaU925kfnzjCev0ciny7QMkPqMAFRtzCUYo5tdS""");
 
             var authResult = SIPRequestAuthenticator.AuthenticateSIPRequest(SIPEndPoint.Empty, SIPEndPoint.Empty, req, account);
 
-            var authReq = req.DuplicateAndAuthenticate(new List<SIPAuthenticationHeader> { authResult.AuthenticationRequiredHeader }, 
+            var authReq = req.DuplicateAndAuthenticate(new List<SIPAuthenticationHeader> { authResult.AuthenticationRequiredHeader },
                 account.SIPUsername, account.SIPPassword);
 
             logger.LogDebug("Auth req={authReq}", authReq);
@@ -424,14 +425,140 @@ opaque=""FQhe/qaU925kfnzjCev0ciny7QMkPqMAFRtzCUYo5tdS""");
             var authResult = SIPRequestAuthenticator.AuthenticateSIPRequest(SIPEndPoint.Empty, SIPEndPoint.Empty, req, account);
             authResult.AuthenticationRequiredHeader.SIPDigest.DigestAlgorithm = DigestAlgorithmsEnum.SHA256;
 
+            string ha1Digest = HTTPDigest.DigestCalcHA1(
+                account.SIPUsername,
+                authResult.AuthenticationRequiredHeader.SIPDigest.Realm,
+                account.SIPPassword,
+                DigestAlgorithmsEnum.SHA256);
+            GetHA1DigestDelegate getHA1Digest = (username, realm, digestAlgorithm) =>
+                username == account.SIPUsername &&
+                realm == authResult.AuthenticationRequiredHeader.SIPDigest.Realm &&
+                digestAlgorithm == DigestAlgorithmsEnum.SHA256
+                    ? ha1Digest
+                    : null;
+
             var authReq = req.DuplicateAndAuthenticate(new List<SIPAuthenticationHeader> { authResult.AuthenticationRequiredHeader },
-                account.SIPUsername, account.SIPPassword);
+                account.SIPUsername, getHA1Digest);
 
             logger.LogDebug("Auth req={authReq}", authReq);
 
             authResult = SIPRequestAuthenticator.AuthenticateSIPRequest(SIPEndPoint.Empty, SIPEndPoint.Empty, authReq, account);
 
             Assert.True(authResult.Authenticated);
+        }
+
+        [Fact]
+        public void SIPRequestHA1ResolverFallsBackWhenPreferredChallengeHasNoCredential()
+        {
+            var account = new MockSIPAccount("user", "password");
+            var req = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, SIPURI.ParseSIPURI("sip:100@0.0.0.0"));
+            var authResult = SIPRequestAuthenticator.AuthenticateSIPRequest(SIPEndPoint.Empty, SIPEndPoint.Empty, req, account);
+            var md5Challenge = authResult.AuthenticationRequiredHeader;
+            var sha256Challenge = new SIPAuthenticationHeader(md5Challenge.SIPDigest.CopyOf());
+            sha256Challenge.SIPDigest.DigestAlgorithm = DigestAlgorithmsEnum.SHA256;
+
+            string md5HA1Digest = HTTPDigest.DigestCalcHA1(
+                account.SIPUsername,
+                md5Challenge.SIPDigest.Realm,
+                account.SIPPassword,
+                DigestAlgorithmsEnum.MD5);
+            var resolvedAlgorithms = new List<DigestAlgorithmsEnum>();
+            GetHA1DigestDelegate getHA1Digest = (username, realm, digestAlgorithm) =>
+            {
+                resolvedAlgorithms.Add(digestAlgorithm);
+                return username == account.SIPUsername &&
+                    realm == md5Challenge.SIPDigest.Realm &&
+                    digestAlgorithm == DigestAlgorithmsEnum.MD5
+                        ? md5HA1Digest
+                        : null;
+            };
+
+            var authReq = req.DuplicateAndAuthenticate(
+                new List<SIPAuthenticationHeader> { sha256Challenge, md5Challenge },
+                account.SIPUsername,
+                getHA1Digest);
+
+            Assert.Equal(new[] { DigestAlgorithmsEnum.SHA256, DigestAlgorithmsEnum.MD5 }, resolvedAlgorithms);
+            Assert.Equal(DigestAlgorithmsEnum.MD5, authReq.Header.AuthenticationHeaders[0].SIPDigest.DigestAlgorithm);
+
+            authResult = SIPRequestAuthenticator.AuthenticateSIPRequest(SIPEndPoint.Empty, SIPEndPoint.Empty, authReq, account);
+            Assert.True(authResult.Authenticated);
+        }
+
+        /// <summary>
+        /// A base64 nonce that ends with '=' padding must be preserved verbatim. The header is split
+        /// on the first '=' only, so the padding characters in the value must not be lost or treated
+        /// as additional separators.
+        /// </summary>
+        [Fact]
+        public void ParseDigestWithBase64PaddedNonceTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            // Nonce and opaque both contain trailing '=' base64 padding.
+            string nonce = "MTYxMjM0NTY3OC4xMjM0NTY3OA==";
+            string opaque = "YWJjZGVmZ2hpamtsbW5vcA=";
+
+            SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(
+                SIPAuthorisationHeadersEnum.WWWAuthenticate,
+                $@"Digest realm=""example.com"",nonce=""{nonce}"",qop=""auth"",opaque=""{opaque}"",algorithm=MD5");
+
+            Assert.Equal("example.com", authRequest.Realm);
+            Assert.Equal(nonce, authRequest.Nonce);
+            Assert.Equal(opaque, authRequest.Opaque);
+            Assert.Equal("auth", authRequest.Qop);
+        }
+
+        /// <summary>
+        /// Round-trip: an auth header serialised via ToString() must re-parse into a digest with the
+        /// same field values.
+        /// </summary>
+        [Fact]
+        public void ParseDigestToStringRoundTripTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(
+                SIPAuthorisationHeadersEnum.WWWAuthenticate,
+                @"Digest realm=""aol.com"",nonce=""48e7541d4339e27ee7b520a4bf8a8e3c4fffcb90"",qop=""auth"",opaque=""004533235332435434ffac663e"",algorithm=MD5");
+            authRequest.SetCredentials("user@aim.com", "password", "sip:01135312222222@sip.aol.com;transport=udp", "INVITE");
+            authRequest.Cnonce = "cf2e005f1801550717cc8c59193aa9f4";
+            authRequest.Response = authRequest.GetDigest();
+
+            string serialised = authRequest.ToString();
+            logger.LogDebug("Serialised auth header={serialised}.", serialised);
+
+            SIPAuthorisationDigest reparsed = SIPAuthorisationDigest.ParseAuthorisationDigest(
+                SIPAuthorisationHeadersEnum.Authorize, serialised);
+
+            Assert.Equal(authRequest.Realm, reparsed.Realm);
+            Assert.Equal(authRequest.Nonce, reparsed.Nonce);
+            Assert.Equal(authRequest.URI, reparsed.URI);
+            Assert.Equal(authRequest.Response, reparsed.Response);
+            Assert.Equal(authRequest.Cnonce, reparsed.Cnonce);
+            Assert.Equal(authRequest.Qop, reparsed.Qop);
+            Assert.Equal(authRequest.Opaque, reparsed.Opaque);
+        }
+
+        /// <summary>
+        /// The algorithm parameter must be parsed case-insensitively and unquoted SHA-256 must be
+        /// recognised.
+        /// </summary>
+        [Fact]
+        public void ParseDigestSHA256AlgorithmTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(
+                SIPAuthorisationHeadersEnum.WWWAuthenticate,
+                @"Digest realm=""example.com"",nonce=""abc123"",qop=""auth"",algorithm=SHA-256");
+
+            Assert.Equal(DigestAlgorithmsEnum.SHA256, authRequest.DigestAlgorithm);
+            Assert.Equal("example.com", authRequest.Realm);
+            Assert.Equal("abc123", authRequest.Nonce);
         }
     }
 }

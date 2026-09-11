@@ -81,7 +81,7 @@ namespace SIPSorcery.SIP
             return new SIPParameterlessURI(sipURI);
         }
 
-        public new string ToString()
+        public override string ToString()
         {
             try
             {

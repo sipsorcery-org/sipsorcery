@@ -73,7 +73,7 @@ namespace SIPSorcery.Net
 
                 RTSPURL rtspURL = new RTSPURL();
 
-                if (url == null || url.Trim().Length == 0)
+                if (string.IsNullOrWhiteSpace(url))
                 {
                     throw new ApplicationException("An RTSP URI cannot be parsed from an empty string.");
                 }
@@ -112,11 +112,11 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                throw new ApplicationException("There was an exception parsing an RTSP URL. " + excp.Message + " url=" + url);
+                throw new ApplicationException($"There was an exception parsing an RTSP URL. {excp.Message} url={url}");
             }
         }
 
-        public new string ToString()
+        public override string ToString()
         {
             try
             {

@@ -85,7 +85,7 @@ namespace SIPSorceryMedia.FFmpeg.Interop.MacOS
                                     {
                                         index = ln.IndexOf("]");
                                         string name = ln.Substring(index + 2);
-                                        string path = ln.Substring(1, index - 1) + ":";
+                                        string path = $"{ln.Substring(1, index - 1)}:";
 
                                         Monitor monitor = new Monitor
                                         {
@@ -149,7 +149,7 @@ namespace SIPSorceryMedia.FFmpeg.Interop.MacOS
                                     {
                                         index = ln.IndexOf("]");
                                         string name = ln.Substring(index+2);
-                                        string path = ln.Substring(1, index - 1) + ":";
+                                        string path = $"{ln.Substring(1, index - 1)}:";
 
                                         Camera camera = new Camera
                                         {

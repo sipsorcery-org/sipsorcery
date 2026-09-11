@@ -10,6 +10,7 @@
 // 13 Mar 2009	Aaron Clauson             Created, Hobart, Australia.
 // 16 Oct 2019  Aaron Clauson             Added IPv6 support.
 // 4 July 2022  Jean-Christophe Grondin   Added custom server certificate callback
+// 18 Aug 2026  Aaron Clauson             Changed bypass remote certificate validation default from true to false.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -32,7 +33,7 @@ namespace SIPSorcery.SIP
         private const int CLOSE_CONNECTION_TIMEOUT = 500;
         private const int TLS_ATTEMPT_CONNECT_TIMEOUT = 5000;
 
-        private readonly X509Certificate2 m_serverCertificate;
+        private volatile X509Certificate2 m_serverCertificate;
         private readonly X509Certificate2Collection m_clientCertificates;
         private readonly RemoteCertificateValidationCallback m_remoteCertificateValidation;
 
@@ -42,7 +43,50 @@ namespace SIPSorcery.SIP
         /// Allows to ignore any ssl policy errors regarding the received certificate.
         /// Only applicable when no custom remote certificate validation is provided.
         /// </summary>
-        public bool BypassCertificateValidation { get; set; } = true;
+        public bool BypassCertificateValidation { get; set; } = false;
+
+        /// <summary>
+        /// The certificate presented to clients that connect to this channel.
+        /// </summary>
+        /// <remarks>
+        /// Settable so that a renewed certificate can replace an expiring one without the
+        /// channel being torn down. The certificate is used at the point a connection is
+        /// accepted rather than when the socket is bound, so a replacement applies to
+        /// connections accepted after it and leaves established ones on the session they
+        /// already negotiated.
+        ///
+        /// Long lived services need this: an automated issuer replaces a certificate every
+        /// few weeks, and without it the only way to pick one up is a restart, which for a
+        /// SIP server means dropping every connection it is holding.
+        /// </remarks>
+        public X509Certificate2 ServerCertificate
+        {
+            get => m_serverCertificate;
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(value),
+                        "A server certificate cannot be removed from a SIP TLS channel that is using one.");
+                }
+
+                if (!value.HasPrivateKey)
+                {
+                    // Refused here rather than at the next handshake, where it would fail
+                    // once per connection with nothing to say which certificate was at fault.
+                    throw new ArgumentException(
+                        "The replacement certificate has no private key so it cannot complete a handshake.",
+                        nameof(value));
+                }
+
+                var previous = m_serverCertificate;
+                m_serverCertificate = value;
+
+                logger.LogInformation(
+                    "SIP TLS Channel for {ListeningSIPEndPoint} replaced certificate {PreviousSubject} with {CertificateSubject}, expiring {Expiry}.",
+                    ListeningSIPEndPoint, previous?.Subject, value.Subject, value.NotAfter);
+            }
+        }
 
         public SIPTLSChannel(IPEndPoint endPoint, bool useDualMode = false, RemoteCertificateValidationCallback remoteCertificateValidation = null)
             : base(endPoint, SIPProtocolsEnum.tls, false, useDualMode)
@@ -122,7 +166,7 @@ namespace SIPSorcery.SIP
 
                     if (resultTask.IsFaulted)
                     {
-                        logger.LogWarning($"SIP TLS Channel failed to connect to remote host. The authentication handshake failed. Error: {resultTask.Exception?.Message} {resultTask.Exception?.InnerException?.Message} {resultTask.Exception?.StackTrace}");
+                        logger.LogWarning(resultTask.Exception, "SIP TLS Channel failed to connect to remote host. The authentication handshake failed.");
                         sslStream.Close();
                         return;
                     }

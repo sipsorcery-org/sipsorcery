@@ -103,7 +103,7 @@ namespace SIPSorcery.SIP
 
                 if (paramDelimPosn != -1)
                 {
-                    string paramStr = trimUserField.Substring(paramDelimPosn + 1).Trim();
+                    var paramStr = trimUserField.AsSpan(paramDelimPosn + 1).Trim().ToString();
                     userField.Parameters = new SIPParameters(paramStr, PARAM_TAG_DELIMITER);
                     uriStr = trimUserField.Substring(0, paramDelimPosn);
                 }
@@ -114,7 +114,7 @@ namespace SIPSorcery.SIP
             {
                 if (position > 0)
                 {
-                    userField.Name = trimUserField.Substring(0, position).Trim().Trim('"');
+                    userField.Name = trimUserField.AsSpan(0, position).Trim().ToString().Trim('"');
                     trimUserField = trimUserField.Substring(position, trimUserField.Length - position);
                 }
 
@@ -124,7 +124,7 @@ namespace SIPSorcery.SIP
                 {
                     addrSpecLen = position - 1;
 
-                    string paramStr = trimUserField.Substring(position + 1).Trim();
+                    var paramStr = trimUserField.AsSpan(position + 1).Trim().ToString();
                     userField.Parameters = new SIPParameters(paramStr, PARAM_TAG_DELIMITER);
 
                     string addrSpec = trimUserField.Substring(1, addrSpecLen);
@@ -133,7 +133,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    throw new SIPValidationException(SIPValidationFieldsEnum.ContactHeader, "A SIPUserField was missing the right quote, " + userFieldStr + ".");
+                    throw new SIPValidationException(SIPValidationFieldsEnum.ContactHeader, $"A SIPUserField was missing the right quote, {userFieldStr}.");
                 }
             }
 
@@ -157,10 +157,10 @@ namespace SIPSorcery.SIP
                         userFieldStr = Name + " ";
                     }*/
 
-                    userFieldStr = "\"" + Name + "\" ";
+                    userFieldStr = $"\"{Name}\" ";
                 }
 
-                userFieldStr += "<" + URI.ToString() + ">" + Parameters.ToString();
+                userFieldStr += $"<{URI.ToString()}>{Parameters.ToString()}";
 
                 return userFieldStr;
             }
@@ -179,10 +179,10 @@ namespace SIPSorcery.SIP
 
                 if (Name != null)
                 {
-                    userFieldStr = "\"" + Name + "\" ";
+                    userFieldStr = $"\"{Name}\" ";
                 }
 
-                userFieldStr += "<" + URI.ToParameterlessString() + ">";
+                userFieldStr += $"<{URI.ToParameterlessString()}>";
 
                 return userFieldStr;
             }

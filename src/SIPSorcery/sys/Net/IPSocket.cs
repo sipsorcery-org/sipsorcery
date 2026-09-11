@@ -19,7 +19,6 @@
 
 using System;
 using System.Globalization;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 
@@ -44,8 +43,10 @@ namespace SIPSorcery.Sys
         /// </summary>
         public static string GetSocketString(IPEndPoint endPoint)
         {
-            string format = (endPoint.Address.AddressFamily == AddressFamily.InterNetworkV6) ? "[{0}]:{1}" : "{0}:{1}";
-            return string.Format(format, endPoint.Address.ToString(), endPoint.Port.ToString(NumberFormatInfo.InvariantInfo));
+            var address = endPoint.Address.ToString();
+            var port = endPoint.Port.ToString(NumberFormatInfo.InvariantInfo);
+
+            return endPoint.Address.AddressFamily == AddressFamily.InterNetworkV6 ? $"[{address}]:{port}" : $"{address}:{port}";
         }
 
         /// <summary>
@@ -123,7 +124,7 @@ namespace SIPSorcery.Sys
         {
             string host = socket;
 
-            if (socket != null && socket.Trim().Length > 0 && socket.IndexOf(':') != -1)
+            if (!string.IsNullOrWhiteSpace(socket) && socket.IndexOf(':') != -1)
             {
                 host = socket.Substring(0, socket.LastIndexOf(':')).Trim();
             }
@@ -154,14 +155,14 @@ namespace SIPSorcery.Sys
                 }
                 // Look to see if this is IPv4 with a port (IPv6 will have another colon)
                 // If it's a host name there will also not be another ':'.
-                else if (socket.Substring(0, lastColonPos).LastIndexOf(':') != -1)
+                else if (socket.AsSpan(0, lastColonPos).LastIndexOf(':') != -1)
                 {
                     // This is an IPv6 address WITHOUT a port.
                     lastColonPos = -1;
                 }
             }
 
-            if (socket != null && socket.Trim().Length > 0 && lastColonPos != -1)
+            if (!string.IsNullOrWhiteSpace(socket) && lastColonPos != -1)
             {
                 port = Convert.ToInt32(socket.Substring(lastColonPos + 1).Trim());
             }
@@ -176,7 +177,7 @@ namespace SIPSorcery.Sys
         /// <returns>true/false</returns>
         public static bool IsIPAddress(string socket)
         {
-            if (socket == null || socket.Trim().Length == 0)
+            if (string.IsNullOrWhiteSpace(socket))
             {
                 return false;
             }
@@ -287,7 +288,7 @@ namespace SIPSorcery.Sys
                 //could [a:b:c]:d
                 if (values[0].StartsWith("[") && values[values.Length - 2].EndsWith("]"))
                 {
-                    string ipaddressstring = string.Join(":", values.Take(values.Length - 1).ToArray());
+                    string ipaddressstring = string.Join(":", values.AsSpan(0, values.Length - 1).ToArray());
                     ipaddr = IPAddress.Parse(ipaddressstring);
                     port = getPort(values[values.Length - 1]);
                     host = ipaddr.ToString();
@@ -310,7 +311,7 @@ namespace SIPSorcery.Sys
             }
             else
             {
-                throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpointstring));
+                throw new FormatException($"Invalid endpoint ipaddress '{endpointstring}'");
             }
 
             return rc;
@@ -327,7 +328,7 @@ namespace SIPSorcery.Sys
                 (defaultport < IPEndPoint.MinPort
                 || defaultport > IPEndPoint.MaxPort))
             {
-                throw new ArgumentException(string.Format("Invalid default port '{0}'", defaultport));
+                throw new ArgumentException($"Invalid default port '{defaultport}'");
             }
 
             string[] values = endpointstring.Split(new char[] { ':' });
@@ -356,7 +357,7 @@ namespace SIPSorcery.Sys
                     }
                     catch
                     {
-                        throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpointstring));
+                        throw new FormatException($"Invalid endpoint ipaddress '{endpointstring}'");
                     }
                 }
             }
@@ -365,7 +366,7 @@ namespace SIPSorcery.Sys
                 //could [a:b:c]:d
                 if (values[0].StartsWith("[") && values[values.Length - 2].EndsWith("]"))
                 {
-                    string ipaddressstring = string.Join(":", values.Take(values.Length - 1).ToArray());
+                    string ipaddressstring = string.Join(":", values.AsSpan(0, values.Length - 1).ToArray());
                     ipaddr = IPAddress.Parse(ipaddressstring);
                     port = getPort(values[values.Length - 1]);
                 }
@@ -377,7 +378,7 @@ namespace SIPSorcery.Sys
             }
             else
             {
-                throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpointstring));
+                throw new FormatException($"Invalid endpoint ipaddress '{endpointstring}'");
             }
 
             if (port == -1)
@@ -396,7 +397,7 @@ namespace SIPSorcery.Sys
              || port < IPEndPoint.MinPort
              || port > IPEndPoint.MaxPort)
             {
-                throw new FormatException(string.Format("Invalid end point port '{0}'", p));
+                throw new FormatException($"Invalid end point port '{p}'");
             }
 
             return port;
@@ -410,13 +411,13 @@ namespace SIPSorcery.Sys
 
                 if (hosts == null || hosts.Length == 0)
                 {
-                    throw new ArgumentException(string.Format("Host not found: {0}", p));
+                    throw new ArgumentException($"Host not found: {p}");
                 }
                 return hosts[0];
             }
             catch
             {
-                throw new ArgumentException(string.Format("Host not found: {0}", p));
+                throw new ArgumentException($"Host not found: {p}");
             }
         }
 

@@ -72,8 +72,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Text;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -176,14 +176,8 @@ namespace SIPSorcery.Net
             {
                 STUNHeader stunHeader = new STUNHeader();
 
-                UInt16 stunTypeValue = BitConverter.ToUInt16(bufferSegment.Array, startIndex);
-                UInt16 stunMessageLength = BitConverter.ToUInt16(bufferSegment.Array, startIndex + 2);;
-
-                if (BitConverter.IsLittleEndian)
-                {
-                    stunTypeValue = NetConvert.DoReverseEndian(stunTypeValue);
-                    stunMessageLength = NetConvert.DoReverseEndian(stunMessageLength);
-                }
+                UInt16 stunTypeValue = BinaryPrimitives.ReadUInt16BigEndian(bufferSegment.Array.AsSpan(startIndex));
+                UInt16 stunMessageLength = BinaryPrimitives.ReadUInt16BigEndian(bufferSegment.Array.AsSpan(startIndex + 2));
 
                 stunHeader.MessageType = STUNMessageTypes.GetSTUNMessageTypeForId(stunTypeValue);
                 stunHeader.MessageLength = stunMessageLength;

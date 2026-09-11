@@ -17,6 +17,7 @@ using System;
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
@@ -34,8 +35,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void TrimTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             String myString = null;
 
@@ -45,8 +46,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ZeroBytesTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             String myString = Encoding.UTF8.GetString(new byte[] { 0x00, 0x00, 0x00, 0x00 });
 
@@ -58,8 +59,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void HexStrTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] buffer = { 0x00, 0x01, 0x02, 0x03 };
 
@@ -71,8 +72,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ToUnixTimeTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var dateTime = new DateTime(2025, 2, 12, 23, 39, 0, DateTimeKind.Utc);
             var unixTime = dateTime.ToUnixTime();
@@ -85,8 +86,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ToUnixTimeAfter2038Test()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var dateTime = new DateTime(2060, 2, 13, 22, 54, 54, DateTimeKind.Utc);
             var unixTime = dateTime.ToUnixTime();
@@ -99,8 +100,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ParseHexStrTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] buffer = TypeExtensions.ParseHexStr("00010203");
 

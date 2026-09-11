@@ -17,6 +17,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using SIPSorcery.Sys;
 
@@ -134,12 +135,37 @@ namespace SIPSorcery.Net
             var sackChunk = new SctpSackChunk();
             ushort chunkLen = sackChunk.ParseFirstWord(buffer, posn);
 
+            // The chunk must be long enough to hold the fixed parameters before they are read. The caller
+            // only guarantees the chunk length is at least an SCTP chunk header and that the chunk fits in
+            // the buffer, so anything shorter than this would read bytes belonging to whatever follows.
+            if (chunkLen < SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH)
+            {
+                throw new ApplicationException($"The SCTP SACK chunk was too short. The minimum length is {SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH} bytes but the chunk specified {chunkLen} bytes.");
+            }
+
             ushort startPosn = (ushort)(posn + SCTP_CHUNK_HEADER_LENGTH);
 
             sackChunk.CumulativeTsnAck = NetConvert.ParseUInt32(buffer, startPosn);
             sackChunk.ARwnd = NetConvert.ParseUInt32(buffer, startPosn + 4);
             ushort numGapAckBlocks = NetConvert.ParseUInt16(buffer, startPosn + 8);
             ushort numDuplicateTSNs = NetConvert.ParseUInt16(buffer, startPosn + 10);
+
+            // The gap ack block and duplicate TSN counts are supplied by the remote party and each allows
+            // up to 65535 entries, so they must be checked against the length the chunk actually declared.
+            // Without this the loops below read whatever follows the chunk in the receive buffer: far
+            // enough past it and the read leaves the buffer entirely, and the resulting
+            // IndexOutOfRangeException is not one of the recoverable parse failures the SCTP receive loop
+            // expects, so it terminates the receive thread and with it the association. Short of that the
+            // reads stay in bounds and quietly turn stale bytes left by earlier packets into gap ack
+            // blocks and duplicate TSNs, corrupting the sender's retransmission state instead.
+            int requiredLen = SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH
+                + numGapAckBlocks * GAP_REPORT_LENGTH
+                + numDuplicateTSNs * DUPLICATE_TSN_LENGTH;
+
+            if (requiredLen > chunkLen)
+            {
+                throw new ApplicationException($"The SCTP SACK chunk was too short for the gap ack block and duplicate TSN counts it specified. Required {requiredLen} bytes but the chunk specified {chunkLen} bytes.");
+            }
 
             int reportPosn = startPosn + FIXED_PARAMETERS_LENGTH;
 

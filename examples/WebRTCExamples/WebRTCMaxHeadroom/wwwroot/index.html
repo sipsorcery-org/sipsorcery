@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>Max Headroom WebRTC Avatar</title>
+    <style>
+        body { box-sizing: border-box; min-height: calc(100vh - 2em); display: flex; flex-direction: column; font-family: sans-serif; background: #0a0a2a; color: #20c0e0; max-width: 700px; margin: 1em auto; }
+        video { width: 640px; height: 480px; background: #000; display: block; }
+        input[type=text] { width: 480px; padding: 6px; }
+        button { padding: 6px 12px; }
+        .row { margin: 8px 0; }
+        label { display: inline-block; width: 70px; }
+        .rights-notice { margin-top: auto; padding: 18px 4px 2px; color: #71808e; border-top: 1px solid #1a3150; font-size: 0.72em; line-height: 1.35; text-align: center; }
+        .rights-notice strong { color: #8b99a5; font-weight: normal; }
+        .rights-notice a { color: #6b9cab; }
+        .activity-panel { position: fixed; z-index: 10; top: 1em; bottom: 1em; left: 0; width: min(330px, calc(100vw - 54px)); color: #d8e8ee; background: #101735; border: 1px solid #246980; border-left: 0; box-shadow: 5px 0 18px rgba(0, 0, 0, 0.45); transform: translateX(-100%); transition: transform 180ms ease; }
+        .activity-panel.open { transform: translateX(0); }
+        .activity-toggle { position: absolute; top: -1px; right: -45px; width: 45px; min-height: 142px; padding: 10px 8px; color: #0a0a2a; background: #20c0e0; border: 0; border-radius: 0 5px 5px 0; font-weight: bold; writing-mode: vertical-rl; cursor: pointer; }
+        .activity-toggle:hover { background: #5bd9f0; }
+        .activity-content { box-sizing: border-box; height: 100%; padding: 15px; overflow-y: auto; }
+        .activity-content h2 { margin: 0 0 4px; color: #5bd9f0; font-size: 1.2em; }
+        .activity-status { margin-bottom: 16px; color: #91a9b2; font-size: 0.8em; }
+        .activity-status.connected { color: #65d78a; }
+        .activity-feed { min-height: 54px; padding: 8px; background: #080d24; border: 1px solid #26345a; }
+        .activity-entry { margin: 0 0 8px; padding: 0 0 8px; border-bottom: 1px solid #26345a; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .activity-entry:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
+        .activity-prefix { display: inline-block; min-width: 34px; margin-right: 5px; font-size: 0.75em; font-weight: bold; letter-spacing: 0.04em; }
+        .activity-entry.stt .activity-prefix { color: #5bd9f0; }
+        .activity-entry.llm .activity-prefix { color: #e0a020; }
+        .activity-empty { color: #6f8290; font-style: italic; }
+    </style>
+</head>
+<body>
+    <aside class="activity-panel open" id="activityPanel" aria-label="Speech activity">
+        <button class="activity-toggle" id="activityToggle" type="button" aria-expanded="true" aria-controls="activityContent" onclick="toggleActivityPanel();">
+            <span id="activityToggleIcon" aria-hidden="true">&#9664;</span> Speech log
+        </button>
+        <div class="activity-content" id="activityContent">
+            <h2>Speech activity</h2>
+            <div class="activity-status" id="activityStatus">Connecting to event stream&hellip;</div>
+            <div class="activity-feed" id="activityFeed" aria-live="polite">
+                <div class="activity-empty">Waiting for speech activity.</div>
+            </div>
+        </div>
+    </aside>
+
+    <h2>Max Headroom WebRTC Avatar</h2>
+
+    <video controls autoplay playsinline id="videoCtl"></video>
+
+    <div class="row">
+        <input type="text" id="serverurl" />
+        <button onclick="start();">Connect</button>
+        <button onclick="closePeer();">Close</button>
+    </div>
+
+    <div class="row">
+        <label>Mic:</label>
+        <button id="micBtn" onclick="toggleMic();" disabled>Mute mic</button>
+        <span id="micStatus">not connected &ndash; talk to Max once connected, or use Say/Ask below</span>
+    </div>
+
+    <div class="row">
+        <label>Say:</label>
+        <input type="text" id="sayText" placeholder="Type text to speak verbatim..." />
+        <button onclick="post('/say', 'sayText');">Speak</button>
+    </div>
+
+    <div class="row">
+        <label>Ask:</label>
+        <input type="text" id="askText" placeholder="Ask the LLM something..." />
+        <button onclick="post('/ask', 'askText');">Ask</button>
+    </div>
+
+    <footer class="rights-notice" role="note">
+        <strong>Unofficial, non-commercial homage.</strong>
+        This technical demo is an homage to Max Headroom and is intended solely for
+        non-commercial, educational and software-demonstration purposes. It is not affiliated
+        with, endorsed by or authorized by
+        <a href="https://www.all3mediainternational.com/" target="_blank" rel="noopener noreferrer">All3Media International</a>.
+        No copyright or trademark permission has been sought or granted. Max Headroom and related
+        rights remain the property of All3Media International and any other applicable rights holders.
+    </footer>
+
+    <script type="text/javascript">
+        const STUN_URL = "stun:stun.cloudflare.com";
+        const BASE_URL = window.location.origin;
+        var pc;
+        var micStream;
+        var activityStream;
+
+        async function start() {
+            connectActivityStream(document.querySelector('#serverurl').value);
+            pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+            pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
+            pc.oniceconnectionstatechange = () => console.log("ice: " + pc.iceConnectionState);
+            pc.onconnectionstatechange = () => console.log("conn: " + pc.connectionState);
+
+            // Capture the microphone and send it on a send/recv audio track so you can TALK to Max
+            // (the server runs speech-to-text on it). Echo cancellation keeps the avatar's own voice
+            // out of the mic, so it stays full duplex - you can talk over him. If the mic is denied or
+            // unavailable, fall back to receive-only audio and use the Say/Ask boxes instead.
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+                pc.addTrack(micStream.getAudioTracks()[0], micStream);
+                setMicStatus(true);
+            } catch (err) {
+                console.warn("Microphone unavailable:", err);
+                pc.addTransceiver("audio", { direction: "recvonly" });
+                document.querySelector('#micStatus').textContent = "mic unavailable (" + err.name + ") – use Say/Ask";
+            }
+            pc.addTransceiver("video", { direction: "recvonly" });
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            const response = await fetch(document.querySelector('#serverurl').value + "/offer", {
+                method: "POST",
+                headers: { "Content-Type": "application/sdp" },
+                body: pc.localDescription.sdp
+            });
+
+            if (!response.ok) { console.error("Offer failed:", response.status); return; }
+
+            const sdpAnswer = await response.text();
+            await pc.setRemoteDescription({ type: "answer", sdp: sdpAnswer });
+        }
+
+        async function post(path, inputId) {
+            const text = document.querySelector('#' + inputId).value;
+            if (!text) return;
+            const resp = await fetch(document.querySelector('#serverurl').value + path, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: text
+            });
+            if (resp.ok) { console.log(await resp.text()); }
+            else { console.error(path + " failed:", resp.status); }
+        }
+
+        function toggleMic() {
+            const track = micStream && micStream.getAudioTracks()[0];
+            if (!track) return;
+            track.enabled = !track.enabled;
+            setMicStatus(track.enabled);
+        }
+
+        function setMicStatus(on) {
+            const btn = document.querySelector('#micBtn');
+            btn.disabled = !(micStream && micStream.getAudioTracks().length);
+            btn.textContent = on ? "Mute mic" : "Unmute mic";
+            document.querySelector('#micStatus').textContent = on ? "listening – talk to Max" : "muted";
+        }
+
+        function toggleActivityPanel() {
+            const panel = document.querySelector('#activityPanel');
+            const isOpen = panel.classList.toggle('open');
+            document.querySelector('#activityToggle').setAttribute('aria-expanded', isOpen.toString());
+            document.querySelector('#activityToggleIcon').innerHTML = isOpen ? '&#9664;' : '&#9654;';
+        }
+
+        function connectActivityStream(baseUrl) {
+            activityStream?.close();
+            const status = document.querySelector('#activityStatus');
+            status.textContent = 'Connecting to event stream…';
+            status.classList.remove('connected');
+
+            activityStream = new EventSource(baseUrl.replace(/\/$/, '') + '/events');
+            activityStream.onopen = () => {
+                status.textContent = 'Live';
+                status.classList.add('connected');
+            };
+            activityStream.onerror = () => {
+                status.textContent = 'Reconnecting…';
+                status.classList.remove('connected');
+            };
+            activityStream.onmessage = event => {
+                const message = JSON.parse(event.data);
+                if (message.type === 'stt' || message.type === 'llm') {
+                    appendActivity(message.type, message.text);
+                }
+            };
+        }
+
+        function appendActivity(type, text) {
+            if (!text) return;
+            const feed = document.querySelector('#activityFeed');
+            feed.querySelector('.activity-empty')?.remove();
+            const entry = document.createElement('div');
+            entry.className = 'activity-entry ' + type;
+
+            const prefix = document.createElement('span');
+            prefix.className = 'activity-prefix';
+            prefix.textContent = type === 'stt' ? 'STT:' : 'LLM:';
+            entry.append(prefix, document.createTextNode(text));
+            feed.prepend(entry);
+
+            while (feed.children.length > 50) {
+                feed.lastElementChild.remove();
+            }
+        }
+
+        async function closePeer() {
+            micStream?.getTracks().forEach(t => t.stop());
+            micStream = null;
+            await pc?.close();
+            document.querySelector('#micBtn').disabled = true;
+            document.querySelector('#micStatus').textContent = "not connected";
+        }
+
+        document.querySelector('#serverurl').value = BASE_URL;
+        connectActivityStream(BASE_URL);
+    </script>
+</body>

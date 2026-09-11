@@ -55,14 +55,24 @@
 // dotnet run -- -d 127.0.0.1 -c 10000 -x 25 -s uac -b true
 // [19:17:03 INF] => Command completed task count 10000 success count 10000 duration 189.21
 //
-// Usage Exmaple:
-// Check RTP connectivity:
+// Usage Example - Check RTP connectivity:
 // dotnet run -- --s uac -d music@iptel.org -v
 // If successful a count of the RTP packets will be displayed:
 // RTP packet received from 212.79.111.155:13818, ssrc 314111075, seqnum 23320, count 48
 //
-// Check RTP connectivity via a TURN server. Contrived exmaple to force a TURN relay RTP path:
+// Check RTP connectivity via a TURN server. Contrived example to force a TURN relay RTP path:
 // dotnet run -- -d music@iptel.org -s uac -v --turn "turn:yourserver;username;password" --turnremotepeerip "212.79.111.155"
+//
+// Usage Example - Authenticated call:
+// dotnet run -- -s uac -d 1234@sipsorcery.com -u yourusername --password yourpassword -v
+//
+// Usage Example - Registration:
+// dotnet run -- -s reg -d sipsorcery.com -u yourusername --password yourpassword -v
+//
+// Usage Example - Check SIP server response to OPTIONS requests:
+// dotnet run -- -s opt -d "iptel.org"
+// dotnet run -- -s opt -d "iptel.org;transport=tcp"
+// dotnet run -- -s opt -d "iptel.org;transport=tls"
 //-----------------------------------------------------------------------------
 
 using System;
@@ -70,7 +80,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
@@ -355,7 +364,7 @@ namespace SIPSorcery
             SIPURI dstUri = null;
 
             // Don't attempt a SIP URI parse for serialised SIPEndPoints.
-            if (Regex.IsMatch(dst, "^(udp|tcp|tls|ws|wss)") == false && SIPURI.TryParse(dst, out var argUri))
+            if (!HasTransportPrefix(dst) && SIPURI.TryParse(dst, out var argUri))
             {
                 dstUri = argUri;
             }
@@ -366,6 +375,20 @@ namespace SIPSorcery
             }
 
             return dstUri;
+        }
+
+        private static bool HasTransportPrefix(string destination)
+        {
+            if (string.IsNullOrEmpty(destination))
+            {
+                return false;
+            }
+
+            return (destination.Length >= 3 && "udp".StartsWith(destination[..3], StringComparison.Ordinal)) ||
+                   (destination.Length >= 3 && "tcp".StartsWith(destination[..3], StringComparison.Ordinal)) ||
+                   (destination.Length >= 3 && "tls".StartsWith(destination[..3], StringComparison.Ordinal)) ||
+                   (destination.Length >= 2 && "ws".StartsWith(destination[..2], StringComparison.Ordinal)) ||
+                   (destination.Length >= 3 && "wss".StartsWith(destination[..3], StringComparison.Ordinal));
         }
 
         /// <summary>

@@ -47,11 +47,11 @@ namespace SIPSorcery.SIP
             get
             {
                 string methodStr = (Method != SIPMethodsEnum.UNKNOWN) ? Method.ToString() : UnknownMethod;
-                return methodStr + " " + URI.ToString() + " " + SIPVersion;
+                return $"{methodStr} {URI.ToString()} {SIPVersion}";
             }
         }
 
-        private SIPRequest(Encoding sipEncoding, Encoding sipBodyEncoding) : this(SIPMethodsEnum.NONE, SIPURI.None,sipEncoding,sipBodyEncoding)
+        private SIPRequest(Encoding sipEncoding, Encoding sipBodyEncoding) : this(SIPMethodsEnum.NONE, SIPURI.None, sipEncoding, sipBodyEncoding)
         {
         }
 
@@ -59,18 +59,18 @@ namespace SIPSorcery.SIP
         {
         }
 
-        public SIPRequest(SIPMethodsEnum method, string uri):this(method, SIPURI.ParseSIPURI(uri))
+        public SIPRequest(SIPMethodsEnum method, string uri) : this(method, SIPURI.ParseSIPURI(uri))
         {
         }
 
-        public SIPRequest(SIPMethodsEnum method, SIPURI uri) 
+        public SIPRequest(SIPMethodsEnum method, SIPURI uri)
         {
             Method = method;
             URI = uri;
             SIPVersion = m_sipFullVersion;
         }
 
-        public SIPRequest(SIPMethodsEnum method, SIPURI uri,Encoding sipEncoding,Encoding sipBodyEncoding):base(sipEncoding,sipBodyEncoding)
+        public SIPRequest(SIPMethodsEnum method, SIPURI uri, Encoding sipEncoding, Encoding sipBodyEncoding) : base(sipEncoding, sipBodyEncoding)
         {
             Method = method;
             URI = uri;
@@ -80,19 +80,17 @@ namespace SIPSorcery.SIP
         public static SIPRequest ParseSIPRequest(SIPMessageBuffer sipMessage) =>
             ParseSIPRequest(sipMessage, SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING);
 
-        public static SIPRequest ParseSIPRequest(SIPMessageBuffer sipMessage,Encoding sipEncoding,Encoding sipBodyEncoding)
+        public static SIPRequest ParseSIPRequest(SIPMessageBuffer sipMessage, Encoding sipEncoding, Encoding sipBodyEncoding)
         {
             try
             {
-                SIPRequest sipRequest = new SIPRequest(sipEncoding,sipBodyEncoding);
+                SIPRequest sipRequest = new SIPRequest(sipEncoding, sipBodyEncoding);
                 sipRequest.LocalSIPEndPoint = sipMessage.LocalSIPEndPoint;
                 sipRequest.RemoteSIPEndPoint = sipMessage.RemoteSIPEndPoint;
 
-                string statusLine = sipMessage.FirstLine;
-
-                int firstSpacePosn = statusLine.IndexOf(" ");
-
-                string method = statusLine.Substring(0, firstSpacePosn).Trim();
+                var statusLine = sipMessage.FirstLine.AsSpan();
+                var firstSpacePosn = statusLine.IndexOf(' ');
+                var method = statusLine.Slice(0, firstSpacePosn).Trim().ToString();
                 sipRequest.Method = SIPMethods.GetMethod(method);
                 if (sipRequest.Method == SIPMethodsEnum.UNKNOWN)
                 {
@@ -100,15 +98,15 @@ namespace SIPSorcery.SIP
                     logger.LogWarning("Unknown SIP method received {UnknownMethod}.", sipRequest.UnknownMethod);
                 }
 
-                statusLine = statusLine.Substring(firstSpacePosn).Trim();
-                int secondSpacePosn = statusLine.IndexOf(" ");
+                statusLine = statusLine.Slice(firstSpacePosn).Trim();
+                var secondSpacePosn = statusLine.IndexOf(' ');
 
                 if (secondSpacePosn != -1)
                 {
-                    string uriStr = statusLine.Substring(0, secondSpacePosn);
+                    var uriStr = statusLine.Slice(0, secondSpacePosn).ToString();
 
                     sipRequest.URI = SIPURI.ParseSIPURI(uriStr);
-                    sipRequest.SIPVersion = statusLine.Substring(secondSpacePosn, statusLine.Length - secondSpacePosn).Trim();
+                    sipRequest.SIPVersion = statusLine.Slice(secondSpacePosn).Trim().ToString();
                     sipRequest.Header = SIPHeader.ParseSIPHeaders(sipMessage.SIPHeaders);
                     sipRequest.BodyBuffer = sipMessage.Body;
 
@@ -133,12 +131,12 @@ namespace SIPSorcery.SIP
         public static SIPRequest ParseSIPRequest(string sipMessageStr) =>
             ParseSIPRequest(sipMessageStr, SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING);
 
-        public static SIPRequest ParseSIPRequest(string sipMessageStr,Encoding sipEncoding,Encoding sipBodyEncoding)
+        public static SIPRequest ParseSIPRequest(string sipMessageStr, Encoding sipEncoding, Encoding sipBodyEncoding)
         {
             try
             {
-                SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(sipMessageStr, sipEncoding,sipBodyEncoding, null, null);
-                return SIPRequest.ParseSIPRequest(sipMessageBuffer,sipEncoding,sipBodyEncoding);
+                SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(sipMessageStr, sipEncoding, sipBodyEncoding, null, null);
+                return SIPRequest.ParseSIPRequest(sipMessageBuffer, sipEncoding, sipBodyEncoding);
             }
             catch (SIPValidationException)
             {
@@ -346,11 +344,7 @@ namespace SIPSorcery.SIP
             string username,
             string password)
         {
-            var dupRequest = this.Copy();
-            dupRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-            dupRequest.Header.CSeq = dupRequest.Header.CSeq + 1;
-
-            dupRequest.Header.AuthenticationHeaders.Clear();
+            var dupRequest = DuplicateRequest();
 
             // RFC8760 (which introduces SHA256/512 for SIP) states that multiple authentication headers with different digest algorithms
             // can be included in a SIP request. When testing this with the latest versions (Jul 2021) of Asterisk v18.5.0 and FreeSWITCH v1.10.6
@@ -370,7 +364,43 @@ namespace SIPSorcery.SIP
                 var md5AuthHeader = SIPAuthChallenge.GetAuthenticationHeader(authenticationChallenges, this.URI, this.Method, username, password);
                 dupRequest.Header.AuthenticationHeaders.Add(md5AuthHeader);
             }
-            
+
+            return dupRequest;
+        }
+
+        /// <summary>
+        /// Duplicates an existing SIP request, typically one that received an unauthorised response, to an
+        /// authenticated version using an HA1 digest resolver. The CSeq and Via branch ID are also incremented so
+        /// that the request will not be flagged as a retransmit.
+        /// </summary>
+        /// <param name="authenticationChallenges">The challenges to authenticate the request against. Typically
+        /// the challenges come from a SIP response.</param>
+        /// <param name="username">The username to authenticate with.</param>
+        /// <param name="getHA1Digest">Resolves an HA1 digest for a username, challenge realm and digest algorithm.
+        /// Return <c>null</c> when no credential is available for a challenge.</param>
+        /// <returns>A SIP request that is a duplicate of the original but with an authentication header added and
+        /// the state header values updated so as not to be flagged as a retransmit.</returns>
+        public SIPRequest DuplicateAndAuthenticate(List<SIPAuthenticationHeader> authenticationChallenges,
+            string username,
+            GetHA1DigestDelegate getHA1Digest)
+        {
+            var digestAuthHeader = SIPAuthChallenge.GetAuthenticationHeader(authenticationChallenges, this.URI, this.Method, username, getHA1Digest);
+            if (digestAuthHeader == null)
+            {
+                return null;
+            }
+
+            var dupRequest = DuplicateRequest();
+            dupRequest.Header.AuthenticationHeaders.Add(digestAuthHeader);
+            return dupRequest;
+        }
+
+        private SIPRequest DuplicateRequest()
+        {
+            var dupRequest = this.Copy();
+            dupRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
+            dupRequest.Header.CSeq = dupRequest.Header.CSeq + 1;
+            dupRequest.Header.AuthenticationHeaders.Clear();
             return dupRequest;
         }
     }

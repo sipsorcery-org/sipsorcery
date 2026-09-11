@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: UdpReceiverUnitTest.cs
 //
 // Description: Unit tests for the UdpReceiver class, specifically verifying
@@ -16,11 +16,13 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -43,15 +45,26 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task CloseWhileReceivingDoesNotThrowUnobservedException()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             AggregateException capturedException = null;
 
+            // Only capture (and observe) unobserved-task exceptions whose stack trace
+            // mentions UdpReceiver. The TaskScheduler.UnobservedTaskException event is
+            // process-global, so without a filter this handler also picks up Task leaks
+            // from any other test running in parallel — which made this test fail
+            // sporadically. Exceptions from other sources are intentionally left
+            // unobserved so their owning tests still see them.
             EventHandler<UnobservedTaskExceptionEventArgs> handler = (s, e) =>
             {
-                capturedException = e.Observed ? null : e.Exception;
-                e.SetObserved();
+                bool fromUdpReceiver = e.Exception.InnerExceptions
+                    .Any(ex => ex.StackTrace?.Contains(nameof(UdpReceiver)) == true);
+                if (fromUdpReceiver)
+                {
+                    capturedException = e.Exception;
+                    e.SetObserved();
+                }
             };
 
             TaskScheduler.UnobservedTaskException += handler;
@@ -95,8 +108,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CloseFiresOnClosedEvent()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
@@ -121,8 +134,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void DoubleCloseDoesNotThrow()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));

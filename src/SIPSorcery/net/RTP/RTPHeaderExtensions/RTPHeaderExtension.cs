@@ -69,11 +69,22 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Checks if the URI provided matches the URI of this extension
+        /// Override this method if the extension can have multiple URIs (for example TransportWideCCExtension)
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <returns></returns>
+        public virtual bool MatchesExtension(string uri)
+        {
+            return Uri.Equals(uri, StringComparison.InvariantCultureIgnoreCase);
+        }
+
         // Id / "extmap"
         public int Id { get; internal set; }
 
         // Uri
-        public string Uri { get; }
+        public string Uri { get; set; }
 
         public int ExtensionSize { get; }
 

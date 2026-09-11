@@ -46,8 +46,8 @@ class Program
     static async Task Main()
     {
         Log.Logger = new LoggerConfiguration()
-            //.MinimumLevel.Debug() 
-            .MinimumLevel.Verbose()
+            .MinimumLevel.Debug() 
+            //.MinimumLevel.Verbose()
             .Enrich.FromLogContext()
             .WriteTo.Console()
             .CreateLogger();

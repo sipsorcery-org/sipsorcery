@@ -25,6 +25,7 @@ namespace SIPSorceryMedia.FFmpeg
     {
         private static ILogger logger = NullLogger.Instance;
         private static bool registered = false;
+        private static readonly object registerLock = new object();
 
         private static av_log_set_callback_callback? logCallback;
         private static String storedLogs = "";
@@ -74,6 +75,49 @@ namespace SIPSorceryMedia.FFmpeg
             ffmpeg.av_log_set_callback(logCallback);
         }
 
+        /// <summary>
+        /// Ensures the FFmpeg native binaries have been located and registered, attempting
+        /// auto-discovery if no explicit <see cref="Initialise"/> call has been made yet. This is
+        /// invoked implicitly by the FFmpeg components (encoder, sources, etc.) from their
+        /// constructors so that, when the binaries are discoverable via the system PATH or an
+        /// FFmpeg/bin/x64 folder, no explicit initialisation is required.
+        ///
+        /// Unlike <see cref="Initialise"/> this performs auto-discovery only and never throws: if
+        /// the binaries cannot be found it leaves the library unregistered and returns false, so a
+        /// subsequent explicit <see cref="Initialise"/> call with a known path can still take over.
+        /// It is safe to call repeatedly and from multiple threads; the first registration wins.
+        /// </summary>
+        /// <returns>True if the binaries are registered (now or previously), otherwise false.</returns>
+        public static bool EnsureBinariesRegistered()
+        {
+            if (registered)
+            {
+                return true;
+            }
+
+            lock (registerLock)
+            {
+                if (registered)
+                {
+                    return true;
+                }
+
+                try
+                {
+                    RegisterFFmpegBinaries();
+                }
+                catch (Exception excp)
+                {
+                    registered = false;
+                    ffmpeg.RootPath = string.Empty;
+                    logger.LogWarning(excp,
+                        "FFmpeg binaries could not be located automatically. Call FFmpegInit.Initialise with an explicit library path.");
+                }
+
+                return registered;
+            }
+        }
+
         public static void Initialise(FfmpegLogLevelEnum? logLevel = null, String? libPath = null, ILogger? appLogger = null)
         {
             if (appLogger != null)
@@ -81,9 +125,16 @@ namespace SIPSorceryMedia.FFmpeg
                 logger = appLogger;
             }
 
-            RegisterFFmpegBinaries(libPath);
+            lock (registerLock)
+            {
+                RegisterFFmpegBinaries(libPath);
+            }
 
-            logger.LogInformation($"FFmpeg version info: {ffmpeg.av_version_info()}");
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                string versionInfo = ffmpeg.av_version_info();
+                logger.LogInformation("FFmpeg version info: {VersionInfo}", versionInfo);
+            }
 
             if (logLevel.HasValue)
             {
@@ -94,21 +145,19 @@ namespace SIPSorceryMedia.FFmpeg
         internal static void SetFFmpegBinariesPath(string path)
         {
             ffmpeg.RootPath = path;
-            registered = true;
 
             DynamicallyLoadedBindings.ThrowErrorIfFunctionNotFound = true;
 
             try
             {
                 ffmpeg.avdevice_register_all();
+
+                registered = true;
             }
             catch (Exception e)
             {
                 throw new DllNotFoundException(
-                    "Check the dependencies of FFmpeg libraries and make sure they are " +
-                    "searchable by the operating system's library loader."
-                    + "\nOn linux you can use 'ldd' & 'strace'."
-                    + "\nOn Windows you can use 'Dependencies'."
+                    $"Check the dependencies of FFmpeg libraries and make sure they are searchable by the operating system's library loader.\nOn linux you can use 'ldd' & 'strace'.\nOn Windows you can use 'Dependencies'."
                     , e);
             }
         }
@@ -116,20 +165,22 @@ namespace SIPSorceryMedia.FFmpeg
         internal static void RegisterFFmpegBinaries(String? libPath = null)
         {
             if (registered)
+            {
                 return;
+            }
 
             if (libPath == null)
             {
                 // search the system path, handle with and without .exe extension
                 string ffmpegExecutable = "ffmpeg";
                 string? path = Environment.GetEnvironmentVariable("PATH")?
-                    .Split([';'], StringSplitOptions.RemoveEmptyEntries)
-                    .Where(s => File.Exists(Path.Combine(s, ffmpegExecutable)) || File.Exists(Path.Combine(s, ffmpegExecutable  + ".exe")))
+                    .Split([Path.PathSeparator], StringSplitOptions.RemoveEmptyEntries)
+                    .Where(s => File.Exists(Path.Combine(s, ffmpegExecutable)) || File.Exists(Path.Combine(s, $"{ffmpegExecutable}.exe")))
                     .FirstOrDefault();
 
                 if (path != null)
                 {
-                    logger.LogInformation($"FFmpeg binaries found in system path at: {path}");
+                    logger.LogInformation("FFmpeg binaries found in system path at: {Path}", path);
                     SetFFmpegBinariesPath(path);
                     return;
                 }
@@ -142,7 +193,7 @@ namespace SIPSorceryMedia.FFmpeg
                     var ffmpegBinaryPath = Path.Combine(current, probe);
                     if (Directory.Exists(ffmpegBinaryPath))
                     {
-                        logger.LogInformation($"FFmpeg binaries found in: {ffmpegBinaryPath}");
+                        logger.LogInformation("FFmpeg binaries found in: {Path}", ffmpegBinaryPath);
                         SetFFmpegBinariesPath(ffmpegBinaryPath);
                         return;
                     }
@@ -154,7 +205,7 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 if (Directory.Exists(libPath))
                 {
-                    logger.LogInformation($"FFmpeg binaries path set to: {libPath}");
+                    logger.LogInformation("FFmpeg binaries path set to: {Path}", libPath);
                     SetFFmpegBinariesPath(libPath);
                     return;
                 }
@@ -200,6 +251,9 @@ namespace SIPSorceryMedia.FFmpeg
                 case VideoCodecsEnum.H265:
                     avCodecID = AVCodecID.AV_CODEC_ID_HEVC;
                     break;
+                case VideoCodecsEnum.AV1:
+                    avCodecID = AVCodecID.AV_CODEC_ID_AV1;
+                    break;
 
                 // Currently disabled because MJPEG doesn't work with the current pipeline that forces pixel conversion to YUV420P
                 // TODO: Fix pixel format conversion in Decode->Encode pipeline
@@ -217,6 +271,12 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 case AVCodecID.AV_CODEC_ID_H264:
                     return VideoCodecsEnum.H264;
+                case AVCodecID.AV_CODEC_ID_HEVC:
+                    return VideoCodecsEnum.H265;
+                case AVCodecID.AV_CODEC_ID_VP9:
+                    return VideoCodecsEnum.VP9;
+                case AVCodecID.AV_CODEC_ID_AV1:
+                    return VideoCodecsEnum.AV1;
             }
 
             return VideoCodecsEnum.VP8;

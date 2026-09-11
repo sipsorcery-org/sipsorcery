@@ -293,7 +293,7 @@ namespace SIPSorcery.Sys
             if (!File.Exists(filepath))
             {
                 logger.LogError("Cannot open a non-existent file for a hash operation, {FilePath}.",  filepath);
-                throw new IOException("Cannot open a non-existent file for a hash operation, " + filepath + ".");
+                throw new IOException($"Cannot open a non-existent file for a hash operation, {filepath}.");
             }
 
             // Open the file.
@@ -303,7 +303,7 @@ namespace SIPSorcery.Sys
             {
                 inputStream.Close();
                 logger.LogError("Cannot perform a hash operation on an empty file, {FilePath}.", filepath);
-                throw new IOException("Cannot perform a hash operation on an empty file, " + filepath + ".");
+                throw new IOException($"Cannot perform a hash operation on an empty file, {filepath}.");
             }
 
             return inputStream;

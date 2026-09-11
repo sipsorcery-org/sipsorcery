@@ -22,47 +22,52 @@
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 using System;
+using System.Buffers.Binary;
+#if NET8_0_OR_GREATER
+using ReadOnlyBytes = System.ReadOnlySpan<byte>;
+using Bytes = System.Span<byte>;
+#else
+using ReadOnlyBytes = System.ArraySegment<byte>;
+using Bytes = System.ArraySegment<byte>;
+#endif
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
 {
     public static class AEAD
     {
-        public static void Encrypt(IAeadBlockCipher engine, bool encrypt, byte[] payload, int offset, int length, byte[] iv, byte[] K_e, int N_tag, byte[] associatedData)
+        public const int BLOCK_SIZE = 12;
+
+        public static void Encrypt(IAeadBlockCipher engine, bool encrypt, ReadOnlyBytes input, Bytes output, byte[] iv, byte[] K_e, int N_tag, ReadOnlyBytes associatedData)
         {
-            int payloadSize = length - offset;
-
-            int expectedLength = engine.GetOutputSize(payloadSize);
-            if (offset + expectedLength > payload.Length)
-            {
-                throw new ArgumentOutOfRangeException("Payload is too small!");
-            }
-
-            var parameters = new AeadParameters(new KeyParameter(K_e), N_tag << 3, iv, associatedData);
-            engine.Init(encrypt, parameters);
-
-            int len = engine.ProcessBytes(payload, offset, payloadSize, payload, offset);
-
-            // throws when the MAC fails to match
-            engine.DoFinal(payload, offset + len);
+            Encrypt(engine, encrypt, input, output, iv, new KeyParameter(K_e), N_tag, associatedData);
         }
 
-        public static byte[] GenerateMessageKeyIV(byte[] k_s, uint ssrc, ulong index)
+        public static void Encrypt(IAeadBlockCipher engine, bool encrypt, ReadOnlyBytes input, Bytes output, byte[] iv, KeyParameter K_e, int N_tag, ReadOnlyBytes associatedData)
         {
-            byte[] iv = new byte[12];
-            Buffer.BlockCopy(k_s, 0, iv, 0, 12);
+            var parameters = new AeadParameters(K_e, N_tag << 3, iv);
+            engine.Init(encrypt, parameters);
 
-            iv[2] ^= (byte)((ssrc >> 24) & 0xFF);
-            iv[3] ^= (byte)((ssrc >> 16) & 0xFF);
-            iv[4] ^= (byte)((ssrc >> 8) & 0xFF);
-            iv[5] ^= (byte)(ssrc & 0xFF);
-            iv[6] ^= (byte)((index >> 40) & 0xFF);
-            iv[7] ^= (byte)((index >> 32) & 0xFF);
-            iv[8] ^= (byte)((index >> 24) & 0xFF);
-            iv[9] ^= (byte)((index >> 16) & 0xFF);
-            iv[10] ^= (byte)((index >> 8) & 0xFF);
-            iv[11] ^= (byte)(index & 0xFF);
+            engine.ProcessAadBytes(associatedData);
 
-            return iv;
+            int len = engine.ProcessBytes(input, output);
+
+            // throws when the MAC fails to match
+            engine.DoFinal(output.Slice(len));
+        }
+
+        public static void GenerateMessageKeyIV(ReadOnlySpan<byte> k_s, uint ssrc, ulong index, Span<byte> iv)
+        {
+            k_s.Slice(0, BLOCK_SIZE).CopyTo(iv);
+
+            // XOR ssrc at offset 2 (3 bytes for 48-bit index)
+            var ssrcSpan = iv.Slice(2, 4);
+            BinaryPrimitives.WriteUInt32BigEndian(ssrcSpan,
+                BinaryPrimitives.ReadUInt32BigEndian(ssrcSpan) ^ ssrc);
+
+            // XOR index at offset 6 (6 bytes for 48-bit index)
+            var indexSpan = iv.Slice(4, 8);
+            BinaryPrimitives.WriteUInt64BigEndian(indexSpan,
+                BinaryPrimitives.ReadUInt64BigEndian(indexSpan) ^ (index & 0x0000_FFFF_FFFF_FFFF));
         }
     }
 }

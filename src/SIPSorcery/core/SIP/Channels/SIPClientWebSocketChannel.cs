@@ -133,11 +133,70 @@ namespace SIPSorcery.SIP
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPClientWebSocketChannel.");
             }
 
-            return SendAsync(dstEndPoint, buffer);
+            if (TryGetHintedConnection(connectionIDHint, out var hinted))
+            {
+                return SendAsync(hinted, buffer);
+            }
+
+            string uriPrefix = (dstEndPoint.Protocol == SIPProtocolsEnum.wss) ? WEB_SOCKET_SECURE_URI_PREFIX : WEB_SOCKET_URI_PREFIX;
+            var serverUri = new Uri($"{uriPrefix}{dstEndPoint.GetIPEndPoint()}");
+
+            return SendAsync(dstEndPoint, buffer, serverUri);
         }
 
         /// <summary>
-        /// Send to a secure web socket server.
+        /// The connection a send hint names, when it names one that is still open.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Connections here are keyed on the URI they were dialled with, which is the right key for
+        /// a request: the destination is where the request is going. It is the wrong key for a
+        /// response, whose destination is derived from the top Via and so is an address, where the
+        /// request that produced it used a host name - the name the server's certificate had to
+        /// match. Two keys for one connection.
+        /// </para>
+        /// <para>
+        /// Left to the URI a response therefore opened a SECOND connection to the same server
+        /// rather than replying on the first, and over wss that second connection did not survive
+        /// its TLS handshake: dialled by address, it failed on a certificate name mismatch and the
+        /// response was never sent. A call answered over wss looked to the caller like it had never
+        /// been answered at all.
+        /// </para>
+        /// <para>
+        /// The hint is set from the end point a request arrived on, which is what a response is
+        /// supposed to travel back over, so preferring it is both the fix and the correct routing.
+        /// </para>
+        /// </remarks>
+        private bool TryGetHintedConnection(string connectionIDHint, out ClientWebSocketConnection connection)
+        {
+            connection = null;
+
+            return !string.IsNullOrEmpty(connectionIDHint)
+                && m_egressConnections.TryGetValue(connectionIDHint, out connection);
+        }
+
+        /// <summary>Sends on a connection that is already open.</summary>
+        private async Task<SocketError> SendAsync(ClientWebSocketConnection connection, byte[] buffer)
+        {
+            try
+            {
+                logger.LogDebug("Sending {BufferLength} bytes on the client web socket connection to {ServerUri} the message arrived on.",
+                    buffer.Length, connection.ServerUri);
+
+                await connection.Client.SendAsync(
+                    new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, m_cts.Token).ConfigureAwait(false);
+
+                return SocketError.Success;
+            }
+            catch (SocketException sockExcp)
+            {
+                return sockExcp.SocketErrorCode;
+            }
+        }
+
+        /// <summary>
+        /// Send to a secure web socket server. The connection is made using the server's host name, rather than its
+        /// resolved IP address, so that the name presented in the server's certificate is able to validate.
         /// </summary>
         public override Task<SocketError> SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, bool canInitiateConnection, string connectionIDHint)
         {
@@ -150,23 +209,35 @@ namespace SIPSorcery.SIP
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for SendSecure in SIPClientWebSocketChannel.");
             }
 
-            return SendAsync(dstEndPoint, buffer);
+            // An already open connection is preferred over dialling, and not only to save the
+            // handshake: the certificate name is what the connection was keyed on, so a send that
+            // has a hint but no name would otherwise dial a duplicate by address and fail on it.
+            if (TryGetHintedConnection(connectionIDHint, out var hinted))
+            {
+                return SendAsync(hinted, buffer);
+            }
+
+            // Without a host name the certificate can never validate. Fall back to the IP address form so that the
+            // failure surfaces from the TLS handshake rather than from the URI parse.
+            var serverUri = !string.IsNullOrWhiteSpace(serverCertificateName) ?
+                new Uri($"{WEB_SOCKET_SECURE_URI_PREFIX}{serverCertificateName}:{dstEndPoint.Port}") :
+                new Uri($"{WEB_SOCKET_SECURE_URI_PREFIX}{dstEndPoint.GetIPEndPoint()}");
+
+            return SendAsync(dstEndPoint, buffer, serverUri);
         }
 
         /// <summary>
         /// Attempts a send to a remote web socket server. If there is an existing connection it will be used
         /// otherwise an attempt will made to establish a new one.
         /// </summary>
-        /// <param name="serverEndPoint">The remote web socket server URI to send to.</param>
+        /// <param name="serverEndPoint">The remote web socket server end point to send to.</param>
         /// <param name="buffer">The data buffer to send.</param>
+        /// <param name="serverUri">The remote web socket server URI to connect to.</param>
         /// <returns>A success value or an error for failure.</returns>
-        private async Task<SocketError> SendAsync(SIPEndPoint serverEndPoint, byte[] buffer)
+        private async Task<SocketError> SendAsync(SIPEndPoint serverEndPoint, byte[] buffer, Uri serverUri)
         {
             try
             {
-                string uriPrefix = (serverEndPoint.Protocol == SIPProtocolsEnum.wss) ? WEB_SOCKET_SECURE_URI_PREFIX : WEB_SOCKET_URI_PREFIX;
-                var serverUri = new Uri($"{uriPrefix}{serverEndPoint.GetIPEndPoint()}");
-
                 string connectionID = GetConnectionID(serverUri);
                 serverEndPoint.ChannelID = this.ID;
                 serverEndPoint.ConnectionID = connectionID;
@@ -247,11 +318,12 @@ namespace SIPSorcery.SIP
         /// </summary>
         public override bool HasConnection(SIPEndPoint serverEndPoint)
         {
-            string uriPrefix = (serverEndPoint.Protocol == SIPProtocolsEnum.wss) ? WEB_SOCKET_SECURE_URI_PREFIX : WEB_SOCKET_URI_PREFIX;
-            var serverUri = new Uri($"{uriPrefix}{serverEndPoint.GetIPEndPoint()}");
-            string connectionID = GetConnectionID(serverUri);
+            // Connections are keyed on the server URI which, for secure connections, uses the server's host name
+            // rather than its IP address. That means the connection ID can't be derived from the end point on its own.
+            var dstEndPoint = serverEndPoint.GetIPEndPoint();
 
-            return m_egressConnections.ContainsKey(connectionID);
+            return m_egressConnections.Any(x => x.Value.RemoteEndPoint.Protocol == serverEndPoint.Protocol
+                && x.Value.RemoteEndPoint.GetIPEndPoint().Equals(dstEndPoint));
         }
 
         /// <summary>
@@ -376,7 +448,7 @@ namespace SIPSorcery.SIP
                         if (receiveTask.IsCompleted)
                         {
                             logger.LogDebug("Client web socket connection to {ServerUri} received {BytesReceived} bytes.", conn.ServerUri, receiveTask.Result.Count);
-                            //SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.Take(receiveTask.Result.Count).ToArray()).Wait();
+                            //SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.AsSpan(0, receiveTask.Result.Count).ToArray()).Wait();
                             ExtractSIPMessages(this, conn, conn.ReceiveBuffer, receiveTask.Result.Count);
                             conn.ReceiveTask = conn.Client.ReceiveAsync(conn.ReceiveBuffer, m_cts.Token);
                         }

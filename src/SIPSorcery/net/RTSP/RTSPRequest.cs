@@ -72,13 +72,13 @@ namespace SIPSorcery.Net
                     URL = RTSPURL.ParseRTSPURL(url, out urlParserError);
                     if (urlParserError != RTSPHeaderParserError.None)
                     {
-                        throw new ApplicationException("Error parsing RTSP URL, " + urlParserError.ToString() + ".");
+                        throw new ApplicationException($"Error parsing RTSP URL, {urlParserError.ToString()}.");
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception RTSPRequest Ctor. {ErrorMessage}", excp.Message + ".");
+                logger.LogError(excp, "Exception in {Method}.", nameof(RTSPRequest));
             }
         }
 
@@ -104,11 +104,9 @@ namespace SIPSorcery.Net
             {
                 RTSPRequest rtspRequest = new RTSPRequest();
 
-                string statusLine = rtspMessage.FirstLine;
-
-                int firstSpacePosn = statusLine.IndexOf(" ");
-
-                string method = statusLine.Substring(0, firstSpacePosn).Trim();
+                var statusLine = rtspMessage.FirstLine.AsSpan();
+                var firstSpacePosn = statusLine.IndexOf(' ');
+                var method = statusLine.Slice(0, firstSpacePosn).Trim().ToString();
                 rtspRequest.Method = RTSPMethods.GetMethod(method);
                 if (rtspRequest.Method == RTSPMethodsEnum.UNKNOWN)
                 {
@@ -116,15 +114,15 @@ namespace SIPSorcery.Net
                     logger.LogWarning("Unknown RTSP method received {Method}.", rtspRequest.Method);
                 }
 
-                statusLine = statusLine.Substring(firstSpacePosn).Trim();
-                int secondSpacePosn = statusLine.IndexOf(" ");
+                statusLine = statusLine.Slice(firstSpacePosn).Trim();
+                var secondSpacePosn = statusLine.IndexOf(' ');
 
                 if (secondSpacePosn != -1)
                 {
-                    urlStr = statusLine.Substring(0, secondSpacePosn);
+                    urlStr = statusLine.Slice(0, secondSpacePosn).ToString();
 
                     rtspRequest.URL = RTSPURL.ParseRTSPURL(urlStr);
-                    rtspRequest.RTSPVersion = statusLine.Substring(secondSpacePosn, statusLine.Length - secondSpacePosn).Trim();
+                    rtspRequest.RTSPVersion = statusLine.Slice(secondSpacePosn).Trim().ToString();
                     rtspRequest.Header = (rtspMessage.RTSPHeaders != null) ? RTSPHeader.ParseRTSPHeaders(rtspMessage.RTSPHeaders) : new RTSPHeader(0, null);
                     rtspRequest.Body = rtspMessage.Body;
 
@@ -138,23 +136,23 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 logger.LogError(excp, "Exception parsing RTSP request. URI, {Uri}. {ErrorMessage}", urlStr, excp.Message);
-                throw new ApplicationException("There was an exception parsing an RTSP request. " + excp.Message);
+                throw new ApplicationException($"There was an exception parsing an RTSP request. {excp.Message}");
             }
         }
 
-        public new string ToString()
+        public override string ToString()
         {
             try
             {
                 string methodStr = (Method != RTSPMethodsEnum.UNKNOWN) ? Method.ToString() : UnknownMethod;
-                string message = methodStr + (URL == null ? "" : (" " + URL?.ToString())) + " " + RTSPVersion + m_CRLF;
+                string message = $"{methodStr + (URL == null ? "" : ($" {URL?.ToString()}"))} {RTSPVersion}{m_CRLF}";
                 if (Header != null)
                 {
                     message += Header.ToString();
                 }
                 if (Body != null)
                 {
-                    message +=m_CRLF+ Body;
+                    message += m_CRLF + Body;
                 }
 
                 return message;

@@ -46,7 +46,7 @@ namespace SIPSorceryMedia.Windows
 
         public readonly static AudioSamplingRatesEnum DefaultAudioPlaybackRate = AudioSamplingRatesEnum.Rate8KHz;
 
-        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
+        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
 
         private WaveFormat _waveSinkFormat;
         private WaveFormat _waveSourceFormat;
@@ -54,7 +54,7 @@ namespace SIPSorceryMedia.Windows
         /// <summary>
         /// Audio render device.
         /// </summary>
-        private WaveOutEvent _waveOutEvent;
+        private WaveOut _waveOutEvent;
 
         /// <summary>
         /// Buffer for audio samples to be rendered.
@@ -64,7 +64,7 @@ namespace SIPSorceryMedia.Windows
         /// <summary>
         /// Audio capture device.
         /// </summary>
-        private WaveInEvent _waveInEvent;
+        private WaveIn _waveInEvent;
 
         private IAudioEncoder _audioEncoder;
         private MediaFormatManager<AudioFormat> _audioFormatManager;
@@ -170,7 +170,9 @@ namespace SIPSorceryMedia.Windows
                 if (_waveSourceFormat.SampleRate != _audioFormatManager.SelectedFormat.ClockRate)
                 {
                     // Reinitialise the audio capture device.
-                    logger.LogDebug($"Windows audio end point adjusting capture rate from {_waveSourceFormat.SampleRate} to {_audioFormatManager.SelectedFormat.ClockRate}.");
+                    logger.LogDebug("Windows audio end point adjusting capture rate from {CurrentCaptureRate} to {SelectedCaptureRate}.",
+                        _waveSourceFormat.SampleRate,
+                        _audioFormatManager.SelectedFormat.ClockRate);
 
                     InitCaptureDevice(_audioInDeviceIndex, _audioFormatManager.SelectedFormat.ClockRate, _audioFormatManager.SelectedFormat.ChannelCount);
                 }
@@ -186,7 +188,9 @@ namespace SIPSorceryMedia.Windows
                 if (_waveSinkFormat.SampleRate != _audioFormatManager.SelectedFormat.ClockRate)
                 {
                     // Reinitialise the audio output device.
-                    logger.LogDebug($"Windows audio end point adjusting playback rate from {_waveSinkFormat.SampleRate} to {_audioFormatManager.SelectedFormat.ClockRate}.");
+                    logger.LogDebug("Windows audio end point adjusting playback rate from {CurrentPlaybackRate} to {SelectedPlaybackRate}.",
+                        _waveSinkFormat.SampleRate,
+                        _audioFormatManager.SelectedFormat.ClockRate);
 
                     InitPlaybackDevice(_audioOutDeviceIndex, _audioFormatManager.SelectedFormat.ClockRate, _audioFormatManager.SelectedFormat.ChannelCount);
                 }
@@ -280,7 +284,7 @@ namespace SIPSorceryMedia.Windows
                     channels);
 
                 // Playback device.
-                _waveOutEvent = new WaveOutEvent();
+                _waveOutEvent = new WaveOut();
                 _waveOutEvent.DeviceNumber = audioOutDeviceIndex;
                 _waveProvider = new BufferedWaveProvider(_waveSinkFormat);
                 _waveProvider.DiscardOnBufferOverflow = true;
@@ -295,9 +299,9 @@ namespace SIPSorceryMedia.Windows
 
         private void InitCaptureDevice(int audioInDeviceIndex, int audioSourceSampleRate, int audioSourceChannels)
         {
-            if (WaveInEvent.DeviceCount > 0)
+            if (WaveIn.DeviceCount > 0)
             {
-                if (WaveInEvent.DeviceCount > audioInDeviceIndex)
+                if (WaveIn.DeviceCount > audioInDeviceIndex)
                 {
                     if (_waveInEvent != null)
                     {
@@ -310,7 +314,7 @@ namespace SIPSorceryMedia.Windows
                            DEVICE_BITS_PER_SAMPLE,
                            audioSourceChannels);
 
-                    _waveInEvent = new WaveInEvent();
+                    _waveInEvent = new WaveIn();
 
                     // Note NAudio recommends a buffer size of 100ms but codecs like Opus can only handle 20ms buffers.
                     _waveInEvent.BufferMilliseconds = DEFAULT_PLAYBACK_BUFFER_MILLISECONDS;
@@ -322,8 +326,10 @@ namespace SIPSorceryMedia.Windows
                 }
                 else
                 {
-                    logger.LogWarning($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
-                    OnAudioSourceError?.Invoke($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
+                    logger.LogWarning("The requested audio input device index {AudioInputDeviceIndex} exceeds the maximum index of {MaximumDeviceIndex}.",
+                        audioInDeviceIndex,
+                        WaveIn.DeviceCount - 1);
+                    OnAudioSourceError?.Invoke($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveIn.DeviceCount - 1}.");
                 }
             }
             else
@@ -341,8 +347,8 @@ namespace SIPSorceryMedia.Windows
             // Note NAudio.Wave.WaveBuffer.ShortBuffer does not take into account little endian.
             // https://github.com/naudio/NAudio/blob/master/NAudio/Wave/WaveOutputs/WaveBuffer.cs
 
-            byte[] buffer = args.Buffer.Take(args.BytesRecorded).ToArray();
-            short[] pcm = buffer.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(buffer, i * 2)).ToArray();
+            short[] pcm = new short[args.BytesRecorded / sizeof(short)];
+            Buffer.BlockCopy(args.Buffer, 0, pcm, 0, args.BytesRecorded);
             byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
             
             OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
@@ -402,6 +408,22 @@ namespace SIPSorceryMedia.Windows
 
             if (_waveProvider != null && _audioEncoder != null && !audioFormat.IsEmpty())
             {
+                // The remote party's send format is only known once media arrives (see the note in
+                // VoIPMediaSession.AudioFormatsNegotiated), so the playback device is adjusted from
+                // the received frame's format. Without this, audio decoded at e.g. 16KHz (G722) or
+                // 48KHz (OPUS) gets played through the default 8KHz device at a fraction of the
+                // correct speed.
+                if (_waveSinkFormat != null && _waveSinkFormat.SampleRate != audioFormat.ClockRate)
+                {
+                    SetAudioSinkFormat(audioFormat);
+
+                    if (_isAudioSinkStarted)
+                    {
+                        // The re-initialised playback device starts in the stopped state.
+                        _waveOutEvent?.Play();
+                    }
+                }
+
                 var pcmSample = _audioEncoder.DecodeAudio(encodedMediaFrame.EncodedAudio, audioFormat);
                 byte[] pcmBytes = pcmSample.SelectMany(BitConverter.GetBytes).ToArray();
                 _waveProvider?.AddSamples(pcmBytes, 0, pcmBytes.Length);

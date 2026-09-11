@@ -20,14 +20,24 @@
 // SOFTWARE.
 
 using Org.BouncyCastle.Crypto.Macs;
+using System;
+#if NET8_0_OR_GREATER
+using ReadOnlyBytes = System.ReadOnlySpan<byte>;
+#else
+using ReadOnlyBytes = System.ArraySegment<byte>;
+#endif
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP.Authentication
 {
     public static class HMAC
     {
-        public static byte[] GenerateAuthTag(HMac hmac, byte[] payload, int offset, int length)
+        public static byte[] GenerateAuthTag(HMac hmac, ReadOnlyBytes payload)
         {
-            hmac.BlockUpdate(payload, offset, length);
+#if NET8_0_OR_GREATER
+            hmac.BlockUpdate(payload);
+#else
+            hmac.BlockUpdate(payload.Array, payload.Offset, payload.Count);
+#endif
 
             byte[] output = new byte[hmac.GetMacSize()];
             hmac.DoFinal(output, 0);

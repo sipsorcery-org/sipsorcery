@@ -1,0 +1,15 @@
+<Project>
+
+  <!-- Several library projects set GeneratePackageOnBuild=true, which makes every build also run
+       NuGet pack (nupkg + snupkg symbol packages). With the core library's 9 target frameworks
+       this hangs Visual Studio: the build sits in the uncancellable pack/NuGet stage and the
+       "Cancel Build" button has no effect. The command-line publish pipeline (.github/workflows/
+       nuget.yml) packs each project explicitly with its own "dotnet pack" step, so pack-on-build
+       is not needed there. Disable it for local/IDE builds; leave it on under CI (GitHub Actions
+       sets CI=true automatically) so nothing about the CI build changes. "dotnet pack" still works
+       anywhere on demand. Imported after each .csproj, so it overrides their explicit "true". -->
+  <PropertyGroup Condition="'$(CI)' != 'true'">
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+</Project>

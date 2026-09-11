@@ -1,0 +1,80 @@
+<Project>
+
+  <!-- Central Package Management for the SIPSorcery example projects under examples/.
+       Package versions are declared once here; project files reference packages without a
+       Version attribute and inherit the version below (see issue #1605). Scope is limited to
+       examples/ so src/ and test/ keep their own independent version sets.
+
+       To add a package: add a PackageVersion here and a versionless PackageReference in the
+       project. Where a single example must pin something different — an old target framework,
+       say — use VersionOverride on that project rather than changing the shared version here.
+
+       Two projects are deliberately outside this scheme:
+         - GetStartedNetFramework is a legacy non-SDK project on net472 with its own old pins.
+         - Projects using VersionOverride are listed against the packages they override below. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="CommandLineParser"                                     Version="2.9.1" />
+    <PackageVersion Include="EmbedIO"                                               Version="3.5.2" />
+    <PackageVersion Include="Google.Protobuf"                                       Version="3.35.1" />
+    <PackageVersion Include="Grpc.Net.Client"                                       Version="2.83.0" />
+    <PackageVersion Include="Grpc.Net.ClientFactory"                                Version="2.83.0" />
+    <PackageVersion Include="Grpc.Tools"                                            Version="2.83.0" />
+    <PackageVersion Include="LanguageExt.Core"                                      Version="4.4.9" />
+    <PackageVersion Include="Livekit.Server.Sdk.Dotnet"                             Version="1.2.2" />
+    <PackageVersion Include="LLamaSharp"                                            Version="0.27.0" />
+    <PackageVersion Include="LLamaSharp.Backend.Cpu"                                Version="0.27.0" />
+    <PackageVersion Include="Makaretu.Dns.Multicast"                                Version="0.27.0" />
+    <PackageVersion Include="MathNet.Filtering"                                     Version="0.7.0" />
+    <PackageVersion Include="MathNet.Numerics"                                      Version="5.0.0" />
+    <PackageVersion Include="Microsoft.CognitiveServices.Speech"                    Version="1.51.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting"                          Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices"          Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Logging"                          Version="3.1.8" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console"                  Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Kiota.Bundle"                                Version="2.0.0" />
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime"                              Version="1.24.4" />
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime.DirectML"                     Version="1.24.4" />
+    <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
+    <PackageVersion Include="NAudio"                                                Version="3.0.0" />
+    <PackageVersion Include="NBitcoin"                                              Version="10.0.9" />
+    <PackageVersion Include="Net.Codecrete.QrCodeGenerator"                         Version="3.1.0" />
+    <PackageVersion Include="Newtonsoft.Json"                                       Version="13.0.4" />
+    <PackageVersion Include="NNostr.Client"                                         Version="0.0.54" />
+    <PackageVersion Include="org.k2fsa.sherpa.onnx"                                 Version="1.13.5" />
+    <PackageVersion Include="RestSharp"                                             Version="114.0.0" />
+    <PackageVersion Include="RestSharp.Serializers.NewtonsoftJson"                  Version="114.0.0" />
+    <PackageVersion Include="Serilog.AspNetCore"                                    Version="10.0.0" />
+    <PackageVersion Include="Serilog.Extensions.Hosting"                            Version="10.0.0" />
+    <PackageVersion Include="Serilog.Extensions.Logging"                            Version="10.0.0" />
+    <PackageVersion Include="Serilog.Settings.Configuration"                        Version="10.0.1" />
+    <PackageVersion Include="Serilog.Sinks.Console"                                 Version="6.1.1" />
+    <PackageVersion Include="Serilog.Sinks.Debug"                                   Version="3.0.0" />
+    <PackageVersion Include="Serilog.Sinks.File"                                    Version="7.0.0" />
+    <PackageVersion Include="SharpGL.WinForms"                                      Version="3.1.1" />
+    <PackageVersion Include="SIPSorcery.WebSocketSharp"                             Version="0.0.1" />
+    <PackageVersion Include="SIPSorceryMedia.Encoders"                              Version="10.0.4" />
+    <!-- Held at 2.x deliberately. ImageSharp.Drawing 3.x replaces the
+         image.Mutate(ctx => ctx.Fill(...)) model with a frame-based DrawingCanvas obtained via
+         ImageFrame.CreateCanvas(configuration, options) — the Fill/DrawText/DrawLine extension
+         methods on IImageProcessingContext no longer exist. That is an API migration across
+         WebRTCLightningGetStarted's drawing code, not a version bump, so it is tracked separately.
+         Only that one project references this package. -->
+    <PackageVersion Include="SixLabors.ImageSharp.Drawing"                          Version="2.1.7" />
+    <PackageVersion Include="SkiaSharp"                                             Version="4.151.1" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux"                          Version="4.151.1" />
+    <PackageVersion Include="Stateless"                                             Version="5.20.1" />
+    <PackageVersion Include="System.Configuration.ConfigurationManager"             Version="10.0.11" />
+    <PackageVersion Include="System.Net.WebSockets.Client"                          Version="4.3.2" />
+    <PackageVersion Include="System.Reactive"                                       Version="7.0.0" />
+    <PackageVersion Include="WebSocketSharp-netstandard"                            Version="1.0.1" />
+    <PackageVersion Include="Xamarin.Android.Support.Core.Utils"                    Version="28.0.0.3" />
+    <PackageVersion Include="Xamarin.Android.Support.CustomTabs"                    Version="28.0.0.3" />
+    <PackageVersion Include="Xamarin.Android.Support.Design"                        Version="28.0.0.3" />
+    <PackageVersion Include="Xamarin.Essentials"                                    Version="1.5.3.2" />
+  </ItemGroup>
+
+</Project>

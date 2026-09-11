@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- Enables Central Package Management for the integration test project and pulls the shared test
+       package versions. See test/Test.Packages.props and issue #1605. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <Import Project="../Test.Packages.props" />
+
+</Project>

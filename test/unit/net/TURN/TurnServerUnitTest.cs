@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: TurnServerUnitTest.cs
 //
 // Description: Unit tests for TurnServer (RFC 5766).
@@ -21,14 +21,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
+
+// TurnServer is marked experimental because it is not hardened for production use. These tests are
+// exercising it deliberately, so the diagnostic is suppressed for this file.
+#pragma warning disable SIPSORCERY001
 
 namespace SIPSorcery.Net.UnitTests
 {
     [Trait("Category", "unit")]
     public class TurnServerUnitTest : IDisposable
     {
-        private ILogger logger = null;
+        private readonly ILogger logger = null;
         private readonly List<TurnServer> _servers = new List<TurnServer>();
 
         private const string TEST_USERNAME = "testuser";
@@ -48,33 +53,109 @@ namespace SIPSorcery.Net.UnitTests
             }
         }
 
-        private (TurnServer server, int port) CreateTurnServer(bool enableTcp = true, bool enableUdp = false)
+        /// <summary>
+        /// The number of times a free port is looked for, and a server start attempted on it, before
+        /// giving up.
+        /// </summary>
+        private const int PORT_BIND_ATTEMPTS = 10;
+
+        /// <summary>
+        /// Picks a free port and starts a TURN server listening on it.
+        /// </summary>
+        /// <remarks>
+        /// The OS assigns the port on a probe socket which must be closed before the TURN server can bind
+        /// it. That leaves a window where anything else on the machine can take the port, which shows up
+        /// as an intermittent failure when the test suite has a lot of sockets in flight. The window
+        /// cannot be closed, the server does the binding, so the start is retried on a new port when it
+        /// loses the race. The probe also has to use the same protocols the server will, TCP and UDP port
+        /// spaces are independent so a free TCP port says nothing about the same UDP port being free.
+        /// </remarks>
+        private (TurnServer server, int port) CreateTurnServer(
+            bool enableTcp = true,
+            bool enableUdp = false,
+            int defaultLifetimeSeconds = 600)
         {
-            // Use port 0 to let the OS assign a free port, then read it back.
-            // Since TurnServer requires a specific port, find a free one first.
-            int port;
-            var tempSocket = new TcpListener(IPAddress.Loopback, 0);
-            tempSocket.Start();
-            port = ((IPEndPoint)tempSocket.LocalEndpoint).Port;
-            tempSocket.Stop();
-
-            var config = new TurnServerConfig
+            for (int attempt = 1; ; attempt++)
             {
-                ListenAddress = IPAddress.Loopback,
-                Port = port,
-                EnableTcp = enableTcp,
-                EnableUdp = enableUdp,
-                Username = TEST_USERNAME,
-                Password = TEST_PASSWORD,
-                Realm = TEST_REALM,
-                RelayAddress = IPAddress.Loopback,
-                DefaultLifetimeSeconds = 600,
-            };
+                int port = GetFreePort(enableTcp, enableUdp);
 
-            var server = new TurnServer(config);
-            _servers.Add(server);
-            server.Start();
-            return (server, port);
+                var config = new TurnServerConfig
+                {
+                    ListenAddress = IPAddress.Loopback,
+                    Port = port,
+                    EnableTcp = enableTcp,
+                    EnableUdp = enableUdp,
+                    Username = TEST_USERNAME,
+                    Password = TEST_PASSWORD,
+                    Realm = TEST_REALM,
+                    RelayAddress = IPAddress.Loopback,
+                    DefaultLifetimeSeconds = defaultLifetimeSeconds,
+                };
+
+                var server = new TurnServer(config);
+
+                try
+                {
+                    server.Start();
+                }
+                catch (SocketException) when (attempt < PORT_BIND_ATTEMPTS)
+                {
+                    // The port went between the probe closing and the server binding. A fresh instance is
+                    // needed as Start sets its running flag before binding and will not re-run.
+                    try { server.Dispose(); } catch { }
+                    continue;
+                }
+
+                _servers.Add(server);
+
+                return (server, port);
+            }
+        }
+
+        /// <summary>
+        /// Returns a port number that is free on each of the protocols requested.
+        /// </summary>
+        private static int GetFreePort(bool needTcp, bool needUdp)
+        {
+            for (int attempt = 1; ; attempt++)
+            {
+                TcpListener tcpProbe = null;
+                UdpClient udpProbe = null;
+
+                try
+                {
+                    int port;
+
+                    if (needTcp)
+                    {
+                        tcpProbe = new TcpListener(IPAddress.Loopback, 0);
+                        tcpProbe.Start();
+                        port = ((IPEndPoint)tcpProbe.LocalEndpoint).Port;
+
+                        if (needUdp)
+                        {
+                            // Check the same port number is also free for UDP.
+                            udpProbe = new UdpClient(new IPEndPoint(IPAddress.Loopback, port));
+                        }
+                    }
+                    else
+                    {
+                        udpProbe = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+                        port = ((IPEndPoint)udpProbe.Client.LocalEndPoint).Port;
+                    }
+
+                    return port;
+                }
+                catch (SocketException) when (attempt < PORT_BIND_ATTEMPTS)
+                {
+                    // The port was free on one protocol but not the other, try for a different one.
+                }
+                finally
+                {
+                    try { tcpProbe?.Stop(); } catch { }
+                    udpProbe?.Dispose();
+                }
+            }
         }
 
         private static byte[] ComputeHmacKey(string username, string realm, string password)
@@ -160,7 +241,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task AllocateReturns401WithoutCredentials()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -200,7 +281,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task AuthenticatedAllocateSucceeds()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -245,7 +326,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task WrongPasswordFails()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -277,7 +358,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task RefreshExtendsLifetime()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -312,7 +393,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task RefreshZeroDeletesAllocation()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -340,7 +421,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task CreatePermissionSucceeds()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -368,7 +449,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task ChannelBindSucceeds()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -405,7 +486,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task SendIndicationRelaysData()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -449,7 +530,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task ChannelDataRelaysViaBinding()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -500,7 +581,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task UdpRelayBackToClient()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -573,7 +654,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task BindingRequestReturnsAddress()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -598,31 +679,10 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task ExpiredAllocationCleanedUp()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
-            // Create server with very short lifetime
-            int testPort;
-            var tempSocket = new TcpListener(IPAddress.Loopback, 0);
-            tempSocket.Start();
-            testPort = ((IPEndPoint)tempSocket.LocalEndpoint).Port;
-            tempSocket.Stop();
-
-            var config = new TurnServerConfig
-            {
-                ListenAddress = IPAddress.Loopback,
-                Port = testPort,
-                EnableTcp = true,
-                EnableUdp = false,
-                Username = TEST_USERNAME,
-                Password = TEST_PASSWORD,
-                Realm = TEST_REALM,
-                RelayAddress = IPAddress.Loopback,
-                DefaultLifetimeSeconds = 1, // Very short for testing
-            };
-
-            var server = new TurnServer(config);
-            _servers.Add(server);
-            server.Start();
+            // Create server with a very short allocation lifetime.
+            var (server, testPort) = CreateTurnServer(enableTcp: true, enableUdp: false, defaultLifetimeSeconds: 1);
 
             using var client = await ConnectTcpClient(testPort);
             var stream = client.GetStream();
@@ -643,6 +703,62 @@ namespace SIPSorcery.Net.UnitTests
                     "Allocation should have expired by now");
             }
             // If the cleanup timer already ran, allocation count could be 0
+        }
+
+        /// <summary>
+        /// A UDP datagram arriving on the TURN port is unauthenticated and arbitrary, and the STUN parser
+        /// throws on input it does not recognise. Processing used to sit inside the receive loop but
+        /// outside any per datagram handler, so one malformed datagram unwound past the loop and ended it.
+        /// The loop is started fire and forget with no supervision, so nothing restarted it and the UDP
+        /// relay stayed down for every client until the process was restarted. The datagram must be
+        /// dropped and the loop must keep serving.
+        /// </summary>
+        /// <param name="malformed">
+        /// First case: an ApplicationException from the STUN header check, the first byte has bits set that
+        /// the parser rejects and it is not channel data. Second case: a datagram too short to hold a STUN
+        /// header, where the header parse returns null and dereferencing it throws.
+        /// </param>
+        [Theory]
+        [InlineData(new byte[] { 0x80, 0x00, 0x00, 0x00 })]
+        [InlineData(new byte[] { 0x00, 0x01, 0x00 })]
+        public async Task MalformedUdpDatagramDoesNotKillReceiveLoop(byte[] malformed)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var (server, port) = CreateTurnServer(enableTcp: false, enableUdp: true);
+            var serverEndPoint = new IPEndPoint(IPAddress.Loopback, port);
+
+            using var client = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+
+            // Confirm the relay is answering before the malformed datagram, so a failure after it cannot be
+            // blamed on the server never having started.
+            Assert.True(await UdpAllocateGetsChallenge(client, serverEndPoint),
+                "The TURN server did not answer a valid UDP request before the malformed datagram.");
+
+            await client.SendAsync(malformed, malformed.Length, serverEndPoint);
+            await Task.Delay(250);
+
+            Assert.True(await UdpAllocateGetsChallenge(client, serverEndPoint),
+                "The TURN server stopped answering UDP requests after a malformed datagram; the receive loop died.");
+        }
+
+        /// <summary>
+        /// Sends an unauthenticated Allocate over UDP and returns true if the 401 challenge comes back.
+        /// </summary>
+        private static async Task<bool> UdpAllocateGetsChallenge(UdpClient client, IPEndPoint serverEndPoint)
+        {
+            var request = BuildAllocateRequest().ToByteBuffer(null, false);
+            await client.SendAsync(request, request.Length, serverEndPoint);
+
+            var receiveTask = client.ReceiveAsync();
+            if (await Task.WhenAny(receiveTask, Task.Delay(3000)) != receiveTask)
+            {
+                return false;
+            }
+
+            var response = STUNMessage.ParseSTUNMessage(receiveTask.Result.Buffer, receiveTask.Result.Buffer.Length);
+
+            return response != null && response.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse;
         }
 
         #region Test Helpers

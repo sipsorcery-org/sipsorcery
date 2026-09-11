@@ -2,6 +2,8 @@
   "solution": {
     "path": "SIPSorcery.slnx",
     "projects": [
+      "benchmarks\\SIPSorcery\\SdpBenchmarks\\SdpBenchmarks.csproj",
+      "benchmarks\\SIPSorceryMedia.Abstractions\\PixelConverterBenchmarks\\PixelConverterBenchmarks.csproj",
       "src\\SIPSorceryMedia.Abstractions\\SIPSorceryMedia.Abstractions.csproj",
       "src\\SIPSorcery\\SIPSorcery.csproj",
       "test\\SIPSorceryMedia.Abstractions.UnitTest\\SIPSorceryMedia.Abstractions.UnitTest.csproj",

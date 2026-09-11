@@ -16,6 +16,7 @@
 using Microsoft.Extensions.Logging;
 using Xunit;
 using SIPSorcery.Media;
+using SIPSorcery.UnitTests;
 
 namespace SIPSorcery.SIP.App.UnitTests
 {
@@ -36,8 +37,8 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public void CanInstantiateUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             VideoTestPatternSource testPatternSource = new VideoTestPatternSource();
 

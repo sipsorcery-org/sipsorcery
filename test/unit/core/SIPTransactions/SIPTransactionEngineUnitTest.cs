@@ -17,6 +17,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -55,40 +56,113 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MatchOnRequestAndResponseTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport sipTransport = new SIPTransport();
             SIPTransactionEngine transactionEngine = sipTransport.m_transactionEngine;
 
-            SIPRequest inviteRequest = SIPRequest.ParseSIPRequest("INVITE sip:dummy@127.0.0.1:12014 SIP/2.0" + m_CRLF +
-                "Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27" + m_CRLF +
-                "To: <sip:dummy@127.0.0.1:12014>" + m_CRLF +
-                "From: <sip:unittest@mysipswitch.com>;tag=2062917371" + m_CRLF +
-                "Call-ID: 8ae45c15425040179a4285d774ccbaf6" + m_CRLF +
-                "CSeq: 1 INVITE" + m_CRLF +
-                "Contact: <sip:127.0.0.1:1234>" + m_CRLF +
-                "Max-Forwards: 70" + m_CRLF +
-                "User-Agent: unittest" + m_CRLF +
-                "Content-Length: 5" + m_CRLF +
-                "Content-Type: application/sdp" + m_CRLF +
-                m_CRLF +
-                "dummy");
+            SIPRequest inviteRequest = SIPRequest.ParseSIPRequest($"INVITE sip:dummy@127.0.0.1:12014 SIP/2.0{m_CRLF}Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27{m_CRLF}To: <sip:dummy@127.0.0.1:12014>{m_CRLF}From: <sip:unittest@mysipswitch.com>;tag=2062917371{m_CRLF}Call-ID: 8ae45c15425040179a4285d774ccbaf6{m_CRLF}CSeq: 1 INVITE{m_CRLF}Contact: <sip:127.0.0.1:1234>{m_CRLF}Max-Forwards: 70{m_CRLF}User-Agent: unittest{m_CRLF}Content-Length: 5{m_CRLF}Content-Type: application/sdp{m_CRLF}{m_CRLF}dummy");
 
             SIPTransaction tx = new UACInviteTransaction(sipTransport, inviteRequest, null);
             transactionEngine.AddTransaction(tx);
 
-            SIPResponse sipResponse = SIPResponse.ParseSIPResponse("SIP/2.0 603 Nothing listening" + m_CRLF +
-                "Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013" + m_CRLF +
-                "To: <sip:dummy@127.0.0.1:12014>" + m_CRLF +
-                "From: <sip:unittest@mysipswitch.com>;tag=2062917371" + m_CRLF +
-                "Call-ID: 8ae45c15425040179a4285d774ccbaf6" + m_CRLF +
-                "CSeq: 1 INVITE" + m_CRLF +
-                "Content-Length: 0" + m_CRLF +
-                m_CRLF);
+            SIPResponse sipResponse = SIPResponse.ParseSIPResponse($"SIP/2.0 603 Nothing listening{m_CRLF}Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013{m_CRLF}To: <sip:dummy@127.0.0.1:12014>{m_CRLF}From: <sip:unittest@mysipswitch.com>;tag=2062917371{m_CRLF}Call-ID: 8ae45c15425040179a4285d774ccbaf6{m_CRLF}CSeq: 1 INVITE{m_CRLF}Content-Length: 0{m_CRLF}{m_CRLF}");
 
             Assert.True(transactionEngine.GetTransaction(sipResponse) != null, "Transaction should have matched, check the hashing mechanism.");
         }
+
+        /// <summary>
+        /// Tests that a non-INVITE transaction created for a RECEIVED request is added to the
+        /// transaction engine straight away, rather than when it first sends a response.
+        /// </summary>
+        /// <remarks>
+        /// This is what lets a retransmitted request be recognised as a duplicate. An application
+        /// handling something slow - a REFER being relayed to another leg, a MESSAGE being handed
+        /// off - can take seconds to produce a final response, and every retransmission arriving in
+        /// that window would otherwise be delivered to it as a brand new request.
+        ///
+        /// The equivalent registration for INVITE lives in the UASInviteTransaction constructor.
+        /// This one was lost in Dec 2019 when the SIPTransport.CreateNonInviteTransaction factory,
+        /// which used to do the adding, was removed in an async refactor.
+        /// </remarks>
+        [Fact]
+        public void NonInviteServerTransactionAddedToEngineOnCreationTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            SIPTransport sipTransport = new SIPTransport();
+            SIPTransactionEngine transactionEngine = sipTransport.m_transactionEngine;
+
+            SIPRequest referRequest = ReceivedReferRequest();
+
+            Assert.Null(transactionEngine.GetTransaction(referRequest));
+
+            SIPNonInviteTransaction tx = new SIPNonInviteTransaction(sipTransport, referRequest, null);
+
+            // Note what has deliberately NOT happened: no response of any kind has been sent.
+            var matched = transactionEngine.GetTransaction(referRequest);
+
+            Assert.NotNull(matched);
+            Assert.Equal(tx.TransactionId, matched.TransactionId);
+        }
+
+        /// <summary>
+        /// Tests that a non-INVITE transaction the application creates to SEND a request is not
+        /// added to the engine until it is sent.
+        /// </summary>
+        /// <remarks>
+        /// The other half of the rule, pinned so a change to one direction cannot quietly alter the
+        /// other. The same class serves both roles and the received end point is what separates
+        /// them, so an outbound transaction that registered on construction would put a transaction
+        /// into the engine for a request that may never be sent at all.
+        /// </remarks>
+        [Fact]
+        public void NonInviteClientTransactionNotAddedToEngineOnCreationTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            SIPTransport sipTransport = new SIPTransport();
+            SIPTransactionEngine transactionEngine = sipTransport.m_transactionEngine;
+
+            // Parsed from a string rather than from a receive buffer, so it carries no remote end
+            // point: this is a request the application is about to send.
+            SIPRequest referRequest = SIPRequest.ParseSIPRequest(ReferRequestText());
+
+            Assert.Null(referRequest.RemoteSIPEndPoint);
+
+            _ = new SIPNonInviteTransaction(sipTransport, referRequest, null);
+
+            Assert.Null(transactionEngine.GetTransaction(referRequest));
+        }
+
+        /// <summary>
+        /// A REFER as it arrives off the wire, with the end point it was received from set.
+        /// </summary>
+        private SIPRequest ReceivedReferRequest()
+        {
+            var buffer = SIPMessageBuffer.ParseSIPMessage(
+                System.Text.Encoding.UTF8.GetBytes(ReferRequestText()),
+                new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.Loopback, 5060),
+                new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.Loopback, 1234));
+
+            return SIPRequest.ParseSIPRequest(buffer);
+        }
+
+        private string ReferRequestText() =>
+            $"REFER sip:dummy@127.0.0.1:12014 SIP/2.0{m_CRLF}" +
+            $"Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK4e2f1c9d1b4a4f0d9a6e2c7b3f8a5d1e{m_CRLF}" +
+            $"To: <sip:dummy@127.0.0.1:12014>;tag=8675309{m_CRLF}" +
+            $"From: <sip:unittest@mysipswitch.com>;tag=2062917371{m_CRLF}" +
+            $"Call-ID: 4d8f2a1b6c3e4a7d9b0f5e8c2a1d6b3f{m_CRLF}" +
+            $"CSeq: 4 REFER{m_CRLF}" +
+            $"Contact: <sip:127.0.0.1:1234>{m_CRLF}" +
+            $"Refer-To: <sip:target@mysipswitch.com>{m_CRLF}" +
+            $"Max-Forwards: 70{m_CRLF}" +
+            $"User-Agent: unittest{m_CRLF}" +
+            $"Content-Length: 0{m_CRLF}{m_CRLF}";
 
         /// <summary>
         /// Tests the production and recognition of an ACK request for this transaction engine.
@@ -98,8 +172,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "txintegration")]
         public async Task AckRecognitionUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport clientTransport = null;
             SIPTransport serverTransport = null;
@@ -107,6 +181,7 @@ namespace SIPSorcery.SIP.UnitTests
             try
             {
                 TaskCompletionSource<bool> uasConfirmedTask = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                TaskCompletionSource<bool> uacConfirmedTask = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
                 // Client side of the call.
                 clientTransport = new SIPTransport();
@@ -154,11 +229,24 @@ namespace SIPSorcery.SIP.UnitTests
                 // Send the invite to the server side.
                 UACInviteTransaction clientTransaction = new UACInviteTransaction(clientTransport, inviteRequest, null);
                 SetTransactionTraceEvents(clientTransaction);
+                // The client reaching Confirmed is a separate asynchronous event from the server reaching
+                // Confirmed: the server confirms when it receives the ACK, but that ACK can be sent from the
+                // duplicate-response path (ResendAckRequest) while the client is still in the Completed state,
+                // before the client's own transition to Confirmed has run. Waiting only on the server therefore
+                // races the client's state and intermittently fails the client assertion. Signal explicitly
+                // when the client reaches Confirmed and wait for both sides below.
+                clientTransaction.TransactionStateChanged += (tx) =>
+                {
+                    if (clientTransaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
+                    {
+                        uacConfirmedTask.TrySetResult(true);
+                    }
+                };
                 clientEngine.AddTransaction(clientTransaction);
                 clientTransaction.SendInviteRequest();
 
-                var timeoutTask = Task.Delay(TimeSpan.FromSeconds(TRANSACTION_EXCHANGE_TIMEOUT_MS));
-                var completed = await Task.WhenAny(uasConfirmedTask.Task, timeoutTask);
+                var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(TRANSACTION_EXCHANGE_TIMEOUT_MS));
+                var completed = await Task.WhenAny(Task.WhenAll(uasConfirmedTask.Task, uacConfirmedTask.Task), timeoutTask);
 
                 if (completed == timeoutTask)
                 {
@@ -178,24 +266,14 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AckRecognitionIIUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport sipTransport = new SIPTransport();
             SIPTransactionEngine engine = sipTransport.m_transactionEngine;     // Client side of the INVITE.
 
             string inviteRequestStr =
-                "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
-                "Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" + m_CRLF +
-                "From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136" + m_CRLF +
-                "To: <sip:303@sip.blueface.ie>" + m_CRLF +
-                "Contact: <sip:aaronxten@192.168.1.2:5065>" + m_CRLF +
-                "Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2" + m_CRLF +
-                "CSeq: 49429 INVITE" + m_CRLF +
-                "Max-Forwards: 70" + m_CRLF +
-                "Content-Type: application/sdp" + m_CRLF +
-                "User-Agent: Dummy" + m_CRLF +
-                m_CRLF;
+                $"INVITE sip:303@sip.blueface.ie SIP/2.0{m_CRLF}Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>{m_CRLF}Contact: <sip:aaronxten@192.168.1.2:5065>{m_CRLF}Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2{m_CRLF}CSeq: 49429 INVITE{m_CRLF}Max-Forwards: 70{m_CRLF}Content-Type: application/sdp{m_CRLF}User-Agent: Dummy{m_CRLF}{m_CRLF}";
 
             SIPRequest inviteRequest = SIPRequest.ParseSIPRequest(inviteRequestStr);
 
@@ -205,16 +283,7 @@ namespace SIPSorcery.SIP.UnitTests
             engine.AddTransaction(serverTransaction);
 
             string ackRequestStr =
-                "ACK sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
-                "Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" + m_CRLF +
-                "From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136" + m_CRLF +
-                "To: <sip:303@sip.blueface.ie>" + m_CRLF +
-                "Contact: <sip:aaronxten@192.168.1.2:5065>" + m_CRLF +
-                "Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2" + m_CRLF +
-                "CSeq: 49429 ACK" + m_CRLF +
-                "Max-Forwards: 70" + m_CRLF +
-                "User-Agent: Dummy" + m_CRLF +
-                m_CRLF;
+                $"ACK sip:303@sip.blueface.ie SIP/2.0{m_CRLF}Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>{m_CRLF}Contact: <sip:aaronxten@192.168.1.2:5065>{m_CRLF}Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2{m_CRLF}CSeq: 49429 ACK{m_CRLF}Max-Forwards: 70{m_CRLF}User-Agent: Dummy{m_CRLF}{m_CRLF}";
 
             SIPRequest ackRequest = SIPRequest.ParseSIPRequest(ackRequestStr);
 
@@ -226,8 +295,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CancelledInviteWithoutCancelledAt_ExpiresUsingCreatedFallback()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport sipTransport = new SIPTransport();
             SIPTransactionEngine engine = sipTransport.m_transactionEngine;
@@ -252,8 +321,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CancelledInviteWithRecentCancelledAt_IsNotExpired()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport sipTransport = new SIPTransport();
             SIPTransactionEngine engine = sipTransport.m_transactionEngine;
@@ -262,8 +331,16 @@ namespace SIPSorcery.SIP.UnitTests
             var tx = new UACInviteTransaction(sipTransport, inviteRequest, null);
             engine.AddTransaction(tx);
 
-            tx.Created = DateTime.Now.AddMilliseconds(-(SIPTimings.T6 * 2));
+            // Flip to Cancelled BEFORE backdating Created. Otherwise there is a brief
+            // window in which the transaction has an "old" Created timestamp but is
+            // still in the Calling state, and the engine's background sweep thread
+            // (started by SIPTransport's constructor) can match the
+            // "now - Created >= T6, state == Calling/Trying" fall-through branch in
+            // RemoveExpiredTransactions and remove the transaction before this test
+            // ever calls the sweep itself. That manifested as a sporadic CI failure
+            // on the order of ~5% of runs.
             tx.CancelCall();
+            tx.Created = DateTime.Now.AddMilliseconds(-(SIPTimings.T6 * 2));
 
             var removeExpiredMethod = typeof(SIPTransactionEngine).GetMethod("RemoveExpiredTransactions", BindingFlags.Instance | BindingFlags.NonPublic);
             removeExpiredMethod.Invoke(engine, null);

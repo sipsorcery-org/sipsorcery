@@ -53,7 +53,7 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            string attrDescrStr = "STUN Attribute: " + STUNAttributeTypesEnum.ChangeRequest.ToString() + ", key byte=" + m_changeRequestByte.ToString("X") + ", change address=" + ChangeAddress + ", change port=" + ChangePort + ".";
+            string attrDescrStr = $"STUN Attribute: {STUNAttributeTypesEnum.ChangeRequest.ToString()}, key byte={m_changeRequestByte.ToString("X")}, change address={ChangeAddress}, change port={ChangePort}.";
 
             return attrDescrStr;
         }

@@ -49,7 +49,7 @@ namespace SIPSorceryMedia.FFmpeg
 
             _pConvertContext = ffmpeg.sws_getContext(srcWidth, srcHeight, sourcePixelFormat,
                 dstWidth, dstHeight, destinationPixelFormat,
-                ffmpeg.SWS_FAST_BILINEAR, null, null, null);
+                0, null, null, null);
             if (_pConvertContext == null)
             {
                 throw new ApplicationException("Could not initialize the conversion context.");
@@ -80,12 +80,12 @@ namespace SIPSorceryMedia.FFmpeg
 
         private void EnsureNotDisposed()
         {
-            if (IsDisposed) throw new ObjectDisposedException(nameof(VideoFrameConverter));
+            if (IsDisposed) { throw new ObjectDisposedException(nameof(VideoFrameConverter)); }
         }
 
         public void Dispose()
         {
-            if (IsDisposed) return;
+            if (IsDisposed) { return; }
 
             Marshal.FreeHGlobal(_convertedFrameBufferPtr);
             _convertedFrameBufferPtr = IntPtr.Zero;

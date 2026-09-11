@@ -304,8 +304,12 @@ namespace SIPSorcery.Net
         /// <param name="streamID">The stream ID to sent the data on.</param>
         /// <param name="ppid">The payload protocol ID for the data.</param>
         /// <param name="data">The byte data to send.</param>
-        public void SendData(ushort streamID, uint ppid, byte[] data)
+        /// <param name="offset">The offset in <paramref name="data"/> at which to begin sending. Defaults to 0.</param>
+        /// <param name="count">The number of bytes to send. Defaults to -1, meaning all bytes from <paramref name="offset"/> to the end of the array.</param>
+        public void SendData(ushort streamID, uint ppid, byte[] data, int offset = 0, int count = -1)
         {
+            int dataCount = count < 0 ? data.Length - offset : count;
+
             lock (_sendQueue)
             {
                 ushort seqnum = 0;
@@ -323,17 +327,17 @@ namespace SIPSorcery.Net
                     _streamSeqnums.Add(streamID, 0);
                 }
 
-                for (int index = 0; index * _defaultMTU < data.Length; index++)
+                for (int index = 0; index * _defaultMTU < dataCount; index++)
                 {
-                    int offset = (index == 0) ? 0 : (index * _defaultMTU);
-                    int payloadLength = (offset + _defaultMTU < data.Length) ? _defaultMTU : data.Length - offset;
+                    int chunkOffset = index * _defaultMTU;
+                    int payloadLength = (chunkOffset + _defaultMTU < dataCount) ? _defaultMTU : dataCount - chunkOffset;
 
                     // Future TODO: Replace with slice when System.Memory is introduced as a dependency.
                     byte[] payload = new byte[payloadLength];
-                    Buffer.BlockCopy(data, offset, payload, 0, payloadLength);
+                    Buffer.BlockCopy(data, offset + chunkOffset, payload, 0, payloadLength);
 
                     bool isBegining = index == 0;
-                    bool isEnd = ((offset + payloadLength) >= data.Length) ? true : false;
+                    bool isEnd = ((chunkOffset + payloadLength) >= dataCount) ? true : false;
 
                     SctpDataChunk dataChunk = new SctpDataChunk(
                         false,
@@ -526,6 +530,19 @@ namespace SIPSorcery.Net
 
             while (!_isClosed)
             {
+                // Reset the sender wake event at the START of each iteration. Resetting
+                // AFTER the send work introduces a lost-wakeup race with SACK arrival:
+                // a SACK that fires _senderMre.Set() between the last chunk sent and
+                // the Reset() gets its signal wiped by Reset(), and the thread then
+                // blocks in _senderMre.Wait() for the full BURST_PERIOD_MILLISECONDS
+                // even though more work is ready to go. On loopback where SACKs
+                // round-trip in microseconds this window is hit almost every burst,
+                // capping throughput at the RFC4960 §7.2.2 steady-state of roughly
+                // MAX_BURST * MTU / BURST_PERIOD (~104 KB/s for MTU=1300, period=50ms).
+                // Resetting first preserves any Set() that happens during send work so
+                // Wait() returns immediately on the next iteration.
+                _senderMre.Reset();
+
                 var outstandingBytes = _outstandingBytes;
                 // DateTime.Now calls have been a tiny bit expensive in the past so get a small saving by only
                 // calling once per loop.
@@ -614,8 +631,6 @@ namespace SIPSorcery.Net
                         chunksSent++;
                     }
                 }
-
-                _senderMre.Reset();
 
                 int wait = GetSendWaitMilliseconds();
                 //logger.LogTrace($"SCTP sender wait period {wait}ms, arwnd {_receiverWindow}, cwnd {_congestionWindow} " +

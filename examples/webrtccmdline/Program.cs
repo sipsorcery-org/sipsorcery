@@ -471,9 +471,9 @@ namespace SIPSorcery.Examples
                     else
                     {
                         // Attempt to execute the current command.
-                        switch (command.ToLower())
+                        switch (command)
                         {
-                            case "c":
+                            case var _ when string.Equals(command, "c", StringComparison.OrdinalIgnoreCase):
                                 // Close active peer connection.
                                 if (_peerConnection != null)
                                 {
@@ -483,7 +483,7 @@ namespace SIPSorcery.Examples
                                 }
                                 break;
 
-                            case var x when x.StartsWith("cdc"):
+                            case var x when x.StartsWith("cdc", StringComparison.OrdinalIgnoreCase):
                                 // Attempt to create a new data channel.
                                 if (_peerConnection != null)
                                 {
@@ -503,7 +503,7 @@ namespace SIPSorcery.Examples
                                 }
                                 break;
 
-                            case var x when x.StartsWith("ldc"):
+                            case var _ when command.StartsWith("ldc", StringComparison.OrdinalIgnoreCase):
                                 // List data channels.
                                 if (_peerConnection != null)
                                 {
@@ -523,7 +523,7 @@ namespace SIPSorcery.Examples
                                 }
                                 break;
 
-                            case var x when x.StartsWith("sdc"):
+                            case var x when x.StartsWith("sdc", StringComparison.OrdinalIgnoreCase):
                                 // Send data channel message.
                                 if (_peerConnection != null)
                                 {
@@ -551,7 +551,7 @@ namespace SIPSorcery.Examples
                                 }
                                 break;
 
-                            case var x when x.StartsWith("dtmf"):
+                            case var x when x.StartsWith("dtmf", StringComparison.OrdinalIgnoreCase):
                                 if (_peerConnection != null)
                                 {
                                     if (_peerConnection.HasAudio)
@@ -577,14 +577,14 @@ namespace SIPSorcery.Examples
                                 }
                                 break;
 
-                            case "q":
+                            case var _ when string.Equals(command, "q", StringComparison.OrdinalIgnoreCase):
                                 // Quit.
                                 Console.WriteLine();
                                 Console.WriteLine("Quitting...");
                                 cts.Cancel();
                                 break;
 
-                            case "isalive":
+                            case var _ when string.Equals(command, "isalive", StringComparison.OrdinalIgnoreCase):
                                 // Check responsiveness.
                                 Console.WriteLine();
                                 Console.WriteLine("yep");

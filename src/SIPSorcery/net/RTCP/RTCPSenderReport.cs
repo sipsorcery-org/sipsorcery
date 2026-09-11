@@ -45,9 +45,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Linq;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -101,33 +100,19 @@ namespace SIPSorcery.Net
             Header = new RTCPHeader(packet);
             ReceptionReports = new List<ReceptionReportSample>();
 
-            if (BitConverter.IsLittleEndian)
-            {
-                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-                NtpTimestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt64(packet, 8));
-                RtpTimestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 16));
-                PacketCount = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 20));
-                OctetCount = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 24));
-            }
-            else
-            {
-                SSRC = BitConverter.ToUInt32(packet, 4);
-                NtpTimestamp = BitConverter.ToUInt64(packet, 8);
-                RtpTimestamp = BitConverter.ToUInt32(packet, 16);
-                PacketCount = BitConverter.ToUInt32(packet, 20);
-                OctetCount = BitConverter.ToUInt32(packet, 24);
-            }
+            SSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(4));
+            NtpTimestamp = BinaryPrimitives.ReadUInt64BigEndian(packet.AsSpan(8));
+            RtpTimestamp = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(16));
+            PacketCount = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(20));
+            OctetCount = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(24));
 
-            int rrIndex = 28;
-            for (int i = 0; i < Header.ReceptionReportCount; i++)
+            var remaining = packet.AsSpan(28);
+            for (var i = 0; (remaining.Length >= ReceptionReportSample.PAYLOAD_SIZE) && (i < Header.ReceptionReportCount); i++)
             {
-                var pkt = packet.Skip(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray();
-                if (pkt.Length >= ReceptionReportSample.PAYLOAD_SIZE)
-                {
-                    var rr = new ReceptionReportSample(pkt);
-                    ReceptionReports.Add(rr);
-                }
-                
+                var rr = new ReceptionReportSample(remaining.Slice(0, ReceptionReportSample.PAYLOAD_SIZE).ToArray());
+                ReceptionReports.Add(rr);
+
+                remaining = remaining.Slice(ReceptionReportSample.PAYLOAD_SIZE);
             }
         }
 
@@ -140,22 +125,11 @@ namespace SIPSorcery.Net
             Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
             int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, buffer, payloadIndex, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(NtpTimestamp)), 0, buffer, payloadIndex + 4, 8);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(RtpTimestamp)), 0, buffer, payloadIndex + 12, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PacketCount)), 0, buffer, payloadIndex + 16, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(OctetCount)), 0, buffer, payloadIndex + 20, 4);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, buffer, payloadIndex, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NtpTimestamp), 0, buffer, payloadIndex + 4, 8);
-                Buffer.BlockCopy(BitConverter.GetBytes(RtpTimestamp), 0, buffer, payloadIndex + 12, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(PacketCount), 0, buffer, payloadIndex + 16, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(OctetCount), 0, buffer, payloadIndex + 20, 4);
-            }
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(payloadIndex), SSRC);
+            BinaryPrimitives.WriteUInt64BigEndian(buffer.AsSpan(payloadIndex + 4), NtpTimestamp);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(payloadIndex + 12), RtpTimestamp);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(payloadIndex + 16), PacketCount);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(payloadIndex + 20), OctetCount);
 
             int bufferIndex = payloadIndex + 24;
             for (int i = 0; i < rrCount; i++)

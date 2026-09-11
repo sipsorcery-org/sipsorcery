@@ -49,7 +49,7 @@ public static class STUNClientExtensions
 
         if (iceServer == null)
         {
-            logger?.LogWarning($"The STUN client was unable to resolve a server to use.");
+            logger?.LogWarning("The STUN client was unable to resolve a server to use.");
 
             return mediaStream;
         }
@@ -67,7 +67,7 @@ public static class STUNClientExtensions
             }
             else
             {
-                logger?.LogWarning($"STUN client failed to get server reflexive RTP end point.");
+                logger?.LogWarning("STUN client failed to get server reflexive RTP end point.");
             }
         }
 

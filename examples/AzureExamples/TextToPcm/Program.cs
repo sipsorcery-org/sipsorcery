@@ -70,7 +70,7 @@ class Program
                     Console.WriteLine($"Speech synthesized to speaker for text [{text}]");
 
                     var buffer = ttsOutStream.GetPcmBuffer();
-                    string saveFilename = DateTime.Now.Ticks.ToString() + ".pcm16k";
+                    string saveFilename = $"{DateTime.Now.Ticks}.pcm16k";
 
                     using (StreamWriter sw = new StreamWriter(saveFilename))
                     {

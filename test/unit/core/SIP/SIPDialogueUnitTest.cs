@@ -38,8 +38,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public async Task CreateDialogueFromUasTxUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
@@ -96,8 +96,8 @@ dummy";
         [Fact]
         public async Task CheckRemoteSocketProxyReceivedUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
@@ -154,8 +154,8 @@ dummy";
         [Fact]
         public async Task CreateDialogueFromUacTxUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
@@ -214,8 +214,8 @@ dummy";
         [Fact]
         public async Task UacTxCheckRemoteSocketProxyReceivedUnitTestUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
@@ -266,6 +266,48 @@ dummy";
             Assert.Equal(SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.50:5080"), dialogue.RemoteSIPEndPoint);
 
             logger.LogDebug("---------------------------------------------------");
+        }
+
+        [Fact]
+        public void DialogueNameWithLocalAndRemoteUsersUnitTest()
+        {
+            const string localUri = "sip:alice@local.test";
+            const string remoteUri = "sip:bob@remote.test";
+            var dialogue = new SIPDialogue
+            {
+                LocalUserField = SIPUserField.ParseSIPUserField($"<{localUri}>"),
+                RemoteUserField = SIPUserField.ParseSIPUserField($"<{remoteUri}>"),
+            };
+
+            Assert.Equal($"L({localUri})-R({remoteUri})", dialogue.DialogueName);
+        }
+
+        [Fact]
+        public void DialogueNameWithMissingLocalUserUnitTest()
+        {
+            const string localUri = "sip:local.test";
+            const string remoteUri = "sip:bob@remote.test";
+            var dialogue = new SIPDialogue
+            {
+                LocalUserField = SIPUserField.ParseSIPUserField($"<{localUri}>"),
+                RemoteUserField = SIPUserField.ParseSIPUserField($"<{remoteUri}>"),
+            };
+
+            Assert.Equal($"L(??)-R({remoteUri})", dialogue.DialogueName);
+        }
+
+        [Fact]
+        public void DialogueNameWithMissingRemoteUserUnitTest()
+        {
+            const string localUri = "sip:alice@local.test";
+            const string remoteUri = "sip:remote.test";
+            var dialogue = new SIPDialogue
+            {
+                LocalUserField = SIPUserField.ParseSIPUserField($"<{localUri}>"),
+                RemoteUserField = SIPUserField.ParseSIPUserField($"<{remoteUri}>"),
+            };
+
+            Assert.Equal($"L({localUri})-R(??)", dialogue.DialogueName);
         }
     }
 }

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: PixelConverterTest.cs
 //
 // Description: Unit tests for the pixel conversion methods.
@@ -70,7 +70,9 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
 
             byte[] buffer = BitmapToBuffer(bmp, out int stride);
 
-            byte[] i420 = PixelConverter.RGBAtoI420(buffer, bmp.Width, bmp.Height, stride);
+            // The buffer is BGRA, so it needs the BGRA converter. Using RGBAtoI420 here silently
+            // swapped the red and blue channels; the test only saved the result so never caught it.
+            byte[] i420 = PixelConverter.BGRAtoI420(buffer, bmp.Width, bmp.Height, stride);
             byte[] bgr = PixelConverter.I420toBGR(i420, bmp.Width, bmp.Height, out int rtStride);
 
             fixed (byte* s = bgr)
@@ -110,7 +112,7 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
         public unsafe void ConvertKnownNV12ToBGRTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             int width = 640;
             int height = 480;
@@ -275,6 +277,242 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
                     rtBmp.Dispose();
                 }
             }
+        }
+
+        /// <summary>
+        /// Tests that a known NV12 image can be converted to I420 and the resulting
+        /// image can be rendered to a bitmap.
+        /// </summary>
+        [Fact]
+        public unsafe void ConvertNV12ToI420Test()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            int width = 640;
+            int height = 480;
+
+            byte[] nv12 = File.ReadAllBytes("img/ref-nv12.yuv");
+            byte[] i420 = PixelConverter.NV12toI420(nv12, width, height);
+
+            Assert.NotNull(i420);
+            // I420 and NV12 have the same size: Y + UV = width*height + (width/2)*(height/2)*2
+            Assert.Equal(nv12.Length, i420.Length);
+
+            // Convert the I420 to BGR for visual verification.
+            byte[] bgr = PixelConverter.I420toBGR(i420, width, height, out int stride);
+
+            fixed (byte* s = bgr)
+            {
+                Bitmap bmp = new Bitmap(width, height, stride, PixelFormat.Format24bppRgb, (IntPtr)s);
+                bmp.Save("ConvertNV12ToI420Test.bmp");
+                bmp.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Tests that a known I420 image can be converted to NV12 and the resulting
+        /// image can be rendered to a bitmap.
+        /// </summary>
+        [Fact]
+        public unsafe void ConvertI420ToNV12Test()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            int width = 640;
+            int height = 480;
+            int stride = width * 3;
+
+            byte[] i420 = File.ReadAllBytes("img/ref-i420.yuv");
+            byte[] nv12 = PixelConverter.I420toNV12(i420, width, height);
+
+            Assert.NotNull(nv12);
+            // I420 and NV12 have the same size: Y + UV = width*height + (width/2)*(height/2)*2
+            Assert.Equal(i420.Length, nv12.Length);
+
+            // Convert the NV12 to BGR for visual verification.
+            byte[] bgr = PixelConverter.NV12toBGR(nv12, width, height, stride);
+
+            fixed (byte* s = bgr)
+            {
+                Bitmap bmp = new Bitmap(width, height, stride, PixelFormat.Format24bppRgb, (IntPtr)s);
+                bmp.Save("ConvertI420ToNV12Test.bmp");
+                bmp.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Tests that an NV12 buffer can be round tripped to I420 and back to NV12.
+        /// </summary>
+        [Fact]
+        public void RoundtripNV12ToI420Test()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            int width = 640;
+            int height = 480;
+
+            byte[] originalNv12 = File.ReadAllBytes("img/ref-nv12.yuv");
+            byte[] i420 = PixelConverter.NV12toI420(originalNv12, width, height);
+            byte[] roundtripNv12 = PixelConverter.I420toNV12(i420, width, height);
+
+            Assert.Equal(originalNv12.Length, roundtripNv12.Length);
+
+            // The round-tripped NV12 should be identical to the original.
+            for (int i = 0; i < originalNv12.Length; i++)
+            {
+                Assert.Equal(originalNv12[i], roundtripNv12[i]);
+            }
+        }
+
+        /// <summary>
+        /// Tests that an I420 buffer can be round tripped to NV12 and back to I420.
+        /// </summary>
+        [Fact]
+        public void RoundtripI420ToNV12Test()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            int width = 640;
+            int height = 480;
+
+            byte[] originalI420 = File.ReadAllBytes("img/ref-i420.yuv");
+            byte[] nv12 = PixelConverter.I420toNV12(originalI420, width, height);
+            byte[] roundtripI420 = PixelConverter.NV12toI420(nv12, width, height);
+
+            Assert.Equal(originalI420.Length, roundtripI420.Length);
+
+            // The round-tripped I420 should be identical to the original.
+            for (int i = 0; i < originalI420.Length; i++)
+            {
+                Assert.Equal(originalI420[i], roundtripI420[i]);
+            }
+        }
+
+        /// <summary>
+        /// Tests that NV12 to I420 conversion works with odd dimensions.
+        /// </summary>
+        [Fact]
+        public void ConvertOddDimensionNV12ToI420Test()
+        {
+            int width = 5;
+            int height = 3;
+            int ySize = width * height;
+            int uvWidth = (width + 1) / 2;
+            int uvHeight = (height + 1) / 2;
+            int uvSize = uvWidth * uvHeight * 2;
+
+            byte[] nv12 = new byte[ySize + uvSize];
+            byte[] i420 = PixelConverter.NV12toI420(nv12, width, height);
+
+            Assert.NotNull(i420);
+            Assert.Equal(nv12.Length, i420.Length);
+        }
+
+        /// <summary>
+        /// Tests that I420 to NV12 conversion works with odd dimensions.
+        /// </summary>
+        [Fact]
+        public void ConvertOddDimensionI420ToNV12Test()
+        {
+            int width = 5;
+            int height = 3;
+            int ySize = width * height;
+            int uvWidth = (width + 1) / 2;
+            int uvHeight = (height + 1) / 2;
+            int uvSize = uvWidth * uvHeight * 2;
+
+            byte[] i420 = new byte[ySize + uvSize];
+            byte[] nv12 = PixelConverter.I420toNV12(i420, width, height);
+
+            Assert.NotNull(nv12);
+            Assert.Equal(i420.Length, nv12.Length);
+        }
+
+        /// <summary>
+        /// Tests that an NV12 buffer with less than the required data throws an exception.
+        /// </summary>
+        [Fact]
+        public void WrongSizeNV12ToI420Test()
+        {
+            int width = 720;
+            int height = 480;
+            int expectedSize = width * height * 3 / 2;
+
+            // Provide a buffer that is too small.
+            byte[] nv12 = new byte[expectedSize - 1];
+            Assert.Throws<ApplicationException>(() => PixelConverter.NV12toI420(nv12, width, height));
+        }
+
+        /// <summary>
+        /// Tests that an I420 buffer with less than the required data throws an exception.
+        /// </summary>
+        [Fact]
+        public void WrongSizeI420ToNV12Test()
+        {
+            int width = 720;
+            int height = 480;
+            int expectedSize = width * height * 3 / 2;
+
+            // Provide a buffer that is too small.
+            byte[] i420 = new byte[expectedSize - 1];
+            Assert.Throws<ApplicationException>(() => PixelConverter.I420toNV12(i420, width, height));
+        }
+
+        /// <summary>
+        /// Tests that ToI420 dispatches each 32 bits per pixel format to the converter matching its
+        /// channel order. A solid red source is used because a red/blue mix-up is unmissable in the
+        /// result, whereas the mean channel values of a photographic reference barely move.
+        /// </summary>
+        [Theory]
+        [InlineData(VideoPixelFormatsEnum.Bgra)]
+        [InlineData(VideoPixelFormatsEnum.Rgba)]
+        public void ToI420PreservesChannelOrderTest(VideoPixelFormatsEnum pixelFormat)
+        {
+            int width = 16;
+            int height = 16;
+
+            // A solid red image laid out in the byte order the pixel format advertises.
+            byte[] sample = new byte[width * height * 4];
+            for (int i = 0; i < width * height; i++)
+            {
+                if (pixelFormat == VideoPixelFormatsEnum.Bgra)
+                {
+                    sample[i * 4] = 0;          // B
+                    sample[i * 4 + 1] = 0;      // G
+                    sample[i * 4 + 2] = 255;    // R
+                }
+                else
+                {
+                    sample[i * 4] = 255;        // R
+                    sample[i * 4 + 1] = 0;      // G
+                    sample[i * 4 + 2] = 0;      // B
+                }
+
+                sample[i * 4 + 3] = 255;        // A
+            }
+
+#pragma warning disable CS0618 // Deliberately exercising the obsolete overload.
+            byte[] i420 = PixelConverter.ToI420(width, height, sample, pixelFormat);
+#pragma warning restore CS0618
+
+            byte[] bgr = PixelConverter.I420toBGR(i420, width, height, out int stride);
+
+            // Sample the centre so any edge handling in the chroma subsampling is not in play.
+            int offset = (height / 2) * stride + (width / 2) * 3;
+            byte b = bgr[offset];
+            byte g = bgr[offset + 1];
+            byte r = bgr[offset + 2];
+
+            logger.LogDebug("{PixelFormat} round tripped to B={B} G={G} R={R}.", pixelFormat, b, g, r);
+
+            // The YUV round trip is lossy, so allow generous tolerances. A swapped red and blue
+            // channel would put the 255 into b and leave r at 0, which these comfortably catch.
+            Assert.True(r > 200, $"Expected a red result but got B={b} G={g} R={r}.");
+            Assert.True(b < 60, $"Expected no blue in the result but got B={b} G={g} R={r}.");
         }
 
         private static byte[] BitmapToBuffer(Bitmap bitmap, out int stride)

@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
@@ -132,6 +133,11 @@ namespace SIPSorcery.UnitTests
                 return Task.FromResult<SIPEndPoint>(null);
             }
         }
+    }
+
+    public static class TestHelper
+    {
+        public static string GetCurrentMethodName([CallerMemberName] string methodName = default) => methodName;
     }
 
     public class MockMediaSession : IMediaSession

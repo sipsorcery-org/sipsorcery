@@ -78,15 +78,14 @@ namespace SIPSorcery.Net
             {
                 RTSPResponse rtspResponse = new RTSPResponse();
 
-                string statusLine = rtspMessage.FirstLine;
+                var statusLine = rtspMessage.FirstLine.AsSpan();
+                var firstSpacePosn = statusLine.IndexOf(' ');
 
-                int firstSpacePosn = statusLine.IndexOf(" ");
-
-                rtspResponse.RTSPVersion = statusLine.Substring(0, firstSpacePosn).Trim();
-                statusLine = statusLine.Substring(firstSpacePosn).Trim();
-                rtspResponse.StatusCode = Convert.ToInt32(statusLine.Substring(0, 3));
+                rtspResponse.RTSPVersion = statusLine.Slice(0, firstSpacePosn).Trim().ToString();
+                statusLine = statusLine.Slice(firstSpacePosn).Trim();
+                rtspResponse.StatusCode = Convert.ToInt32(statusLine.Slice(0, 3).ToString());
                 rtspResponse.Status = RTSPResponseStatusCodes.GetStatusTypeForCode(rtspResponse.StatusCode);
-                rtspResponse.ReasonPhrase = statusLine.Substring(3).Trim();
+                rtspResponse.ReasonPhrase = statusLine.Slice(3).Trim().ToString();
 
                 rtspResponse.Header = RTSPHeader.ParseRTSPHeaders(rtspMessage.RTSPHeaders);
                 rtspResponse.Body = rtspMessage.Body;
@@ -96,19 +95,18 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 logger.LogError(excp, "Exception parsing RTSP response. {ErrorMessage}", excp.Message);
-                throw new ApplicationException("There was an exception parsing an RTSP response. " + excp.Message);
+                throw new ApplicationException($"There was an exception parsing an RTSP response. {excp.Message}");
             }
         }
 
-        public new string ToString()
+        public override string ToString()
         {
             try
             {
-                string reasonPhrase = (!ReasonPhrase.IsNullOrBlank()) ? " " + ReasonPhrase : null;
+                string reasonPhrase = (!ReasonPhrase.IsNullOrBlank()) ? $" {ReasonPhrase}" : null;
 
-                string message =
-                    RTSPVersion + "/" + RTSPMajorVersion + "." + RTSPMinorVersion + " " + StatusCode + reasonPhrase + m_CRLF +
-                    this.Header.ToString();
+                var message =
+                    $"{RTSPVersion}/{RTSPMajorVersion}.{RTSPMinorVersion} {StatusCode}{reasonPhrase}{m_CRLF}{Header}";
 
                 if (Body != null)
                 {

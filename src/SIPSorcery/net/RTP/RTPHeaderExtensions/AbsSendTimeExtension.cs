@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers.Binary;
 using SIPSorcery.Net;
 
 namespace SIPSorcery.Net
@@ -63,9 +64,7 @@ namespace SIPSorcery.Net
                 return null;
             }
 
-            return BitConverter.IsLittleEndian ?
-                SIPSorcery.Sys.NetConvert.DoReverseEndian(BitConverter.ToUInt64(data, 0)) :
-                BitConverter.ToUInt64(data, 0);
+            return BinaryPrimitives.ReadUInt64BigEndian(data);
         }
     }
 }

@@ -28,7 +28,8 @@ namespace SIPSorcery.Media
     {
         private const int G722_BIT_RATE = 64000;              // G722 sampling rate is 16KHz with bits per sample of 16.
         private const int OPUS_SAMPLE_RATE = 48000;           // Opus codec sampling rate, 48KHz.
-        private const int OPUS_CHANNELS = 2;                  // Opus codec number of channels.
+        private const int OPUS_CHANNELS = 2;                  // Opus SDP channel count, fixed at 2 by RFC 7587. Does NOT describe the encoded stream.
+        private const int OPUS_STREAM_CHANNELS = 1;           // The encoded stream is mono, matching the library's PCM convention.
 
         /// <summary>
         /// The max frame size that the OPUS encoder will accept is 2880 bytes (see IOpusEncoder.Encode).
@@ -50,6 +51,12 @@ namespace SIPSorcery.Media
         private G722CodecState _g722CodecState;
         private G722Codec _g722Decoder;
         private G722CodecState _g722DecoderState;
+
+        // Guards the lazy initialisation of the G722 codec/state pairs above. The pairs are two
+        // separate fields, so without this an unlucky caller could observe the codec already set
+        // while its state is still null and pass that null into Encode/Decode (a sporadic
+        // NullReferenceException on the first G722 frame when two audio source timers encode at once).
+        private readonly object _g722Lock = new object();
 
         private G729Encoder _g729Encoder;
         private G729Decoder _g729Decoder;
@@ -111,15 +118,25 @@ namespace SIPSorcery.Media
         {
             if (format.Codec == AudioCodecsEnum.G722)
             {
-                if (_g722Codec == null)
+                // Read both fields into locals and only encode through the locals, so a concurrent
+                // caller can never hand a null state to Encode (the codec field may be published
+                // before the state field). Initialise under a lock with the state assigned first.
+                var g722Codec = _g722Codec;
+                var g722State = _g722CodecState;
+                if (g722Codec == null || g722State == null)
                 {
-                    _g722Codec = new G722Codec();
-                    _g722CodecState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
+                    lock (_g722Lock)
+                    {
+                        _g722CodecState ??= new G722CodecState(G722_BIT_RATE, G722Flags.None);
+                        _g722Codec ??= new G722Codec();
+                        g722Codec = _g722Codec;
+                        g722State = _g722CodecState;
+                    }
                 }
 
                 int outputBufferSize = pcm.Length / 2;
                 byte[] encodedSample = new byte[outputBufferSize];
-                int res = _g722Codec.Encode(_g722CodecState, encodedSample, pcm, pcm.Length);
+                g722Codec.Encode(g722State, encodedSample, pcm, pcm.Length);
 
                 return encodedSample;
             }
@@ -159,8 +176,13 @@ namespace SIPSorcery.Media
             {
                 if (_opusEncoder == null)
                 {
-                    var channelCount = format.ChannelCount > 0 ? format.ChannelCount : OPUS_CHANNELS;
-                    _opusEncoder = OpusCodecFactory.CreateEncoder(format.ClockRate, channelCount, OpusApplication.OPUS_APPLICATION_VOIP);
+                    // The PCM convention throughout this library is mono. The OPUS SDP format is
+                    // always "opus/48000/2" (RFC 7587) but that is a fixed wire-format declaration,
+                    // NOT the stream channel count, which is signalled in-band in each OPUS packet.
+                    // Creating the encoder from the format's channel count and feeding it mono PCM
+                    // makes it consume every two mono samples as one stereo frame, halving the
+                    // duration and doubling the pitch of the audio.
+                    _opusEncoder = OpusCodecFactory.CreateEncoder(format.ClockRate, OPUS_STREAM_CHANNELS, OpusApplication.OPUS_APPLICATION_VOIP);
                 }
 
                 if (pcm.Length > _opusEncoder.NumChannels * OPUS_MAXIMUM_INPUT_SAMPLES_PER_CHANNEL)
@@ -190,16 +212,24 @@ namespace SIPSorcery.Media
         {
             if (format.Codec == AudioCodecsEnum.G722)
             {
-                if (_g722Decoder == null)
+                // Same ordered, double-checked init as EncodeAudio: never pass a null state to Decode.
+                var g722Decoder = _g722Decoder;
+                var g722DecoderState = _g722DecoderState;
+                if (g722Decoder == null || g722DecoderState == null)
                 {
-                    _g722Decoder = new G722Codec();
-                    _g722DecoderState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
+                    lock (_g722Lock)
+                    {
+                        _g722DecoderState ??= new G722CodecState(G722_BIT_RATE, G722Flags.None);
+                        _g722Decoder ??= new G722Codec();
+                        g722Decoder = _g722Decoder;
+                        g722DecoderState = _g722DecoderState;
+                    }
                 }
 
                 short[] decodedPcm = new short[encodedSample.Length * 2];
-                int decodedSampleCount = _g722Decoder.Decode(_g722DecoderState, decodedPcm, encodedSample, encodedSample.Length);
+                int decodedSampleCount = g722Decoder.Decode(g722DecoderState, decodedPcm, encodedSample, encodedSample.Length);
 
-                return decodedPcm.Take(decodedSampleCount).ToArray();
+                return decodedPcm.AsSpan(0, decodedSampleCount).ToArray();
             }
             if (format.Codec == AudioCodecsEnum.G729)
             {
@@ -236,8 +266,12 @@ namespace SIPSorcery.Media
             {
                 if (_opusDecoder == null)
                 {
-                    var channelCount = format.ChannelCount > 0 ? format.ChannelCount : OPUS_CHANNELS;
-                    _opusDecoder = OpusCodecFactory.CreateDecoder(format.ClockRate, channelCount);
+                    // See the comment in EncodeAudio: the library PCM convention is mono and the
+                    // SDP channel count for OPUS does not describe the stream. A mono decoder
+                    // downmixes any stereo stream, whereas a stereo decoder would upmix mono
+                    // streams to interleaved stereo and feed double-length samples into a
+                    // pipeline (resampler, sinks) that assumes mono.
+                    _opusDecoder = OpusCodecFactory.CreateDecoder(format.ClockRate, OPUS_STREAM_CHANNELS);
                 }
 
                 int maxSamples = OPUS_MAXIMUM_INPUT_SAMPLES_PER_CHANNEL * _opusDecoder.NumChannels;

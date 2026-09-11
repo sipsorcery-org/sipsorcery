@@ -27,6 +27,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -166,44 +167,28 @@ namespace SIPSorcery.Net
             Header = new RTCPHeader(packet);
 
             int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
-            if (BitConverter.IsLittleEndian)
-            {
-                SenderSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, payloadIndex));
-                MediaSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, payloadIndex + 4));
-            }
-            else
-            {
-                SenderSSRC = BitConverter.ToUInt32(packet, payloadIndex);
-                MediaSSRC = BitConverter.ToUInt32(packet, payloadIndex + 4);
-            }
+            SenderSSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(payloadIndex));
+            MediaSSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(payloadIndex + 4));
 
             switch (Header)
             {
-                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
+                case var h when h.PacketType == RTCPReportTypesEnum.RTPFB && h.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
                     SENDER_PAYLOAD_SIZE = 8;
                     // PLI feedback reports do no have any additional parameters.
                     break;
-                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB:
+                case var h when h.PacketType == RTCPReportTypesEnum.RTPFB:
                     SENDER_PAYLOAD_SIZE = 12;
-                    if (BitConverter.IsLittleEndian)
-                    {
-                        PID = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 8));
-                        BLP = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 10));
-                    }
-                    else
-                    {
-                        PID = BitConverter.ToUInt16(packet, payloadIndex + 8);
-                        BLP = BitConverter.ToUInt16(packet, payloadIndex + 10);
-                    }
+                    PID = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(payloadIndex + 8));
+                    BLP = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(payloadIndex + 10));
                     break;
 
-                case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
+                case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
                     SENDER_PAYLOAD_SIZE = 8;
                     break;
 
                 // We have a lot of different kind of extension messages
                 // In case below we will handle the specific REMB Message https://datatracker.ietf.org/doc/html/draft-alvestrand-rmcat-remb-03#page-3
-                case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
+                case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
 
                     // 0                   1                   2                   3
                     // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -231,28 +216,13 @@ namespace SIPSorcery.Net
 
                         // Now read next 18 bits
                         var remaininMantissaBytes = new byte[] { (byte)0, (byte)(packet[currentCounter] & 3), packet[currentCounter + 1], packet[currentCounter + 2] };
-                        if (BitConverter.IsLittleEndian)
-                        {
-                            BitrateMantissa = NetConvert.DoReverseEndian(BitConverter.ToUInt32(remaininMantissaBytes, 0));
-                        }
-                        else
-                        {
-                            BitrateMantissa = BitConverter.ToUInt32(remaininMantissaBytes, 0);
-                        }
+                        BitrateMantissa = BinaryPrimitives.ReadUInt32BigEndian(remaininMantissaBytes);
                         
                         currentCounter += 3;
                         FeedbackSSRCs=new uint[NumSsrcs];
                         for (int i = 0; i < NumSsrcs; i++)
                         {
-                            if (BitConverter.IsLittleEndian)
-                            {
-                                FeedbackSSRCs[i] =
-                                    NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, currentCounter));
-                            }
-                            else
-                            {
-                                FeedbackSSRCs[i] = BitConverter.ToUInt32(packet, currentCounter);
-                            }
+                            FeedbackSSRCs[i] = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(currentCounter));
 
                             if (i < FeedbackSSRCs.Length - 1)
                             {
@@ -292,38 +262,22 @@ namespace SIPSorcery.Net
             int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
 
             // All feedback packets require the Sender and Media SSRC's to be set.
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SenderSSRC)), 0, buffer, payloadIndex, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(MediaSSRC)), 0, buffer, payloadIndex + 4, 4);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(SenderSSRC), 0, buffer, payloadIndex, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(MediaSSRC), 0, buffer, payloadIndex + 4, 4);
-            }
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(payloadIndex), SenderSSRC);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(payloadIndex + 4), MediaSSRC);
 
             switch (Header)
             {
-                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
+                case var h when h.PacketType == RTCPReportTypesEnum.RTPFB && h.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
                     // PLI feedback reports do no have any additional parameters.
                     break;
-                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB:
-                    if (BitConverter.IsLittleEndian)
-                    {
-                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PID)), 0, buffer, payloadIndex + 8, 2);
-                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(BLP)), 0, buffer, payloadIndex + 10, 2);
-                    }
-                    else
-                    {
-                        Buffer.BlockCopy(BitConverter.GetBytes(PID), 0, buffer, payloadIndex + 8, 2);
-                        Buffer.BlockCopy(BitConverter.GetBytes(BLP), 0, buffer, payloadIndex + 10, 2);
-                    }
+                case var h when h.PacketType == RTCPReportTypesEnum.RTPFB:
+                    BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(payloadIndex + 8), PID);
+                    BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(payloadIndex + 10), BLP);
                     break;
 
-                case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
+                case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
                     break;
-                case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
+                case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
 
                     // There's have a lot of different kind of extension messages
                     // In case below we will handle the specific REMB Message https://datatracker.ietf.org/doc/html/draft-alvestrand-rmcat-remb-03#page-3
@@ -359,14 +313,8 @@ namespace SIPSorcery.Net
                        
 
                         byte[] remaininMantissaBytes;
-                        if (BitConverter.IsLittleEndian)
-                        {
-                            remaininMantissaBytes = BitConverter.GetBytes(NetConvert.DoReverseEndian(BitrateMantissa));
-                        }
-                        else
-                        {
-                            remaininMantissaBytes = BitConverter.GetBytes(BitrateMantissa);
-                        }
+                        remaininMantissaBytes = new byte[4];
+                        BinaryPrimitives.WriteUInt32BigEndian(remaininMantissaBytes, BitrateMantissa);
                         buffer[currentCounter] = (byte)((BitrateExp << 2) | (remaininMantissaBytes[1] & 3));
                         buffer[currentCounter + 1] = remaininMantissaBytes[2];
                         buffer[currentCounter + 2] = remaininMantissaBytes[3];
@@ -375,14 +323,7 @@ namespace SIPSorcery.Net
                         
                         for (int i = 0; i < FeedbackSSRCs.Length; i++)
                         {
-                            if (BitConverter.IsLittleEndian)
-                            {
-                                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(FeedbackSSRCs[i])), 0, buffer, currentCounter, 4);
-                            }
-                            else
-                            {
-                                Buffer.BlockCopy(BitConverter.GetBytes(FeedbackSSRCs[i]), 0, buffer, currentCounter, 4);
-                            }
+                            BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(currentCounter), FeedbackSSRCs[i]);
 
                             if (i < FeedbackSSRCs.Length - 1)
                             {

@@ -20,6 +20,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -42,8 +43,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RtpChannelCreateManyUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             List<RTPChannel> channels = new List<RTPChannel>();
 
@@ -67,8 +68,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task RtpChannelLoopbackUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPChannel channel1 = new RTPChannel(false, null);
 
@@ -94,7 +95,8 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug("Attempting to send packet from {LocalEndPoint} to {RemoteEndPoint}.", channel1.RTPLocalEndPoint, channel2Dst);
 
-            var sendResult = channel1.Send(RTPChannelSocketsEnum.RTP, channel2Dst, new byte[] { 0x02 }); // 0x00 & 0x01 are STUN packets.
+            // 12 byte packet (RTP minimum header length) starting 0x02 (0x00 & 0x01 are STUN packets).
+            var sendResult = channel1.Send(RTPChannelSocketsEnum.RTP, channel2Dst, new byte[] { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
 
             logger.LogDebug("Send result {SendResult}.", sendResult);
 
@@ -115,8 +117,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task RtpChannelWithIPv4BindAddressLoopbackUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPChannel channel1 = new RTPChannel(false, IPAddress.Loopback);
             RTPChannel channel2 = new RTPChannel(false, IPAddress.Loopback);
@@ -138,7 +140,8 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug("Attempting to send packet from {LocalEndPoint} to {RemoteEndPoint}.", channel1.RTPLocalEndPoint, channel2Dst);
 
-            var sendResult = channel1.Send(RTPChannelSocketsEnum.RTP, channel2Dst, new byte[] { 0x02 }); // 0x00 & 0x01 are STUN packets.
+            // 12 byte packet (RTP minimum header length) starting 0x02 (0x00 & 0x01 are STUN packets).
+            var sendResult = channel1.Send(RTPChannelSocketsEnum.RTP, channel2Dst, new byte[] { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
 
             logger.LogDebug("Send result {SendResult}.", sendResult);
 
@@ -167,8 +170,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task RtpChannelWithIPv6BindAddressLoopbackUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPChannel channel1 = new RTPChannel(false, IPAddress.IPv6Loopback);
 
@@ -193,7 +196,8 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug("Attempting to send packet from {LocalEndPoint} to {RemoteEndPoint}.", channel1.RTPLocalEndPoint, channel2Dst);
 
-            var sendResult = channel1.Send(RTPChannelSocketsEnum.RTP, channel2Dst, new byte[] { 0x02 }); // 0x00 & 0x01 are STUN packets.
+            // 12 byte packet (RTP minimum header length) starting 0x02 (0x00 & 0x01 are STUN packets).
+            var sendResult = channel1.Send(RTPChannelSocketsEnum.RTP, channel2Dst, new byte[] { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
 
             logger.LogDebug("Send result {SendResult}.", sendResult);
 
@@ -203,6 +207,120 @@ namespace SIPSorcery.Net.UnitTests
 
             channel1.Close("normal");
             channel2.Close("normal");
+
+            logger.LogDebug("Test complete.");
+        }
+
+        /// <summary>
+        /// Regression test for a remotely exploitable denial-of-service issue. A single malformed inbound
+        /// UDP packet (here a 1 byte packet) used to throw in the packet receive handler which the UDP
+        /// receive loop converted into a channel Close, terminating the media session. The receive loop
+        /// must now drop the offending packet and keep the channel open.
+        /// </summary>
+        [Fact]
+        public async Task RtpChannelMalformedPacketDoesNotCloseChannelUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            RTPChannel channel = new RTPChannel(false, IPAddress.Loopback);
+
+            string closedReason = null;
+            channel.OnClosed += reason => closedReason = reason;
+
+            channel.Start();
+
+            // Give the socket receive task time to fire up.
+            await Task.Delay(1000);
+
+            using (var attacker = new UdpClient())
+            {
+                // A 1 byte 0x00 packet. The old handler read packet[1] after only checking the packet was
+                // non-empty, throwing IndexOutOfRangeException which tore the channel down.
+                attacker.Send(new byte[] { 0x00 }, 1, new IPEndPoint(IPAddress.Loopback, channel.RTPPort));
+            }
+
+            // Allow time for the packet to be received and (previously) close the channel.
+            await Task.Delay(1000);
+
+            Assert.False(channel.IsClosed, $"The RTP channel was closed by a malformed packet. Reason: {closedReason ?? "(none)"}.");
+
+            // The channel must still be usable - confirm it can receive a subsequent valid RTP packet.
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            channel.OnRTPDataReceived += (lep, rep, pkt) => tcs.TrySetResult(true);
+
+            using (var sender = new UdpClient())
+            {
+                // A 12 byte packet (RTP minimum header length) starting 0x02 so it is not treated as STUN.
+                sender.Send(new byte[] { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 12, new IPEndPoint(IPAddress.Loopback, channel.RTPPort));
+            }
+
+            var completed = await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(TEST_TIMEOUT_SECONDS)));
+
+            channel.Close("normal");
+
+            Assert.True(completed == tcs.Task && await tcs.Task, "The RTP channel did not receive a valid packet after a malformed packet was dropped.");
+
+            logger.LogDebug("Test complete.");
+        }
+
+        /// <summary>
+        /// Test harness that drives the protected packet received handler directly, the same way the socket
+        /// receive loop does, so a malformed packet can be exercised without live socket traffic.
+        /// </summary>
+        private sealed class TestableRTPChannel : RTPChannel
+        {
+            public TestableRTPChannel() : base(false, IPAddress.Loopback) { }
+
+            public void Receive(byte[] packet) => OnRTPPacketReceived(null, RTPPort, new IPEndPoint(IPAddress.Loopback, 9), packet);
+        }
+
+        /// <summary>
+        /// A TURN data indication with no DATA attribute (or a zero length one) leaves the relayed payload
+        /// null after it is extracted, which is after the length guard on the original packet has already
+        /// run. The discriminator byte reads must not be reached with that null payload. On the ICE-over-TCP
+        /// receive path the resulting NullReferenceException closed the receiver outright, permanently
+        /// killing the relay path for the session.
+        /// </summary>
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void RtpChannelDataIndicationWithoutPayloadIsDropped(bool includeEmptyDataAttribute)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var dataIndication = new STUNMessage(STUNMessageTypesEnum.DataIndication);
+            if (includeEmptyDataAttribute)
+            {
+                dataIndication.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, new byte[0]));
+            }
+
+            var buffer = dataIndication.ToByteBuffer(null, false);
+
+            Assert.Equal(0x00, buffer[0]);
+            Assert.Equal(0x17, buffer[1]);
+
+            var channel = new TestableRTPChannel();
+
+            try
+            {
+                bool dataReceived = false;
+                bool stunReceived = false;
+                channel.OnRTPDataReceived += (lep, rep, pkt) => dataReceived = true;
+                channel.OnStunMessageReceived += (msg, rep, relayed) => stunReceived = true;
+
+                // Must not throw - previously a NullReferenceException on the null payload.
+                channel.Receive(buffer);
+
+                Assert.False(dataReceived);
+                Assert.False(stunReceived);
+                Assert.False(channel.IsClosed);
+            }
+            finally
+            {
+                channel.Close("normal");
+            }
 
             logger.LogDebug("Test complete.");
         }

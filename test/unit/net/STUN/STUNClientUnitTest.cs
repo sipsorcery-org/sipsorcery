@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -31,13 +32,13 @@ namespace SIPSorcery.Net.UnitTests
         /// <summary>
         /// Tests that the STUN client can get it's public IP address from a known STUN server.
         /// </summary>
-        [Fact(Skip = "STUN server isn't kept running all the time.")]
+        [Fact()]
         public void GetPublicIPStunClientTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            var publicIP = STUNClient.GetPublicIPAddress("stun.sipsorcery.com");
+            var publicIP = STUNClient.GetPublicIPAddress("stun.cloudflare.com");
 
             logger.LogDebug("Public IP address {publicIP}.", publicIP);
         }

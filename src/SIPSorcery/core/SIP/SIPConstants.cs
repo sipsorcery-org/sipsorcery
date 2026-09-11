@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using Polyfills;
 using SIPSorcery.Sys;
 // ReSharper disable InconsistentNaming
 
@@ -37,10 +38,9 @@ namespace SIPSorcery.SIP
         /// The maximum size supported for an incoming SIP message.
         /// </summary>
         /// <remarks>
-        /// From https://tools.ietf.org/html/rfc3261#section-18.1.1:
-        /// However, implementations MUST be able to handle messages up to the maximum
-        /// datagram packet size.For UDP, this size is 65,535 bytes, including
-        /// IP and UDP headers.
+        /// From https://tools.ietf.org/html/rfc3261#section-18.1.1: However, implementations MUST be able to handle
+        /// messages up to the maximum datagram packet size.For UDP, this size is 65,535 bytes, including IP and UDP
+        /// headers.
         /// </remarks>
         public const int SIP_MAXIMUM_RECEIVE_LENGTH = 65535;
 
@@ -84,7 +84,7 @@ namespace SIPSorcery.SIP
         public static Encoding DEFAULT_ENCODING = Encoding.UTF8;
 
         /// <summary>
-        /// Gets the default SIP port for the protocol. 
+        /// Gets the default SIP port for the protocol.
         /// </summary>
         /// <param name="protocol">The transport layer protocol to get the port for.</param>
         /// <returns>The default port to use.</returns>
@@ -118,26 +118,26 @@ namespace SIPSorcery.SIP
     public static class SIPTimings
     {
         /// <summary>
-        /// Value of the SIP defined timer T1 in milliseconds and is the time for the first retransmit.
-        /// Should not need to be adjusted in normal circumstances.
+        /// Value of the SIP defined timer T1 in milliseconds and is the time for the first retransmit. Should not need
+        /// to be adjusted in normal circumstances.
         /// </summary>
         public static int T1 = 500;
 
         /// <summary>
-        /// Value of the SIP defined timer T2 in milliseconds and is the maximum time between retransmits.
-        /// Should not need to be adjusted in normal circumstances.
+        /// Value of the SIP defined timer T2 in milliseconds and is the maximum time between retransmits. Should not
+        /// need to be adjusted in normal circumstances.
         /// </summary>
         public static int T2 = 4000;
 
         /// <summary>
-        /// Value of the SIP defined timer T6 in milliseconds and is the period after which a transaction 
-        /// has timed out. Should not need to be adjusted in normal circumstances.
+        /// Value of the SIP defined timer T6 in milliseconds and is the period after which a transaction has timed out.
+        /// Should not need to be adjusted in normal circumstances.
         /// </summary>
         public static int T6 = 64 * T1;
 
         /// <summary>
-        /// The number of milliseconds a transaction can stay in the proceeding state 
-        /// (i.e. an INVITE will ring for) before the call is given up and timed out.     
+        /// The number of milliseconds a transaction can stay in the proceeding state (i.e. an INVITE will ring for)
+        /// before the call is given up and timed out.
         /// </summary>
         public static int MAX_RING_TIME = 180000;
     }
@@ -160,12 +160,11 @@ namespace SIPSorcery.SIP
         public static bool IsAllowedScheme(string schemeType)
         {
             return Enum.TryParse<SIPSchemesEnum>(schemeType, true, out _);
-            }
-            }
+        }
+    }
 
     /// <summary>
-    /// A list of the transport layer protocols that are supported (the network layers
-    /// supported are IPv4 and IPv6).
+    /// A list of the transport layer protocols that are supported (the network layers supported are IPv4 and IPv6).
     /// </summary>
     public enum SIPProtocolsEnum
     {
@@ -173,8 +172,8 @@ namespace SIPSorcery.SIP
         /// User Datagram Protocol.
         /// </summary>
         udp = 1,
-        /// <summary>.
-        /// Transmission Control Protocol
+        /// <summary>
+        /// . Transmission Control Protocol
         /// </summary>
         tcp = 2,
         /// <summary>
@@ -206,11 +205,11 @@ namespace SIPSorcery.SIP
         public static bool IsAllowedProtocol(string protocol)
         {
             return Enum.TryParse<SIPProtocolsEnum>(protocol, true, out _);
-            }
+        }
 
         /// <summary>
-        /// Returns true for connectionless transport protocols, such as UDP, and false for
-        /// connection oriented protocols.
+        /// Returns true for connectionless transport protocols, such as UDP, and false for connection oriented
+        /// protocols.
         /// </summary>
         /// <param name="protocol">The protocol to check.</param>
         /// <returns>True if the protocol is connectionless.</returns>
@@ -495,22 +494,11 @@ namespace SIPSorcery.SIP
 
     /// <summary>
     /// For SIP URI user portion the reserved characters below need to be escaped.
-    /// 
     /// <code>
-    /// <![CDATA[
-    /// reserved    =  ";" / "/" / "?" / ":" / "@" / "&" / "=" / "+"  / "$" / ","
-    /// user-unreserved  =  "&" / "=" / "+" / "$" / "," / ";" / "?" / "/"
-    /// Leaving to be escaped = ":" / "@" 
-    /// ]]>
+    /// <![CDATA[ reserved = ";" / "/" / "?" / ":" / "@" / "&" / "=" / "+" / "$" / "," user-unreserved = "&" / "=" / "+" / "$" / "," / ";" / "?" / "/" Leaving to be escaped = ":" / "@" ]]>
     /// </code>
-    /// 
-    /// For SIP URI parameters different characters are unreserved (just to make life difficult).
-    /// <code>
-    /// <![CDATA[
-    /// reserved    =  ";" / "/" / "?" / ":" / "@" / "&" / "=" / "+"  / "$" / ","
-    /// param-unreserved = "[" / "]" / "/" / ":" / "&" / "+" / "$"
-    /// Leaving to be escaped =  ";" / "?" / "@" / "=" / ","
-    /// ]]>
+    /// For SIP URI parameters different characters are unreserved (just to make life difficult). <code>
+    /// <![CDATA[ reserved = ";" / "/" / "?" / ":" / "@" / "&" / "=" / "+" / "$" / "," param-unreserved = "[" / "]" / "/" / ":" / "&" / "+" / "$" Leaving to be escaped = ";" / "?" / "@" / "=" / "," ]]>
     /// </code>
     /// </summary>
     public static class SIPEscape
@@ -582,9 +570,9 @@ namespace SIPSorcery.SIP
         }
     }
 
-    ///<summary>
+    /// <summary>
     /// List of SIP extensions to RFC3262.
-    /// </summary> 
+    /// </summary>
     public enum SIPExtensions
     {
         None = 0,
@@ -596,8 +584,8 @@ namespace SIPSorcery.SIP
     }
 
     /// <summary>
-    /// Constants that can be placed in the SIP Supported or Required headers to indicate support or mandate for
-    /// a particular SIP extension.
+    /// Constants that can be placed in the SIP Supported or Required headers to indicate support or mandate for a
+    /// particular SIP extension.
     /// </summary>
     public static class SIPExtensionHeaders
     {
@@ -608,48 +596,76 @@ namespace SIPSorcery.SIP
         public const string MULTIPLE_REFER = "multiple-refer";
 
         /// <summary>
-        /// Parses a string containing a list of SIP extensions into a list of extensions that this library
-        /// understands.
+        /// Parses a string containing a list of SIP extensions into a list of extensions that this library understands.
         /// </summary>
         /// <param name="extensionList">The string containing the list of extensions to parse.</param>
         /// <param name="unknownExtensions">A comma separated list of the unsupported extensions.</param>
-        /// <returns>A list of extensions that were understood and a boolean indicating whether any unknown extensions were present.</returns>
+        /// <returns>
+        /// A list of extensions that were understood and a boolean indicating whether any unknown extensions were
+        /// present.
+        /// </returns>
         public static List<SIPExtensions> ParseSIPExtensions(string extensionList, out string unknownExtensions)
         {
             List<SIPExtensions> knownExtensions = new List<SIPExtensions>();
             unknownExtensions = null;
 
-            if (String.IsNullOrEmpty(extensionList) == false)
+            if (!string.IsNullOrEmpty(extensionList))
             {
-                string[] extensions = extensionList.Trim().Split(',');
+                var firstUnknown = ReadOnlySpan<char>.Empty;
+                var unknownSb = default(StringBuilder);
+                var extensions = extensionList.AsSpan().Trim();
 
-                foreach (string extension in extensions)
+                foreach (var extensionRange in extensions.Split(','))
                 {
-                    if (String.IsNullOrEmpty(extension) == false)
+                    var extension = extensions[extensionRange];
+
+                    var trimmedExtension = extension.Trim();
+                    switch (trimmedExtension)
                     {
-                        string trimmedExtension = extension.Trim().ToLower();
-                        switch (trimmedExtension)
-                        {
-                            case PRACK:
-                                knownExtensions.Add(SIPExtensions.Prack);
+                        case var x when PRACK.Equals(x, StringComparison.OrdinalIgnoreCase):
+                            knownExtensions.Add(SIPExtensions.Prack);
+                            break;
+                        case var x when NO_REFER_SUB.Equals(x, StringComparison.OrdinalIgnoreCase):
+                            knownExtensions.Add(SIPExtensions.NoReferSub);
+                            break;
+                        case var x when REPLACES.Equals(x, StringComparison.OrdinalIgnoreCase):
+                            knownExtensions.Add(SIPExtensions.Replaces);
+                            break;
+                        case var x when SIPREC.Equals(x, StringComparison.OrdinalIgnoreCase):
+                            knownExtensions.Add(SIPExtensions.SipRec);
+                            break;
+                        case var x when MULTIPLE_REFER.Equals(x, StringComparison.OrdinalIgnoreCase):
+                            knownExtensions.Add(SIPExtensions.MultipleRefer);
+                            break;
+                        default:
+                            if (trimmedExtension.IsEmpty)
+                            {
                                 break;
-                            case NO_REFER_SUB:
-                                knownExtensions.Add(SIPExtensions.NoReferSub);
-                                break;
-                            case REPLACES:
-                                knownExtensions.Add(SIPExtensions.Replaces);
-                                break;
-                            case SIPREC:
-                                knownExtensions.Add(SIPExtensions.SipRec);
-                                break;
-                            case MULTIPLE_REFER:
-                                knownExtensions.Add(SIPExtensions.MultipleRefer);
-                                break;
-                            default:
-                                unknownExtensions += (unknownExtensions != null) ? $",{extension.Trim()}" : extension.Trim();
-                                break;
-                        }
+                            }
+
+                            if (unknownSb is not null)
+                            {
+                                unknownSb.Append(',').Append(trimmedExtension);
+                            }
+                            else if (firstUnknown.IsEmpty)
+                            {
+                                firstUnknown = trimmedExtension;
+                            }
+                            else
+                            {
+                                unknownSb = new StringBuilder().Append(firstUnknown).Append(',').Append(trimmedExtension);
+                            }
+                            break;
                     }
+                }
+
+                if (unknownSb is not null)
+                {
+                    unknownExtensions = unknownSb.ToString();
+                }
+                else if (!firstUnknown.IsEmpty)
+                {
+                    unknownExtensions = firstUnknown.ToString();
                 }
             }
 

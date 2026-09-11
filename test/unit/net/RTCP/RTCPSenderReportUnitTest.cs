@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -38,8 +39,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripRTCPSenderResportUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 23;
             ulong ntpTs = 1;
@@ -84,8 +85,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseSenderReportUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var buffer = TypeExtensions.ParseHexStr("80C8000641446122E1D2B0EA004B650C0000D556000001310003BA5A");
 
@@ -93,6 +94,33 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.NotNull(sr);
             Assert.Equal(1095000354U, sr.SSRC);
+        }
+
+        /// <summary>
+        /// Tests that a sender report whose header claims more reception reports than the packet
+        /// actually contains is parsed tolerantly: the complete reports are returned and the
+        /// missing ones are skipped without an exception. RTCP packets arrive from the network so
+        /// a truncated or corrupted report count must not be able to throw.
+        /// </summary>
+        [Fact]
+        public void ParseSenderReportWithOverstatedReportCountUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var rr = new ReceptionReportSample(5, 6, 7, 8, 9, 10, 11);
+            var sr = new RTCPSenderReport(23, 1, 2, 3, 4, new List<ReceptionReportSample> { rr });
+            byte[] buffer = sr.GetBytes();
+
+            // Patch the reception report count (low 5 bits of the first byte) to claim 3 reports
+            // when only 1 is present in the packet.
+            buffer[0] = (byte)((buffer[0] & 0xE0) | 0x03);
+
+            var parsed = new RTCPSenderReport(buffer);
+
+            Assert.Equal(23U, parsed.SSRC);
+            Assert.Single(parsed.ReceptionReports);
+            Assert.Equal(5U, parsed.ReceptionReports.First().SSRC);
         }
     }
 }

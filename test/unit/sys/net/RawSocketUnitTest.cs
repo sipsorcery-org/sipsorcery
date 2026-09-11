@@ -12,6 +12,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
@@ -29,8 +30,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void IPHeaderConstructionUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             IPv4Header header = new IPv4Header(ProtocolType.Udp, 4567, IPAddress.Parse("127.0.0.1"), IPAddress.Parse("127.0.0.1"));
             byte[] headerData = header.GetBytes();
@@ -54,8 +55,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact(Skip = "Will only work on Win10 or where raw socket privileges have been explicitly granted.")]
         public void PreconstructedIPPacketSendUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] ipPacket = new byte[] {
                      // IP Header.
@@ -90,8 +91,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact(Skip = "Will only work on Win10 or where raw socket privileges have been explicitly granted.")]
         public void IPEmptyPacketSendUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             UDPPacket udpPacket = new UDPPacket(4001, 4001, new byte[] { 0x1, 0x2, 0x3, 0x4 });
             IPv4Header header = new IPv4Header(ProtocolType.Udp, 7890, IPAddress.Parse("127.0.0.1"), IPAddress.Parse("127.0.0.1"));

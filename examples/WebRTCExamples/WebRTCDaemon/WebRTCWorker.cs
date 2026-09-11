@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: WebRtcWorker.cs
 //
 // Description: Long running background worker hosting WebRTC peer connections.
@@ -15,10 +15,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -30,190 +28,206 @@ using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.FFmpeg;
 using WebSocketSharp.Server;
 
-namespace WebRTCDaemon
+namespace WebRTCDaemon;
+
+public class WebRTCWorker : BackgroundService
 {
-    public class WebRTCWorker : BackgroundService
+    private const string LINUX_FFMPEG_LIB_PATH = "/usr/local/lib/";
+
+    private const int WEBSOCKET_PORT = 8081;
+    private const string STUN_URL = "stun:stun.sipsorcery.com";
+    private const string MP4_PATH = "media/max_intro.mp4";
+    private const string MAX_URL = "max";
+    private const VideoCodecsEnum VIDEO_CODEC = VideoCodecsEnum.VP8;
+    private const int VP8_OFFERED_FORMATID = 96;
+    private const SDPWellKnownMediaFormatsEnum AUDIO_FORMAT = SDPWellKnownMediaFormatsEnum.PCMU;
+
+    private readonly ILogger<WebRTCWorker> _logger;
+
+    private FFmpegFileSource _maxSource;
+    private VideoTestPatternSource _testPatternSource;
+    private FFmpegVideoEndPoint _videoEndPoint;
+    private AudioExtrasSource _musicSource;
+
+    public WebRTCWorker(ILogger<WebRTCWorker> logger, IConfiguration configuration)
     {
-        private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin"; //    /!\ Path to FFmpeg binaries
+        _logger = logger;
 
-        private const int WEBSOCKET_PORT = 8081;
-        private const string STUN_URL = "stun:stun.sipsorcery.com";
-        private const string MP4_PATH = "media/max_intro.mp4";
-        private const string MAX_URL = "max";
-        private const VideoCodecsEnum VIDEO_CODEC = VideoCodecsEnum.VP8;
-        private const int VP8_OFFERED_FORMATID = 96;
-        private const SDPWellKnownMediaFormatsEnum AUDIO_FORMAT = SDPWellKnownMediaFormatsEnum.PCMU;
+        _logger.LogInformation($"WebRTCWorker starting...");
+    }
 
-        private readonly ILogger<WebRTCWorker> _logger;
-
-        private string _certificatePath;
-        private FFmpegFileSource _maxSource;
-        private VideoTestPatternSource _testPatternSource;
-        private FFmpegVideoEndPoint _testPatternEncoder;
-        private AudioExtrasSource _musicSource;
-
-        public WebRTCWorker(ILogger<WebRTCWorker> logger, IConfiguration configuration)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        if (Environment.OSVersion.Platform == PlatformID.Unix)
         {
-            _logger = logger;
-
-            _logger.LogInformation($"WebRTCWorker starting...");
-
-            _certificatePath = configuration["CertificatePath"];
-
-            _logger.LogInformation($"Certificate path {_certificatePath}."); 
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, _logger);
+        }
+        else
+        {
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, _logger);
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        // Set up media sources.
+        _maxSource = new FFmpegFileSource(MP4_PATH, true, new AudioEncoder());
+
+        _testPatternSource = new VideoTestPatternSource();
+        _videoEndPoint = new FFmpegVideoEndPoint();
+        _testPatternSource.OnVideoSourceRawSample += _videoEndPoint.ExternalVideoSourceRawSample;
+
+        _musicSource = new AudioExtrasSource(new AudioEncoder(),
+            new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+
+        // The same  sources are used for all connected peers (broadcast) so the codecs need 
+        // to be restricted to a single well supported option.
+        _musicSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
+        _maxSource.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+        _videoEndPoint.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+
+        // The format of each source needs to be set before it can be started. Typically the format is negotiated as part of the peer connection set up
+        // but in this case for efficiency reasons only a single codec per source is offered.
+        _musicSource.SetAudioSourceFormat(new AudioFormat(AUDIO_FORMAT));
+        _maxSource.SetVideoSourceFormat(new VideoFormat(VIDEO_CODEC, VP8_OFFERED_FORMATID));
+        _videoEndPoint.SetVideoSourceFormat(new VideoFormat(VIDEO_CODEC, VP8_OFFERED_FORMATID));
+
+        // Start all the sources and put them in a paused state.
+        await _maxSource.StartVideo();
+        await _maxSource.Pause();
+
+        await _testPatternSource.StartVideo();
+        await _testPatternSource.PauseVideo();
+
+        await _musicSource.StartAudio();
+        await _musicSource.PauseAudio();
+
+        // Start web socket.
+        _logger.LogInformation("Starting web socket server...");
+
+        WebSocketServer webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+        webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = () => CreatePeerConnection(null));
+        webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>($"/{MAX_URL}",
+            (peer) => peer.CreatePeerConnection = () => CreatePeerConnection(MAX_URL));
+        webSocketServer.Start();
+
+        _logger.LogInformation($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
+
+        await Task.Delay(Timeout.Infinite, stoppingToken);
+    }
+
+    private Task<RTCPeerConnection> CreatePeerConnection(string url)
+    {
+        RTCConfiguration config = new RTCConfiguration
         {
+            iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
+        };
+        var pc = new RTCPeerConnection(config);
 
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, _logger);
-            // Set up media sources.
-            _maxSource = new FFmpegFileSource(MP4_PATH, true, new AudioEncoder());
+        //mediaFileSource.OnEndOfFile += () => pc.Close("source eof");
 
-            _testPatternSource = new VideoTestPatternSource();
-            _testPatternEncoder = new FFmpegVideoEndPoint();
-            _testPatternSource.OnVideoSourceRawSample += _testPatternEncoder.ExternalVideoSourceRawSample;
+        MediaStreamTrack videoTrack = new MediaStreamTrack(new List<VideoFormat> { new VideoFormat(VIDEO_CODEC, VP8_OFFERED_FORMATID) }, MediaStreamStatusEnum.SendOnly);
+        pc.addTrack(videoTrack);
+        MediaStreamTrack audioTrack = new MediaStreamTrack(new List<AudioFormat> { new AudioFormat(AUDIO_FORMAT) }, MediaStreamStatusEnum.SendOnly);
+        pc.addTrack(audioTrack);
 
-            _musicSource = new AudioExtrasSource(new AudioEncoder(),
-                new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
-            
-            // The same  sources are used for all connected peers (broadcast) so the codecs need 
-            // to be restricted to a single well supported option.
-            _musicSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
-            _maxSource.RestrictFormats(format => format.Codec == VIDEO_CODEC);
-            _testPatternEncoder.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+        IVideoSource videoSource = null;
+        IAudioSource audioSource = null;
 
-            // Start web socket.
-            _logger.LogInformation("Starting web socket server...");
-
-            WebSocketServer webSocketServer = null;
-
-            if (!string.IsNullOrWhiteSpace(_certificatePath))
-            {
-                if(!File.Exists(_certificatePath))
-                {
-                    throw new ApplicationException($"Certificate path could not be found {_certificatePath}.");
-                }
-
-                webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
-                webSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(_certificatePath);
-                webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
-                webSocketServer.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
-            }
-            else
-            {
-                webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-            }
-
-            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = () => CreatePeerConnection(null));
-            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>($"/{MAX_URL}", 
-                (peer) => peer.CreatePeerConnection = () => CreatePeerConnection(MAX_URL));
-            webSocketServer.Start();
-
-            _logger.LogInformation($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
-
-            await Task.Delay(Timeout.Infinite, stoppingToken);
+        if (url == MAX_URL)
+        {
+            videoSource = _maxSource;
+            audioSource = _maxSource;
+        }
+        else
+        {
+            videoSource = _videoEndPoint;
+            audioSource = _musicSource;
         }
 
-        private Task<RTCPeerConnection> CreatePeerConnection(string url)
+        pc.OnVideoFormatsNegotiated += (formats) => videoSource.SetVideoSourceFormat(formats.First());
+        pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
+        videoSource.OnVideoSourceEncodedSample += pc.SendVideo;
+        audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
+
+        pc.onconnectionstatechange += async (state) =>
         {
-            RTCConfiguration config = new RTCConfiguration
+            _logger.LogInformation($"Peer connection state change to {state}.");
+
+            if (state == RTCPeerConnectionState.failed)
             {
-                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
-            };
-            var pc = new RTCPeerConnection(config);
-
-            //mediaFileSource.OnEndOfFile += () => pc.Close("source eof");
-
-            MediaStreamTrack videoTrack = new MediaStreamTrack(new List<VideoFormat> { new VideoFormat(VIDEO_CODEC, VP8_OFFERED_FORMATID) }, MediaStreamStatusEnum.SendOnly);
-            pc.addTrack(videoTrack);
-            MediaStreamTrack audioTrack = new MediaStreamTrack(new List<AudioFormat> { new AudioFormat(AUDIO_FORMAT) }, MediaStreamStatusEnum.SendOnly);
-            pc.addTrack(audioTrack);
-
-            IVideoSource videoSource = null;
-            IAudioSource audioSource = null;
-
-            if (url == MAX_URL)
-            {
-                videoSource = _maxSource;
-                audioSource = _maxSource;
+                pc.Close("ice disconnection");
             }
-            else
+            else if (state == RTCPeerConnectionState.closed)
             {
-                videoSource = _testPatternSource;
-                audioSource = _musicSource;
+                videoSource.OnVideoSourceEncodedSample -= pc.SendVideo;
+                audioSource.OnAudioSourceEncodedSample -= pc.SendAudio;
+                await CheckForSourceSubscribers();
             }
-
-            pc.OnVideoFormatsNegotiated += (formats) => videoSource.SetVideoSourceFormat(formats.First());
-            pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
-            videoSource.OnVideoSourceEncodedSample += pc.SendVideo;
-            audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
-
-            pc.onconnectionstatechange += async (state) =>
+            else if (state == RTCPeerConnectionState.connected)
             {
-                _logger.LogInformation($"Peer connection state change to {state}.");
+                await ResumeSource(url);
+            }
+        };
 
-                if (state == RTCPeerConnectionState.failed)
-                {
-                    pc.Close("ice disconnection");
-                }
-                else if (state == RTCPeerConnectionState.closed)
-                {
-                    videoSource.OnVideoSourceEncodedSample -= pc.SendVideo;
-                    audioSource.OnAudioSourceEncodedSample -= pc.SendAudio;
-                    await CheckForSourceSubscribers();
-                }
-                else if(state == RTCPeerConnectionState.connected)
-                {
-                    await StartSource(url);
-                }
-            };
+        pc.onsignalingstatechange += () =>
+        {
+            _logger.LogDebug($"Signalling state change to {pc.signalingState}.");
 
-            // Diagnostics.
-            //pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
-            //pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
-            //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
-            pc.oniceconnectionstatechange += (state) => _logger.LogInformation($"ICE connection state change to {state}.");
+            if (pc.signalingState == RTCSignalingState.have_local_offer)
+            {
+                _logger.LogDebug($"Local SDP offer:\n{pc.localDescription.sdp}");
+            }
+            else if (pc.signalingState == RTCSignalingState.stable)
+            {
+                _logger.LogDebug($"Remote SDP answer:\n{pc.remoteDescription.sdp}");
+            }
+        };
 
-            return Task.FromResult(pc);
+        // Diagnostics.
+        //pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
+        //pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
+        //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
+        pc.oniceconnectionstatechange += (state) => _logger.LogInformation($"ICE connection state change to {state}.");
+
+        return Task.FromResult(pc);
+    }
+
+    private async Task ResumeSource(string url)
+    {
+        if (url == MAX_URL)
+        {
+            _logger.LogDebug("Starting/resuming mp4 file source.");
+
+            _maxSource.ForceKeyFrame();
+            await _maxSource.Resume();
+        }
+        else
+        {
+            _logger.LogDebug("Starting/resuming test pattern source.");
+
+            _videoEndPoint.ForceKeyFrame();
+
+            await _testPatternSource.ResumeVideo();
+            await _musicSource.ResumeAudio();
+        }
+    }
+
+    private async Task CheckForSourceSubscribers()
+    {
+        if (!_videoEndPoint.HasEncodedVideoSubscribers())
+        {
+            _logger.LogInformation("Pausing test pattern video source.");
+            await _testPatternSource.PauseVideo();
         }
 
-        private async Task StartSource(string url)
+        if (!_musicSource.HasEncodedAudioSubscribers())
         {
-            if(url == MAX_URL)
-            {
-                _maxSource.ForceKeyFrame();
-                await (_maxSource.IsPaused() ? _maxSource.ResumeVideo() : _maxSource.StartVideo());
-            }
-            else
-            {
-                _testPatternEncoder.ForceKeyFrame();
-                await _testPatternEncoder.StartVideo();
-                
-                await (_testPatternSource.IsVideoSourcePaused() ? _testPatternSource.ResumeVideo() : _testPatternSource.StartVideo());
-                await (_musicSource.IsAudioSourcePaused() ? _musicSource.ResumeAudio() : _musicSource.StartAudio());
-            }
+            _logger.LogInformation("Pausing music audio source.");
+            await _musicSource.PauseAudio();
         }
 
-        private async Task CheckForSourceSubscribers()
+        if (!_maxSource.HasEncodedVideoSubscribers())
         {
-            if(!_testPatternEncoder.HasEncodedVideoSubscribers())
-            {
-                _logger.LogInformation("Pausing test pattern video source.");
-                await _testPatternSource.PauseVideo();
-            }
-
-            if(!_musicSource.HasEncodedAudioSubscribers())
-            {
-                _logger.LogInformation("Pausing music audio source.");
-                await _musicSource.PauseAudio();
-            }
-
-            if(!_maxSource.HasEncodedVideoSubscribers())
-            {
-                _logger.LogInformation("Pausing mp4 file source.");
-                await _maxSource.Pause();
-            }
+            _logger.LogInformation("Pausing mp4 file source.");
+            await _maxSource.Pause();
         }
     }
 }

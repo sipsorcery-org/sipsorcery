@@ -29,7 +29,7 @@ using SIPSorceryMedia.Windows;
 
 namespace SIPSorcery.SoftPhone
 {
-    public class SIPClient
+    public partial class SIPClient
     {
         private static string _sdpMimeContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
@@ -45,6 +45,9 @@ namespace SIPSorcery.SoftPhone
         private CancellationTokenSource _cts = new CancellationTokenSource();
 
         private int m_audioOutDeviceIndex = SIPSoftPhoneState.AudioOutDeviceIndex;
+
+        [GeneratedRegex(@"^SIP/2\.0 (?<statusCode>\d{3})")]
+        private static partial Regex SipFragStatusCodeRegex();
 
         public event Action<SIPClient> CallAnswer;                 // Fires when an outgoing SIP call is answered.
         public event Action<SIPClient> CallEnded;                  // Fires when an incoming or outgoing call is over.
@@ -117,7 +120,7 @@ namespace SIPSorcery.SoftPhone
             else
             {
                 // This call will use the pre-configured SIP account.
-                callURI = SIPURI.ParseSIPURIRelaxed(destination + "@" + m_sipServer);
+                callURI = SIPURI.ParseSIPURIRelaxed($"{destination}@{m_sipServer}");
                 sipUsername = m_sipUsername;
                 sipPassword = m_sipPassword;
                 fromHeader = (new SIPFromHeader(m_sipFromName, new SIPURI(m_sipUsername, m_sipServer, null), null)).ToString();
@@ -151,7 +154,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void Cancel()
         {
-            StatusMessage(this, "Cancelling SIP call to " + m_userAgent.CallDescriptor?.Uri + ".");
+            StatusMessage(this, $"Cancelling SIP call to {m_userAgent.CallDescriptor?.Uri}.");
             m_userAgent.Cancel();
         }
 
@@ -215,7 +218,7 @@ namespace SIPSorcery.SoftPhone
         /// Puts the remote call party on hold.
         /// </summary>
         public async Task PutOnHold()
-        { 
+        {
             await MediaSession.PutOnHold();
             m_userAgent.PutOnHold();
             StatusMessage(this, "Local party put on hold");
@@ -319,7 +322,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void CallTrying(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
-            StatusMessage(this, "Call trying: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
+            StatusMessage(this, $"Call trying: {sipResponse.StatusCode} {sipResponse.ReasonPhrase}.");
         }
 
         /// <summary>
@@ -327,7 +330,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void CallRinging(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
-            StatusMessage(this, "Call ringing: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
+            StatusMessage(this, $"Call ringing: {sipResponse.StatusCode} {sipResponse.ReasonPhrase}.");
         }
 
         /// <summary>
@@ -335,7 +338,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void CallFailed(ISIPClientUserAgent uac, string errorMessage, SIPResponse failureResponse)
         {
-            StatusMessage(this, "Call failed: " + errorMessage + ".");
+            StatusMessage(this, $"Call failed: {errorMessage}.");
             CallFinished(null);
         }
 
@@ -346,7 +349,7 @@ namespace SIPSorcery.SoftPhone
         /// <param name="sipResponse">The SIP answer response received from the remote party.</param>
         private void CallAnswered(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
-            StatusMessage(this, "Call answered: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
+            StatusMessage(this, $"Call answered: {sipResponse.StatusCode} {sipResponse.ReasonPhrase}.");
             CallAnswer?.Invoke(this);
         }
 
@@ -382,7 +385,7 @@ namespace SIPSorcery.SoftPhone
             }
             else
             {
-                Match statusCodeMatch = Regex.Match(sipFrag, @"^SIP/2\.0 (?<statusCode>\d{3})");
+                var statusCodeMatch = SipFragStatusCodeRegex().Match(sipFrag);
                 if (statusCodeMatch.Success)
                 {
                     int statusCode = Int32.Parse(statusCodeMatch.Result("${statusCode}"));

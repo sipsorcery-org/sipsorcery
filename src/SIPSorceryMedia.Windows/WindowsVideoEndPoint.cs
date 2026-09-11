@@ -231,11 +231,11 @@ namespace SIPSorceryMedia.Windows
 
                 if (vidDevice == null)
                 {
-                    logger.LogWarning($"Could not find video capture device for specified ID {_videoDeviceID}, using default device.");
+                    logger.LogWarning("Could not find video capture device for specified ID {VideoDeviceId}, using default device.", _videoDeviceID);
                 }
                 else
                 {
-                    logger.LogInformation($"Video capture device {vidDevice.Name} selected.");
+                    logger.LogInformation("Video capture device {VideoDeviceName} selected.", vidDevice.Name);
                     mediaCaptureSettings.VideoDeviceId = vidDevice.Id;
                 }
             }
@@ -277,7 +277,8 @@ namespace SIPSorceryMedia.Windows
             if (preferredFormat == null)
             {
                 // Still can't get what we want. Log a warning message and take the default.
-                logger.LogWarning($"The video capture device did not support the requested format (or better) {_width}x{_height} {fps}fps. Using default mode.");
+                logger.LogWarning("The video capture device did not support the requested format (or better) {Width}x{Height} {Fps}fps. Using default mode.",
+                    _width, _height, fps);
 
                 preferredFormat = colorFrameSource.SupportedFormats.First();
             }
@@ -448,14 +449,21 @@ namespace SIPSorceryMedia.Windows
                 MediaCapture mediaCapture = new MediaCapture();
                 await mediaCapture.InitializeAsync(mediaCaptureSettings);
 
-                foreach (var srcFmtList in mediaCapture.FrameSources.Values.Select(x => x.SupportedFormats).Select(y => y.ToList()))
+                if (logger.IsEnabled(LogLevel.Debug))
                 {
-                    foreach (var srcFmt in srcFmtList)
+                    foreach (var srcFmtList in mediaCapture.FrameSources.Values)
                     {
-                        var vidFmt = srcFmt.VideoFormat;
-                        float vidFps = vidFmt.MediaFrameFormat.FrameRate.Numerator / vidFmt.MediaFrameFormat.FrameRate.Denominator;
-                        string pixFmt = vidFmt.MediaFrameFormat.Subtype == MF_I420_PIXEL_FORMAT ? "I420" : vidFmt.MediaFrameFormat.Subtype;
-                        logger.LogDebug($"Video Capture device {vidCapDevice.Name} format {vidFmt.Width}x{vidFmt.Height} {vidFps:0.##}fps {pixFmt}");
+                        foreach (var srcFmt in srcFmtList.SupportedFormats)
+                        {
+                            var vidFps = srcFmt.VideoFormat.MediaFrameFormat.FrameRate.Numerator / srcFmt.VideoFormat.MediaFrameFormat.FrameRate.Denominator;
+                            var pixFmt = srcFmt.VideoFormat.MediaFrameFormat.Subtype == MF_I420_PIXEL_FORMAT ? "I420" : srcFmt.VideoFormat.MediaFrameFormat.Subtype;
+                            logger.LogDebug("Video Capture device {VideoDeviceName} format {Width}x{Height} {FrameRate:0.##}fps {PixelFormat}",
+                                vidCapDevice.Name,
+                                srcFmt.VideoFormat.Width,
+                                srcFmt.VideoFormat.Height,
+                                vidFps,
+                                pixFmt);
+                        }
                     }
                 }
             }
@@ -478,7 +486,7 @@ namespace SIPSorceryMedia.Windows
             var vidCapDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
             foreach (var vidCapDevice in vidCapDevices)
             {
-                if(vidCapDevice.Name.ToLower() == deviceName.ToLower())
+                if(string.Equals(vidCapDevice.Name, deviceName, StringComparison.OrdinalIgnoreCase))
                 {
                     var mediaCaptureSettings = new MediaCaptureInitializationSettings()
                     {
@@ -590,7 +598,9 @@ namespace SIPSorceryMedia.Windows
                                                 frameSpacing = Convert.ToUInt32(DateTime.Now.Subtract(_lastFrameAt).TotalMilliseconds);
                                             }
 
+#pragma warning disable CS0618 // Type or member is obsolete
                                             var bgrBuffer = PixelConverter.NV12toBGR(nv12Buffer, width, height, width * 3);
+#pragma warning restore CS0618 // Type or member is obsolete
 
                                             OnVideoSourceRawSample(frameSpacing, width, height, bgrBuffer, VideoPixelFormatsEnum.Bgr);
                                         }
@@ -676,16 +686,21 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         private void PrintFrameSourceInfo(MediaFrameSource frameSource)
         {
-            var width = frameSource.CurrentFormat.VideoFormat.Width;
-            var height = frameSource.CurrentFormat.VideoFormat.Height;
-            var fpsNumerator = frameSource.CurrentFormat.FrameRate.Numerator;
-            var fpsDenominator = frameSource.CurrentFormat.FrameRate.Denominator;
+            if (!logger.IsEnabled(LogLevel.Information))
+            {
+                return;
+            }
 
-            double fps = fpsNumerator / fpsDenominator;
-            string pixFmt = frameSource.CurrentFormat.Subtype;
-            string deviceName = frameSource.Info.DeviceInformation.Name;
+            var currentFormat = frameSource.CurrentFormat;
+            var videoFormat = currentFormat.VideoFormat;
+            var frameRate = currentFormat.FrameRate;
 
-            logger.LogInformation($"Video capture device {deviceName} successfully initialised: {width}x{height} {fps:0.##}fps pixel format {pixFmt}.");
+            logger.LogInformation("Video capture device {VideoDeviceName} successfully initialised: {Width}x{Height} {Fps:0.##}fps pixel format {PixelFormat}.",
+                frameSource.Info.DeviceInformation.Name,
+                videoFormat.Width,
+                videoFormat.Height,
+                frameRate.Numerator / frameRate.Denominator,
+                currentFormat.Subtype);
         }
 
         public void Dispose()

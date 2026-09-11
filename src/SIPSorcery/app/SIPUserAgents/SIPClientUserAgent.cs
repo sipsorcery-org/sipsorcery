@@ -105,27 +105,22 @@ namespace SIPSorcery.SIP.App
         public async Task<SIPEndPoint> GetCallDestination(SIPCallDescriptor sipCallDescriptor)
         {
             SIPURI callURI = SIPURI.ParseSIPURI(sipCallDescriptor.Uri);
-            SIPEndPoint serverEndPoint = null;
 
-            // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
-            if (m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.Address))
+            // A configured outbound proxy takes precedence. ProxySendFrom says which of the
+            // proxy's own sockets it should send from, so it is a hint to the proxy rather than
+            // an address to send to, and it is only used here when there is no configured proxy
+            // to send to instead.
+            SIPEndPoint serverEndPoint = m_outboundProxy;
+
+            if (serverEndPoint == null && !sipCallDescriptor.ProxySendFrom.IsNullOrBlank())
             {
-                serverEndPoint = m_outboundProxy;
-            }
-            else if (!sipCallDescriptor.ProxySendFrom.IsNullOrBlank())
-            {
-                // If the binding has a specific proxy end point sent then the request needs to be forwarded to the proxy's default end point for it to take care of.
+                // If the binding has a specific proxy end point set then the request needs to be forwarded to the proxy's default end point for it to take care of.
                 //SIPEndPoint outboundProxyEndPoint = SIPEndPoint.ParseSIPEndPoint(sipCallDescriptor.ProxySendFrom);
                 //m_outboundProxy = new SIPEndPoint(SIPProtocolsEnum.udp, outboundProxyEndPoint.Address, SIPConstants.DEFAULT_SIP_PORT);
                 //m_serverEndPoint = m_outboundProxy;
                 m_outboundProxy = SIPEndPoint.ParseSIPEndPoint(sipCallDescriptor.ProxySendFrom);
                 serverEndPoint = m_outboundProxy;
                 logger.LogDebug("SIPClientUserAgent Call using alternate outbound proxy of {ServerEndPoint}.", serverEndPoint);
-            }
-            else if (m_outboundProxy != null)
-            {
-                // Using the system outbound proxy only, no additional user routing requirements.
-                serverEndPoint = m_outboundProxy;
             }
 
             // No outbound proxy, determine the forward destination based on the SIP request.
@@ -286,7 +281,7 @@ namespace SIPSorcery.SIP.App
                     // If auth header is included inside INVITE request, we re-include them inside CANCEL request
                     if (m_serverTransaction.TransactionRequest.Header.HasAuthenticationHeader)
                     {
-                        string username = (m_sipCallDescriptor.AuthUsername == null || m_sipCallDescriptor.AuthUsername.Trim().Length <= 0 ? m_sipCallDescriptor.Username : m_sipCallDescriptor.AuthUsername);
+                        var username = string.IsNullOrWhiteSpace(m_sipCallDescriptor.AuthUsername) ? m_sipCallDescriptor.Username : m_sipCallDescriptor.AuthUsername;
                         SIPAuthorisationDigest authDigest = m_serverTransaction.TransactionRequest.Header.AuthenticationHeaders.First().SIPDigest;
                         authDigest.SetCredentials(username, m_sipCallDescriptor.Password, m_sipCallDescriptor.Uri, SIPMethodsEnum.CANCEL.ToString());
 
@@ -332,7 +327,7 @@ namespace SIPSorcery.SIP.App
                 //SIPRequest byeRequest = GetByeRequest(m_serverTransaction.TransactionFinalResponse, m_sipDialogue.RemoteTarget);
                 SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
                 byeRequest.SetSendFromHints(m_serverTransaction.TransactionRequest.LocalSIPEndPoint);
-                
+
                 if (!string.IsNullOrEmpty(reason))
                 {
                     // The REASON header gets pre-appended automatically in the SIPHeader class as "Reason: " when ToString() is called on the SIP Header class.
@@ -427,7 +422,7 @@ namespace SIPSorcery.SIP.App
                             m_serverAuthAttempts = 1;
 
                             // Resend INVITE with credentials.
-                            string username = (m_sipCallDescriptor.AuthUsername != null && m_sipCallDescriptor.AuthUsername.Trim().Length > 0) ? m_sipCallDescriptor.AuthUsername : m_sipCallDescriptor.Username;
+                            var username = !string.IsNullOrWhiteSpace(m_sipCallDescriptor.AuthUsername) ? m_sipCallDescriptor.AuthUsername : m_sipCallDescriptor.Username;
                             var authRequest = m_serverTransaction.TransactionRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders,
                                 username, m_sipCallDescriptor.Password);
 
@@ -457,6 +452,7 @@ namespace SIPSorcery.SIP.App
                     {
                         m_sipDialogue = new SIPDialogue(m_serverTransaction);
                         m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
+                        m_sipDialogue.TransferMode = m_sipCallDescriptor.TransferMode;
                     }
 
                     CallAnswered?.Invoke(this, sipResponse);
@@ -529,7 +525,7 @@ namespace SIPSorcery.SIP.App
 
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
                 {
-                    string username = (m_sipCallDescriptor.AuthUsername == null || m_sipCallDescriptor.AuthUsername.Trim().Length <= 0 ? m_sipCallDescriptor.Username : m_sipCallDescriptor.AuthUsername);
+                    var username = string.IsNullOrWhiteSpace(m_sipCallDescriptor.AuthUsername) ? m_sipCallDescriptor.Username : m_sipCallDescriptor.AuthUsername;
                     var authRequest = transaction.TransactionRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders,
                         username, m_sipCallDescriptor.Password);
 
@@ -560,8 +556,9 @@ namespace SIPSorcery.SIP.App
             inviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
             inviteHeader.UserAgent = SIPConstants.SipUserAgentVersionString;
             inviteHeader.Routes = routeSet;
-            inviteHeader.Supported = SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB
-                + ((PrackSupported == true) ? ", " + SIPExtensionHeaders.PRACK : "");
+            inviteHeader.Supported = PrackSupported == true
+                ? $"{SIPExtensionHeaders.REPLACES}, {SIPExtensionHeaders.NO_REFER_SUB}, {SIPExtensionHeaders.PRACK}"
+                : $"{SIPExtensionHeaders.REPLACES}, {SIPExtensionHeaders.NO_REFER_SUB}";
 
             inviteRequest.Header = inviteHeader;
 
@@ -587,13 +584,17 @@ namespace SIPSorcery.SIP.App
                         {
                             continue;
                         }
-                        else if (customHeader.Trim().StartsWith(SIPHeaders.SIP_HEADER_USERAGENT))
+
+                        var customHeaderSpan = customHeader.AsSpan().Trim();
+                        if (customHeaderSpan.StartsWith(SIPHeaders.SIP_HEADER_USERAGENT, StringComparison.Ordinal))
                         {
-                            inviteRequest.Header.UserAgent = customHeader.Substring(customHeader.IndexOf(":") + 1).Trim();
+                            inviteRequest.Header.UserAgent = customHeader.Substring(customHeader.IndexOf(':') + 1).Trim();
                         }
-                        else if (customHeader.Trim().StartsWith(SIPHeaders.SIP_HEADER_TO + ":"))
+                        else if (customHeaderSpan.StartsWith(SIPHeaders.SIP_HEADER_TO, StringComparison.Ordinal) &&
+                                 customHeaderSpan.Length > SIPHeaders.SIP_HEADER_TO.Length &&
+                                 customHeaderSpan[SIPHeaders.SIP_HEADER_TO.Length] == ':')
                         {
-                            var customToHeader = SIPUserField.ParseSIPUserField(customHeader.Substring(customHeader.IndexOf(":") + 1).Trim());
+                            var customToHeader = SIPUserField.ParseSIPUserField(customHeader.Substring(customHeader.IndexOf(':') + 1).Trim());
                             if (customToHeader != null)
                             {
                                 inviteRequest.Header.To.ToUserField = customToHeader;

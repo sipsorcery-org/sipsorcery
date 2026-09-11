@@ -20,7 +20,18 @@
 // SOFTWARE.
 
 using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Parameters;
 using System;
+using System.Buffers;
+using System.Buffers.Binary;
+#if NET8_0_OR_GREATER
+using Bytes = System.Span<byte>;
+using ReadOnlyBytes = System.ReadOnlySpan<byte>;
+#else
+using Bytes = byte[];
+using ReadOnlyBytes = byte[];
+#endif
+
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
 {
@@ -28,118 +39,109 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
     {
         public const int BLOCK_SIZE = 16;
 
-        public static byte[] GenerateRtpMessageKeyIV(IBlockCipher engine, byte[] k_e, byte[] k_s, byte[] rtpPacket, uint ROC)
+        public static void GenerateRtpMessageKeyIV(IBlockCipher engine, byte[] k_e, byte[] k_s, ReadOnlySpan<byte> rtpPacket, uint ROC, Bytes iv)
         {
-            byte[] iv = GenerateRtpIV(rtpPacket, ROC);            
-            byte[] iv2 = GenerateIV2(engine, k_e, k_s, iv);
-            return iv2;
+#if NET8_0_OR_GREATER
+            Span<byte> rtpIV = stackalloc byte[BLOCK_SIZE];
+#else
+            var rtpIV = new byte[BLOCK_SIZE];
+#endif
+            GenerateRtpIV(rtpIV, rtpPacket, ROC);
+
+            GenerateIV2(engine, k_e, k_s, rtpIV, iv);
         }
 
-        private static byte[] GenerateRtpIV(byte[] rtpPacket, uint ROC)
+        private static void GenerateRtpIV(Span<byte> iv, ReadOnlySpan<byte> rtpPacket, uint ROC)
         {
-            byte[] iv = new byte[BLOCK_SIZE];
             iv[0] = 0;
 
             // M + PT + SEQ + TS + SSRC
-            Buffer.BlockCopy(rtpPacket, 1, iv, 1, 11);
-            
-            // ROC
-            iv[12] = (byte)((ROC >> 24) & 0xFF);
-            iv[13] = (byte)((ROC >> 16) & 0xFF);
-            iv[14] = (byte)((ROC >> 8) & 0xFF);
-            iv[15] = (byte)(ROC & 0xFF);
-            return iv;
+            rtpPacket.Slice(1, 11).CopyTo(iv.Slice(1));
+
+            // ROC (big-endian)
+            BinaryPrimitives.WriteUInt32BigEndian(iv.Slice(12, 4), ROC);
         }
 
-        public static byte[] GenerateRtcpMessageKeyIV(IBlockCipher engine, byte[] k_e, byte[] k_s, byte[] rtcpPacket, uint index)
+        public static byte[] GenerateRtcpMessageKeyIV(IBlockCipher engine, byte[] k_e, byte[] k_s, ReadOnlySpan<byte> rtcpPacket, uint index)
         {
-            byte[] iv = GenerateRtcpIV(rtcpPacket, index);
-            byte[] iv2 = GenerateIV2(engine, k_e, k_s, iv);
+#if NET8_0_OR_GREATER
+            Span<byte> iv = stackalloc byte[BLOCK_SIZE];
+#else
+            var iv = new byte[BLOCK_SIZE];
+#endif
+            GenerateRtcpIV(iv, rtcpPacket, index);
+
+            byte[] iv2 = new byte[BLOCK_SIZE];
+
+            GenerateIV2(engine, k_e, k_s, iv, iv2);
+
             return iv2;
         }
 
-        private static byte[] GenerateRtcpIV(byte[] rtcpPacket, uint index)
+        private static void GenerateRtcpIV(Span<byte> iv, ReadOnlySpan<byte> rtcpPacket, uint index)
         {
-            byte[] iv = new byte[BLOCK_SIZE];
-
             // 0..0
-            iv[0] = 0;
-            iv[1] = 0;
-            iv[2] = 0;
-            iv[3] = 0;
+            iv.Slice(0, 4).Clear();
 
             // E + SRTCP index
-            iv[4] = (byte)((index >> 24) & 0xFF);
-            iv[5] = (byte)((index >> 16) & 0xFF);
-            iv[6] = (byte)((index >> 8) & 0xFF);
-            iv[7] = (byte)(index & 0xFF);
+            BinaryPrimitives.WriteUInt32BigEndian(iv.Slice(4, 4), index);
 
             // V + P + RC + PT + L + SSRC
-            Buffer.BlockCopy(rtcpPacket, 0, iv, BLOCK_SIZE - 8, 8);
-            return iv;
+            rtcpPacket.Slice(0, 8).CopyTo(iv.Slice(BLOCK_SIZE - 8, 8));
         }
 
-        private static byte[] GenerateIV2(IBlockCipher engine, byte[] k_e, byte[] k_s, byte[] iv)
+        private static void GenerateIV2(IBlockCipher engine, byte[] k_e, byte[] k_s, ReadOnlyBytes iv, Bytes iv2)
         {
-            byte[] iv2 = new byte[BLOCK_SIZE];
-            
             // IV' = E(k_e XOR m, IV)
-            Buffer.BlockCopy(k_e, 0, iv2, 0, k_e.Length);
+            k_e.CopyTo(iv2);
 
             // m = k_s || 0x555..5
-            for (int i = 0; i < BLOCK_SIZE; i++)
-            {
-                if (i < k_s.Length)
-                {
-                    iv2[i] ^= k_s[i];
-                }
-                else
-                {
-                    iv2[i] ^= 0x55;
-                }
-            }
+            Span<byte> k_s_temp = stackalloc byte[BLOCK_SIZE];
+            k_s_temp.Fill(0x55);
+            k_s.CopyTo(k_s_temp);
 
-            engine.Init(true, new Org.BouncyCastle.Crypto.Parameters.KeyParameter(iv2));
-            engine.ProcessBlock(iv, 0, iv2, 0);
+            BinaryExtensions.Xor128(iv2, k_s_temp);
 
-            return iv2;
+            engine.Init(true, new KeyParameter(iv2));
+            engine.ProcessBlock(iv, iv2);
         }
 
-        public static void Encrypt(IBlockCipher aes, byte[] payload, int offset, int length, byte[] iv)
+        public static void Encrypt(IBlockCipher aes, ReadOnlySpan<byte> input, Span<byte> output, ReadOnlySpan<byte> iv)
         {
-            int payloadSize = length - offset;
-            int blockCount = payloadSize / BLOCK_SIZE + payloadSize % BLOCK_SIZE;
-            byte[] cipher = new byte[blockCount * BLOCK_SIZE];
+            int payloadSize = input.Length;
+            int blockCount = (payloadSize + BLOCK_SIZE - 1) / BLOCK_SIZE;
+            byte[] cipher = ArrayPool<byte>.Shared.Rent(blockCount * BLOCK_SIZE);
 
-            int blockNo = 0;
-            byte[] iv2 = new byte[iv.Length];
-            for (uint j = 0; j < blockCount; j++)
+            try
             {
-                Buffer.BlockCopy(iv, 0, iv2, 0, iv.Length);
-
-                // IV' xor j
-                iv2[12] ^= (byte)((j >> 24) & 0xff);
-                iv2[13] ^= (byte)((j >> 16) & 0xff);
-                iv2[14] ^= (byte)((j >> 8) & 0xff);
-                iv2[15] ^= (byte)(j & 0xff);
-
-                // IV' xor S(-1) xor j
-                if (blockNo > 0)
+                int blockNo = 0;
+                byte[] iv2 = GC.AllocateUninitializedArray<byte>(iv.Length);
+                for (uint j = 0; j < blockCount; j++)
                 {
-                    int previousBlockIndex = BLOCK_SIZE * (blockNo - 1);
-                    for (int i = 0; i < BLOCK_SIZE; i++)
+                    iv.CopyTo(iv2);
+
+                    // IV' xor j
+                    BinaryExtensions.Xor32(iv2.AsSpan(12, 4), j);
+
+                    // IV' xor S(-1) xor j
+                    if (blockNo > 0)
                     {
-                        iv2[i] = (byte)(iv2[i] ^ cipher[previousBlockIndex + i]);
+                        var previousBlockIndex = BLOCK_SIZE * (blockNo - 1);
+                        BinaryExtensions.Xor128(iv2, cipher.AsSpan(previousBlockIndex + 0));
                     }
+
+                    aes.ProcessBlock(iv2, 0, cipher, BLOCK_SIZE * blockNo);
+                    blockNo++;
                 }
 
-                aes.ProcessBlock(iv2, 0, cipher, BLOCK_SIZE * blockNo);
-                blockNo++;
+                BinaryExtensions.Xor(
+                    input,
+                    cipher.AsSpan(0, payloadSize),
+                    output.Slice(0, payloadSize));
             }
-
-            for (int i = 0; i < payloadSize; i++)
+            finally
             {
-                payload[offset + i] ^= cipher[i];
+                ArrayPool<byte>.Shared.Return(cipher);
             }
         }
     }

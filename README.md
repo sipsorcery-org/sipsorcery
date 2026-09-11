@@ -1,7 +1,8 @@
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-win.yml/badge.svg) 
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-ubuntu.yml/badge.svg) 
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-mac.yml/badge.svg) 
-![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/examples-core-win.yml/badge.svg)
+![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/examples-core-win.yml/badge.svg) 
+![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/unity-smoke-test.yml/badge.svg)
 
 ## License
 
@@ -21,20 +22,13 @@ This repository is the home of the **SIPSorcery** project - a comprehensive real
 
 | Package | Version | Downloads | Description | README |
 |---------|---------|-----------|-------------|---------|
-| **SIPSorcery** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.svg)](https://www.nuget.org/packages/SIPSorcery) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.svg)](https://www.nuget.org/packages/SIPSorcery) | Core library with SIP, WebRTC, RTP, ICE, STUN, and SDP support | [README](src/SIPSorcery) |
-| **SIPSorceryMedia.Abstractions** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | Interfaces for audio/video encoders and device access | [README](src/SIPSorceryMedia.Abstractions/) |
-| **SIPSorceryMedia.Windows** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | Windows-specific audio capture and playback and video capture | [README](src/SIPSorceryMedia.Windows/) |
-| **SIPSorceryMedia.FFmpeg** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | Cross-platform media support using FFmpeg | [README](src/SIPSorceryMedia.FFmpeg/) |
-| **SIPSorcery.OpenAI.Realtime** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.OpenAI.WebRTC.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.WebRTC) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.OpenAI.WebRTC.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.WebRTC) | Support for OpenAI's Realtime WebRTC and SIP end points | [README](src/SIPSorcery.OpenAI.Realtime/) |
-| **VP8.Net** |  |  | Experimental pure C# VP8 codec implementation | [README](src/VP8.Net/) |
+| **SIPSorcery** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.svg)](https://www.nuget.org/packages/SIPSorcery) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.svg)](https://www.nuget.org/packages/SIPSorcery) | Core library with SIP, WebRTC, RTP, ICE, STUN, and SDP support | [README](src/SIPSorcery/README.md) |
+| **SIPSorceryMedia.Abstractions** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | Interfaces for audio/video encoders and device access | [README](src/SIPSorceryMedia.Abstractions/README.md) |
+| **SIPSorceryMedia.Windows** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | Windows-specific audio capture and playback and video capture | [README](src/SIPSorceryMedia.Windows/README.md) |
+| **SIPSorceryMedia.FFmpeg** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | Cross-platform media support using FFmpeg | [README](src/SIPSorceryMedia.FFmpeg/README.md) |
+| **SIPSorcery.OpenAI.Realtime** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.OpenAI.Realtime.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.Realtime) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.OpenAI.Realtime.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.Realtime) | Support for OpenAI's Realtime WebRTC and SIP end points | [README](src/SIPSorcery.OpenAI.Realtime/README.md) |
+| **SIPSorcery.VP8** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | Pure C# VP8 video codec implementation | [README](src/SIPSorcery.VP8/README.md) |
 
-### Related Repositories
-
-The SIPSorcery ecosystem includes several companion projects hosted in separate repositories:
-
-- **[SIPSorceryMedia.Encoders](https://github.com/sipsorcery-org/SIPSorceryMedia.Encoders)** - Windows-specific wrappers for VP8 and other video codecs [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Encoders.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Encoders)
-- **[SIPSorceryMedia.SDL2](https://github.com/sipsorcery-org/SIPSorceryMedia.SDL2)** - Cross-platform audio/video using SDL2 
-- **[signalrtc](https://github.com/sipsorcery-org/signalrtc)** - Real-time signaling server for WebRTC
 
 ### Examples
 
@@ -45,7 +39,7 @@ This repository includes **[70+ example projects](examples/)** demonstrating var
 - **[SIP Scenarios](examples/SIPScenarios/)** - Call transfers, load testing, complex call flows ([README](examples/SIPScenarios/README.md))
 - **[WebRTC Scenarios](examples/WebRTCScenarios/)** - Advanced WebRTC use cases ([README](examples/WebRTCScenarios/README.md))
 - **[Softphone](examples/Softphone/)** - Full-featured Windows Forms softphone application ([README](examples/Softphone/README.md))
-- **[OpenAI](examples/OpenAIExamples/)** - Example applications for interacting with OpenAI's Realtime WebRTC and SIP end poiints ([README](examples/OpenAIExamples/GetStarted/README.md))
+- **[OpenAI](examples/OpenAIExamples/)** - Example applications for interacting with OpenAI's Realtime WebRTC and SIP end points ([README](examples/OpenAIExamples/GetStarted/README.md))
 
 ---
 
@@ -69,13 +63,13 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 **Media End Points - Audio/Video Sinks and Sources:**
 
- - The main `SIPSorcery` library does not provide access to audio and video devices or native codecs. Providing cross platform access to to these features on top of .NET is a large undertaking. A number of separate demonstration libraries show some different approaches to accessing audio/video devices and wrapping codecs with .NET. 
-   - [SIPSorceryMedia.Windows](https://github.com/sipsorcery-org/SIPSorceryMedia.Windows): An example of a Windows specific library that provides audio capture and playback. 
-   - [SIPSorceryMedia.Encoders](https://github.com/sipsorcery-org/SIPSorceryMedia.Encoders): An example of a Windows specific wrapper for the [VP8](https://www.webmproject.org/) video codec.
-   - [SIPSorceryMedia.FFmpeg](SIPSorceryMedia.FFmpeg/): An example of a cross platform library that features audio and video codecs using PInvoke and [FFmpeg](https://ffmpeg.org/).
-   - [SIPSorceryMedia.SDL2](https://github.com/sipsorcery-org/SIPSorceryMedia.SDL2): An example of integrating the cross-platform [SDL2](https://www.libsdl.org/index.php) Simple Direct Media Layer library.
+ - The main `SIPSorcery` library does not provide access to audio and video devices or native codecs. Two separate library packages can be used depending on the runtime target:
+   - [SIPSorceryMedia.Windows](src/SIPSorceryMedia.Windows): A Windows specific library that provides audio capture and playback. 
+   - [SIPSorceryMedia.FFmpeg](src/SIPSorceryMedia.FFmpeg/): A cross platform library that can be used for high performance video codecs using PInvoke and [FFmpeg](https://ffmpeg.org/).
 
- - This library provides only a small number of audio and video codecs (G711, G722 and G729). OPUS is available via [Concentus](https://github.com/lostromb/concentus). Additional codecs, particularly video ones, require C or C++ libraries. An effort is underway to port the [VP8](https://www.webmproject.org/) video codec to C# see the [VP8.Net directory](VP8.Net/).
+ - This library includes audio codecs G711, G722, G729 and, thanks to [Concentus](https://github.com/lostromb/concentus), OPUS.
+ - A C# port of the VP8 video codec is available at [SIPSorcery.VP8 directory](src/SIPSorcery.VP8/) but it should be considered experimental and performs poorly at 1080p and greater. The advantage of the VP8 .NET port is it allows video streaming with NO native dependencies required.
+ - High performance native video codecs (VP8, VP9, H264, H265 and AV1) are available via the [SIPSorcery FFmpeg](src/SIPSorceryMedia.FFmpeg/) package which in turn depends on [FFmpeg](https://ffmpeg.org/) being available at runtime. These video codecs (H264 is the fastest) can be used to stream 4k video at 30fps on a typical Windows machine. See [Video Pipeline Capacity](#video-pipeline-capacity) below for some benchmarking results.
 
 ## Installation
 
@@ -90,6 +84,42 @@ With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](
 ````ps1
 Install-Package SIPSorcery
 ````
+
+**FFmpeg Install**
+
+See [SIPSorcery FFmpeg readme](src/SIPSorceryMedia.FFmpeg/README.md).
+
+For Windows the easiest option is:
+
+````ps1
+winget install "FFmpeg (Shared)" --version 8.1
+````
+
+## Video Pipeline Capacity
+
+Video processing — and encoding in particular — is generally the bottleneck in most real-time communications libraries. The original goal of the SIPSorcery library was to support 1080p video at 30 frames per second.
+
+In June 2026, the new SIPSorcery.Diagnostics tool (the `sipsorcery-diags` command) was conceived to test various SIP, ICE, WebRTC, and benchmarking scenarios. The benchmarking has revealed that, thanks to the capabilities of the [FFmpeg](https://ffmpeg.org/) project (and the various libraries it in turn wraps), the SIPSorcery library running on a typical Windows machine with the H264 video codec is capable of processing 4K video at over 30fps and 1080p at over 100fps.
+
+Sample test results are shown below.
+
+### Machine
+
+| CPU | Cores | Logical processors | Memory |
+| --- | --- | --- | --- |
+| Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz | 10 | 20 | 31.8 GB |
+
+### Results
+
+| Preset | Encode vp8.net | Encode ffmpeg H264 | Encode ffmpeg VP8 | Decode H264 (ffmpeg) | Decode VP8 (ffmpeg) | Decode VP8 (vp8.net) | Plumbing (no codec) |
+|---|---|---|---|---|---|---|---|
+| 480p | 74.9 | 500.1 | 361.5 | 120 | 120 | 60 | 6435.4 |
+| 720p | 23.3 | 341.1 | 132.4 | 120 | 120 | 30 | 1735.5 |
+| 1080p | 9 | 174.3 | 52.8 | 120 | 120 | 15 | 1084.9 |
+| 1440p | 5.1 | 95.1 | 37.7 | 90 | 90 | n/a | 525.3 |
+| 4k | 1.9 | 48.7 | 31.6 | 30 | 30 | n/a | 367.3 |
+
+_Generated 2026-06-16 09:31; duration 6s/run, 1 run(s)/point._
 
 ## Documentation
 
@@ -147,7 +177,6 @@ The example requires two steps:
 
  The full project file and code are available at [WebRTC Get Started](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCGetStarted).
 
-The example relies on the Windows specific `SIPSorceryMedia.Encoders` package, which is mainly a wrapper around [libvpx](https://chromium.googlesource.com/webm/libvpx). Hopefully in the future there will be equivalent packages for other platforms.
 
 **Step 1:**
 
@@ -155,7 +184,7 @@ The example relies on the Windows specific `SIPSorceryMedia.Encoders` package, w
 dotnet new console --name WebRTCGetStarted
 cd WebRTCGetStarted
 dotnet add package SIPSorcery
-dotnet add package SIPSorceryMedia.Encoders
+dotnet add package SIPSorcery.VP8
 # Paste the code below into Program.cs.
 dotnet run
 ````
@@ -167,7 +196,7 @@ using System.Net;
 using System.Threading.Tasks;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Encoders;
+using Vpx.Net;
 using WebSocketSharp.Server;
 
 namespace demo
@@ -196,7 +225,7 @@ namespace demo
         {
             var pc = new RTCPeerConnection(null);
 
-            var testPatternSource = new VideoTestPatternSource(new VpxVideoEncoder());
+            var testPatternSource = new VideoTestPatternSource(new VP8Codec());
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);
