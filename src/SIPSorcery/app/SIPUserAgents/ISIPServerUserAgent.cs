@@ -45,7 +45,7 @@ namespace SIPSorcery.SIP.App
         SIPDialogue Answer(string contentType, string body, SIPDialogueTransferModesEnum transferMode);
         SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogueTransferModesEnum transferMode);
         SIPDialogue Answer(string contentType, string body, SIPDialogueTransferModesEnum transferMode, string[] customHeaders);
-        SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogueTransferModesEnum transferMode, string[] customHeaders);
+        SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogueTransferModesEnum transferMode, string[] customHeaders, SIPContactHeader contactHeader);
         void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase);
         void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders);
         void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI);

@@ -818,9 +818,9 @@ namespace SIPSorcery.SIP.App
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
         /// <param name="mediaSession">The media session used for this call</param>
         /// <param name="publicIpAddress">The public IP address to use in SDP</param>
-        public Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, IPAddress publicIpAddress = null)
+        public Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, IPAddress publicIpAddress = null, SIPContactHeader contactHeader = null)
         {
-            return Answer(uas, mediaSession, null, publicIpAddress);
+            return Answer(uas, mediaSession, null, publicIpAddress, contactHeader);
         }
 
         /// <summary>
@@ -837,12 +837,12 @@ namespace SIPSorcery.SIP.App
         /// <param name="publicIpAddress">The public IP address to use in SDP</param>
         /// <returns>True if the call was successfully answered or false if there was a problem
         /// such as incompatible codecs.</returns>
-        public async Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders, IPAddress publicIpAddress = null)
+        public async Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders, IPAddress publicIpAddress = null, SIPContactHeader contactHeader = null)
         {
             try
             {
                 await m_semaphoreSlim.WaitAsync().ConfigureAwait(false);
-                return await AnswerSynchronised(uas, mediaSession, customHeaders, publicIpAddress).ConfigureAwait(false);
+                return await AnswerSynchronised(uas, mediaSession, customHeaders, publicIpAddress, contactHeader).ConfigureAwait(false);
             }
             finally
             {
@@ -850,7 +850,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private async Task<bool> AnswerSynchronised(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders, IPAddress publicIpAddress)
+        private async Task<bool> AnswerSynchronised(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders, IPAddress publicIpAddress, SIPContactHeader contactHeader)
         {
             if (m_sipDialogue != null && !IsReplacingCurrentDialog(uas.ClientTransaction.TransactionRequest))
             {
@@ -928,7 +928,7 @@ namespace SIPSorcery.SIP.App
                 TaskCompletionSource<SIPDialogue> dialogueCreatedTcs = new TaskCompletionSource<SIPDialogue>(TaskCreationOptions.RunContinuationsAsynchronously);
                 m_uas.OnDialogueCreated += (dialogue) => dialogueCreatedTcs.TrySetResult(dialogue);
 
-                m_uas.Answer(m_sdpContentType, sdp, null, SIPDialogueTransferModesEnum.Default, customHeaders);
+                m_uas.Answer(m_sdpContentType, sdp, null, SIPDialogueTransferModesEnum.Default, customHeaders, contactHeader);
 
                 await Task.WhenAny(dialogueCreatedTcs.Task, Task.Delay(WAIT_DIALOG_TIMEOUT)).ConfigureAwait(false);
 
