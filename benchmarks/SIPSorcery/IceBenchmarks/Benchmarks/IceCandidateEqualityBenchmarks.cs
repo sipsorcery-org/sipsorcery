@@ -22,12 +22,12 @@ public class IceCandidateEqualityBenchmarks
     public bool Equals_ToString() => _candidate1.ToString() == _candidate2.ToString();
 
     [Benchmark]
-    public bool Equals_Equatable()
+    public bool Equals_IsEquivalent()
     {
 #if LibVersion
         return false;
 #else
-        return _candidate1 == _candidate2;
+        return _candidate1.IsEquivalent(_candidate2);
 #endif
     }
 }

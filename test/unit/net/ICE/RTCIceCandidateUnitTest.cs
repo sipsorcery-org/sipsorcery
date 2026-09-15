@@ -468,10 +468,10 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that two identical host candidates are equal using IEquatable implementation.
+        /// Tests that two identical host candidates are equivalent.
         /// </summary>
         [Fact]
-        public void HostCandidatesEqualityUnitTest()
+        public void HostCandidatesEquivalenceUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -479,19 +479,18 @@ namespace SIPSorcery.Net.UnitTests
             var candidate1 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
             var candidate2 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
 
-            Assert.True(candidate1.Equals(candidate2));
-            Assert.True(candidate2.Equals(candidate1));
-            Assert.Equal(candidate1.GetHashCode(), candidate2.GetHashCode());
+            Assert.True(candidate1.IsEquivalent(candidate2));
+            Assert.True(candidate2.IsEquivalent(candidate1));
 
-            // Verify that equality matches ToString equality
-            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.Equals(candidate2));
+            // Verify that equivalence matches ToString equality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
         }
 
         /// <summary>
-        /// Tests that two different host candidates are not equal.
+        /// Tests that two different host candidates are not equivalent.
         /// </summary>
         [Fact]
-        public void HostCandidatesInequalityUnitTest()
+        public void HostCandidatesNonEquivalenceUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -499,18 +498,18 @@ namespace SIPSorcery.Net.UnitTests
             var candidate1 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
             var candidate2 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.51 61680 typ host generation 0");
 
-            Assert.False(candidate1.Equals(candidate2));
-            Assert.False(candidate2.Equals(candidate1));
+            Assert.False(candidate1.IsEquivalent(candidate2));
+            Assert.False(candidate2.IsEquivalent(candidate1));
 
-            // Verify that inequality matches ToString inequality
-            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.Equals(candidate2));
+            // Verify that non-equivalence matches ToString inequality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
         }
 
         /// <summary>
-        /// Tests that two identical srflx candidates are equal.
+        /// Tests that two identical srflx candidates are equivalent.
         /// </summary>
         [Fact]
-        public void SrflxCandidatesEqualityUnitTest()
+        public void SrflxCandidatesEquivalenceUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -518,19 +517,18 @@ namespace SIPSorcery.Net.UnitTests
             var candidate1 = RTCIceCandidate.Parse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 0.0.0.0 rport 0 generation 0");
             var candidate2 = RTCIceCandidate.Parse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 0.0.0.0 rport 0 generation 0");
 
-            Assert.True(candidate1.Equals(candidate2));
-            Assert.True(candidate2.Equals(candidate1));
-            Assert.Equal(candidate1.GetHashCode(), candidate2.GetHashCode());
+            Assert.True(candidate1.IsEquivalent(candidate2));
+            Assert.True(candidate2.IsEquivalent(candidate1));
 
-            // Verify that equality matches ToString equality
-            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.Equals(candidate2));
+            // Verify that equivalence matches ToString equality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
         }
 
         /// <summary>
-        /// Tests that two different srflx candidates are not equal.
+        /// Tests that two different srflx candidates are not equivalent.
         /// </summary>
         [Fact]
-        public void SrflxCandidatesInequalityUnitTest()
+        public void SrflxCandidatesNonEquivalenceUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -538,17 +536,17 @@ namespace SIPSorcery.Net.UnitTests
             var candidate1 = RTCIceCandidate.Parse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 192.168.1.1 rport 5000 generation 0");
             var candidate2 = RTCIceCandidate.Parse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 192.168.1.2 rport 5000 generation 0");
 
-            Assert.False(candidate1.Equals(candidate2));
+            Assert.False(candidate1.IsEquivalent(candidate2));
 
-            // Verify that inequality matches ToString inequality
-            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.Equals(candidate2));
+            // Verify that non-equivalence matches ToString inequality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
         }
 
         /// <summary>
-        /// Tests that two identical TCP candidates are equal.
+        /// Tests that two identical TCP candidates are equivalent.
         /// </summary>
         [Fact]
-        public void TcpCandidatesEqualityUnitTest()
+        public void TcpCandidatesEquivalenceUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -556,49 +554,33 @@ namespace SIPSorcery.Net.UnitTests
             var candidate1 = RTCIceCandidate.Parse("4 1 TCP 2105458943 10.0.1.16 9 typ host tcptype active generation 0");
             var candidate2 = RTCIceCandidate.Parse("4 1 TCP 2105458943 10.0.1.16 9 typ host tcptype active generation 0");
 
-            Assert.True(candidate1.Equals(candidate2));
-            Assert.True(candidate2.Equals(candidate1));
-            Assert.Equal(candidate1.GetHashCode(), candidate2.GetHashCode());
+            Assert.True(candidate1.IsEquivalent(candidate2));
+            Assert.True(candidate2.IsEquivalent(candidate1));
 
-            // Verify that equality matches ToString equality
-            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.Equals(candidate2));
+            // Verify that equivalence matches ToString equality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
         }
 
         /// <summary>
-        /// Tests equality with null reference.
+        /// Tests equivalence with a null reference.
         /// </summary>
         [Fact]
-        public void CandidateEqualityWithNullUnitTest()
+        public void CandidateEquivalenceWithNullUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
 
-            Assert.False(candidate.Equals(null));
-            Assert.False(candidate.Equals((IRTCIceCandidate)null));
+            Assert.False(candidate.IsEquivalent(null));
+            Assert.False(candidate.IsEquivalent((IRTCIceCandidate)null));
         }
 
         /// <summary>
-        /// Tests equality with object of different type.
+        /// Tests that two candidates created via constructor are equivalent when they have the same properties.
         /// </summary>
         [Fact]
-        public void CandidateEqualityWithDifferentTypeUnitTest()
-        {
-            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
-            logger.BeginScope(TestHelper.GetCurrentMethodName());
-
-            var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
-
-            Assert.False(candidate.Equals("not a candidate"));
-            Assert.False(candidate.Equals(42));
-        }
-
-        /// <summary>
-        /// Tests that two candidates created via constructor are equal when they have the same properties.
-        /// </summary>
-        [Fact]
-        public void ConstructedCandidatesEqualityUnitTest()
+        public void ConstructedCandidatesEquivalenceUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -606,18 +588,17 @@ namespace SIPSorcery.Net.UnitTests
             var candidate1 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.host);
             var candidate2 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.host);
 
-            Assert.True(candidate1.Equals(candidate2));
-            Assert.Equal(candidate1.GetHashCode(), candidate2.GetHashCode());
+            Assert.True(candidate1.IsEquivalent(candidate2));
 
-            // Verify that equality matches ToString equality
-            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.Equals(candidate2));
+            // Verify that equivalence matches ToString equality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
         }
 
         /// <summary>
-        /// Tests that candidates with different ports are not equal.
+        /// Tests that candidates with different ports are not equivalent.
         /// </summary>
         [Fact]
-        public void CandidatesDifferentPortInequalityUnitTest()
+        public void CandidatesDifferentPortNonEquivalenceUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -625,17 +606,17 @@ namespace SIPSorcery.Net.UnitTests
             var candidate1 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.host);
             var candidate2 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5001, RTCIceCandidateType.host);
 
-            Assert.False(candidate1.Equals(candidate2));
+            Assert.False(candidate1.IsEquivalent(candidate2));
 
-            // Verify that inequality matches ToString inequality
-            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.Equals(candidate2));
+            // Verify that non-equivalence matches ToString inequality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
         }
 
         /// <summary>
-        /// Tests that candidates with different protocols are not equal.
+        /// Tests that candidates with different protocols are not equivalent.
         /// </summary>
         [Fact]
-        public void CandidatesDifferentProtocolInequalityUnitTest()
+        public void CandidatesDifferentProtocolNonEquivalenceUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -643,17 +624,17 @@ namespace SIPSorcery.Net.UnitTests
             var candidate1 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.host);
             var candidate2 = new RTCIceCandidate(RTCIceProtocol.tcp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.host);
 
-            Assert.False(candidate1.Equals(candidate2));
+            Assert.False(candidate1.IsEquivalent(candidate2));
 
-            // Verify that inequality matches ToString inequality
-            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.Equals(candidate2));
+            // Verify that non-equivalence matches ToString inequality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
         }
 
         /// <summary>
-        /// Tests that candidates with different types are not equal.
+        /// Tests that candidates with different types are not equivalent.
         /// </summary>
         [Fact]
-        public void CandidatesDifferentTypeInequalityUnitTest()
+        public void CandidatesDifferentTypeNonEquivalenceUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -661,36 +642,35 @@ namespace SIPSorcery.Net.UnitTests
             var candidate1 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.host);
             var candidate2 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.srflx);
 
-            Assert.False(candidate1.Equals(candidate2));
+            Assert.False(candidate1.IsEquivalent(candidate2));
 
-            // Verify that inequality matches ToString inequality
-            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.Equals(candidate2));
+            // Verify that non-equivalence matches ToString inequality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
         }
 
         /// <summary>
-        /// Tests self equality (reflexive property).
+        /// Tests self equivalence (reflexive property).
         /// </summary>
         [Fact]
-        public void CandidateSelfEqualityUnitTest()
+        public void CandidateSelfEquivalenceUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
 
-            Assert.True(candidate.Equals(candidate));
-            Assert.Equal(candidate.GetHashCode(), candidate.GetHashCode());
+            Assert.True(candidate.IsEquivalent(candidate));
         }
 
         /// <summary>
-        /// Tests that equality is consistent with ToString comparison across various candidate types.
+        /// Tests that equivalence is consistent with ToString comparison across various candidate types.
         /// </summary>
         [Theory]
         [InlineData("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0")]
         [InlineData("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 192.168.1.1 rport 5000 generation 0")]
         [InlineData("4 1 TCP 2105458943 10.0.1.16 9 typ host tcptype active generation 0")]
         [InlineData("1 1 udp 100 10.0.0.1 5000 typ relay raddr 192.168.1.1 rport 5000 generation 0")]
-        public void CandidateEqualityConsistentWithToStringUnitTest(string candidateString)
+        public void CandidateEquivalenceConsistentWithToStringUnitTest(string candidateString)
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -698,19 +678,19 @@ namespace SIPSorcery.Net.UnitTests
             var candidate1 = RTCIceCandidate.Parse(candidateString);
             var candidate2 = RTCIceCandidate.Parse(candidateString);
 
-            // The primary assertion: equality matches ToString equality
+            // The primary assertion: equivalence matches ToString equality
             bool toStringEqual = candidate1.ToString() == candidate2.ToString();
-            bool equalsEqual = candidate1.Equals(candidate2);
+            bool areEquivalent = candidate1.IsEquivalent(candidate2);
 
-            Assert.Equal(toStringEqual, equalsEqual);
-            Assert.True(equalsEqual, $"Two candidates parsed from identical strings should be equal");
+            Assert.Equal(toStringEqual, areEquivalent);
+            Assert.True(areEquivalent, "Two candidates parsed from identical strings should be equivalent");
         }
 
         /// <summary>
-        /// Tests the == operator with equal candidates.
+        /// Tests IsEquivalent with equivalent candidates.
         /// </summary>
         [Fact]
-        public void OperatorEqualityWithEqualCandidatesUnitTest()
+        public void IsEquivalentWithEquivalentCandidatesUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -718,15 +698,14 @@ namespace SIPSorcery.Net.UnitTests
             var candidate1 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
             var candidate2 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
 
-            Assert.True(candidate1 == candidate2);
-            Assert.False(candidate1 != candidate2);
+            Assert.True(candidate1.IsEquivalent(candidate2));
         }
 
         /// <summary>
-        /// Tests the != operator with different candidates.
+        /// Tests IsEquivalent with non-equivalent candidates.
         /// </summary>
         [Fact]
-        public void OperatorInequalityWithDifferentCandidatesUnitTest()
+        public void IsEquivalentWithNonEquivalentCandidatesUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -734,51 +713,42 @@ namespace SIPSorcery.Net.UnitTests
             var candidate1 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
             var candidate2 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.51 61680 typ host generation 0");
 
-            Assert.True(candidate1 != candidate2);
-            Assert.False(candidate1 == candidate2);
+            Assert.False(candidate1.IsEquivalent(candidate2));
         }
 
         /// <summary>
-        /// Tests the == operator with null references.
+        /// Tests IsEquivalent with a null candidate.
         /// </summary>
         [Fact]
-        public void OperatorEqualityWithNullUnitTest()
+        public void IsEquivalentWithNullCandidateUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
-            RTCIceCandidate nullCandidate = null;
-
-            Assert.False(candidate == null);
-            Assert.False(null == candidate);
-            Assert.True(nullCandidate == null);
-            Assert.True(null == nullCandidate);
+            Assert.False(candidate.IsEquivalent(null));
         }
 
         /// <summary>
-        /// Tests the != operator with null references.
+        /// Tests IsEquivalent with a null IRTCIceCandidate.
         /// </summary>
         [Fact]
-        public void OperatorInequalityWithNullUnitTest()
+        public void IsEquivalentWithNullInterfaceUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
-            RTCIceCandidate nullCandidate = null;
+            IRTCIceCandidate nullCandidate = null;
 
-            Assert.True(candidate != null);
-            Assert.True(null != candidate);
-            Assert.False(nullCandidate != null);
-            Assert.False(null != nullCandidate);
+            Assert.False(candidate.IsEquivalent(nullCandidate));
         }
 
         /// <summary>
-        /// Tests that == operator matches Equals method and ToString equality.
+        /// Tests that IsEquivalent matches ToString equality.
         /// </summary>
         [Fact]
-        public void OperatorEqualityConsistentWithEqualsAndToStringUnitTest()
+        public void IsEquivalentConsistentWithToStringUnitTest()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
@@ -787,13 +757,11 @@ namespace SIPSorcery.Net.UnitTests
             var candidate2 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
             var candidate3 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.51 61680 typ host generation 0");
 
-            // Equal candidates
-            Assert.Equal(candidate1 == candidate2, candidate1.Equals(candidate2));
-            Assert.Equal(candidate1 == candidate2, candidate1.ToString() == candidate2.ToString());
+            // Equivalent candidates
+            Assert.Equal(candidate1.IsEquivalent(candidate2), candidate1.ToString() == candidate2.ToString());
 
-            // Different candidates
-            Assert.Equal(candidate1 == candidate3, candidate1.Equals(candidate3));
-            Assert.Equal(candidate1 == candidate3, candidate1.ToString() == candidate3.ToString());
+            // Non-equivalent candidates
+            Assert.Equal(candidate1.IsEquivalent(candidate3), candidate1.ToString() == candidate3.ToString());
         }
     }
 }
