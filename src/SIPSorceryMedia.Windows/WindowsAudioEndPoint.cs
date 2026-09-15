@@ -165,7 +165,7 @@ namespace SIPSorceryMedia.Windows
         {
             _audioFormatManager.SetSelectedFormat(audioFormat);
 
-            if (!_disableSource)
+            if (!_disableSource && WaveIn.DeviceCount > 0)
             {
                 if (_waveSourceFormat.SampleRate != _audioFormatManager.SelectedFormat.ClockRate)
                 {

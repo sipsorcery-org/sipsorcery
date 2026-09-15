@@ -6,13 +6,8 @@
     <UseWPF>true</UseWPF>
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	<AssemblyName>softphone</AssemblyName>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>Latest</LangVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove=".appveyor.yml" />
-    <None Remove="favicon.ico" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Serilog.Sinks.Debug" />
