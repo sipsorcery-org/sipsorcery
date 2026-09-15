@@ -23,6 +23,7 @@
   </Folder>
   <Folder Name="/benchmarks/" />
   <Folder Name="/benchmarks/SIPSorcery/">
+    <Project Path="benchmarks/SIPSorcery/IceBenchmarks/IceBenchmarks.csproj" />
     <Project Path="benchmarks/SIPSorcery/SdpBenchmarks/SdpBenchmarks.csproj" />
   </Folder>
   <Folder Name="/benchmarks/SIPSorceryMedia.Abstractions/">
