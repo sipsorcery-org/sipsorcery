@@ -24,7 +24,7 @@ using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.Encoders;
+using SIPSorceryMedia.FFmpeg;
 using SIPSorceryMedia.Windows;
 
 namespace SIPSorcery.SoftPhone
@@ -34,17 +34,19 @@ namespace SIPSorcery.SoftPhone
         private static string _sdpMimeContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
 
-        private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
-        private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
-        private string m_sipServer = SIPSoftPhoneState.SIPServer;
-        private string m_sipFromName = SIPSoftPhoneState.SIPFromName;
+        private string m_sipUsername = SIPSoftPhoneState.Settings.SIPUsername;
+        private string m_sipPassword = SIPSoftPhoneState.Settings.SIPPassword;
+        private string m_sipServer = SIPSoftPhoneState.Settings.SIPServer;
+        private string m_sipFromName = SIPSoftPhoneState.Settings.SIPFromName;
 
         private SIPTransport m_sipTransport;
         private SIPUserAgent m_userAgent;
         private SIPServerUserAgent m_pendingIncomingCall;
         private CancellationTokenSource _cts = new CancellationTokenSource();
 
-        private int m_audioOutDeviceIndex = SIPSoftPhoneState.AudioOutDeviceIndex;
+        private int m_audioOutDeviceIndex = SIPSoftPhoneState.Settings.AudioOutDeviceIndex;
+
+        private bool m_disableVideo = SIPSoftPhoneState.Settings.DisableVideo;
 
         [GeneratedRegex(@"^SIP/2\.0 (?<statusCode>\d{3})")]
         private static partial Regex SipFragStatusCodeRegex();
@@ -227,9 +229,9 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Takes the remote call party off hold.
         /// </summary>
-        public void TakeOffHold()
+        public async Task TakeOffHold()
         {
-            MediaSession.TakeOffHold();
+            await MediaSession.TakeOffHold();
             m_userAgent.TakeOffHold();
             StatusMessage(this, "Local party taken off on hold");
         }
@@ -298,23 +300,34 @@ namespace SIPSorcery.SoftPhone
         private VoIPMediaSession CreateMediaSession()
         {
             var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), m_audioOutDeviceIndex);
-            var windowsVideoEndPoint = new WindowsVideoEndPoint(new VpxVideoEncoder());
 
             MediaEndPoints mediaEndPoints = new MediaEndPoints
             {
                 AudioSink = windowsAudioEndPoint,
-                AudioSource = windowsAudioEndPoint,
-                VideoSink = windowsVideoEndPoint,
-                VideoSource = windowsVideoEndPoint,
+                AudioSource = windowsAudioEndPoint
             };
 
-            // Fallback video source if a Windows webcam cannot be accessed.
-            var testPatternSource = new VideoTestPatternSource(new VpxVideoEncoder());
+            if (m_disableVideo)
+            {
+                var audioOnlyMediaSession = new VoIPMediaSession(mediaEndPoints);
+                audioOnlyMediaSession.AcceptRtpFromAny = true;
+                return audioOnlyMediaSession;
+            }
+            else
+            {
+                var windowsVideoEndPoint = new WindowsVideoEndPoint(new FFmpegVideoEncoder());
 
-            var voipMediaSession = new VoIPMediaSession(mediaEndPoints, testPatternSource);
-            voipMediaSession.AcceptRtpFromAny = true;
+                mediaEndPoints.VideoSink = windowsVideoEndPoint;
+                mediaEndPoints.VideoSource = windowsVideoEndPoint;
 
-            return voipMediaSession;
+                // Fallback video source if a Windows webcam cannot be accessed.
+                var testPatternSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
+
+                var audioAndVideoMediaSession = new VoIPMediaSession(mediaEndPoints, testPatternSource);
+                audioAndVideoMediaSession.AcceptRtpFromAny = true;
+
+                return audioAndVideoMediaSession;
+            }
         }
 
         /// <summary>

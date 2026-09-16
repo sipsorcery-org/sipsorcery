@@ -9,36 +9,45 @@
 // 
 // History:
 // 27 Mar 2012	Aaron Clauson	Refactored, Hobart, Australia.
+// 15 Sep 2026	Aaron Clauson	Switched from App.config to appsettings.json.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Configuration;
 using System.Net;
-using System.Xml;
+using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Extensions.Logging;
 
 namespace SIPSorcery.SoftPhone
 {
-    public class SIPSoftPhoneState : IConfigurationSectionHandler
+    public static class SIPSoftPhoneState
     {
-        private const string SIPSOFTPHONE_CONFIGNODE_NAME = "sipsoftphone";
-        private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
-        private const string STUN_SERVER_KEY = "STUNServerHostname";
+        private const string APPSETTINGS_FILENAME = "appsettings.json";
+        private const string ENVIRONMENT_VARIABLE_PREFIX = "SOFTPHONE_";
+        private const string ENVIRONMENT_VARIABLE_NAME = "DOTNET_ENVIRONMENT";
+        private const string DEVELOPMENT_ENVIRONMENT = "Development";
+        private const string PRODUCTION_ENVIRONMENT = "Production";
 
-        private static readonly XmlNode m_sipSoftPhoneConfigNode;
-        public static readonly XmlNode SIPSocketsNode;
-        public static readonly string STUNServerHostname;
+        /// <summary>
+        /// The environment name used to select the appsettings.{Environment}.json file. Taken from
+        /// the DOTNET_ENVIRONMENT environment variable and if that's not set defaults to
+        /// Development for a Debug build and Production for a Release build.
+        /// </summary>
+        public static readonly string EnvironmentName;
 
-        public static readonly string SIPUsername = ConfigurationManager.AppSettings["SIPUsername"];    // Get the SIP username from the config file.
-        public static readonly string SIPPassword = ConfigurationManager.AppSettings["SIPPassword"];    // Get the SIP password from the config file.
-        public static readonly string SIPServer = ConfigurationManager.AppSettings["SIPServer"];        // Get the SIP server from the config file.
-        public static readonly string SIPFromName = ConfigurationManager.AppSettings["SIPFromName"];    // Get the SIP From display name from the config file.
-        public static readonly bool UseAudioScope = Boolean.Parse(ConfigurationManager.AppSettings["UseAudioScope"]);
-        public static int AudioOutDeviceIndex = Int32.Parse(ConfigurationManager.AppSettings["AudioOutDeviceIndex"]);
+        /// <summary>
+        /// The raw configuration. Useful if a setting needs to be read that's not on
+        /// the <see cref="Settings"/> object.
+        /// </summary>
+        public static readonly IConfiguration Configuration;
+
+        /// <summary>
+        /// The application's settings as loaded at start up.
+        /// </summary>
+        public static readonly SoftphoneSettings Settings;
 
         public static IPAddress PublicIPAddress;
 
@@ -46,25 +55,28 @@ namespace SIPSorcery.SoftPhone
         {
             AddDebugLogger();
 
-            if (ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME) != null)
+            EnvironmentName = Environment.GetEnvironmentVariable(ENVIRONMENT_VARIABLE_NAME);
+            if (string.IsNullOrWhiteSpace(EnvironmentName))
             {
-                m_sipSoftPhoneConfigNode = (XmlNode)ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME);
+#if DEBUG
+                EnvironmentName = DEVELOPMENT_ENVIRONMENT;
+#else
+                EnvironmentName = PRODUCTION_ENVIRONMENT;
+#endif
             }
 
-            if (m_sipSoftPhoneConfigNode != null)
-            {
-                SIPSocketsNode = m_sipSoftPhoneConfigNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
-            }
+            // The settings files are copied beside the executable so the base path needs to be
+            // the application's directory rather than the current working directory. Each source
+            // overrides the ones before it.
+            Configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile(APPSETTINGS_FILENAME, optional: false, reloadOnChange: false)
+                .AddJsonFile($"appsettings.{EnvironmentName}.json", optional: true, reloadOnChange: false)
+                .AddEnvironmentVariables(ENVIRONMENT_VARIABLE_PREFIX)
+                .Build();
 
-            STUNServerHostname = ConfigurationManager.AppSettings[STUN_SERVER_KEY];
-        }
-
-        /// <summary>
-        /// Handler for processing the App.Config file and retrieving a custom XML node.
-        /// </summary>
-        public object Create(object parent, object context, XmlNode configSection)
-        {
-            return configSection;
+            Settings = Configuration.GetSection(SoftphoneSettings.SectionName).Get<SoftphoneSettings>()
+                ?? new SoftphoneSettings();
         }
 
         private static void AddDebugLogger()
