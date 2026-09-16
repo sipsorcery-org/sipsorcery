@@ -433,5 +433,82 @@ namespace SIPSorcery.Net
             return (uint)(c ^ 0xFFFFFFFF);
         }
 
+        /// <summary>
+        /// Determines whether the specified ICE candidate is equivalent to this instance.
+        /// </summary>
+        /// <param name="other">The ICE candidate to compare against this instance.</param>
+        /// <returns><see langword="true"/> when the candidates are equivalent; otherwise, <see langword="false"/>.</returns>
+        public bool IsEquivalent(IRTCIceCandidate other)
+        {
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other is null)
+            {
+                return false;
+            }
+
+            var usesTcpFormat = protocol == RTCIceProtocol.tcp;
+            var otherUsesTcpFormat = other.protocol == RTCIceProtocol.tcp;
+
+            if (!StringFieldEquals(foundation, other.foundation) ||
+                component != other.component ||
+                usesTcpFormat != otherUsesTcpFormat ||
+                priority != other.priority ||
+                !StringFieldEquals(address, other.address) ||
+                port != other.port ||
+                type != other.type)
+            {
+                return false;
+            }
+
+            if (usesTcpFormat && tcpType != other.tcpType)
+            {
+                return false;
+            }
+
+            if (type is RTCIceCandidateType.host or RTCIceCandidateType.prflx)
+            {
+                return true;
+            }
+
+            return relatedPort == other.relatedPort &&
+                AddressEquals(relatedAddress, other.relatedAddress);
+
+            static bool StringFieldEquals(string left, string right)
+            {
+                if (left is null)
+                {
+                    return string.IsNullOrEmpty(right);
+                }
+
+                if (right is null)
+                {
+                    return left.Length == 0;
+                }
+
+                return string.Equals(left, right, StringComparison.Ordinal);
+            }
+
+            static bool AddressEquals(string left, string right)
+            {
+                const string anyAddress = "0.0.0.0";
+
+                if (string.IsNullOrWhiteSpace(left))
+                {
+                    return string.IsNullOrWhiteSpace(right) ||
+                        string.Equals(right, anyAddress, StringComparison.Ordinal);
+                }
+
+                if (string.IsNullOrWhiteSpace(right))
+                {
+                    return string.Equals(left, anyAddress, StringComparison.Ordinal);
+                }
+
+                return string.Equals(left, right, StringComparison.Ordinal);
+            }
+        }
     }
 }
