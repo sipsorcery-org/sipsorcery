@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -21,6 +22,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using AudioScope;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
@@ -32,6 +34,13 @@ namespace SIPSorcery.SoftPhone
 {
     public partial class SoftPhone : Window
     {
+        private sealed class ClientVideoState
+        {
+            public required Image Image { get; init; }
+
+            public WriteableBitmap Bitmap { get; set; }
+        }
+
         private const int SIP_CLIENT_COUNT = 2;                             // The number of SIP clients (simultaneous calls) that the UI can handle.
         private const int ZINDEX_TOP = 10;
         private const int REGISTRATION_EXPIRY = 180;
@@ -48,10 +57,7 @@ namespace SIPSorcery.SoftPhone
         private SoftphoneSTUNClient _stunClient;                    // STUN client to periodically check the public IP address.
         private SIPRegistrationUserAgent _sipRegistrationClient;    // Can be used to register with an external SIP provider if incoming calls are required.
 
-#pragma warning disable CS0649
-        private WriteableBitmap _client0WriteableBitmap;
-        private WriteableBitmap _client1WriteableBitmap;
-#pragma warning restore CS0649
+        private ClientVideoState[] _clientVideoStates;
 
         private AudioScope.AudioScopeRenderer _audioScope0;
         private AudioScope.AudioScopeRenderer _audioScope1;
@@ -59,6 +65,14 @@ namespace SIPSorcery.SoftPhone
         public SoftPhone()
         {
             InitializeComponent();
+
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
+
+            _clientVideoStates =
+            [
+                new ClientVideoState { Image = _client0Video },
+                new ClientVideoState { Image = _client1Video }
+            ];
 
             if (m_useAudioScope)
             {
@@ -169,10 +183,10 @@ namespace SIPSorcery.SoftPhone
                     _client0Video.Visibility = Visibility.Collapsed;
                     SetStatusText(m_signallingStatus, "Ready");
 
-                    if (_sipClients?.Count > 0 && _sipClients[0]?.MediaSession != null)
+                    if (_sipClients?.Count > 0 && _sipClients[0] != null)
                     {
-                        _sipClients[0].MediaSession.OnVideoSinkSample -= OnClientZeroVideoSinkSample;
-                        _sipClients[0].MediaSession.OnAudioFrameReceived -= OnClientZeroAudioFrameReceived;
+                        _sipClients[0].OnRemoteVideo -= OnClientZeroVideoSinkSample;
+                        _sipClients[0].OnRemoteAudio -= OnClientZeroAudioFrameReceived;
                     }
                 });
             }
@@ -195,10 +209,10 @@ namespace SIPSorcery.SoftPhone
                     SetStatusText(m_signallingStatus, "Ready");
                 });
 
-                if (_sipClients?.Count > 1 && _sipClients[1]?.MediaSession != null)
+                if (_sipClients?.Count > 1 && _sipClients[1] != null)
                 {
-                    _sipClients[1].MediaSession.OnVideoSinkSample -= OnClientOneVideoSinkSample;
-                    _sipClients[1].MediaSession.OnAudioFrameReceived -= OnClientOneAudioFrameReceived;
+                    _sipClients[1].OnRemoteVideo -= OnClientOneVideoSinkSample;
+                    _sipClients[1].OnRemoteAudio -= OnClientOneAudioFrameReceived;
                 }
             }
         }
@@ -261,7 +275,6 @@ namespace SIPSorcery.SoftPhone
             {
                 if (_sipClients[1].IsCallActive && !_sipClients[1].IsOnHold)
                 {
-                    //_sipClients[1].PutOnHold(_onHoldAudioScopeGL);
                     await _sipClients[1].PutOnHold();
                 }
 
@@ -278,15 +291,15 @@ namespace SIPSorcery.SoftPhone
 
                     m_call2ActionsGrid.IsEnabled = true;
 
-                    if (_sipClients[0].MediaSession.HasVideo)
+                    if (_sipClients[0].HasVideo)
                     {
-                        _sipClients[0].MediaSession.OnVideoSinkSample += OnClientZeroVideoSinkSample;
+                        _sipClients[0].OnRemoteVideo += OnClientZeroVideoSinkSample;
                         _client0Video.Visibility = Visibility.Visible;
                     }
                     else if (m_useAudioScope)
                     {
                         // No video so use the audio scope to provide a visual representation of the audio stream.
-                        _sipClients[0].MediaSession.OnAudioFrameReceived += OnClientZeroAudioFrameReceived;
+                        _sipClients[0].OnRemoteAudio += OnClientZeroAudioFrameReceived;
                        _client0Video.Visibility = Visibility.Visible;
                     }
                 });
@@ -305,15 +318,15 @@ namespace SIPSorcery.SoftPhone
                     m_hold2Button.Visibility = Visibility.Visible;
                     m_attendedTransferButton.Visibility = Visibility.Visible;
 
-                    if (_sipClients[1].MediaSession.HasVideo)
+                    if (_sipClients[1].HasVideo)
                     {
-                        _sipClients[1].MediaSession.OnVideoSinkSample += OnClientOneVideoSinkSample;
+                        _sipClients[1].OnRemoteVideo += OnClientOneVideoSinkSample;
                         _client1Video.Visibility = Visibility.Visible;
                     }
                     else if (m_useAudioScope)
                     {
                         // No video so use the audio scope to provide a visual representation of the audio stream.
-                        _sipClients[1].MediaSession.OnAudioFrameReceived += OnClientOneAudioFrameReceived;
+                        _sipClients[1].OnRemoteAudio += OnClientOneAudioFrameReceived;
                         _client1Video.Visibility = Visibility.Visible;
                     }
                 });
@@ -335,22 +348,22 @@ namespace SIPSorcery.SoftPhone
             }
         }
 
-        private void OnClientZeroVideoSinkSample(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat)
-            => VideoSampleReady(sample, width, height, stride, pixelFormat, _client0WriteableBitmap, _client0Video);
+        private void OnClientZeroVideoSinkSample(RawImage rawImage)
+            => ShowClientFrame(rawImage, _clientVideoStates[0]);
 
         private void OnClientZeroAudioFrameReceived(EncodedAudioFrame encodedAudioFrame)
         {
             var videoFrame = _audioScope0.ProcessEncodedSample(encodedAudioFrame);
-            VideoSampleReady(videoFrame, AudioScopeRenderer.Width, AudioScopeRenderer.Height, AudioScopeRenderer.PIXEL_STRIDE, VideoPixelFormatsEnum.Rgb, _client0WriteableBitmap, _client0Video);
+            //VideoSampleReady(videoFrame, AudioScopeRenderer.Width, AudioScopeRenderer.Height, AudioScopeRenderer.PIXEL_STRIDE, VideoPixelFormatsEnum.Rgb, _clientVideoStates[0]);
         }
 
-        private void OnClientOneVideoSinkSample(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat)
-            => VideoSampleReady(sample, width, height, stride, pixelFormat, _client1WriteableBitmap, _client1Video);
+        private void OnClientOneVideoSinkSample(RawImage rawImage)
+            => ShowClientFrame(rawImage, _clientVideoStates[1]);
 
         private void OnClientOneAudioFrameReceived(EncodedAudioFrame encodedAudioFrame)
         {
             var videoFrame = _audioScope1.ProcessEncodedSample(encodedAudioFrame);
-            VideoSampleReady(videoFrame, AudioScopeRenderer.Width, AudioScopeRenderer.Height, AudioScopeRenderer.PIXEL_STRIDE, VideoPixelFormatsEnum.Rgb, _client1WriteableBitmap, _client1Video);
+            //VideoSampleReady(videoFrame, AudioScopeRenderer.Width, AudioScopeRenderer.Height, AudioScopeRenderer.PIXEL_STRIDE, VideoPixelFormatsEnum.Rgb, _clientVideoStates[1]);
         }
 
         /// <summary>
@@ -387,7 +400,6 @@ namespace SIPSorcery.SoftPhone
                     // Put the first call on hold.
                     if (_sipClients[0].IsCallActive)
                     {
-                        //_sipClients[0].PutOnHold(_onHoldAudioScopeGL);
                         await _sipClients[0].PutOnHold();
                         m_holdButton.Visibility = Visibility.Collapsed;
                         m_offHoldButton.Visibility = Visibility.Visible;
@@ -577,15 +589,12 @@ namespace SIPSorcery.SoftPhone
             {
                 m_holdButton.Visibility = Visibility.Collapsed;
                 m_offHoldButton.Visibility = Visibility.Visible;
-                //client.PutOnHold(_onHoldAudioScopeGL);
                 await client.PutOnHold();
-                //_sipClients[0].MediaSession.OnHoldAudioScopeSampleReady += _onHoldAudioScope.ProcessSample;
             }
             else if (client == _sipClients[1])
             {
                 m_hold2Button.Visibility = Visibility.Collapsed;
                 m_offHold2Button.Visibility = Visibility.Visible;
-                //client.PutOnHold(_onHoldAudioScopeGL);
                 await client.PutOnHold();
             }
         }
@@ -601,7 +610,6 @@ namespace SIPSorcery.SoftPhone
             {
                 m_holdButton.Visibility = Visibility.Visible;
                 m_offHoldButton.Visibility = Visibility.Collapsed;
-                //_sipClients[0].MediaSession.OnHoldAudioScopeSampleReady -= _onHoldAudioScope.ProcessSample;
             }
             else if (client == _sipClients[1])
             {
@@ -629,58 +637,77 @@ namespace SIPSorcery.SoftPhone
         /// Called when the active SIP client has a bitmap representing the remote video stream
         /// ready.
         /// </summary>
-        /// <param name="sample">The bitmap sample in pixel format BGR24.</param>
-        /// <param name="width">The bitmap width.</param>
-        /// <param name="height">The bitmap height.</param>
-        /// <param name="stride">The bitmap stride.</param>
-        private void VideoSampleReady(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat, WriteableBitmap wBmp, Image dst)
+        private void ShowClientFrame(RawImage rawImage, ClientVideoState client)
         {
-            if (sample != null && sample.Length > 0)
+            if (rawImage.PixelFormat != VideoPixelFormatsEnum.Bgr)
             {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    var bmpPixelFormat = PixelFormats.Bgr24;
-                    switch (pixelFormat)
-                    {
-                        case VideoPixelFormatsEnum.Bgr:
-                            bmpPixelFormat = PixelFormats.Bgr24;
-                            break;
-                        case VideoPixelFormatsEnum.Bgra:
-                            bmpPixelFormat = PixelFormats.Bgra32;
-                            break;
-                        case VideoPixelFormatsEnum.Rgb:
-                            bmpPixelFormat = PixelFormats.Rgb24;
-                            break;
-                        default:
-                            bmpPixelFormat = PixelFormats.Bgr24;
-                            break;
-                    }
+                logger.LogError("Cannot display decoded video sample, expected pixel format Bgr but got {PixelFormat}.",
+                    rawImage.PixelFormat);
 
-                    if (wBmp == null || wBmp.Width != width || wBmp.Height != height)
+                return;
+            }
+
+            int width = rawImage.Width;
+            int height = rawImage.Height;
+
+            // BGR24 = 3 bytes per pixel, rows aligned to 4 bytes.
+            int stride = (width * 3 + 3) & ~3;
+            int bufferSize = stride * height;
+
+            byte[] frame = ArrayPool<byte>.Shared.Rent(bufferSize);
+
+            try
+            {
+                var handle = GCHandle.Alloc(frame, GCHandleType.Pinned);
+
+                try
+                {
+                    // Copy immediately because RawImage will be reused by FFmpeg after this method returns.
+                    rawImage.CopyTo(
+                        handle.AddrOfPinnedObject(),
+                        stride);
+                }
+                finally
+                {
+                    handle.Free();
+                }
+            }
+            catch
+            {
+                ArrayPool<byte>.Shared.Return(frame);
+                throw;
+            }
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    if (client.Bitmap == null ||
+                        client.Bitmap.PixelWidth != width ||
+                        client.Bitmap.PixelHeight != height)
                     {
-                        wBmp = new WriteableBitmap(
-                            (int)width,
-                            (int)height,
+                        client.Bitmap = new WriteableBitmap(
+                            width,
+                            height,
                             96,
                             96,
-                            bmpPixelFormat,
+                            PixelFormats.Bgr24,
                             null);
 
-                        dst.Source = wBmp;
+                        client.Image.Source = client.Bitmap;
                     }
 
-                    // Reserve the back buffer for updates.
-                    wBmp.Lock();
-
-                    Marshal.Copy(sample, 0, wBmp.BackBuffer, sample.Length);
-
-                    // Specify the area of the bitmap that changed.
-                    wBmp.AddDirtyRect(new Int32Rect(0, 0, (int)width, (int)height));
-
-                    // Release the back buffer and make it available for display.
-                    wBmp.Unlock();
-                }), System.Windows.Threading.DispatcherPriority.Normal);
-            }
+                    client.Bitmap.WritePixels(
+                        new Int32Rect(0, 0, width, height),
+                        frame,
+                        stride,
+                        0);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(frame);
+                }
+            }), DispatcherPriority.Normal);
         }
 
         /// <summary>
