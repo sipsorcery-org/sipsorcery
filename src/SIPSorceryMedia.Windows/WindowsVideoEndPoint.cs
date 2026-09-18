@@ -322,7 +322,7 @@ namespace SIPSorceryMedia.Windows
 
                 if (decodedFrames == null)
                 {
-                    logger.LogWarning("VPX decode of video sample failed.");
+                    logger.LogWarning("{className} decode of video sample failed.", nameof(WindowsVideoEndPoint));
                 }
                 else
                 {
