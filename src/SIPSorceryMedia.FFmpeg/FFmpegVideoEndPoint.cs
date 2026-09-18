@@ -29,7 +29,7 @@ using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorceryMedia.FFmpeg;
 
-public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
+public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable, IVideoEndPoint
 {
     public static ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEndPoint>();
 
@@ -47,6 +47,7 @@ public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
 #pragma warning disable CS0067
     // Decoded frames are delivered via the faster RawImage event below. The byte[] variant is part of
     // the IVideoSink contract but is not currently raised by this endpoint.
+    [Obsolete("This event is not wired up. Use the OnVideoSinkDecodedSampleFaster event instead.")]
     public event VideoSinkSampleDecodedDelegate? OnVideoSinkDecodedSample;
 #pragma warning restore CS0067
 
@@ -113,7 +114,9 @@ public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
         if (_ffmpegEncoder != null)
         {
             if (FFmpegConvert.GetAVCodecID(codec) is var cdc && cdc is not null)
+            {
                 return _ffmpegEncoder.SetCodec((AVCodecID)cdc, name, opts);
+            }
             else
             {
                 logger.LogError("Codec {codec} is not supported by this endpoint.", codec);
@@ -265,4 +268,12 @@ public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
     {
         return Task.CompletedTask;
     }
+
+    public Task Start() => StartVideo();
+
+    public Task Close() => CloseVideo();
+
+    public Task Pause() => PauseVideo();
+
+    public Task Resume() => ResumeVideo();
 }
