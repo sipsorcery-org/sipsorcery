@@ -435,7 +435,7 @@ namespace SIPSorcery.Net
         /// case refers to media encoding, e.g. PCMU, OPUS. For audio payloads RTP framing is not
         /// typically used so each frame will correspond to a single RTP packet. This event
         /// aggregates receiving audio frames from all media stream attached to the RTP session.
-        /// THe media stream index can be used to identify which stream the frame is from in
+        /// The media stream index can be used to identify which stream the frame is from in
         /// the case there are multiple audio streams.
         /// </summary>
         public event Action<EncodedAudioFrame> OnAudioFrameReceived;
