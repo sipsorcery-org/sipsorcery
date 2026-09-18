@@ -1,7 +1,8 @@
 {
   "profiles": {
     "VideoPhoneCmdLine": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "dotnet run --dst=127.0.0.1:5080 --cam=0"
     }
   }
 }

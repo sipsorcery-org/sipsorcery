@@ -29,7 +29,7 @@ using SIPSorceryMedia.Windows;
 
 namespace SIPSorcery.SoftPhone
 {
-    public partial class SIPClient
+    public partial class SIPClient : IDisposable
     {
         private static string _sdpMimeContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
@@ -58,6 +58,9 @@ namespace SIPSorcery.SoftPhone
         public event Action<SIPClient> RemotePutOnHold;            // Fires when the remote call party puts us on hold.	
         public event Action<SIPClient> RemoteTookOffHold;          // Fires when the remote call party takes us off hold.
 
+        public event Action<EncodedAudioFrame> OnRemoteAudio;                        // Fires when a decoded audio sample from the remote peer is ready.
+        public event VideoSinkSampleDecodedFasterDelegate OnRemoteVideo;    // Fires when a decoded video sample from the remote peer is ready.
+
         /// <summary>
         /// Once a call is established this holds the properties of the established SIP dialogue.
         /// </summary>
@@ -66,7 +69,8 @@ namespace SIPSorcery.SoftPhone
             get { return m_userAgent.Dialogue; }
         }
 
-        public VoIPMediaSession MediaSession { get; private set; }
+        //private RTPSession MediaSession;
+        private RTCPeerConnection _rtcPeerConnection;
 
         /// <summary>
         /// Returns true of this SIP client is on an active call.
@@ -83,6 +87,8 @@ namespace SIPSorcery.SoftPhone
         {
             get { return m_userAgent.IsOnLocalHold || m_userAgent.IsOnRemoteHold; }
         }
+
+        public bool HasVideo => !m_disableVideo;
 
         public SIPClient(SIPTransport sipTransport)
         {
@@ -142,12 +148,13 @@ namespace SIPSorcery.SoftPhone
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {dstEndpoint}.");
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
-                MediaSession = CreateMediaSession();
+                //MediaSession = CreateMediaSession();
+                _rtcPeerConnection = CreateWebRtcMediaSession();
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                await m_userAgent.InitiateCallAsync(callDescriptor, MediaSession);
+                await m_userAgent.InitiateCallAsync(callDescriptor, _rtcPeerConnection);
             }
         }
 
@@ -196,12 +203,13 @@ namespace SIPSorcery.SoftPhone
                     hasVideo = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
                 }
 
-                MediaSession = CreateMediaSession();
+                //MediaSession = CreateMediaSession();
+                _rtcPeerConnection = CreateWebRtcMediaSession();
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                bool result = await m_userAgent.Answer(m_pendingIncomingCall, MediaSession);
+                bool result = await m_userAgent.Answer(m_pendingIncomingCall, _rtcPeerConnection);
                 m_pendingIncomingCall = null;
 
                 return result;
@@ -221,7 +229,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public async Task PutOnHold()
         {
-            await MediaSession.PutOnHold();
+            //await MediaSession.PutOnHold();
             m_userAgent.PutOnHold();
             StatusMessage(this, "Local party put on hold");
         }
@@ -231,7 +239,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public async Task TakeOffHold()
         {
-            await MediaSession.TakeOffHold();
+            //await MediaSession.TakeOffHold();
             m_userAgent.TakeOffHold();
             StatusMessage(this, "Local party taken off on hold");
         }
@@ -297,7 +305,7 @@ namespace SIPSorcery.SoftPhone
         /// Creates the media session to use with the SIP call.
         /// </summary>
         /// <returns>A new media session object.</returns>
-        private VoIPMediaSession CreateMediaSession()
+        private VoIPMediaSession CreateVoIPMediaSession()
         {
             var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), m_audioOutDeviceIndex);
 
@@ -326,7 +334,89 @@ namespace SIPSorcery.SoftPhone
                 var audioAndVideoMediaSession = new VoIPMediaSession(mediaEndPoints, testPatternSource);
                 audioAndVideoMediaSession.AcceptRtpFromAny = true;
 
+                //mediaEndPoints.VideoSink.VideoSinkSampleDecodedFasterDelegate += OnRemoteVideo;
+
                 return audioAndVideoMediaSession;
+            }
+        }
+
+        /// <summary>
+        /// Creates the media session to use with the SIP call.
+        /// </summary>
+        /// <returns>A new media session object.</returns>
+        private RTCPeerConnection CreateWebRtcMediaSession()
+        {
+            var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), m_audioOutDeviceIndex);
+            FFmpegVideoEndPoint videoEndPoint = null;
+
+            var pc = new RTCPeerConnection();
+            pc.AcceptRtpFromAny = true;
+
+            MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEndPoint.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            pc.addTrack(audioTrack);
+
+            pc.OnAudioFormatsNegotiated += (formats) => windowsAudioEndPoint.SetAudioSinkFormat(formats.First());
+            windowsAudioEndPoint.OnAudioSourceEncodedSample += pc.SendAudio;
+            pc.OnAudioFrameReceived += (audioFrame) => OnRemoteAudio?.Invoke(audioFrame);
+            pc.OnAudioFrameReceived += windowsAudioEndPoint.GotEncodedMediaFrame;
+
+            if (!m_disableVideo)
+            {
+                //var ffmpegVideoEncoder = new FFmpegVideoEncoder();
+                //windowsVideoEndPoint = new WindowsVideoEndPoint(ffmpegVideoEncoder);
+
+                videoEndPoint = new FFmpegVideoEndPoint();
+                //videoEndPoint.RestrictFormats(f => f.Codec == VideoCodecsEnum.H265);
+
+                var videoTrack = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats());
+                pc.addTrack(videoTrack);
+
+                pc.OnVideoFormatsNegotiated += (formats) => videoEndPoint.SetVideoSinkFormat(formats.First());
+                pc.OnVideoFormatsNegotiated += (formats) => videoEndPoint.SetVideoSourceFormat(formats.First());
+                videoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
+                //windowsVideoEndPoint.OnVideoSourceError += VideoSource_OnVideoSourceError;
+                pc.OnVideoFrameReceived += videoEndPoint.GotVideoFrame;
+                videoEndPoint.OnVideoSinkDecodedSampleFaster += (rawImage) =>
+                    OnRemoteVideo?.Invoke(rawImage);
+            }
+
+            pc.onconnectionstatechange += async (state) =>
+            {
+                if (state == RTCPeerConnectionState.connected)
+                {
+                    await windowsAudioEndPoint.Start();
+
+                    if(videoEndPoint != null)
+                    {
+                        await videoEndPoint.StartVideo();
+                        await videoEndPoint.StartVideoSink();
+
+                        RequestPeerConnectionKeyFrame(pc);
+                    }
+                }
+                else if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
+                {
+                    await windowsAudioEndPoint.Close();
+
+                    if (videoEndPoint != null)
+                    {
+                        await videoEndPoint.Close();
+                    }
+                }
+            };
+
+            return pc;
+        }
+
+        private void RequestPeerConnectionKeyFrame(RTCPeerConnection pc)
+        {
+            if (pc != null && pc.connectionState == RTCPeerConnectionState.connected)
+            {
+                var localVideoSsrc = pc.VideoLocalTrack.Ssrc;
+                var remoteVideoSsrc = pc.VideoRemoteTrack.Ssrc;
+
+                RTCPFeedback pli = new RTCPFeedback(localVideoSsrc, remoteVideoSsrc, PSFBFeedbackTypesEnum.PLI);
+                pc.SendRtcpFeedback(SDPMediaTypesEnum.video, pli);
             }
         }
 
@@ -448,6 +538,11 @@ namespace SIPSorcery.SoftPhone
             {
                 return Task.FromResult(0);
             }
+        }
+
+        public void Dispose()
+        {
+            //MediaSession?.VideoSink.OnVideoSinkDecodedSampleFaster -= OnVideoRemoteSampleReady;
         }
     }
 }
