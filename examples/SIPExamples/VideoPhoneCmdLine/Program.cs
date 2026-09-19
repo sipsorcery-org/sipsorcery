@@ -97,7 +97,7 @@ namespace demo
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;
         private const uint MAXIMUM_VIDEO_BANDWIDTH = 5000000; // 5Mbps.
-        private const VideoCodecsEnum VIDEO_CODEC = VideoCodecsEnum.VP8; // Supported options are H264 or VP8.
+        //private const VideoCodecsEnum VIDEO_CODEC = VideoCodecsEnum.VP8; // Supported options are H264 or VP8.
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
@@ -265,8 +265,8 @@ namespace demo
                         var testPattern = new VideoTestPatternSource(new FFmpegVideoEncoder());
                         var videoSink = new FFmpegVideoEndPoint();
 
-                        testPattern.RestrictFormats(format => format.Codec == VIDEO_CODEC);
-                        videoSink.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+                        //testPattern.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+                        //videoSink.RestrictFormats(format => format.Codec == VIDEO_CODEC);
 
                         mediaEndPoints = new MediaEndPoints
                         {
@@ -283,7 +283,7 @@ namespace demo
                             null => new WindowsVideoEndPoint(new FFmpegVideoEncoder()),
                             _ => new WindowsVideoEndPoint(new FFmpegVideoEncoder(), webcamName),
                         };
-                        windowsVideoEndPoint.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+                        //windowsVideoEndPoint.RestrictFormats(format => format.Codec == VIDEO_CODEC);
 
                         mediaEndPoints = new MediaEndPoints
                         {

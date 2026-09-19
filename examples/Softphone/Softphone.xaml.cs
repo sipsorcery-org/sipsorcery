@@ -14,9 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -300,7 +298,7 @@ namespace SIPSorcery.SoftPhone
                     {
                         // No video so use the audio scope to provide a visual representation of the audio stream.
                         _sipClients[0].OnRemoteAudio += OnClientZeroAudioFrameReceived;
-                       _client0Video.Visibility = Visibility.Visible;
+                        _client0Video.Visibility = Visibility.Visible;
                     }
                 });
             }
@@ -348,22 +346,22 @@ namespace SIPSorcery.SoftPhone
             }
         }
 
-        private void OnClientZeroVideoSinkSample(RawImage rawImage)
-            => ShowClientFrame(rawImage, _clientVideoStates[0]);
+        private void OnClientZeroVideoSinkSample(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat)
+            => ShowClientFrame(sample, width, height, stride, pixelFormat, _clientVideoStates[0]);
 
         private void OnClientZeroAudioFrameReceived(EncodedAudioFrame encodedAudioFrame)
         {
             var videoFrame = _audioScope0.ProcessEncodedSample(encodedAudioFrame);
-            //VideoSampleReady(videoFrame, AudioScopeRenderer.Width, AudioScopeRenderer.Height, AudioScopeRenderer.PIXEL_STRIDE, VideoPixelFormatsEnum.Rgb, _clientVideoStates[0]);
+            ShowClientFrame(videoFrame, AudioScopeRenderer.Width, AudioScopeRenderer.Height, AudioScopeRenderer.PIXEL_STRIDE, VideoPixelFormatsEnum.Bgr, _clientVideoStates[0]);
         }
 
-        private void OnClientOneVideoSinkSample(RawImage rawImage)
-            => ShowClientFrame(rawImage, _clientVideoStates[1]);
+        private void OnClientOneVideoSinkSample(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat)
+            => ShowClientFrame(sample, width, height, stride, pixelFormat, _clientVideoStates[1]);
 
         private void OnClientOneAudioFrameReceived(EncodedAudioFrame encodedAudioFrame)
         {
             var videoFrame = _audioScope1.ProcessEncodedSample(encodedAudioFrame);
-            //VideoSampleReady(videoFrame, AudioScopeRenderer.Width, AudioScopeRenderer.Height, AudioScopeRenderer.PIXEL_STRIDE, VideoPixelFormatsEnum.Rgb, _clientVideoStates[1]);
+            ShowClientFrame(videoFrame, AudioScopeRenderer.Width, AudioScopeRenderer.Height, AudioScopeRenderer.PIXEL_STRIDE, VideoPixelFormatsEnum.Bgr, _clientVideoStates[1]);
         }
 
         /// <summary>
@@ -637,76 +635,38 @@ namespace SIPSorcery.SoftPhone
         /// Called when the active SIP client has a bitmap representing the remote video stream
         /// ready.
         /// </summary>
-        private void ShowClientFrame(RawImage rawImage, ClientVideoState client)
+        private void ShowClientFrame(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat, ClientVideoState client)
         {
-            if (rawImage.PixelFormat != VideoPixelFormatsEnum.Bgr)
+            if (pixelFormat != VideoPixelFormatsEnum.Bgr)
             {
                 logger.LogError("Cannot display decoded video sample, expected pixel format Bgr but got {PixelFormat}.",
-                    rawImage.PixelFormat);
+                    pixelFormat);
 
                 return;
             }
 
-            int width = rawImage.Width;
-            int height = rawImage.Height;
-
-            // BGR24 = 3 bytes per pixel, rows aligned to 4 bytes.
-            int stride = (width * 3 + 3) & ~3;
-            int bufferSize = stride * height;
-
-            byte[] frame = ArrayPool<byte>.Shared.Rent(bufferSize);
-
-            try
-            {
-                var handle = GCHandle.Alloc(frame, GCHandleType.Pinned);
-
-                try
-                {
-                    // Copy immediately because RawImage will be reused by FFmpeg after this method returns.
-                    rawImage.CopyTo(
-                        handle.AddrOfPinnedObject(),
-                        stride);
-                }
-                finally
-                {
-                    handle.Free();
-                }
-            }
-            catch
-            {
-                ArrayPool<byte>.Shared.Return(frame);
-                throw;
-            }
-
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                try
+                if (client.Bitmap == null ||
+                    client.Bitmap.PixelWidth != width ||
+                    client.Bitmap.PixelHeight != height)
                 {
-                    if (client.Bitmap == null ||
-                        client.Bitmap.PixelWidth != width ||
-                        client.Bitmap.PixelHeight != height)
-                    {
-                        client.Bitmap = new WriteableBitmap(
-                            width,
-                            height,
-                            96,
-                            96,
-                            PixelFormats.Bgr24,
-                            null);
+                    client.Bitmap = new WriteableBitmap(
+                        (int)width,
+                        (int)height,
+                        96,
+                        96,
+                        PixelFormats.Bgr24,
+                        null);
 
-                        client.Image.Source = client.Bitmap;
-                    }
+                    client.Image.Source = client.Bitmap;
+                }
 
-                    client.Bitmap.WritePixels(
-                        new Int32Rect(0, 0, width, height),
-                        frame,
-                        stride,
-                        0);
-                }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(frame);
-                }
+                client.Bitmap.WritePixels(
+                    new Int32Rect(0, 0, (int)width, (int)height),
+                    sample,
+                    stride,
+                    0);
             }), DispatcherPriority.Normal);
         }
 

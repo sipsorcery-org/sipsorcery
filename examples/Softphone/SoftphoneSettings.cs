@@ -57,6 +57,12 @@ namespace SIPSorcery.SoftPhone
         public bool UseAudioScope { get; set; }
 
         /// <summary>
+        /// If set to true the undelrying RTP session will be a WebRTC peer connection. If false
+        /// the standard VoIP RTP session will be offered and accepted.
+        /// </summary>
+        public bool UseWebRTCMedia { get; set; }
+
+        /// <summary>
         /// The index of the audio output device to use. Defaults to -1 which means use the
         /// system default device.
         /// </summary>

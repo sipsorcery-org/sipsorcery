@@ -38,6 +38,7 @@ namespace SIPSorcery.SoftPhone
         private string m_sipPassword = SIPSoftPhoneState.Settings.SIPPassword;
         private string m_sipServer = SIPSoftPhoneState.Settings.SIPServer;
         private string m_sipFromName = SIPSoftPhoneState.Settings.SIPFromName;
+        private bool m_useWebRTCMedia = SIPSoftPhoneState.Settings.UseWebRTCMedia;
 
         private SIPTransport m_sipTransport;
         private SIPUserAgent m_userAgent;
@@ -59,7 +60,7 @@ namespace SIPSorcery.SoftPhone
         public event Action<SIPClient> RemoteTookOffHold;          // Fires when the remote call party takes us off hold.
 
         public event Action<EncodedAudioFrame> OnRemoteAudio;                        // Fires when a decoded audio sample from the remote peer is ready.
-        public event VideoSinkSampleDecodedFasterDelegate OnRemoteVideo;    // Fires when a decoded video sample from the remote peer is ready.
+        public event VideoSinkSampleDecodedDelegate OnRemoteVideo;    // Fires when a decoded video sample from the remote peer is ready.
 
         /// <summary>
         /// Once a call is established this holds the properties of the established SIP dialogue.
@@ -69,8 +70,8 @@ namespace SIPSorcery.SoftPhone
             get { return m_userAgent.Dialogue; }
         }
 
-        //private RTPSession MediaSession;
-        private RTCPeerConnection _rtcPeerConnection;
+        private RTPSession MediaSession;
+        //private RTCPeerConnection _rtcPeerConnection;
 
         /// <summary>
         /// Returns true of this SIP client is on an active call.
@@ -148,13 +149,12 @@ namespace SIPSorcery.SoftPhone
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {dstEndpoint}.");
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
-                //MediaSession = CreateMediaSession();
-                _rtcPeerConnection = CreateWebRtcMediaSession();
+                MediaSession = !m_useWebRTCMedia ? CreateVoIPMediaSession() : CreateWebRtcMediaSession();
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                await m_userAgent.InitiateCallAsync(callDescriptor, _rtcPeerConnection);
+                await m_userAgent.InitiateCallAsync(callDescriptor, MediaSession);
             }
         }
 
@@ -203,13 +203,12 @@ namespace SIPSorcery.SoftPhone
                     hasVideo = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
                 }
 
-                //MediaSession = CreateMediaSession();
-                _rtcPeerConnection = CreateWebRtcMediaSession();
+                MediaSession = !m_useWebRTCMedia ? CreateVoIPMediaSession() : CreateWebRtcMediaSession();
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                bool result = await m_userAgent.Answer(m_pendingIncomingCall, _rtcPeerConnection);
+                bool result = await m_userAgent.Answer(m_pendingIncomingCall, MediaSession);
                 m_pendingIncomingCall = null;
 
                 return result;
@@ -347,7 +346,7 @@ namespace SIPSorcery.SoftPhone
         private RTCPeerConnection CreateWebRtcMediaSession()
         {
             var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), m_audioOutDeviceIndex);
-            FFmpegVideoEndPoint videoEndPoint = null;
+            IVideoEndPoint videoEndPoint = null;
 
             var pc = new RTCPeerConnection();
             pc.AcceptRtpFromAny = true;
@@ -362,10 +361,7 @@ namespace SIPSorcery.SoftPhone
 
             if (!m_disableVideo)
             {
-                //var ffmpegVideoEncoder = new FFmpegVideoEncoder();
-                //windowsVideoEndPoint = new WindowsVideoEndPoint(ffmpegVideoEncoder);
-
-                videoEndPoint = new FFmpegVideoEndPoint();
+                videoEndPoint = new WindowsVideoEndPoint(new FFmpegVideoEncoder());
                 //videoEndPoint.RestrictFormats(f => f.Codec == VideoCodecsEnum.H265);
 
                 var videoTrack = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats());
@@ -376,8 +372,8 @@ namespace SIPSorcery.SoftPhone
                 videoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
                 //windowsVideoEndPoint.OnVideoSourceError += VideoSource_OnVideoSourceError;
                 pc.OnVideoFrameReceived += videoEndPoint.GotVideoFrame;
-                videoEndPoint.OnVideoSinkDecodedSampleFaster += (rawImage) =>
-                    OnRemoteVideo?.Invoke(rawImage);
+                videoEndPoint.OnVideoSinkDecodedSample += (byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
+                    OnRemoteVideo?.Invoke(sample, width, height, stride, pixelFormat);
             }
 
             pc.onconnectionstatechange += async (state) =>
