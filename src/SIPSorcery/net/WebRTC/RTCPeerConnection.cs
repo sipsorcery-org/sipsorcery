@@ -246,7 +246,29 @@ namespace SIPSorcery.Net
         private Org.BouncyCastle.Tls.Certificate _dtlsCertificate;
         private Org.BouncyCastle.Crypto.AsymmetricKeyParameter _dtlsPrivateKey;
         private BcTlsCrypto _crypto;
-        private DtlsSrtpTransport _dtlsHandle;
+
+        /// <summary>
+        /// The DTLS transport. Created as soon as the remote description resolves the DTLS role,
+        /// which is well before ICE nominates a candidate pair, so that DTLS sent by the remote
+        /// peer as soon as it has a valid pair can be buffered instead of dropped. Volatile
+        /// because it is assigned on the signalling or ICE thread and read on the RTP receive
+        /// thread.
+        /// </summary>
+        private volatile DtlsSrtpTransport _dtlsHandle;
+
+        /// <summary>
+        /// The lock protecting the creation of <seealso cref="_dtlsHandle"/>, which can be
+        /// attempted from the signalling thread (setting the remote description) and the ICE
+        /// thread (a candidate pair being nominated).
+        /// </summary>
+        private readonly object _dtlsHandleLock = new object();
+
+        /// <summary>
+        /// Set once the DTLS handshake has been started. The transport now exists before the
+        /// handshake begins, so its presence no longer indicates the handshake is under way.
+        /// </summary>
+        private int _dtlsHandshakeStarted = 0;
+
         private Task _iceInitiateGatheringTask;
         private readonly TaskCompletionSource<bool> _iceCompletedGatheringTask = new();
 
@@ -567,6 +589,54 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Creates the DTLS transport if this peer connection does not have one yet.
+        /// </summary>
+        /// <remarks>
+        /// The transport is deliberately created before it is needed. A remote peer may start its
+        /// DTLS handshake as soon as it has a valid candidate pair (RFC 8445 section 12), which is
+        /// a round trip or more before this end nominates one, and browsers do exactly that. The
+        /// transport buffers anything written to it until the handshake reads it, so having it in
+        /// place early means that opening flight is held rather than dropped, which otherwise
+        /// costs a DTLS retransmission timeout on every connection.
+        ///
+        /// Creation is idempotent. A renegotiation must not swap out a transport that is carrying
+        /// a live DTLS association, and the DTLS role cannot change for the lifetime of the
+        /// connection.
+        /// </remarks>
+        private void CreateDtlsTransportIfRequired()
+        {
+            if (_dtlsHandle != null || IsClosed)
+            {
+                return;
+            }
+
+            lock (_dtlsHandleLock)
+            {
+                if (_dtlsHandle != null || IsClosed)
+                {
+                    return;
+                }
+
+                bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
+
+                var dtlsHandle = new DtlsSrtpTransport(
+                            IceRole == IceRolesEnum.active ?
+                            new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
+                            { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
+                            new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
+                            { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret, ForceDisableMKI = true }
+                            );
+
+                dtlsHandle.OnAlert += OnDtlsAlert;
+
+                // Published last so the RTP receive thread never sees a partly wired up transport.
+                _dtlsHandle = dtlsHandle;
+
+                logger.LogDebug("RTCPeerConnection DTLS transport created with role {IceRole}, DTLS arriving before the handshake starts will be buffered.", IceRole);
+            }
+        }
+
+        /// <summary>
         /// Event handler for ICE connection state changes.
         /// </summary>
         /// <param name="iceState">The new ICE connection state.</param>
@@ -576,7 +646,11 @@ namespace SIPSorcery.Net
 
             if (iceState == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
             {
-                if (_dtlsHandle != null)
+                // The transport is created when the remote description is set, so it being
+                // non-null says nothing about whether the handshake has been started. Track that
+                // separately, otherwise the first nomination would be mistaken for a re-connection
+                // and the handshake would never run.
+                if (Interlocked.Exchange(ref _dtlsHandshakeStarted, 1) == 1)
                 {
                     if (base.PrimaryStream.DestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
                         base.PrimaryStream.DestinationEndPoint?.Port != _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
@@ -606,23 +680,26 @@ namespace SIPSorcery.Net
                     SetGlobalDestination(connectedEP, connectedEP);
                     logger.LogDebug("ICE connected to remote end point {connectedEP}.", connectedEP);
 
-                    bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
+                    // Normally a no-op, the transport was created when the remote description was
+                    // set. It still has to be attempted here to cover a peer connection that
+                    // reaches this point without one, for example an ICE only set up where no
+                    // remote description was supplied.
+                    CreateDtlsTransportIfRequired();
 
-                    _dtlsHandle = new DtlsSrtpTransport(
-                                IceRole == IceRolesEnum.active ?
-                                new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
-                                { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
-                                new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
-                                { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret, ForceDisableMKI = true }
-                                );
+                    var dtlsHandle = _dtlsHandle;
 
-                    _dtlsHandle.OnAlert += OnDtlsAlert;
+                    if (dtlsHandle == null)
+                    {
+                        // Only reachable if the peer connection was closed while ICE was completing.
+                        logger.LogDebug("RTCPeerConnection not starting a DTLS handshake, the peer connection has been closed.");
+                        return;
+                    }
 
-                    logger.LogDebug("Starting DLS handshake with role {IceRole}.", IceRole);
+                    logger.LogDebug("Starting DTLS handshake with role {IceRole}.", IceRole);
 
                     try
                     {
-                        bool handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
+                        bool handshakeResult = await Task.Run(() => DoDtlsHandshake(dtlsHandle)).ConfigureAwait(false);
 
                         connectionState = handshakeResult ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
                         onconnectionstatechange?.Invoke(connectionState);
@@ -883,6 +960,12 @@ namespace SIPSorcery.Net
                     // Set DTLS role as client.
                     IceRole = IceRolesEnum.active;
                 }
+
+                // The DTLS role is now known, so the transport can be created. This is done before
+                // the remote ICE credentials are set, which is the point connectivity checks can
+                // start succeeding and therefore the earliest the remote peer can begin its DTLS
+                // handshake. On a renegotiation the existing transport is kept.
+                CreateDtlsTransportIfRequired();
 
                 if (remoteIceUser != null && remoteIcePassword != null)
                 {
