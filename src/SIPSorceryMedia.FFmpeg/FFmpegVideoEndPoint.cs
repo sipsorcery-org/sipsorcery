@@ -14,6 +14,8 @@
 //
 // History:
 // 08 Jun 2026  Aaron Clauson   Added the missing IVideoSource interface and implementation.
+// 19 Sep 2026  Aaron Clauson   Added full IVideoEndPoint implementation and wired up the
+//                              OnVideoSinkDecodedSample event.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
