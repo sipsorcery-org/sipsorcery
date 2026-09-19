@@ -618,12 +618,13 @@ namespace SIPSorcery.Net
                 }
 
                 bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
+                bool useRsaForDtlsCertificate = _configuration != null && _configuration.X_UseRsaForDtlsCertificate;
 
                 var dtlsHandle = new DtlsSrtpTransport(
                             IceRole == IceRolesEnum.active ?
-                            new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
+                            new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey, useRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
                             { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
-                            new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
+                            new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey, useRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
                             { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret, ForceDisableMKI = true }
                             );
 
