@@ -101,17 +101,24 @@ namespace SIPSorcery.Net
 
             Array.Copy(header, packet, header.Length);
 
-            if (_payloadSegment != null)
+            // Test _payload first to match how the packet length was sized above, and test the
+            // segment on its backing array rather than against null. "_payloadSegment != null"
+            // does not mean the same thing on every target: ArraySegment<T> gains an implicit
+            // conversion from T[] on .NET Core, so there the null literal converts to a default
+            // segment and the comparison asks "is this segment non-default", while on .NET
+            // Framework it lifts to ArraySegment<T>? and is always true. That made GetBytes take
+            // the segment branch for a payload backed packet on .NET Framework and throw.
+            if (_payload != null)
+            {
+                Array.Copy(_payload, 0, packet, header.Length, _payload.Length);
+            }
+            else if (_payloadSegment.Array != null)
             {
 #if NETCOREAPP2_1_OR_GREATER && !NETFRAMEWORK
                 _payloadSegment.CopyTo(packet, header.Length);
 #else
-                Array.Copy(_payloadSegment.Array!, _payloadSegment.Offset, packet, header.Length, _payloadSegment.Count);
+                Array.Copy(_payloadSegment.Array, _payloadSegment.Offset, packet, header.Length, _payloadSegment.Count);
 #endif
-            }
-            else if (_payload != null)
-            {
-                Array.Copy(_payload, 0, packet, header.Length, _payload.Length);
             }
             else
             {
