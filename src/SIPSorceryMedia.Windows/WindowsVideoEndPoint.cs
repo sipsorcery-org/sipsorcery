@@ -322,7 +322,7 @@ namespace SIPSorceryMedia.Windows
 
                 if (decodedFrames == null)
                 {
-                    logger.LogWarning("VPX decode of video sample failed.");
+                    logger.LogWarning("{className} decode of video sample failed.", nameof(WindowsVideoEndPoint));
                 }
                 else
                 {
@@ -331,7 +331,7 @@ namespace SIPSorceryMedia.Windows
                         // Windows bitmaps expect BGR when supplying System.Drawing.Imaging.PixelFormat.Format24bppRgb. 
                         //byte[] bgr = PixelConverter.I420toBGR(decodedFrame.Sample, (int)decodedFrame.Width, (int)decodedFrame.Height);
                         //Console.WriteLine($"VP8 decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
-                        OnVideoSinkDecodedSample(decodedFrame.Sample, decodedFrame.Width, decodedFrame.Height, (int)(decodedFrame.Width * 3), VideoPixelFormatsEnum.Bgr);
+                        OnVideoSinkDecodedSample?.Invoke(decodedFrame.Sample, decodedFrame.Width, decodedFrame.Height, (int)(decodedFrame.Width * 3), VideoPixelFormatsEnum.Bgr);
                     }
                 }
             }

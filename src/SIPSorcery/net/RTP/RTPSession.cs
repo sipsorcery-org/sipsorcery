@@ -104,6 +104,24 @@ namespace SIPSorcery.Net
         /// </summary>
         public const uint RTCP_RR_NOSTREAM_SSRC = 4195875351U;
 
+        /// <summary>
+        /// The maximum number of RTP/RTCP packets that will be held while waiting for the
+        /// secure (SRTP) context to become ready. A remote peer starts sending as soon as
+        /// its own DTLS handshake completes which can precede this end finishing its SRTP
+        /// set up. Rather than dropping those packets, which for a receiver are very often
+        /// part of the opening key frame, they are buffered and replayed once the context
+        /// is up. The bound stops a peer that never completes DTLS from growing the queue.
+        /// </summary>
+        public const int PENDING_SECURE_PACKETS_MAX_COUNT = 64;
+
+        /// <summary>
+        /// The maximum age of a packet held waiting for the secure context. Anything older
+        /// is discarded when a new packet is buffered. Combined with
+        /// <seealso cref="PENDING_SECURE_PACKETS_MAX_COUNT"/> this bounds the queue on both
+        /// count and age.
+        /// </summary>
+        public const int PENDING_SECURE_PACKETS_MAX_AGE_MS = 500;
+
         protected static readonly ILogger logger = LogFactory.CreateLogger<RTPSession>();
 
         protected RtpSessionConfig rtpSessionConfig;
@@ -123,6 +141,30 @@ namespace SIPSorcery.Net
         protected List<List<SDPSsrcAttribute>> audioRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>>();
         protected List<List<SDPSsrcAttribute>> videoRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>>();
         protected List<List<SDPSsrcAttribute>> textRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>>();
+
+        /// <summary>
+        /// RTP/RTCP packets that arrived before the secure context was ready. Drained, in
+        /// arrival order, as soon as the context becomes available.
+        /// </summary>
+        private readonly Queue<PendingSecurePacket> m_pendingSecurePackets = new Queue<PendingSecurePacket>();
+        private readonly object m_pendingSecurePacketsLock = new object();
+
+        /// <summary>
+        /// Set whenever <seealso cref="m_pendingSecurePackets"/> is non-empty. Lets the receive
+        /// path skip taking the lock in the overwhelmingly common case of nothing being held.
+        /// </summary>
+        private volatile bool m_hasPendingSecurePackets = false;
+
+        /// <summary>
+        /// An RTP or RTCP packet that arrived before the secure context was ready.
+        /// </summary>
+        private struct PendingSecurePacket
+        {
+            public int LocalPort;
+            public IPEndPoint RemoteEndPoint;
+            public byte[] Buffer;
+            public DateTime ReceivedAt;
+        }
 
         /// <summary>
         /// Track if current remote description is invalid (used in Renegotiation logic)
@@ -435,7 +477,7 @@ namespace SIPSorcery.Net
         /// case refers to media encoding, e.g. PCMU, OPUS. For audio payloads RTP framing is not
         /// typically used so each frame will correspond to a single RTP packet. This event
         /// aggregates receiving audio frames from all media stream attached to the RTP session.
-        /// THe media stream index can be used to identify which stream the frame is from in
+        /// The media stream index can be used to identify which stream the frame is from in
         /// the case there are multiple audio streams.
         /// </summary>
         public event Action<EncodedAudioFrame> OnAudioFrameReceived;
@@ -1197,6 +1239,7 @@ namespace SIPSorcery.Net
                                 if (srtpHandler.IsNegotiationComplete)
                                 {
                                     currentMediaStream.SetSecurityContext(srtpHandler.ProtectRTP, srtpHandler.UnprotectRTP, srtpHandler.ProtectRTCP, srtpHandler.UnprotectRTCP);
+                                    DrainPendingSecurePackets();
                                 }
                             }
                         }
@@ -1755,6 +1798,8 @@ namespace SIPSorcery.Net
             {
                 textStream.SetSecurityContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
             }
+
+            DrainPendingSecurePackets();
         }
 
         private void InitIPEndPointAndSecurityContext(MediaStream mediaStream)
@@ -2218,6 +2263,7 @@ namespace SIPSorcery.Net
                     if (srtpHandler.IsNegotiationComplete)
                     {
                         mediaStream.SetSecurityContext(srtpHandler.ProtectRTP, srtpHandler.UnprotectRTP, srtpHandler.ProtectRTCP, srtpHandler.UnprotectRTCP);
+                        DrainPendingSecurePackets();
                     }
                 }
 
@@ -2426,6 +2472,8 @@ namespace SIPSorcery.Net
                     }
                 }
 
+                ClearPendingSecurePackets();
+
                 OnRtpClosed?.Invoke(reason);
                 OnClosed?.Invoke();
             }
@@ -2462,28 +2510,149 @@ namespace SIPSorcery.Net
             {
                 if ((rtpSessionConfig.IsSecure || rtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
                 {
-                    logger.LogWarning("RTP or RTCP packet received before secure context ready.");
+                    // The remote peer starts sending as soon as its own handshake completes which can
+                    // precede this end finishing its SRTP set up. Hold the packet rather than dropping
+                    // it, otherwise the opening key frame is very often lost and, with no NACK or key
+                    // frame request in the library, the stream never recovers.
+                    BufferPacketUntilSecureContextReady(localPort, remoteEndPoint, buffer);
                 }
                 else
                 {
-                    if (Enum.IsDefined(typeof(RTCPReportTypesEnum), buffer[1]))
-                    {
-                        // Only call OnReceiveRTCPPacket for supported RTCPCompoundPacket types
-                        if (buffer[1] == (byte)RTCPReportTypesEnum.SR ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.RR ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.SDES ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.BYE ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.PSFB ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.RTPFB)
-                        {
-                            OnReceiveRTCPPacket(localPort, remoteEndPoint, buffer);
-                        }
-                    }
-                    else
-                    {
-                        OnReceiveRTPPacket(localPort, remoteEndPoint, buffer);
-                    }
+                    // Anything held while the secure context was coming up must be delivered first
+                    // so the stream is presented to the depacketisers in arrival order.
+                    DrainPendingSecurePackets();
+
+                    DispatchReceivedPacket(localPort, remoteEndPoint, buffer);
                 }
+            }
+        }
+
+        private void DispatchReceivedPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+        {
+            if (Enum.IsDefined(typeof(RTCPReportTypesEnum), buffer[1]))
+            {
+                // Only call OnReceiveRTCPPacket for supported RTCPCompoundPacket types
+                if (buffer[1] == (byte)RTCPReportTypesEnum.SR ||
+                    buffer[1] == (byte)RTCPReportTypesEnum.RR ||
+                    buffer[1] == (byte)RTCPReportTypesEnum.SDES ||
+                    buffer[1] == (byte)RTCPReportTypesEnum.BYE ||
+                    buffer[1] == (byte)RTCPReportTypesEnum.PSFB ||
+                    buffer[1] == (byte)RTCPReportTypesEnum.RTPFB)
+                {
+                    OnReceiveRTCPPacket(localPort, remoteEndPoint, buffer);
+                }
+            }
+            else
+            {
+                OnReceiveRTPPacket(localPort, remoteEndPoint, buffer);
+            }
+        }
+
+        /// <summary>
+        /// Holds an RTP or RTCP packet that arrived before the secure context was ready. The
+        /// queue is bounded on both count and age so a peer that never completes its handshake
+        /// cannot grow it. The oldest packets are discarded on overflow.
+        /// </summary>
+        private void BufferPacketUntilSecureContextReady(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+        {
+            int discardedAged = 0;
+            int discardedOverflow = 0;
+            int pendingCount;
+
+            lock (m_pendingSecurePacketsLock)
+            {
+                if (IsClosed)
+                {
+                    return;
+                }
+
+                var now = DateTime.Now;
+
+                while (m_pendingSecurePackets.Count > 0 &&
+                    now.Subtract(m_pendingSecurePackets.Peek().ReceivedAt).TotalMilliseconds > PENDING_SECURE_PACKETS_MAX_AGE_MS)
+                {
+                    m_pendingSecurePackets.Dequeue();
+                    discardedAged++;
+                }
+
+                while (m_pendingSecurePackets.Count >= PENDING_SECURE_PACKETS_MAX_COUNT)
+                {
+                    m_pendingSecurePackets.Dequeue();
+                    discardedOverflow++;
+                }
+
+                m_pendingSecurePackets.Enqueue(new PendingSecurePacket
+                {
+                    LocalPort = localPort,
+                    RemoteEndPoint = remoteEndPoint,
+                    Buffer = buffer,
+                    ReceivedAt = now
+                });
+
+                m_hasPendingSecurePackets = true;
+                pendingCount = m_pendingSecurePackets.Count;
+            }
+
+            if (discardedAged > 0 || discardedOverflow > 0)
+            {
+                logger.LogWarning("RTP or RTCP packets received before secure context ready were discarded, {DiscardedAged} older than {MaxAgeMilliseconds}ms and {DiscardedOverflow} over the {MaxCount} packet limit.",
+                    discardedAged, PENDING_SECURE_PACKETS_MAX_AGE_MS, discardedOverflow, PENDING_SECURE_PACKETS_MAX_COUNT);
+            }
+            else
+            {
+                logger.LogDebug("RTP or RTCP packet received before secure context ready, buffered, {PendingCount} packet(s) pending.", pendingCount);
+            }
+        }
+
+        /// <summary>
+        /// Delivers any packets that were held while the secure context was being set up. Safe
+        /// to call at any point, it is a no-op when nothing is pending.
+        /// </summary>
+        protected void DrainPendingSecurePackets()
+        {
+            if (!m_hasPendingSecurePackets)
+            {
+                return;
+            }
+
+            if ((rtpSessionConfig.IsSecure || rtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
+            {
+                return;
+            }
+
+            PendingSecurePacket[] pending = null;
+
+            lock (m_pendingSecurePacketsLock)
+            {
+                if (m_pendingSecurePackets.Count > 0)
+                {
+                    pending = m_pendingSecurePackets.ToArray();
+                    m_pendingSecurePackets.Clear();
+                }
+
+                m_hasPendingSecurePackets = false;
+            }
+
+            if (pending != null)
+            {
+                logger.LogDebug("Secure context ready, draining {PendingCount} buffered RTP or RTCP packet(s).", pending.Length);
+
+                foreach (var packet in pending)
+                {
+                    DispatchReceivedPacket(packet.LocalPort, packet.RemoteEndPoint, packet.Buffer);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Discards any packets held waiting for the secure context.
+        /// </summary>
+        private void ClearPendingSecurePackets()
+        {
+            lock (m_pendingSecurePacketsLock)
+            {
+                m_pendingSecurePackets.Clear();
+                m_hasPendingSecurePackets = false;
             }
         }
 
