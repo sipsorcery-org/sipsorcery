@@ -54,6 +54,12 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public string STUNServerHostname { get; set; }
 
+        /// <summary>
+        /// Enables the audio scope. What it does depends on <see cref="DisableVideo"/>: with video
+        /// disabled it visualises this end's microphone and is only drawn locally, and with video
+        /// enabled it visualises the remote party's audio and is sent to them as this call's video
+        /// stream in place of a camera, while their video is displayed here.
+        /// </summary>
         public bool UseAudioScope { get; set; }
 
         /// <summary>

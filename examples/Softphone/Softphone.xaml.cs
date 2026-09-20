@@ -21,7 +21,6 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using AudioScope;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -57,9 +56,6 @@ namespace SIPSorcery.SoftPhone
 
         private ClientVideoState[] _clientVideoStates;
 
-        private AudioScope.AudioScopeRenderer _audioScope0;
-        private AudioScope.AudioScopeRenderer _audioScope1;
-
         public SoftPhone()
         {
             InitializeComponent();
@@ -71,12 +67,6 @@ namespace SIPSorcery.SoftPhone
                 new ClientVideoState { Image = _client0Video },
                 new ClientVideoState { Image = _client1Video }
             ];
-
-            if (m_useAudioScope)
-            {
-                _audioScope0 = new AudioScope.AudioScopeRenderer();
-                _audioScope1 = new AudioScope.AudioScopeRenderer();
-            }
 
             // Do some UI initialization.
             ResetToCallStartState(null);
@@ -184,7 +174,7 @@ namespace SIPSorcery.SoftPhone
                     if (_sipClients?.Count > 0 && _sipClients[0] != null)
                     {
                         _sipClients[0].OnRemoteVideo -= OnClientZeroVideoSinkSample;
-                        _sipClients[0].OnRemoteAudio -= OnClientZeroAudioFrameReceived;
+                        _sipClients[0].OnAudioScopeFrame -= OnClientZeroAudioScopeFrame;
                     }
                 });
             }
@@ -210,7 +200,7 @@ namespace SIPSorcery.SoftPhone
                 if (_sipClients?.Count > 1 && _sipClients[1] != null)
                 {
                     _sipClients[1].OnRemoteVideo -= OnClientOneVideoSinkSample;
-                    _sipClients[1].OnRemoteAudio -= OnClientOneAudioFrameReceived;
+                    _sipClients[1].OnAudioScopeFrame -= OnClientOneAudioScopeFrame;
                 }
             }
         }
@@ -296,8 +286,11 @@ namespace SIPSorcery.SoftPhone
                     }
                     else if (m_useAudioScope)
                     {
-                        // No video so use the audio scope to provide a visual representation of the audio stream.
-                        _sipClients[0].OnRemoteAudio += OnClientZeroAudioFrameReceived;
+                        // No remote video to show, so draw the audio scope locally instead. With
+                        // video disabled that is a scope of this end's microphone; if video was
+                        // enabled but the remote party answered without it, it is a scope of their
+                        // audio that had nowhere to be sent.
+                        _sipClients[0].OnAudioScopeFrame += OnClientZeroAudioScopeFrame;
                         _client0Video.Visibility = Visibility.Visible;
                     }
                 });
@@ -323,8 +316,11 @@ namespace SIPSorcery.SoftPhone
                     }
                     else if (m_useAudioScope)
                     {
-                        // No video so use the audio scope to provide a visual representation of the audio stream.
-                        _sipClients[1].OnRemoteAudio += OnClientOneAudioFrameReceived;
+                        // No remote video to show, so draw the audio scope locally instead. With
+                        // video disabled that is a scope of this end's microphone; if video was
+                        // enabled but the remote party answered without it, it is a scope of their
+                        // audio that had nowhere to be sent.
+                        _sipClients[1].OnAudioScopeFrame += OnClientOneAudioScopeFrame;
                         _client1Video.Visibility = Visibility.Visible;
                     }
                 });
@@ -349,20 +345,14 @@ namespace SIPSorcery.SoftPhone
         private void OnClientZeroVideoSinkSample(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat)
             => ShowClientFrame(sample, width, height, stride, pixelFormat, _clientVideoStates[0]);
 
-        private void OnClientZeroAudioFrameReceived(EncodedAudioFrame encodedAudioFrame)
-        {
-            var videoFrame = _audioScope0.ProcessEncodedSample(encodedAudioFrame);
-            ShowClientFrame(videoFrame, AudioScopeRenderer.Width, AudioScopeRenderer.Height, AudioScopeRenderer.PIXEL_STRIDE, VideoPixelFormatsEnum.Bgr, _clientVideoStates[0]);
-        }
+        private void OnClientZeroAudioScopeFrame(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat)
+            => ShowClientFrame(sample, width, height, stride, pixelFormat, _clientVideoStates[0]);
 
         private void OnClientOneVideoSinkSample(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat)
             => ShowClientFrame(sample, width, height, stride, pixelFormat, _clientVideoStates[1]);
 
-        private void OnClientOneAudioFrameReceived(EncodedAudioFrame encodedAudioFrame)
-        {
-            var videoFrame = _audioScope1.ProcessEncodedSample(encodedAudioFrame);
-            ShowClientFrame(videoFrame, AudioScopeRenderer.Width, AudioScopeRenderer.Height, AudioScopeRenderer.PIXEL_STRIDE, VideoPixelFormatsEnum.Bgr, _clientVideoStates[1]);
-        }
+        private void OnClientOneAudioScopeFrame(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat)
+            => ShowClientFrame(sample, width, height, stride, pixelFormat, _clientVideoStates[1]);
 
         /// <summary>
         /// The button to place an outgoing call.
@@ -642,6 +632,13 @@ namespace SIPSorcery.SoftPhone
                 logger.LogError("Cannot display decoded video sample, expected pixel format Bgr but got {PixelFormat}.",
                     pixelFormat);
 
+                return;
+            }
+
+            if (sample == null || sample.Length < stride * height)
+            {
+                // Can happen if a source has nothing to render yet, e.g. the audio scope before the
+                // first audio frame arrives. WritePixels throws on an undersized buffer.
                 return;
             }
 
