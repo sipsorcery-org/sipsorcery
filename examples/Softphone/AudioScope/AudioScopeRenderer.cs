@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: AudioScopeRenderer.cs
 //
 // Description: Portable, dependency-free renderer for the audio scope. It draws
@@ -12,11 +12,17 @@
 // and it has zero dependencies, so the example builds and runs anywhere .NET does
 // (Windows/Linux/macOS/containers), headless.
 //
+// This type is deliberately only the rasteriser: no timer, no events, no threading
+// and no media dependencies. Everything needed to act as a video source in a media
+// pipeline lives in AudioScopeVideoSource, which owns an instance of this.
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 08 Jun 2026	Aaron Clauson	Created, via CLaude Opus 4.8, Wexford, Ireland.
+// 20 Sep 2026  Aaron Clauson   Split the media pipeline plumbing out into
+//                              AudioScopeVideoSource, leaving this as the rasteriser.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -31,11 +37,26 @@ namespace AudioScope
     /// Renders the audio scope trace to a packed BGR byte buffer with a minimal software rasteriser.
     /// CPU-only and dependency-free, so it can run headless with nothing to install or license.
     /// </summary>
-    public class AudioScopeRenderer : IDisposable
+    /// <remarks>
+    /// Not thread safe, and <see cref="ProcessAudioSample"/> returns the instance's own pixel buffer
+    /// rather than a copy. A caller that hands the frame somewhere it will still be read after the
+    /// call returns has to copy it first; <see cref="AudioScopeVideoSource"/> does that.
+    /// </remarks>
+    public class AudioScopeRenderer
     {
         public const int Width = 640;
         public const int Height = 480;
         public const int PIXEL_STRIDE = 3;
+
+        /// <summary>
+        /// The number of bytes in one rendered frame.
+        /// </summary>
+        public const int FRAME_SIZE = Width * Height * PIXEL_STRIDE;
+
+        /// <summary>
+        /// The byte offset between the start of one row of a rendered frame and the next.
+        /// </summary>
+        public const int ROW_STRIDE = Width * PIXEL_STRIDE;
 
         private const int Stride = 4;            // Floats per vertex: x, y, angular velocity, noise.
         private const float LineRadius = 1.6f;   // Half line thickness, in pixels (also the round-cap radius).
@@ -44,11 +65,15 @@ namespace AudioScope
         private const float Desaturation = 0.1f;
 
         private readonly AudioScope _audioScope = new AudioScope();
-        private readonly byte[] _pixels = new byte[Width * Height * PIXEL_STRIDE];
+        private readonly byte[] _pixels = new byte[FRAME_SIZE];
 
         /// <summary>
         /// Processes a block of audio samples and returns the rendered scope frame as packed BGR bytes.
         /// </summary>
+        /// <returns>
+        /// This instance's own pixel buffer, which the next call overwrites. Copy it if it is needed
+        /// after the caller returns.
+        /// </returns>
         public byte[] ProcessAudioSample(Complex[] samples)
         {
             _audioScope.ProcessSample(samples);
@@ -158,7 +183,7 @@ namespace AudioScope
 
                     // Channels are stored blue-green-red to match the BGR24 layout the video
                     // pipeline and WPF's Bgr24 bitmaps expect.
-                    int idx = (py * Width + px) * 3;
+                    int idx = (py * Width + px) * PIXEL_STRIDE;
                     _pixels[idx] = Blend(_pixels[idx], bb, coverage);
                     _pixels[idx + 1] = Blend(_pixels[idx + 1], gb, coverage);
                     _pixels[idx + 2] = Blend(_pixels[idx + 2], rb, coverage);
@@ -204,9 +229,5 @@ namespace AudioScope
         private static float Lerp(float a, float b, float t) => a + (b - a) * t;
 
         private static byte ToByte(float c) => (byte)(Math.Clamp(c, 0.0f, 1.0f) * 255.0f + 0.5f);
-
-        public void Dispose()
-        {
-        }
     }
 }

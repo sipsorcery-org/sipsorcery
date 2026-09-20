@@ -51,37 +51,7 @@ namespace SIPSorcery.SoftPhone
 
         private int m_audioOutDeviceIndex = SIPSoftPhoneState.Settings.AudioOutDeviceIndex;
 
-        private bool m_disableVideo = SIPSoftPhoneState.Settings.DisableVideo;
-        private bool m_useAudioScope = SIPSoftPhoneState.Settings.UseAudioScope;
-
-        // The scope video is rendered and encoded on its own timer rather than inside the audio
-        // callback. Encoding a 640x480 frame takes several milliseconds and doing that synchronously
-        // on the audio pacing thread pushes audio packets past their 20ms budget, which makes the
-        // audio choppy. 33ms is ~30fps.
-        private const int SCOPE_FRAME_INTERVAL_MS = 33;
-
-        // Set when the audio scope is standing in for a camera as the outgoing video source. Null
-        // when this end has a real camera, or when the scope is only being drawn locally.
-        private FFmpegVideoEndPoint _scopeVideoEndPoint;
-
-        // True once the scope is confirmed to have a negotiated video stream to go out on. Until
-        // then, and whenever video is disabled, scope frames are drawn locally instead.
-        private bool _scopeSendsVideo;
-
-        // The renderer hands back its own internal pixel buffer and overwrites it on the next tick,
-        // while the UI blits on the dispatcher some time later. Alternating between two buffers
-        // means the frame being displayed is never the one being drawn into, without allocating a
-        // 900KB (large object heap) array every frame.
-        private readonly byte[][] _scopeDisplayBuffers = new byte[2][];
-        private int _scopeDisplayBufferIndex;
-        private AudioScopeRenderer _scopeRenderer;
-        private Timer _scopeTimer;
-        private readonly IAudioEncoder _scopeAudioDecoder = new AudioEncoder(includeOpus: true);
-        private bool _scopeDecodeErrorReported;
-        private readonly object _scopePcmLock = new object();
-        private short[] _scopeLatestPcm;
-        private int _scopeRenderInProgress;
-        private AudioFormat? _scopeAudioFormat;
+        private SoftphoneVideoSourcesEnum _videoSource;
 
         [GeneratedRegex(@"^SIP/2\.0 (?<statusCode>\d{3})")]
         private static partial Regex SipFragStatusCodeRegex();
@@ -106,7 +76,6 @@ namespace SIPSorcery.SoftPhone
         }
 
         private RTPSession MediaSession;
-        //private RTCPeerConnection _rtcPeerConnection;
 
         /// <summary>
         /// Returns true of this SIP client is on an active call.
@@ -131,9 +100,10 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public bool HasVideo => MediaSession?.VideoRemoteTrack != null;
 
-        public SIPClient(SIPTransport sipTransport)
+        public SIPClient(SIPTransport sipTransport, SoftphoneVideoSourcesEnum videoSource)
         {
             m_sipTransport = sipTransport;
+            _videoSource = videoSource;
 
             m_userAgent = new SIPUserAgent(m_sipTransport, null);
             m_userAgent.ClientCallTrying += CallTrying;
@@ -345,6 +315,40 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
+        /// Creates the frame producing video source for the configured option, or null when the
+        /// option doesn't use one. <see cref="SoftphoneVideoSourcesEnum.Webcam"/> returns null
+        /// because a webcam end point is its own source and sink and is created by the caller.
+        /// </summary>
+        /// <param name="encoder">Optional encoder for the source to raise encoded samples with.
+        /// Supply one when whatever consumes the source expects encoded frames, as
+        /// <see cref="VoIPMediaSession"/> does. Leave it null to take raw frames and encode them
+        /// elsewhere, which is what the WebRTC path does.</param>
+        private IVideoSource CreateRawVideoSource(IVideoEncoder encoder)
+        {
+            switch (_videoSource)
+            {
+                case SoftphoneVideoSourcesEnum.AudioScope:
+                    var audioScopeSource = new AudioScopeVideoSource(encoder);
+
+                    // The scope is also drawn locally. This is a separate event to the ones feeding
+                    // the encoder, so it works whether or not the remote party ended up with a video
+                    // stream for the scope to be sent on.
+                    audioScopeSource.OnVideoSourceRawSample += (duration, width, height, sample, pixelFormat) =>
+                        OnAudioScopeFrame?.Invoke(sample, (uint)width, (uint)height, AudioScopeRenderer.ROW_STRIDE, pixelFormat);
+
+                    audioScopeSource.OnVideoSourceError += (error) => StatusMessage(this, error);
+
+                    return audioScopeSource;
+
+                case SoftphoneVideoSourcesEnum.TestPattern:
+                    return new VideoTestPatternSource(encoder);
+
+                default:
+                    return null;
+            }
+        }
+
+        /// <summary>
         /// Creates the media session to use with the SIP call.
         /// </summary>
         /// <returns>A new media session object.</returns>
@@ -358,37 +362,57 @@ namespace SIPSorcery.SoftPhone
                 AudioSource = windowsAudioEndPoint
             };
 
-            if (m_disableVideo)
-            {
-                var audioOnlyMediaSession = new VoIPMediaSession(mediaEndPoints);
-                audioOnlyMediaSession.AcceptRtpFromAny = true;
-                return audioOnlyMediaSession;
-            }
-            else
+            // VoIPMediaSession drives the lifecycle of whatever is in MediaEndPoints and sends its
+            // encoded samples, so a generated source goes in as the video source with an encoder of
+            // its own, and a separate end point decodes the remote party's video.
+            var rawVideoSource = CreateRawVideoSource(new FFmpegVideoEncoder());
+            FFmpegVideoEndPoint videoSinkEndPoint = null;
+
+            if (_videoSource is SoftphoneVideoSourcesEnum.Webcam)
             {
                 var windowsVideoEndPoint = new WindowsVideoEndPoint(new FFmpegVideoEncoder());
 
                 mediaEndPoints.VideoSink = windowsVideoEndPoint;
                 mediaEndPoints.VideoSource = windowsVideoEndPoint;
-
-                // Fallback video source if a Windows webcam cannot be accessed.
-                var testPatternSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
-
-                var audioAndVideoMediaSession = new VoIPMediaSession(mediaEndPoints, testPatternSource);
-                audioAndVideoMediaSession.AcceptRtpFromAny = true;
-
-                //mediaEndPoints.VideoSink.VideoSinkSampleDecodedFasterDelegate += OnRemoteVideo;
-
-                return audioAndVideoMediaSession;
             }
+            else if (rawVideoSource != null)
+            {
+                videoSinkEndPoint = new FFmpegVideoEndPoint();
+
+                mediaEndPoints.VideoSource = rawVideoSource;
+                mediaEndPoints.VideoSink = videoSinkEndPoint;
+            }
+
+            var mediaSession = new VoIPMediaSession(mediaEndPoints);
+            mediaSession.AcceptRtpFromAny = true;
+
+            mediaSession.OnAudioFrameReceived += (audioFrame) => OnRemoteAudio?.Invoke(audioFrame);
+
+            if (rawVideoSource is AudioScopeVideoSource audioScope)
+            {
+                mediaSession.OnAudioFrameReceived += (audioFrame) => audioScope.PushAudio(audioFrame?.EncodedAudio, audioFrame?.AudioFormat);
+            }
+
+            if (videoSinkEndPoint != null)
+            {
+                // VoIPMediaSession only pushes the negotiated format to the video source, which is
+                // enough when the source and sink are one object, as they are for a webcam. Here
+                // they are separate so the sink needs telling as well.
+                mediaSession.OnVideoFormatsNegotiated += (formats) => videoSinkEndPoint.SetVideoSinkFormat(formats.First());
+            }
+
+            if (mediaEndPoints.VideoSink != null)
+            {
+                mediaSession.OnVideoSinkSample += (sample, width, height, stride, pixelFormat) =>
+                    OnRemoteVideo?.Invoke(sample, width, height, stride, pixelFormat);
+            }
+
+            return mediaSession;
         }
 
         /// <summary>
         /// Creates the media session to use with the SIP call.
         /// </summary>
-        /// <param name="offerVideo">True if a video stream should be part of this session. For an
-        /// outgoing call that is always the case since the remote party's video can only be
-        /// discovered by offering. For an incoming call it reflects the offer we received.</param>
         /// <returns>A new media session object.</returns>
         private RTCPeerConnection CreateWebRtcMediaSession(bool offerVideo)
         {
@@ -401,31 +425,30 @@ namespace SIPSorcery.SoftPhone
             MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEndPoint.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(audioTrack);
 
-            pc.OnAudioFormatsNegotiated += (formats) =>
-            {
-                windowsAudioEndPoint.SetAudioSinkFormat(formats.First());
-
-                // Stashed so the scope can decode the microphone's encoded samples back to PCM.
-                _scopeAudioFormat = formats.First();
-            };
+            pc.OnAudioFormatsNegotiated += (formats) => windowsAudioEndPoint.SetAudioSinkFormat(formats.First());
             windowsAudioEndPoint.OnAudioSourceEncodedSample += pc.SendAudio;
             pc.OnAudioFrameReceived += (audioFrame) => OnRemoteAudio?.Invoke(audioFrame);
             pc.OnAudioFrameReceived += windowsAudioEndPoint.GotEncodedMediaFrame;
 
-            if (!m_disableVideo && offerVideo)
+            // The peer connection is wired up event by event rather than from a MediaEndPoints, so
+            // a generated source hands its raw frames to an end point that encodes them for sending
+            // and decodes the remote party's video for display.
+            var rawVideoSource = CreateRawVideoSource(encoder: null);
+
+            if (_videoSource is SoftphoneVideoSourcesEnum.Webcam)
             {
-                if (m_useAudioScope)
-                {
-                    // The audio scope takes the camera's place as this call's video source. It is
-                    // also the sink, so the remote party's video is decoded for display here.
-                    _scopeVideoEndPoint = new FFmpegVideoEndPoint();
-                    videoEndPoint = _scopeVideoEndPoint;
-                }
-                else
-                {
-                    videoEndPoint = new WindowsVideoEndPoint(new FFmpegVideoEncoder());
-                    //videoEndPoint.RestrictFormats(f => f.Codec == VideoCodecsEnum.H265);
-                }
+                videoEndPoint = new WindowsVideoEndPoint(new FFmpegVideoEncoder());
+                //videoEndPoint.RestrictFormats(f => f.Codec == VideoCodecsEnum.H265);
+            }
+            else if (rawVideoSource != null)
+            {
+                videoEndPoint = new FFmpegVideoEndPoint();
+                rawVideoSource.OnVideoSourceRawSampleFaster += videoEndPoint.ExternalVideoSourceRawSampleFaster;
+            }
+
+            if (rawVideoSource is AudioScopeVideoSource audioScope)
+            {
+                pc.OnAudioFrameReceived += (audioFrame) => audioScope.PushAudio(audioFrame?.EncodedAudio, audioFrame?.AudioFormat);
             }
 
             if (videoEndPoint != null)
@@ -436,30 +459,9 @@ namespace SIPSorcery.SoftPhone
                 pc.OnVideoFormatsNegotiated += (formats) => videoEndPoint.SetVideoSinkFormat(formats.First());
                 pc.OnVideoFormatsNegotiated += (formats) => videoEndPoint.SetVideoSourceFormat(formats.First());
                 videoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
-                //windowsVideoEndPoint.OnVideoSourceError += VideoSource_OnVideoSourceError;
                 pc.OnVideoFrameReceived += videoEndPoint.GotVideoFrame;
                 videoEndPoint.OnVideoSinkDecodedSample += (byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
                     OnRemoteVideo?.Invoke(sample, width, height, stride, pixelFormat);
-            }
-
-            if (m_useAudioScope)
-            {
-                // Tap the audio the scope visualises. These handlers run on the audio pacing threads
-                // so they only decode and stash; the render, and the encode when there is one, happen
-                // on the scope timer. Both bail out while _scopeRenderer is null, so nothing is
-                // decoded until the scope is actually running.
-                if (m_disableVideo)
-                {
-                    // Drawn locally only, so visualise this end's microphone.
-                    windowsAudioEndPoint.OnAudioSourceEncodedSample += (durationRtpUnits, sample) =>
-                        StashScopePcm(sample, _scopeAudioFormat);
-                }
-                else
-                {
-                    // Sent to the remote party as video, so visualise their own audio.
-                    pc.OnAudioFrameReceived += (audioFrame) =>
-                        StashScopePcm(audioFrame?.EncodedAudio, audioFrame?.AudioFormat);
-                }
             }
 
             pc.onconnectionstatechange += async (state) =>
@@ -468,7 +470,7 @@ namespace SIPSorcery.SoftPhone
                 {
                     await windowsAudioEndPoint.Start();
 
-                    if(videoEndPoint != null)
+                    if (videoEndPoint != null)
                     {
                         await videoEndPoint.StartVideo();
                         await videoEndPoint.StartVideoSink();
@@ -476,18 +478,17 @@ namespace SIPSorcery.SoftPhone
                         RequestPeerConnectionKeyFrame(pc);
                     }
 
-                    if (m_useAudioScope)
+                    if (rawVideoSource != null)
                     {
-                        // The scope only goes out on the wire if there is a negotiated video stream
-                        // to carry it. Otherwise it is drawn locally, which is both the video
-                        // disabled case and the fallback when the remote party answered without
-                        // video.
-                        StartAudioScopeVideo(sendsVideo: _scopeVideoEndPoint != null && pc.VideoRemoteTrack != null);
+                        await rawVideoSource.StartVideo();
                     }
                 }
                 else if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
                 {
-                    StopAudioScopeVideo();
+                    if (rawVideoSource != null)
+                    {
+                        await rawVideoSource.CloseVideo();
+                    }
 
                     await windowsAudioEndPoint.Close();
 
@@ -501,170 +502,8 @@ namespace SIPSorcery.SoftPhone
             return pc;
         }
 
-        /// <summary>
-        /// Decodes a block of encoded audio and stashes it for the scope timer to render. Called on
-        /// the audio source or receive thread, so it deliberately does no rendering or encoding.
-        /// </summary>
-        private void StashScopePcm(byte[] encodedSample, AudioFormat? format)
-        {
-            if (_scopeRenderer == null || encodedSample == null || format == null)
-            {
-                return;
-            }
-
-            try
-            {
-                var decoded = _scopeAudioDecoder.DecodeAudio(encodedSample, format.Value);
-
-                lock (_scopePcmLock)
-                {
-                    _scopeLatestPcm = decoded;
-                }
-            }
-            catch (Exception excp)
-            {
-                // This would repeat for every audio packet, so say it once rather than flooding the
-                // status bar and the UI dispatcher ~50 times a second.
-                if (!_scopeDecodeErrorReported)
-                {
-                    _scopeDecodeErrorReported = true;
-                    StatusMessage(this, $"Audio scope could not decode an audio sample. {excp.Message}");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Starts the clock that renders the audio scope.
-        /// </summary>
-        /// <param name="sendsVideo">True to encode each frame and send it to the remote party as this
-        /// call's video stream, false to hand it to the UI to draw locally.</param>
-        private void StartAudioScopeVideo(bool sendsVideo)
-        {
-            if (_scopeTimer != null)
-            {
-                return;
-            }
-
-            _scopeSendsVideo = sendsVideo;
-            _scopeDecodeErrorReported = false;
-            _scopeRenderer = new AudioScopeRenderer();
-
-            int frameSize = AudioScopeRenderer.Width * AudioScopeRenderer.Height * AudioScopeRenderer.PIXEL_STRIDE;
-            _scopeDisplayBuffers[0] ??= new byte[frameSize];
-            _scopeDisplayBuffers[1] ??= new byte[frameSize];
-
-            _scopeTimer = new Timer(OnScopeTimer, null, 0, SCOPE_FRAME_INTERVAL_MS);
-
-            StatusMessage(this, sendsVideo
-                ? "Sending an audio scope of the remote party's audio as this call's video stream."
-                : "Showing an audio scope of the microphone.");
-        }
-
-        /// <summary>
-        /// Stops the scope video clock. Safe to call when the scope was never started.
-        /// </summary>
-        private void StopAudioScopeVideo()
-        {
-            _scopeTimer?.Dispose();
-            _scopeTimer = null;
-            _scopeRenderer = null;
-            _scopeSendsVideo = false;
-
-            lock (_scopePcmLock)
-            {
-                _scopeLatestPcm = null;
-            }
-        }
-
-        /// <summary>
-        /// Fires every SCOPE_FRAME_INTERVAL_MS on a thread pool thread and renders a scope frame from
-        /// the most recently stashed audio. If the previous render and encode is still running the
-        /// tick is dropped rather than queued, so a slow encode can never build a backlog.
-        /// </summary>
-        private void OnScopeTimer(object state)
-        {
-            if (Interlocked.CompareExchange(ref _scopeRenderInProgress, 1, 0) != 0)
-            {
-                return;
-            }
-
-            try
-            {
-                short[] pcm;
-                lock (_scopePcmLock)
-                {
-                    pcm = _scopeLatestPcm;
-                }
-
-                // Taken into locals because a call ending concurrently nulls both.
-                var renderer = _scopeRenderer;
-                var scopeVideoEndPoint = _scopeSendsVideo ? _scopeVideoEndPoint : null;
-
-                if (pcm != null && renderer != null)
-                {
-                    var frame = renderer.ProcessAudioSample(pcm.Select(s => new Complex(s / 32768f, 0f)).ToArray());
-
-                    if (scopeVideoEndPoint != null)
-                    {
-                        scopeVideoEndPoint.ExternalVideoSourceRawSample(
-                            SCOPE_FRAME_INTERVAL_MS,
-                            AudioScopeRenderer.Width,
-                            AudioScopeRenderer.Height,
-                            frame,
-                            VideoPixelFormatsEnum.Bgr);
-                    }
-                    else
-                    {
-                        RaiseAudioScopeFrame(frame);
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                StatusMessage(this, $"Audio scope render failed. {excp.Message}");
-            }
-            finally
-            {
-                Interlocked.Exchange(ref _scopeRenderInProgress, 0);
-            }
-        }
-
-        /// <summary>
-        /// Hands a rendered scope frame to the UI to draw locally. The frame is copied into one of
-        /// two alternating buffers first, because the renderer reuses its own buffer on the next tick
-        /// while the UI is still blitting this one on the dispatcher.
-        /// </summary>
-        private void RaiseAudioScopeFrame(byte[] frame)
-        {
-            var handler = OnAudioScopeFrame;
-
-            if (handler == null || frame == null)
-            {
-                return;
-            }
-
-            _scopeDisplayBufferIndex ^= 1;
-            var display = _scopeDisplayBuffers[_scopeDisplayBufferIndex];
-
-            if (display == null || display.Length < frame.Length)
-            {
-                return;
-            }
-
-            Buffer.BlockCopy(frame, 0, display, 0, frame.Length);
-
-            handler(display,
-                AudioScopeRenderer.Width,
-                AudioScopeRenderer.Height,
-                AudioScopeRenderer.Width * AudioScopeRenderer.PIXEL_STRIDE,
-                VideoPixelFormatsEnum.Bgr);
-        }
-
         private void RequestPeerConnectionKeyFrame(RTCPeerConnection pc)
         {
-            // Both tracks have to be present. A video track is offered whenever this end has
-            // something to send, including the audio scope, but the remote party is free to answer
-            // without video, which leaves VideoRemoteTrack null.
             if (pc != null && pc.connectionState == RTCPeerConnectionState.connected &&
                 pc.VideoLocalTrack != null && pc.VideoRemoteTrack != null)
             {
@@ -718,7 +557,6 @@ namespace SIPSorcery.SoftPhone
         private void CallFinished(SIPDialogue dialogue)
         {
             m_pendingIncomingCall = null;
-            StopAudioScopeVideo();
             CallEnded(this);
         }
 
@@ -799,9 +637,6 @@ namespace SIPSorcery.SoftPhone
 
         public void Dispose()
         {
-            StopAudioScopeVideo();
-            _scopeVideoEndPoint?.Dispose();
-            _scopeVideoEndPoint = null;
             //MediaSession?.VideoSink.OnVideoSinkDecodedSampleFaster -= OnVideoRemoteSampleReady;
         }
     }

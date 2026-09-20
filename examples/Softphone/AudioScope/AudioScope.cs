@@ -19,6 +19,9 @@ using System;
 using System.Numerics;
 using MathNet.Numerics;
 using MathNet.Numerics.IntegralTransforms;
+using SIPSorcery.Media;
+using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions;
 
 namespace AudioScope
 {

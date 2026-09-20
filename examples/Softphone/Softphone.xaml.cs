@@ -47,7 +47,7 @@ namespace SIPSorcery.SoftPhone
         private string m_sipUsername = SIPSoftPhoneState.Settings.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.Settings.SIPPassword;
         private string m_sipServer = SIPSoftPhoneState.Settings.SIPServer;
-        private bool m_useAudioScope = SIPSoftPhoneState.Settings.UseAudioScope;
+        private SoftphoneVideoSourcesEnum m_videoSource = SIPSoftPhoneState.Settings.VideoSource;
 
         private SIPTransportManager _sipTransportManager;
         private List<SIPClient> _sipClients;
@@ -103,7 +103,7 @@ namespace SIPSorcery.SoftPhone
 
             for (int i = 0; i < SIP_CLIENT_COUNT; i++)
             {
-                var sipClient = new SIPClient(_sipTransportManager.SIPTransport);
+                var sipClient = new SIPClient(_sipTransportManager.SIPTransport, SIPSoftPhoneState.Settings.VideoSource);
 
                 sipClient.CallAnswer += SIPCallAnswered;
                 sipClient.CallEnded += ResetToCallStartState;
@@ -284,12 +284,10 @@ namespace SIPSorcery.SoftPhone
                         _sipClients[0].OnRemoteVideo += OnClientZeroVideoSinkSample;
                         _client0Video.Visibility = Visibility.Visible;
                     }
-                    else if (m_useAudioScope)
+                    else if (m_videoSource is SoftphoneVideoSourcesEnum.AudioScope)
                     {
-                        // No remote video to show, so draw the audio scope locally instead. With
-                        // video disabled that is a scope of this end's microphone; if video was
-                        // enabled but the remote party answered without it, it is a scope of their
-                        // audio that had nowhere to be sent.
+                        // The remote party answered without video, so the scope of their audio has
+                        // nowhere to be sent. Draw it locally instead.
                         _sipClients[0].OnAudioScopeFrame += OnClientZeroAudioScopeFrame;
                         _client0Video.Visibility = Visibility.Visible;
                     }
@@ -314,12 +312,10 @@ namespace SIPSorcery.SoftPhone
                         _sipClients[1].OnRemoteVideo += OnClientOneVideoSinkSample;
                         _client1Video.Visibility = Visibility.Visible;
                     }
-                    else if (m_useAudioScope)
+                    else if (m_videoSource is SoftphoneVideoSourcesEnum.AudioScope)
                     {
-                        // No remote video to show, so draw the audio scope locally instead. With
-                        // video disabled that is a scope of this end's microphone; if video was
-                        // enabled but the remote party answered without it, it is a scope of their
-                        // audio that had nowhere to be sent.
+                        // The remote party answered without video, so the scope of their audio has
+                        // nowhere to be sent. Draw it locally instead.
                         _sipClients[1].OnAudioScopeFrame += OnClientOneAudioScopeFrame;
                         _client1Video.Visibility = Visibility.Visible;
                     }
