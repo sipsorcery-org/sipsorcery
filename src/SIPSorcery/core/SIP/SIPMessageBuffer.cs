@@ -43,6 +43,13 @@ namespace SIPSorcery.SIP
         private static string m_CRLF = SIPConstants.CRLF;
         private static string m_sipMessageDelimiter = SIPConstants.CRLF + SIPConstants.CRLF;    // The delimiting character sequence for messages in a stream.
 
+        /// <summary>
+        /// The largest Content-Length value this framing code will accept. The transport refuses any
+        /// message longer than SIP_MAXIMUM_RECEIVE_LENGTH, so a Content-Length above it can only ever
+        /// describe a message that was never going to be delivered.
+        /// </summary>
+        private const int MAX_CONTENTLENGTH_VALUE = SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH;
+
         private static readonly ILogger logger = LogFactory.CreateLogger<SIPMessageBuffer>();
 
         public string RawMessage
@@ -355,18 +362,34 @@ namespace SIPSorcery.SIP
                 if (contentLengthValueStartPosn != 0)
                 {
                     // The Content-Length header has been found, this block extracts the value of the header.
-                    string contentLengthValue = null;
+                    // The digit run is accumulated into a long and bounded as it goes, so that neither the
+                    // number of digits nor the value they represent can take the conversion out of range. A
+                    // value that does not fit is discarded and reported as no header, which is how the header
+                    // parser already treats a Content-Length it cannot parse.
+                    //
+                    // This is framing code that runs on every receive on every stream channel, so it is not a
+                    // safe place to throw from: a receive loop that unwinds through here is left holding a
+                    // buffer it can never make progress on. See GHSA-j5j8-rhcm-7fp9.
+                    long contentLength = 0;
+                    bool haveDigits = false;
+                    bool outOfRange = false;
 
                     for (int index = contentLengthValueStartPosn; index < end; index++)
                     {
-                        if (contentLengthValue == null && (buffer[index] == ' ' || buffer[index] == '\t'))
+                        if (!haveDigits && (buffer[index] == ' ' || buffer[index] == '\t'))
                         {
                             // Skip any whitespace at the start of the header value.
                             continue;
                         }
                         else if (buffer[index] >= '0' && buffer[index] <= '9')
                         {
-                            contentLengthValue += ((char)buffer[index]).ToString();
+                            haveDigits = true;
+
+                            if (!outOfRange)
+                            {
+                                contentLength = contentLength * 10 + (buffer[index] - '0');
+                                outOfRange = contentLength > MAX_CONTENTLENGTH_VALUE;
+                            }
                         }
                         else
                         {
@@ -374,9 +397,14 @@ namespace SIPSorcery.SIP
                         }
                     }
 
-                    if (!contentLengthValue.IsNullOrBlank())
+                    if (haveDigits && outOfRange)
                     {
-                        return Convert.ToInt32(contentLengthValue);
+                        logger.LogWarning("The {ContentLengthHeader} value exceeded the maximum of {MaximumContentLength} and was ignored.",
+                            SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CONTENTLENGTH, MAX_CONTENTLENGTH_VALUE);
+                    }
+                    else if (haveDigits)
+                    {
+                        return (int)contentLength;
                     }
                 }
 
