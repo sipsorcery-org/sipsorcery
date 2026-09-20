@@ -324,5 +324,90 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug("Test complete.");
         }
+
+        /// <summary>
+        /// A TURN data indication whose DATA value is too short to be a packet of any of the multiplexed
+        /// types must be dropped. The guard the payload used to meet rejected only a null or zero length
+        /// value, so a 1 to 19 byte value beginning 0x00 or 0x01 reached a STUN re-parse it was too short
+        /// for and threw on the null header that came back. A peer sending to the client's relay allocation
+        /// controls that value, and on the TURN over TLS read loop the throw ended the loop for good, taking
+        /// the relayed media leg with it. See GHSA-6848-qmp4-652w.
+        /// </summary>
+        [Theory]
+        [InlineData(new byte[] { 0x00, 0x01, 0x02 })]                   // The payload from the advisory.
+        [InlineData(new byte[] { 0x01, 0x02, 0x03 })]
+        [InlineData(new byte[] { 0x00 })]
+        [InlineData(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 })]   // 19 bytes, one short of a STUN header.
+        [InlineData(new byte[] { 0x02, 0x03, 0x04 })]                   // Too short to be RTP either.
+        public void RtpChannelDataIndicationWithShortPayloadIsDropped(byte[] relayedPayload)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var dataIndication = new STUNMessage(STUNMessageTypesEnum.DataIndication);
+            dataIndication.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, relayedPayload));
+
+            var buffer = dataIndication.ToByteBuffer(null, false);
+
+            Assert.Equal(0x00, buffer[0]);
+            Assert.Equal(0x17, buffer[1]);
+
+            var channel = new TestableRTPChannel();
+
+            try
+            {
+                bool dataReceived = false;
+                bool stunReceived = false;
+                channel.OnRTPDataReceived += (lep, rep, pkt) => dataReceived = true;
+                channel.OnStunMessageReceived += (msg, rep, relayed) => stunReceived = true;
+
+                // Must not throw - previously a NullReferenceException on the null STUN header.
+                channel.Receive(buffer);
+
+                Assert.False(dataReceived);
+                Assert.False(stunReceived);
+                Assert.False(channel.IsClosed);
+            }
+            finally
+            {
+                channel.Close("normal");
+            }
+
+            logger.LogDebug("Test complete.");
+        }
+
+        /// <summary>
+        /// A packet received directly that is long enough for the channel's guard but too short to hold a
+        /// STUN header must be dropped rather than dispatched. Handlers read the header, so passing on a
+        /// message that could not be parsed would move the null reference rather than remove it.
+        /// </summary>
+        [Fact]
+        public void RtpChannelShortStunPacketIsDropped()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            // 12 bytes, RTPHeader.MIN_HEADER_LEN, so the channel's own length guard admits it.
+            byte[] packet = new byte[] { 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+            var channel = new TestableRTPChannel();
+
+            try
+            {
+                bool stunReceived = false;
+                channel.OnStunMessageReceived += (msg, rep, relayed) => stunReceived = true;
+
+                channel.Receive(packet);
+
+                Assert.False(stunReceived);
+                Assert.False(channel.IsClosed);
+            }
+            finally
+            {
+                channel.Close("normal");
+            }
+
+            logger.LogDebug("Test complete.");
+        }
     }
 }

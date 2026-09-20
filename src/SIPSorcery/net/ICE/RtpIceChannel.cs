@@ -67,6 +67,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Security;
@@ -2434,7 +2435,12 @@ namespace SIPSorcery.Net
         /// 0x4000-0x7FFF channel-number range. We accumulate bytes until we have a full
         /// message and then dispatch it via OnRTPPacketReceived (inherited from RTPChannel).
         /// </summary>
-        private async Task StartTlsReadLoop(STUNUri uri, SslStream sslStream, IPEndPoint remoteEndPoint)
+        /// <remarks>
+        /// Takes a Stream rather than the SslStream it is called with, and is internal rather than
+        /// private, so the loop's drop-and-continue behaviour can be tested over a plain stream.
+        /// Nothing in here needs TLS: the caller owns the handshake.
+        /// </remarks>
+        internal async Task StartTlsReadLoop(STUNUri uri, Stream sslStream, IPEndPoint remoteEndPoint)
         {
             byte[] receiveBuffer = new byte[4096];
             List<byte> streamBuffer = new List<byte>();
@@ -2471,7 +2477,22 @@ namespace SIPSorcery.Net
                         {
                             byte[] packetBytes = streamBuffer.GetRange(0, totalPacketLength).ToArray();
                             streamBuffer.RemoveRange(0, totalPacketLength);
-                            OnRTPPacketReceived(null, 0, remoteEndPoint, packetBytes);
+
+                            // The framing above has already consumed exactly this packet's bytes, so one
+                            // that can't be processed can be dropped without losing the stream position.
+                            // Letting it unwind instead ended this loop for good: the catch below is the
+                            // only handler, the finally drops the TLS stream, and nothing restarts a loop
+                            // that was started fire and forget, so every relayed packet after it was lost
+                            // and the media session went with it. Drop and continue, the way the other ICE
+                            // receive loops do. See GHSA-6848-qmp4-652w.
+                            try
+                            {
+                                OnRTPPacketReceived(null, 0, remoteEndPoint, packetBytes);
+                            }
+                            catch (Exception packetExcp)
+                            {
+                                logger.LogWarning(packetExcp, "RTPIceChannel dropped a packet received over TLS from {Uri} that could not be processed. {ErrorMessage}", uri, packetExcp.Message);
+                            }
                         }
                         else
                         {

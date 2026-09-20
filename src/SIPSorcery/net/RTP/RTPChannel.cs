@@ -410,6 +410,15 @@ public class RTPChannel : IDisposable
 
                 // TURN data indication. Extract the data payload and adjust the end point.
                 var dataIndication = STUNMessage.ParseSTUNMessage(packet, packet.Length);
+
+                // The guard above admits anything from RTPHeader.MIN_HEADER_LEN bytes, which is short of
+                // the 20 a STUN header needs, so the indication itself may not be parseable.
+                if (dataIndication == null)
+                {
+                    logger.LogWarning("RTPChannel dropped a TURN data indication from {RemoteEndPoint} that was too short to parse.", remoteEndPoint);
+                    return;
+                }
+
                 var dataAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.Data).FirstOrDefault();
                 packet = dataAttribute?.Value;
 
@@ -417,12 +426,19 @@ public class RTPChannel : IDisposable
                 remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
 
                 // The length guard above was applied to the original data indication, not to the relayed
-                // payload extracted from it. A data indication with no DATA attribute, or with a zero length
-                // one (STUNAttribute.ParseMessageAttributes leaves Value null in that case), leaves the
-                // payload null and the discriminator byte reads below would throw. Drop it here instead.
-                if (packet == null || packet.Length == 0)
+                // payload extracted from it, so it is re-applied here. The payload is multiplexed exactly
+                // like a packet arriving directly, so the same reasoning bounds it: anything shorter cannot
+                // be a valid packet of any of the types below. A data indication with no DATA attribute, or
+                // with a zero length one (STUNAttribute.ParseMessageAttributes leaves Value null in that
+                // case), leaves the payload null and the discriminator byte reads below would throw.
+                //
+                // Checking only for null or empty let a 1 to 19 byte payload through to a STUN re-parse it
+                // was too short for, which threw on the null header that came back. A relayed payload is
+                // something a peer sending to the client's allocation controls, and on the TURN over TLS
+                // read loop that throw ended the loop for good. See GHSA-6848-qmp4-652w.
+                if (packet == null || packet.Length < RTPHeader.MIN_HEADER_LEN)
                 {
-                    logger.LogWarning("RTPChannel dropped a TURN data indication from {RemoteEndPoint} with a missing or empty DATA attribute.", remoteEndPoint);
+                    logger.LogWarning("RTPChannel dropped a TURN data indication from {RemoteEndPoint} with a missing, empty or too short DATA attribute.", remoteEndPoint);
                     return;
                 }
             }
@@ -433,6 +449,16 @@ public class RTPChannel : IDisposable
             {
                 // STUN packet.
                 var stunMessage = STUNMessage.ParseSTUNMessage(packet, packet.Length);
+
+                // A packet between RTPHeader.MIN_HEADER_LEN and the 20 bytes a STUN header needs parses to
+                // null. Handlers read the header, so dispatching one would move the null reference rather
+                // than remove it.
+                if (stunMessage == null)
+                {
+                    logger.LogWarning("RTPChannel dropped a packet from {RemoteEndPoint} that was too short to parse as a STUN message.", remoteEndPoint);
+                    return;
+                }
+
                 OnStunMessageReceived?.Invoke(stunMessage, remoteEndPoint, wasRelayed);
             }
             else
