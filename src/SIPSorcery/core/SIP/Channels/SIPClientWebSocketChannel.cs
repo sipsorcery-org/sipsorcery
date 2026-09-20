@@ -445,11 +445,34 @@ namespace SIPSorcery.SIP
                         Task<WebSocketReceiveResult> receiveTask = receiveTasks[completedTaskIndex];
                         var conn = m_egressConnections.Where(x => x.Value.ReceiveTask.Id == receiveTask.Id).Single().Value;
 
-                        if (receiveTask.IsCompleted)
+                        // The task a connection is waiting on is this loop's only wait handle, so any path
+                        // that leaves a completed task in place is a spin: Task.WaitAny returns it again
+                        // immediately on the next iteration and keeps returning it. Every branch below either
+                        // replaces the task or drops the connection. See GHSA-j5j8-rhcm-7fp9.
+                        //
+                        // Note the test is for a task that ran to completion rather than Task.IsCompleted,
+                        // which is also true of a faulted or cancelled task. A faulted receive taken down the
+                        // success path throws when its Result is read, and the connection is then neither
+                        // re-armed nor closed.
+                        if (receiveTask.Status == TaskStatus.RanToCompletion)
                         {
                             logger.LogDebug("Client web socket connection to {ServerUri} received {BytesReceived} bytes.", conn.ServerUri, receiveTask.Result.Count);
                             //SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.AsSpan(0, receiveTask.Result.Count).ToArray()).Wait();
-                            ExtractSIPMessages(this, conn, conn.ReceiveBuffer, receiveTask.Result.Count);
+
+                            try
+                            {
+                                ExtractSIPMessages(this, conn, conn.ReceiveBuffer, receiveTask.Result.Count);
+                            }
+                            catch (Exception parseExcp)
+                            {
+                                // Bytes that can't be parsed leave the stream framing out of step and stay in
+                                // the pending buffer, so there is nothing to recover on this connection. Drop
+                                // it, the same way the TCP channel does when processing a receive fails.
+                                logger.LogError(parseExcp, "Exception SIPClientWebSocketChannel extracting SIP messages received from {ServerUri}, closing connection. {ErrorMessage}", conn.ServerUri, parseExcp.Message);
+                                Close(conn.ConnectionID, conn.Client);
+                                continue;
+                            }
+
                             conn.ReceiveTask = conn.Client.ReceiveAsync(conn.ReceiveBuffer, m_cts.Token);
                         }
                         else
