@@ -54,7 +54,11 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public string STUNServerHostname { get; set; }
 
-        public bool UseAudioScope { get; set; }
+        /// <summary>
+        /// If set to true the undelrying RTP session will be a WebRTC peer connection. If false
+        /// the standard VoIP RTP session will be offered and accepted.
+        /// </summary>
+        public bool UseWebRTCMedia { get; set; }
 
         /// <summary>
         /// The index of the audio output device to use. Defaults to -1 which means use the
@@ -63,9 +67,12 @@ namespace SIPSorcery.SoftPhone
         public int AudioOutDeviceIndex { get; set; } = -1;
 
         /// <summary>
-        /// If set to true video streams will not be offered or accepted in SIP calls.
+        /// The source for the video stream. If set to None a video stream will not be offered.
+        /// <see cref="SoftphoneVideoSourcesEnum.AudioScope"/> visualises the remote party's audio
+        /// and sends it to them as this call's video stream in place of a camera; if they answer
+        /// without video it is drawn locally instead.
         /// </summary>
-        public bool DisableVideo { get; set; }
+        public SoftphoneVideoSourcesEnum VideoSource { get; set; }
 
         /// <summary>
         /// Optional, used to configure the SIP channels used by the SIP transport layer. If
@@ -99,5 +106,16 @@ namespace SIPSorcery.SoftPhone
         /// Optional, the password for the tls channel's certificate key.
         /// </summary>
         public string CertificateKeyPassword { get; set; }
+    }
+
+    public enum SoftphoneVideoSourcesEnum
+    {
+        None,
+
+        Webcam,
+
+        AudioScope,
+
+        TestPattern
     }
 }

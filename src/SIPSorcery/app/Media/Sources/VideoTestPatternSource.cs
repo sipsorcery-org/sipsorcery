@@ -10,6 +10,8 @@
 // History:
 // 04 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
 // 05 Nov 2020  Aaron Clauson   Added video encoder parameter.
+// 20 Sep 2026  Aaron Clauson   Raise OnVideoSourceRawSampleFaster for consumers that want the
+//                              frame as a RawImage rather than a byte array.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -18,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -67,9 +70,11 @@ namespace SIPSorcery.Media
         /// </summary>
         public event RawVideoSampleDelegate OnVideoSourceRawSample;
 
-#pragma warning disable CS0067
+        /// <summary>
+        /// Unencoded test pattern samples handed over as a <see cref="RawImage"/>, for consumers
+        /// that would rather not take a byte array copy per frame.
+        /// </summary>
         public event RawVideoSampleFasterDelegate OnVideoSourceRawSampleFaster;
-#pragma warning restore CS0067
 
         /// <summary>
         /// If a video encoder has been set then this event contains the encoded video
@@ -229,7 +234,7 @@ namespace SIPSorcery.Media
         {
             lock (_sendTestPatternTimer)
             {
-                if (!_isClosed && (OnVideoSourceRawSample != null || OnVideoSourceEncodedSample != null))
+                if (!_isClosed && (OnVideoSourceRawSample != null || OnVideoSourceRawSampleFaster != null || OnVideoSourceEncodedSample != null))
                 {
                     _frameCount++;
 
@@ -240,6 +245,11 @@ namespace SIPSorcery.Media
                         GenerateRawSample(TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer);
                     }
 
+                    if (OnVideoSourceRawSampleFaster != null)
+                    {
+                        GenerateRawSampleFaster(TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer);
+                    }
+
                     if (_videoEncoder != null && OnVideoSourceEncodedSample != null && !_formatManager.SelectedFormat.IsEmpty())
                     {
                         var encodedBuffer = _videoEncoder.EncodeVideo(TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer, VideoPixelFormatsEnum.I420, _formatManager.SelectedFormat.Codec);
@@ -248,11 +258,7 @@ namespace SIPSorcery.Media
                         {
                             uint fps = (_frameSpacing > 0) ? 1000 / (uint)_frameSpacing : DEFAULT_FRAMES_PER_SECOND;
                             uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
-                            // Use ?.Invoke so the null-check and the call are
-                            // a single atomic delegate read. Without this a
-                            // subscriber unsubscribing on another thread
-                            // between the outer null-check and this Invoke
-                            // produced a NullReferenceException.
+
                             OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encodedBuffer);
                         }
                     }
@@ -276,6 +282,47 @@ namespace SIPSorcery.Media
             var bgr = PixelConverter.I420toBGR(i420Buffer, width, height, out _);
 #pragma warning restore CS0618 // Type or member is obsolete
             OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, width, height, bgr, VideoPixelFormatsEnum.Bgr);
+        }
+
+        /// <summary>
+        /// The <see cref="RawImage"/> counterpart to <seealso cref="GenerateRawSample"/>. Converts the
+        /// I420 test pattern frame to BGR, the same format the byte array event supplies, and points a
+        /// <see cref="RawImage"/> at it.
+        /// </summary>
+        /// <param name="i420Buffer">The I420 buffer representing the test pattern.</param>
+        /// <remarks>
+        /// The converted buffer is pinned only for the duration of the event, which is exactly how long
+        /// <see cref="RawImage.Sample"/> is documented to be valid for. A handler that needs the frame
+        /// after it returns must copy it, for example with <see cref="RawImage.GetBuffer"/>.
+        /// </remarks>
+        private void GenerateRawSampleFaster(int width, int height, byte[] i420Buffer)
+        {
+#pragma warning disable CS0618 // Type or member is obsolete
+            var bgr = PixelConverter.I420toBGR(i420Buffer, width, height, out int stride);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+            if (bgr == null)
+            {
+                return;
+            }
+
+            var pinnedBgr = GCHandle.Alloc(bgr, GCHandleType.Pinned);
+
+            try
+            {
+                OnVideoSourceRawSampleFaster?.Invoke((uint)_frameSpacing, new RawImage
+                {
+                    Width = width,
+                    Height = height,
+                    Stride = stride,
+                    Sample = pinnedBgr.AddrOfPinnedObject(),
+                    PixelFormat = VideoPixelFormatsEnum.Bgr
+                });
+            }
+            finally
+            {
+                pinnedBgr.Free();
+            }
         }
 
         /// <summary>

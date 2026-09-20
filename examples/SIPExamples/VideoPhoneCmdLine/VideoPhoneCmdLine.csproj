@@ -6,13 +6,14 @@
     <UseWindowsForms>true</UseWindowsForms>
     <DisableWinExeOutputInference>true</DisableWinExeOutputInference>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>Latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" />
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Sinks.Console" />
-    <PackageReference Include="SIPSorceryMedia.Encoders" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" />
   </ItemGroup>
 
     <ItemGroup>

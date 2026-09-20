@@ -120,7 +120,7 @@ namespace SIPSorcery.Net
         /// <seealso cref="PENDING_SECURE_PACKETS_MAX_COUNT"/> this bounds the queue on both
         /// count and age.
         /// </summary>
-        public const int PENDING_SECURE_PACKETS_MAX_AGE_MS = 500;
+        public const int PENDING_SECURE_PACKETS_MAX_AGE_MS = 5000;
 
         protected static readonly ILogger logger = LogFactory.CreateLogger<RTPSession>();
 
