@@ -595,5 +595,58 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Throws<ApplicationException>(() => STUNHeader.ParseSTUNHeader(new ArraySegment<byte>(buffer)));
         }
+        /// <summary>
+        /// Tests that a buffer too short to hold a STUN header is reported as unparseable rather than
+        /// throwing. STUNHeader.ParseSTUNHeader returns null below the 20 byte header length, and a first
+        /// byte of 0x00 or 0x01 clears the initial byte mask so it takes that null return rather than its
+        /// "did not begin with 0x00" throw. Dereferencing the null header raised a NullReferenceException,
+        /// which on the TURN over TLS read loop ended the loop permanently. See GHSA-6848-qmp4-652w.
+        /// </summary>
+        [Theory]
+        [InlineData(0x00, 1)]
+        [InlineData(0x00, 3)]       // The length from the advisory's primitive check.
+        [InlineData(0x00, 12)]      // RTPHeader.MIN_HEADER_LEN, the shortest an RTP channel will admit.
+        [InlineData(0x00, 19)]      // One short of a STUN header.
+        [InlineData(0x01, 3)]
+        [InlineData(0x01, 19)]
+        public void ParseSTUNMessageTooShortForHeaderReturnsNull(byte firstByte, int length)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            byte[] buffer = new byte[length];
+            buffer[0] = firstByte;
+
+            for (int i = 1; i < length; i++)
+            {
+                buffer[i] = (byte)i;
+            }
+
+            STUNMessage stunMessage = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
+
+            Assert.Null(stunMessage);
+        }
+
+        /// <summary>
+        /// Tests that rejecting the buffers too short to hold a header left a buffer that is long enough
+        /// parsing as it did before.
+        /// </summary>
+        [Fact]
+        public void ParseSTUNMessageHeaderLengthBufferStillParses()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            byte[] buffer = new STUNMessage(STUNMessageTypesEnum.BindingRequest).ToByteBuffer(null, false);
+
+            Assert.Equal(STUNHeader.STUN_HEADER_LENGTH, buffer.Length);
+
+            STUNMessage stunMessage = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
+
+            Assert.NotNull(stunMessage);
+            Assert.NotNull(stunMessage.Header);
+            Assert.Equal(STUNMessageTypesEnum.BindingRequest, stunMessage.Header.MessageType);
+        }
+
     }
 }
