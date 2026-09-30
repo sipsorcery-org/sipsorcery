@@ -90,7 +90,7 @@
             <!-- Left column: video | right column: text -->
             <UniformGrid Grid.Row="3" Rows="1">
                 <!-- Video -->
-                <Border x:Name="_videoArea" BorderBrush="#FF807FC3" BorderThickness="0" CornerRadius="2" Visibility="Visible" Margin="0,121,0,52">
+                <Border x:Name="_videoArea" BorderBrush="#FF807FC3" BorderThickness="0" CornerRadius="2" Visibility="Visible">
                     <Grid Margin="2" VerticalAlignment="Stretch" x:Name="m_callVideoGrid" HorizontalAlignment="Stretch">
                         <Grid x:Name="_client0VideoCanvas" MouseLeftButtonUp="OnClickVideo">
                             <Image x:Name="_client0Video" MinWidth="128" MinHeight="96" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed" MaxWidth="490" MaxHeight="277"/>

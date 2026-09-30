@@ -145,6 +145,15 @@ namespace SIPSorcery.SoftPhone
 
         private async void OnWindowLoaded(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                Title += $" V{System.IO.File.GetLastWriteTime(System.Reflection.Assembly.GetEntryAssembly().Location):yyyy.MM.dd}";
+            }
+            catch (Exception)
+            {
+                Title += " (unknown version)";
+            }
+
             await Initialize();
             InitializeUi();
         }
