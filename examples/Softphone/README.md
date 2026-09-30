@@ -116,3 +116,12 @@ Command line to use to place a video call to this softphone application:
 ````
 dotnet run --dst=127.0.0.1:5060 --tp
 ````
+
+### Video Support in Softphone (FFmpeg)
+
+For the video support to work in the softphone application, the correct FFmpeg environment has to be set up:
+```
+winget install "FFmpeg (Shared)" --version 8.1
+```
+
+See: https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorceryMedia.FFmpeg#installing-ffmpeg
