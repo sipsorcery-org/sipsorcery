@@ -946,6 +946,9 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                                 // copy header without extensions
                                 output.Slice(0, rtpHeaderLength).CopyTo(syntheticRtpPacket.AsSpan(0, rtpHeaderLength));
 
+                                // preserve incoming x bit
+                                byte outerFirstByte = output[0];
+
                                 // set X bit to 0
                                 syntheticRtpPacket[0] &= 0xEF;
 
@@ -984,6 +987,9 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
                                 // copy the synthetic header back to the output buffer
                                 syntheticRtpPacket.AsSpan(0, rtpHeaderLength).CopyTo(output.Slice(0, rtpHeaderLength));
+
+                                // restore preserved incoming x bit value
+                                output[0] = outerFirstByte;
 
                                 // update the output buffer length
                                 outputBufferLength = offset + syntheticRtpPacketLen - rtpHeaderLength - context.N_tag / 2;
