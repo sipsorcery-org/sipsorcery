@@ -109,12 +109,11 @@ namespace SIPSorcery.SIP.UnitTests
 
         /// <summary>
         /// A late retransmission of the INVITE reached a server after it had answered, and the server, no longer
-        /// holding the transaction, rejected it as a merged request. The 482 is acknowledged with an ACK for the
-        /// 482 itself - its To tag and the INVITE's branch - not with a repeat of the ACK for the 200, which left
-        /// the server retransmitting its 482 until it timed out.
+        /// holding the transaction, rejected it as a merged request. The 482 is not sent the ACK for the 200,
+        /// which acknowledges a different response, and is not acknowledged at all: it is logged and left.
         /// </summary>
         [Fact]
-        public async Task ADifferentNonSuccessFinalResponseAfterA2xxIsAcknowledgedWithItsOwnAck()
+        public async Task ADifferentNonSuccessFinalResponseAfterA2xxIsNotAcknowledged()
         {
             var (transport, channel, transaction, invite) = Create(OutboundProxy);
 
@@ -124,19 +123,13 @@ namespace SIPSorcery.SIP.UnitTests
                 Assert.Equal(SIPTransactionStatesEnum.Confirmed, transaction.TransactionState);
                 Assert.Single(SentAcks(channel));
 
-                await transaction.GotResponse(transport.GetSIPChannels().First().ListeningSIPEndPoint, FarEnd, GetResponse(invite, SIPResponseStatusCodesEnum.LoopDetected, "merged"));
+                var result = await transaction.GotResponse(transport.GetSIPChannels().First().ListeningSIPEndPoint, FarEnd, GetResponse(invite, SIPResponseStatusCodesEnum.LoopDetected, "merged"));
 
-                var acks = SentAcks(channel);
-                Assert.Equal(2, acks.Length);
-
-                var mergedAck = acks[1];
-                Assert.Equal("merged", mergedAck.Header.To.ToTag);
-                Assert.Equal(invite.Header.Vias.TopViaHeader.Branch, mergedAck.Header.Vias.TopViaHeader.Branch);
-                Assert.Equal(invite.URI.ToString(), mergedAck.URI.ToString());
-                Assert.Equal(1, mergedAck.Header.CSeq);
-
-                Assert.Equal("answered", transaction.AckRequest.Header.To.ToTag, StringComparer.Ordinal);
+                Assert.Equal(SocketError.Success, result);
+                Assert.Single(SentAcks(channel));
                 Assert.Equal(0, transaction.AckRetransmits);
+                Assert.Equal(SIPTransactionStatesEnum.Confirmed, transaction.TransactionState);
+                Assert.Equal("answered", transaction.TransactionFinalResponse.Header.To.ToTag);
             }
             finally
             {
@@ -196,7 +189,7 @@ namespace SIPSorcery.SIP.UnitTests
 
         /// <summary>
         /// A 2xx from another fork, with a different To tag, cannot be acknowledged by the first 2xx's ACK and is
-        /// left to the transaction user rather than answered with it.
+        /// logged and left rather than answered with it.
         /// </summary>
         [Fact]
         public async Task A2xxFromAnotherForkIsNotSentTheFirstForksAck()

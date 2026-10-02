@@ -309,11 +309,19 @@ namespace SIPSorcery.SIP
                     else
                     {
                         // A different final response from the one that completed the transaction. The stored
-                        // ACK acknowledges that one, not this: resending it would leave the far end
-                        // retransmitting its response until it timed out. Seen when a late retransmission of
-                        // the INVITE reaches a server after it has answered, and the server, no longer
-                        // holding the transaction, rejects it as a merged request with 482.
-                        return AcknowledgeOtherFinalResponse(sipResponse);
+                        // ACK acknowledges that one, not this, so it is not resent: it would reach the far end
+                        // as an ACK for something else. Nor is this response acknowledged in its own right. It
+                        // should not have arrived, and its sender retransmitting it is the evidence that it
+                        // did - seen when a late retransmission of the INVITE reached a server after it had
+                        // answered, and the server, no longer holding the transaction, rejected it as a merged
+                        // request with 482. Said at warning, so the cause can be looked for.
+                        logger.LogWarning(
+                            "Final response {StatusCode} {ReasonPhrase} (To tag {ToTag}) from {RemoteEndPoint} for {Method} Call-ID {CallId} ignored: the transaction had completed with {FinalStatusCode} (To tag {FinalToTag}).",
+                            sipResponse.StatusCode, sipResponse.ReasonPhrase, sipResponse.Header.To?.ToTag, remoteEndPoint,
+                            sipResponse.Header.CSeqMethod, sipResponse.Header.CallId,
+                            m_transactionFinalResponse.StatusCode, m_transactionFinalResponse.Header.To?.ToTag);
+
+                        return Task.FromResult(SocketError.Success);
                     }
                 }
                 else
@@ -520,16 +528,6 @@ namespace SIPSorcery.SIP
             return m_transactionFinalResponse == null ||
                 (sipResponse.StatusCode == m_transactionFinalResponse.StatusCode &&
                  string.Equals(sipResponse.Header.To?.ToTag, m_transactionFinalResponse.Header.To?.ToTag, StringComparison.Ordinal));
-        }
-
-        /// <summary>
-        /// Handles a final response that differs from the one that completed the transaction. By default it is
-        /// discarded; an INVITE client transaction acknowledges a non-2xx one so its sender stops retransmitting.
-        /// </summary>
-        /// <param name="sipResponse">The final response received.</param>
-        protected virtual Task<SocketError> AcknowledgeOtherFinalResponse(SIPResponse sipResponse)
-        {
-            return Task.FromResult(SocketError.Success);
         }
 
         private Task<SocketError> ResendAckRequest()
