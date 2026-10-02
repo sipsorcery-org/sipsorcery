@@ -44,6 +44,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CommandLine;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
@@ -108,8 +109,6 @@ namespace demo
         private static Bitmap _remoteVideoBmp;
         private static Bitmap _localVideoBmp;
         private static Options _options;
-
-        private static CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte> _bgrWriter = new();
 
         static async Task Main(string[] args)
         {
@@ -298,29 +297,37 @@ namespace demo
                         if (_isFormActivated)
                         {
                             int stride;
-                            byte[] bgr;
+                            ArrayPoolBufferWriter<byte> bgrWriter;
 
-                            if (pixelFormat == VideoPixelFormatsEnum.I420)
+                            switch (pixelFormat)
                             {
-                                _bgrWriter.Clear();
-                                int bytesWritten = PixelConverter.I420toBGR(_bgrWriter, sample.AsSpan(), width, height, out stride);
-                                bgr = _bgrWriter.WrittenSpan.ToArray();
-                            }
-                            else if (pixelFormat == VideoPixelFormatsEnum.Bgr)
-                            {
-                                stride = width * 3;
-                                bgr = sample.ToArray();
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine($"OnVideoSourceRawSample received a sample with an unsupported pixel format of {pixelFormat}.");
-                                return;
+                                case VideoPixelFormatsEnum.I420:
+                                    bgrWriter = new();
+                                    int bytesWritten = PixelConverter.I420toBGR(bgrWriter, sample.AsSpan(), width, height, out stride);
+                                    break;
+                                case VideoPixelFormatsEnum.Bgr:
+                                    bgrWriter = new();
+                                    stride = width * 3;
+                                    bgrWriter.Write(sample);
+                                    break;
+                                default:
+                                    Console.Error.WriteLine($"OnVideoSourceRawSample received a sample with an unsupported pixel format of {pixelFormat}.");
+                                    return;
                             }
 
                             //if (_form.Handle != IntPtr.Zero)
                             //{
-                            _form.BeginInvoke(new Action(() =>
-                                _localVideoBmp = ShowFrame(_localVideoBmp, _localVideoPicBox, bgr, width, height, stride)));
+                            _form.BeginInvoke(() =>
+                                {
+                                    try
+                                    {
+                                        _localVideoBmp = ShowFrame(_localVideoBmp, _localVideoPicBox, bgrWriter.WrittenSpan, width, height, stride);
+                                    }
+                                    finally
+                                    {
+                                        bgrWriter.Dispose();
+                                    }
+                                });
                             //}
                         }
                     };
@@ -385,27 +392,15 @@ namespace demo
                                 int width = rawImage.Width;
                                 int height = rawImage.Height;
 
-                                // BGR24 = 3 bytes per pixel, rows aligned to 4 bytes.
-                                int stride = (width * 3 + 3) & ~3;
-                                int bufferSize = stride * height;
+                                int stride = rawImage.Stride;
+                                int bufferSize = rawImage.BufferSize;
 
                                 byte[] frame = ArrayPool<byte>.Shared.Rent(bufferSize);
 
                                 try
                                 {
-                                    var handle = GCHandle.Alloc(frame, GCHandleType.Pinned);
-
-                                    try
-                                    {
-                                        // Copy immediately because RawImage will be reused by FFmpeg after this method returns.
-                                        rawImage.CopyTo(
-                                            handle.AddrOfPinnedObject(),
-                                            stride);
-                                    }
-                                    finally
-                                    {
-                                        handle.Free();
-                                    }
+                                    // Copy immediately because RawImage will be reused by FFmpeg after this method returns.
+                                    rawImage.CopyTo(frame);
                                 }
                                 catch
                                 {
@@ -414,7 +409,16 @@ namespace demo
                                 }
 
                                 _form.BeginInvoke(new Action(() =>
-                                    _remoteVideoBmp = ShowFrame(_remoteVideoBmp, _remoteVideoPicBox, frame, width, height, stride)));
+                                {
+                                    try
+                                    {
+                                        _remoteVideoBmp = ShowFrame(_remoteVideoBmp, _remoteVideoPicBox, frame.AsSpan(0, bufferSize), width, height, stride);
+                                    }
+                                    finally
+                                    {
+                                        ArrayPool<byte>.Shared.Return(frame);
+                                    }
+                                }));
                             }
                         };
                     }
@@ -560,20 +564,18 @@ namespace demo
         /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         /// <summary>
-        /// Copies a decoded 24 bits per pixel frame into a bitmap this application owns and displays it,
-        /// returning the bitmap so the caller can re-use it for the next frame.
+        /// Copies a decoded 24 bits per pixel frame into a bitmap this application owns and displays it, returning the
+        /// bitmap so the caller can re-use it for the next frame.
         /// </summary>
         /// <remarks>
-        /// Runs on the UI thread. The byte[] overloads hand over a managed array, which unlike
-        /// RawImage.Sample stays valid after the callback returns, so the frame can simply be
-        /// marshalled across and copied here. Wrapping the array in a Bitmap instead would leave the
-        /// picture box pointing at memory the GC is free to move or reclaim.
-        ///
-        /// The bitmap is allocated once and re-used until the frame size changes. Note GDI+'s
-        /// Format24bppRgb is B,G,R in memory despite the name, which is why a Bgr sample copies in
-        /// verbatim.
+        /// Runs on the UI thread. The decoded-frame callbacks hand over managed arrays, which unlike RawImage.Sample
+        /// stays valid after the callback returns, so the frame can simply be marshalled across and copied here.
+        /// Wrapping the array in a Bitmap instead would leave the picture box pointing at memory the GC is free to move
+        /// or reclaim.
+        /// The bitmap is allocated once and re-used until the frame size changes. Note GDI+'s Format24bppRgb is B,G,R
+        /// in memory despite the name, which is why a Bgr sample copies in verbatim.
         /// </remarks>
-        private static Bitmap ShowFrame(Bitmap displayBmp, PictureBox picBox, byte[] sample, int width, int height, int stride)
+        private static Bitmap ShowFrame(Bitmap displayBmp, PictureBox picBox, ReadOnlySpan<byte> sample, int width, int height, int stride)
         {
             if (displayBmp == null || displayBmp.Width != width || displayBmp.Height != height)
             {
@@ -590,17 +592,26 @@ namespace demo
 
             try
             {
+                var sampleBytes = MemoryMarshal.AsBytes(sample);
+
                 // GDI+ pads each row to a multiple of four bytes, so the strides only agree when the
                 // width is a multiple of four. That covers every standard resolution.
                 if (stride == bmpData.Stride)
                 {
-                    Marshal.Copy(sample, 0, bmpData.Scan0, stride * height);
+                    unsafe
+                    {
+                        sampleBytes[..(stride * height)].CopyTo(new Span<byte>(bmpData.Scan0.ToPointer(), stride * height));
+                    }
                 }
                 else
                 {
                     for (int row = 0; row < height; row++)
                     {
-                        Marshal.Copy(sample, row * stride, bmpData.Scan0 + row * bmpData.Stride, width * 3);
+                        unsafe
+                        {
+                            sampleBytes.Slice(row * stride, width * 3)
+                                .CopyTo(new Span<byte>((bmpData.Scan0 + row * bmpData.Stride).ToPointer(), width * 3));
+                        }
                     }
                 }
             }
