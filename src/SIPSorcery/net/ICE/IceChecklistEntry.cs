@@ -232,6 +232,13 @@ namespace SIPSorcery.Net
         public DateTime LastBindingRequestReceivedAt { get; set; }
 
         /// <summary>
+        /// Set when the remote peer has sent a binding request with the USE-CANDIDATE attribute
+        /// for this entry. Distinct from <see cref="Nominated"/>, which marks the entry in use:
+        /// a controlling peer may nominate several entries, and only verified ones are used.
+        /// </summary>
+        public bool RemoteNominated { get; set; }
+
+        /// <summary>
         /// Creates a new entry for the ICE session checklist.
         /// </summary>
         /// <param name="localCandidate">The local candidate for the checklist pair.</param>

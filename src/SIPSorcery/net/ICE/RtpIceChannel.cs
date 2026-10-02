@@ -120,7 +120,8 @@ namespace SIPSorcery.Net
         private const int ICE_PASSWORD_LENGTH = 24;
         private const int MAX_CHECKLIST_ENTRIES = 25;       // Maximum number of entries that can be added to the checklist of candidate pairs.
         private const string MDNS_TLD = ".local";           // Top Level Domain name for multicast lookups as per RFC6762.
-        private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected. 
+        private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected.
+        private const int RENOMINATION_CHECK_INTERVAL_MS = 500; // Minimum spacing of the checks that verify an entry the remote peer nominates once connected.
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
 
@@ -1518,6 +1519,36 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Once connected, moves the nominated entry to the highest priority entry the remote peer
+        /// has nominated and our own check has verified, if that is better than the one in use.
+        /// The entry in use is kept while it is verified and no verified nomination outranks it.
+        /// </summary>
+        private void SelectRemoteNominatedEntry()
+        {
+            ChecklistEntry best;
+
+            lock (_checklistLock)
+            {
+                best = _checklist
+                    .Where(x => x.RemoteNominated && x.State == ChecklistEntryState.Succeeded)
+                    .OrderByDescending(x => x.Priority)
+                    .FirstOrDefault();
+            }
+
+            var current = NominatedEntry;
+
+            if (best == null || current == null ||
+                best.RemoteCandidate.ToString() == current.RemoteCandidate.ToString() ||
+                (current.State == ChecklistEntryState.Succeeded && best.Priority <= current.Priority))
+            {
+                return;
+            }
+
+            logger.LogDebug("ICE RTP channel remote peer nominated a new candidate: {RemoteCandidate}.", best.RemoteCandidate.ToShortString());
+            SetNominatedEntry(best);
+        }
+
+        /// <summary>
         /// Performs a connectivity check for a single candidate pair entry.
         /// </summary>
         /// <param name="candidatePair">The candidate pair to perform a connectivity check for.</param>
@@ -1753,6 +1784,14 @@ namespace SIPSorcery.Net
                     else
                     {
                         matchingChecklistEntry.GotStunResponse(stunMessage, remoteEndPoint);
+
+                        if (matchingChecklistEntry.RemoteNominated &&
+                            IceConnectionState == RTCIceConnectionState.connected &&
+                            stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
+                        {
+                            // The check that verifies an entry the remote peer nominated after connecting.
+                            SelectRemoteNominatedEntry();
+                        }
 
                         if (_checklistState == ChecklistState.Running &&
                             stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
@@ -2012,13 +2051,28 @@ namespace SIPSorcery.Net
                                 // If we are the "controlled" agent and get a "use candidate" attribute that sets the matching candidate as nominated 
                                 // as per https://tools.ietf.org/html/rfc8445#section-7.3.1.5.
                                 logger.LogDebug("ICE RTP channel remote peer nominated entry from binding request: {RemoteCandidate}.", matchingChecklistEntry.RemoteCandidate.ToShortString());
+                                matchingChecklistEntry.RemoteNominated = true;
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
                             else if (!matchingChecklistEntry.RemoteCandidate.IsEquivalent(NominatedEntry.RemoteCandidate))
                             {
-                                // The remote peer is changing the nominated candidate.
-                                logger.LogDebug("ICE RTP channel remote peer nominated a new candidate: {RemoteCandidate}.", matchingChecklistEntry.RemoteCandidate.ToShortString());
-                                SetNominatedEntry(matchingChecklistEntry);
+                                // The remote peer nominates another entry. A controlling peer may nominate several
+                                // (Chrome keeps nominating every pair it rates at least as good as its selected one),
+                                // so switching on each nomination flips the destination between them, and switching
+                                // to one we cannot reach loses the media. Only entries verified by our own check
+                                // qualify, and the highest priority of those is used, as per
+                                // https://tools.ietf.org/html/rfc8445#section-8.1.1.
+                                matchingChecklistEntry.RemoteNominated = true;
+
+                                if (matchingChecklistEntry.State == ChecklistEntryState.Succeeded)
+                                {
+                                    SelectRemoteNominatedEntry();
+                                }
+                                else if (DateTime.Now.Subtract(matchingChecklistEntry.LastCheckSentAt).TotalMilliseconds >= RENOMINATION_CHECK_INTERVAL_MS)
+                                {
+                                    logger.LogDebug("ICE RTP channel checking remote nominated candidate before use: {RemoteCandidate}.", matchingChecklistEntry.RemoteCandidate.ToShortString());
+                                    SendConnectivityCheck(matchingChecklistEntry, false);
+                                }
                             }
                         }
 

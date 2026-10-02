@@ -1,0 +1,212 @@
+//-----------------------------------------------------------------------------
+// Filename: RtpIceChannelRenominationUnitTest.cs
+//
+// Description: Tests for how a controlled RtpIceChannel handles a controlling
+// peer that nominates further candidate pairs once connected. Chrome nominates
+// every pair it rates at least as good as its selected one, so the channel sees
+// a stream of USE-CANDIDATE requests across several pairs. Only pairs the channel
+// has verified with its own check may become the destination.
+//
+// The remote peer is played by loopback UDP sockets: one that answers the
+// channel's checks (a working path) and one that only sends (a path that works
+// in one direction, as the Android emulator's NAT has for IPv6).
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
+using Xunit;
+
+namespace SIPSorcery.Net.UnitTests
+{
+    [Trait("Category", "unit")]
+    public class RtpIceChannelRenominationUnitTest
+    {
+        private const string PEER_UFRAG = "peer";
+        private const string PEER_PASSWORD = "peerpasswordpeerpassword";
+
+        private readonly Microsoft.Extensions.Logging.ILogger logger;
+
+        public RtpIceChannelRenominationUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
+        /// <summary>
+        /// A path the remote peer can send on but the channel cannot reach is nominated while the
+        /// channel is connected over a working one. The destination stays on the working path.
+        /// </summary>
+        [Fact]
+        public async Task UnverifiedNominationDoesNotMoveTheDestination()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var channel = NewControlledChannel();
+            using var working = new PeerSocket(channel, answersChecks: true);
+            using var oneWay = new PeerSocket(channel, answersChecks: false);
+            try
+            {
+                working.Nominate();
+                await WaitFor(() => IsDestination(channel, working), "connected over the working path");
+
+                for (int i = 0; i < 20; i++)
+                {
+                    working.Nominate();
+                    oneWay.Nominate();
+                    await Task.Delay(60);
+                    Assert.True(IsDestination(channel, working), $"destination moved to {channel.NominatedEntry.RemoteCandidate.ToShortString()}");
+                }
+            }
+            finally
+            {
+                channel.Close();
+            }
+        }
+
+        /// <summary>
+        /// The channel connects on a path it cannot reach, and the peer then nominates a working
+        /// one as well. The destination moves to the working path once the channel's own check
+        /// on it succeeds, and stays there while the peer goes on nominating both.
+        /// </summary>
+        [Fact]
+        public async Task VerifiedNominationMovesTheDestinationOnce()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var channel = NewControlledChannel();
+            using var working = new PeerSocket(channel, answersChecks: true);
+            using var oneWay = new PeerSocket(channel, answersChecks: false);
+            try
+            {
+                int changes = 0;
+                oneWay.Nominate();
+                await WaitFor(() => IsDestination(channel, oneWay), "connected over the one-way path");
+                channel.OnIceConnectionStateChange += _ => changes++;
+
+                await WaitFor(() =>
+                {
+                    working.Nominate();
+                    oneWay.Nominate();
+                    return IsDestination(channel, working);
+                }, "moved to the working path");
+
+                for (int i = 0; i < 20; i++)
+                {
+                    working.Nominate();
+                    oneWay.Nominate();
+                    await Task.Delay(60);
+                    Assert.True(IsDestination(channel, working), $"destination moved to {channel.NominatedEntry.RemoteCandidate.ToShortString()}");
+                }
+
+                Assert.Equal(1, changes);
+            }
+            finally
+            {
+                channel.Close();
+            }
+        }
+
+        private static RtpIceChannel NewControlledChannel()
+        {
+            var channel = new RtpIceChannel(IPAddress.Loopback, RTCIceComponent.rtp);
+            channel.SetRemoteCredentials(PEER_UFRAG, PEER_PASSWORD);
+            channel.StartGathering();
+            return channel;
+        }
+
+        private static bool IsDestination(RtpIceChannel channel, PeerSocket peer) =>
+            channel.IceConnectionState == RTCIceConnectionState.connected &&
+            channel.NominatedEntry?.RemoteCandidate.DestinationEndPoint?.Port == peer.Port;
+
+        private static async Task WaitFor(Func<bool> condition, string what)
+        {
+            var until = DateTime.Now.AddSeconds(5);
+            while (!condition())
+            {
+                if (DateTime.Now > until)
+                {
+                    throw new TimeoutException($"Not {what} within 5 s.");
+                }
+                await Task.Delay(50);
+            }
+        }
+
+        /// <summary>
+        /// One of the controlling peer's sockets. It sends USE-CANDIDATE binding requests to the
+        /// channel and, if it answers checks, replies to the channel's binding requests.
+        /// </summary>
+        private sealed class PeerSocket : IDisposable
+        {
+            private readonly RtpIceChannel _channel;
+            private readonly UdpClient _udp = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+            private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+
+            public int Port => ((IPEndPoint)_udp.Client.LocalEndPoint).Port;
+
+            public PeerSocket(RtpIceChannel channel, bool answersChecks)
+            {
+                _channel = channel;
+                _ = Task.Run(() => Receive(answersChecks));
+            }
+
+            public void Nominate()
+            {
+                var request = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
+                request.Header.TransactionId = Encoding.ASCII.GetBytes(Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH));
+                request.AddUsernameAttribute($"{_channel.LocalIceUser}:{PEER_UFRAG}");
+                request.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Priority, BitConverter.GetBytes(1_000_000u)));
+                request.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.IceControlling, NetConvert.GetBytes(1UL)));
+                request.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.UseCandidate, null));
+                var bytes = request.ToByteBufferStringKey(_channel.LocalIcePassword, true);
+                _udp.Send(bytes, bytes.Length, _channel.RTPLocalEndPoint);
+            }
+
+            private async Task Receive(bool answersChecks)
+            {
+                while (!_cts.IsCancellationRequested)
+                {
+                    UdpReceiveResult received;
+                    try
+                    {
+                        received = await _udp.ReceiveAsync();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        return;
+                    }
+                    catch (SocketException)
+                    {
+                        continue;
+                    }
+
+                    var message = STUNMessage.ParseSTUNMessage(received.Buffer, received.Buffer.Length);
+                    if (!answersChecks || message?.Header.MessageType != STUNMessageTypesEnum.BindingRequest)
+                    {
+                        continue;
+                    }
+
+                    var response = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
+                    response.Header.TransactionId = message.Header.TransactionId;
+                    response.AddXORMappedAddressAttribute(received.RemoteEndPoint.Address, received.RemoteEndPoint.Port);
+                    var bytes = response.ToByteBufferStringKey(PEER_PASSWORD, true);
+                    _udp.Send(bytes, bytes.Length, received.RemoteEndPoint);
+                }
+            }
+
+            public void Dispose()
+            {
+                _cts.Cancel();
+                _udp.Dispose();
+            }
+        }
+    }
+}
