@@ -39,7 +39,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>main</RepositoryBranch>
     <PackageTags>OpenAI WebRTC SIPSorcery Real-time</PackageTags>
-    <PackageReleaseNotes>-v10.0.16: Updated nuget packages to latest stable versions.
+    <PackageReleaseNotes>-v10.0.17: Updated for main sipsorcery library release.
+-v10.0.16: Updated nuget packages to latest stable versions.
 -v10.0.15: Updated for main sipsorcery library release.
 -v10.0.13: Fix license file.
 -v10.0.12: Updated for main sipsorcery library release.
@@ -56,9 +57,9 @@
 -v8.0.1-pre: Initial version.
 </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>10.0.16</Version>
-    <AssemblyVersion>10.0.16</AssemblyVersion>
-    <FileVersion>10.0.16</FileVersion>
+    <Version>10.0.17</Version>
+    <AssemblyVersion>10.0.17</AssemblyVersion>
+    <FileVersion>10.0.17</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">
