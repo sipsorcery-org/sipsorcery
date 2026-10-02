@@ -302,9 +302,18 @@ namespace SIPSorcery.SIP
                     {
                         return ResendPrackRequest();
                     }
-                    else
+                    else if (IsFinalResponseRetransmit(sipResponse))
                     {
                         return ResendAckRequest();
+                    }
+                    else
+                    {
+                        // A different final response from the one that completed the transaction. The stored
+                        // ACK acknowledges that one, not this: resending it would leave the far end
+                        // retransmitting its response until it timed out. Seen when a late retransmission of
+                        // the INVITE reaches a server after it has answered, and the server, no longer
+                        // holding the transaction, rejects it as a merged request with 482.
+                        return AcknowledgeOtherFinalResponse(sipResponse);
                     }
                 }
                 else
@@ -502,6 +511,27 @@ namespace SIPSorcery.SIP
             _ = m_sipTransport.SendResponseAsync(prackResponse);
         }
 
+        /// <summary>
+        /// Whether a final response received after the transaction completed repeats the one that completed it:
+        /// the same status and the same To tag, the tag identifying which server sent it.
+        /// </summary>
+        private bool IsFinalResponseRetransmit(SIPResponse sipResponse)
+        {
+            return m_transactionFinalResponse == null ||
+                (sipResponse.StatusCode == m_transactionFinalResponse.StatusCode &&
+                 string.Equals(sipResponse.Header.To?.ToTag, m_transactionFinalResponse.Header.To?.ToTag, StringComparison.Ordinal));
+        }
+
+        /// <summary>
+        /// Handles a final response that differs from the one that completed the transaction. By default it is
+        /// discarded; an INVITE client transaction acknowledges a non-2xx one so its sender stops retransmitting.
+        /// </summary>
+        /// <param name="sipResponse">The final response received.</param>
+        protected virtual Task<SocketError> AcknowledgeOtherFinalResponse(SIPResponse sipResponse)
+        {
+            return Task.FromResult(SocketError.Success);
+        }
+
         private Task<SocketError> ResendAckRequest()
         {
             try
@@ -510,7 +540,10 @@ namespace SIPSorcery.SIP
                 {
                     AckRetransmits += 1;
                     LastTransmit = DateTime.Now;
-                    return m_sipTransport.SendRequestAsync(AckRequest);
+
+                    // Through the outbound proxy, as the first ACK was. Sent directly, it reached the far end from
+                    // an address the far end had never seen this dialog on.
+                    return SendRequestAsync(AckRequest);
                 }
                 else
                 {
@@ -533,7 +566,7 @@ namespace SIPSorcery.SIP
                 {
                     PrackRetransmits += 1;
                     LastTransmit = DateTime.Now;
-                    return m_sipTransport.SendRequestAsync(PRackRequest);
+                    return SendRequestAsync(PRackRequest);
                 }
                 else
                 {

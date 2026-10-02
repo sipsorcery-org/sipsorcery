@@ -333,6 +333,25 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
+        /// Acknowledges a non-2xx final response that arrives after a different final response completed the
+        /// transaction, as RFC 3261 17.1.1.3 has every non-2xx final response to an INVITE acknowledged. The ACK
+        /// is built from the response it acknowledges, so its To tag matches, and is not stored: it is not the
+        /// ACK a retransmission of the completing response should repeat. A different 2xx, from another fork,
+        /// is left for the transaction user, as the first 2xx's ACK cannot acknowledge it.
+        /// </summary>
+        /// <param name="sipResponse">The final response received.</param>
+        protected override Task<SocketError> AcknowledgeOtherFinalResponse(SIPResponse sipResponse)
+        {
+            if (sipResponse.StatusCode >= 300)
+            {
+                var ackRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI);
+                return SendRequestAsync(ackRequest);
+            }
+
+            return Task.FromResult(SocketError.Success);
+        }
+
+        /// <summary>
         /// Cancels this transaction. This does NOT generate a CANCEL request. A separate
         /// reliable transaction needs to be created for that.
         /// </summary>
