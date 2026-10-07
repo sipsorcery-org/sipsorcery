@@ -23,6 +23,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP.Packetisation;
 using SIPSorcery.Net.UnitTests.Helpers;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions;
@@ -178,7 +179,7 @@ namespace SIPSorcery.Net.UnitTests
 
         /// <summary>
         /// MJPEG through the top level SendVideoAt dispatch stamps every packet of each frame with the supplied
-        /// timestamp. (Markers aren't checked: SendMJPEGFrame sets them as isLast ? 0 : 1, which predates this change.)
+        /// timestamp, with the marker bit on the last packet of each frame.
         /// </summary>
         [Fact]
         public async Task SendVideoAt_Mjpeg_StampsEveryPacketOfEachFrame()
@@ -197,8 +198,64 @@ namespace SIPSorcery.Net.UnitTests
 
                 var packets = await pair.WaitForPackets(timestamps.Length * 3);
 
-                AssertFramesGrouped(packets, timestamps, checkMarkers: false);
+                AssertFramesGrouped(packets, timestamps, checkMarkers: true);
                 Assert.Equal(48_000u, pair.Sender.VideoStream.LocalTrack.Timestamp);
+            }
+        }
+
+        /// <summary>
+        /// The duration based MJPEG send stamps each frame with the track timestamp and then advances it by the
+        /// duration, like the other video codecs, with the marker bit on the last packet of each frame.
+        /// </summary>
+        [Fact]
+        public async Task SendVideo_Mjpeg_AdvancesTimestampAndSetsMarkerOnLastPacket()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            using (var pair = await LoopbackPair.CreateVideo(26, "JPEG"))
+            {
+                uint start = pair.Sender.VideoStream.LocalTrack.Timestamp;
+                byte[] jpeg = CreateTestJpegFrame(entropyLength: 3_000);
+
+                pair.Sender.SendVideo(3_000, jpeg);
+                pair.Sender.SendVideo(3_000, jpeg);
+
+                var packets = await pair.WaitForPackets(6);
+
+                AssertFramesGrouped(packets, new[] { start, start + 3_000 }, checkMarkers: true);
+                Assert.Equal(start + 6_000, pair.Sender.VideoStream.LocalTrack.Timestamp);
+            }
+        }
+
+        /// <summary>
+        /// The RFC 2435 fragment offset of each packet is the position of its data within the frame's scan data,
+        /// so the fragments of a frame are contiguous and together cover all of it.
+        /// </summary>
+        [Fact]
+        public async Task SendVideo_Mjpeg_FragmentOffsetsAreContiguous()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            using (var pair = await LoopbackPair.CreateVideo(26, "JPEG"))
+            {
+                byte[] jpeg = CreateTestJpegFrame(entropyLength: 3_000);
+                int scanDataLength = MJPEGPacketiser.GetFrameData(jpeg, out _).Data.Length;
+
+                pair.Sender.SendVideo(3_000, jpeg);
+
+                var packets = await pair.WaitForPackets(3);
+
+                Assert.Equal(3, packets.Count);
+
+                int expectedOffset = 0;
+                foreach (var packet in packets)
+                {
+                    var (fragmentOffset, dataLength) = ParseMjpegFragment(packet.Payload);
+                    Assert.Equal(expectedOffset, fragmentOffset);
+                    expectedOffset += dataLength;
+                }
+
+                Assert.Equal(scanDataLength, expectedOffset);
             }
         }
 
@@ -359,6 +416,31 @@ namespace SIPSorcery.Net.UnitTests
                     Enumerable.Range(0, r.Count).Select(i => i == r.Count - 1 ? 1 : 0),
                     r.Select(p => p.Marker)));
             }
+        }
+
+        /// <summary>
+        /// Reads the RFC 2435 fragment offset from an MJPEG RTP payload and the length of the scan data it carries
+        /// after the main, restart marker and (first fragment only) quantisation table headers.
+        /// </summary>
+        private static (int fragmentOffset, int dataLength) ParseMjpegFragment(byte[] payload)
+        {
+            int fragmentOffset = payload[1] << 16 | payload[2] << 8 | payload[3];
+            int type = payload[4];
+            int q = payload[5];
+
+            int headerLength = 8;
+            if (type > 63)
+            {
+                headerLength += 4;
+            }
+
+            if (q > 127 && fragmentOffset == 0)
+            {
+                int quantisationTablesLength = payload[headerLength + 2] << 8 | payload[headerLength + 3];
+                headerLength += 4 + quantisationTablesLength;
+            }
+
+            return (fragmentOffset, payload.Length - headerLength);
         }
 
         /// <summary>
