@@ -376,10 +376,10 @@ namespace SIPSorcery.Net
         /// <param name="sample">The JPEG encoded payload.</param>
         public void SendMJPEGFrame(uint durationRtpUnits, int payloadID, byte[] sample)
         {
-            SendMJPEGFrameCore(null, payloadID, sample);
+            SendMJPEGFrameCore(null, durationRtpUnits, payloadID, sample);
         }
 
-        private void SendMJPEGFrameCore(uint? rtpTimestamp, int payloadID, byte[] sample)
+        private void SendMJPEGFrameCore(uint? rtpTimestamp, uint duration, int payloadID, byte[] sample)
         {
             if (CheckIfCanSendRtpRaw())
             {
@@ -402,21 +402,19 @@ namespace SIPSorcery.Net
                             var dataSize = RTPSession.RTP_MAX_PAYLOAD - rtpHeader.Length;
                             var isLast = dataSize >= restBytes.Length;
                             var data = isLast ? restBytes : restBytes.AsSpan(0, dataSize).ToArray();
-                            var markerBit = isLast ? 0 : 1;
+                            var markerBit = isLast ? 1 : 0; // Marker bit set on the last packet of the frame.
                             var payload = rtpHeader.Concat(data).ToArray();
                             SendRtpRaw(payload, rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadID, true);
 
-                            offset += RTPSession.RTP_MAX_PAYLOAD;
+                            // The fragment offset is the position of the next packet's data within the JPEG
+                            // scan data (RFC 2435), so it advances by the data sent, not including the headers.
+                            offset += data.Length;
                             rtpHeader = MJPEGPacketiser.GetMJPEGRTPHeader(customData, offset);
                             restBytes = restBytes.AsSpan(data.Length).ToArray();
                         }
                     }
 
-                    // The duration based form has never advanced the track timestamp; only record an explicit one.
-                    if (rtpTimestamp.HasValue)
-                    {
-                        LocalTrack.Timestamp = rtpTimestamp.Value;
-                    }
+                    AdvanceTimestamp(rtpTimestamp, duration);
                 }
                 catch (SocketException sockExcp)
                 {
@@ -498,7 +496,7 @@ namespace SIPSorcery.Net
                     SendH265FrameCore(rtpTimestamp, 0, payloadID, sample);
                     break;
                 case VideoCodecsEnum.JPEG:
-                    SendMJPEGFrameCore(rtpTimestamp, payloadID, sample);
+                    SendMJPEGFrameCore(rtpTimestamp, 0, payloadID, sample);
                     break;
                 default:
                     throw new ApplicationException($"Unsupported video format selected {sendingFormat.FormatName}.");
