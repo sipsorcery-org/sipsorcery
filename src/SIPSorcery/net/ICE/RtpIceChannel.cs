@@ -122,6 +122,7 @@ namespace SIPSorcery.Net
         private const string MDNS_TLD = ".local";           // Top Level Domain name for multicast lookups as per RFC6762.
         private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected.
         private const int RENOMINATION_CHECK_INTERVAL_MS = 500; // Minimum spacing of the checks that verify an entry the remote peer nominates once connected.
+        private const int RENOMINATION_CHECK_GRACE_MS = 1000;   // How long an entry still counts as verified while our latest check on it is unanswered.
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
 
@@ -1530,7 +1531,7 @@ namespace SIPSorcery.Net
             lock (_checklistLock)
             {
                 best = _checklist
-                    .Where(x => x.RemoteNominated && x.State == ChecklistEntryState.Succeeded)
+                    .Where(x => x.RemoteNominated && x.LastResponseAt != DateTime.MinValue && IsStillAnswering(x))
                     .OrderByDescending(x => x.Priority)
                     .FirstOrDefault();
             }
@@ -1539,13 +1540,44 @@ namespace SIPSorcery.Net
 
             if (best == null || current == null ||
                 best.RemoteCandidate.ToString() == current.RemoteCandidate.ToString() ||
-                (current.State == ChecklistEntryState.Succeeded && best.Priority <= current.Priority))
+                (IsStillAnswering(current) && best.Priority <= current.Priority))
             {
                 return;
             }
 
             logger.LogDebug("ICE RTP channel remote peer nominated a new candidate: {RemoteCandidate}.", best.RemoteCandidate.ToShortString());
             SetNominatedEntry(best);
+        }
+
+        /// <summary>
+        /// Whether the entry has not stopped answering our renomination checks: none is unanswered,
+        /// or the first unanswered one is still within its grace. An entry nobody has checked yet
+        /// keeps its benefit of the doubt; one that answered and has since died loses it
+        /// <see cref="RENOMINATION_CHECK_GRACE_MS"/> after the first check it leaves unanswered.
+        /// </summary>
+        private static bool IsStillAnswering(ChecklistEntry entry) =>
+            entry.UnansweredSince == DateTime.MinValue ||
+            entry.LastResponseAt >= entry.UnansweredSince ||
+            DateTime.Now.Subtract(entry.UnansweredSince).TotalMilliseconds < RENOMINATION_CHECK_GRACE_MS;
+
+        /// <summary>
+        /// Checks an entry that takes part in a renomination, at most every
+        /// <see cref="RENOMINATION_CHECK_INTERVAL_MS"/>.
+        /// </summary>
+        private void RecheckForRenomination(ChecklistEntry entry)
+        {
+            if (DateTime.Now.Subtract(entry.LastCheckSentAt).TotalMilliseconds < RENOMINATION_CHECK_INTERVAL_MS)
+            {
+                return;
+            }
+
+            if (entry.UnansweredSince == DateTime.MinValue || entry.LastResponseAt >= entry.UnansweredSince)
+            {
+                entry.UnansweredSince = DateTime.Now;
+            }
+
+            logger.LogDebug("ICE RTP channel checking candidate for a renomination: {RemoteCandidate}.", entry.RemoteCandidate.ToShortString());
+            SendConnectivityCheck(entry, false);
         }
 
         /// <summary>
@@ -2062,17 +2094,14 @@ namespace SIPSorcery.Net
                                 // to one we cannot reach loses the media. Only entries verified by our own check
                                 // qualify, and the highest priority of those is used, as per
                                 // https://tools.ietf.org/html/rfc8445#section-8.1.1.
+                                //
+                                // Both ends of the choice are checked: the entry nominated, and the one in use,
+                                // which may be why the peer moved (a network change). One that stops answering
+                                // loses its claim (IsStillAnswering), so the peer's next nomination moves us off it.
                                 matchingChecklistEntry.RemoteNominated = true;
-
-                                if (matchingChecklistEntry.State == ChecklistEntryState.Succeeded)
-                                {
-                                    SelectRemoteNominatedEntry();
-                                }
-                                else if (DateTime.Now.Subtract(matchingChecklistEntry.LastCheckSentAt).TotalMilliseconds >= RENOMINATION_CHECK_INTERVAL_MS)
-                                {
-                                    logger.LogDebug("ICE RTP channel checking remote nominated candidate before use: {RemoteCandidate}.", matchingChecklistEntry.RemoteCandidate.ToShortString());
-                                    SendConnectivityCheck(matchingChecklistEntry, false);
-                                }
+                                RecheckForRenomination(matchingChecklistEntry);
+                                RecheckForRenomination(NominatedEntry);
+                                SelectRemoteNominatedEntry();
                             }
                         }
 

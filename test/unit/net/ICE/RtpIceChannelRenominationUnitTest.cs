@@ -115,6 +115,86 @@ namespace SIPSorcery.Net.UnitTests
             }
         }
 
+        /// <summary>
+        /// The path in use dies (a network change) after the channel verified it, and the peer
+        /// nominates another working one. The destination moves within seconds, not when the
+        /// connection times out as disconnected (DISCONNECTED_TIMEOUT_PERIOD, 8 s).
+        /// </summary>
+        [Fact]
+        public async Task LeavesAVerifiedPathThatStopsAnswering()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var channel = NewControlledChannel();
+            using var first = new PeerSocket(channel, answersChecks: true);
+            using var second = new PeerSocket(channel, answersChecks: true);
+            using var oneWay = new PeerSocket(channel, answersChecks: false);
+            try
+            {
+                // Onto the first path by way of a verified renomination, so it counts as verified.
+                oneWay.Nominate();
+                await WaitFor(() => IsDestination(channel, oneWay), "connected over the one-way path");
+                await WaitFor(() =>
+                {
+                    first.Nominate();
+                    return IsDestination(channel, first);
+                }, "moved to the first path");
+
+                first.AnswersChecks = false;
+                var died = DateTime.Now;
+
+                // The peer renominates as Chrome does once its pings on the first path fail.
+                while (!IsDestination(channel, second) && DateTime.Now.Subtract(died).TotalSeconds < 6)
+                {
+                    second.Nominate();
+                    await Task.Delay(300);
+                }
+
+                var took = DateTime.Now.Subtract(died);
+                Assert.True(IsDestination(channel, second), $"still on {channel.NominatedEntry.RemoteCandidate.ToShortString()} after {took.TotalMilliseconds:F0} ms");
+                Assert.True(took.TotalSeconds < 3, $"moved after {took.TotalMilliseconds:F0} ms");
+            }
+            finally
+            {
+                channel.Close();
+            }
+        }
+
+        /// <summary>
+        /// Two working paths, both nominated over and over: the one in use keeps answering, so it
+        /// is kept, rather than the destination following each nomination.
+        /// </summary>
+        [Fact]
+        public async Task KeepsAWorkingPathWhenAnotherIsNominated()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var channel = NewControlledChannel();
+            using var first = new PeerSocket(channel, answersChecks: true);
+            using var second = new PeerSocket(channel, answersChecks: true);
+            try
+            {
+                first.Nominate();
+                await WaitFor(() => IsDestination(channel, first), "connected over the first path");
+                int changes = 0;
+                channel.OnIceConnectionStateChange += _ => changes++;
+
+                for (int i = 0; i < 20; i++)
+                {
+                    second.Nominate();
+                    first.Nominate();
+                    await Task.Delay(100);
+                }
+
+                Assert.True(IsDestination(channel, first), $"destination moved to {channel.NominatedEntry.RemoteCandidate.ToShortString()}");
+                Assert.Equal(0, changes);
+            }
+            finally
+            {
+                channel.Close();
+            }
+        }
+
         private static RtpIceChannel NewControlledChannel()
         {
             var channel = new RtpIceChannel(IPAddress.Loopback, RTCIceComponent.rtp);
@@ -152,10 +232,14 @@ namespace SIPSorcery.Net.UnitTests
 
             public int Port => ((IPEndPoint)_udp.Client.LocalEndPoint).Port;
 
+            /// <summary>Whether the channel's checks are answered: a path that works both ways.</summary>
+            public bool AnswersChecks { get; set; }
+
             public PeerSocket(RtpIceChannel channel, bool answersChecks)
             {
                 _channel = channel;
-                _ = Task.Run(() => Receive(answersChecks));
+                AnswersChecks = answersChecks;
+                _ = Task.Run(Receive);
             }
 
             public void Nominate()
@@ -170,7 +254,7 @@ namespace SIPSorcery.Net.UnitTests
                 _udp.Send(bytes, bytes.Length, _channel.RTPLocalEndPoint);
             }
 
-            private async Task Receive(bool answersChecks)
+            private async Task Receive()
             {
                 while (!_cts.IsCancellationRequested)
                 {
@@ -189,7 +273,7 @@ namespace SIPSorcery.Net.UnitTests
                     }
 
                     var message = STUNMessage.ParseSTUNMessage(received.Buffer, received.Buffer.Length);
-                    if (!answersChecks || message?.Header.MessageType != STUNMessageTypesEnum.BindingRequest)
+                    if (!AnswersChecks || message?.Header.MessageType != STUNMessageTypesEnum.BindingRequest)
                     {
                         continue;
                     }

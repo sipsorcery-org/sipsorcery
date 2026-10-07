@@ -239,6 +239,20 @@ namespace SIPSorcery.Net
         public bool RemoteNominated { get; set; }
 
         /// <summary>
+        /// When a check of ours on this entry was last answered, whether the entry is
+        /// nominated or not. Compared with <see cref="LastCheckSentAt"/> it tells whether
+        /// the entry still answers.
+        /// </summary>
+        public DateTime LastResponseAt { get; set; } = DateTime.MinValue;
+
+        /// <summary>
+        /// When the first of the renomination checks still unanswered was sent: later checks
+        /// do not move it, so an entry that has stopped answering cannot stay in grace by
+        /// being checked again.
+        /// </summary>
+        public DateTime UnansweredSince { get; set; } = DateTime.MinValue;
+
+        /// <summary>
         /// Creates a new entry for the ICE session checklist.
         /// </summary>
         /// <param name="localCandidate">The local candidate for the checklist pair.</param>
@@ -327,6 +341,8 @@ namespace SIPSorcery.Net
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
             {
+                LastResponseAt = DateTime.Now;
+
                 if (Nominated)
                 {
                     // If the candidate has been nominated then this is a response to a periodic
