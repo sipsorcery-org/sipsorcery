@@ -2415,6 +2415,34 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Sends an audio sample to the remote peer (on the primary stream) with an explicit RTP timestamp.
+        /// Use this instead of <see cref="SendAudio(uint, byte[])"/> when the presentation time of each sample
+        /// is known (e.g. live or relayed sources).
+        /// </summary>
+        /// <param name="rtpTimestamp">The RTP timestamp of the sample's first audio sample, in the sending
+        /// format's clock rate.</param>
+        /// <param name="durationRtpUnits">The length of this sample in RTP timestamp units (its sample count),
+        /// not the gap to the next sample.</param>
+        /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
+        public void SendAudioAt(uint rtpTimestamp, uint durationRtpUnits, byte[] sample)
+        {
+            AudioStream?.SendAudioAt(rtpTimestamp, durationRtpUnits, sample);
+        }
+
+        /// <summary>
+        /// Sends a video sample to the remote peer (on the primary stream) with an explicit RTP timestamp.
+        /// Every RTP packet of the sample carries <paramref name="rtpTimestamp"/>. Use this instead of
+        /// <see cref="SendVideo(uint, byte[])"/> when the presentation time of each frame is known but the
+        /// time until the next frame is not (e.g. live or relayed sources).
+        /// </summary>
+        /// <param name="rtpTimestamp">The RTP timestamp for the sample, in the sending format's clock rate.</param>
+        /// <param name="sample">The video sample to set as the RTP packet payload.</param>
+        public void SendVideoAt(uint rtpTimestamp, byte[] sample)
+        {
+            VideoStream?.SendVideoAt(rtpTimestamp, sample);
+        }
+
+        /// <summary>
         /// Sends a text sample to the remote peer. (on the primary one)
         /// </summary>
         /// <param name="sample">The text sample to set as the RTP packet payload.</param>

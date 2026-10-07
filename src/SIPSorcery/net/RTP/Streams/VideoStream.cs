@@ -134,11 +134,16 @@ namespace SIPSorcery.Net
         // The same URL without XML escape sequences: https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-H.264-201602-S!!PDF-E&type=items
         public void SendH264Frame(uint duration, int payloadTypeID, byte[] accessUnit)
         {
+            SendH264FrameCore(null, duration, payloadTypeID, accessUnit);
+        }
+
+        private void SendH264FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, byte[] accessUnit)
+        {
             if (CheckIfCanSendRtpRaw())
             {
                 foreach (var nal in H264Packetiser.ParseNals(accessUnit))
                 {
-                    SendH26XNal(duration, payloadTypeID, nal.NAL, nal.IsLast);
+                    SendH26XNal(rtpTimestamp, duration, payloadTypeID, nal.NAL, nal.IsLast);
                 }
             }
         }
@@ -146,12 +151,14 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Sends a single H264 NAL to the remote party.
         /// </summary>
-        /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>
+        /// <param name="rtpTimestamp">An explicit RTP timestamp for the NAL, or null to use the track timestamp.</param>
+        /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps). Only used
+        /// when <paramref name="rtpTimestamp"/> is null.</param>
         /// <param name="payloadTypeID">The payload type ID  being used for H264 and that will be set on the RTP header.</param>
         /// <param name="nal">The buffer containing the NAL to send.</param>
         /// <param name="isLastNal">Should be set for the last NAL in the H264 access unit. Determines when the markbit gets set 
         /// and the timestamp incremented.</param>
-        private void SendH26XNal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal, bool is265 = false)
+        private void SendH26XNal(uint? rtpTimestamp, uint duration, int payloadTypeID, byte[] nal, bool isLastNal, bool is265 = false)
         {
             //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
             //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
@@ -171,7 +178,7 @@ namespace SIPSorcery.Net
                 //For TWCC
                 SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
 
-                SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                SendRtpRaw(payload, rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
             }
@@ -199,18 +206,23 @@ namespace SIPSorcery.Net
                     //For TWCC
                     SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
 
-                    SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                    SendRtpRaw(payload, rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                     //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 }
             }
 
             if (isLastNal)
             {
-                LocalTrack.Timestamp += duration;
+                AdvanceTimestamp(rtpTimestamp, duration);
             }
         }
 
         public void SendH265Frame(uint durationRtpUnits, int payloadID, byte[] sample)
+        {
+            SendH265FrameCore(null, durationRtpUnits, payloadID, sample);
+        }
+
+        private void SendH265FrameCore(uint? rtpTimestamp, uint durationRtpUnits, int payloadID, byte[] sample)
         {
             if(CheckIfCanSendRtpRaw())
             {
@@ -227,7 +239,7 @@ namespace SIPSorcery.Net
                 foreach (var nal in nals)
                 {
                     //logger.LogTrace("(out) SEND {bits}({of}/{all})", nal.NAL.Length, i++, nals.Count());
-                    SendH26XNal(durationRtpUnits, payloadID, nal.NAL, nal.IsLast, true);
+                    SendH26XNal(rtpTimestamp, durationRtpUnits, payloadID, nal.NAL, nal.IsLast, true);
                 }
             }
         }
@@ -240,6 +252,11 @@ namespace SIPSorcery.Net
         /// <param name="payloadTypeID">The payload ID to place in the RTP header.</param>
         /// <param name="buffer">The VP8 encoded payload.</param>
         public void SendVp8Frame(uint duration, int payloadTypeID, byte[] buffer)
+        {
+            SendVp8FrameCore(null, duration, payloadTypeID, buffer);
+        }
+
+        private void SendVp8FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, byte[] buffer)
         {
             if (CheckIfCanSendRtpRaw())
             {
@@ -258,9 +275,9 @@ namespace SIPSorcery.Net
                         int markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
 
                         SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
-                        SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        SendRtpRaw(payload, rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                     }
-                    LocalTrack.Timestamp += duration;
+                    AdvanceTimestamp(rtpTimestamp, duration);
                 }
                 catch (SocketException sockExcp)
                 {
@@ -277,6 +294,11 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The VP9 encoded frame.</param>
         public void SendVp9Frame(uint duration, int payloadTypeID, byte[] buffer)
         {
+            SendVp9FrameCore(null, duration, payloadTypeID, buffer);
+        }
+
+        private void SendVp9FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, byte[] buffer)
+        {
             if (CheckIfCanSendRtpRaw())
             {
                 try
@@ -289,12 +311,12 @@ namespace SIPSorcery.Net
                         int markerBit = (i == packets.Count - 1) ? 1 : 0; // Marker bit set on the last packet of the frame.
 
                         SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
-                        SendRtpRaw(packets[i], LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        SendRtpRaw(packets[i], rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                     }
 
                     if (packets.Count > 0)
                     {
-                        LocalTrack.Timestamp += duration;
+                        AdvanceTimestamp(rtpTimestamp, duration);
                         _vp9PictureId = (_vp9PictureId + 1) & Vp9Packetiser.MAX_PICTURE_ID;
                     }
                 }
@@ -314,6 +336,11 @@ namespace SIPSorcery.Net
         /// <param name="temporalUnit">The AV1 encoded temporal unit, represented as a sequence of OBUs.</param>
         public void SendAv1Frame(uint duration, int payloadTypeID, byte[] temporalUnit)
         {
+            SendAv1FrameCore(null, duration, payloadTypeID, temporalUnit);
+        }
+
+        private void SendAv1FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, byte[] temporalUnit)
+        {
             if (CheckIfCanSendRtpRaw())
             {
                 try
@@ -325,13 +352,13 @@ namespace SIPSorcery.Net
                         int markerBit = packet.IsLast ? 1 : 0;
 
                         SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
-                        SendRtpRaw(packet.Payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        SendRtpRaw(packet.Payload, rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                         sentPacket = true;
                     }
 
                     if (sentPacket)
                     {
-                        LocalTrack.Timestamp += duration;
+                        AdvanceTimestamp(rtpTimestamp, duration);
                     }
                 }
                 catch (SocketException sockExcp)
@@ -349,6 +376,11 @@ namespace SIPSorcery.Net
         /// <param name="sample">The JPEG encoded payload.</param>
         public void SendMJPEGFrame(uint durationRtpUnits, int payloadID, byte[] sample)
         {
+            SendMJPEGFrameCore(null, payloadID, sample);
+        }
+
+        private void SendMJPEGFrameCore(uint? rtpTimestamp, int payloadID, byte[] sample)
+        {
             if (CheckIfCanSendRtpRaw())
             {
                 try
@@ -359,7 +391,7 @@ namespace SIPSorcery.Net
                     if (rtpHeader.Length + frameData.Data.Length <= RTPSession.RTP_MAX_PAYLOAD)
                     {
                         var payload = rtpHeader.Concat(frameData.Data).ToArray();
-                        SendRtpRaw(payload, LocalTrack.Timestamp, 1, payloadID, true);
+                        SendRtpRaw(payload, rtpTimestamp ?? LocalTrack.Timestamp, 1, payloadID, true);
                     }
                     else
                     {
@@ -372,12 +404,18 @@ namespace SIPSorcery.Net
                             var data = isLast ? restBytes : restBytes.AsSpan(0, dataSize).ToArray();
                             var markerBit = isLast ? 0 : 1;
                             var payload = rtpHeader.Concat(data).ToArray();
-                            SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadID, true);
+                            SendRtpRaw(payload, rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadID, true);
 
                             offset += RTPSession.RTP_MAX_PAYLOAD;
                             rtpHeader = MJPEGPacketiser.GetMJPEGRTPHeader(customData, offset);
                             restBytes = restBytes.AsSpan(data.Length).ToArray();
                         }
+                    }
+
+                    // The duration based form has never advanced the track timestamp; only record an explicit one.
+                    if (rtpTimestamp.HasValue)
+                    {
+                        LocalTrack.Timestamp = rtpTimestamp.Value;
                     }
                 }
                 catch (SocketException sockExcp)
@@ -395,11 +433,7 @@ namespace SIPSorcery.Net
         /// <param name="sample">The video sample to set as the RTP packet payload.</param>
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
-            if (!sendingFormatFound)
-            {
-                sendingFormat = GetSendingFormat().ToVideoFormat();
-                sendingFormatFound = true;
-            }
+            EnsureSendingFormat();
 
             int payloadID = sendingFormat.FormatID;
 
@@ -425,6 +459,74 @@ namespace SIPSorcery.Net
                     break;
                 default:
                     throw new ApplicationException($"Unsupported video format selected {sendingFormat.FormatName}.");
+            }
+        }
+
+        /// <summary>
+        /// Sends a video sample to the remote peer with an explicit RTP timestamp. Every RTP packet of the sample
+        /// carries <paramref name="rtpTimestamp"/>.
+        /// </summary>
+        /// <param name="rtpTimestamp">The RTP timestamp for the sample, in the sending format's clock rate.</param>
+        /// <param name="sample">The video sample to set as the RTP packet payload.</param>
+        /// <remarks>
+        /// Use this instead of the duration based method when the presentation time of each frame is known but the
+        /// time until the next frame is not (e.g. live or relayed sources). Don't mix the two styles on one track: after
+        /// this call the track timestamp is <paramref name="rtpTimestamp"/>, so a following duration based send would
+        /// reuse it.
+        /// </remarks>
+        public void SendVideoAt(uint rtpTimestamp, byte[] sample)
+        {
+            EnsureSendingFormat();
+
+            int payloadID = sendingFormat.FormatID;
+
+            switch (sendingFormat.Codec)
+            {
+                case VideoCodecsEnum.VP8:
+                    SendVp8FrameCore(rtpTimestamp, 0, payloadID, sample);
+                    break;
+                case VideoCodecsEnum.VP9:
+                    SendVp9FrameCore(rtpTimestamp, 0, payloadID, sample);
+                    break;
+                case VideoCodecsEnum.AV1:
+                    SendAv1FrameCore(rtpTimestamp, 0, payloadID, sample);
+                    break;
+                case VideoCodecsEnum.H264:
+                    SendH264FrameCore(rtpTimestamp, 0, payloadID, sample);
+                    break;
+                case VideoCodecsEnum.H265:
+                    SendH265FrameCore(rtpTimestamp, 0, payloadID, sample);
+                    break;
+                case VideoCodecsEnum.JPEG:
+                    SendMJPEGFrameCore(rtpTimestamp, payloadID, sample);
+                    break;
+                default:
+                    throw new ApplicationException($"Unsupported video format selected {sendingFormat.FormatName}.");
+            }
+        }
+
+        private void EnsureSendingFormat()
+        {
+            if (!sendingFormatFound)
+            {
+                sendingFormat = GetSendingFormat().ToVideoFormat();
+                sendingFormatFound = true;
+            }
+        }
+
+        /// <summary>
+        /// Moves the track timestamp on after a frame: by the frame's duration for the duration based methods (as
+        /// they always have), or to the explicit timestamp the frame was sent with.
+        /// </summary>
+        private void AdvanceTimestamp(uint? rtpTimestamp, uint duration)
+        {
+            if (rtpTimestamp.HasValue)
+            {
+                LocalTrack.Timestamp = rtpTimestamp.Value;
+            }
+            else
+            {
+                LocalTrack.Timestamp += duration;
             }
         }
 
