@@ -122,7 +122,8 @@ namespace SIPSorcery.Net
         private const string MDNS_TLD = ".local";           // Top Level Domain name for multicast lookups as per RFC6762.
         private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected.
         private const int RENOMINATION_CHECK_INTERVAL_MS = 500; // Minimum spacing of the checks that verify an entry the remote peer nominates once connected.
-        private const int RENOMINATION_CHECK_GRACE_MS = 1000;   // How long an entry still counts as verified while our latest check on it is unanswered.
+        private const int RENOMINATION_CHECK_GRACE_MS = 1000;   // How long an entry that has answered before keeps its claim while a check on it is unanswered.
+        private const int RENOMINATION_FIRST_CHECK_GRACE_MS = 250; // The same for an entry that never has: a working path answers well within it.
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
 
@@ -1554,11 +1555,15 @@ namespace SIPSorcery.Net
         /// or the first unanswered one is still within its grace. An entry nobody has checked yet
         /// keeps its benefit of the doubt; one that answered and has since died loses it
         /// <see cref="RENOMINATION_CHECK_GRACE_MS"/> after the first check it leaves unanswered.
+        /// One that has never answered loses it sooner, <see cref="RENOMINATION_FIRST_CHECK_GRACE_MS"/>:
+        /// the first nomination is taken unchecked, and a dead one held for the full grace delays
+        /// DTLS by a retransmit (2.5 s, measured with Chrome on the Android emulator).
         /// </summary>
         private static bool IsStillAnswering(ChecklistEntry entry) =>
             entry.UnansweredSince == DateTime.MinValue ||
             entry.LastResponseAt >= entry.UnansweredSince ||
-            DateTime.Now.Subtract(entry.UnansweredSince).TotalMilliseconds < RENOMINATION_CHECK_GRACE_MS;
+            DateTime.Now.Subtract(entry.UnansweredSince).TotalMilliseconds <
+                (entry.LastResponseAt == DateTime.MinValue ? RENOMINATION_FIRST_CHECK_GRACE_MS : RENOMINATION_CHECK_GRACE_MS);
 
         /// <summary>
         /// Checks an entry that takes part in a renomination, at most every

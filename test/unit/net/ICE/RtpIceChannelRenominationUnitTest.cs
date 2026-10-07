@@ -92,12 +92,18 @@ namespace SIPSorcery.Net.UnitTests
                 await WaitFor(() => IsDestination(channel, oneWay), "connected over the one-way path");
                 channel.OnIceConnectionStateChange += _ => changes++;
 
+                var nominated = DateTime.Now;
                 await WaitFor(() =>
                 {
                     working.Nominate();
                     oneWay.Nominate();
                     return IsDestination(channel, working);
                 }, "moved to the working path");
+
+                // Within DTLS's first retransmit (1 s): the one-way path never answered, so it
+                // gets the short grace, not the full one.
+                var took = DateTime.Now.Subtract(nominated);
+                Assert.True(took.TotalMilliseconds < 1000, $"moved after {took.TotalMilliseconds:F0} ms");
 
                 for (int i = 0; i < 20; i++)
                 {
