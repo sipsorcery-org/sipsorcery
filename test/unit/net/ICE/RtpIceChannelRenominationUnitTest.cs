@@ -218,6 +218,58 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
+        /// A path that answered once and has since died, unchecked meanwhile, must not win
+        /// over the one the peer is nominating now: a phone's mobile-data path, verified
+        /// before it went back to Wi-Fi and turned mobile data off.
+        /// </summary>
+        [Fact]
+        public async Task MovesToThePathNominatedNowNotOneVerifiedLongAgo()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var channel = NewControlledChannel();
+            using var inUse = new PeerSocket(channel, answersChecks: true);
+            using var stale = new PeerSocket(channel, answersChecks: true);
+            using var current = new PeerSocket(channel, answersChecks: true);
+            try
+            {
+                inUse.Nominate();
+                await WaitFor(() => IsDestination(channel, inUse), "connected");
+
+                // Verified while it worked, created before the path nominated later, so first on a tie.
+                for (int i = 0; i < 3; i++)
+                {
+                    stale.Nominate();
+                    await Task.Delay(200);
+                }
+                stale.AnswersChecks = false;
+
+                // Both the stale path and the one in use have died by the time the peer
+                // nominates the path that works now.
+                inUse.AnswersChecks = false;
+                await Task.Delay(4_500);
+
+                var nominated = DateTime.Now;
+                var visitedStale = false;
+                while (!IsDestination(channel, current) && DateTime.Now.Subtract(nominated).TotalSeconds < 5)
+                {
+                    current.Nominate();
+                    await Task.Delay(100);
+                    visitedStale |= IsDestination(channel, stale);
+                }
+
+                var took = DateTime.Now.Subtract(nominated);
+                Assert.False(visitedStale, "moved to the stale path");
+                Assert.True(IsDestination(channel, current), $"still on {channel.NominatedEntry.RemoteCandidate.ToShortString()} after {took.TotalMilliseconds:F0} ms");
+                Assert.True(took.TotalMilliseconds < 900, $"moved {took.TotalMilliseconds:F0} ms after the first nomination");
+            }
+            finally
+            {
+                channel.Close();
+            }
+        }
+
+        /// <summary>
         /// Two working paths, both nominated over and over: the one in use keeps answering, so it
         /// is kept, rather than the destination following each nomination.
         /// </summary>

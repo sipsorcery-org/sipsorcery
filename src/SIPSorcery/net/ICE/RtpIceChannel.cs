@@ -124,6 +124,7 @@ namespace SIPSorcery.Net
         private const int RENOMINATION_CHECK_INTERVAL_MS = 500; // Minimum spacing of the checks that verify an entry the remote peer nominates once connected.
         private const int RENOMINATION_CHECK_GRACE_MS = 1000;   // How long an entry that has answered before keeps its claim while a check on it is unanswered.
         private const int RENOMINATION_FIRST_CHECK_GRACE_MS = 250; // The same for an entry that never has: a working path answers well within it.
+        private const int RENOMINATION_FRESH_MS = CONNECTED_CHECK_PERIOD * 1000; // How recently a candidate must have answered to be moved to.
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
 
@@ -1532,7 +1533,7 @@ namespace SIPSorcery.Net
             lock (_checklistLock)
             {
                 best = _checklist
-                    .Where(x => x.RemoteNominated && x.LastResponseAt != DateTime.MinValue && IsStillAnswering(x))
+                    .Where(x => x.RemoteNominated && IsFresh(x) && IsStillAnswering(x))
                     .OrderByDescending(x => x.Priority)
                     .FirstOrDefault();
             }
@@ -1564,6 +1565,17 @@ namespace SIPSorcery.Net
             entry.LastResponseAt >= entry.UnansweredSince ||
             DateTime.Now.Subtract(entry.UnansweredSince).TotalMilliseconds <
                 (entry.LastResponseAt == DateTime.MinValue ? RENOMINATION_FIRST_CHECK_GRACE_MS : RENOMINATION_CHECK_GRACE_MS);
+
+        /// <summary>
+        /// Whether a candidate answered a check of ours recently enough to move to. One that
+        /// answered once and has not been checked since may have died meanwhile: a phone's
+        /// mobile-data path, verified before it went back to Wi-Fi and turned mobile data off,
+        /// was moved to again and swallowed 5 s of audio, measured with Chrome on the Android
+        /// emulator. An entry the peer is nominating is checked on each nomination, so stays fresh.
+        /// </summary>
+        private static bool IsFresh(ChecklistEntry entry) =>
+            entry.LastResponseAt != DateTime.MinValue &&
+            DateTime.Now.Subtract(entry.LastResponseAt).TotalMilliseconds < RENOMINATION_FRESH_MS;
 
         /// <summary>
         /// Checks an entry that takes part in a renomination, at most every
