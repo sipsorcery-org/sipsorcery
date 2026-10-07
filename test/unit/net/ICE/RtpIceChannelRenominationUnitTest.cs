@@ -167,6 +167,57 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
+        /// The path in use dies with no renomination at first (Wi-Fi back, mobile data off,
+        /// before the peer has revalidated the Wi-Fi path), so only the channel's own
+        /// periodic checks on it go unanswered. When the peer then nominates a path it
+        /// nominated before, the channel moves at once: the unanswered periodic checks
+        /// have already cost the dead path its claim.
+        /// </summary>
+        [Fact]
+        public async Task LeavesAPathWhosePeriodicChecksWentUnanswered()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var channel = NewControlledChannel();
+            using var inUse = new PeerSocket(channel, answersChecks: true);
+            using var other = new PeerSocket(channel, answersChecks: true);
+            try
+            {
+                inUse.Nominate();
+                await WaitFor(() => IsDestination(channel, inUse), "connected");
+
+                // The other path nominated and verified while the one in use still works.
+                for (int i = 0; i < 5; i++)
+                {
+                    other.Nominate();
+                    inUse.Nominate();
+                    await Task.Delay(200);
+                }
+                Assert.True(IsDestination(channel, inUse), "moved while the path in use worked");
+
+                // Dies quietly: a periodic check (every CONNECTED_CHECK_PERIOD, 3 s) and its
+                // grace pass before the peer nominates anything.
+                inUse.AnswersChecks = false;
+                await Task.Delay(4_500);
+
+                var nominated = DateTime.Now;
+                while (!IsDestination(channel, other) && DateTime.Now.Subtract(nominated).TotalSeconds < 5)
+                {
+                    other.Nominate();
+                    await Task.Delay(300);
+                }
+
+                var took = DateTime.Now.Subtract(nominated);
+                Assert.True(IsDestination(channel, other), $"still on {channel.NominatedEntry.RemoteCandidate.ToShortString()} after {took.TotalMilliseconds:F0} ms");
+                Assert.True(took.TotalMilliseconds < 900, $"moved {took.TotalMilliseconds:F0} ms after the first nomination");
+            }
+            finally
+            {
+                channel.Close();
+            }
+        }
+
+        /// <summary>
         /// Two working paths, both nominated over and over: the one in use keeps answering, so it
         /// is kept, rather than the destination following each nomination.
         /// </summary>

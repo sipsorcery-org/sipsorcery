@@ -246,11 +246,25 @@ namespace SIPSorcery.Net
         public DateTime LastResponseAt { get; set; } = DateTime.MinValue;
 
         /// <summary>
-        /// When the first of the renomination checks still unanswered was sent: later checks
-        /// do not move it, so an entry that has stopped answering cannot stay in grace by
-        /// being checked again.
+        /// When the first of our checks still unanswered was sent, the periodic ones on the
+        /// nominated entry included: later checks do not move it, so an entry that has
+        /// stopped answering cannot stay in grace by being checked again.
         /// </summary>
         public DateTime UnansweredSince { get; set; } = DateTime.MinValue;
+
+        /// <summary>
+        /// Records a check sent on this entry: <see cref="LastCheckSentAt"/>, and
+        /// <see cref="UnansweredSince"/> unless a check is already outstanding.
+        /// </summary>
+        internal void MarkCheckSent()
+        {
+            var now = DateTime.Now;
+            if (UnansweredSince == DateTime.MinValue || LastResponseAt >= UnansweredSince)
+            {
+                UnansweredSince = now;
+            }
+            LastCheckSentAt = now;
+        }
 
         /// <summary>
         /// Creates a new entry for the ICE session checklist.

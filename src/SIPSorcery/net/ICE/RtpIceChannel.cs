@@ -1551,7 +1551,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Whether the entry has not stopped answering our renomination checks: none is unanswered,
+        /// Whether the entry has not stopped answering our checks: none is unanswered,
         /// or the first unanswered one is still within its grace. An entry nobody has checked yet
         /// keeps its benefit of the doubt; one that answered and has since died loses it
         /// <see cref="RENOMINATION_CHECK_GRACE_MS"/> after the first check it leaves unanswered.
@@ -1574,11 +1574,6 @@ namespace SIPSorcery.Net
             if (DateTime.Now.Subtract(entry.LastCheckSentAt).TotalMilliseconds < RENOMINATION_CHECK_INTERVAL_MS)
             {
                 return;
-            }
-
-            if (entry.UnansweredSince == DateTime.MinValue || entry.LastResponseAt >= entry.UnansweredSince)
-            {
-                entry.UnansweredSince = DateTime.Now;
             }
 
             logger.LogDebug("ICE RTP channel checking candidate for a renomination: {RemoteCandidate}.", entry.RemoteCandidate.ToShortString());
@@ -1613,7 +1608,7 @@ namespace SIPSorcery.Net
                 candidatePair.State = ChecklistEntryState.InProgress;
             }
 
-            candidatePair.LastCheckSentAt = DateTime.Now;
+            candidatePair.MarkCheckSent();
             candidatePair.ChecksSent++;
             candidatePair.RequestTransactionID = Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
 
@@ -1751,7 +1746,7 @@ namespace SIPSorcery.Net
                     }
 
                     candidatePair.RequestTransactionID = candidatePair.RequestTransactionID ?? Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
-                    candidatePair.LastCheckSentAt = DateTime.Now;
+                    candidatePair.MarkCheckSent();
                     candidatePair.ChecksSent++;
 
                     SendSTUNBindingRequest(candidatePair, false);
