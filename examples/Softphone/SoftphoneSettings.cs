@@ -79,6 +79,31 @@ namespace SIPSorcery.SoftPhone
         /// left empty a single UDP channel on the default SIP port will be used.
         /// </summary>
         public List<SIPSocketSettings> SIPSockets { get; set; } = new List<SIPSocketSettings>();
+
+        /// <summary>
+        /// Optional, dropdown entries in call destination fields
+        /// </summary>
+        public List<string> QuickDialEntries { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Enables text log output
+        /// </summary>
+        public bool EnableLog { get; set; }
+
+        /// <summary>
+        /// The expiry value to request for the contact. This value can be rejected or overridden by the server.
+        /// </summary>
+        public int? RegisterExpiry { get; set; }
+
+        /// <summary>
+        /// Number of seconds between consecutive register requests in the event of failures or timeouts.
+        /// </summary>
+        public int RegisterRetryInSeconds { get; set; }
+
+        /// <summary>
+        /// Enables debug output of all rtt messages to log
+        /// </summary>
+        public bool EnableRttDumps { get; set; }
     }
 
     /// <summary>

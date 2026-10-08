@@ -3,43 +3,36 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    xmlns:sip="clr-namespace:SIPSorcery.SIP;assembly=SIPSorcery"
     x:Class="SIPSorcery.SoftPhone.SoftPhone"
-    Title="SIPSorcery SoftPhone" Background="#FF808080" Closing="Window_Closing" Icon="favicon.ico" MinHeight="560" MinWidth="490" Loaded="OnWindowLoaded" Height="560" Width="490">
+    Title="SIPSorcery SoftPhone" Background="#FF808080" Closing="Window_Closing" Icon="favicon.ico"
+    MinHeight="560" MinWidth="700" Loaded="OnWindowLoaded" Height="560" Width="700">
+
+    <Window.Resources>
+        <ObjectDataProvider MethodName="GetValues" ObjectType="{x:Type sys:Enum}" x:Key="SIPProtocolsEnum">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="sip:SIPProtocolsEnum" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </Window.Resources>
 
     <Grid>
-        <Border BorderBrush="#FF807FC3" BorderThickness="0" CornerRadius="2" Visibility="Visible" Margin="0,121,0,52">
-            <Grid Margin="2" VerticalAlignment="Stretch" x:Name="m_callVideoGrid" HorizontalAlignment="Stretch">
-                <Grid x:Name="_client0VideoCanvas" MouseLeftButtonUp="OnClickVideo">
-                    <Image x:Name="_client0Video" MinWidth="128" MinHeight="96" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed" MaxWidth="490" MaxHeight="277"/>
-                    <Border x:Name="_audioScope0Border" CornerRadius="40" Width="42" Height="42" Margin="10,0,0,10" HorizontalAlignment="Left" VerticalAlignment="Bottom">
-                        <Border.OpacityMask>
-                            <VisualBrush>
-                                <VisualBrush.Visual>
-                                    <Border 
-                                    Background="Black"
-                                    SnapsToDevicePixels="True"
-                                    CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource AncestorType=Border}}"
-                                    Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Border}}"
-                                    Height="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Border}}"
-                                    />
-                                </VisualBrush.Visual>
-                            </VisualBrush>
-                        </Border.OpacityMask>
-                    </Border>
-                </Grid>
-                <Grid>
-                    <Image x:Name="_client1Video" MinWidth="128" MinHeight="96" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Collapsed" MaxWidth="490" MaxHeight="277" MouseLeftButtonUp="OnClickVideo"/>
-                </Grid>
-            </Grid>
-        </Border>
-
-        <StackPanel>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="36" />
+                <RowDefinition Height="46" />
+                <RowDefinition Height="46" />
+                <RowDefinition />
+                <RowDefinition Height="36" />
+                <RowDefinition Height="36" />
+            </Grid.RowDefinitions>
 
             <Border x:Name="_statusBorder" BorderBrush="#FF807FC3" Margin="2" CornerRadius="3" VerticalAlignment="Top" Height="32" Background="#FFCCD0EA">
                 <TextBlock x:Name="m_signallingStatus" TextWrapping="Wrap" Margin="2" Background="#FFCCD0EA" Text="Ready" VerticalAlignment="Center"/>
             </Border>
 
-            <Border BorderBrush="#FF807FC3" BorderThickness="2">
+            <Border Grid.Row="1" BorderBrush="#FFA4A4A5" BorderThickness="2" Background="#FFA4A4A5" CornerRadius="3" Margin="2 0 2 2">
                 <StackPanel Margin="2" VerticalAlignment="Top" Orientation="Horizontal" Height="36" x:Name="m_callActionsGrid" HorizontalAlignment="Right">
                     <Button x:Name="m_answerButton" Content="Answer" Click="AnswerButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed"/>
                     <Button x:Name="m_rejectButton" Content="Reject" Click="RejectButton_Click" HorizontalAlignment="Left" Margin="4,0,0,0" Width="64" Visibility="Collapsed"/>
@@ -49,14 +42,23 @@
                     <Button x:Name="m_transferButton" Click="BlindTransferButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed">
                         <TextBlock TextAlignment="Center">Blind<LineBreak/>Transfer</TextBlock>
                     </Button>
-                    <TextBox FontSize="16" Margin="4,0,4,0" x:Name="m_uriEntryTextBox" HorizontalAlignment="Right" TextWrapping="NoWrap" Text="sip:music@iptel.org" HorizontalContentAlignment="Stretch" MinWidth="200" VerticalContentAlignment="Center"/>
+                    <ComboBox x:Name="_uriEntryDropDown" FontSize="16" Margin="4,0,4,0" MinWidth="200" IsEditable="True" VerticalContentAlignment="Center" />
+                    <ComboBox x:Name="_protocolSelection" ItemsSource="{Binding Source={StaticResource SIPProtocolsEnum}}" SelectedIndex="1" FontSize="16" VerticalContentAlignment="Center" />
                     <Button x:Name="m_cancelButton" Content="Cancel" Click="CancelButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
                     <Button x:Name="m_byeButton" Content="Bye" Click="ByeButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
-                    <Button HorizontalAlignment="Right" x:Name="m_callButton" Width="64" Content="Call" Click="CallButton_Click" Margin="0,0,4,0" />
+                    <Button HorizontalAlignment="Right" x:Name="m_callButton" Width="64" Content="Call" Click="CallButton_Click" Margin="0,0,4,0" IsDefault="True" />
+                    <StackPanel>
+                        <StackPanel.LayoutTransform>
+                            <ScaleTransform ScaleX="0.8" ScaleY="0.8" />
+                        </StackPanel.LayoutTransform>
+                        <CheckBox x:Name="_useAudio" Content="Audio" IsChecked="True" />
+                        <CheckBox x:Name="_useVideo" Content="Video" />
+                        <CheckBox x:Name="_useText" Content="Text" IsChecked="True" Checked="_useText_Checked" Unchecked="_useText_Checked" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
 
-            <Border BorderBrush="#FF807FC3" BorderThickness="2">
+            <Border Grid.Row="2" BorderBrush="#FFA4A4A5" BorderThickness="2" Background="#FFA4A4A5" CornerRadius="3" Margin="2 0 2 2">
                 <StackPanel Margin="2" VerticalAlignment="Top" Orientation="Horizontal" Height="36" x:Name="m_call2ActionsGrid" HorizontalAlignment="Right" IsEnabled="False">
                     <Button x:Name="m_answer2Button" Content="Answer" Click="AnswerButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed"/>
                     <Button x:Name="m_reject2Button" Content="Reject" Click="RejectButton_Click" HorizontalAlignment="Left" Margin="4,0,0,0" Width="64" Visibility="Collapsed"/>
@@ -66,17 +68,85 @@
                     <Button x:Name="m_transfer2Button" Click="BlindTransferButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed">
                         <TextBlock TextAlignment="Center">Blind<LineBreak/>Transfer</TextBlock>
                     </Button>
-                    <TextBox FontSize="16" Margin="4,0,4,0" x:Name="m_uriEntry2TextBox" HorizontalAlignment="Right" TextWrapping="NoWrap" Text="" HorizontalContentAlignment="Stretch" MinWidth="200" VerticalContentAlignment="Center"/>
+                    <ComboBox x:Name="_uriEntry2DropDown" FontSize="16" Margin="4,0,4,0" MinWidth="200" IsEditable="True" VerticalContentAlignment="Center" />
+                    <ComboBox x:Name="_protocolSelection2" ItemsSource="{Binding Source={StaticResource SIPProtocolsEnum}}" SelectedIndex="1" FontSize="16" VerticalContentAlignment="Center" />
                     <Button x:Name="m_cancel2Button" Content="Cancel" Click="CancelButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
                     <Button x:Name="m_bye2Button" Content="Bye" Click="ByeButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
-                    <Button HorizontalAlignment="Right" x:Name="m_call2Button" Width="64" Content="Call" Click="CallButton_Click" Margin="0,0,4,0"/>
+                    <Button x:Name="m_call2Button" Content="Call" Click="CallButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0"/>
+                    <StackPanel>
+                        <StackPanel.LayoutTransform>
+                            <ScaleTransform ScaleX="0.8" ScaleY="0.8" />
+                        </StackPanel.LayoutTransform>
+                        <CheckBox x:Name="_useAudio2" Content="Audio" />
+                        <CheckBox x:Name="_useVideo2" Content="Video" />
+                        <CheckBox x:Name="_useText2" Content="Text" Checked="_useText_Checked" Unchecked="_useText_Checked" />
+                    </StackPanel>
                     <Button x:Name="m_attendedTransferButton" Click="AttendedTransferButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed">
                         <TextBlock TextAlignment="Center">Attended<LineBreak/>Transfer</TextBlock>
                     </Button>
                 </StackPanel>
             </Border>
 
-            <Grid x:Name="_keypadGrid" Margin="8,8,8,8" MinHeight="300" HorizontalAlignment="Center" Width="300" Visibility="Hidden" Panel.ZIndex="11">
+            <!-- Left column: video | right column: text -->
+            <UniformGrid Grid.Row="3" Rows="1">
+                <!-- Video -->
+                <Border x:Name="_videoArea" BorderBrush="#FF807FC3" BorderThickness="0" CornerRadius="2" Visibility="Visible">
+                    <Grid Margin="2" VerticalAlignment="Stretch" x:Name="m_callVideoGrid" HorizontalAlignment="Stretch">
+                        <Grid x:Name="_client0VideoCanvas" MouseLeftButtonUp="OnClickVideo">
+                            <Image x:Name="_client0Video" MinWidth="128" MinHeight="96" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed" MaxWidth="490" MaxHeight="277"/>
+                            <Border x:Name="_audioScope0Border" CornerRadius="40" Width="42" Height="42" Margin="10,0,0,10" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                                <Border.OpacityMask>
+                                    <VisualBrush>
+                                        <VisualBrush.Visual>
+                                            <Border 
+                                                Background="Black"
+                                                SnapsToDevicePixels="True"
+                                                CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource AncestorType=Border}}"
+                                                Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Border}}"
+                                                Height="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Border}}"
+                                                />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Border.OpacityMask>
+                            </Border>
+                        </Grid>
+                        <Grid>
+                            <Image x:Name="_client1Video" MinWidth="128" MinHeight="96" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Collapsed" MaxWidth="490" MaxHeight="277" MouseLeftButtonUp="OnClickVideo"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- RTT -->
+                <Border Grid.Column="1" x:Name="_rttArea" BorderBrush="AntiqueWhite" Background="AntiqueWhite" BorderThickness="2" CornerRadius="3" Margin="2 0 2 2">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="40" />
+                        </Grid.RowDefinitions>
+                        
+                        <!-- small rtt header -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="9*" />
+                                <ColumnDefinition Width="1*" MinWidth="30" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="RTT" Foreground="BurlyWood" FontSize="8" FontWeight="Bold" Margin="5 2 0 0" />
+                            <Button Grid.Column="1" x:Name="m_rttClear" Click="_rttClear_Click" Content="Clear"
+                                    Background="Transparent" BorderThickness="0" FontSize="8" FontWeight="Bold"
+                                    Foreground="SteelBlue" HorizontalContentAlignment="Right" Margin="0 -3 4 -5" />
+                        </Grid>
+                        
+                        <ListBox Grid.Row="1" x:Name="_rttConversationList" BorderBrush="Transparent" Background="Transparent" />
+                        <Border Grid.Row="2" x:Name="_rttOutgoingBoxBorder" BorderBrush="White" BorderThickness="2" CornerRadius="0 0 3 3" Margin="-2 0 -2 -2">
+                            <TextBox x:Name="_rttOutgoingBox" BorderBrush="White" IsReadOnly="True"
+                                     PreviewTextInput="_rttOutgoingBox_PreviewTextInput" PreviewKeyDown="_rttOutgoingBox_PreviewKeyDown" />
+                        </Border>
+                    </Grid>
+                </Border>
+            </UniformGrid>
+
+            <Grid Grid.Row="3" x:Name="_keypadGrid" Margin="8,8,8,8" MinHeight="300" HorizontalAlignment="Center" Width="300" Visibility="Hidden" Panel.ZIndex="11">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
@@ -105,14 +175,16 @@
                 <Button x:Name="m_keypadHashButton" Content="#" Click="KeyPadButton_Click" Grid.Row="3" Grid.Column="2" HorizontalAlignment="Center" Width="80" Margin="0,4,0,20"/>
             </Grid>
 
-        </StackPanel>
+            <Button Grid.Row="4" Width="60" Height="32" VerticalAlignment="Bottom" Click="ToggleKeyPad">Keypad</Button>
 
-        <Grid>
-            <Button Width="60" Height="32" VerticalAlignment="Bottom" Margin="0,0,0,42" Click="ToggleKeyPad">Keypad</Button>
+            <StatusBar Grid.Row="5" VerticalAlignment="Bottom" Height="40">
+                <StatusBarItem>
+                    <Label x:Name="listeningEndPoint" ToolTip="Listening On">Socket State</Label>
+                </StatusBarItem>
+                <StatusBarItem DockPanel.Dock="Right" HorizontalContentAlignment="Right">
+                    <Label x:Name="_registrationState" ToolTip="Registration state on server">⚪</Label>
+                </StatusBarItem>
+            </StatusBar>
         </Grid>
-
-        <StatusBar VerticalAlignment="Bottom" Height="40" Margin="0,0,0,0">
-            <Label x:Name="listeningEndPoint" ToolTip="Listening On"></Label>
-        </StatusBar>
     </Grid>
 </Window>
