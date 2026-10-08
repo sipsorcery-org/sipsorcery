@@ -120,7 +120,11 @@ namespace SIPSorcery.Net
         private const int ICE_PASSWORD_LENGTH = 24;
         private const int MAX_CHECKLIST_ENTRIES = 25;       // Maximum number of entries that can be added to the checklist of candidate pairs.
         private const string MDNS_TLD = ".local";           // Top Level Domain name for multicast lookups as per RFC6762.
-        private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected. 
+        private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected.
+        private const int RENOMINATION_CHECK_INTERVAL_MS = 500; // Minimum spacing of the checks that verify an entry the remote peer nominates once connected.
+        private const int RENOMINATION_CHECK_GRACE_MS = 1000;   // How long an entry that has answered before keeps its claim while a check on it is unanswered.
+        private const int RENOMINATION_FIRST_CHECK_GRACE_MS = 250; // The same for an entry that never has: a working path answers well within it.
+        private const int RENOMINATION_FRESH_MS = CONNECTED_CHECK_PERIOD * 1000; // How recently a candidate must have answered to be moved to.
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
 
@@ -1518,6 +1522,77 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Once connected, moves the nominated entry to the highest priority entry the remote peer
+        /// has nominated and our own check has verified, if that is better than the one in use.
+        /// The entry in use is kept while it is verified and no verified nomination outranks it.
+        /// </summary>
+        private void SelectRemoteNominatedEntry()
+        {
+            ChecklistEntry best;
+
+            lock (_checklistLock)
+            {
+                best = _checklist
+                    .Where(x => x.RemoteNominated && IsFresh(x) && IsStillAnswering(x))
+                    .OrderByDescending(x => x.Priority)
+                    .FirstOrDefault();
+            }
+
+            var current = NominatedEntry;
+
+            if (best == null || current == null ||
+                best.RemoteCandidate.ToString() == current.RemoteCandidate.ToString() ||
+                (IsStillAnswering(current) && best.Priority <= current.Priority))
+            {
+                return;
+            }
+
+            logger.LogDebug("ICE RTP channel remote peer nominated a new candidate: {RemoteCandidate}.", best.RemoteCandidate.ToShortString());
+            SetNominatedEntry(best);
+        }
+
+        /// <summary>
+        /// Whether the entry has not stopped answering our checks: none is unanswered,
+        /// or the first unanswered one is still within its grace. An entry nobody has checked yet
+        /// keeps its benefit of the doubt; one that answered and has since died loses it
+        /// <see cref="RENOMINATION_CHECK_GRACE_MS"/> after the first check it leaves unanswered.
+        /// One that has never answered loses it sooner, <see cref="RENOMINATION_FIRST_CHECK_GRACE_MS"/>:
+        /// the first nomination is taken unchecked, and a dead one held for the full grace delays
+        /// DTLS by a retransmit (2.5 s, measured with Chrome on the Android emulator).
+        /// </summary>
+        private static bool IsStillAnswering(ChecklistEntry entry) =>
+            entry.UnansweredSince == DateTime.MinValue ||
+            entry.LastResponseAt >= entry.UnansweredSince ||
+            DateTime.Now.Subtract(entry.UnansweredSince).TotalMilliseconds <
+                (entry.LastResponseAt == DateTime.MinValue ? RENOMINATION_FIRST_CHECK_GRACE_MS : RENOMINATION_CHECK_GRACE_MS);
+
+        /// <summary>
+        /// Whether a candidate answered a check of ours recently enough to move to. One that
+        /// answered once and has not been checked since may have died meanwhile: a phone's
+        /// mobile-data path, verified before it went back to Wi-Fi and turned mobile data off,
+        /// was moved to again and swallowed 5 s of audio, measured with Chrome on the Android
+        /// emulator. An entry the peer is nominating is checked on each nomination, so stays fresh.
+        /// </summary>
+        private static bool IsFresh(ChecklistEntry entry) =>
+            entry.LastResponseAt != DateTime.MinValue &&
+            DateTime.Now.Subtract(entry.LastResponseAt).TotalMilliseconds < RENOMINATION_FRESH_MS;
+
+        /// <summary>
+        /// Checks an entry that takes part in a renomination, at most every
+        /// <see cref="RENOMINATION_CHECK_INTERVAL_MS"/>.
+        /// </summary>
+        private void RecheckForRenomination(ChecklistEntry entry)
+        {
+            if (DateTime.Now.Subtract(entry.LastCheckSentAt).TotalMilliseconds < RENOMINATION_CHECK_INTERVAL_MS)
+            {
+                return;
+            }
+
+            logger.LogDebug("ICE RTP channel checking candidate for a renomination: {RemoteCandidate}.", entry.RemoteCandidate.ToShortString());
+            SendConnectivityCheck(entry, false);
+        }
+
+        /// <summary>
         /// Performs a connectivity check for a single candidate pair entry.
         /// </summary>
         /// <param name="candidatePair">The candidate pair to perform a connectivity check for.</param>
@@ -1545,7 +1620,7 @@ namespace SIPSorcery.Net
                 candidatePair.State = ChecklistEntryState.InProgress;
             }
 
-            candidatePair.LastCheckSentAt = DateTime.Now;
+            candidatePair.MarkCheckSent();
             candidatePair.ChecksSent++;
             candidatePair.RequestTransactionID = Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
 
@@ -1683,7 +1758,7 @@ namespace SIPSorcery.Net
                     }
 
                     candidatePair.RequestTransactionID = candidatePair.RequestTransactionID ?? Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
-                    candidatePair.LastCheckSentAt = DateTime.Now;
+                    candidatePair.MarkCheckSent();
                     candidatePair.ChecksSent++;
 
                     SendSTUNBindingRequest(candidatePair, false);
@@ -1753,6 +1828,14 @@ namespace SIPSorcery.Net
                     else
                     {
                         matchingChecklistEntry.GotStunResponse(stunMessage, remoteEndPoint);
+
+                        if (matchingChecklistEntry.RemoteNominated &&
+                            IceConnectionState == RTCIceConnectionState.connected &&
+                            stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
+                        {
+                            // The check that verifies an entry the remote peer nominated after connecting.
+                            SelectRemoteNominatedEntry();
+                        }
 
                         if (_checklistState == ChecklistState.Running &&
                             stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
@@ -2012,13 +2095,25 @@ namespace SIPSorcery.Net
                                 // If we are the "controlled" agent and get a "use candidate" attribute that sets the matching candidate as nominated 
                                 // as per https://tools.ietf.org/html/rfc8445#section-7.3.1.5.
                                 logger.LogDebug("ICE RTP channel remote peer nominated entry from binding request: {RemoteCandidate}.", matchingChecklistEntry.RemoteCandidate.ToShortString());
+                                matchingChecklistEntry.RemoteNominated = true;
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
                             else if (!matchingChecklistEntry.RemoteCandidate.IsEquivalent(NominatedEntry.RemoteCandidate))
                             {
-                                // The remote peer is changing the nominated candidate.
-                                logger.LogDebug("ICE RTP channel remote peer nominated a new candidate: {RemoteCandidate}.", matchingChecklistEntry.RemoteCandidate.ToShortString());
-                                SetNominatedEntry(matchingChecklistEntry);
+                                // The remote peer nominates another entry. A controlling peer may nominate several
+                                // (Chrome keeps nominating every pair it rates at least as good as its selected one),
+                                // so switching on each nomination flips the destination between them, and switching
+                                // to one we cannot reach loses the media. Only entries verified by our own check
+                                // qualify, and the highest priority of those is used, as per
+                                // https://tools.ietf.org/html/rfc8445#section-8.1.1.
+                                //
+                                // Both ends of the choice are checked: the entry nominated, and the one in use,
+                                // which may be why the peer moved (a network change). One that stops answering
+                                // loses its claim (IsStillAnswering), so the peer's next nomination moves us off it.
+                                matchingChecklistEntry.RemoteNominated = true;
+                                RecheckForRenomination(matchingChecklistEntry);
+                                RecheckForRenomination(NominatedEntry);
+                                SelectRemoteNominatedEntry();
                             }
                         }
 
