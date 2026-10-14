@@ -211,7 +211,7 @@ namespace SIPSorcery.SIP.App
             throw new NotImplementedException();
         }
 
-        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogueTransferModesEnum transferMode, string[] customHeaders)
+        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogueTransferModesEnum transferMode, string[] customHeaders, SIPContactHeader contactHeader)
         {
             throw new NotImplementedException();
         }
