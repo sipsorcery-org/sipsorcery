@@ -2,7 +2,7 @@ using System;
 
 namespace SIPSorcery.Media
 {
-    internal static class PcmResampler
+    public static class PcmResampler
     {
         /// <summary>
         /// Resamples PCM using linear interpolation. Not as good as a proper windowed-sinc

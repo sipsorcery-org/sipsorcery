@@ -302,9 +302,26 @@ namespace SIPSorcery.SIP
                     {
                         return ResendPrackRequest();
                     }
-                    else
+                    else if (IsFinalResponseRetransmit(sipResponse))
                     {
                         return ResendAckRequest();
+                    }
+                    else
+                    {
+                        // A different final response from the one that completed the transaction. The stored
+                        // ACK acknowledges that one, not this, so it is not resent: it would reach the far end
+                        // as an ACK for something else. Nor is this response acknowledged in its own right. It
+                        // should not have arrived, and its sender retransmitting it is the evidence that it
+                        // did - seen when a late retransmission of the INVITE reached a server after it had
+                        // answered, and the server, no longer holding the transaction, rejected it as a merged
+                        // request with 482. Said at warning, so the cause can be looked for.
+                        logger.LogWarning(
+                            "Final response {StatusCode} {ReasonPhrase} (To tag {ToTag}) from {RemoteEndPoint} for {Method} Call-ID {CallId} ignored: the transaction had completed with {FinalStatusCode} (To tag {FinalToTag}).",
+                            sipResponse.StatusCode, sipResponse.ReasonPhrase, sipResponse.Header.To?.ToTag, remoteEndPoint,
+                            sipResponse.Header.CSeqMethod, sipResponse.Header.CallId,
+                            m_transactionFinalResponse.StatusCode, m_transactionFinalResponse.Header.To?.ToTag);
+
+                        return Task.FromResult(SocketError.Success);
                     }
                 }
                 else
@@ -502,6 +519,17 @@ namespace SIPSorcery.SIP
             _ = m_sipTransport.SendResponseAsync(prackResponse);
         }
 
+        /// <summary>
+        /// Whether a final response received after the transaction completed repeats the one that completed it:
+        /// the same status and the same To tag, the tag identifying which server sent it.
+        /// </summary>
+        private bool IsFinalResponseRetransmit(SIPResponse sipResponse)
+        {
+            return m_transactionFinalResponse == null ||
+                (sipResponse.StatusCode == m_transactionFinalResponse.StatusCode &&
+                 string.Equals(sipResponse.Header.To?.ToTag, m_transactionFinalResponse.Header.To?.ToTag, StringComparison.Ordinal));
+        }
+
         private Task<SocketError> ResendAckRequest()
         {
             try
@@ -510,7 +538,10 @@ namespace SIPSorcery.SIP
                 {
                     AckRetransmits += 1;
                     LastTransmit = DateTime.Now;
-                    return m_sipTransport.SendRequestAsync(AckRequest);
+
+                    // Through the outbound proxy, as the first ACK was. Sent directly, it reached the far end from
+                    // an address the far end had never seen this dialog on.
+                    return SendRequestAsync(AckRequest);
                 }
                 else
                 {
@@ -533,7 +564,7 @@ namespace SIPSorcery.SIP
                 {
                     PrackRetransmits += 1;
                     LastTransmit = DateTime.Now;
-                    return m_sipTransport.SendRequestAsync(PRackRequest);
+                    return SendRequestAsync(PRackRequest);
                 }
                 else
                 {

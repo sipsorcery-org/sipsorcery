@@ -164,15 +164,35 @@ namespace SIPSorcery.Net
             return ParseSTUNHeader(new ArraySegment<byte>(buffer, 0, buffer.Length));
         }
 
+        /// <summary>
+        /// Parses a STUN header from the start of the supplied segment.
+        /// </summary>
+        /// <param name="bufferSegment">The buffer to parse. A segment with no backing array, or
+        /// one too short to hold a header, yields null rather than throwing.</param>
+        /// <returns>The parsed header, or null if the segment cannot hold one.</returns>
+        /// <exception cref="ApplicationException">The buffer is long enough to hold a header but
+        /// does not begin with the two zero bits every STUN message starts with.</exception>
         public static STUNHeader ParseSTUNHeader(ArraySegment<byte> bufferSegment)
         {
+            // Check the backing array rather than comparing the segment itself against null.
+            // "bufferSegment != null" does not mean the same thing on every target: ArraySegment<T>
+            // gains an implicit conversion from T[] on .NET Core, so there the null literal converts
+            // to a default segment and the comparison asks "is this segment non-default", while on
+            // .NET Framework it lifts to ArraySegment<T>? and is always true. It also sat after the
+            // first byte had already been read, so a default segment threw a NullReferenceException
+            // before reaching it.
+            if (bufferSegment.Array == null || bufferSegment.Count == 0)
+            {
+                return null;
+            }
+
             var startIndex = bufferSegment.Offset;
             if ((bufferSegment.Array[startIndex] & STUN_INITIAL_BYTE_MASK) != 0)
             {
                 throw new ApplicationException("The STUN header did not begin with 0x00.");
             }
 
-            if (bufferSegment != null && bufferSegment.Count > 0 && bufferSegment.Count >= STUN_HEADER_LENGTH)
+            if (bufferSegment.Count >= STUN_HEADER_LENGTH)
             {
                 STUNHeader stunHeader = new STUNHeader();
 

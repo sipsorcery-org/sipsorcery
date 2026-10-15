@@ -8,6 +8,9 @@ on:
 jobs:
   build-test-pack:
     runs-on: windows-latest
+    permissions:
+      id-token: write   # required for NuGet trusted publishing (the GitHub OIDC token)
+      contents: read    # once a permissions block is set it is the full allow-list; checkout needs this
     steps:
       - uses: actions/checkout@v4
 
@@ -41,16 +44,24 @@ jobs:
         
       - name: Pack SIPSorcery.VP8
         run: dotnet pack src/SIPSorcery.VP8/SIPSorcery.VP8.csproj -c Release --no-build -o ./artifacts
+        
+      - name: Pack SIPSorcery.Cli
+        run: dotnet pack src/SIPSorcery.Cli/SIPSorcery.Cli.csproj -c Release --no-build -o ./artifacts
+        
+      - name: Pack SIPSorcery.Diagnostics
+        run: dotnet pack src/SIPSorcery.Diagnostics/SIPSorcery.Diagnostics.csproj -c Release --no-build -o ./artifacts
+      
+      - name: NuGet login (trusted publishing)
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: sipsorcery
 
-      # Publish to NuGet (only on tag pushes)
       - name: Publish all packages to NuGet
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           Get-ChildItem ./artifacts/*.nupkg | ForEach-Object {
             dotnet nuget push $_.FullName `
               --source https://api.nuget.org/v3/index.json `
-              --api-key $env:NUGET_API_KEY `
+            --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} `
               --skip-duplicate
           }

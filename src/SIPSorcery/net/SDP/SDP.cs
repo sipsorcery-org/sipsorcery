@@ -109,8 +109,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Polyfills;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -1058,111 +1056,156 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            var sdp = new StringBuilder();
-            sdp.Append("v=").Append(SDP_PROTOCOL_VERSION).Append(CRLF)
-                .Append("o=").Append(Owner).Append(CRLF)
+            var builder = new StringBuilder();
+            WriteString(builder);
+            return builder.ToString();
+        }
+
+        public void WriteString(StringBuilder builder)
+        {
+            builder
+                .Append("v=").Append(SDP_PROTOCOL_VERSION).Append(CRLF)
+                .Append("o=")
+                .Append(Username).Append(' ')
+                .Append(SessionId).Append(' ')
+                .Append(AnnouncementVersion).Append(' ')
+                .Append(NetworkType).Append(' ')
+                .Append(AddressType).Append(' ')
+                .Append(AddressOrHost).Append(CRLF)
                 .Append("s=").Append(SessionName).Append(CRLF);
 
-            if (Connection != null)
+            Connection?.WriteString(builder);
+
+            foreach (var bandwidth in BandwidthAttributes)
             {
-                sdp.Append(Connection);
+                builder.Append("b=").Append(bandwidth).Append(CRLF);
             }
 
-            foreach (string bandwidth in BandwidthAttributes)
-            {
-                sdp.Append("b=").Append(bandwidth).Append(CRLF);
-            }
-
-            sdp.Append("t=").Append(Timing).Append(CRLF);
+            builder.Append("t=").Append(Timing).Append(CRLF);
 
             if (!string.IsNullOrWhiteSpace(IceUfrag))
             {
-                sdp.Append("a=").Append(ICE_UFRAG_ATTRIBUTE_PREFIX).Append(':').Append(IceUfrag).Append(CRLF);
+                builder.Append("a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":").Append(IceUfrag).Append(CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(IcePwd))
             {
-                sdp.Append("a=").Append(ICE_PWD_ATTRIBUTE_PREFIX).Append(':').Append(IcePwd).Append(CRLF);
+                builder.Append("a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":").Append(IcePwd).Append(CRLF);
             }
 
-            if (IceRole != null)
+            if (IceRole is { } iceRole)
             {
-                sdp.Append("a=").Append(SDP.ICE_SETUP_ATTRIBUTE_PREFIX).Append(':').Append(IceRole).Append(CRLF);
+                builder.Append("a=" + ICE_SETUP_ATTRIBUTE_PREFIX + ":").Append(GetIceRoleName(iceRole)).Append(CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(DtlsFingerprint))
             {
-                sdp.Append("a=").Append(DTLS_FINGERPRINT_ATTRIBUTE_PREFIX).Append(':').Append(DtlsFingerprint).Append(CRLF);
+                builder.Append("a=" + DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":").Append(DtlsFingerprint).Append(CRLF);
             }
 
             if (IceCandidates?.Count > 0)
             {
                 foreach (var candidate in IceCandidates)
                 {
-                    sdp.Append("a=").Append(SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX).Append(':').Append(candidate).Append(CRLF);
+                    builder.Append("a=" + ICE_CANDIDATE_ATTRIBUTE_PREFIX + ":").Append(candidate).Append(CRLF);
                 }
             }
 
             if (!string.IsNullOrWhiteSpace(SessionDescription))
             {
-                sdp.Append("i=").Append(SessionDescription).Append(CRLF);
+                builder.Append("i=").Append(SessionDescription).Append(CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(URI))
             {
-                sdp.Append("u=").Append(URI).Append(CRLF);
+                builder.Append("u=").Append(URI).Append(CRLF);
             }
 
             if (OriginatorEmailAddresses != null && OriginatorEmailAddresses.Length > 0)
             {
-                foreach (string originatorAddress in OriginatorEmailAddresses)
+                foreach (var originatorAddress in OriginatorEmailAddresses)
                 {
                     if (!string.IsNullOrWhiteSpace(originatorAddress))
                     {
-                        sdp.Append("e=").Append(originatorAddress).Append(CRLF);
+                        builder.Append("e=").Append(originatorAddress).Append(CRLF);
                     }
                 }
             }
 
             if (OriginatorPhoneNumbers != null && OriginatorPhoneNumbers.Length > 0)
             {
-                foreach (string originatorNumber in OriginatorPhoneNumbers)
+                foreach (var originatorNumber in OriginatorPhoneNumbers)
                 {
                     if (!string.IsNullOrWhiteSpace(originatorNumber))
                     {
-                        sdp.Append("p=").Append(originatorNumber).Append(CRLF);
+                        builder.Append("p=").Append(originatorNumber).Append(CRLF);
                     }
                 }
             }
 
             if (Group != null)
             {
-                sdp.Append("a=").Append(GROUP_ATRIBUTE_PREFIX).Append(':').Append(Group).Append(CRLF);
+                builder.Append("a=" + GROUP_ATRIBUTE_PREFIX + ":").Append(Group).Append(CRLF);
             }
 
-            foreach (string extra in ExtraSessionAttributes)
+            foreach (var extra in ExtraSessionAttributes)
             {
                 if (!string.IsNullOrWhiteSpace(extra))
                 {
-                    sdp.Append(extra).Append(CRLF);
+                    builder.Append(extra).Append(CRLF);
                 }
             }
 
             if (SessionMediaStreamStatus != null)
             {
-                sdp.Append(MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus.Value)).Append(CRLF);
+                builder.Append(MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus.Value)).Append(CRLF);
             }
 
-            //foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
-            foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
+            if (IsMediaSorted(Media))
             {
-                if (media != null)
+                foreach (var media in Media)
                 {
-                    sdp.Append(media);
+                    media?.WriteString(builder);
+                }
+            }
+            else
+            {
+                var medias = Media.ToArray();
+                Array.Sort(medias, CompareMedia);
+
+                foreach (var media in medias)
+                {
+                    media?.WriteString(builder);
                 }
             }
 
-            return sdp.ToString();
+            static bool IsMediaSorted(List<SDPMediaAnnouncement> media)
+            {
+                for (var i = 1; i < media.Count; i++)
+                {
+                    if (CompareMedia(media[i - 1], media[i]) > 0)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            static int CompareMedia(SDPMediaAnnouncement x, SDPMediaAnnouncement y)
+            {
+                var comparison = x.MLineIndex.CompareTo(y.MLineIndex);
+                return comparison != 0 ? comparison : StringComparer.Ordinal.Compare(x.MediaID, y.MediaID);
+            }
+
+            // TODO: use https://www.nuget.org/packages/NetEscapades.EnumGenerators
+            static string GetIceRoleName(IceRolesEnum iceRole) => iceRole switch
+            {
+                IceRolesEnum.actpass => nameof(IceRolesEnum.actpass),
+                IceRolesEnum.passive => nameof(IceRolesEnum.passive),
+                IceRolesEnum.active => nameof(IceRolesEnum.active),
+                _ => iceRole.ToString()
+            };
         }
 
         /// <summary>

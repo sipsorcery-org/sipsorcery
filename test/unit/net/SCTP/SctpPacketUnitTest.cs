@@ -13,7 +13,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using SIPSorcery.UnitTests;
@@ -200,6 +202,30 @@ namespace SIPSorcery.Net.UnitTests
             var cookieAckChunk = sctpPkt.Chunks.First();
 
             Assert.Equal(4, cookieAckChunk.GetChunkLength(true));
+        }
+
+        /// <summary>
+        /// Tests that a recognised SCTP chunk with a declared length of zero is rejected rather
+        /// than sending the chunk parser into an infinite loop. The chunk walking logic advances
+        /// the buffer cursor by the declared chunk length, so a zero length previously left the
+        /// cursor stationary and the parse loop spinning forever. This packet is the valid
+        /// COOKIE ACK from <see cref="ParseUsrSctpCookieAckPacket"/> with the chunk length field
+        /// zeroed. Reported by Team Atlanta.
+        /// </summary>
+        [Fact]
+        public async Task ParseZeroLengthChunkDoesNotHang()
+        {
+            byte[] buffer = {
+                0x00, 0x07, 0xdf, 0x90, 0xe3, 0x1c, 0x55, 0x36, 0xb2, 0x04, 0xdf, 0x21, 0x0b, 0x00, 0x00, 0x00 };
+
+            // Run the parse on a worker task with a timeout so that a regression manifests as a
+            // test failure rather than a hung test run.
+            var parseTask = Task.Run(() => SctpPacket.Parse(buffer, 0, buffer.Length));
+
+            var completed = await Task.WhenAny(parseTask, Task.Delay(TimeSpan.FromSeconds(2)));
+
+            Assert.True(completed == parseTask, "SctpPacket.Parse did not return, the zero-length chunk parser hang has regressed.");
+            await Assert.ThrowsAsync<ApplicationException>(() => parseTask);
         }
 
         /// <summary>

@@ -67,6 +67,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Security;
@@ -119,7 +120,11 @@ namespace SIPSorcery.Net
         private const int ICE_PASSWORD_LENGTH = 24;
         private const int MAX_CHECKLIST_ENTRIES = 25;       // Maximum number of entries that can be added to the checklist of candidate pairs.
         private const string MDNS_TLD = ".local";           // Top Level Domain name for multicast lookups as per RFC6762.
-        private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected. 
+        private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected.
+        private const int RENOMINATION_CHECK_INTERVAL_MS = 500; // Minimum spacing of the checks that verify an entry the remote peer nominates once connected.
+        private const int RENOMINATION_CHECK_GRACE_MS = 1000;   // How long an entry that has answered before keeps its claim while a check on it is unanswered.
+        private const int RENOMINATION_FIRST_CHECK_GRACE_MS = 250; // The same for an entry that never has: a working path answers well within it.
+        private const int RENOMINATION_FRESH_MS = CONNECTED_CHECK_PERIOD * 1000; // How recently a candidate must have answered to be moved to.
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
 
@@ -966,9 +971,29 @@ namespace SIPSorcery.Net
             {
                 try
                 {
-                    if (_activeIceServer == null || _activeIceServer.Error != SocketError.Success)
+                    if (_activeIceServer is null || _activeIceServer.Error != SocketError.Success)
                     {
-                        if (_iceServerResolver.IceServers.Count(x => x.Value.Error == SocketError.Success) == 0)
+                        // Select the next server to check.
+                        var selectedIceServer = default(IceServer);
+                        foreach (var (uri, iceServer) in _iceServerResolver.IceServers.ToArray())
+                        {
+                            if (iceServer.Error != SocketError.Success)
+                            {
+                                continue;
+                            }
+
+                            if (selectedIceServer is null
+                                || iceServer.Uri.Scheme > selectedIceServer.Uri.Scheme)
+                            {
+                                selectedIceServer = iceServer;
+                            }
+                        }
+
+                        if (selectedIceServer is not null)
+                        {
+                            _activeIceServer = selectedIceServer;
+                        }
+                        else
                         {
                             logger.LogDebug("RTP ICE Channel all ICE server connection checks failed, stopping ICE servers timer.");
                             _processIceServersTimer.Dispose();
@@ -978,24 +1003,6 @@ namespace SIPSorcery.Net
                             {
                                 IceGatheringState = RTCIceGatheringState.complete;
                                 OnIceGatheringStateChange?.Invoke(IceGatheringState);
-                            }
-                        }
-                        else
-                        {
-                            // Select the next server to check.
-                            var entry = _iceServerResolver.IceServers
-                                .Where(x => x.Value.Error == SocketError.Success)
-                                .OrderByDescending(x => x.Value._uri.Scheme) // TURN serves take priority.
-                                .FirstOrDefault();
-
-                            if (!entry.Equals(default(KeyValuePair<STUNUri, IceServer>)))
-                            {
-                                _activeIceServer = entry.Value;
-                            }
-                            else
-                            {
-                                logger.LogDebug("RTP ICE Channel was not able to set an active ICE server, stopping ICE servers timer.");
-                                _processIceServersTimer.Dispose();
                             }
                         }
                     }
@@ -1515,6 +1522,77 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Once connected, moves the nominated entry to the highest priority entry the remote peer
+        /// has nominated and our own check has verified, if that is better than the one in use.
+        /// The entry in use is kept while it is verified and no verified nomination outranks it.
+        /// </summary>
+        private void SelectRemoteNominatedEntry()
+        {
+            ChecklistEntry best;
+
+            lock (_checklistLock)
+            {
+                best = _checklist
+                    .Where(x => x.RemoteNominated && IsFresh(x) && IsStillAnswering(x))
+                    .OrderByDescending(x => x.Priority)
+                    .FirstOrDefault();
+            }
+
+            var current = NominatedEntry;
+
+            if (best == null || current == null ||
+                best.RemoteCandidate.ToString() == current.RemoteCandidate.ToString() ||
+                (IsStillAnswering(current) && best.Priority <= current.Priority))
+            {
+                return;
+            }
+
+            logger.LogDebug("ICE RTP channel remote peer nominated a new candidate: {RemoteCandidate}.", best.RemoteCandidate.ToShortString());
+            SetNominatedEntry(best);
+        }
+
+        /// <summary>
+        /// Whether the entry has not stopped answering our checks: none is unanswered,
+        /// or the first unanswered one is still within its grace. An entry nobody has checked yet
+        /// keeps its benefit of the doubt; one that answered and has since died loses it
+        /// <see cref="RENOMINATION_CHECK_GRACE_MS"/> after the first check it leaves unanswered.
+        /// One that has never answered loses it sooner, <see cref="RENOMINATION_FIRST_CHECK_GRACE_MS"/>:
+        /// the first nomination is taken unchecked, and a dead one held for the full grace delays
+        /// DTLS by a retransmit (2.5 s, measured with Chrome on the Android emulator).
+        /// </summary>
+        private static bool IsStillAnswering(ChecklistEntry entry) =>
+            entry.UnansweredSince == DateTime.MinValue ||
+            entry.LastResponseAt >= entry.UnansweredSince ||
+            DateTime.Now.Subtract(entry.UnansweredSince).TotalMilliseconds <
+                (entry.LastResponseAt == DateTime.MinValue ? RENOMINATION_FIRST_CHECK_GRACE_MS : RENOMINATION_CHECK_GRACE_MS);
+
+        /// <summary>
+        /// Whether a candidate answered a check of ours recently enough to move to. One that
+        /// answered once and has not been checked since may have died meanwhile: a phone's
+        /// mobile-data path, verified before it went back to Wi-Fi and turned mobile data off,
+        /// was moved to again and swallowed 5 s of audio, measured with Chrome on the Android
+        /// emulator. An entry the peer is nominating is checked on each nomination, so stays fresh.
+        /// </summary>
+        private static bool IsFresh(ChecklistEntry entry) =>
+            entry.LastResponseAt != DateTime.MinValue &&
+            DateTime.Now.Subtract(entry.LastResponseAt).TotalMilliseconds < RENOMINATION_FRESH_MS;
+
+        /// <summary>
+        /// Checks an entry that takes part in a renomination, at most every
+        /// <see cref="RENOMINATION_CHECK_INTERVAL_MS"/>.
+        /// </summary>
+        private void RecheckForRenomination(ChecklistEntry entry)
+        {
+            if (DateTime.Now.Subtract(entry.LastCheckSentAt).TotalMilliseconds < RENOMINATION_CHECK_INTERVAL_MS)
+            {
+                return;
+            }
+
+            logger.LogDebug("ICE RTP channel checking candidate for a renomination: {RemoteCandidate}.", entry.RemoteCandidate.ToShortString());
+            SendConnectivityCheck(entry, false);
+        }
+
+        /// <summary>
         /// Performs a connectivity check for a single candidate pair entry.
         /// </summary>
         /// <param name="candidatePair">The candidate pair to perform a connectivity check for.</param>
@@ -1542,7 +1620,7 @@ namespace SIPSorcery.Net
                 candidatePair.State = ChecklistEntryState.InProgress;
             }
 
-            candidatePair.LastCheckSentAt = DateTime.Now;
+            candidatePair.MarkCheckSent();
             candidatePair.ChecksSent++;
             candidatePair.RequestTransactionID = Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
 
@@ -1680,7 +1758,7 @@ namespace SIPSorcery.Net
                     }
 
                     candidatePair.RequestTransactionID = candidatePair.RequestTransactionID ?? Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
-                    candidatePair.LastCheckSentAt = DateTime.Now;
+                    candidatePair.MarkCheckSent();
                     candidatePair.ChecksSent++;
 
                     SendSTUNBindingRequest(candidatePair, false);
@@ -1750,6 +1828,14 @@ namespace SIPSorcery.Net
                     else
                     {
                         matchingChecklistEntry.GotStunResponse(stunMessage, remoteEndPoint);
+
+                        if (matchingChecklistEntry.RemoteNominated &&
+                            IceConnectionState == RTCIceConnectionState.connected &&
+                            stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
+                        {
+                            // The check that verifies an entry the remote peer nominated after connecting.
+                            SelectRemoteNominatedEntry();
+                        }
 
                         if (_checklistState == ChecklistState.Running &&
                             stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
@@ -2009,13 +2095,25 @@ namespace SIPSorcery.Net
                                 // If we are the "controlled" agent and get a "use candidate" attribute that sets the matching candidate as nominated 
                                 // as per https://tools.ietf.org/html/rfc8445#section-7.3.1.5.
                                 logger.LogDebug("ICE RTP channel remote peer nominated entry from binding request: {RemoteCandidate}.", matchingChecklistEntry.RemoteCandidate.ToShortString());
+                                matchingChecklistEntry.RemoteNominated = true;
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
-                            else if (matchingChecklistEntry.RemoteCandidate.ToString() != NominatedEntry.RemoteCandidate.ToString())
+                            else if (!matchingChecklistEntry.RemoteCandidate.IsEquivalent(NominatedEntry.RemoteCandidate))
                             {
-                                // The remote peer is changing the nominated candidate.
-                                logger.LogDebug("ICE RTP channel remote peer nominated a new candidate: {RemoteCandidate}.", matchingChecklistEntry.RemoteCandidate.ToShortString());
-                                SetNominatedEntry(matchingChecklistEntry);
+                                // The remote peer nominates another entry. A controlling peer may nominate several
+                                // (Chrome keeps nominating every pair it rates at least as good as its selected one),
+                                // so switching on each nomination flips the destination between them, and switching
+                                // to one we cannot reach loses the media. Only entries verified by our own check
+                                // qualify, and the highest priority of those is used, as per
+                                // https://tools.ietf.org/html/rfc8445#section-8.1.1.
+                                //
+                                // Both ends of the choice are checked: the entry nominated, and the one in use,
+                                // which may be why the peer moved (a network change). One that stops answering
+                                // loses its claim (IsStillAnswering), so the peer's next nomination moves us off it.
+                                matchingChecklistEntry.RemoteNominated = true;
+                                RecheckForRenomination(matchingChecklistEntry);
+                                RecheckForRenomination(NominatedEntry);
+                                SelectRemoteNominatedEntry();
                             }
                         }
 
@@ -2365,6 +2463,28 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
+                        m_rtpTcpReceiverByUri.TryGetValue(iceServer?._uri, out IceTcpReceiver rtpTcpReceiver);
+
+                        // Socket.Connected reports the state as of the last I/O operation and stays true
+                        // after the remote end closes the connection gracefully, so it cannot detect a half
+                        // closed connection on its own. The receiver can: a zero byte receive on a stream
+                        // socket is the end of stream.
+                        //
+                        // The connection cannot be recovered in place. A connected socket cannot be reused
+                        // once disconnected (Socket.Connect throws InvalidOperationException after
+                        // Socket.Disconnect regardless of the endpoint), and for a TURN server a new
+                        // connection is a new 5-tuple, so the allocation is gone with the old one and would
+                        // have to be re-established from scratch anyway. Reporting the failure is therefore
+                        // the correct outcome: the caller records it against the ICE server, which takes that
+                        // server out of the running and lets the checklist move to the next one. Without this
+                        // the send below is issued into a dead connection and the failure is only noticed
+                        // indirectly, once the retry and timeout heuristics happen to give up.
+                        if (rtpTcpReceiver != null && rtpTcpReceiver.IsEndOfStream)
+                        {
+                            logger.LogWarning("SendOverTCP the connection to ICE server {Uri} was closed by the remote party.", iceServer?._uri);
+                            return SocketError.NotConnected;
+                        }
+
                         if (!sendSocket.Connected || !(sendSocket.RemoteEndPoint is IPEndPoint) || !equals(sendSocket.RemoteEndPoint as IPEndPoint, dstEndPoint))
                         {
                             if (sendSocket.Connected)
@@ -2378,7 +2498,6 @@ namespace SIPSorcery.Net
                         }
 
                         //Fix ReceiveFrom logic if any previous exception happens
-                        m_rtpTcpReceiverByUri.TryGetValue(iceServer?._uri, out IceTcpReceiver rtpTcpReceiver);
                         if (rtpTcpReceiver != null && !rtpTcpReceiver.IsRunningReceive && !rtpTcpReceiver.IsClosed)
                         {
                             rtpTcpReceiver.BeginReceiveFrom();
@@ -2411,7 +2530,12 @@ namespace SIPSorcery.Net
         /// 0x4000-0x7FFF channel-number range. We accumulate bytes until we have a full
         /// message and then dispatch it via OnRTPPacketReceived (inherited from RTPChannel).
         /// </summary>
-        private async Task StartTlsReadLoop(STUNUri uri, SslStream sslStream, IPEndPoint remoteEndPoint)
+        /// <remarks>
+        /// Takes a Stream rather than the SslStream it is called with, and is internal rather than
+        /// private, so the loop's drop-and-continue behaviour can be tested over a plain stream.
+        /// Nothing in here needs TLS: the caller owns the handshake.
+        /// </remarks>
+        internal async Task StartTlsReadLoop(STUNUri uri, Stream sslStream, IPEndPoint remoteEndPoint)
         {
             byte[] receiveBuffer = new byte[4096];
             List<byte> streamBuffer = new List<byte>();
@@ -2448,7 +2572,22 @@ namespace SIPSorcery.Net
                         {
                             byte[] packetBytes = streamBuffer.GetRange(0, totalPacketLength).ToArray();
                             streamBuffer.RemoveRange(0, totalPacketLength);
-                            OnRTPPacketReceived(null, 0, remoteEndPoint, packetBytes);
+
+                            // The framing above has already consumed exactly this packet's bytes, so one
+                            // that can't be processed can be dropped without losing the stream position.
+                            // Letting it unwind instead ended this loop for good: the catch below is the
+                            // only handler, the finally drops the TLS stream, and nothing restarts a loop
+                            // that was started fire and forget, so every relayed packet after it was lost
+                            // and the media session went with it. Drop and continue, the way the other ICE
+                            // receive loops do. See GHSA-6848-qmp4-652w.
+                            try
+                            {
+                                OnRTPPacketReceived(null, 0, remoteEndPoint, packetBytes);
+                            }
+                            catch (Exception packetExcp)
+                            {
+                                logger.LogWarning(packetExcp, "RTPIceChannel dropped a packet received over TLS from {Uri} that could not be processed. {ErrorMessage}", uri, packetExcp.Message);
+                            }
                         }
                         else
                         {

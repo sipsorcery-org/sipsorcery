@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CommandLine;
@@ -52,13 +53,13 @@ namespace demo
 
     class Program
     {
-        private const string STUN_URL = "stun:stun.sipsorcery.com";
         private const int WEBSOCKET_PORT = 8081;
         private const int VIDEO_INITIAL_WIDTH = 640;
         private const int VIDEO_INITIAL_HEIGHT = 480;
 
         private static Form _form;
         private static PictureBox _picBox;
+        private static Bitmap _spareBmp;   // Retired bitmap handed back by the UI thread for re-use.
         private static Options _options;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
@@ -111,24 +112,7 @@ namespace demo
             var videoEP = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
 
-            videoEP.OnVideoSinkDecodedSampleFaster += (RawImage rawImage) =>
-            {
-                _form.BeginInvoke(new Action(() =>
-                {
-                    unsafe
-                    {
-                        if(_picBox.Width != rawImage.Width || _picBox.Height != rawImage.Height)
-                        {
-                           logger.LogDebug($"Adjusting video display from {_picBox.Width}x{_picBox.Height} to {rawImage.Width}x{rawImage.Height}.");
-                            _picBox.Width = rawImage.Width;
-                            _picBox.Height = rawImage.Height;
-                        }
-
-                        Bitmap bmpImage = new Bitmap(rawImage.Width, rawImage.Height, rawImage.Stride, PixelFormat.Format24bppRgb, rawImage.Sample);
-                        _picBox.Image = bmpImage;
-                    }
-                }));
-            };
+            videoEP.OnVideoSinkDecodedSampleFaster += ShowFrame;
 
             RTCConfiguration config = new RTCConfiguration
             {
@@ -187,6 +171,53 @@ namespace demo
         private static void Pc_OnRtpPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
         {
             
+        }
+
+        private static void ShowFrame(RawImage rawImage)
+        {
+            if (rawImage.PixelFormat != VideoPixelFormatsEnum.Bgr)
+            {
+                logger.LogError($"Cannot display decoded video sample, expected pixel format Bgr but got {rawImage.PixelFormat}.");
+                return;
+            }
+
+            var bmp = Interlocked.Exchange(ref _spareBmp, null);
+
+            int width = rawImage.Width;
+            int height = rawImage.Height;
+
+            if (bmp == null || bmp.Width != width || bmp.Height != height)
+            {
+                bmp?.Dispose();
+                bmp = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+            }
+
+            var bmpData = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+
+            try
+            {
+                rawImage.CopyTo(bmpData.Scan0, bmpData.Stride);
+            }
+            finally
+            {
+                bmp.UnlockBits(bmpData);
+            }
+
+            _form.BeginInvoke(new Action(() =>
+            {
+                if (_picBox.Width != width || _picBox.Height != height)
+                {
+                    logger.LogDebug($"Adjusting video display to {width}x{height}.");
+                    _picBox.Width = width;
+                    _picBox.Height = height;
+                }
+
+                var previous = _picBox.Image as Bitmap;
+                _picBox.Image = bmp;
+
+                // The previous picure box bitmap is no longer being painted so it can be used for the next frame copy.
+                Interlocked.Exchange(ref _spareBmp, previous)?.Dispose();
+            }));
         }
 
         private static X509Certificate2 LoadCertificate(string path)

@@ -415,3 +415,12 @@ MigrationBackup/
 *.bmp
 
 .claude/
+
+src/SIPSorcery.Diagnostics/benchmarks/results
+
+examples/WebRTCExamples/WebRTCMaxHeadroom/*.bin
+examples/WebRTCExamples/WebRTCMaxHeadroom/*.wav
+
+# Local, developer specific settings overrides, never commit these
+appsettings.local.json
+appsettings.Development.json

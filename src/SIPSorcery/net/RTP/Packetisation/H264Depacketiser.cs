@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -13,10 +15,13 @@ namespace SIPSorcery.Net
     /// </summary>
     public class H264Depacketiser
     {
+        private static readonly ILogger logger = LogFactory.CreateLogger<H264Depacketiser>();
+
+        // nal_unit_type values from H.264 Table 7-1.
+        const int NON_IDR_SLICE = 1;
+        const int IDR_SLICE = 5;
         const int SPS = 7;
         const int PPS = 8;
-        const int IDR_SLICE = 1;
-        const int NON_IDR_SLICE = 5;
 
         //Payload Helper Fields
         uint previous_timestamp = 0;
@@ -28,7 +33,7 @@ namespace SIPSorcery.Net
         {
             List<byte[]> nal_units = ProcessRTPPayloadAsNals(rtpPayload, seqNum, timestamp, markbit, out isKeyFrame);
 
-            if (nal_units != null)
+            if (nal_units != null && nal_units.Count > 0)
             {
                 //Calculate total buffer size
                 long totalBufferSize = 0;
@@ -114,6 +119,9 @@ namespace SIPSorcery.Net
         {
             bool? isKeyFrameNullable = null;
             List<byte[]> nal_units = new List<byte[]>(); // Stores the NAL units for a Video Frame. May be more than one NAL unit in a video frame.
+            bool fragment_run_started = false;           // Set once a Fragmentation Unit start fragment has been seen for the NAL currently being reassembled.
+            int fragment_run_last_seqnum = 0;            // Sequence number of the last fragment appended, used to detect a hole in the fragment run.
+            bool fragment_run_discard_logged = false;    // Only one log message per discarded fragment run, a run can be many packets long.
 
             for (int payload_index = 0; payload_index < rtp_payloads.Count; payload_index++)
             {
@@ -187,7 +195,7 @@ namespace SIPSorcery.Net
                     int fu_header_type = (rtp_payloads[payload_index].Value[1] >> 0) & 0x1F; // Original NAL unit header
 
                     // Check Start and End flags
-                    if (fu_header_s == 1 && fu_header_e == 0)
+                    if (fu_header_s == 1)
                     {
                         // Start of Fragment.
                         // Initialise the fragmented_nal byte array
@@ -202,23 +210,46 @@ namespace SIPSorcery.Net
 
                         // copy the rest of the RTP payload to the memory stream
                         fragmented_nal.Write(rtp_payloads[payload_index].Value, 2, rtp_payloads[payload_index].Value.Length - 2);
-                    }
 
-                    if (fu_header_s == 0 && fu_header_e == 0)
+                        fragment_run_started = true;
+                        fragment_run_last_seqnum = rtp_payloads[payload_index].Key;
+                        fragment_run_discard_logged = false;
+                    }
+                    else if (!fragment_run_started)
                     {
-                        // Middle part of Fragment
-                        // Append this payload to the fragmented_nal
+                        // A middle or end fragment with no start fragment. The original NAL header was in
+                        // the missing start fragment so there is nothing to reconstruct it from. Appending
+                        // these fragments would produce a NAL whose first byte is slice data rather than a
+                        // NAL header, which is indistinguishable from a valid NAL downstream.
+                        if (!fragment_run_discard_logged)
+                        {
+                            logger.LogWarning("H264 depacketiser discarded fragment with sequence number {SequenceNumber}, the start fragment was not received.", rtp_payloads[payload_index].Key);
+                            fragment_run_discard_logged = true;
+                        }
+                    }
+                    else if (rtp_payloads[payload_index].Key != (ushort)(fragment_run_last_seqnum + 1))
+                    {
+                        // A gap in the fragment run means the reassembled NAL would be missing a slice of
+                        // its middle. Abandon the run rather than deliver a corrupt NAL.
+                        logger.LogWarning("H264 depacketiser discarded a fragmented NAL, sequence number jumped from {PreviousSequenceNumber} to {SequenceNumber}.", fragment_run_last_seqnum, rtp_payloads[payload_index].Key);
+
+                        fragment_run_started = false;
+                        fragment_run_discard_logged = true;
+                        fragmented_nal.SetLength(0);
+                    }
+                    else
+                    {
+                        // Middle or end part of Fragment.
+                        // Append this payload to the fragmented_nal.
                         // Data starts after the NAL Unit Type byte and the FU Header byte
                         fragmented_nal.Write(rtp_payloads[payload_index].Value, 2, rtp_payloads[payload_index].Value.Length - 2);
+
+                        fragment_run_last_seqnum = rtp_payloads[payload_index].Key;
                     }
 
-                    if (fu_header_s == 0 && fu_header_e == 1)
+                    if (fragment_run_started && fu_header_e == 1)
                     {
-                        // End part of Fragment
-                        // Append this payload to the fragmented_nal
-                        // Data starts after the NAL Unit Type byte and the FU Header byte
-                        fragmented_nal.Write(rtp_payloads[payload_index].Value, 2, rtp_payloads[payload_index].Value.Length - 2);
-
+                        // End part of Fragment.
                         var fragmeted_nal_array = fragmented_nal.ToArray();
                         byte reconstructed_nal_type = (byte)((fragmeted_nal_array[0] >> 0) & 0x1F);
 
@@ -227,6 +258,8 @@ namespace SIPSorcery.Net
 
                         // Add the NAL to the array of NAL units
                         nal_units.Add(fragmeted_nal_array);
+
+                        fragment_run_started = false;
                         fragmented_nal.SetLength(0);
                     }
                 }
@@ -243,18 +276,27 @@ namespace SIPSorcery.Net
             return nal_units;
         }
 
+        /// <summary>
+        /// Folds one NAL unit type into the key frame indication for the access unit it belongs
+        /// to. An IDR slice, or the parameter sets that precede one, mark a key frame. A coded
+        /// slice of a non-IDR picture is decisive the other way and outranks both, so a frame is
+        /// only reported as a key frame when nothing in it needs an earlier frame to decode.
+        /// </summary>
+        /// <param name="nal_type">The nal_unit_type of the NAL unit being folded in.</param>
+        /// <param name="isKeyFrame">The indication so far, null until a NAL unit that carries
+        /// one has been seen.</param>
         protected void CheckKeyFrame(int nal_type, ref bool? isKeyFrame)
         {
-            if (isKeyFrame == null)
+            if (nal_type == NON_IDR_SLICE)
             {
-                isKeyFrame = nal_type == SPS || nal_type == PPS ? new bool?(true) :
-                    (nal_type == NON_IDR_SLICE ? new bool?(false) : null);
+                isKeyFrame = false;
             }
-            else
+            else if (nal_type == IDR_SLICE || nal_type == SPS || nal_type == PPS)
             {
-                isKeyFrame = nal_type == SPS || nal_type == PPS ?
-                    (isKeyFrame.Value ? isKeyFrame : new bool?(false)) :
-                    (nal_type == NON_IDR_SLICE ? new bool?(false) : isKeyFrame);
+                if (isKeyFrame == null)
+                {
+                    isKeyFrame = true;
+                }
             }
         }
     }

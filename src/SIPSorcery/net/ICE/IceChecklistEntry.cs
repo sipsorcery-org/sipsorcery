@@ -232,6 +232,41 @@ namespace SIPSorcery.Net
         public DateTime LastBindingRequestReceivedAt { get; set; }
 
         /// <summary>
+        /// Set when the remote peer has sent a binding request with the USE-CANDIDATE attribute
+        /// for this entry. Distinct from <see cref="Nominated"/>, which marks the entry in use:
+        /// a controlling peer may nominate several entries, and only verified ones are used.
+        /// </summary>
+        public bool RemoteNominated { get; set; }
+
+        /// <summary>
+        /// When a check of ours on this entry was last answered, whether the entry is
+        /// nominated or not. Compared with <see cref="LastCheckSentAt"/> it tells whether
+        /// the entry still answers.
+        /// </summary>
+        public DateTime LastResponseAt { get; set; } = DateTime.MinValue;
+
+        /// <summary>
+        /// When the first of our checks still unanswered was sent, the periodic ones on the
+        /// nominated entry included: later checks do not move it, so an entry that has
+        /// stopped answering cannot stay in grace by being checked again.
+        /// </summary>
+        public DateTime UnansweredSince { get; set; } = DateTime.MinValue;
+
+        /// <summary>
+        /// Records a check sent on this entry: <see cref="LastCheckSentAt"/>, and
+        /// <see cref="UnansweredSince"/> unless a check is already outstanding.
+        /// </summary>
+        internal void MarkCheckSent()
+        {
+            var now = DateTime.Now;
+            if (UnansweredSince == DateTime.MinValue || LastResponseAt >= UnansweredSince)
+            {
+                UnansweredSince = now;
+            }
+            LastCheckSentAt = now;
+        }
+
+        /// <summary>
         /// Creates a new entry for the ICE session checklist.
         /// </summary>
         /// <param name="localCandidate">The local candidate for the checklist pair.</param>
@@ -320,6 +355,8 @@ namespace SIPSorcery.Net
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
             {
+                LastResponseAt = DateTime.Now;
+
                 if (Nominated)
                 {
                     // If the candidate has been nominated then this is a response to a periodic

@@ -70,7 +70,9 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
 
             byte[] buffer = BitmapToBuffer(bmp, out int stride);
 
-            byte[] i420 = PixelConverter.RGBAtoI420(buffer, bmp.Width, bmp.Height, stride);
+            // The buffer is BGRA, so it needs the BGRA converter. Using RGBAtoI420 here silently
+            // swapped the red and blue channels; the test only saved the result so never caught it.
+            byte[] i420 = PixelConverter.BGRAtoI420(buffer, bmp.Width, bmp.Height, stride);
             byte[] bgr = PixelConverter.I420toBGR(i420, bmp.Width, bmp.Height, out int rtStride);
 
             fixed (byte* s = bgr)
@@ -458,6 +460,59 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
             // Provide a buffer that is too small.
             byte[] i420 = new byte[expectedSize - 1];
             Assert.Throws<ApplicationException>(() => PixelConverter.I420toNV12(i420, width, height));
+        }
+
+        /// <summary>
+        /// Tests that ToI420 dispatches each 32 bits per pixel format to the converter matching its
+        /// channel order. A solid red source is used because a red/blue mix-up is unmissable in the
+        /// result, whereas the mean channel values of a photographic reference barely move.
+        /// </summary>
+        [Theory]
+        [InlineData(VideoPixelFormatsEnum.Bgra)]
+        [InlineData(VideoPixelFormatsEnum.Rgba)]
+        public void ToI420PreservesChannelOrderTest(VideoPixelFormatsEnum pixelFormat)
+        {
+            int width = 16;
+            int height = 16;
+
+            // A solid red image laid out in the byte order the pixel format advertises.
+            byte[] sample = new byte[width * height * 4];
+            for (int i = 0; i < width * height; i++)
+            {
+                if (pixelFormat == VideoPixelFormatsEnum.Bgra)
+                {
+                    sample[i * 4] = 0;          // B
+                    sample[i * 4 + 1] = 0;      // G
+                    sample[i * 4 + 2] = 255;    // R
+                }
+                else
+                {
+                    sample[i * 4] = 255;        // R
+                    sample[i * 4 + 1] = 0;      // G
+                    sample[i * 4 + 2] = 0;      // B
+                }
+
+                sample[i * 4 + 3] = 255;        // A
+            }
+
+#pragma warning disable CS0618 // Deliberately exercising the obsolete overload.
+            byte[] i420 = PixelConverter.ToI420(width, height, sample, pixelFormat);
+#pragma warning restore CS0618
+
+            byte[] bgr = PixelConverter.I420toBGR(i420, width, height, out int stride);
+
+            // Sample the centre so any edge handling in the chroma subsampling is not in play.
+            int offset = (height / 2) * stride + (width / 2) * 3;
+            byte b = bgr[offset];
+            byte g = bgr[offset + 1];
+            byte r = bgr[offset + 2];
+
+            logger.LogDebug("{PixelFormat} round tripped to B={B} G={G} R={R}.", pixelFormat, b, g, r);
+
+            // The YUV round trip is lossy, so allow generous tolerances. A swapped red and blue
+            // channel would put the 255 into b and leave r at 0, which these comfortably catch.
+            Assert.True(r > 200, $"Expected a red result but got B={b} G={g} R={r}.");
+            Assert.True(b < 60, $"Expected no blue in the result but got B={b} G={g} R={r}.");
         }
 
         private static byte[] BitmapToBuffer(Bitmap bitmap, out int stride)

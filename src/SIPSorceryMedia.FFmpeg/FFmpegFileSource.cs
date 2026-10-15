@@ -44,6 +44,8 @@ public class FFmpegFileSource: IAudioSource, IVideoSource, IDisposable
             }
         }
 
+        FFmpegInit.EnsureBinariesRegistered();
+
         if (audioEncoder != null)
         {
             _FFmpegAudioSource = new FFmpegAudioSource(audioEncoder, audioFrameSize);

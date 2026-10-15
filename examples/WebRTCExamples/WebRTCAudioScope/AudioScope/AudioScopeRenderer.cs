@@ -2,7 +2,7 @@
 // Filename: AudioScopeRenderer.cs
 //
 // Description: Portable, dependency-free renderer for the audio scope. It draws
-// the analytic-signal trace produced by AudioScope directly into an RGB byte
+// the analytic-signal trace produced by AudioScope directly into a BGR byte
 // buffer using a tiny software rasteriser - no GPU, no native libraries and no
 // third-party packages - replacing the previous SharpGL/OpenGL + WinForms path.
 //
@@ -28,7 +28,7 @@ using System.Numerics;
 namespace AudioScope
 {
     /// <summary>
-    /// Renders the audio scope trace to a packed RGB byte buffer with a minimal software rasteriser.
+    /// Renders the audio scope trace to a packed BGR byte buffer with a minimal software rasteriser.
     /// CPU-only and dependency-free, so it can run headless with nothing to install or license.
     /// </summary>
     public class AudioScopeRenderer : IDisposable
@@ -46,7 +46,7 @@ namespace AudioScope
         private readonly byte[] _pixels = new byte[Width * Height * 3];
 
         /// <summary>
-        /// Processes a block of audio samples and returns the rendered scope frame as packed RGB bytes.
+        /// Processes a block of audio samples and returns the rendered scope frame as packed BGR bytes.
         /// </summary>
         public byte[] ProcessAudioSample(Complex[] samples)
         {
@@ -155,10 +155,12 @@ namespace AudioScope
                         continue;
                     }
 
+                    // Channels are stored blue-green-red to match the BGR24 layout the video
+                    // pipeline and WPF's Bgr24 bitmaps expect.
                     int idx = (py * Width + px) * 3;
-                    _pixels[idx] = Blend(_pixels[idx], rb, coverage);
+                    _pixels[idx] = Blend(_pixels[idx], bb, coverage);
                     _pixels[idx + 1] = Blend(_pixels[idx + 1], gb, coverage);
-                    _pixels[idx + 2] = Blend(_pixels[idx + 2], bb, coverage);
+                    _pixels[idx + 2] = Blend(_pixels[idx + 2], rb, coverage);
                 }
             }
         }

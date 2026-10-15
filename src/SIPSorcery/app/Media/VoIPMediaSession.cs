@@ -293,6 +293,7 @@ namespace SIPSorcery.Media
 
                 if (Media.AudioSource != null)
                 {
+                    Media.AudioSource.OnAudioSourceEncodedSample -= SendAudio;
                     await Media.AudioSource.CloseAudio().ConfigureAwait(false);
                 }
 

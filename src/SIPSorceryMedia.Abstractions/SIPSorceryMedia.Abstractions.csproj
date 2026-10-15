@@ -6,6 +6,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 	<LangVersion>12.0</LangVersion>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- Disable warning for missing XML doc comments. -->
     <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
 	<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
@@ -13,7 +14,7 @@
     <Authors>Aaron Clauson</Authors>
     <Copyright>Copyright © 2020-2026 Aaron Clauson</Copyright>
     <Company>SIP Sorcery PTY LTD</Company>
-    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <Title>SIPSorceryMedia.Abstractions</Title>
     <Summary>A set of interfaces and common structures used for building media end points for the SIPSorcery library.</Summary>
     <Description>Don't reference this package unless you are building a media end point to work with the SIPSorcery real-time communications library. In most cases a concrete implementation package such as SIPSorceryMedia.Windows should be referenced.
@@ -24,12 +25,18 @@
     <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorceryMedia.Abstractions</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>10.0.10</Version>
-    <AssemblyVersion>10.0.10</AssemblyVersion>
-    <FileVersion>10.0.10</FileVersion>
+    <Version>10.0.17</Version>
+    <AssemblyVersion>10.0.17</AssemblyVersion>
+    <FileVersion>10.0.17</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Media</PackageTags>
-    <PackageReleaseNotes>-v10.0.10: Updated for main sipsorcery library release.
+    <PackageReleaseNotes>-v10.0.17: Added new pxiel conversion overloads.
+-v10.0.16: Updated nuget packages to latest stable versions.
+-v10.0.15: Updated for main sipsorcery library release.
+-v10.0.13: Fix license file.
+-v10.0.12: Updated for main sipsorcery library release.
+-v10.0.11: Updated for main sipsorcery library release.
+-v10.0.10: Updated for main sipsorcery library release.
 -v10.0.9: Updated for main sipsorcery library release.
 -v10.0.8: Full library release.
 -v10.0.7: Updated for main sipsorcery library release.
@@ -51,10 +58,11 @@
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
 	<None Include="README.md" Pack="true" PackagePath="" />
+	<None Include="..\..\LICENSE.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
   <PropertyGroup>

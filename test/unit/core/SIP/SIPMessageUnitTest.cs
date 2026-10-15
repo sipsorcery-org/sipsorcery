@@ -9,6 +9,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -387,6 +388,92 @@ $"            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0{CRLF}Via: SIP/2.0/TCP 10.1.1.
 
             Assert.Equal(localEndPoint, sipMessageBuffer.LocalSIPEndPoint);
             Assert.Equal(remoteEndPoint, sipMessageBuffer.RemoteSIPEndPoint);
+        }
+
+        /// <summary>
+        /// Tests that a Content-Length value that can't be used is discarded rather than thrown on.
+        /// Converting the digit run without a bound threw an OverflowException out of the framing and
+        /// into the channel receive loops, where the web socket client loop re-parsed the same bytes
+        /// forever at 100% CPU and stopped servicing every connection on the channel. See
+        /// GHSA-j5j8-rhcm-7fp9.
+        /// </summary>
+        [Theory]
+        [InlineData("99999999999")]                         // The value from the advisory, larger than Int32.MaxValue.
+        [InlineData("2147483648")]                          // Int32.MaxValue + 1.
+        [InlineData("99999999999999999999999999999999")]    // Larger than a long, so the accumulator has to bound as it goes.
+        [InlineData("65536")]                               // Longer than any message the transport will accept.
+        public void GetContentLengthOutOfRangeValueUnitTest(string contentLengthValue)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            byte[] buffer = Encoding.UTF8.GetBytes($"REGISTER sip:x SIP/2.0{CRLF}Content-Length: {contentLengthValue}{CRLF}{CRLF}");
+
+            int contentLength = SIPMessageBuffer.GetContentLength(buffer, 0, buffer.Length);
+
+            Assert.Equal(0, contentLength);
+        }
+
+        /// <summary>
+        /// Tests that bounding the Content-Length value left the values that can be used alone.
+        /// </summary>
+        [Theory]
+        [InlineData("0", 0)]
+        [InlineData("15", 15)]
+        [InlineData("   42", 42)]
+        [InlineData("0000000000000000042", 42)]
+        [InlineData("65535", 65535)]
+        public void GetContentLengthInRangeValueUnitTest(string contentLengthValue, int expectedContentLength)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            byte[] buffer = Encoding.UTF8.GetBytes($"REGISTER sip:x SIP/2.0{CRLF}Content-Length:{contentLengthValue}{CRLF}{CRLF}");
+
+            int contentLength = SIPMessageBuffer.GetContentLength(buffer, 0, buffer.Length);
+
+            Assert.Equal(expectedContentLength, contentLength);
+        }
+
+        /// <summary>
+        /// Tests that the framing steps over a message carrying an unusable Content-Length and goes on to
+        /// extract the message behind it. This is the property the receive loops depend on: the oversized
+        /// value used to throw before the receive position advanced, so nothing queued behind the bad
+        /// message was ever seen again. See GHSA-j5j8-rhcm-7fp9.
+        /// </summary>
+        [Fact]
+        public void ParseSIPMessageFromStreamStepsOverOversizedContentLengthUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            string oversizedMessage = $"REGISTER sip:x SIP/2.0{CRLF}Content-Length: 99999999999{CRLF}{CRLF}";
+            string validMessage = $"SIP/2.0 100 Trying{CRLF}Via: SIP/2.0/WS 127.0.0.1:5060;branch=z9hG4bK1{CRLF}Content-Length: 0{CRLF}{CRLF}";
+
+            byte[] receiveBuffer = Encoding.UTF8.GetBytes(oversizedMessage + validMessage);
+
+            // This is the loop every stream channel's ExtractSIPMessages runs: parse, advance by what was
+            // parsed, parse again. A parse that throws leaves the start position where it was.
+            var extracted = new List<string>();
+            int recvStartPosn = 0;
+            byte[] sipMsgBuffer = SIPMessageBuffer.ParseSIPMessageFromStream(receiveBuffer, recvStartPosn, receiveBuffer.Length, out int bytesSkipped);
+
+            while (sipMsgBuffer != null)
+            {
+                extracted.Add(Encoding.UTF8.GetString(sipMsgBuffer));
+                recvStartPosn += sipMsgBuffer.Length + bytesSkipped;
+
+                if (recvStartPosn == receiveBuffer.Length)
+                {
+                    break;
+                }
+
+                sipMsgBuffer = SIPMessageBuffer.ParseSIPMessageFromStream(receiveBuffer, recvStartPosn, receiveBuffer.Length, out bytesSkipped);
+            }
+
+            Assert.Equal(2, extracted.Count);
+            Assert.Equal(oversizedMessage, extracted[0]);
+            Assert.Equal(validMessage, extracted[1]);
         }
     }
 }

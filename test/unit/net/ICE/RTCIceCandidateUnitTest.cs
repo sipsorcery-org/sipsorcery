@@ -10,6 +10,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
@@ -272,21 +273,495 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// A TCP host candidate parses with the protocol and type identified. (Transport keyword is matched
-        /// case-sensitively as lower-case "tcp", matching the form produced by ToString().)
+        /// A TCP host candidate parses with the protocol and candidate type identified.
         /// </summary>
         [Fact]
         public void Parse_TcpHostCandidate()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
-            var candidate = RTCIceCandidate.Parse("4 1 tcp 2105458943 10.0.1.16 9 typ host tcptype active generation 0");
+            var candidate = RTCIceCandidate.Parse("4 1 tcp 2105458943 10.0.1.16 9 typ host tcpType active generation 0");
 
             Assert.NotNull(candidate);
             Assert.Equal(RTCIceProtocol.tcp, candidate.protocol);
             Assert.Equal(RTCIceCandidateType.host, candidate.type);
+            Assert.Equal(RTCIceTcpCandidateType.active, candidate.tcpType);
+            Assert.Equal("active", candidate.relatedAddress);
             Assert.Equal("10.0.1.16", candidate.address);
             Assert.Equal(9, candidate.port);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void Parse_NullOrEmptyCandidate_ThrowsArgumentNullException(string candidateLine)
+        {
+            Assert.Throws<ArgumentNullException>(() => RTCIceCandidate.Parse(candidateLine));
+        }
+
+        [Fact]
+        public void Parse_CandidatePrefixAndRelatedFields_ParsesEveryField()
+        {
+            var candidate = RTCIceCandidate.Parse(
+                "candidate:relay-foundation 2 udp 123456 203.0.113.10 3478 typ relay raddr 192.0.2.10 rport 5000 generation 0");
+
+            Assert.Equal("relay-foundation", candidate.foundation);
+            Assert.Equal(RTCIceComponent.rtcp, candidate.component);
+            Assert.Equal(RTCIceProtocol.udp, candidate.protocol);
+            Assert.Equal(123456u, candidate.priority);
+            Assert.Equal("203.0.113.10", candidate.address);
+            Assert.Equal(3478, candidate.port);
+            Assert.Equal(RTCIceCandidateType.relay, candidate.type);
+            Assert.Equal("192.0.2.10", candidate.relatedAddress);
+            Assert.Equal(5000, candidate.relatedPort);
+        }
+
+        [Fact]
+        public void Parse_InvalidEnumAndPriorityFields_LeavesDefaultValues()
+        {
+            var candidate = RTCIceCandidate.Parse("foundation invalid invalid invalid 192.0.2.1 5000 typ invalid");
+
+            Assert.Equal(RTCIceComponent.rtp, candidate.component);
+            Assert.Equal(RTCIceProtocol.udp, candidate.protocol);
+            Assert.Equal(0u, candidate.priority);
+            Assert.Equal(RTCIceCandidateType.host, candidate.type);
+        }
+
+        [Fact]
+        public void Parse_RelatedAddressWithoutRelatedPort_LeavesPortAtDefault()
+        {
+            var candidate = RTCIceCandidate.Parse(
+                "foundation 1 udp 100 203.0.113.10 3478 typ srflx raddr 192.0.2.10 generation 0");
+
+            Assert.Equal("192.0.2.10", candidate.relatedAddress);
+            Assert.Equal(0, candidate.relatedPort);
+        }
+
+        [Fact]
+        public void Parse_TcpCandidateWithoutTcpType_LeavesTcpTypeAtDefault()
+        {
+            var candidate = RTCIceCandidate.Parse("foundation 1 tcp 100 192.0.2.1 9 typ host");
+
+            Assert.Equal(RTCIceProtocol.tcp, candidate.protocol);
+            Assert.Equal(RTCIceTcpCandidateType.active, candidate.tcpType);
+        }
+
+        [Fact]
+        public void Parse_TcpRelayCandidate_ParsesRelatedFields()
+        {
+            const string candidateLine =
+                "foundation 1 tcp 100 203.0.113.10 3478 typ relay tcptype passive raddr 192.0.2.10 rport 5000 generation 0";
+
+            var candidate = RTCIceCandidate.Parse(candidateLine);
+
+            Assert.Equal("192.0.2.10", candidate.relatedAddress);
+            Assert.Equal(5000, candidate.relatedPort);
+        }
+
+        [Theory]
+        [InlineData(RTCIceCandidateType.host, RTCIceProtocol.udp, RTCIceTcpCandidateType.active, null, 0,
+            "foundation 1 udp 100 192.0.2.1 5000 typ host generation 0")]
+        [InlineData(RTCIceCandidateType.prflx, RTCIceProtocol.tcp, RTCIceTcpCandidateType.so, null, 0,
+            "foundation 1 tcp 100 192.0.2.1 5000 typ prflx tcptype so generation 0")]
+        [InlineData(RTCIceCandidateType.srflx, RTCIceProtocol.udp, RTCIceTcpCandidateType.active, "198.51.100.1", 6000,
+            "foundation 1 udp 100 192.0.2.1 5000 typ srflx raddr 198.51.100.1 rport 6000 generation 0")]
+        [InlineData(RTCIceCandidateType.relay, RTCIceProtocol.tcp, RTCIceTcpCandidateType.passive, "198.51.100.1", 6000,
+            "foundation 1 tcp 100 192.0.2.1 5000 typ relay tcptype passive raddr 198.51.100.1 rport 6000 generation 0")]
+        [InlineData(RTCIceCandidateType.relay, RTCIceProtocol.udp, RTCIceTcpCandidateType.active, null, 0,
+            "foundation 1 udp 100 192.0.2.1 5000 typ relay raddr 0.0.0.0 rport 0 generation 0")]
+        public void ToString_AllCandidateForms_ReturnsExpectedSdp(
+            RTCIceCandidateType type,
+            RTCIceProtocol protocol,
+            RTCIceTcpCandidateType tcpType,
+            string relatedAddress,
+            ushort relatedPort,
+            string expected)
+        {
+            var candidate = new RTCIceCandidate(new RTCIceCandidateInit())
+            {
+                foundation = "foundation",
+                component = RTCIceComponent.rtp,
+                protocol = protocol,
+                priority = 100,
+                address = "192.0.2.1",
+                port = 5000,
+                type = type,
+                tcpType = tcpType,
+                relatedAddress = relatedAddress,
+                relatedPort = relatedPort
+            };
+
+            Assert.Equal(expected, candidate.ToString());
+            Assert.Equal(expected, candidate.candidate);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void CandidateInitTryParse_NullOrWhiteSpace_ReturnsFalse(string json)
+        {
+            Assert.False(RTCIceCandidateInit.TryParse(json, out var init));
+            Assert.Null(init);
+        }
+
+        [Theory]
+        [InlineData("null")]
+        [InlineData("not-json")]
+        public void CandidateInitTryParse_NullOrInvalidJsonValue_ReturnsFalse(string json)
+        {
+            Assert.False(RTCIceCandidateInit.TryParse(json, out var init));
+            Assert.Null(init);
+        }
+
+        [Theory]
+        [InlineData("{}")]
+        [InlineData("{\"sdpMid\":\"audio\"}")]
+        [InlineData("{\"candidate\":\"candidate:foundation 1 udp 100 192.0.2.1 5000 typ host\"}")]
+        public void CandidateInitTryParse_MissingRequiredField_ReturnsFalse(string json)
+        {
+            Assert.False(RTCIceCandidateInit.TryParse(json, out var init));
+            Assert.NotNull(init);
+        }
+
+        [Fact]
+        public void CandidateInitTryParse_AllFields_ReturnsPopulatedObject()
+        {
+            const string json = "{\"candidate\":\"candidate:foundation 1 udp 100 192.0.2.1 5000 typ host\",\"sdpMid\":\"audio\",\"sdpMLineIndex\":2,\"usernameFragment\":\"ufrag\"}";
+
+            Assert.True(RTCIceCandidateInit.TryParse(json, out var init));
+            Assert.Equal("candidate:foundation 1 udp 100 192.0.2.1 5000 typ host", init.candidate);
+            Assert.Equal("audio", init.sdpMid);
+            Assert.Equal(2, init.sdpMLineIndex);
+            Assert.Equal("ufrag", init.usernameFragment);
+        }
+
+        [Fact]
+        public void Candidate_FromJson_ParsesAllFields()
+        {
+            const string json = "{\"candidate\":\"candidate:foundation 1 udp 100 192.0.2.1 5000 typ host\",\"sdpMid\":\"audio\",\"sdpMLineIndex\":2,\"usernameFragment\":\"ufrag\"}";
+
+            Assert.True(RTCIceCandidateInit.TryParse(json, out var init));
+            Assert.NotNull(init);
+            Assert.Equal("candidate:foundation 1 udp 100 192.0.2.1 5000 typ host", init.candidate);
+            Assert.Equal("audio", init.sdpMid);
+            Assert.Equal(2, init.sdpMLineIndex);
+            Assert.Equal("ufrag", init.usernameFragment);
+        }
+
+        [Fact]
+        public void Candidate_ToJson_SerializesAllFields()
+        {
+            var init = new RTCIceCandidateInit
+            {
+                candidate = "candidate:foundation 1 udp 100 192.0.2.1 5000 typ host",
+                sdpMid = "audio",
+                sdpMLineIndex = 2,
+                usernameFragment = "ufrag"
+            };
+
+            var json = init.toJSON();
+
+            Assert.Equal(
+                "{\"candidate\":\"candidate:foundation 1 udp 100 192.0.2.1 5000 typ host\",\"sdpMid\":\"audio\",\"sdpMLineIndex\":2,\"usernameFragment\":\"ufrag\"}",
+                json);
+        }
+
+        /// <summary>
+        /// Tests that two identical host candidates are equivalent.
+        /// </summary>
+        [Fact]
+        public void HostCandidatesEquivalenceUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+            var candidate2 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+
+            Assert.True(candidate1.IsEquivalent(candidate2));
+            Assert.True(candidate2.IsEquivalent(candidate1));
+
+            // Verify that equivalence matches ToString equality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
+        }
+
+        /// <summary>
+        /// Tests that two different host candidates are not equivalent.
+        /// </summary>
+        [Fact]
+        public void HostCandidatesNonEquivalenceUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+            var candidate2 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.51 61680 typ host generation 0");
+
+            Assert.False(candidate1.IsEquivalent(candidate2));
+            Assert.False(candidate2.IsEquivalent(candidate1));
+
+            // Verify that non-equivalence matches ToString inequality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
+        }
+
+        /// <summary>
+        /// Tests that two identical srflx candidates are equivalent.
+        /// </summary>
+        [Fact]
+        public void SrflxCandidatesEquivalenceUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = RTCIceCandidate.Parse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 0.0.0.0 rport 0 generation 0");
+            var candidate2 = RTCIceCandidate.Parse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 0.0.0.0 rport 0 generation 0");
+
+            Assert.True(candidate1.IsEquivalent(candidate2));
+            Assert.True(candidate2.IsEquivalent(candidate1));
+
+            // Verify that equivalence matches ToString equality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
+        }
+
+        /// <summary>
+        /// Tests that two different srflx candidates are not equivalent.
+        /// </summary>
+        [Fact]
+        public void SrflxCandidatesNonEquivalenceUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = RTCIceCandidate.Parse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 192.168.1.1 rport 5000 generation 0");
+            var candidate2 = RTCIceCandidate.Parse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 192.168.1.2 rport 5000 generation 0");
+
+            Assert.False(candidate1.IsEquivalent(candidate2));
+
+            // Verify that non-equivalence matches ToString inequality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
+        }
+
+        /// <summary>
+        /// Tests that two identical TCP candidates are equivalent.
+        /// </summary>
+        [Fact]
+        public void TcpCandidatesEquivalenceUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = RTCIceCandidate.Parse("4 1 TCP 2105458943 10.0.1.16 9 typ host tcptype active generation 0");
+            var candidate2 = RTCIceCandidate.Parse("4 1 TCP 2105458943 10.0.1.16 9 typ host tcptype active generation 0");
+
+            Assert.True(candidate1.IsEquivalent(candidate2));
+            Assert.True(candidate2.IsEquivalent(candidate1));
+
+            // Verify that equivalence matches ToString equality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
+        }
+
+        /// <summary>
+        /// Tests equivalence with a null reference.
+        /// </summary>
+        [Fact]
+        public void CandidateEquivalenceWithNullUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+
+            Assert.False(candidate.IsEquivalent(null));
+            Assert.False(candidate.IsEquivalent((IRTCIceCandidate)null));
+        }
+
+        /// <summary>
+        /// Tests that two candidates created via constructor are equivalent when they have the same properties.
+        /// </summary>
+        [Fact]
+        public void ConstructedCandidatesEquivalenceUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.host);
+            var candidate2 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.host);
+
+            Assert.True(candidate1.IsEquivalent(candidate2));
+
+            // Verify that equivalence matches ToString equality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
+        }
+
+        /// <summary>
+        /// Tests that candidates with different ports are not equivalent.
+        /// </summary>
+        [Fact]
+        public void CandidatesDifferentPortNonEquivalenceUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.host);
+            var candidate2 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5001, RTCIceCandidateType.host);
+
+            Assert.False(candidate1.IsEquivalent(candidate2));
+
+            // Verify that non-equivalence matches ToString inequality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
+        }
+
+        /// <summary>
+        /// Tests that candidates with different protocols are not equivalent.
+        /// </summary>
+        [Fact]
+        public void CandidatesDifferentProtocolNonEquivalenceUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.host);
+            var candidate2 = new RTCIceCandidate(RTCIceProtocol.tcp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.host);
+
+            Assert.False(candidate1.IsEquivalent(candidate2));
+
+            // Verify that non-equivalence matches ToString inequality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
+        }
+
+        /// <summary>
+        /// Tests that candidates with different types are not equivalent.
+        /// </summary>
+        [Fact]
+        public void CandidatesDifferentTypeNonEquivalenceUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.host);
+            var candidate2 = new RTCIceCandidate(RTCIceProtocol.udp, IPAddress.Parse("192.168.1.100"), 5000, RTCIceCandidateType.srflx);
+
+            Assert.False(candidate1.IsEquivalent(candidate2));
+
+            // Verify that non-equivalence matches ToString inequality
+            Assert.Equal(candidate1.ToString() == candidate2.ToString(), candidate1.IsEquivalent(candidate2));
+        }
+
+        /// <summary>
+        /// Tests self equivalence (reflexive property).
+        /// </summary>
+        [Fact]
+        public void CandidateSelfEquivalenceUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+
+            Assert.True(candidate.IsEquivalent(candidate));
+        }
+
+        /// <summary>
+        /// Tests that equivalence is consistent with ToString comparison across various candidate types.
+        /// </summary>
+        [Theory]
+        [InlineData("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0")]
+        [InlineData("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 192.168.1.1 rport 5000 generation 0")]
+        [InlineData("4 1 TCP 2105458943 10.0.1.16 9 typ host tcptype active generation 0")]
+        [InlineData("1 1 udp 100 10.0.0.1 5000 typ relay raddr 192.168.1.1 rport 5000 generation 0")]
+        public void CandidateEquivalenceConsistentWithToStringUnitTest(string candidateString)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = RTCIceCandidate.Parse(candidateString);
+            var candidate2 = RTCIceCandidate.Parse(candidateString);
+
+            // The primary assertion: equivalence matches ToString equality
+            bool toStringEqual = candidate1.ToString() == candidate2.ToString();
+            bool areEquivalent = candidate1.IsEquivalent(candidate2);
+
+            Assert.Equal(toStringEqual, areEquivalent);
+            Assert.True(areEquivalent, "Two candidates parsed from identical strings should be equivalent");
+        }
+
+        /// <summary>
+        /// Tests IsEquivalent with equivalent candidates.
+        /// </summary>
+        [Fact]
+        public void IsEquivalentWithEquivalentCandidatesUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+            var candidate2 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+
+            Assert.True(candidate1.IsEquivalent(candidate2));
+        }
+
+        /// <summary>
+        /// Tests IsEquivalent with non-equivalent candidates.
+        /// </summary>
+        [Fact]
+        public void IsEquivalentWithNonEquivalentCandidatesUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+            var candidate2 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.51 61680 typ host generation 0");
+
+            Assert.False(candidate1.IsEquivalent(candidate2));
+        }
+
+        /// <summary>
+        /// Tests IsEquivalent with a null candidate.
+        /// </summary>
+        [Fact]
+        public void IsEquivalentWithNullCandidateUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+            Assert.False(candidate.IsEquivalent(null));
+        }
+
+        /// <summary>
+        /// Tests IsEquivalent with a null IRTCIceCandidate.
+        /// </summary>
+        [Fact]
+        public void IsEquivalentWithNullInterfaceUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+            IRTCIceCandidate nullCandidate = null;
+
+            Assert.False(candidate.IsEquivalent(nullCandidate));
+        }
+
+        /// <summary>
+        /// Tests that IsEquivalent matches ToString equality.
+        /// </summary>
+        [Fact]
+        public void IsEquivalentConsistentWithToStringUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var candidate1 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+            var candidate2 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+            var candidate3 = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.51 61680 typ host generation 0");
+
+            // Equivalent candidates
+            Assert.Equal(candidate1.IsEquivalent(candidate2), candidate1.ToString() == candidate2.ToString());
+
+            // Non-equivalent candidates
+            Assert.Equal(candidate1.IsEquivalent(candidate3), candidate1.ToString() == candidate3.ToString());
         }
     }
 }

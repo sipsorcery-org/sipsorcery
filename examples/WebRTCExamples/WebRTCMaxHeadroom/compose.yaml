@@ -1,0 +1,34 @@
+services:
+  max-headroom:
+    image: sipsorcery/webrtc-max-headroom:local
+    build:
+      context: ../../..
+      dockerfile: examples/WebRTCExamples/WebRTCMaxHeadroom/Dockerfile
+    init: true
+    # WebRTC binds an OS-selected ephemeral UDP port. Host networking makes the full
+    # range reachable without expanding tens of thousands of Docker NAT bindings.
+    network_mode: host
+    volumes:
+      - type: bind
+        source: "${MAX_MODELS_ROOT:-C:/tools}"
+        target: /models
+        read_only: true
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:8080
+      WAIT_FOR_ICE_GATHERING_TO_SEND_ANSWER: true
+      AVATAR_RENDERER: "${AVATAR_RENDERER:-}"
+      SHERPA_MODEL_DIR: /models/sherpa-tts/vits-piper-en_US-ryan-high
+      SHERPA_STT_DIR: /models/sherpa-stt/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8
+      SHERPA_STT_PROVIDER: cpu
+      LLM_GGUF: /models/llm/Llama-3.2-3B-Instruct-Q4_K_M.gguf
+      LLM_GPU_LAYERS: "0"
+      WAV2LIP_ONNX: /models/wav2lip/wav2lip-onnx/checkpoints/wav2lip_gan.onnx
+      NEURAL_PERSONA: /models/wav2lip/persona.jpg
+      NEURAL_MATTE: /models/wav2lip/persona_alpha.png
+      NEURAL_FACE_BOX: "${NEURAL_FACE_BOX:-}"
+      NEURAL_EYES: "${NEURAL_EYES:-}"
+      ELEVENLABS_API_KEY: "${ELEVENLABS_API_KEY:-}"
+      LLM_ENDPOINT: "${LLM_ENDPOINT:-}"
+      LLM_MODEL: "${LLM_MODEL:-}"
+      LLM_API_KEY: "${LLM_API_KEY:-}"
+    restart: unless-stopped

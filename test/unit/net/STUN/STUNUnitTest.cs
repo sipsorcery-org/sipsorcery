@@ -522,5 +522,131 @@ namespace SIPSorcery.Net.UnitTests
 
             return header.Concat(attribute).ToArray();
         }
+
+        /// <summary>
+        /// A well formed header must parse from a segment that starts part way into its backing
+        /// array, which is how IceTcpReceiver frames messages out of its receive buffer.
+        /// </summary>
+        [Fact]
+        public void ParseSTUNHeaderFromOffsetSegmentUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            byte[] header = new byte[]
+            {
+                0x00, 0x01, 0x00, 0x00,                          // Binding request, no attributes.
+                0x21, 0x12, 0xa4, 0x42,                          // Magic cookie.
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11             // Transaction id.
+            };
+
+            byte[] buffer = new byte[] { 0xFF, 0xFF }.Concat(header).ToArray();
+
+            var stunHeader = STUNHeader.ParseSTUNHeader(new ArraySegment<byte>(buffer, 2, header.Length));
+
+            Assert.NotNull(stunHeader);
+            Assert.Equal(STUNMessageTypesEnum.BindingRequest, stunHeader.MessageType);
+            Assert.Equal(0, stunHeader.MessageLength);
+            Assert.Equal(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 }, stunHeader.TransactionId);
+        }
+
+        /// <summary>
+        /// A default ArraySegment has no backing array. The guard for it used to be written as
+        /// "bufferSegment != null", which means different things on .NET Framework and .NET Core,
+        /// and sat after the first byte had already been read, so this threw a
+        /// NullReferenceException instead of returning null.
+        /// </summary>
+        [Fact]
+        public void ParseSTUNHeaderFromDefaultSegmentReturnsNullUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            Assert.Null(STUNHeader.ParseSTUNHeader(default(ArraySegment<byte>)));
+            Assert.Null(STUNHeader.ParseSTUNHeader(new ArraySegment<byte>(new byte[10], 0, 0)));
+        }
+
+        /// <summary>
+        /// A buffer too short to hold a header yields null rather than a partly populated header.
+        /// </summary>
+        [Fact]
+        public void ParseSTUNHeaderFromShortSegmentReturnsNullUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var shortBuffer = new byte[STUNHeader.STUN_HEADER_LENGTH - 1];
+
+            Assert.Null(STUNHeader.ParseSTUNHeader(new ArraySegment<byte>(shortBuffer)));
+        }
+
+        /// <summary>
+        /// Every STUN message begins with two zero bits. A buffer that does not is rejected with
+        /// an exception rather than being parsed as a header.
+        /// </summary>
+        [Fact]
+        public void ParseSTUNHeaderWithBadInitialBitsThrowsUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var buffer = new byte[STUNHeader.STUN_HEADER_LENGTH];
+            buffer[0] = 0xFF;
+
+            Assert.Throws<ApplicationException>(() => STUNHeader.ParseSTUNHeader(new ArraySegment<byte>(buffer)));
+        }
+        /// <summary>
+        /// Tests that a buffer too short to hold a STUN header is reported as unparseable rather than
+        /// throwing. STUNHeader.ParseSTUNHeader returns null below the 20 byte header length, and a first
+        /// byte of 0x00 or 0x01 clears the initial byte mask so it takes that null return rather than its
+        /// "did not begin with 0x00" throw. Dereferencing the null header raised a NullReferenceException,
+        /// which on the TURN over TLS read loop ended the loop permanently. See GHSA-6848-qmp4-652w.
+        /// </summary>
+        [Theory]
+        [InlineData(0x00, 1)]
+        [InlineData(0x00, 3)]       // The length from the advisory's primitive check.
+        [InlineData(0x00, 12)]      // RTPHeader.MIN_HEADER_LEN, the shortest an RTP channel will admit.
+        [InlineData(0x00, 19)]      // One short of a STUN header.
+        [InlineData(0x01, 3)]
+        [InlineData(0x01, 19)]
+        public void ParseSTUNMessageTooShortForHeaderReturnsNull(byte firstByte, int length)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            byte[] buffer = new byte[length];
+            buffer[0] = firstByte;
+
+            for (int i = 1; i < length; i++)
+            {
+                buffer[i] = (byte)i;
+            }
+
+            STUNMessage stunMessage = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
+
+            Assert.Null(stunMessage);
+        }
+
+        /// <summary>
+        /// Tests that rejecting the buffers too short to hold a header left a buffer that is long enough
+        /// parsing as it did before.
+        /// </summary>
+        [Fact]
+        public void ParseSTUNMessageHeaderLengthBufferStillParses()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            byte[] buffer = new STUNMessage(STUNMessageTypesEnum.BindingRequest).ToByteBuffer(null, false);
+
+            Assert.Equal(STUNHeader.STUN_HEADER_LENGTH, buffer.Length);
+
+            STUNMessage stunMessage = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
+
+            Assert.NotNull(stunMessage);
+            Assert.NotNull(stunMessage.Header);
+            Assert.Equal(STUNMessageTypesEnum.BindingRequest, stunMessage.Header.MessageType);
+        }
+
     }
 }

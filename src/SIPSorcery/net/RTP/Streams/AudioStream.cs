@@ -81,12 +81,48 @@ namespace SIPSorcery.Net
         /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
         public void SendAudio(uint durationRtpUnits, ArraySegment<byte> sample)
         {
+            EnsureSendingFormat();
+            SendAudioFrame(durationRtpUnits, NegotiatedFormat.ID, sample);
+        }
+
+        /// <summary>
+        /// Sends an audio sample to the remote peer with an explicit RTP timestamp.
+        /// </summary>
+        /// <param name="rtpTimestamp">The RTP timestamp of the sample's first audio sample, in the sending format's
+        /// clock rate.</param>
+        /// <param name="durationRtpUnits">The length of this sample in RTP timestamp units (its sample count), not the
+        /// gap to the next sample. Used to space the RTP packets if the sample has to be split across several packets.</param>
+        /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
+        /// <remarks>
+        /// Use this instead of the duration based method when the presentation time of each sample is known (e.g. live
+        /// or relayed sources). Afterwards the track timestamp is <paramref name="rtpTimestamp"/> plus the duration,
+        /// where the next sample starts.
+        /// </remarks>
+        public void SendAudioAt(uint rtpTimestamp, uint durationRtpUnits, ArraySegment<byte> sample)
+        {
+            EnsureSendingFormat();
+            SendAudioFrameCore(rtpTimestamp, durationRtpUnits, NegotiatedFormat.ID, sample);
+        }
+
+        /// <summary>
+        /// Sends an audio sample to the remote peer with an explicit RTP timestamp.
+        /// See <see cref="SendAudioAt(uint, uint, ArraySegment{byte})"/>.
+        /// </summary>
+        /// <param name="rtpTimestamp">The RTP timestamp of the sample's first audio sample.</param>
+        /// <param name="durationRtpUnits">The length of this sample in RTP timestamp units.</param>
+        /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
+        public void SendAudioAt(uint rtpTimestamp, uint durationRtpUnits, byte[] sample)
+        {
+            SendAudioAt(rtpTimestamp, durationRtpUnits, new ArraySegment<byte>(sample));
+        }
+
+        private void EnsureSendingFormat()
+        {
             if (!sendingFormatFound)
             {
                 NegotiatedFormat = GetSendingFormat();
                 sendingFormatFound = true;
             }
-            SendAudioFrame(durationRtpUnits, NegotiatedFormat.ID, sample);
         }
 
         /// <summary>
@@ -108,6 +144,13 @@ namespace SIPSorcery.Net
         /// <param name="payloadTypeID">The payload ID to set in the RTP header.</param>
         /// <param name="bufferSegment">The audio payload to send.</param>
         public void SendAudioFrame(uint duration, int payloadTypeID, ArraySegment<byte> bufferSegment)
+        {
+            SendAudioFrameCore(null, duration, payloadTypeID, bufferSegment);
+        }
+
+        /// <param name="rtpTimestamp">An explicit RTP timestamp for the frame's first sample, or null to use (and
+        /// advance) the track timestamp exactly as the duration based method always has.</param>
+        private void SendAudioFrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, ArraySegment<byte> bufferSegment)
         {
             if (CheckIfCanSendRtpRaw())
             {
@@ -150,18 +193,32 @@ namespace SIPSorcery.Net
 #else
                         var memorySegment = new ArraySegment<byte>(bufferSegment.Array!, offset, payloadLength);
 #endif
-                        // Send this packet at the current LocalTrack.Timestamp
-                        SendRtpRaw(memorySegment, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        // Send this packet at the current LocalTrack.Timestamp, or for an explicit timestamp at the
+                        // frame's timestamp plus the portion already sent.
+                        SendRtpRaw(memorySegment, rtpTimestamp.HasValue ? rtpTimestamp.Value + totalIncrement : LocalTrack.Timestamp, markerBit, payloadTypeID, true);
 
                         // After sending, increment the timestamp by this packet's portion.
                         // This ensures the timestamp increments for the next packet, including the first one.
-                        LocalTrack.Timestamp += packetDuration;
                         totalIncrement += packetDuration;
+                        if (rtpTimestamp.HasValue)
+                        {
+                            // Keep the track at the end of what's been sent, in case a later packet fails.
+                            LocalTrack.Timestamp = rtpTimestamp.Value + totalIncrement;
+                        }
+                        else
+                        {
+                            LocalTrack.Timestamp += packetDuration;
+                        }
                     }
 
-                    // After all packets are sent, correct if we haven't incremented exactly by `duration`.
-                    if (totalIncrement != duration)
+                    if (rtpTimestamp.HasValue)
                     {
+                        // Leave the track timestamp where the next frame starts.
+                        LocalTrack.Timestamp = rtpTimestamp.Value + duration;
+                    }
+                    else if (totalIncrement != duration)
+                    {
+                        // After all packets are sent, correct if we haven't incremented exactly by `duration`.
                         // Add or subtract the difference so total increment equals duration.
                         LocalTrack.Timestamp += (duration - totalIncrement);
                     }

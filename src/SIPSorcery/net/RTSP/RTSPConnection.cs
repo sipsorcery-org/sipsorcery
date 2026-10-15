@@ -245,18 +245,29 @@ namespace SIPSorcery.Net
                 if (contentLengthValueStartPosn != 0)
                 {
                     // The Content-Length header has been found, this block extracts the value of the header.
-                    string contentLengthValue = null;
+                    // The digit run is bounded as it is accumulated so that the conversion cannot be taken out
+                    // of range; a value that does not fit is reported as no header. See GHSA-j5j8-rhcm-7fp9,
+                    // which covers the same unbounded conversion on the SIP side.
+                    long parsedContentLength = 0;
+                    bool haveDigits = false;
+                    bool outOfRange = false;
 
                     for (int index = contentLengthValueStartPosn; index < end; index++)
                     {
-                        if (contentLengthValue == null && (buffer[index] == ' ' || buffer[index] == '\t'))
+                        if (!haveDigits && (buffer[index] == ' ' || buffer[index] == '\t'))
                         {
                             // Skip any whitespace at the start of the header value.
                             continue;
                         }
                         else if (buffer[index] >= '0' && buffer[index] <= '9')
                         {
-                            contentLengthValue += ((char)buffer[index]).ToString();
+                            haveDigits = true;
+
+                            if (!outOfRange)
+                            {
+                                parsedContentLength = parsedContentLength * 10 + (buffer[index] - '0');
+                                outOfRange = parsedContentLength > MaxMessageSize;
+                            }
                         }
                         else
                         {
@@ -264,9 +275,14 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                    if (!contentLengthValue.IsNullOrBlank())
+                    if (haveDigits && outOfRange)
                     {
-                        return Convert.ToInt32(contentLengthValue);
+                        logger.LogWarning("The {ContentLengthHeader} value exceeded the maximum of {MaximumContentLength} and was ignored.",
+                            RTSPHeaders.RTSP_HEADER_CONTENTLENGTH, MaxMessageSize);
+                    }
+                    else if (haveDigits)
+                    {
+                        return (int)parsedContentLength;
                     }
                 }
 

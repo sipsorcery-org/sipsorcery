@@ -11,6 +11,8 @@ namespace SIPSorceryMedia.FFmpeg
     {
         static public List<Camera>? GetCameraDevices()
         {
+            FFmpegInit.EnsureBinariesRegistered();
+
             List<Camera>? result = null;
 
             string inputFormat = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dshow"

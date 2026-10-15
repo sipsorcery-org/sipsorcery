@@ -871,7 +871,7 @@ a=sendrecv";
         }
 
         /// <summary>
-        /// Tests that the SIPUserAgent can correctly place be the recipient of an attended transfer
+        /// Tests that the SIPUserAgent can correctly place and be the recipient of an attended transfer
         /// REFER request.
         /// </summary>
         /// <remarks>
@@ -919,6 +919,12 @@ a=sendrecv";
                     var uas = ua.AcceptCall(req);
                     bool answerResult = await ua.Answer(uas, CreateMediaSession());
                     logger.LogDebug("Answer incoming call result {AnswerResult}.", answerResult);
+                };
+                // Transfer requests are rejected unless the application explicitly permits them.
+                userAgent.OnTransferRequested += (referTo, referredBy) =>
+                {
+                    logger.LogDebug("Transfer requested to {ReferTo}, accepting.", referTo);
+                    return true;
                 };
             }
 

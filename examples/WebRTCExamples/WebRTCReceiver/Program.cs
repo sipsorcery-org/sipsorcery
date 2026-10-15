@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CommandLine;
@@ -30,7 +31,6 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.Encoders;
 using SIPSorceryMedia.FFmpeg;
 using WebSocketSharp.Server;
 
@@ -53,15 +53,12 @@ namespace demo
 
     class Program
     {
-        private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin"; //  /!\ A valid path to FFmpeg library
-
-        private const string STUN_URL = "stun:stun.sipsorcery.com";
         private const int WEBSOCKET_PORT = 8081;
         private const int VIDEO_INITIAL_WIDTH = 640;
         private const int VIDEO_INITIAL_HEIGHT = 480;
-
         private static Form _form;
         private static PictureBox _picBox;
+        private static Bitmap _spareBmp;   // Retired bitmap handed back by the UI thread for re-use.
         private static Options _options;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
@@ -110,58 +107,10 @@ namespace demo
 
         private static Task<RTCPeerConnection> CreatePeerConnection()
         {
-            //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new VpxVideoEncoder());
-            //videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
-            //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new FFmpegVideoEncoder());
-            //videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
-
             var videoEP = new FFmpegVideoEndPoint();
             videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
 
-
-            videoEP.OnVideoSinkDecodedSampleFaster += (RawImage rawImage) =>
-            {
-                _form.BeginInvoke(new Action(() =>
-                {
-                    if (rawImage.PixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb)
-                    {
-                        if (_picBox.Width != rawImage.Width || _picBox.Height != rawImage.Height)
-                        {
-                            logger.LogDebug($"Adjusting video display from {_picBox.Width}x{_picBox.Height} to {rawImage.Width}x{rawImage.Height}.");
-                            _picBox.Width = rawImage.Width;
-                            _picBox.Height = rawImage.Height;
-                        }
-
-                        Bitmap bmpImage = new Bitmap(rawImage.Width, rawImage.Height, rawImage.Stride, PixelFormat.Format24bppRgb, rawImage.Sample);
-                        _picBox.Image = bmpImage;
-                    }
-                }));
-            };
-
-            videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
-            {
-                _form.BeginInvoke(new Action(() =>
-                {
-                    if (pixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb)
-                    {
-                        if (_picBox.Width != (int)width || _picBox.Height != (int)height)
-                        {
-                            logger.LogDebug($"Adjusting video display from {_picBox.Width}x{_picBox.Height} to {width}x{height}.");
-                            _picBox.Width = (int)width;
-                            _picBox.Height = (int)height;
-                        }
-
-                        unsafe
-                        {
-                            fixed (byte* s = bmp)
-                            {
-                                Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(bmp.Length / height), PixelFormat.Format24bppRgb, (IntPtr)s);
-                                _picBox.Image = bmpImage;
-                            }
-                        }
-                    }
-                }));
-            };
+            videoEP.OnVideoSinkDecodedSampleFaster += ShowFrame;
 
             RTCConfiguration config = new RTCConfiguration
             {
@@ -181,7 +130,10 @@ namespace demo
             //MediaStreamTrack videoTrack = new MediaStreamTrack(new VideoFormat(96, "VP8", 90000, "x-google-max-bitrate=5000000"), MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(videoTrack);
 
-            pc.OnVideoFrameReceived += videoEP.GotVideoFrame;
+            pc.OnVideoFrameReceived += (ep, ts, frame, fmt) =>
+            {
+                videoEP.GotVideoFrame(ep, ts, frame, fmt);
+            };
             pc.OnVideoFormatsNegotiated += (formats) => videoEP.SetVideoSinkFormat(formats.First());
 
             pc.onconnectionstatechange += async (state) =>
@@ -206,6 +158,71 @@ namespace demo
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
             return Task.FromResult(pc);
+        }
+
+        /// <summary>
+        /// Copies a decoded 24 bits per pixel frame into a bitmap this application owns and displays it.
+        /// </summary>
+        /// <remarks>
+        /// The copy runs on the WebRTC receiver thread, the only place the <see cref="RawImage.Sample"/>
+        /// is guaranteed for safe access, and therfore needs to do the minimum possible amount of work possible.
+        ///
+        /// The mechanism used is to rotate two bitmaps so the one being written is never the one the picture
+        /// box is painting, which GDI+ would throw on: the UI thread hands the previous bitmap back once it has been
+        /// replaced and it will be used for the next frame copy.
+        /// 
+        /// The bitmaps are allocated once and re-used until the frame size changes. Allocating one per
+        /// frame costs several times more than the copy itself and, at 1080p and above, produces enough
+        /// garbage to stall the application.
+        ///
+        /// Note GDI+'s Format24bppRgb is B,G,R in memory despite the name, which is why a Bgr sample
+        /// can be copied into it verbatim.
+        /// </remarks>
+        private static void ShowFrame(RawImage rawImage)
+        {
+            if (rawImage.PixelFormat != VideoPixelFormatsEnum.Bgr)
+            {
+                logger.LogError($"Cannot display decoded video sample, expected pixel format Bgr but got {rawImage.PixelFormat}.");
+                return;
+            }
+
+            var bmp = Interlocked.Exchange(ref _spareBmp, null);
+
+            int width = rawImage.Width;
+            int height = rawImage.Height;
+
+            if (bmp == null || bmp.Width != width || bmp.Height != height)
+            {
+                bmp?.Dispose();
+                bmp = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+            }
+
+            var bmpData = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+
+            try
+            {
+                rawImage.CopyTo(bmpData.Scan0, bmpData.Stride);
+            }
+            finally
+            {
+                bmp.UnlockBits(bmpData);
+            }
+
+            _form.BeginInvoke(new Action(() =>
+            {
+                if (_picBox.Width != width || _picBox.Height != height)
+                {
+                    logger.LogDebug($"Adjusting video display to {width}x{height}.");
+                    _picBox.Width = width;
+                    _picBox.Height = height;
+                }
+
+                var previous = _picBox.Image as Bitmap;
+                _picBox.Image = bmp;
+
+                // The previous picure box bitmap is no longer being painted so it can be used for the next frame copy.
+                Interlocked.Exchange(ref _spareBmp, previous)?.Dispose();
+            }));
         }
 
         private static X509Certificate2 LoadCertificate(string path)

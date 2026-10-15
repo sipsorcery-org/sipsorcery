@@ -13,7 +13,7 @@
   </PropertyGroup>
  
   <ItemGroup>
-    <PackageReference Include="FFmpeg.AutoGen" Version="8.1.0" />
+    <PackageReference Include="FFmpeg.AutoGen" />
   </ItemGroup>
   
   <ItemGroup>
@@ -44,7 +44,13 @@
 		<RepositoryType>git</RepositoryType>
 		<RepositoryBranch>master</RepositoryBranch>
 		<PackageTags>WebRTC VoIP SIPSorcery Media FFmpeg</PackageTags>
-		<PackageReleaseNotes>-v10.0.10: Add and improve support for video codecs including H265, VP9 and AV1.
+		<PackageReleaseNotes>-v10.0.17: Updated for main sipsorcery library release.
+-v10.0.16: Updated nuget packages to latest stable versions.
+-v10.0.15: Updated for main sipsorcery library release.
+-v10.0.13: Fix license file.
+-v10.0.12: Updated for main sipsorcery library release.
+-v10.0.11: Updated for main sipsorcery library release.
+-v10.0.10: Add and improve support for video codecs including H265, VP9 and AV1.
 -v10.0.9:  Updated for main sipsorcery library release.
 -v10.0.8: Full library release.
 -v10.0.7: Updated for main sipsorcery library release.
@@ -75,9 +81,9 @@
 -v0.0.1-pre: Initial release.
 		</PackageReleaseNotes>
 		<NeutralLanguage>en</NeutralLanguage>
-		<Version>10.0.10</Version>
-		<AssemblyVersion>10.0.10</AssemblyVersion>
-		<FileVersion>10.0.10</FileVersion>
+		<Version>10.0.17</Version>
+		<AssemblyVersion>10.0.17</AssemblyVersion>
+		<FileVersion>10.0.17</FileVersion>
 	</PropertyGroup>
 
 

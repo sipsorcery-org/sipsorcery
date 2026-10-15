@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -61,6 +62,30 @@ namespace SIPSorcery.Net
         protected RTPChannel rtpChannel = null;
 
         protected bool _isClosed = false;
+
+        /// <summary>
+        /// How long after the stream closes that sends are dropped quietly. A media source runs on
+        /// its own thread and cannot be stopped synchronously with the close, so a short tail of
+        /// sends is expected even from correct application code and is not worth reporting.
+        /// </summary>
+        public const int CLOSED_SEND_GRACE_PERIOD_MS = 2000;
+
+        /// <summary>
+        /// The minimum interval between warnings once sends are still arriving after the grace
+        /// period. By then the media source genuinely has not been stopped, which the application
+        /// needs to be told, but not once per packet.
+        /// </summary>
+        public const int CLOSED_SEND_WARNING_INTERVAL_MS = 5000;
+
+        /// <summary>
+        /// How many dropped sends between consulting the clock. The drop path runs at the media
+        /// frame rate so it must not take a timestamp for every packet.
+        /// </summary>
+        private const int CLOSED_SEND_CLOCK_CHECK_INTERVAL = 50;
+
+        private long _closedAtTicks = 0;                 // When the stream closed, 0 while it is open.
+        private long _sendsAfterClose = 0;               // Sends dropped since the stream closed.
+        private long _lastClosedSendWarningTicks = 0;    // When the last of those was reported, 0 if none has been.
         /// <summary>
         /// Used for keeping track of TWCC packets
         /// </summary>
@@ -136,6 +161,12 @@ namespace SIPSorcery.Net
                     return;
                 }
                 _isClosed = value;
+
+                // Stamp the transition so sends arriving afterwards can distinguish the expected
+                // shutdown tail from a media source that was never stopped.
+                Interlocked.Exchange(ref _closedAtTicks, _isClosed ? DateTime.Now.Ticks : 0);
+                Interlocked.Exchange(ref _sendsAfterClose, 0);
+                Interlocked.Exchange(ref _lastClosedSendWarningTicks, 0);
 
                 //Clear previous buffer
                 ClearPendingPackages();
@@ -371,7 +402,7 @@ namespace SIPSorcery.Net
         {
             if (IsClosed)
             {
-                logger.LogWarning("SendRtpRaw was called for a {MediaType} packet on a closed RTP session.", MediaType);
+                ReportSendOnClosedStream();
                 return false;
             }
 
@@ -396,6 +427,74 @@ namespace SIPSorcery.Net
             return true;
         }
 
+        /// <summary>
+        /// Reports a send that was dropped because the stream is closed.
+        /// </summary>
+        /// <remarks>
+        /// Closing is a normal lifecycle event and a media source cannot be stopped synchronously
+        /// with it. Close sets IsClosed and raises its events on the closing thread while the
+        /// source is still producing samples on its own, so a short tail of sends afterwards is
+        /// expected and says nothing is wrong. Sends still arriving well after the close are a
+        /// different thing: the source was never stopped, which is an application bug worth
+        /// reporting because it holds on to a capture device and burns CPU encoding frames that
+        /// are thrown away.
+        ///
+        /// So the first drop is logged once at debug and the rest of the tail is silent. Past
+        /// <seealso cref="CLOSED_SEND_GRACE_PERIOD_MS"/> a warning is raised instead, rate limited
+        /// to one every <seealso cref="CLOSED_SEND_WARNING_INTERVAL_MS"/> and carrying the running
+        /// total so the scale of the leak is obvious.
+        /// </remarks>
+        private void ReportSendOnClosedStream()
+        {
+            long sendCount = Interlocked.Increment(ref _sendsAfterClose);
+
+            if (sendCount == 1)
+            {
+                logger.LogDebug("RTP packet for {MediaType} not sent, the RTP session is closed.", MediaType);
+                return;
+            }
+
+            // Gate the clock behind a cheap counter, this runs at the media frame rate.
+            if (sendCount % CLOSED_SEND_CLOCK_CHECK_INTERVAL != 0)
+            {
+                return;
+            }
+
+            long closedAtTicks = Interlocked.Read(ref _closedAtTicks);
+
+            if (closedAtTicks == 0)
+            {
+                // Re-opened underneath us, nothing meaningful to measure against.
+                return;
+            }
+
+            long nowTicks = DateTime.Now.Ticks;
+            long sinceClosedTicks = nowTicks - closedAtTicks;
+
+            if (sinceClosedTicks < CLOSED_SEND_GRACE_PERIOD_MS * TimeSpan.TicksPerMillisecond)
+            {
+                // Still the expected shutdown tail.
+                return;
+            }
+
+            long lastWarningTicks = Interlocked.Read(ref _lastClosedSendWarningTicks);
+
+            if (lastWarningTicks != 0 &&
+                (nowTicks - lastWarningTicks) < CLOSED_SEND_WARNING_INTERVAL_MS * TimeSpan.TicksPerMillisecond)
+            {
+                return;
+            }
+
+            if (Interlocked.CompareExchange(ref _lastClosedSendWarningTicks, nowTicks, lastWarningTicks) != lastWarningTicks)
+            {
+                // Another thread is reporting this round.
+                return;
+            }
+
+            logger.LogWarning("{SendCount} {MediaType} packets have been sent on the RTP session in the {SecondsSinceClosed:0.##}s since it closed, the media source does not appear to have been stopped.",
+                sendCount, MediaType, new TimeSpan(sinceClosedTicks).TotalSeconds);
+        }
+
         private static byte[] Combine(params byte[][] arrays)
         {
             byte[] rv = new byte[arrays.Sum(a => a.Length)];
@@ -410,7 +509,7 @@ namespace SIPSorcery.Net
 
         protected void SendRtpRaw(ArraySegment<byte> data, uint timestamp, int markerBit, int payloadType, Boolean checkDone, ushort? seqNum = null)
         {
-            if (checkDone || CheckIfCanSendRtpRaw())
+            if (HasRtpChannel() && (checkDone || CheckIfCanSendRtpRaw()))
             {
                 ProtectRtpPacket protectRtpPacket = SecureContext?.ProtectRtpPacket;
                 int srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
@@ -643,7 +742,7 @@ namespace SIPSorcery.Net
                 logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
                 return false;
             }
-            else if (ControlDestinationEndPoint != null)
+            else if (HasRtpChannel() && ControlDestinationEndPoint != null)
             {
                 //logger.LogDebug("SendRtcpReport: {ReportBytes}", reportBytes.HexStr());
 
@@ -768,7 +867,11 @@ namespace SIPSorcery.Net
 
             var format = LocalTrack?.GetFormatForPayloadID(hdr.PayloadType);
 
-            if (rtpPacket != null && format != null)
+            if(format == null || format.Value.IsEmpty())
+            {
+                logger.LogWarning("Received RTP packet with unknown payload type {PayloadType} for {MediaType} stream from {RemoteEndPoint}.", hdr.PayloadType, MediaType, remoteEndPoint);
+            }
+            else if (rtpPacket != null)
             {
                 if (UseBuffer())
                 {
@@ -894,11 +997,14 @@ namespace SIPSorcery.Net
 
         protected void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)
         {
-            if (track.LastRemoteSeqNum != 0 &&
-                header.SequenceNumber != (track.LastRemoteSeqNum + 1) &&
-                !(header.SequenceNumber == 0 && track.LastRemoteSeqNum == ushort.MaxValue))
+            if (logger.IsEnabled(LogLevel.Trace))
             {
-                logger.LogWarning("{TrackType} stream sequence number jumped from {LastRemoteSeqNum} to {SequenceNumber}.", trackType, track.LastRemoteSeqNum, header.SequenceNumber);
+                if (track.LastRemoteSeqNum != 0 &&
+                    header.SequenceNumber != (track.LastRemoteSeqNum + 1) &&
+                    !(header.SequenceNumber == 0 && track.LastRemoteSeqNum == ushort.MaxValue))
+                {
+                    logger.LogTrace("{TrackType} stream sequence number jumped from {LastRemoteSeqNum} to {SequenceNumber}.", trackType, track.LastRemoteSeqNum, header.SequenceNumber);
+                }
             }
         }
 

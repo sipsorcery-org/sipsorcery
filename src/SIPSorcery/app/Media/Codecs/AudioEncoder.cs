@@ -52,6 +52,12 @@ namespace SIPSorcery.Media
         private G722Codec _g722Decoder;
         private G722CodecState _g722DecoderState;
 
+        // Guards the lazy initialisation of the G722 codec/state pairs above. The pairs are two
+        // separate fields, so without this an unlucky caller could observe the codec already set
+        // while its state is still null and pass that null into Encode/Decode (a sporadic
+        // NullReferenceException on the first G722 frame when two audio source timers encode at once).
+        private readonly object _g722Lock = new object();
+
         private G729Encoder _g729Encoder;
         private G729Decoder _g729Decoder;
 
@@ -112,15 +118,25 @@ namespace SIPSorcery.Media
         {
             if (format.Codec == AudioCodecsEnum.G722)
             {
-                if (_g722Codec == null)
+                // Read both fields into locals and only encode through the locals, so a concurrent
+                // caller can never hand a null state to Encode (the codec field may be published
+                // before the state field). Initialise under a lock with the state assigned first.
+                var g722Codec = _g722Codec;
+                var g722State = _g722CodecState;
+                if (g722Codec == null || g722State == null)
                 {
-                    _g722Codec = new G722Codec();
-                    _g722CodecState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
+                    lock (_g722Lock)
+                    {
+                        _g722CodecState ??= new G722CodecState(G722_BIT_RATE, G722Flags.None);
+                        _g722Codec ??= new G722Codec();
+                        g722Codec = _g722Codec;
+                        g722State = _g722CodecState;
+                    }
                 }
 
                 int outputBufferSize = pcm.Length / 2;
                 byte[] encodedSample = new byte[outputBufferSize];
-                int res = _g722Codec.Encode(_g722CodecState, encodedSample, pcm, pcm.Length);
+                g722Codec.Encode(g722State, encodedSample, pcm, pcm.Length);
 
                 return encodedSample;
             }
@@ -196,14 +212,22 @@ namespace SIPSorcery.Media
         {
             if (format.Codec == AudioCodecsEnum.G722)
             {
-                if (_g722Decoder == null)
+                // Same ordered, double-checked init as EncodeAudio: never pass a null state to Decode.
+                var g722Decoder = _g722Decoder;
+                var g722DecoderState = _g722DecoderState;
+                if (g722Decoder == null || g722DecoderState == null)
                 {
-                    _g722Decoder = new G722Codec();
-                    _g722DecoderState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
+                    lock (_g722Lock)
+                    {
+                        _g722DecoderState ??= new G722CodecState(G722_BIT_RATE, G722Flags.None);
+                        _g722Decoder ??= new G722Codec();
+                        g722Decoder = _g722Decoder;
+                        g722DecoderState = _g722DecoderState;
+                    }
                 }
 
                 short[] decodedPcm = new short[encodedSample.Length * 2];
-                int decodedSampleCount = _g722Decoder.Decode(_g722DecoderState, decodedPcm, encodedSample, encodedSample.Length);
+                int decodedSampleCount = g722Decoder.Decode(g722DecoderState, decodedPcm, encodedSample, encodedSample.Length);
 
                 return decodedPcm.AsSpan(0, decodedSampleCount).ToArray();
             }

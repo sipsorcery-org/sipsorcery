@@ -9,6 +9,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -244,6 +245,58 @@ namespace SIPSorcery.Net.UnitTests
             var extensions= header.GetHeaderExtensions().ToList();
             Assert.NotNull(extensions);
             Assert.Empty(extensions);
+        }
+
+        /// <summary>
+        /// Serialising a packet whose payload is a byte array rather than an ArraySegment must
+        /// work on every target framework. GetBytes used to select its copy branch with
+        /// "_payloadSegment != null", which means different things on .NET Framework and .NET
+        /// Core, so on .NET Framework it took the segment branch for an array backed packet and
+        /// threw ArgumentNullException.
+        /// </summary>
+        [Fact]
+        public void RtpPacketWithArrayPayloadGetBytesUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var packet = new RTPPacket(4);
+            packet.Header.PayloadType = 0;
+            packet.Header.SequenceNumber = 1234;
+            packet.Header.SyncSource = 5678;
+            packet.Payload[0] = 0xAA;
+            packet.Payload[3] = 0xBB;
+
+            var buffer = packet.GetBytes();
+
+            Assert.Equal(packet.Header.Length + 4, buffer.Length);
+
+            var roundTripped = new RTPPacket(buffer);
+
+            Assert.Equal(1234, roundTripped.Header.SequenceNumber);
+            Assert.Equal(5678u, roundTripped.Header.SyncSource);
+            Assert.Equal(new byte[] { 0xAA, 0x00, 0x00, 0xBB }, roundTripped.Payload);
+        }
+
+        /// <summary>
+        /// The ArraySegment backed form, which is what the library's own send path uses, must
+        /// serialise the segment's bytes and honour its offset.
+        /// </summary>
+        [Fact]
+        public void RtpPacketWithSegmentPayloadGetBytesUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var backing = new byte[] { 0x11, 0x22, 0xAA, 0x00, 0x00, 0xBB, 0x33 };
+            var packet = new RTPPacket(new ArraySegment<byte>(backing, 2, 4), 0);
+            packet.Header.PayloadType = 0;
+            packet.Header.SequenceNumber = 4321;
+
+            var buffer = packet.GetBytes();
+
+            Assert.Equal(packet.Header.Length + 4, buffer.Length);
+            Assert.Equal(new byte[] { 0xAA, 0x00, 0x00, 0xBB }, new RTPPacket(buffer).Payload);
         }
     }
 }

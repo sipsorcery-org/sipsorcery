@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>12.0</LangVersion>
+    <RootNamespace>demo</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Properties\launchSettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
+    <!-- IN-PROCESS Wav2Lip avatar (Wav2LipAvatarRenderer): onnxruntime runs the lip-sync
+         model (DirectML uses any DX12 GPU on Windows, CPU elsewhere) and MathNet provides
+         the FFT for the librosa-compatible mel front-end - replaces the Python sidecar. -->
+    <!-- Version pinned to match the onnxruntime native library sherpa-onnx bundles (sherpa comes
+         via the AvatarPipeline reference). DirectML is Windows-only; Linux containers use the
+         portable CPU package. Both provide the same managed API used by the renderer. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML"
+                      Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime"
+                      Condition="!$([MSBuild]::IsOSPlatform('Windows'))" />
+    <PackageReference Include="MathNet.Numerics" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The engine-agnostic speech/AI pipeline (TTS/STT/LLM + the IAvatarMouth seam); the sherpa
+         and LLamaSharp packages come transitively from here. -->
+    <ProjectReference Include="..\AvatarPipeline\AvatarPipeline.csproj" />
+    <ProjectReference Include="..\..\..\src\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
+    <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
+  </ItemGroup>
+
+</Project>

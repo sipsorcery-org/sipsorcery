@@ -1,0 +1,38 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="WebRTC Godot VRM Avatar"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7", "C#")
+
+[display]
+
+window/size/viewport_width=760
+window/size/viewport_height=560
+
+[dotnet]
+
+project/assembly_name="WebRTCGodotAvatar"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/mtoon/plugin.cfg", "res://addons/vrm/plugin.cfg")
+
+[extension_list]
+
+enabled=PackedStringArray("res://addons/gd_cubism/gd_cubism.gdextension")
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.035, 0.045, 0.06, 1)

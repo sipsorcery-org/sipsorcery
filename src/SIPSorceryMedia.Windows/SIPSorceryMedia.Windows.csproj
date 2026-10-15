@@ -1,7 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   
   <ItemGroup>
-    <PackageReference Include="NAudio" Version="2.3.0" />
+    <PackageReference Include="NAudio" />
+    <!-- WaveOutEvent / WaveInEvent. Explicit because NAudio 3.0's meta-package only pulls
+         WinMM in via its net9.0-windows10.0.19041 group, which this project's platform
+         version (17763) cannot select. See the note in Directory.Packages.props. -->
+    <PackageReference Include="NAudio.WinMM" />
   </ItemGroup>
   
   <ItemGroup>
@@ -19,7 +23,7 @@
     <Authors>Aaron Clauson</Authors>
     <Copyright>Copyright © 2020-2026 Aaron Clauson</Copyright>
     <Company>SIP Sorcery PTY LTD</Company>
-    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <Title>SIPSorceryMedia.Windows</Title>
     <Summary>Audio and video end points for Windows capture devices.</Summary>
     <Description>Provides audio and video device access for Windows for use with the main SIPSorcery real-time communications library.</Description>
@@ -29,13 +33,19 @@
     <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorceryMedia.Windows</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>10.0.10</Version>
-    <AssemblyVersion>10.0.10</AssemblyVersion>
-    <FileVersion>10.0.10</FileVersion>
+    <Version>10.0.17</Version>
+    <AssemblyVersion>10.0.17</AssemblyVersion>
+    <FileVersion>10.0.17</FileVersion>
 	<RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Audio Video Codecs Encoders Decoders</PackageTags>
-	  <PackageReleaseNotes>-v10.0.10: Updated for main sipsorcery library release.
+	  <PackageReleaseNotes>-v10.0.17: Updated for main sipsorcery library release.
+-v10.0.16: Updated nuget packages to latest stable versions.
+-v10.0.15: Updated for main sipsorcery library release.
+-v10.0.13: Fix license file.
+-v10.0.12: Updated for main sipsorcery library release.
+-v10.0.11: Updated for main sipsorcery library release.
+-v10.0.10: Updated for main sipsorcery library release.
 -v10.0.9: Updated for main sipsorcery library release.
 -v10.0.8: Full library release.
 -v10.0.7: Updated for main sipsorcery library release.
@@ -69,6 +79,7 @@
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
 	<None Include="README.md" Pack="true" PackagePath="" />
+	<None Include="..\..\LICENSE.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <PropertyGroup>

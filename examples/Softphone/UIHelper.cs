@@ -112,7 +112,7 @@ namespace SIPSorcery.SoftPhone
                 var imgBytes = new byte[streamInfo.Stream.Length];
                 using (var stream = streamInfo.Stream)
                 {
-                    stream.Read(imgBytes, 0, (int)stream.Length);
+                    stream.ReadExactly(imgBytes, 0, (int)stream.Length);
                 }
 
                 return imgBytes;

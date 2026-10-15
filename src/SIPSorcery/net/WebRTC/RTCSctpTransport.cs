@@ -263,9 +263,9 @@ namespace SIPSorcery.Net
                 Tag = RTCSctpAssociation.VerificationTag,
                 TSN = RTCSctpAssociation.TSN,
                 ARwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW,
-                CreatedAt = DateTime.Now.ToString("o"),
+                CreatedAt = DateTime.UtcNow,
                 Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS + lifeTimeExtension,
-                HMAC = string.Empty
+                HMAC = null
             };
 
             return cookie;
@@ -346,6 +346,17 @@ namespace SIPSorcery.Net
                 {
                     // Treat application exceptions as recoverable, things like SCTP packet parse failures.
                     logger.LogWarning("SCTP error processing RTCSctpTransport receive. {Message}", appExcp.Message);
+                }
+                catch (Exception parseExcp) when (parseExcp is IndexOutOfRangeException || parseExcp is ArgumentException)
+                {
+                    // Defence in depth for the same class of failure. Malformed input reaching a parser that
+                    // indexes the receive buffer without its own length check surfaces as one of these rather
+                    // than as an ApplicationException, and the generic handler below would break out of the
+                    // loop and end the receive thread for good. A single bad packet from the remote party must
+                    // not cost the association, so drop it and carry on. Anything that genuinely leaves the
+                    // transport unusable will fail again on the next iteration through the socket or DTLS
+                    // exception paths.
+                    logger.LogWarning(parseExcp, "SCTP error parsing packet received on RTCSctpTransport, packet dropped. {Message}", parseExcp.Message);
                 }
                 catch (TlsFatalAlert alert) when (alert.InnerException is SocketException)
                 {

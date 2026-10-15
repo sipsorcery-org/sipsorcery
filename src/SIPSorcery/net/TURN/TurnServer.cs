@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -186,6 +187,14 @@ namespace SIPSorcery.Net
     ///   <item>Allocation lifetime is not capped — clients can request arbitrarily long lifetimes.</item>
     ///   <item>No ALTERNATE-SERVER support.</item>
     /// </list>
+    /// <para>
+    /// Because of the above this type is marked with
+    /// <see cref="System.Diagnostics.CodeAnalysis.ExperimentalAttribute"/> and using it is a compile
+    /// error until the <c>SIPSORCERY001</c> diagnostic is suppressed, so that the limitations are
+    /// acknowledged rather than discovered in production. To suppress it for a project add
+    /// <c>&lt;NoWarn&gt;$(NoWarn);SIPSORCERY001&lt;/NoWarn&gt;</c> to the csproj, or use
+    /// <c>#pragma warning disable SIPSORCERY001</c> around the usage.
+    /// </para>
     /// <para><strong>Security considerations:</strong></para>
     /// <list type="bullet">
     ///   <item>Default credentials (<c>turn-user</c> / <c>turn-pass</c>) — callers MUST configure
@@ -211,6 +220,7 @@ namespace SIPSorcery.Net
     /// server.Dispose(); // or server.Stop();
     /// </code>
     /// </example>
+    [Experimental("SIPSORCERY001", UrlFormat = "https://github.com/sipsorcery-org/sipsorcery/blob/master/docs/diagnostics/{0}.md")]
     public class TurnServer : IDisposable
     {
         private const int PERMISSION_LIFETIME_SECONDS = 300; // RFC 5766 Section 8
@@ -389,6 +399,13 @@ namespace SIPSorcery.Net
 
             logger.LogInformation("TURN server started on {Address}:{Port} (TCP={Tcp}, UDP={Udp}).",
                 _config.ListenAddress, _config.Port, _config.EnableTcp, _config.EnableUdp);
+
+            // The compile time SIPSORCERY001 diagnostic can be suppressed once and then forgotten, so the
+            // same caveat is repeated here for whoever is looking at the logs of a running process.
+            logger.LogWarning("TURN server is intended for development, testing and small scale or embedded " +
+                "scenarios and is not hardened for production use. It has no nonce validation, no rate limiting " +
+                "or per-IP allocation caps and no TLS/DTLS on the control channel. Use coturn or an equivalent " +
+                "for production deployments.");
         }
 
         /// <summary>
@@ -485,7 +502,14 @@ namespace SIPSorcery.Net
                                 break;
                         }
 
-                        HandleChannelData(allocation, channelNumber, data, 0, data.Length);
+                        try
+                        {
+                            HandleChannelData(allocation, channelNumber, data, 0, data.Length);
+                        }
+                        catch (Exception channelDataExcp)
+                        {
+                            logger.LogWarning(channelDataExcp, "TURN server dropped channel data from TCP client {Client} that could not be processed. {ErrorMessage}", clientId, channelDataExcp.Message);
+                        }
                     }
                     else
                     {
@@ -498,17 +522,41 @@ namespace SIPSorcery.Net
                         if (remaining > 0 && !await ReadExactAsync(stream, fullMsg, 4, remaining).ConfigureAwait(false))
                             break;
 
-                        var stunMsg = STUNMessage.ParseSTUNMessage(fullMsg, fullMsg.Length);
+                        // Parsing and processing are isolated from the read loop for the same reason as
+                        // the UDP path. The framing above has already consumed exactly this message's
+                        // bytes, so the stream stays in a consistent position and the connection can
+                        // carry on with the next message rather than being dropped over one bad one.
+                        // The reads themselves stay outside this try so a genuinely broken connection
+                        // still exits via the IOException handler below instead of spinning.
+                        STUNMessage stunMsg;
+
+                        try
+                        {
+                            stunMsg = STUNMessage.ParseSTUNMessage(fullMsg, fullMsg.Length);
+                        }
+                        catch (Exception parseExcp)
+                        {
+                            logger.LogWarning(parseExcp, "TURN server dropped an unparseable STUN message from TCP client {Client}. {ErrorMessage}", clientId, parseExcp.Message);
+                            continue;
+                        }
+
                         if (stunMsg == null)
                         {
                             logger.LogWarning("Failed to parse STUN message from TCP client {Client}.", clientId);
                             continue;
                         }
 
-                        ProcessMessage(stunMsg, clientId, clientEndPoint,
-                            (responseBytes) => SendTcpResponseAsync(stream, responseBytes),
-                            ref allocation,
-                            stream, null, null);
+                        try
+                        {
+                            ProcessMessage(stunMsg, clientId, clientEndPoint,
+                                (responseBytes) => SendTcpResponseAsync(stream, responseBytes),
+                                ref allocation,
+                                stream, null, null);
+                        }
+                        catch (Exception processExcp) when (!(processExcp is System.IO.IOException) && !(processExcp is OperationCanceledException))
+                        {
+                            logger.LogWarning(processExcp, "TURN server failed to process a STUN message from TCP client {Client}. {ErrorMessage}", clientId, processExcp.Message);
+                        }
                     }
                 }
             }
@@ -566,7 +614,21 @@ namespace SIPSorcery.Net
                     catch (ObjectDisposedException) { break; }
                     catch (SocketException) { break; }
 
-                    HandleUdpDatagram(result.Buffer, result.RemoteEndPoint);
+                    // Processing a datagram is isolated from the receive loop. The datagram is
+                    // unauthenticated and arbitrary, and the STUN parser throws on input it does not
+                    // recognise, so without this a single malformed datagram from anyone who can reach
+                    // the port unwinds past the loop. The loop is started fire and forget with no
+                    // supervision, so nothing would restart it and the UDP relay would stay down for
+                    // every client until the process was restarted.
+                    try
+                    {
+                        HandleUdpDatagram(result.Buffer, result.RemoteEndPoint);
+                    }
+                    catch (Exception datagramExcp)
+                    {
+                        logger.LogWarning(datagramExcp, "TURN server dropped a UDP datagram from {Remote} that could not be processed. {ErrorMessage}",
+                            result.RemoteEndPoint, datagramExcp.Message);
+                    }
                 }
             }
             catch (ObjectDisposedException) { }

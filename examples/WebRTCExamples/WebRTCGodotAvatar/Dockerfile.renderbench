@@ -1,0 +1,106 @@
+# Render-throughput test: can software-rendered Godot (llvmpipe/Lavapipe) hold 25fps
+# for the VRM avatar at 640x480 on GPU-less k8s vCPUs?
+#
+# Build (from the repo root):
+#   docker build -f examples/WebRTCExamples/WebRTCGodotAvatar/Dockerfile.renderbench -t godot-avatar-renderbench .
+# Run (mimic the DOKS pod's cpu limit):
+#   docker run --rm --cpus=3 godot-avatar-renderbench
+# Watch for the "[bench] engine_fps=... captured_fps=... encode_ms=..." lines (every 5s).
+#
+# The image deliberately contains no speech/LLM models: RENDER_BENCH=1 drives a synthetic
+# mouth and runs the full capture -> BGR -> VP8 pipeline without a WebRTC peer.
+
+# FFmpeg.AutoGen 8.1 binds to libavcodec.so.62 (FFmpeg 8). Debian's ffmpeg package is
+# older, so use the same checksum-verified shared build the Max image uses.
+FROM debian:bookworm-slim AS ffmpeg
+ARG FFMPEG_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-06-30-13-34/ffmpeg-n8.1.2-21-gce3c09c101-linux64-lgpl-shared-8.1.tar.xz
+ARG FFMPEG_SHA256=bc60572d89533c7987e7cfbb654eba4d35122a77885c6938483dd7ef8219cde9
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates xz-utils \
+    && curl --fail --location --retry 3 "$FFMPEG_URL" --output /tmp/ffmpeg.tar.xz \
+    && echo "$FFMPEG_SHA256  /tmp/ffmpeg.tar.xz" | sha256sum --check --strict \
+    && mkdir /opt/ffmpeg \
+    && tar --extract --xz --file /tmp/ffmpeg.tar.xz --strip-components=1 --directory /opt/ffmpeg \
+    && test -f /opt/ffmpeg/lib/libavcodec.so.62 \
+    && rm /tmp/ffmpeg.tar.xz
+
+# Linux build of the gd_cubism GDExtension (Live2D renderer). The Cubism SDK for Native
+# is license-gated so it cannot be fetched here - the build context must already contain
+# the locally downloaded SDK at ThirdParty/gd_cubism/thirdparty/CubismSdkForNative-5-r.5
+# (see build-gd-cubism.ps1 / the README for how that tree is set up).
+FROM debian:bookworm-slim AS gdcubism
+RUN apt-get update && apt-get install -y --no-install-recommends g++ scons pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+COPY examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty/gd_cubism /build/gd_cubism
+WORKDIR /build/gd_cubism
+# The editor loads the debug library, exported builds the release one - build both.
+RUN scons platform=linux arch=x86_64 target=template_debug -j"$(nproc)" \
+    && scons platform=linux arch=x86_64 target=template_release -j"$(nproc)" \
+    && ls demo/addons/gd_cubism/bin/libgd_cubism.linux.debug.x86_64.so \
+          demo/addons/gd_cubism/bin/libgd_cubism.linux.release.x86_64.so
+
+# App source minus the gd_cubism build tree (see the COPY --from=appsrc comment below).
+FROM debian:bookworm-slim AS appsrc
+COPY . /work
+RUN rm -rf /work/examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+
+# Xvfb (virtual display), llvmpipe (software GL) and Lavapipe (software Vulkan) plus the
+# X client libraries Godot's linuxbsd platform links against.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      unzip wget ca-certificates xvfb \
+      libgl1-mesa-dri mesa-vulkan-drivers libegl1 \
+      libx11-6 libxcursor1 libxinerama1 libxrandr2 libxi6 libxext6 libxrender1 \
+      libxkbcommon0 fontconfig libdbus-1-3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Godot 4.7 .NET (mono) linux build - the editor binary doubles as the runtime and
+# performs the one-time headless asset import (VRM -> scene conversion).
+RUN wget -q https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_mono_linux_x86_64.zip -O /tmp/godot.zip \
+    && unzip -q /tmp/godot.zip -d /opt/godot \
+    && rm /tmp/godot.zip \
+    && ln -s "/opt/godot/Godot_v4.7-stable_mono_linux_x86_64/Godot_v4.7-stable_mono_linux.x86_64" /usr/local/bin/godot
+
+WORKDIR /work
+# Via a prep stage rather than COPY . . directly: the context carries the ~600M
+# ThirdParty/gd_cubism build tree (godot-cpp + Cubism SDK) that only the gdcubism stage
+# needs - stripping it here keeps it out of the runtime image entirely and stops Godot's
+# resource scan from finding the second copy of the gd_cubism .gdextension in its demo.
+COPY --from=appsrc /work /work
+
+# Linux gd_cubism binaries into the addon's bin/ (alongside the wrapper scripts) so the
+# already-declared linux.* entries in gd_cubism.gdextension resolve and Live2D avatars work.
+COPY --from=gdcubism /build/gd_cubism/demo/addons/gd_cubism/bin/libgd_cubism.linux.debug.x86_64.so \
+                     /build/gd_cubism/demo/addons/gd_cubism/bin/libgd_cubism.linux.release.x86_64.so \
+                     examples/WebRTCExamples/WebRTCGodotAvatar/addons/gd_cubism/bin/
+
+WORKDIR /work/examples/WebRTCExamples/WebRTCGodotAvatar
+RUN dotnet build
+
+# Headless import pass (VRM importer is editor-only; also runs the one-time Live2D
+# texture import now that the gd_cubism extension loads on Linux).
+RUN godot --headless --path . --import || true
+
+COPY --from=ffmpeg /opt/ffmpeg /opt/ffmpeg
+
+# Godot must not run as a grandchild of a PID-1 /bin/sh (xvfb-run's shell): in that process
+# tree it dies silently at startup while xvfb-run lingers. Start Xvfb ourselves and exec
+# godot so it becomes PID 1 and receives signals directly.
+RUN printf '%s\n' \
+      '#!/bin/bash' \
+      'Xvfb :99 -screen 0 1280x800x24 -nolisten tcp &' \
+      'export DISPLAY=:99' \
+      'cd /work/examples/WebRTCExamples/WebRTCGodotAvatar' \
+      'exec godot --path . --audio-driver Dummy' \
+      > /entrypoint.sh \
+    && chmod +x /entrypoint.sh
+
+# RENDER_BENCH=1 (set it in the pod/container env) turns the image into a pure render
+# benchmark; the default is normal serving mode: viewer page + WebRTC on port 8081.
+ENV LIBGL_ALWAYS_SOFTWARE=1 \
+    VIDEO_ENCODER=ffmpeg \
+    LD_LIBRARY_PATH=/opt/ffmpeg/lib
+
+EXPOSE 8081
+
+CMD ["/entrypoint.sh"]

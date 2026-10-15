@@ -91,4 +91,18 @@ public enum SetDescriptionResultEnum
     /// Crypto attributes invalid or not compatible.
     /// </summary>
     CryptoNegotiationFailed,
+
+    /// <summary>
+    /// The DTLS fingerprint in the session description did not match the certificate from the
+    /// completed DTLS handshake. Using the new certificate would require a new DTLS handshake,
+    /// which is not supported, so the session description was rejected.
+    /// </summary>
+    DtlsFingerprintChanged,
+
+    /// <summary>
+    /// The session description contained media announcements with different DTLS fingerprints.
+    /// A single DTLS association is used for the whole session so the certificate requested by
+    /// each announcement has to be the same one.
+    /// </summary>
+    DtlsFingerprintConflict,
 }

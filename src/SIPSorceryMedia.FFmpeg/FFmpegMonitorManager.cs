@@ -14,7 +14,9 @@ namespace SIPSorceryMedia.FFmpeg
     {
         static public List<Monitor>? GetMonitorDevices()
         {
-            List<Monitor>? result = null ; 
+            FFmpegInit.EnsureBinariesRegistered();
+
+            List<Monitor>? result = null ;
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {

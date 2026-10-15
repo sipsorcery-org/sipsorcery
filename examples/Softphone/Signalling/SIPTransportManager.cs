@@ -18,11 +18,12 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using System.Xml;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SoftPhone
 {
@@ -36,7 +37,8 @@ namespace SIPSorcery.SoftPhone
 
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<SIPTransportManager>();
 
-        private XmlNode m_sipSocketsNode = SIPSoftPhoneState.SIPSocketsNode;    // Optional XML node that can be used to configure the SIP channels used with the SIP transport layer.
+        // Optional settings that can be used to configure the SIP channels used with the SIP transport layer.
+        private List<SIPSocketSettings> m_sipSockets = SIPSoftPhoneState.Settings.SIPSockets;
 
         private bool _isInitialised = false;
         public SIPTransport SIPTransport { get; private set; }
@@ -69,6 +71,72 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
+        /// Creates the SIP channels for the SIP transport layer from the application's settings.
+        /// </summary>
+        /// <param name="sipSockets">The SIP socket settings to create the channels from.</param>
+        /// <returns>A list of the SIP channels that could be created. Sockets that could not be
+        /// used are logged and skipped rather than preventing the application from starting.</returns>
+        private static List<SIPChannel> CreateSIPChannels(List<SIPSocketSettings> sipSockets)
+        {
+            var sipChannels = new List<SIPChannel>();
+
+            foreach (var sipSocket in sipSockets)
+            {
+                try
+                {
+                    int defaultPort = (sipSocket.Protocol == SIPProtocolsEnum.tls) ? SIPConstants.DEFAULT_SIP_TLS_PORT : SIP_DEFAULT_PORT;
+
+                    if (!IPSocket.TryParseIPEndPoint(sipSocket.Endpoint, out var endPoint))
+                    {
+                        logger.LogWarning("Could not parse SIP socket end point {Endpoint}, channel skipped.", sipSocket.Endpoint);
+                        continue;
+                    }
+
+                    if (endPoint.Port == 0)
+                    {
+                        endPoint.Port = defaultPort;
+                    }
+
+                    switch (sipSocket.Protocol)
+                    {
+                        case SIPProtocolsEnum.udp:
+                            logger.LogDebug("Attempting to create SIP UDP channel for {EndPoint}.", endPoint);
+                            sipChannels.Add(new SIPUDPChannel(endPoint));
+                            break;
+
+                        case SIPProtocolsEnum.tcp:
+                            logger.LogDebug("Attempting to create SIP TCP channel for {EndPoint}.", endPoint);
+                            sipChannels.Add(new SIPTCPChannel(endPoint));
+                            break;
+
+                        case SIPProtocolsEnum.tls:
+                            if (string.IsNullOrWhiteSpace(sipSocket.CertificatePath))
+                            {
+                                logger.LogWarning("Could not create SIP TLS channel for {EndPoint} as no CertificatePath was supplied.", endPoint);
+                            }
+                            else
+                            {
+                                logger.LogDebug("Attempting to create SIP TLS channel for {EndPoint} using certificate {CertificatePath}.", endPoint, sipSocket.CertificatePath);
+                                var certificate = X509CertificateLoader.LoadPkcs12FromFile(sipSocket.CertificatePath, sipSocket.CertificateKeyPassword);
+                                sipChannels.Add(new SIPTLSChannel(certificate, endPoint));
+                            }
+                            break;
+
+                        default:
+                            logger.LogWarning("Could not create a SIP channel for protocol {Protocol}.", sipSocket.Protocol);
+                            break;
+                    }
+                }
+                catch (Exception excp)
+                {
+                    logger.LogWarning(excp, "Exception creating SIP channel for {Endpoint}. {ErrorMessage}", sipSocket.Endpoint, excp.Message);
+                }
+            }
+
+            return sipChannels;
+        }
+
+        /// <summary>
         /// Initialises the SIP transport layer.
         /// </summary>
         public async Task InitialiseSIP()
@@ -83,11 +151,11 @@ namespace SIPSorcery.SoftPhone
                     SIPTransport = new SIPTransport();
                     bool sipChannelAdded = false;
 
-                    if (m_sipSocketsNode != null)
+                    if (m_sipSockets?.Count > 0)
                     {
-                        // Set up the SIP channels based on the app.config file.
-                        List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipSocketsNode);
-                        if (sipChannels?.Count > 0)
+                        // Set up the SIP channels based on the appsettings.json file.
+                        List<SIPChannel> sipChannels = CreateSIPChannels(m_sipSockets);
+                        if (sipChannels.Count > 0)
                         {
                             SIPTransport.AddSIPChannel(sipChannels);
                             sipChannelAdded = true;

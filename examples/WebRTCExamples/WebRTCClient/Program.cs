@@ -21,6 +21,7 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
@@ -46,6 +47,7 @@ namespace demo
 
         private static Form _form;
         private static PictureBox _picBox;
+        private static Bitmap _spareBmp;   // Retired bitmap handed back by the UI thread for re-use.
 
         static async Task Main(string[] args)
         {
@@ -119,36 +121,7 @@ namespace demo
             var videoEP = new FFmpegVideoEndPoint();
 
             videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
-            videoEP.OnVideoSinkDecodedSampleFaster += (RawImage rawImage) =>
-            {
-                _form.BeginInvoke(new Action(() =>
-                {
-
-                    if (rawImage.PixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb)
-                    {
-                        unsafe
-                        {
-                            Bitmap bmpImage = new Bitmap(rawImage.Width, rawImage.Height, rawImage.Stride, PixelFormat.Format24bppRgb, rawImage.Sample);
-                            _picBox.Image = bmpImage;
-                        }
-                    }
-                }));
-            };
-
-            videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
-            {
-                _form.BeginInvoke(new Action(() =>
-                {
-                    unsafe
-                    {
-                        fixed (byte* s = bmp)
-                        {
-                            Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(bmp.Length / height), PixelFormat.Format24bppRgb, (IntPtr)s);
-                            _picBox.Image = bmpImage;
-                        }
-                    }
-                }));
-            };
+            videoEP.OnVideoSinkDecodedSampleFaster += ShowFrame;
 
             // Sink (speaker) only audio end point.
             WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true, false);
@@ -183,6 +156,53 @@ namespace demo
             peerConnection.OnAudioFrameReceived += windowsAudioEP.GotEncodedMediaFrame;
 
             return Task.FromResult(peerConnection);
+        }
+
+        private static void ShowFrame(RawImage rawImage)
+        {
+            if (rawImage.PixelFormat != VideoPixelFormatsEnum.Bgr)
+            {
+                logger.LogError($"Cannot display decoded video sample, expected pixel format Bgr but got {rawImage.PixelFormat}.");
+                return;
+            }
+
+            var bmp = Interlocked.Exchange(ref _spareBmp, null);
+
+            int width = rawImage.Width;
+            int height = rawImage.Height;
+
+            if (bmp == null || bmp.Width != width || bmp.Height != height)
+            {
+                bmp?.Dispose();
+                bmp = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+            }
+
+            var bmpData = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+
+            try
+            {
+                rawImage.CopyTo(bmpData.Scan0, bmpData.Stride);
+            }
+            finally
+            {
+                bmp.UnlockBits(bmpData);
+            }
+
+            _form.BeginInvoke(new Action(() =>
+            {
+                if (_picBox.Width != width || _picBox.Height != height)
+                {
+                    logger.LogDebug($"Adjusting video display to {width}x{height}.");
+                    _picBox.Width = width;
+                    _picBox.Height = height;
+                }
+
+                var previous = _picBox.Image as Bitmap;
+                _picBox.Image = bmp;
+
+                // The previous picure box bitmap is no longer being painted so it can be used for the next frame copy.
+                Interlocked.Exchange(ref _spareBmp, previous)?.Dispose();
+            }));
         }
 
         /// <summary>

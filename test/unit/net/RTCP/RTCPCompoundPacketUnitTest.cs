@@ -13,8 +13,11 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using SIPSorcery.UnitTests;
@@ -126,6 +129,116 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(6, cp.Feedback.FeedbackSSRCs.Length);
             Assert.Equal( 8 + 12 + (5*4),  cp.Feedback.SENDER_PAYLOAD_SIZE);//// 8 bytes from (SenderSSRC + MediaSSRC) + extra 12 bytes from REMB Definition +5x extra 4 bytes for SSRCs
             Assert.NotNull(cp);
+        }
+
+        [Fact]
+        public void ParseSdesWithOptionalToolAndByeUnitTest()
+        {
+            byte[] packet = BuildCompoundPacketWithToolAndBye();
+
+            var parsed = new RTCPCompoundPacket(packet);
+
+            Assert.NotNull(parsed.ReceiverReport);
+            Assert.NotNull(parsed.SDesReport);
+            Assert.Equal("linphone@example.test", parsed.SDesReport.CNAME);
+            Assert.NotNull(parsed.Bye);
+            Assert.Equal(0x10203040U, parsed.Bye.SSRC);
+        }
+
+        [Fact]
+        public void TryParseSdesWithOptionalToolAndByeUnitTest()
+        {
+            byte[] packet = BuildCompoundPacketWithToolAndBye();
+
+            bool success = RTCPCompoundPacket.TryParse(
+                packet.AsSpan(), out RTCPCompoundPacket parsed, out int consumed);
+
+            Assert.True(success);
+            Assert.Equal(packet.Length, consumed);
+            Assert.NotNull(parsed.SDesReport);
+            Assert.NotNull(parsed.Bye);
+        }
+
+        [Fact]
+        public void TryParseTruncatedSdesLengthUnitTest()
+        {
+            byte[] receiverReport = BuildReceiverReport();
+            byte[] truncatedSdes = { 0x81, (byte)RTCPReportTypesEnum.SDES, 0x00, 0x05 };
+            byte[] packet = receiverReport.Concat(truncatedSdes).ToArray();
+
+            bool success = RTCPCompoundPacket.TryParse(
+                packet.AsSpan(), out RTCPCompoundPacket parsed, out int consumed);
+
+            Assert.False(success);
+            Assert.Equal(receiverReport.Length, consumed);
+            Assert.NotNull(parsed.SDesReport);
+            Assert.Null(parsed.Bye);
+        }
+
+        [Fact]
+        public void ParseTruncatedSdesLengthUnitTest()
+        {
+            byte[] receiverReport = BuildReceiverReport();
+            byte[] truncatedSdes = { 0x81, (byte)RTCPReportTypesEnum.SDES, 0x00, 0x05 };
+            byte[] packet = receiverReport.Concat(truncatedSdes).ToArray();
+
+            Exception exception = Record.Exception(() => new RTCPCompoundPacket(packet));
+
+            Assert.Null(exception);
+        }
+
+        private static byte[] BuildCompoundPacketWithToolAndBye()
+        {
+            const uint ssrc = 0x10203040;
+            var bytes = new List<byte>();
+            bytes.AddRange(BuildReceiverReport());
+            bytes.AddRange(BuildSdesReport(
+                ssrc,
+                "linphone@example.test",
+                "Linphone-Desktop/6.0.0"));
+            bytes.AddRange(new RTCPBye(ssrc, "completed").GetBytes());
+            return bytes.ToArray();
+        }
+
+        private static byte[] BuildReceiverReport()
+        {
+            byte[] packet = new byte[8];
+            packet[0] = 0x80;
+            packet[1] = (byte)RTCPReportTypesEnum.RR;
+            BinaryPrimitives.WriteUInt16BigEndian(packet.AsSpan(2), 1);
+            BinaryPrimitives.WriteUInt32BigEndian(packet.AsSpan(4), 0x10203040);
+            return packet;
+        }
+
+        private static byte[] BuildSdesReport(uint ssrc, string cname, string tool)
+        {
+            var payload = new List<byte>();
+            byte[] ssrcBytes = new byte[4];
+            BinaryPrimitives.WriteUInt32BigEndian(ssrcBytes, ssrc);
+            payload.AddRange(ssrcBytes);
+            AddSdesItem(payload, 1, Encoding.UTF8.GetBytes(cname));
+            AddSdesItem(payload, 6, Encoding.UTF8.GetBytes(tool));
+            payload.Add(0);
+
+            while ((RTCPHeader.HEADER_BYTES_LENGTH + payload.Count) % 4 != 0)
+            {
+                payload.Add(0);
+            }
+
+            byte[] packet = new byte[RTCPHeader.HEADER_BYTES_LENGTH + payload.Count];
+            packet[0] = 0x81;
+            packet[1] = (byte)RTCPReportTypesEnum.SDES;
+            BinaryPrimitives.WriteUInt16BigEndian(
+                packet.AsSpan(2), (ushort)(packet.Length / 4 - 1));
+            payload.CopyTo(packet, RTCPHeader.HEADER_BYTES_LENGTH);
+            return packet;
+        }
+
+        private static void AddSdesItem(List<byte> payload, byte type, byte[] value)
+        {
+            payload.Add(type);
+            payload.Add(checked((byte)value.Length));
+            payload.AddRange(value);
         }
 
     }

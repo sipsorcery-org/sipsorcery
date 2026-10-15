@@ -344,11 +344,7 @@ namespace SIPSorcery.SIP
             string username,
             string password)
         {
-            var dupRequest = this.Copy();
-            dupRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-            dupRequest.Header.CSeq = dupRequest.Header.CSeq + 1;
-
-            dupRequest.Header.AuthenticationHeaders.Clear();
+            var dupRequest = DuplicateRequest();
 
             // RFC8760 (which introduces SHA256/512 for SIP) states that multiple authentication headers with different digest algorithms
             // can be included in a SIP request. When testing this with the latest versions (Jul 2021) of Asterisk v18.5.0 and FreeSWITCH v1.10.6
@@ -369,6 +365,42 @@ namespace SIPSorcery.SIP
                 dupRequest.Header.AuthenticationHeaders.Add(md5AuthHeader);
             }
 
+            return dupRequest;
+        }
+
+        /// <summary>
+        /// Duplicates an existing SIP request, typically one that received an unauthorised response, to an
+        /// authenticated version using an HA1 digest resolver. The CSeq and Via branch ID are also incremented so
+        /// that the request will not be flagged as a retransmit.
+        /// </summary>
+        /// <param name="authenticationChallenges">The challenges to authenticate the request against. Typically
+        /// the challenges come from a SIP response.</param>
+        /// <param name="username">The username to authenticate with.</param>
+        /// <param name="getHA1Digest">Resolves an HA1 digest for a username, challenge realm and digest algorithm.
+        /// Return <c>null</c> when no credential is available for a challenge.</param>
+        /// <returns>A SIP request that is a duplicate of the original but with an authentication header added and
+        /// the state header values updated so as not to be flagged as a retransmit.</returns>
+        public SIPRequest DuplicateAndAuthenticate(List<SIPAuthenticationHeader> authenticationChallenges,
+            string username,
+            GetHA1DigestDelegate getHA1Digest)
+        {
+            var digestAuthHeader = SIPAuthChallenge.GetAuthenticationHeader(authenticationChallenges, this.URI, this.Method, username, getHA1Digest);
+            if (digestAuthHeader == null)
+            {
+                return null;
+            }
+
+            var dupRequest = DuplicateRequest();
+            dupRequest.Header.AuthenticationHeaders.Add(digestAuthHeader);
+            return dupRequest;
+        }
+
+        private SIPRequest DuplicateRequest()
+        {
+            var dupRequest = this.Copy();
+            dupRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
+            dupRequest.Header.CSeq = dupRequest.Header.CSeq + 1;
+            dupRequest.Header.AuthenticationHeaders.Clear();
             return dupRequest;
         }
     }

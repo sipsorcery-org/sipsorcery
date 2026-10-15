@@ -83,7 +83,7 @@ class Program
 
         logger = AddConsoleLogger();
 
-        // The scope renders straight to an RGB buffer on the CPU - no window or GL context required.
+        // The scope renders straight to a BGR buffer on the CPU - no window or GL context required.
         _renderer = new AudioScopeRenderer();
 
         // Start web socket.
@@ -225,7 +225,7 @@ class Program
                 AudioScopeRenderer.Width,
                 AudioScopeRenderer.Height,
                 frame,
-                VideoPixelFormatsEnum.Rgb);
+                VideoPixelFormatsEnum.Bgr);
         }
 
         // Fires every SCOPE_FRAME_INTERVAL_MS on a thread-pool thread. Renders the scope from the

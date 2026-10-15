@@ -10,8 +10,8 @@
   </PropertyGroup>
 
  <ItemGroup>
-    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
-    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="LanguageExt.Core" />
+    <PackageReference Include="Serilog.AspNetCore" />
   </ItemGroup>
 
     <ItemGroup>

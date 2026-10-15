@@ -34,10 +34,12 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
+using System.Buffers;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -47,6 +49,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions;
@@ -76,57 +79,14 @@ namespace demo
         [Option("tp", Required = false, Default = true,
            HelpText = "If set will use a test pattern source instead of a webcam feed. Format \"--tp\".")]
         public bool TestPattern { get; set; }
-        
-        [Option("noaudio", Required = false, Default =false,
+
+        [Option("noaudio", Required = false, Default = false,
             HelpText = "If set will exclude the audio stream from the call. Format \"--noaudio\".")]
         public bool NoAudio { get; set; }
-    }
 
-    public class DecoderVideoSink : IVideoSink
-    {
-        public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>();
-        private IVideoEncoder _videoDecoder;
-        private MediaFormatManager<VideoFormat> _formatManager;
-
-        public event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
-#pragma warning disable CS0067
-        public event VideoSinkSampleDecodedFasterDelegate OnVideoSinkDecodedSampleFaster;
-#pragma warning restore CS0067
-
-        public DecoderVideoSink(IVideoEncoder videoDecoder)
-        {
-            _videoDecoder = videoDecoder;
-            _formatManager = new MediaFormatManager<VideoFormat>(videoDecoder.SupportedFormats);
-        }
-
-        public Task CloseVideoSink() => Task.CompletedTask;
-        public Task StartVideoSink() => Task.CompletedTask;
-        public Task PauseVideoSink() => Task.CompletedTask;
-        public Task ResumeVideoSink() => Task.CompletedTask;
-
-        public void RestrictFormats(Func<VideoFormat, bool> filter) => _formatManager.RestrictFormats(filter);
-        public List<VideoFormat> GetVideoSinkFormats() => _formatManager.GetSourceFormats();
-        public void SetVideoSinkFormat(VideoFormat videoFormat) => _formatManager.SetSelectedFormat(videoFormat);
-        public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
-             throw new ApplicationException("This Video End Point requires full video frames rather than individual RTP packets.");
-
-        public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] frame, VideoFormat format)
-        {
-            if (OnVideoSinkDecodedSample != null)
-            {
-                try
-                {
-                    foreach (var decoded in _videoDecoder.DecodeVideo(frame, VideoPixelFormatsEnum.Bgr, format.Codec))
-                    {
-                        OnVideoSinkDecodedSample(decoded.Sample, decoded.Width, decoded.Height, (int)(decoded.Width * 3), VideoPixelFormatsEnum.Bgr);
-                    }
-                }
-                catch(Exception excp)
-                {
-                    Console.WriteLine($"Exception decoding video. {excp.Message}");
-                }
-            }
-        }
+        [Option("webrtc", Required = false, Default = false,
+            HelpText = "If set will use a WebRTC compatible media layer. If not set the standard VoIP media layer is used. Format \"--webrtc\".")]
+        public bool UseWebRtcSession { get; set; }
     }
 
     class Program
@@ -136,7 +96,7 @@ namespace demo
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;
         private const uint MAXIMUM_VIDEO_BANDWIDTH = 5000000; // 5Mbps.
-        private const VideoCodecsEnum VIDEO_CODEC = VideoCodecsEnum.VP8; // Supported options are H264 or VP8.
+        //private const VideoCodecsEnum VIDEO_CODEC = VideoCodecsEnum.VP8; // Supported options are H264 or VP8.
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
@@ -145,7 +105,11 @@ namespace demo
         private static bool _isFormActivated;
         private static PictureBox _remoteVideoPicBox;
         private static PictureBox _localVideoPicBox;
+        private static Bitmap _remoteVideoBmp;
+        private static Bitmap _localVideoBmp;
         private static Options _options;
+
+        private static CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte> _bgrWriter = new();
 
         static async Task Main(string[] args)
         {
@@ -298,17 +262,16 @@ namespace demo
                     if (_options.TestPattern && _options.WebcamIndex == null)
                     {
                         var testPattern = new VideoTestPatternSource(new FFmpegVideoEncoder());
-                        var decoderSink = new DecoderVideoSink(new FFmpegVideoEncoder());
-                        //var decoderSink = new DecoderVideoSink(new VpxVideoEncoder());
+                        var videoSink = new FFmpegVideoEndPoint();
 
-                        testPattern.RestrictFormats(format => format.Codec == VIDEO_CODEC);
-                        decoderSink.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+                        //testPattern.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+                        //videoSink.RestrictFormats(format => format.Codec == VIDEO_CODEC);
 
                         mediaEndPoints = new MediaEndPoints
                         {
                             AudioSink = windowsAudioEndPoint,
                             AudioSource = windowsAudioEndPoint,
-                            VideoSink = decoderSink,
+                            VideoSink = videoSink,
                             VideoSource = testPattern,
                         };
                     }
@@ -319,7 +282,7 @@ namespace demo
                             null => new WindowsVideoEndPoint(new FFmpegVideoEncoder()),
                             _ => new WindowsVideoEndPoint(new FFmpegVideoEncoder(), webcamName),
                         };
-                        windowsVideoEndPoint.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+                        //windowsVideoEndPoint.RestrictFormats(format => format.Codec == VIDEO_CODEC);
 
                         mediaEndPoints = new MediaEndPoints
                         {
@@ -334,33 +297,31 @@ namespace demo
                     {
                         if (_isFormActivated)
                         {
-                            _form?.BeginInvoke(new Action(() =>
+                            int stride;
+                            byte[] bgr;
+
+                            if (pixelFormat == VideoPixelFormatsEnum.I420)
                             {
-                                if (_form.Handle != IntPtr.Zero)
-                                {
-                                    int stride = width * 3;
-                                    if (pixelFormat == VideoPixelFormatsEnum.I420)
-                                    {
-                                        sample = PixelConverter.I420toBGR(sample, width, height, out stride);
-                                    }
+                                _bgrWriter.Clear();
+                                int bytesWritten = PixelConverter.I420toBGR(_bgrWriter, sample.AsSpan(), width, height, out stride);
+                                bgr = _bgrWriter.WrittenSpan.ToArray();
+                            }
+                            else if (pixelFormat == VideoPixelFormatsEnum.Bgr)
+                            {
+                                stride = width * 3;
+                                bgr = sample.ToArray();
+                            }
+                            else
+                            {
+                                Console.Error.WriteLine($"OnVideoSourceRawSample received a sample with an unsupported pixel format of {pixelFormat}.");
+                                return;
+                            }
 
-                                    if (_localVideoPicBox.Width != width || _localVideoPicBox.Height != height)
-                                    {
-                                        Log.LogDebug($"Adjusting local video display from {_localVideoPicBox.Width}x{_localVideoPicBox.Height} to {width}x{height}.");
-                                        _localVideoPicBox.Width = width;
-                                        _localVideoPicBox.Height = height;
-                                    }
-
-                                    unsafe
-                                    {
-                                        fixed (byte* s = sample)
-                                        {
-                                            System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap(width, height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                                            _localVideoPicBox.Image = bmpImage;
-                                        }
-                                    }
-                                }
-                            }));
+                            //if (_form.Handle != IntPtr.Zero)
+                            //{
+                            _form.BeginInvoke(new Action(() =>
+                                _localVideoBmp = ShowFrame(_localVideoBmp, _localVideoPicBox, bgr, width, height, stride)));
+                            //}
                         }
                     };
 
@@ -378,12 +339,7 @@ namespace demo
 
                         userAgent.OnIncomingCall += async (ua, req) =>
                         {
-                            var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
-                            voipMediaSession.AcceptRtpFromAny = true;
-                            if (voipMediaSession.VideoLocalTrack != null)
-                            {
-                                voipMediaSession.VideoLocalTrack.MaximumBandwidth = MAXIMUM_VIDEO_BANDWIDTH;
-                            }
+                            var voipMediaSession = CreateMediaSession(mediaEndPoints);
 
                             var uas = userAgent.AcceptCall(req);
                             await userAgent.Answer(uas, voipMediaSession);
@@ -399,12 +355,7 @@ namespace demo
                     }
                     else
                     {
-                        var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
-                        voipMediaSession.AcceptRtpFromAny = true;
-                        if (voipMediaSession.VideoLocalTrack != null)
-                        {
-                            voipMediaSession.VideoLocalTrack.MaximumBandwidth = MAXIMUM_VIDEO_BANDWIDTH;
-                        }
+                        var voipMediaSession = CreateMediaSession(mediaEndPoints);
 
                         ActivateForm();
 
@@ -419,31 +370,51 @@ namespace demo
                     if (userAgent.IsCallActive)
                     {
                         Log.LogInformation("Call attempt successful.");
-                        mediaEndPoints.VideoSink.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
+                        //mediaEndPoints.VideoSink.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
+                        //{
+                        //    if (_isFormActivated && _form.Handle != IntPtr.Zero)
+                        //    {
+                        //        _form.BeginInvoke(new Action(() =>
+                        //            _remoteVideoBmp = ShowFrame(_remoteVideoBmp, _remoteVideoPicBox, bmp, (int)width, (int)height, stride)));
+                        //    }
+                        //};
+                        mediaEndPoints.VideoSink.OnVideoSinkDecodedSampleFaster += rawImage =>
                         {
                             if (_isFormActivated)
                             {
-                                _form?.BeginInvoke(new Action(() =>
-                                {
-                                    if (_form.Handle != IntPtr.Zero)
-                                    {
-                                        unsafe
-                                        {
-                                            if (_remoteVideoPicBox.Width != (int)width || _remoteVideoPicBox.Height != (int)height)
-                                            {
-                                                Log.LogDebug($"Adjusting remote video display from {_remoteVideoPicBox.Width}x{_remoteVideoPicBox.Height} to {width}x{height}.");
-                                                _remoteVideoPicBox.Width = (int)width;
-                                                _remoteVideoPicBox.Height = (int)height;
-                                            }
+                                int width = rawImage.Width;
+                                int height = rawImage.Height;
 
-                                            fixed (byte* s = bmp)
-                                            {
-                                                System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                                                _remoteVideoPicBox.Image = bmpImage;
-                                            }
-                                        }
+                                // BGR24 = 3 bytes per pixel, rows aligned to 4 bytes.
+                                int stride = (width * 3 + 3) & ~3;
+                                int bufferSize = stride * height;
+
+                                byte[] frame = ArrayPool<byte>.Shared.Rent(bufferSize);
+
+                                try
+                                {
+                                    var handle = GCHandle.Alloc(frame, GCHandleType.Pinned);
+
+                                    try
+                                    {
+                                        // Copy immediately because RawImage will be reused by FFmpeg after this method returns.
+                                        rawImage.CopyTo(
+                                            handle.AddrOfPinnedObject(),
+                                            stride);
                                     }
-                                }));
+                                    finally
+                                    {
+                                        handle.Free();
+                                    }
+                                }
+                                catch
+                                {
+                                    ArrayPool<byte>.Shared.Return(frame);
+                                    throw;
+                                }
+
+                                _form.BeginInvoke(new Action(() =>
+                                    _remoteVideoBmp = ShowFrame(_remoteVideoBmp, _remoteVideoPicBox, frame, width, height, stride)));
                             }
                         };
                     }
@@ -470,6 +441,71 @@ namespace demo
                     }
                     _sipTransport.Shutdown();
                 }
+            }
+        }
+
+        private static RTPSession CreateMediaSession(MediaEndPoints mediaEndPoints)
+        {
+            if (_options.UseWebRtcSession)
+            {
+                var pc = new RTCPeerConnection
+                {
+                    AcceptRtpFromAny = true
+                };
+
+                var videoTrack = new MediaStreamTrack(mediaEndPoints.VideoSource.GetVideoSourceFormats());
+                pc.addTrack(videoTrack);
+
+                pc.OnVideoFormatsNegotiated += (formats) => mediaEndPoints.VideoSink.SetVideoSinkFormat(formats.First());
+                pc.OnVideoFormatsNegotiated += (formats) => mediaEndPoints.VideoSource.SetVideoSourceFormat(formats.First());
+                mediaEndPoints.VideoSource.OnVideoSourceEncodedSample += pc.SendVideo;
+                pc.OnVideoFrameReceived += mediaEndPoints.VideoSink.GotVideoFrame;
+                //mediaEndPoints.VideoSink.OnVideoSinkDecodedSampleFaster += (rawImage) => OnRemoteVideo?.Invoke(rawImage);
+
+                pc.onconnectionstatechange += async (state) =>
+                {
+                    Console.WriteLine($"WebRTC peer connection state changed to {state}.");
+
+                    if (state == RTCPeerConnectionState.connected)
+                    {
+                        await mediaEndPoints.VideoSource.StartVideo();
+                        await mediaEndPoints.VideoSink.StartVideoSink();
+
+                        RequestPeerConnectionKeyFrame(pc);
+                    }
+                    else if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
+                    {
+                        await mediaEndPoints.VideoSource.CloseVideo();
+                        await mediaEndPoints.VideoSink.CloseVideoSink();
+                    }
+                };
+
+                return pc;
+            }
+            else
+            {
+                var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
+                voipMediaSession.AcceptRtpFromAny = true;
+                if (voipMediaSession.VideoLocalTrack != null)
+                {
+                    voipMediaSession.VideoLocalTrack.MaximumBandwidth = MAXIMUM_VIDEO_BANDWIDTH;
+                }
+
+                return voipMediaSession;
+            }
+        }
+
+        private static void RequestPeerConnectionKeyFrame(RTCPeerConnection pc)
+        {
+            if (pc != null && pc.connectionState == RTCPeerConnectionState.connected)
+            {
+                var localVideoSsrc = pc.VideoLocalTrack.Ssrc;
+                var remoteVideoSsrc = pc.VideoRemoteTrack.Ssrc;
+
+                Console.WriteLine($"Requesting key frame from peer connection for remote ssrc {remoteVideoSsrc}.");
+
+                RTCPFeedback pli = new RTCPFeedback(localVideoSsrc, remoteVideoSsrc, PSFBFeedbackTypesEnum.PLI);
+                pc.SendRtcpFeedback(SDPMediaTypesEnum.video, pli);
             }
         }
 
@@ -523,6 +559,61 @@ namespace demo
         /// <summary>
         /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
+        /// <summary>
+        /// Copies a decoded 24 bits per pixel frame into a bitmap this application owns and displays it,
+        /// returning the bitmap so the caller can re-use it for the next frame.
+        /// </summary>
+        /// <remarks>
+        /// Runs on the UI thread. The byte[] overloads hand over a managed array, which unlike
+        /// RawImage.Sample stays valid after the callback returns, so the frame can simply be
+        /// marshalled across and copied here. Wrapping the array in a Bitmap instead would leave the
+        /// picture box pointing at memory the GC is free to move or reclaim.
+        ///
+        /// The bitmap is allocated once and re-used until the frame size changes. Note GDI+'s
+        /// Format24bppRgb is B,G,R in memory despite the name, which is why a Bgr sample copies in
+        /// verbatim.
+        /// </remarks>
+        private static Bitmap ShowFrame(Bitmap displayBmp, PictureBox picBox, byte[] sample, int width, int height, int stride)
+        {
+            if (displayBmp == null || displayBmp.Width != width || displayBmp.Height != height)
+            {
+                var previous = displayBmp;
+                displayBmp = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+
+                picBox.Width = width;
+                picBox.Height = height;
+                picBox.Image = displayBmp;
+                previous?.Dispose();
+            }
+
+            var bmpData = displayBmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+
+            try
+            {
+                // GDI+ pads each row to a multiple of four bytes, so the strides only agree when the
+                // width is a multiple of four. That covers every standard resolution.
+                if (stride == bmpData.Stride)
+                {
+                    Marshal.Copy(sample, 0, bmpData.Scan0, stride * height);
+                }
+                else
+                {
+                    for (int row = 0; row < height; row++)
+                    {
+                        Marshal.Copy(sample, row * stride, bmpData.Scan0 + row * bmpData.Stride, width * 3);
+                    }
+                }
+            }
+            finally
+            {
+                displayBmp.UnlockBits(bmpData);
+            }
+
+            picBox.Invalidate();
+
+            return displayBmp;
+        }
+
         private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
         {
             var serilogLogger = new LoggerConfiguration()
