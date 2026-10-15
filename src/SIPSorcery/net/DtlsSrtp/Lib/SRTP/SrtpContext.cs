@@ -72,11 +72,10 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         /// <remarks>https://datatracker.ietf.org/doc/html/rfc2401 Appendix C</remarks>
         public bool CheckReplayWindow(uint sequenceNumber)
         {
-            if (sequenceNumber == 0)
-            {
-                return !S_l_set; /* index 0 only acceptable as the very first packet */
-            }
-
+            // Index 0 is not special: an RTP stream may start at sequence number 0 - its first is random - and an SRTCP
+            // stream's first index is 0. UnprotectRtp sets s_l to the first sequence number before this is asked, so a
+            // special case of "0 only before s_l is set" refused every stream starting at 0; the window below takes it as
+            // any other index, once.
             if (sequenceNumber > S_l)
             {
                 return true; /* new larger index */
@@ -105,12 +104,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         /// <param name="sequenceNumber">The 32-bit packet index that was authenticated.</param>
         public void UpdateReplayWindow(uint sequenceNumber)
         {
-            if (sequenceNumber == 0)
-            {
-                S_l_set = true;
-                return;
-            }
-
+            // index 0 is marked as seen as any other: returning before it is let a replay of it through again
             if (sequenceNumber > S_l)
             {
                 var diff = (int)(sequenceNumber - S_l);
@@ -133,6 +127,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
             {
                 Bitmap |= ((ulong)1 << d); /* mark as seen */
             }
+            S_l_set = true;
         }
 
         public void SetInitialSequence(uint sequenceNumber)
