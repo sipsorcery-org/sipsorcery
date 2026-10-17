@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: RTPSession.cs
 //
 // Description: Represents an RTP session constituted of a single media stream. The session
@@ -516,6 +516,23 @@ namespace SIPSorcery.Net
         ///  - The video format of the encoded frame.
         /// </remarks>
         public event Action<int, IPEndPoint, uint, byte[], VideoFormat> OnVideoFrameReceivedByIndex;
+
+        /// <summary>
+        /// Forward error correction configuration for video streams created by this session.
+        /// </summary>
+        public RtpUlpfecConfig VideoFecConfig { get; set; }
+
+        /// <summary>
+        /// Enables ULPFEC / RED video forward error correction on this session.
+        /// </summary>
+        public void EnableVideoFec(RtpUlpfecConfig config = null)
+        {
+            VideoFecConfig = config ?? new RtpUlpfecConfig { Enabled = true };
+            if (VideoStream != null)
+            {
+                VideoStream.FecConfig = VideoFecConfig;
+            }
+        }
 
         /// <summary>
         /// It's recommended to use the <see cref="OnAudioFrameReceived"/> and <see cref="OnVideoFrameReceived"/>
@@ -1096,6 +1113,10 @@ namespace SIPSorcery.Net
             {
                 VideoStream videoStream = new VideoStream(rtpSessionConfig, index);
                 videoStream.MediaInsertionOrder = Interlocked.Increment(ref m_nextMediaInsertionOrder);
+                if (VideoFecConfig != null)
+                {
+                    videoStream.FecConfig = VideoFecConfig.Clone();
+                }
                 VideoStreamList.Add(videoStream);
                 return videoStream;
             }
@@ -1271,6 +1292,29 @@ namespace SIPSorcery.Net
                         currentMediaStream.LocalTrack.Capabilities = capabilities;
                         currentMediaStream.RemoteTrack.Capabilities = capabilities;
 
+                        if (currentMediaStream.MediaType == SDPMediaTypesEnum.video)
+                        {
+                            var fecConfig = currentMediaStream.FecConfig ?? VideoFecConfig;
+                            if (fecConfig != null && fecConfig.Enabled)
+                            {
+                                bool hasRed = capabilities.Any(x => x.IsRed);
+                                bool hasUlpfec = capabilities.Any(x => x.IsUlpfec);
+                                bool hasH264 = capabilities.Any(x => x.IsH264);
+
+                                if (hasRed && hasUlpfec && hasH264)
+                                {
+                                    var redFmt = capabilities.First(x => x.IsRed);
+                                    var ulpfecFmt = capabilities.First(x => x.IsUlpfec);
+                                    var h264Fmt = capabilities.First(x => x.IsH264);
+                                    currentMediaStream.EnableUlpfec(redFmt.ID, ulpfecFmt.ID, h264Fmt.ID, fecConfig);
+                                }
+                                else
+                                {
+                                    currentMediaStream.DisableUlpfec("Negotiated video capabilities do not include required RED, ULPFEC, and H264 formats.");
+                                }
+                            }
+                        }
+
                         if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                         {
                             // Adjust the local track's RTP event capability if the remote party has specified a different payload ID.
@@ -1322,7 +1366,9 @@ namespace SIPSorcery.Net
                         IPEndPoint remoteRtcpEP = null;
                         if (remoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive && currentMediaStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                         {
-                            remoteRtcpEP = rtpSessionConfig.IsRtcpMultiplexed ? remoteRtpEP : new IPEndPoint(remoteRtpEP.Address, remoteRtpEP.Port + 1);
+                            remoteRtcpEP = (remoteRtpEP != null)
+                                ? (rtpSessionConfig.IsRtcpMultiplexed ? remoteRtpEP : new IPEndPoint(remoteRtpEP.Address, remoteRtpEP.Port + 1))
+                                : null;
                         }
 
                         // When ICE manages the transport (WebRTC/multiplexed), the ICE layer

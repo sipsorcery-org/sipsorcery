@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: SDPMediaFormat.cs
 //
 // Description: 
@@ -177,6 +177,18 @@ namespace SIPSorcery.Net
                 return Rtpmap.AsSpan().Trim().StartsWith("H265", StringComparison.OrdinalIgnoreCase);
             }
         }
+
+        public bool IsRed => MatchesCodecName("red");
+
+        public bool IsUlpfec => MatchesCodecName("ulpfec");
+
+        public bool IsFlexfec => MatchesCodecName("flexfec") || MatchesCodecName("flexfec-03");
+
+        public static SDPAudioVideoMediaFormat CreateRedFormat(int id = 122, int clockRate = 90000)
+            => new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, id, "red", clockRate);
+
+        public static SDPAudioVideoMediaFormat CreateUlpfecFormat(int id = 127, int clockRate = 90000)
+            => new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, id, "ulpfec", clockRate);
 
         public bool CheckCompatible()
         {

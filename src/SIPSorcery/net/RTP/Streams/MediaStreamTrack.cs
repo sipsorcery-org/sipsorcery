@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: MediaStreamTrack.cs
 //
 // Description: Represents a one-way audio or video stream. In a typical call
@@ -393,6 +393,30 @@ namespace SIPSorcery.Net
                 actualSeqNum = Interlocked.CompareExchange(ref m_seqNum, nextSeqNum, expectedSeqNum);
             } while (expectedSeqNum != actualSeqNum); // Try as long as compare-exchange was not successful; in most cases, only one iteration should be needed
             return (ushort)expectedSeqNum;
+        }
+
+        /// <summary>
+        /// Adds RFC 2198 (red) and RFC 5109 (ulpfec) auxiliary video media formats to this track's capabilities
+        /// so they can be matched during SDP offer/answer negotiation with WebRTC peers.
+        /// </summary>
+        /// <param name="redPt">Optional payload type ID to use for RED if not specified by peer (default 122).</param>
+        /// <param name="ulpfecPt">Optional payload type ID to use for ULPFEC if not specified by peer (default 127).</param>
+        public void AddFecFormats(int redPt = 122, int ulpfecPt = 127)
+        {
+            if (Capabilities == null)
+            {
+                Capabilities = new List<SDPAudioVideoMediaFormat>();
+            }
+
+            if (!Capabilities.Any(x => x.IsRed))
+            {
+                Capabilities.Add(SDPAudioVideoMediaFormat.CreateRedFormat(redPt));
+            }
+
+            if (!Capabilities.Any(x => x.IsUlpfec))
+            {
+                Capabilities.Add(SDPAudioVideoMediaFormat.CreateUlpfecFormat(ulpfecPt));
+            }
         }
     }
 }
