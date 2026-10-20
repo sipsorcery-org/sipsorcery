@@ -700,7 +700,11 @@ namespace SIPSorcery.Net
 
                     try
                     {
-                        bool handshakeResult = await Task.Run(() => DoDtlsHandshake(dtlsHandle)).ConfigureAwait(false);
+                        // The handshake blocks its thread until it completes or times out (up to the
+                        // DTLS handshake timeout, 20s by default), so it gets a dedicated thread rather
+                        // than holding a thread pool worker for that long.
+                        bool handshakeResult = await Task.Factory.StartNew(() => DoDtlsHandshake(dtlsHandle),
+                            CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default).ConfigureAwait(false);
 
                         connectionState = handshakeResult ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
                         onconnectionstatechange?.Invoke(connectionState);

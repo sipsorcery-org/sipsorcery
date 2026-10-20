@@ -12,6 +12,7 @@
 // 02 Jul 2020  Aaron Clauson   Switched underlying transport from socket to
 //                              piped memory stream.
 // 30 Dec 2025  Lukas Volf      New DTLS/SRTP impl
+// 14 Oct 2026  Andy Ventura    Receive waits on the queue instead of polling it.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -19,6 +20,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using Org.BouncyCastle.Tls;
 using SIPSorcery.Net.SharpSRTP.DTLS;
 using SIPSorcery.Net.SharpSRTP.DTLSSRTP;
@@ -36,7 +38,16 @@ namespace SIPSorcery.Net
 
         private IDtlsSrtpPeer _connection;
 
-        private ConcurrentQueue<byte[]> _data = new ConcurrentQueue<byte[]>();
+        private readonly BlockingCollection<byte[]> _data = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
+
+        /// <summary>
+        /// Cancelled if the transport is closed before the DTLS handshake has completed. A handshake
+        /// waiting on <see cref="Receive(byte[], int, int, int)"/> for the remote peer's next flight is
+        /// then aborted instead of waiting out the handshake timeout.
+        /// </summary>
+        private readonly CancellationTokenSource _handshakeCancellation = new CancellationTokenSource();
+
+        private volatile bool _isHandshakeComplete;
         private Certificate _peerCertificate;
 
         public DatagramTransport Transport { get; internal set; }
@@ -73,6 +84,7 @@ namespace SIPSorcery.Net
         {
             DtlsTransport transport = _connection.DoHandshake(out handshakeError, this, null);
             Transport = transport;
+            _isHandshakeComplete = transport != null;
             return string.IsNullOrEmpty(handshakeError);
         }
 
@@ -112,11 +124,16 @@ namespace SIPSorcery.Net
 
         public void WriteToRecvStream(byte[] buffer)
         {
-            _data.Enqueue(buffer);
+            _data.Add(buffer);
         }
 
         public void Close()
         {
+            if (!_isHandshakeComplete)
+            {
+                _handshakeCancellation.Cancel();
+            }
+
             var transport = Transport;
             if (transport != null)
             {
@@ -127,24 +144,26 @@ namespace SIPSorcery.Net
 
         public int Receive(byte[] buf, int off, int len, int waitMillis)
         {
-            long t = 0;
-            while(true)
+            // As per the BouncyCastle DatagramReceiver contract a wait of zero is an infinite timeout.
+            int timeout = waitMillis == 0 ? Timeout.Infinite : Math.Max(waitMillis, 0);
+
+            byte[] data;
+
+            try
             {
-                if (_data.TryDequeue(out var data))
+                if (!_data.TryTake(out data, timeout, _handshakeCancellation.Token))
                 {
-                    Buffer.BlockCopy(data, 0, buf, off, data.Length);
-                    return data.Length;
-                }
-                else
-                {
-                    System.Threading.Thread.Sleep(25);
-                    t += 25;
-                    if (t > waitMillis)
-                    {
-                        return -1;
-                    }
+                    return DTLS_RETRANSMISSION_CODE;
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Closed before the handshake completed, no further flights will be delivered.
+                throw new TlsFatalAlert(AlertDescription.user_canceled);
+            }
+
+            Buffer.BlockCopy(data, 0, buf, off, data.Length);
+            return data.Length;
         }
 
         public void Send(byte[] buf, int off, int len)
