@@ -88,6 +88,12 @@ namespace SIPSorcery.Media
         /// </summary>
         public int LostPacketCount => _depacketiser.LostPacketCount;
 
+        /// <summary>
+        /// True if text passed to <see cref="SendText"/> will be sent, i.e. the source has been
+        /// started and is not paused, for example by the call being put on hold.
+        /// </summary>
+        public bool CanSendText => _sourceStarted && !_sourcePaused;
+
         /// <param name="useRedundancy">If true RED is offered in preference to plain t140.</param>
         /// <param name="t140PayloadType">The payload type to offer for t140.</param>
         /// <param name="redPayloadType">The payload type to offer for RED.</param>

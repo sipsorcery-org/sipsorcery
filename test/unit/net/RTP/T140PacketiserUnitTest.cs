@@ -284,6 +284,26 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(TextCodecsEnum.RED, new TextFormat(100, "red", parameters: "98/98/98").Codec);
         }
 
+        [Fact]
+        public async Task CanSendTextFollowsSourceStateUnitTest()
+        {
+            using var rtt = new RttEndPoint();
+
+            Assert.False(rtt.CanSendText);
+
+            await rtt.StartText();
+            Assert.True(rtt.CanSendText);
+
+            await rtt.PauseText();
+            Assert.False(rtt.CanSendText);
+
+            await rtt.ResumeText();
+            Assert.True(rtt.CanSendText);
+
+            await rtt.CloseText();
+            Assert.False(rtt.CanSendText);
+        }
+
         /// <summary>
         /// The local offer from a session with an RttEndPoint must include both RED and the
         /// t140 format it references.
