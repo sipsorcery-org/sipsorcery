@@ -46,10 +46,12 @@ namespace Net.Codecrete.QrCodeGenerator
             // create bitmap
             var image = new Image<Rgb24>(dim, dim);
 
-            image.Mutate(img =>
+            var foregroundBrush = Brushes.Solid(foreground);
+
+            image.Mutate(img => img.Paint(canvas =>
             {
                 // draw background
-                img.Fill(background);
+                canvas.Fill(Brushes.Solid(background));
 
                 // draw modules
                 for (int y = 0; y < size; y++)
@@ -58,11 +60,11 @@ namespace Net.Codecrete.QrCodeGenerator
                     {
                         if (qrCode.GetModule(x, y))
                         {
-                            img.Fill(foreground, new Rectangle((x + border) * scale, (y + border) * scale, scale, scale));
+                            canvas.Fill(foregroundBrush, new Rectangle((x + border) * scale, (y + border) * scale, scale, scale));
                         }
                     }
                 }
-            });
+            }));
 
             return image;
         }
