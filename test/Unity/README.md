@@ -9,23 +9,24 @@ where SIPSorcery's static initializers throw on Unity's Mono runtime.
 The project is intentionally tiny: one PlayMode test that constructs an
 `RTCPeerConnection` and asserts no exception is raised.
 
-## Two jobs, two reasons
+## Why Windows only, and manual only
 
-The workflow runs two jobs in parallel:
+The workflow has a single `smoke-test-windows` job. It runs on
+`windows-latest` with a native Unity Editor install via
+[`RageAgainstThePixel/unity-setup`](https://github.com/RageAgainstThePixel/unity-setup)
+and license activation via
+[`RageAgainstThePixel/activate-unity-license`](https://github.com/RageAgainstThePixel/activate-unity-license).
 
-- **`smoke-test` (Linux)** — fast canary. Uses GameCI's Docker image on
-  `ubuntu-latest`. Proves the SIPSorcery DLLs load on Unity's Linux Mono
-  and the `NetServices` type initializer doesn't crash there. Catches
-  general init regressions but **does not reproduce #1614**, because
-  the bug is in Unity's Windows-shipped Mono (`NetworkChange` is
-  unsupported on Win32 Mono but works on Linux Mono).
-- **`smoke-test-windows`** — reproduction job. Runs on `windows-latest`
-  with a native Unity Editor install via
-  [`RageAgainstThePixel/unity-setup`](https://github.com/RageAgainstThePixel/unity-setup)
-  and license activation via
-  [`RageAgainstThePixel/activate-unity-license`](https://github.com/RageAgainstThePixel/activate-unity-license).
-  This is the job that actually fails when #1614 is open and turns
-  green when it's fixed.
+#1614 only reproduces on Unity's Windows-shipped Mono (`NetworkChange` is
+unsupported on Win32 Mono but works on Linux Mono). A Linux job using
+GameCI's Docker image used to run on every push and PR, but it could not
+reproduce the bug and broke whenever the machine-bound `.ulf` license
+stopped matching the runner ("Machine bindings don't match"), so it was
+removed.
+
+A cold Windows run takes ~20 min, so the workflow is `workflow_dispatch`
+only. Run it from the Actions tab before a release or after changes to
+`SIPSorcery.Sys.NetServices` / other static initializers.
 
 ## Layout
 
@@ -52,9 +53,10 @@ test/Unity/SipSorceryUnitySmokeTest/
    (notably `Makaretu.Dns.Multicast → Tmds.LibC`, which is Linux-only and
    not pulled in by a `netstandard2.1` publish on Windows), and refuses
    to load SIPSorcery itself.
-3. [`game-ci/unity-test-runner`](https://github.com/game-ci/unity-test-runner)
-   opens the project and runs the PlayMode test on a Linux container.
-4. Results are uploaded as a workflow artifact.
+3. Unity is installed and activated, then run in `-batchmode -runTests`
+   for PlayMode; the job parses `playmode-results.xml` and fails on any
+   failed test or if zero tests were discovered.
+4. Results and the Unity log are uploaded as a workflow artifact.
 
 ## Running it locally
 
@@ -87,41 +89,19 @@ PROJ=test/Unity/SipSorceryUnitySmokeTest
 
 (Unity reports the test-runner internal code in the log — `code 2` means
 a test failed. The shell exit code from `-runTests` is unreliable; parse
-`test-results.xml` to know the real outcome. GameCI's `unity-test-runner`
-action does this for you in CI.)
+`test-results.xml` to know the real outcome. The CI job does this for
+you.)
 
 ## CI setup (one-time)
 
-The two jobs need different combinations of secrets, both gated by an
-early `license_check` step that logs a warning and skips the job (no
-build failure) when secrets are missing.
+| Secret | Required for |
+| --- | --- |
+| `UNITY_EMAIL` | the Unity ID email |
+| `UNITY_PASSWORD` | the Unity ID password |
+| `UNITY_SERIAL` | only needed if you switch the job to a Pro/Plus license |
 
-| Secret | Used by | Required for |
-| --- | --- | --- |
-| `UNITY_LICENSE` | Linux job (GameCI) | the `.ulf` file contents |
-| `UNITY_EMAIL` | both | the Unity ID email |
-| `UNITY_PASSWORD` | both | the Unity ID password |
-| `UNITY_SERIAL` | — | only needed if you switch the Windows job to a Pro/Plus license |
-
-For a Personal Unity account, follow
-[GameCI's activation guide](https://game.ci/docs/github/activation/) to
-generate the `Unity_v*.ulf` and paste its contents into `UNITY_LICENSE`.
-Add `UNITY_EMAIL` and `UNITY_PASSWORD` from the Unity ID account that
-owns that license. The Windows job uses email+password directly via
+The job activates a Personal license with email+password via
 [`RageAgainstThePixel/activate-unity-license`](https://github.com/RageAgainstThePixel/activate-unity-license),
-so it doesn't need the `.ulf` file at all.
-
-Until the secrets are set, each job logs a warning and exits without
-failing the build, so PRs are not blocked.
-
-## Triggers
-
-The workflow runs on:
-
-- `workflow_dispatch` — manually from the Actions tab
-- Pull requests touching `src/SIPSorcery/sys/Net/**`, `test/Unity/**`,
-  or the workflow file itself
-
-Expand the path filter in
-[`.github/workflows/unity-smoke-test.yml`](../../.github/workflows/unity-smoke-test.yml)
-if you want broader coverage.
+so no `.ulf` file is needed (the old `UNITY_LICENSE` secret is unused and
+can be deleted). If the secrets are missing, an early `license_check`
+step logs a warning and skips the job instead of failing.
