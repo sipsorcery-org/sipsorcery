@@ -78,9 +78,9 @@ namespace SIPSorcery.Net.UnitTests
             videoStream.LocalTrack = localTrack;
             videoStream.DestinationEndPoint = new IPEndPoint(IPAddress.Loopback, 5004);
 
-            // Configure fake/loopback channel to capture wire packets
+            // Configure fake/loopback channel to capture wire packets and simulate transport drop
             var capturedWirePackets = new List<RTPPacket>();
-            var rtpChannel = new RTPChannel(false, IPAddress.Loopback);
+            var rtpChannel = new TestImpairedRtpChannel();
             videoStream.AddRtpChannel(rtpChannel);
 
             // Enable ULPFEC on VideoStream
@@ -92,17 +92,18 @@ namespace SIPSorcery.Net.UnitTests
             };
             videoStream.EnableUlpfec(redPayloadType: 122, ulpfecPayloadType: 127, mediaPayloadType: 96, fecConfig);
 
-            // Set up impairment hook: drop the 2nd FU-A media packet
+            // Set up impairment hook: drop the 2nd FU-A media packet at transport layer
             ushort droppedSeqNum = 0;
             int mediaPacketIndex = 0;
 
-            videoStream.PacketDropInterceptor = (mediaPkt) =>
+            rtpChannel.DropPredicate = (buf) =>
             {
+                var hdr = new RTPHeader(buf);
                 mediaPacketIndex++;
                 if (mediaPacketIndex == 2)
                 {
-                    droppedSeqNum = mediaPkt.Header.SequenceNumber;
-                    return true; // Drop this packet!
+                    droppedSeqNum = hdr.SequenceNumber;
+                    return true; // Drop this packet at transport layer!
                 }
                 return false;
             };
@@ -114,10 +115,28 @@ namespace SIPSorcery.Net.UnitTests
             // Metrics validation
             Assert.True(videoStream.FecMetrics.MediaPacketsSent > 0, "Media packets should have been recorded");
             Assert.True(videoStream.FecMetrics.RepairPacketsGenerated > 0, "Repair packets should have been generated");
-            Assert.Equal(1, videoStream.FecMetrics.PacketsDroppedByImpairment);
+            Assert.Equal(1, rtpChannel.DroppedCount);
             Assert.True(droppedSeqNum > 0, "A packet should have been dropped by the impairment hook");
 
             rtpChannel.Close("test completed");
+        }
+
+        private class TestImpairedRtpChannel : RTPChannel
+        {
+            public int DroppedCount { get; private set; }
+            public Func<byte[], bool> DropPredicate { get; set; }
+
+            public TestImpairedRtpChannel() : base(false, IPAddress.Loopback) { }
+
+            public override System.Net.Sockets.SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+            {
+                if (DropPredicate != null && DropPredicate(buffer))
+                {
+                    DroppedCount++;
+                    return System.Net.Sockets.SocketError.Success;
+                }
+                return base.Send(sendOn, dstEndPoint, buffer);
+            }
         }
     }
 }

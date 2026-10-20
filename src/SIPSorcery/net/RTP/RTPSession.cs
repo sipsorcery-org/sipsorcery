@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTPSession.cs
 //
 // Description: Represents an RTP session constituted of a single media stream. The session
@@ -1299,18 +1299,17 @@ namespace SIPSorcery.Net
                             {
                                 bool hasRed = capabilities.Any(x => x.IsRed);
                                 bool hasUlpfec = capabilities.Any(x => x.IsUlpfec);
-                                bool hasH264 = capabilities.Any(x => x.IsH264);
+                                var primaryVideoFmt = capabilities.FirstOrDefault(x => x.IsVideoMediaCodec);
 
-                                if (hasRed && hasUlpfec && hasH264)
+                                if (hasRed && hasUlpfec && !primaryVideoFmt.IsEmpty())
                                 {
                                     var redFmt = capabilities.First(x => x.IsRed);
                                     var ulpfecFmt = capabilities.First(x => x.IsUlpfec);
-                                    var h264Fmt = capabilities.First(x => x.IsH264);
-                                    currentMediaStream.EnableUlpfec(redFmt.ID, ulpfecFmt.ID, h264Fmt.ID, fecConfig);
+                                    currentMediaStream.EnableUlpfec(redFmt.ID, ulpfecFmt.ID, primaryVideoFmt.ID, fecConfig);
                                 }
                                 else
                                 {
-                                    currentMediaStream.DisableUlpfec("Negotiated video capabilities do not include required RED, ULPFEC, and H264 formats.");
+                                    currentMediaStream.DisableUlpfec("Negotiated video capabilities do not include required RED, ULPFEC, and primary video media formats.");
                                 }
                             }
                         }
@@ -1366,9 +1365,7 @@ namespace SIPSorcery.Net
                         IPEndPoint remoteRtcpEP = null;
                         if (remoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive && currentMediaStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                         {
-                            remoteRtcpEP = (remoteRtpEP != null)
-                                ? (rtpSessionConfig.IsRtcpMultiplexed ? remoteRtpEP : new IPEndPoint(remoteRtpEP.Address, remoteRtpEP.Port + 1))
-                                : null;
+                            remoteRtcpEP = rtpSessionConfig.IsRtcpMultiplexed ? remoteRtpEP : new IPEndPoint(remoteRtpEP.Address, remoteRtpEP.Port + 1);
                         }
 
                         // When ICE manages the transport (WebRTC/multiplexed), the ICE layer

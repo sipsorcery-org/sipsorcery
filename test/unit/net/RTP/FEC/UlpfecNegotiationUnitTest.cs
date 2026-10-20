@@ -153,5 +153,43 @@ namespace SIPSorcery.Net.UnitTests
             Assert.DoesNotContain(videoMedia.MediaFormats.Values, f => f.IsRed);
             Assert.DoesNotContain(videoMedia.MediaFormats.Values, f => f.IsUlpfec);
         }
+
+        [Fact]
+        public void NegotiatesVp8WithRedAndUlpfecTest()
+        {
+            var session = new RTPSession(new RtpSessionConfig());
+            session.EnableVideoFec(new RtpUlpfecConfig { Enabled = true });
+
+            var videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat>
+            {
+                new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000)
+            });
+            videoTrack.AddFecFormats(redPt: 122, ulpfecPt: 127);
+            session.addTrack(videoTrack);
+
+            var offer = new SDP(System.Net.IPAddress.Loopback);
+            offer.SessionId = "12345";
+            offer.Connection = new SDPConnectionInformation(System.Net.IPAddress.Loopback);
+            var announcement = new SDPMediaAnnouncement
+            {
+                Media = SDPMediaTypesEnum.video,
+                Port = 9000,
+                Transport = "UDP/TLS/RTP/SAVPF"
+            };
+            announcement.MediaFormats.Add(96, new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000));
+            announcement.MediaFormats.Add(122, SDPAudioVideoMediaFormat.CreateRedFormat(122));
+            announcement.MediaFormats.Add(127, SDPAudioVideoMediaFormat.CreateUlpfecFormat(127));
+            offer.Media.Add(announcement);
+
+            var result = session.SetRemoteDescription(SdpType.offer, offer);
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+            Assert.NotNull(session.VideoStream);
+            Assert.NotNull(session.VideoStream.FecEncoder);
+            Assert.NotNull(session.VideoStream.FecDecoder);
+            Assert.Equal(122, session.VideoStream.FecEncoder.RedPayloadType);
+            Assert.Equal(127, session.VideoStream.FecEncoder.UlpfecPayloadType);
+            Assert.Equal(96, session.VideoStream.FecEncoder.MediaPayloadType);
+        }
     }
 }

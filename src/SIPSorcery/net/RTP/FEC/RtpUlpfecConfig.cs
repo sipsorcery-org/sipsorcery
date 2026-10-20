@@ -74,12 +74,6 @@ namespace SIPSorcery.Net
         public TimeSpan MaxRepairAge { get; set; } = DEFAULT_MAX_REPAIR_AGE;
 
         /// <summary>
-        /// If true, repair packets are generated only for key frames (IDR).
-        /// If false (default), all frames are protected according to the target ratio.
-        /// </summary>
-        public bool ProtectKeyFramesOnly { get; set; } = false;
-
-        /// <summary>
         /// If true, use RFC 5109 long mask (48-bit mask / 8-byte Level 0 header) when the group
         /// span exceeds 16 packets. If false, limits group size to 16 packets (short mask).
         /// </summary>
@@ -97,7 +91,6 @@ namespace SIPSorcery.Net
                 MaxGroupPackets = MaxGroupPackets,
                 MinGroupPackets = MinGroupPackets,
                 MaxRepairAge = MaxRepairAge,
-                ProtectKeyFramesOnly = ProtectKeyFramesOnly,
                 AllowLongMask = AllowLongMask
             };
         }

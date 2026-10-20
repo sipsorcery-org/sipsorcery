@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SDPMediaFormat.cs
 //
 // Description: 
@@ -183,6 +183,14 @@ namespace SIPSorcery.Net
         public bool IsUlpfec => MatchesCodecName("ulpfec");
 
         public bool IsFlexfec => MatchesCodecName("flexfec") || MatchesCodecName("flexfec-03");
+
+        public bool IsVideoMediaCodec =>
+            Kind == SDPMediaTypesEnum.video &&
+            !IsRed &&
+            !IsUlpfec &&
+            !IsFlexfec &&
+            !MatchesCodecName("rtx") &&
+            !_isEmpty;
 
         public static SDPAudioVideoMediaFormat CreateRedFormat(int id = 122, int clockRate = 90000)
             => new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, id, "red", clockRate);

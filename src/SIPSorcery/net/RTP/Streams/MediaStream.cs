@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: MediaStream.cs
 //
 // Description: Define a Media Stream to centralize all related objects: local/remote tracks, rtcp session, ip end point
@@ -110,16 +110,14 @@ namespace SIPSorcery.Net
         public RtpUlpfecEncoder FecEncoder { get; protected set; }
 
         /// <summary>
+        /// The active RFC 5109 / RFC 2198 FEC decoder when FEC is negotiated and enabled.
+        /// </summary>
+        public RtpUlpfecDecoder FecDecoder { get; protected set; }
+
+        /// <summary>
         /// Metrics tracking media sends, FEC repair generation, send rates, and impairment drops.
         /// </summary>
         public RtpFecMetrics FecMetrics { get; } = new RtpFecMetrics();
-
-        /// <summary>
-        /// Deterministic impairment hook for testing. If this delegate returns true for an RTP packet,
-        /// the packet is dropped immediately prior to transport submission, while preserving its
-        /// sequence number consumption and repair generation.
-        /// </summary>
-        public Func<RTPPacket, bool> PacketDropInterceptor { get; set; }
 
         /// <summary>
         /// Enables ULPFEC / RED forward error correction on this stream with the negotiated payload types.
@@ -129,6 +127,7 @@ namespace SIPSorcery.Net
             FecConfig = config?.Clone() ?? FecConfig ?? new RtpUlpfecConfig();
             FecConfig.Enabled = true;
             FecEncoder = new RtpUlpfecEncoder(redPayloadType, ulpfecPayloadType, mediaPayloadType, FecConfig);
+            FecDecoder = new RtpUlpfecDecoder(redPayloadType, ulpfecPayloadType);
             logger.LogInformation("ULPFEC enabled on {MediaType} stream. RED PT={RedPt}, ULPFEC PT={FecPt}, Media PT={MediaPt}, Overhead={Overhead:P1}.",
                 MediaType, redPayloadType, ulpfecPayloadType, mediaPayloadType, FecConfig.TargetOverheadFraction);
         }
@@ -138,10 +137,11 @@ namespace SIPSorcery.Net
         /// </summary>
         public void DisableUlpfec(string reason = null)
         {
-            if (FecEncoder != null)
+            if (FecEncoder != null || FecDecoder != null)
             {
                 logger.LogInformation("ULPFEC disabled on {MediaType} stream. Reason: {Reason}", MediaType, reason ?? "Disabled by caller");
                 FecEncoder = null;
+                FecDecoder = null;
             }
             if (FecConfig != null)
             {
@@ -222,6 +222,7 @@ namespace SIPSorcery.Net
                 ClearPendingPackages();
 
                 FecEncoder?.Reset();
+                FecDecoder?.Reset();
 
                 OnIsClosedStateChanged?.Invoke(_isClosed);
             }
@@ -569,65 +570,81 @@ namespace SIPSorcery.Net
                 ushort assignedSeqNum = seqNum ?? LocalTrack.GetNextSeqNum();
 
                 RTPPacket rtpPacket = new RTPPacket(data, srtpProtectionLength);
+
                 rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
                 rtpPacket.Header.SequenceNumber = assignedSeqNum;
                 rtpPacket.Header.Timestamp = timestamp;
                 rtpPacket.Header.MarkerBit = markerBit;
                 rtpPacket.Header.PayloadType = payloadType;
 
-                ApplyHeaderExtensions(rtpPacket);
+                /*  https://datatracker.ietf.org/doc/html/rfc5285#section-4.2
+                    
+                    An example header extension, with three extension elements, some
+                    padding, and including the required RTP fields, follows:
 
-                if (FecEncoder != null && FecEncoder.IsActive)
+                    0                   1                   2                   3
+                    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+                    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    |       0xBE    |    0xDE       |           length=3            |
+                    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    |  ID   | L=0   |     data      |  ID   |  L=1  |   data...     |
+                    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    |     ...data   |    0 (pad)    |    0 (pad)    |  ID   | L=3   |
+                    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    |                          data                                 |
+                    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                */
+                if (LocalTrack?.HeaderExtensions?.Values.Count > 0)
+                {
+                    byte[] payload = null;
+                    foreach (var ext in LocalTrack.HeaderExtensions.Values)
+                    {
+                        // We support up to 14 extensions .... Not clear at all how to manage more ...
+                        if ((ext.Id < 1) || (ext.Id > 14))
+                        {
+                            continue;
+                        }
+
+                        // Get extension payload and combine it to global payload
+                        var extPayLoad = ext.Marshal();
+                        if (payload == null)
+                        {
+                            payload = extPayLoad;
+                        }
+                        else
+                        {
+                            payload = Combine(payload, extPayLoad);
+                        }
+                    }
+
+                    if (payload?.Length > 0)
+                    {
+                        // Need to round to 4 bytes boundaries
+                        var roundedExtSize = payload.Length % 4;
+                        if (roundedExtSize > 0)
+                        {
+                            var padding = Enumerable.Repeat((byte)0, 4 - roundedExtSize).ToArray();
+                            payload = Combine(payload, padding);
+                        }
+
+                        rtpPacket.Header.HeaderExtensionFlag = 1; // We have at least one extension
+                        rtpPacket.Header.ExtensionLength = (ushort)(payload.Length / 4);  // payload length / 4 
+                        rtpPacket.Header.ExtensionProfile = RTPHeader.ONE_BYTE_EXTENSION_PROFILE; // We support up to 14 extensions .... Not clear at all how to manage more ...
+                        rtpPacket.Header.ExtensionPayload = payload;
+                    }
+                }
+                else
+                {
+                    rtpPacket.Header.HeaderExtensionFlag = 0;
+                }
+
+                if (seqNum == null && FecEncoder != null && FecEncoder.IsActive)
                 {
                     SendRtpRawWithFec(rtpPacket, data, protectRtpPacket, srtpProtectionLength);
                     return;
                 }
 
                 SendFinalizedRtpPacket(rtpPacket, protectRtpPacket, srtpProtectionLength);
-            }
-        }
-
-        private void ApplyHeaderExtensions(RTPPacket rtpPacket)
-        {
-            if (LocalTrack?.HeaderExtensions?.Values.Count > 0)
-            {
-                byte[] payload = null;
-                foreach (var ext in LocalTrack.HeaderExtensions.Values)
-                {
-                    if ((ext.Id < 1) || (ext.Id > 14))
-                    {
-                        continue;
-                    }
-
-                    var extPayLoad = ext.Marshal();
-                    if (payload == null)
-                    {
-                        payload = extPayLoad;
-                    }
-                    else
-                    {
-                        payload = Combine(payload, extPayLoad);
-                    }
-                }
-
-                if (payload?.Length > 0)
-                {
-                    var roundedExtSize = payload.Length % 4;
-                    if (roundedExtSize > 0)
-                    {
-                        var padding = Enumerable.Repeat((byte)0, 4 - roundedExtSize).ToArray();
-                        payload = Combine(payload, padding);
-                    }
-
-                    rtpPacket.Header.HeaderExtensionFlag = 1;
-                    rtpPacket.Header.ExtensionLength = (ushort)(payload.Length / 4);
-                    rtpPacket.Header.ExtensionProfile = RTPHeader.ONE_BYTE_EXTENSION_PROFILE;
-                    rtpPacket.Header.ExtensionPayload = payload;
-                }
-            }
-            else
-            {
-                rtpPacket.Header.HeaderExtensionFlag = 0;
             }
         }
 
@@ -695,19 +712,10 @@ namespace SIPSorcery.Net
             redMediaPacket.Header.ExtensionLength = primaryPacket.Header.ExtensionLength;
             redMediaPacket.Header.ExtensionPayload = primaryPacket.Header.ExtensionPayload;
 
-            // 3. Impairment hook check
-            if (PacketDropInterceptor != null && PacketDropInterceptor(primaryPacket))
-            {
-                logger.LogDebug("Impairment hook dropped media packet {SeqNum} TS {Timestamp}.", primaryPacket.Header.SequenceNumber, primaryPacket.Header.Timestamp);
-                FecMetrics.RecordDroppedByImpairment();
-            }
-            else
-            {
-                SendFinalizedRtpPacket(redMediaPacket, protectRtpPacket, srtpProtectionLength);
-                FecMetrics.RecordMediaPacket(redPayload.Length);
-            }
+            SendFinalizedRtpPacket(redMediaPacket, protectRtpPacket, srtpProtectionLength);
+            FecMetrics.RecordMediaPacket(redPayload.Length);
 
-            // 4. Send any generated repair packets
+            // 3. Send any generated repair packets
             if (repairPackets != null && repairPackets.Count > 0)
             {
                 foreach (var repairPkt in repairPackets)
@@ -973,39 +981,164 @@ namespace SIPSorcery.Net
 
             var format = LocalTrack?.GetFormatForPayloadID(hdr.PayloadType);
 
+            bool isRed = (FecDecoder != null && hdr.PayloadType == FecDecoder.RedPayloadType) || (format != null && format.Value.IsRed);
+            bool isUlpfec = (FecDecoder != null && hdr.PayloadType == FecDecoder.UlpfecPayloadType) || (format != null && format.Value.IsUlpfec);
+
+            if (isRed && rtpPacket != null)
+            {
+                byte[] redPayload = rtpPacket.GetPayloadBytes() ?? rtpPacket.Payload;
+                if (RtpRedPayload.TryDecode(redPayload, out var redundantBlocks, out var primaryBlock))
+                {
+                    // Process redundant ULPFEC blocks if any
+                    foreach (var redBlock in redundantBlocks)
+                    {
+                        if (FecDecoder != null && (redBlock.PayloadType == FecDecoder.UlpfecPayloadType || LocalTrack?.GetFormatForPayloadID(redBlock.PayloadType)?.IsUlpfec == true))
+                        {
+                            var fecPkt = new RTPPacket(new ArraySegment<byte>(redBlock.Data), 0)
+                            {
+                                Header = rtpPacket.Header
+                            };
+                            fecPkt.Header.PayloadType = redBlock.PayloadType;
+                            fecPkt.Payload = redBlock.Data;
+
+                            FecDecoder.AddReceivedFec(fecPkt, out var recList);
+                            DispatchRecoveredPackets(remoteEndPoint, recList);
+                        }
+                    }
+
+                    // Check primary block: can be standalone ULPFEC repair or primary media (e.g. VP8 / H264)
+                    if (FecDecoder != null && (primaryBlock.PayloadType == FecDecoder.UlpfecPayloadType || LocalTrack?.GetFormatForPayloadID(primaryBlock.PayloadType)?.IsUlpfec == true))
+                    {
+                        var fecPkt = new RTPPacket(new ArraySegment<byte>(primaryBlock.Data), 0)
+                        {
+                            Header = rtpPacket.Header
+                        };
+                        fecPkt.Header.PayloadType = primaryBlock.PayloadType;
+                        fecPkt.Payload = primaryBlock.Data;
+
+                        FecDecoder.AddReceivedFec(fecPkt, out var recList);
+                        DispatchRecoveredPackets(remoteEndPoint, recList);
+                    }
+                    else
+                    {
+                        var unwrappedMedia = new RTPPacket(new ArraySegment<byte>(primaryBlock.Data), 0);
+                        unwrappedMedia.Header.SyncSource = rtpPacket.Header.SyncSource;
+                        unwrappedMedia.Header.SequenceNumber = rtpPacket.Header.SequenceNumber;
+                        unwrappedMedia.Header.Timestamp = rtpPacket.Header.Timestamp;
+                        unwrappedMedia.Header.MarkerBit = rtpPacket.Header.MarkerBit;
+                        unwrappedMedia.Header.PayloadType = primaryBlock.PayloadType;
+                        unwrappedMedia.Header.PaddingFlag = rtpPacket.Header.PaddingFlag;
+                        unwrappedMedia.Header.HeaderExtensionFlag = rtpPacket.Header.HeaderExtensionFlag;
+                        unwrappedMedia.Header.CSRCCount = rtpPacket.Header.CSRCCount;
+                        unwrappedMedia.Header.ExtensionProfile = rtpPacket.Header.ExtensionProfile;
+                        unwrappedMedia.Header.ExtensionLength = rtpPacket.Header.ExtensionLength;
+                        unwrappedMedia.Header.ExtensionPayload = rtpPacket.Header.ExtensionPayload;
+                        unwrappedMedia.Payload = primaryBlock.Data;
+
+                        var mediaFmt = LocalTrack?.GetFormatForPayloadID(primaryBlock.PayloadType);
+                        if (mediaFmt != null && !mediaFmt.Value.IsEmpty())
+                        {
+                            if (FecDecoder != null)
+                            {
+                                FecDecoder.AddReceivedMedia(unwrappedMedia, out var recList);
+                                DispatchReceivedMediaPacket(remoteEndPoint, unwrappedMedia, mediaFmt.Value);
+                                DispatchRecoveredPackets(remoteEndPoint, recList);
+                            }
+                            else
+                            {
+                                DispatchReceivedMediaPacket(remoteEndPoint, unwrappedMedia, mediaFmt.Value);
+                            }
+                        }
+                        else
+                        {
+                            logger.LogWarning("Received RED packet with unknown inner payload type {PayloadType} on {MediaType}.", primaryBlock.PayloadType, MediaType);
+                        }
+                    }
+
+                    RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+                    return;
+                }
+            }
+            else if (isUlpfec && rtpPacket != null)
+            {
+                if (FecDecoder != null)
+                {
+                    FecDecoder.AddReceivedFec(rtpPacket, out var recList);
+                    DispatchRecoveredPackets(remoteEndPoint, recList);
+                }
+                RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+                return;
+            }
+
             if(format == null || format.Value.IsEmpty())
             {
                 logger.LogWarning("Received RTP packet with unknown payload type {PayloadType} for {MediaType} stream from {RemoteEndPoint}.", hdr.PayloadType, MediaType, remoteEndPoint);
             }
             else if (rtpPacket != null)
             {
-                if (UseBuffer())
+                if (FecDecoder != null)
                 {
-                    var reorderBuffer = GetBuffer();
-                    reorderBuffer.Add(rtpPacket);
-                    while (reorderBuffer.Get(out var bufferedPacket))
-                    {
-                        if (RemoteTrack != null)
-                        {
-                            LogIfWrongSeqNumber($"{MediaType}", bufferedPacket.Header, RemoteTrack);
-                            RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
-                        }
-                        ProcessRtpPacket(remoteEndPoint, bufferedPacket, format.Value);
-                    }
+                    FecDecoder.AddReceivedMedia(rtpPacket, out var recList);
+                    DispatchReceivedMediaPacket(remoteEndPoint, rtpPacket, format.Value);
+                    DispatchRecoveredPackets(remoteEndPoint, recList);
                 }
                 else
                 {
-                    if (RemoteTrack != null)
-                    {
-                        // Must be updated for LogIfWrongSeqNumber to function: with the initial
-                        // value of 0 the sequence discontinuity check never fires, so the
-                        // unbuffered path previously never reported out of order packets.
-                        RemoteTrack.LastRemoteSeqNum = rtpPacket.Header.SequenceNumber;
-                    }
-                    ProcessRtpPacket(remoteEndPoint, rtpPacket, format.Value);
+                    DispatchReceivedMediaPacket(remoteEndPoint, rtpPacket, format.Value);
                 }
 
                 RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+            }
+        }
+
+        private void DispatchReceivedMediaPacket(IPEndPoint remoteEndPoint, RTPPacket packet, SDPAudioVideoMediaFormat format)
+        {
+            if (UseBuffer())
+            {
+                var reorderBuffer = GetBuffer();
+                reorderBuffer.Add(packet);
+                while (reorderBuffer.Get(out var bufferedPacket))
+                {
+                    if (RemoteTrack != null)
+                    {
+                        LogIfWrongSeqNumber($"{MediaType}", bufferedPacket.Header, RemoteTrack);
+                        RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
+                    }
+                    ProcessRtpPacket(remoteEndPoint, bufferedPacket, format);
+                }
+            }
+            else
+            {
+                if (RemoteTrack != null)
+                {
+                    RemoteTrack.LastRemoteSeqNum = packet.Header.SequenceNumber;
+                }
+                ProcessRtpPacket(remoteEndPoint, packet, format);
+            }
+        }
+
+        private void DispatchRecoveredPackets(IPEndPoint remoteEndPoint, List<RTPPacket> recoveredPackets)
+        {
+            if (recoveredPackets == null || recoveredPackets.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var recovered in recoveredPackets)
+            {
+                FecMetrics.RecordPacketRecovered();
+                var recFormat = LocalTrack?.GetFormatForPayloadID(recovered.Header.PayloadType);
+                if (recFormat != null && !recFormat.Value.IsEmpty())
+                {
+                    logger.LogDebug("Dispatching recovered {MediaType} packet SN={SeqNum} TS={Timestamp} PT={PayloadType}.",
+                        MediaType, recovered.Header.SequenceNumber, recovered.Header.Timestamp, recovered.Header.PayloadType);
+                    DispatchReceivedMediaPacket(remoteEndPoint, recovered, recFormat.Value);
+                    RtcpSession?.RecordRtpPacketReceived(recovered);
+                }
+                else
+                {
+                    logger.LogWarning("Recovered packet has unknown payload type {PayloadType}.", recovered.Header.PayloadType);
+                }
             }
         }
 

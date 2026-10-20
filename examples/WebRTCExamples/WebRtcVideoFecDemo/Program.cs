@@ -89,24 +89,42 @@ namespace WebRtcVideoFecDemo
                     MinGroupPackets = 1
                 });
 
-                // Configure impairment hook
                 pc.onconnectionstatechange += (state) =>
                 {
+                    logger.LogInformation("Peer connection state: {State}", state);
                     if (state == RTCPeerConnectionState.connected && pc.VideoStream != null)
                     {
-                        pc.VideoStream.PacketDropInterceptor = (mediaPkt) =>
+                        var originalChannel = pc.VideoStream.GetRTPChannel();
+                        if (originalChannel != null && !(originalChannel is ImpairedRtpChannel))
                         {
-                            if (!_impairmentDropActive) return false;
-
-                            int count = System.Threading.Interlocked.Increment(ref _packetCounter);
-                            if ((count % _impairmentDropInterval) == 0)
+                            var impaired = new ImpairedRtpChannel(originalChannel);
+                            impaired.DropPredicate = (buffer) =>
                             {
-                                logger.LogWarning("--> [IMPAIRMENT HOOK] Deliberately dropping media packet SN={SeqNum}, TS={Timestamp}.",
-                                    mediaPkt.Header.SequenceNumber, mediaPkt.Header.Timestamp);
-                                return true; // Dropped on wire; sequence consumed; repair still sent!
-                            }
-                            return false;
-                        };
+                                if (!_impairmentDropActive) return false;
+                                try
+                                {
+                                    var hdr = new RTPHeader(buffer);
+                                    if (hdr.PayloadType == 122 && buffer.Length > hdr.Length)
+                                    {
+                                        byte redHeader = buffer[hdr.Length];
+                                        int innerPt = redHeader & 0x7F;
+                                        if (innerPt == 96) // H.264 primary media
+                                        {
+                                            int count = System.Threading.Interlocked.Increment(ref _packetCounter);
+                                            if ((count % _impairmentDropInterval) == 0)
+                                            {
+                                                logger.LogWarning("--> [TRANSPORT IMPAIRMENT] Deliberately dropping media packet SN={SeqNum}, TS={Timestamp}.",
+                                                    hdr.SequenceNumber, hdr.Timestamp);
+                                                return true;
+                                            }
+                                        }
+                                    }
+                                }
+                                catch { }
+                                return false;
+                            };
+                            pc.VideoStream.AddRtpChannel(impaired);
+                        }
                     }
                 };
 
@@ -196,6 +214,28 @@ namespace WebRtcVideoFecDemo
             Console.WriteLine("==================================================================");
 
             await app.RunAsync();
+        }
+    }
+
+    public class ImpairedRtpChannel : RTPChannel
+    {
+        private readonly RTPChannel _inner;
+        public Func<byte[], bool>? DropPredicate { get; set; }
+
+        public ImpairedRtpChannel(RTPChannel inner)
+            : base(false, System.Net.IPAddress.Loopback)
+        {
+            _inner = inner;
+            RTPSrflxEndPoint = inner.RTPSrflxEndPoint;
+        }
+
+        public override System.Net.Sockets.SocketError Send(RTPChannelSocketsEnum sendOn, System.Net.IPEndPoint dstEndPoint, byte[] buffer)
+        {
+            if (sendOn == RTPChannelSocketsEnum.RTP && DropPredicate != null && DropPredicate(buffer))
+            {
+                return System.Net.Sockets.SocketError.Success;
+            }
+            return _inner.Send(sendOn, dstEndPoint, buffer);
         }
     }
 }

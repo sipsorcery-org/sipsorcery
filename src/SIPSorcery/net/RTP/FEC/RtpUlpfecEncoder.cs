@@ -62,66 +62,51 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Wraps an RTP media payload with an RFC 2198 RED header (single-block format).
-        /// Wire format: 1 byte [ 0-bit followed by 7-bit inner payload type ] followed by inner payload.
+        /// Wraps an RTP payload with an RFC 2198 RED header (single-block format).
         /// </summary>
         public static byte[] WrapInRed(byte[] innerPayload, byte innerPayloadType)
         {
-            if (innerPayload == null || innerPayload.Length == 0)
-            {
-                return new byte[] { (byte)(innerPayloadType & 0x7F) };
-            }
-
-            byte[] redPayload = new byte[innerPayload.Length + 1];
-            redPayload[0] = (byte)(innerPayloadType & 0x7F);
-            Buffer.BlockCopy(innerPayload, 0, redPayload, 1, innerPayload.Length);
-            return redPayload;
+            return RtpRedPayload.EncodeSingleBlock(innerPayload, innerPayloadType);
         }
 
         /// <summary>
-        /// Unwraps an RFC 2198 single-block RED packet to extract the inner payload type and data.
+        /// Unwraps an RFC 2198 RED packet to extract the primary payload type and data.
+        /// Supports both single-block and multi-block RED layouts.
         /// </summary>
         public static bool TryUnwrapRed(byte[] redPayload, out byte innerPayloadType, out byte[] innerPayload)
         {
-            if (redPayload == null || redPayload.Length < 1)
+            return RtpRedPayload.TryUnwrapPrimary(redPayload, out innerPayloadType, out innerPayload);
+        }
+
+        /// <summary>
+        /// Extracts all bytes after the 12-byte fixed RTP header (CSRC list + Header Extensions + Payload + Padding)
+        /// in accordance with RFC 5109 Section 7.
+        /// </summary>
+        public static byte[] GetProtectedBytes(RTPPacket packet)
+        {
+            if (packet == null)
             {
-                innerPayloadType = 0;
-                innerPayload = Array.Empty<byte>();
-                return false;
+                return Array.Empty<byte>();
             }
 
-            // Bit 7 is F bit. For single block or final block, F = 0.
-            byte header = redPayload[0];
-            bool hasMoreHeaders = (header & 0x80) != 0;
-            if (hasMoreHeaders)
+            // Header.GetBytes() serializes the fixed 12 bytes + CSRC list + Header Extensions (if X == 1).
+            byte[] headerBytes = packet.Header?.GetBytes() ?? Array.Empty<byte>();
+            byte[] payloadBytes = packet.GetPayloadBytes() ?? packet.Payload ?? Array.Empty<byte>();
+
+            int post12HeaderLen = Math.Max(0, headerBytes.Length - RTPHeader.MIN_HEADER_LEN);
+            byte[] protectedBytes = new byte[post12HeaderLen + payloadBytes.Length];
+
+            if (post12HeaderLen > 0)
             {
-                // Multi-block RED parsing
-                int offset = 0;
-                while (offset < redPayload.Length && (redPayload[offset] & 0x80) != 0)
-                {
-                    offset += 4; // F(1) + BlockPT(7) + TimestampOffset(14) + BlockLength(10)
-                }
-                if (offset < redPayload.Length)
-                {
-                    offset += 1; // Final header octet
-                }
-                innerPayloadType = (byte)(header & 0x7F);
-                int innerLen = redPayload.Length - offset;
-                innerPayload = new byte[Math.Max(0, innerLen)];
-                if (innerLen > 0)
-                {
-                    Buffer.BlockCopy(redPayload, offset, innerPayload, 0, innerLen);
-                }
-                return true;
+                Buffer.BlockCopy(headerBytes, RTPHeader.MIN_HEADER_LEN, protectedBytes, 0, post12HeaderLen);
             }
 
-            innerPayloadType = (byte)(header & 0x7F);
-            innerPayload = new byte[redPayload.Length - 1];
-            if (innerPayload.Length > 0)
+            if (payloadBytes.Length > 0)
             {
-                Buffer.BlockCopy(redPayload, 1, innerPayload, 0, innerPayload.Length);
+                Buffer.BlockCopy(payloadBytes, 0, protectedBytes, post12HeaderLen, payloadBytes.Length);
             }
-            return true;
+
+            return protectedBytes;
         }
 
         /// <summary>
@@ -276,14 +261,16 @@ namespace SIPSorcery.Net
             int maskBytesCount = isLongMask ? RFC5109_LONG_MASK_SIZE : RFC5109_SHORT_MASK_SIZE;
             byte[] maskBytes = new byte[maskBytesCount];
 
-            // 1. Calculate Protection Length (maximum payload length across protected media packets)
-            int maxPayloadLength = 0;
+            // 1. Calculate Protection Length (maximum post-12-byte length across protected media packets per RFC 5109 §7)
+            int maxProtectedLength = 0;
+            var protectedByteBuffers = new List<byte[]>(mediaPackets.Count);
             foreach (var pkt in mediaPackets)
             {
-                byte[] payload = pkt.GetPayloadBytes();
-                if (payload != null && payload.Length > maxPayloadLength)
+                byte[] protectedBytes = GetProtectedBytes(pkt);
+                protectedByteBuffers.Add(protectedBytes);
+                if (protectedBytes.Length > maxProtectedLength)
                 {
-                    maxPayloadLength = payload.Length;
+                    maxProtectedLength = protectedBytes.Length;
                 }
             }
 
@@ -296,10 +283,13 @@ namespace SIPSorcery.Net
             uint tsRecovery = 0;
             ushort lengthRecovery = 0;
 
-            byte[] fecPayloadParity = new byte[maxPayloadLength];
+            byte[] fecPayloadParity = new byte[maxProtectedLength];
 
-            foreach (var pkt in mediaPackets)
+            for (int pIdx = 0; pIdx < mediaPackets.Count; pIdx++)
             {
+                var pkt = mediaPackets[pIdx];
+                byte[] protectedBytes = protectedByteBuffers[pIdx];
+
                 ushort diff = (ushort)(pkt.Header.SequenceNumber - snBase);
                 if (diff < maskBytesCount * 8)
                 {
@@ -313,19 +303,18 @@ namespace SIPSorcery.Net
                 ptRecovery ^= (byte)(pkt.Header.PayloadType & 0x7F);
                 tsRecovery ^= pkt.Header.Timestamp;
 
-                byte[] payload = pkt.GetPayloadBytes() ?? Array.Empty<byte>();
-                lengthRecovery ^= (ushort)payload.Length;
+                lengthRecovery ^= (ushort)protectedBytes.Length;
 
-                for (int i = 0; i < payload.Length; i++)
+                for (int i = 0; i < protectedBytes.Length; i++)
                 {
-                    fecPayloadParity[i] ^= payload[i];
+                    fecPayloadParity[i] ^= protectedBytes[i];
                 }
             }
 
             // 3. Assemble RFC 5109 Payload
             // FEC Header (10 bytes) + FEC Level 0 Header (2 bytes length + maskBytesCount) + Parity Payload
             int level0HeaderLength = 2 + maskBytesCount;
-            int rfc5109Length = RFC5109_FEC_HEADER_SIZE + level0HeaderLength + maxPayloadLength;
+            int rfc5109Length = RFC5109_FEC_HEADER_SIZE + level0HeaderLength + maxProtectedLength;
             byte[] rfc5109Payload = new byte[rfc5109Length];
 
             // Byte 0: E (bit 7 = 0), L (bit 6 = 1 for long mask, 0 for short), P, X, CC
@@ -349,13 +338,13 @@ namespace SIPSorcery.Net
 
             // Level 0 Header:
             // Bytes 10-11: Protection Length
-            BinaryPrimitives.WriteUInt16BigEndian(rfc5109Payload.AsSpan(10), (ushort)maxPayloadLength);
+            BinaryPrimitives.WriteUInt16BigEndian(rfc5109Payload.AsSpan(10), (ushort)maxProtectedLength);
 
             // Bytes 12 to 12+maskBytesCount-1: Mask
             Buffer.BlockCopy(maskBytes, 0, rfc5109Payload, 12, maskBytesCount);
 
             // Bytes (12+maskBytesCount) to end: Parity Payload
-            Buffer.BlockCopy(fecPayloadParity, 0, rfc5109Payload, 12 + maskBytesCount, maxPayloadLength);
+            Buffer.BlockCopy(fecPayloadParity, 0, rfc5109Payload, 12 + maskBytesCount, maxProtectedLength);
 
             // 4. Wrap RFC 5109 payload into RFC 2198 RED format
             byte[] redPayload = WrapInRed(rfc5109Payload, (byte)UlpfecPayloadType);

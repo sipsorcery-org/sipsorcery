@@ -28,6 +28,7 @@ namespace SIPSorcery.Net
         private long _repairBytesSent;
         private long _packetsDroppedByImpairment;
         private long _transportErrors;
+        private long _packetsRecovered;
 
         /// <summary>
         /// Total primary media packets accepted and submitted to transport.
@@ -53,6 +54,11 @@ namespace SIPSorcery.Net
         /// Total RFC 5109 repair bytes submitted to transport (including RED and RTP headers).
         /// </summary>
         public long RepairBytesSent => Interlocked.Read(ref _repairBytesSent);
+
+        /// <summary>
+        /// Total lost RTP media packets successfully reconstructed and recovered by the ULPFEC decoder.
+        /// </summary>
+        public long PacketsRecovered => Interlocked.Read(ref _packetsRecovered);
 
         /// <summary>
         /// Total packets deliberately dropped by the test impairment hook.
@@ -105,6 +111,11 @@ namespace SIPSorcery.Net
             Interlocked.Add(ref _repairBytesSent, byteCount);
         }
 
+        public void RecordPacketRecovered()
+        {
+            Interlocked.Increment(ref _packetsRecovered);
+        }
+
         public void RecordDroppedByImpairment()
         {
             Interlocked.Increment(ref _packetsDroppedByImpairment);
@@ -124,12 +135,14 @@ namespace SIPSorcery.Net
             Interlocked.Exchange(ref _repairBytesSent, 0);
             Interlocked.Exchange(ref _packetsDroppedByImpairment, 0);
             Interlocked.Exchange(ref _transportErrors, 0);
+            Interlocked.Exchange(ref _packetsRecovered, 0);
         }
 
         public override string ToString()
         {
             return $"MediaPackets: {MediaPacketsSent}, MediaBytes: {MediaBytesSent}, " +
                    $"FecGenerated: {RepairPacketsGenerated}, FecSent: {RepairPacketsSent}, FecBytes: {RepairBytesSent}, " +
+                   $"Recovered: {PacketsRecovered}, " +
                    $"OverheadPkt: {PacketOverheadRatio:P1}, OverheadBytes: {ByteOverheadRatio:P1}, " +
                    $"ImpairmentDrops: {PacketsDroppedByImpairment}, Errors: {TransportErrors}";
         }

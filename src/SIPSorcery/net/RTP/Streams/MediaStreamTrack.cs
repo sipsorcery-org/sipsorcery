@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: MediaStreamTrack.cs
 //
 // Description: Represents a one-way audio or video stream. In a typical call

@@ -27,6 +27,14 @@ namespace SIPSorcery.Net
     {
         private static readonly ILogger logger = LogFactory.CreateLogger<RtpUlpfecDecoder>();
 
+        public const int MAX_MEDIA_HISTORY = 128;
+        public const int MAX_PENDING_FEC = 32;
+
+        private readonly object _lock = new object();
+        private readonly Dictionary<ushort, RTPPacket> _receivedMedia = new Dictionary<ushort, RTPPacket>();
+        private readonly Queue<ushort> _receivedMediaOrder = new Queue<ushort>();
+        private readonly List<RTPPacket> _pendingFec = new List<RTPPacket>();
+
         public int RedPayloadType { get; set; }
         public int UlpfecPayloadType { get; set; }
 
@@ -34,6 +42,116 @@ namespace SIPSorcery.Net
         {
             RedPayloadType = redPayloadType;
             UlpfecPayloadType = ulpfecPayloadType;
+        }
+
+        /// <summary>
+        /// Registers a received media packet with the sliding window and checks if any pending
+        /// FEC packets can now recover missing packets.
+        /// </summary>
+        public void AddReceivedMedia(RTPPacket mediaPacket, out List<RTPPacket> recoveredPackets)
+        {
+            recoveredPackets = new List<RTPPacket>();
+            if (mediaPacket == null)
+            {
+                return;
+            }
+
+            lock (_lock)
+            {
+                ushort seq = mediaPacket.Header.SequenceNumber;
+                if (!_receivedMedia.ContainsKey(seq))
+                {
+                    _receivedMedia[seq] = mediaPacket;
+                    _receivedMediaOrder.Enqueue(seq);
+
+                    while (_receivedMediaOrder.Count > MAX_MEDIA_HISTORY)
+                    {
+                        ushort oldest = _receivedMediaOrder.Dequeue();
+                        _receivedMedia.Remove(oldest);
+                    }
+                }
+
+                // Check pending FEC packets to see if any can now recover a missing media packet
+                CheckPendingFecRecovery(recoveredPackets);
+            }
+        }
+
+        /// <summary>
+        /// Registers a received FEC repair packet and immediately attempts recovery of any
+        /// missing media packets. If recovery is not yet possible, the FEC packet is retained
+        /// in the pending FEC buffer.
+        /// </summary>
+        public void AddReceivedFec(RTPPacket fecPacket, out List<RTPPacket> recoveredPackets)
+        {
+            recoveredPackets = new List<RTPPacket>();
+            if (fecPacket == null)
+            {
+                return;
+            }
+
+            lock (_lock)
+            {
+                if (TryRecoverPacket(fecPacket, _receivedMedia, out var recovered))
+                {
+                    recoveredPackets.Add(recovered);
+                    ushort recSeq = recovered.Header.SequenceNumber;
+                    if (!_receivedMedia.ContainsKey(recSeq))
+                    {
+                        _receivedMedia[recSeq] = recovered;
+                        _receivedMediaOrder.Enqueue(recSeq);
+                    }
+
+                    // Iterative recovery for any other pending FEC packets
+                    CheckPendingFecRecovery(recoveredPackets);
+                }
+                else
+                {
+                    _pendingFec.Add(fecPacket);
+                    while (_pendingFec.Count > MAX_PENDING_FEC)
+                    {
+                        _pendingFec.RemoveAt(0);
+                    }
+                }
+            }
+        }
+
+        private void CheckPendingFecRecovery(List<RTPPacket> recoveredPackets)
+        {
+            bool recoveredAny;
+            do
+            {
+                recoveredAny = false;
+                for (int i = _pendingFec.Count - 1; i >= 0; i--)
+                {
+                    var fec = _pendingFec[i];
+                    if (TryRecoverPacket(fec, _receivedMedia, out var recovered))
+                    {
+                        _pendingFec.RemoveAt(i);
+                        recoveredPackets.Add(recovered);
+                        ushort recSeq = recovered.Header.SequenceNumber;
+                        if (!_receivedMedia.ContainsKey(recSeq))
+                        {
+                            _receivedMedia[recSeq] = recovered;
+                            _receivedMediaOrder.Enqueue(recSeq);
+                        }
+                        recoveredAny = true;
+                        break; // Loop again with updated media history
+                    }
+                }
+            } while (recoveredAny);
+        }
+
+        /// <summary>
+        /// Resets the sliding-window media and pending FEC buffers.
+        /// </summary>
+        public void Reset()
+        {
+            lock (_lock)
+            {
+                _receivedMedia.Clear();
+                _receivedMediaOrder.Clear();
+                _pendingFec.Clear();
+            }
         }
 
         /// <summary>
@@ -227,40 +345,41 @@ namespace SIPSorcery.Net
                 ptRec ^= (byte)(present.Header.PayloadType & 0x7F);
                 tsRec ^= present.Header.Timestamp;
 
-                byte[] presPayload = present.GetPayloadBytes() ?? Array.Empty<byte>();
-                lenRec ^= (ushort)presPayload.Length;
+                byte[] presProtected = RtpUlpfecEncoder.GetProtectedBytes(present);
+                lenRec ^= (ushort)presProtected.Length;
 
-                for (int i = 0; i < presPayload.Length && i < recoveredPayloadParity.Length; i++)
+                for (int i = 0; i < presProtected.Length && i < recoveredPayloadParity.Length; i++)
                 {
-                    recoveredPayloadParity[i] ^= presPayload[i];
+                    recoveredPayloadParity[i] ^= presProtected[i];
                 }
             }
 
-            int recoveredPayloadLength = lenRec;
-            if (recoveredPayloadLength < 0 || recoveredPayloadLength > recoveredPayloadParity.Length)
+            int recoveredPost12Length = lenRec;
+            if (recoveredPost12Length < 0 || recoveredPost12Length > recoveredPayloadParity.Length)
             {
-                logger.LogWarning("Invalid recovered payload length {Length} (exceeds parity length {ParityLength}).", recoveredPayloadLength, recoveredPayloadParity.Length);
+                logger.LogWarning("Invalid recovered post-12 payload length {Length} (exceeds parity length {ParityLength}).", recoveredPost12Length, recoveredPayloadParity.Length);
                 return false;
             }
 
-            byte[] finalPayload = new byte[recoveredPayloadLength];
-            if (recoveredPayloadLength > 0)
+            // Reconstruct full RFC 3550 RTP packet (12-byte fixed header + recovered post-12 bytes per RFC 5109 §9)
+            byte[] fullPacket = new byte[RTPHeader.MIN_HEADER_LEN + recoveredPost12Length];
+            ushort firstWord = (ushort)((2 << 14) |
+                                       ((pRec & 0x01) << 13) |
+                                       ((xRec & 0x01) << 12) |
+                                       ((ccRec & 0x0F) << 8) |
+                                       ((mRec & 0x01) << 7) |
+                                       (ptRec & 0x7F));
+            BinaryPrimitives.WriteUInt16BigEndian(fullPacket.AsSpan(0), firstWord);
+            BinaryPrimitives.WriteUInt16BigEndian(fullPacket.AsSpan(2), missingSeqNum);
+            BinaryPrimitives.WriteUInt32BigEndian(fullPacket.AsSpan(4), tsRec);
+            BinaryPrimitives.WriteUInt32BigEndian(fullPacket.AsSpan(8), fecPacket.Header.SyncSource);
+
+            if (recoveredPost12Length > 0)
             {
-                Buffer.BlockCopy(recoveredPayloadParity, 0, finalPayload, 0, recoveredPayloadLength);
+                Buffer.BlockCopy(recoveredPayloadParity, 0, fullPacket, RTPHeader.MIN_HEADER_LEN, recoveredPost12Length);
             }
 
-            recoveredPacket = new RTPPacket(new ArraySegment<byte>(finalPayload), 0);
-            recoveredPacket.Header.Version = 2;
-            recoveredPacket.Header.PaddingFlag = pRec & 0x01;
-            recoveredPacket.Header.HeaderExtensionFlag = xRec & 0x01;
-            recoveredPacket.Header.CSRCCount = ccRec & 0x0F;
-            recoveredPacket.Header.MarkerBit = mRec & 0x01;
-            recoveredPacket.Header.PayloadType = ptRec & 0x7F;
-            recoveredPacket.Header.SequenceNumber = missingSeqNum;
-            recoveredPacket.Header.Timestamp = tsRec;
-            recoveredPacket.Header.SyncSource = fecPacket.Header.SyncSource;
-            recoveredPacket.Payload = finalPayload;
-
+            recoveredPacket = new RTPPacket(fullPacket);
             return true;
         }
     }
