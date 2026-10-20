@@ -90,7 +90,7 @@ namespace SIPSorcery.Net.UnitTests
                 int changes = 0;
                 oneWay.Nominate();
                 await WaitFor(() => IsDestination(channel, oneWay), "connected over the one-way path");
-                channel.OnIceConnectionStateChange += _ => changes++;
+                var moved = OnMove(channel, () => changes++);
 
                 var nominated = DateTime.Now;
                 await WaitFor(() =>
@@ -102,7 +102,7 @@ namespace SIPSorcery.Net.UnitTests
 
                 // Within DTLS's first retransmit (1 s): the one-way path never answered, so it
                 // gets the short grace, not the full one.
-                var took = DateTime.Now.Subtract(nominated);
+                var took = MovedAt(moved).Subtract(nominated);
                 Assert.True(took.TotalMilliseconds < 1000, $"moved after {took.TotalMilliseconds:F0} ms");
 
                 for (int i = 0; i < 20; i++)
@@ -199,7 +199,9 @@ namespace SIPSorcery.Net.UnitTests
                 // grace pass before the peer nominates anything.
                 inUse.AnswersChecks = false;
                 await Task.Delay(4_500);
+                await WaitFor(() => IsPastGrace(channel.NominatedEntry), "the path in use past its grace");
 
+                var moved = OnMove(channel);
                 var nominated = DateTime.Now;
                 while (!IsDestination(channel, other) && DateTime.Now.Subtract(nominated).TotalSeconds < 5)
                 {
@@ -207,7 +209,7 @@ namespace SIPSorcery.Net.UnitTests
                     await Task.Delay(300);
                 }
 
-                var took = DateTime.Now.Subtract(nominated);
+                var took = MovedAt(moved).Subtract(nominated);
                 Assert.True(IsDestination(channel, other), $"still on {channel.NominatedEntry.RemoteCandidate.ToShortString()} after {took.TotalMilliseconds:F0} ms");
                 Assert.True(took.TotalMilliseconds < 900, $"moved {took.TotalMilliseconds:F0} ms after the first nomination");
             }
@@ -248,7 +250,9 @@ namespace SIPSorcery.Net.UnitTests
                 // nominates the path that works now.
                 inUse.AnswersChecks = false;
                 await Task.Delay(4_500);
+                await WaitFor(() => IsPastGrace(channel.NominatedEntry), "the path in use past its grace");
 
+                var moved = OnMove(channel);
                 var nominated = DateTime.Now;
                 var visitedStale = false;
                 while (!IsDestination(channel, current) && DateTime.Now.Subtract(nominated).TotalSeconds < 5)
@@ -258,7 +262,7 @@ namespace SIPSorcery.Net.UnitTests
                     visitedStale |= IsDestination(channel, stale);
                 }
 
-                var took = DateTime.Now.Subtract(nominated);
+                var took = MovedAt(moved).Subtract(nominated);
                 Assert.False(visitedStale, "moved to the stale path");
                 Assert.True(IsDestination(channel, current), $"still on {channel.NominatedEntry.RemoteCandidate.ToShortString()} after {took.TotalMilliseconds:F0} ms");
                 Assert.True(took.TotalMilliseconds < 900, $"moved {took.TotalMilliseconds:F0} ms after the first nomination");
@@ -315,6 +319,35 @@ namespace SIPSorcery.Net.UnitTests
         private static bool IsDestination(RtpIceChannel channel, PeerSocket peer) =>
             channel.IceConnectionState == RTCIceConnectionState.connected &&
             channel.NominatedEntry?.RemoteCandidate.DestinationEndPoint?.Port == peer.Port;
+
+        /// <summary>
+        /// When the destination next moves, as the channel itself reports it: the polling
+        /// loops only see it on their next pass, late by up to a delay of theirs.
+        /// </summary>
+        private static TaskCompletionSource<DateTime> OnMove(RtpIceChannel channel, Action onChange = null)
+        {
+            var moved = new TaskCompletionSource<DateTime>(TaskCreationOptions.RunContinuationsAsynchronously);
+            channel.OnIceConnectionStateChange += _ =>
+            {
+                moved.TrySetResult(DateTime.Now);
+                onChange?.Invoke();
+            };
+            return moved;
+        }
+
+        /// <summary>When the destination moved, or now if the channel has yet to report it.</summary>
+        private static DateTime MovedAt(TaskCompletionSource<DateTime> moved) =>
+            moved.Task.IsCompleted ? moved.Task.Result : DateTime.Now;
+
+        /// <summary>
+        /// Whether a check on the entry has gone unanswered for longer than the channel's grace
+        /// (RENOMINATION_CHECK_GRACE_MS, 1 s). A fixed wait for the periodic check and its grace
+        /// is not enough on a loaded CI runner, where the check timer can fire late.
+        /// </summary>
+        private static bool IsPastGrace(ChecklistEntry entry) =>
+            entry.UnansweredSince != DateTime.MinValue &&
+            entry.LastResponseAt < entry.UnansweredSince &&
+            DateTime.Now.Subtract(entry.UnansweredSince).TotalMilliseconds > 1_100;
 
         private static async Task WaitFor(Func<bool> condition, string what)
         {
