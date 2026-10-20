@@ -74,83 +74,9 @@ public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
 
             image.Mutate(ctx =>
             {
-                // 1) Draw border - need to draw each side separately like in original
-                var borderColor = frameConfig.BorderColour;
-                var borderWidth = BORDER_WIDTH;
-                var borderPen = new SolidPen(borderColor, borderWidth);
+                ctx.Paint(canvas => DrawAnnotations(canvas, frameConfig, width, height, pixelHeight));
 
-                ctx.DrawLine(borderPen, new PointF(0, 0), new PointF(0, height));
-                ctx.DrawLine(borderPen, new PointF(0, 0), new PointF(width, 0));
-                ctx.DrawLine(borderPen, new PointF(width, 0), new PointF(width, height));
-                ctx.DrawLine(borderPen, new PointF(0, height), new PointF(width, height));
-
-                // 2) Add transparency overlay
-                var overlayColor = new Rgba32(128, 128, 128, (byte)frameConfig.Opacity);
-                ctx.Fill(overlayColor, new RectangleF(0, 0, width, height));
-
-                // 3) Add header and footer text with outline effect
-                var textOptions = new RichTextOptions(_font)
-                {
-                    Origin = new PointF(width / 2f, TEXT_MARGIN_PIXELS),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Top
-                };
-
-                // Draw title with outline
-                if (!string.IsNullOrEmpty(frameConfig.Title))
-                {
-                    // Outline (draw multiple times with offset)
-                    for (int i = 0; i < 4; i++)
-                    {
-                        var offset = i switch
-                        {
-                            0 => new PointF(-1, 0),
-                            1 => new PointF(1, 0),
-                            2 => new PointF(0, -1),
-                            3 => new PointF(0, 1),
-                            _ => PointF.Empty
-                        };
-
-                        textOptions.Origin = new PointF(width / 2f + offset.X, TEXT_MARGIN_PIXELS + offset.Y);
-                        ctx.DrawText(textOptions, frameConfig.Title, Color.Black);
-                    }
-
-                    // Main text
-                    textOptions.Origin = new PointF(width / 2f, TEXT_MARGIN_PIXELS);
-                    ctx.DrawText(textOptions, frameConfig.Title, Color.White);
-                }
-
-                // Draw timestamp with outline
-                var timestamp = DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff");
-                var footerOptions = new RichTextOptions(_font)
-                {
-                    Origin = new PointF(width / 2f, height - TEXT_FONT_SIZE - TEXT_MARGIN_PIXELS),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Top
-                };
-
-                // Outline
-                for (int i = 0; i < 4; i++)
-                {
-                    var offset = i switch
-                    {
-                        0 => new PointF(-1, 0),
-                        1 => new PointF(1, 0),
-                        2 => new PointF(0, -1),
-                        3 => new PointF(0, 1),
-                        _ => PointF.Empty
-                    };
-
-                    footerOptions.Origin = new PointF(width / 2f + offset.X,
-                        height - pixelHeight - TEXT_MARGIN_PIXELS + offset.Y);
-                    ctx.DrawText(footerOptions, timestamp, Color.Black);
-                }
-
-                // Main text
-                footerOptions.Origin = new PointF(width / 2f, height - pixelHeight - TEXT_MARGIN_PIXELS);
-                ctx.DrawText(footerOptions, timestamp, Color.White);
-
-                // 4) Draw QR code if present
+                // Draw QR code if present
                 if (_qrTask?.IsCompletedSuccessfully == true)
                 {
                     _qrImage ??= _qrTask.Result;
@@ -168,6 +94,85 @@ public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
             _logger.LogError("Exception GetAnnotatedBitmap. " + excp);
             return null;
         }
+    }
+
+    private void DrawAnnotations(DrawingCanvas canvas, PaidVideoFrameConfig frameConfig, int width, int height, int pixelHeight)
+    {
+        // 1) Draw border - need to draw each side separately like in original
+        var borderColor = frameConfig.BorderColour;
+        var borderWidth = BORDER_WIDTH;
+        var borderPen = new SolidPen(borderColor, borderWidth);
+
+        canvas.DrawLine(borderPen, new PointF(0, 0), new PointF(0, height));
+        canvas.DrawLine(borderPen, new PointF(0, 0), new PointF(width, 0));
+        canvas.DrawLine(borderPen, new PointF(width, 0), new PointF(width, height));
+        canvas.DrawLine(borderPen, new PointF(0, height), new PointF(width, height));
+
+        // 2) Add transparency overlay
+        var overlayColor = new Rgba32(128, 128, 128, (byte)frameConfig.Opacity);
+        canvas.Fill(Brushes.Solid(Color.FromPixel(overlayColor)), new Rectangle(0, 0, width, height));
+
+        // 3) Add header and footer text with outline effect
+        var textOptions = new RichTextOptions(_font)
+        {
+            Origin = new PointF(width / 2f, TEXT_MARGIN_PIXELS),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top
+        };
+
+        // Draw title with outline
+        if (!string.IsNullOrEmpty(frameConfig.Title))
+        {
+            // Outline (draw multiple times with offset)
+            for (int i = 0; i < 4; i++)
+            {
+                var offset = i switch
+                {
+                    0 => new PointF(-1, 0),
+                    1 => new PointF(1, 0),
+                    2 => new PointF(0, -1),
+                    3 => new PointF(0, 1),
+                    _ => PointF.Empty
+                };
+
+                textOptions.Origin = new PointF(width / 2f + offset.X, TEXT_MARGIN_PIXELS + offset.Y);
+                canvas.DrawText(textOptions, frameConfig.Title, Brushes.Solid(Color.Black), null);
+            }
+
+            // Main text
+            textOptions.Origin = new PointF(width / 2f, TEXT_MARGIN_PIXELS);
+            canvas.DrawText(textOptions, frameConfig.Title, Brushes.Solid(Color.White), null);
+        }
+
+        // Draw timestamp with outline
+        var timestamp = DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff");
+        var footerOptions = new RichTextOptions(_font)
+        {
+            Origin = new PointF(width / 2f, height - TEXT_FONT_SIZE - TEXT_MARGIN_PIXELS),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top
+        };
+
+        // Outline
+        for (int i = 0; i < 4; i++)
+        {
+            var offset = i switch
+            {
+                0 => new PointF(-1, 0),
+                1 => new PointF(1, 0),
+                2 => new PointF(0, -1),
+                3 => new PointF(0, 1),
+                _ => PointF.Empty
+            };
+
+            footerOptions.Origin = new PointF(width / 2f + offset.X,
+                height - pixelHeight - TEXT_MARGIN_PIXELS + offset.Y);
+            canvas.DrawText(footerOptions, timestamp, Brushes.Solid(Color.Black), null);
+        }
+
+        // Main text
+        footerOptions.Origin = new PointF(width / 2f, height - pixelHeight - TEXT_MARGIN_PIXELS);
+        canvas.DrawText(footerOptions, timestamp, Brushes.Solid(Color.White), null);
     }
 
     private void DisposeQrCode()
