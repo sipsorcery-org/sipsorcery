@@ -15,7 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using SixLabors.ImageSharp;
+using SkiaSharp;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -66,7 +66,7 @@ public class PaymentStateMachine : IFrameConfigStateMachine
         _lightningPaymentService = lightningPaymentService;
         _paymentStateMachine = CreatePaymentStateMachine();
 
-        _paidFrameConfig = new PaidVideoFrameConfig(DateTimeOffset.Now, null, 0, Color.Green, INITIALISING_TITLE, false, FREE_IMAGE_PATH, QR_CODE_LOGO_PATH);
+        _paidFrameConfig = new PaidVideoFrameConfig(DateTimeOffset.Now, null, 0, SKColors.Green, INITIALISING_TITLE, false, FREE_IMAGE_PATH, QR_CODE_LOGO_PATH);
     }
 
     private StateMachine<PaymentStatus, PaymentStateTrigger> CreatePaymentStateMachine()
@@ -202,7 +202,7 @@ public class PaymentStateMachine : IFrameConfigStateMachine
             case PaymentStatus.FreePeriod:
                 return _paidFrameConfig with
                 {
-                    BorderColour = Color.Pink,
+                    BorderColour = SKColors.Pink,
                     Title = FREE_PERIOD_TITLE,
                     IsPaid = false,
                     LightningPaymentRequest = null,
@@ -213,7 +213,7 @@ public class PaymentStateMachine : IFrameConfigStateMachine
                 int opacityFree = GetOpacity(MAX_ALPHA_TRANSPARENCY, TRANSITION_PERIOD_SECONDS, secondsRemaining);
                 return _paidFrameConfig with
                 {
-                    BorderColour = Color.Orange,
+                    BorderColour = SKColors.Orange,
                     Title = TRANSITION_PERIOD_TITLE,
                     IsPaid = false,
                     LightningPaymentRequest = lightningPaymentRequest,
@@ -223,7 +223,7 @@ public class PaymentStateMachine : IFrameConfigStateMachine
             case PaymentStatus.FreeWaitingForPayment:
                 return _paidFrameConfig with
                 {
-                    BorderColour = Color.Red,
+                    BorderColour = SKColors.Red,
                     Title = WAITING_FOR_PAYMENT_PERIOD_TITLE,
                     IsPaid = false,
                     LightningPaymentRequest = lightningPaymentRequest,
@@ -233,7 +233,7 @@ public class PaymentStateMachine : IFrameConfigStateMachine
             case PaymentStatus.PaidPeriod:
                 return _paidFrameConfig with
                 {
-                    BorderColour = Color.Blue,
+                    BorderColour = SKColors.Blue,
                     Title = PAID_PERIOD_TITLE,
                     IsPaid = true,
                     LightningPaymentRequest = null,
@@ -244,7 +244,7 @@ public class PaymentStateMachine : IFrameConfigStateMachine
                 int opacityPaid = GetOpacity(MAX_ALPHA_TRANSPARENCY, TRANSITION_PERIOD_SECONDS, secondsRemaining);
                 return _paidFrameConfig with
                 {
-                    BorderColour = Color.Orange,
+                    BorderColour = SKColors.Orange,
                     Title = TRANSITION_PERIOD_TITLE,
                     IsPaid = true,
                     LightningPaymentRequest = lightningPaymentRequest,
@@ -254,7 +254,7 @@ public class PaymentStateMachine : IFrameConfigStateMachine
             case PaymentStatus.PaidWaitingForPayment:
                 return _paidFrameConfig with
                 {
-                    BorderColour = Color.Red,
+                    BorderColour = SKColors.Red,
                     Title = WAITING_FOR_PAYMENT_PERIOD_TITLE,
                     IsPaid = true,
                     LightningPaymentRequest = lightningPaymentRequest,
@@ -264,7 +264,7 @@ public class PaymentStateMachine : IFrameConfigStateMachine
             default:
                 return _paidFrameConfig with
                 {
-                    BorderColour = Color.Red,
+                    BorderColour = SKColors.Red,
                     Title = WAITING_FOR_PAYMENT_PERIOD_TITLE,
                     IsPaid = true,
                     LightningPaymentRequest = lightningPaymentRequest,

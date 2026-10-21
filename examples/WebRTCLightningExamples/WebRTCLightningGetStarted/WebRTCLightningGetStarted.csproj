@@ -33,7 +33,8 @@
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Extensions.Hosting" />
     <PackageReference Include="Serilog.Sinks.Console" />
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
     <PackageReference Include="Stateless" />
     <PackageReference Include="System.Reactive" />
   </ItemGroup>

@@ -9,16 +9,13 @@
 // 
 // History:
 // 26 Apr 2025	Aaron Clauson	Ported AnnotatedBitmapService to use fully managed ImageSharp library.
+// 21 Oct 2026	Aaron Clauson	Ported from ImageSharp to SkiaSharp.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using SixLabors.Fonts;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
+using SkiaSharp;
 using Net.Codecrete.QrCodeGenerator;
 using System;
 using Microsoft.Extensions.Logging;
@@ -28,7 +25,7 @@ namespace demo;
 
 public interface IAnnotatedBitmapGenerator
 {
-    Image<Rgba32>? GetAnnotatedBitmap(PaidVideoFrameConfig frameConfig);
+    SKBitmap? GetAnnotatedBitmap(PaidVideoFrameConfig frameConfig);
 }
 
 public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
@@ -41,20 +38,28 @@ public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
     private const float TEXT_FONT_SIZE = 16.0f;
     private const string FONT_FAMILY = "Verdana";
 
+    private static readonly SKPoint[] _outlineOffsets =
+    {
+        new SKPoint(-1, 0),
+        new SKPoint(1, 0),
+        new SKPoint(0, -1),
+        new SKPoint(0, 1)
+    };
+
     private readonly ILogger _logger;
-    private readonly Font _font;
+    private readonly SKFont _font;
 
     private string? _lastPaymentRequest;
-    private Task<Image>? _qrTask;
-    private Image? _qrImage;
+    private Task<SKBitmap>? _qrTask;
+    private SKBitmap? _qrImage;
 
     public AnnotatedBitmapService(ILogger<AnnotatedBitmapService> logger)
     {
         _logger = logger;
-        _font =  SystemFonts.CreateFont(FONT_FAMILY, TEXT_FONT_SIZE, FontStyle.Bold);
+        _font = new SKFont(SKTypeface.FromFamilyName(FONT_FAMILY, SKFontStyle.Bold), TEXT_FONT_SIZE);
     }
 
-    public Image<Rgba32>? GetAnnotatedBitmap(PaidVideoFrameConfig frameConfig)
+    public SKBitmap? GetAnnotatedBitmap(PaidVideoFrameConfig frameConfig)
     {
         if (frameConfig.LightningPaymentRequest != _lastPaymentRequest)
         {
@@ -67,25 +72,57 @@ public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
 
         try
         {
-            var image = Image.Load<Rgba32>(frameConfig.ImagePath);
-            int width = image.Width;
-            int height = image.Height;
+            using var source = SKBitmap.Decode(frameConfig.ImagePath)
+                ?? throw new ApplicationException($"Failed to decode image {frameConfig.ImagePath}.");
+
+            int width = source.Width;
+            int height = source.Height;
             int pixelHeight = (int)(height * TEXT_SIZE_PERCENTAGE);
 
-            image.Mutate(ctx =>
+            var image = new SKBitmap(new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Premul));
+
+            using var canvas = new SKCanvas(image);
+            canvas.DrawBitmap(source, 0, 0);
+
+            // 1) Draw border - need to draw each side separately like in original
+            using (var borderPaint = new SKPaint
             {
-                ctx.Paint(canvas => DrawAnnotations(canvas, frameConfig, width, height, pixelHeight));
+                Color = frameConfig.BorderColour,
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = BORDER_WIDTH,
+                IsAntialias = true
+            })
+            {
+                canvas.DrawLine(0, 0, 0, height, borderPaint);
+                canvas.DrawLine(0, 0, width, 0, borderPaint);
+                canvas.DrawLine(width, 0, width, height, borderPaint);
+                canvas.DrawLine(0, height, width, height, borderPaint);
+            }
 
-                // Draw QR code if present
-                if (_qrTask?.IsCompletedSuccessfully == true)
-                {
-                    _qrImage ??= _qrTask.Result;
+            // 2) Add transparency overlay
+            using (var overlayPaint = new SKPaint { Color = new SKColor(128, 128, 128, (byte)frameConfig.Opacity) })
+            {
+                canvas.DrawRect(0, 0, width, height, overlayPaint);
+            }
 
-                    int xCenter = (width - _qrImage.Width) / 2;
-                    int yCenter = (height - _qrImage.Height) / 2;
-                    ctx.DrawImage(_qrImage, new Point(xCenter, yCenter), 1f);
-                }
-            });
+            // 3) Add header and footer text with outline effect
+            if (!string.IsNullOrEmpty(frameConfig.Title))
+            {
+                DrawOutlinedText(canvas, frameConfig.Title, width / 2f, TEXT_MARGIN_PIXELS);
+            }
+
+            var timestamp = DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff");
+            DrawOutlinedText(canvas, timestamp, width / 2f, height - pixelHeight - TEXT_MARGIN_PIXELS);
+
+            // 4) Draw QR code if present
+            if (_qrTask?.IsCompletedSuccessfully == true)
+            {
+                _qrImage ??= _qrTask.Result;
+
+                int xCenter = (width - _qrImage.Width) / 2;
+                int yCenter = (height - _qrImage.Height) / 2;
+                canvas.DrawBitmap(_qrImage, xCenter, yCenter);
+            }
 
             return image;
         }
@@ -96,83 +133,25 @@ public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
         }
     }
 
-    private void DrawAnnotations(DrawingCanvas canvas, PaidVideoFrameConfig frameConfig, int width, int height, int pixelHeight)
+    /// <summary>
+    /// Draws horizontally centred white text with a black outline. The y coordinate is the top of the
+    /// text rather than the baseline that SkiaSharp draws from.
+    /// </summary>
+    private void DrawOutlinedText(SKCanvas canvas, string text, float centreX, float top)
     {
-        // 1) Draw border - need to draw each side separately like in original
-        var borderColor = frameConfig.BorderColour;
-        var borderWidth = BORDER_WIDTH;
-        var borderPen = new SolidPen(borderColor, borderWidth);
+        float baseline = top - _font.Metrics.Ascent;
 
-        canvas.DrawLine(borderPen, new PointF(0, 0), new PointF(0, height));
-        canvas.DrawLine(borderPen, new PointF(0, 0), new PointF(width, 0));
-        canvas.DrawLine(borderPen, new PointF(width, 0), new PointF(width, height));
-        canvas.DrawLine(borderPen, new PointF(0, height), new PointF(width, height));
+        using var paint = new SKPaint { IsAntialias = true, Color = SKColors.Black };
 
-        // 2) Add transparency overlay
-        var overlayColor = new Rgba32(128, 128, 128, (byte)frameConfig.Opacity);
-        canvas.Fill(Brushes.Solid(Color.FromPixel(overlayColor)), new Rectangle(0, 0, width, height));
-
-        // 3) Add header and footer text with outline effect
-        var textOptions = new RichTextOptions(_font)
+        // Outline (draw multiple times with offset)
+        foreach (var offset in _outlineOffsets)
         {
-            Origin = new PointF(width / 2f, TEXT_MARGIN_PIXELS),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Top
-        };
-
-        // Draw title with outline
-        if (!string.IsNullOrEmpty(frameConfig.Title))
-        {
-            // Outline (draw multiple times with offset)
-            for (int i = 0; i < 4; i++)
-            {
-                var offset = i switch
-                {
-                    0 => new PointF(-1, 0),
-                    1 => new PointF(1, 0),
-                    2 => new PointF(0, -1),
-                    3 => new PointF(0, 1),
-                    _ => PointF.Empty
-                };
-
-                textOptions.Origin = new PointF(width / 2f + offset.X, TEXT_MARGIN_PIXELS + offset.Y);
-                canvas.DrawText(textOptions, frameConfig.Title, Brushes.Solid(Color.Black), null);
-            }
-
-            // Main text
-            textOptions.Origin = new PointF(width / 2f, TEXT_MARGIN_PIXELS);
-            canvas.DrawText(textOptions, frameConfig.Title, Brushes.Solid(Color.White), null);
-        }
-
-        // Draw timestamp with outline
-        var timestamp = DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff");
-        var footerOptions = new RichTextOptions(_font)
-        {
-            Origin = new PointF(width / 2f, height - TEXT_FONT_SIZE - TEXT_MARGIN_PIXELS),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Top
-        };
-
-        // Outline
-        for (int i = 0; i < 4; i++)
-        {
-            var offset = i switch
-            {
-                0 => new PointF(-1, 0),
-                1 => new PointF(1, 0),
-                2 => new PointF(0, -1),
-                3 => new PointF(0, 1),
-                _ => PointF.Empty
-            };
-
-            footerOptions.Origin = new PointF(width / 2f + offset.X,
-                height - pixelHeight - TEXT_MARGIN_PIXELS + offset.Y);
-            canvas.DrawText(footerOptions, timestamp, Brushes.Solid(Color.Black), null);
+            canvas.DrawText(text, centreX + offset.X, baseline + offset.Y, SKTextAlign.Center, _font, paint);
         }
 
         // Main text
-        footerOptions.Origin = new PointF(width / 2f, height - pixelHeight - TEXT_MARGIN_PIXELS);
-        canvas.DrawText(footerOptions, timestamp, Brushes.Solid(Color.White), null);
+        paint.Color = SKColors.White;
+        canvas.DrawText(text, centreX, baseline, SKTextAlign.Center, _font, paint);
     }
 
     private void DisposeQrCode()
@@ -194,24 +173,30 @@ public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
         _lastPaymentRequest = paymentRequest;
     }
 
-    private Image CreateQrImageWithLogo(string pr, string logoPath)
+    private SKBitmap CreateQrImageWithLogo(string pr, string logoPath)
     {
-        const float logoWidth = 0.25f; // logo will have 15% the width of the QR code 
+        const float logoWidth = 0.25f; // logo will have 25% the width of the QR code
 
         var qr = QrCode.EncodeText(pr, QrCode.Ecc.Medium);
 
         var image = qr.ToBitmap(scale: QR_CODE_SCALE, border: QR_CODE_BORDER);
-        var logo = Image.Load(logoPath);
+        using var logo = SKBitmap.Decode(logoPath);
 
-        // resize logo
-        var w = (int)Math.Round(image.Width * logoWidth);
-        logo.Mutate(logo => logo.Resize(w, 0));
+        if (logo != null)
+        {
+            // resize logo, preserving its aspect ratio
+            var w = (int)Math.Round(image.Width * logoWidth);
+            var h = (int)Math.Round((double)logo.Height * w / logo.Width);
+            using var resizedLogo = logo.Resize(new SKSizeI(w, h), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
 
-        // draw logo in center
-        var topLeft = new Point((image.Width - logo.Width) / 2, (image.Height - logo.Height) / 2);
-        image.Mutate(img => img.DrawImage(logo, topLeft, 1));
-
-        //logo.Dispose();
+            // draw logo in center
+            using var canvas = new SKCanvas(image);
+            canvas.DrawBitmap(resizedLogo, (image.Width - resizedLogo.Width) / 2, (image.Height - resizedLogo.Height) / 2);
+        }
+        else
+        {
+            _logger.LogWarning("Failed to load QR code logo from {LogoPath}.", logoPath);
+        }
 
         return image;
     }
