@@ -99,6 +99,11 @@ namespace SIPSorcery.SoftPhone
         /// Number of seconds between consecutive register requests in the event of failures or timeouts.
         /// </summary>
         public int RegisterRetryInSeconds { get; set; }
+
+        /// <summary>
+        /// Enables debug output of all rtt messages to log
+        /// </summary>
+        public bool EnableRttDumps { get; set; }
     }
 
     /// <summary>
