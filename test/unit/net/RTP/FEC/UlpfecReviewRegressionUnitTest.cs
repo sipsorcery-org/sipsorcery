@@ -13,6 +13,210 @@ namespace SIPSorcery.Net.UnitTests
         private const int FecPt = 127;
         private const uint Ssrc = 0x1234;
 
+        [Theory]
+        [InlineData(SDPMediaTypesEnum.audio, false)]
+        [InlineData(SDPMediaTypesEnum.audio, true)]
+        [InlineData(SDPMediaTypesEnum.text, false)]
+        [InlineData(SDPMediaTypesEnum.text, true)]
+        public void NonVideoRedIsDeliveredUnchanged(SDPMediaTypesEnum kind, bool videoFec)
+        {
+            using var session = new RTPSession(new RtpSessionConfig { IsMediaMultiplexed = true });
+            int clockRate = kind == SDPMediaTypesEnum.audio ? 48000 : 1000;
+            var formats = new List<SDPAudioVideoMediaFormat>
+            {
+                new SDPAudioVideoMediaFormat(kind, 98, kind == SDPMediaTypesEnum.audio ? "opus" : "t140", clockRate),
+                new SDPAudioVideoMediaFormat(kind, RedPt, "red", clockRate, fmtp: "98/98/98")
+            };
+            session.addTrack(new MediaStreamTrack(kind, false, formats));
+            session.addTrack(new MediaStreamTrack(kind, true, formats));
+            MediaStream stream = kind == SDPMediaTypesEnum.audio ? (MediaStream)session.AudioStream : session.TextStream;
+            var received = new List<RTPPacket>();
+            stream.OnRtpPacketReceivedByIndex += (index, endpoint, mediaType, packet) =>
+            {
+                Assert.Equal(kind, mediaType);
+                received.Add(packet);
+            };
+
+            var videoFrames = new List<byte[]>();
+            if (videoFec)
+            {
+                session.EnableVideoFec();
+                session.addTrack(new MediaStreamTrack(SDPMediaTypesEnum.video, false,
+                    new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, MediaPt, "VP8", 90000) }));
+                var clock = new FecTestClock();
+                session.VideoStream.SetFecReceiveTiming(() => clock.Now, clock.CreateTimer);
+                session.VideoStream.EnableUlpfec(RedPt, FecPt, MediaPt);
+                session.VideoStream.OnVideoFrameReceivedByIndex += (index, endpoint, timestamp, frame, format) => videoFrames.Add(frame);
+            }
+
+            byte[] red = RtpRedPayload.Encode(new[]
+            {
+                new RtpRedBlock(98, 600, new byte[] { 1, 2 }),
+                new RtpRedBlock(98, 300, new byte[] { 3, 4 })
+            }, new RtpRedBlock(98, new byte[] { 5, 6 }));
+            var wire = CreateMedia(500, 9000, red, true);
+            wire.Header.PayloadType = RedPt;
+            wire.Header.CSRCCount = 1;
+            wire.Header.CSRCList = new[] { 17 };
+            wire.Header.HeaderExtensionFlag = 1;
+            wire.Header.ExtensionProfile = RTPHeader.ONE_BYTE_EXTENSION_PROFILE;
+            wire.Header.ExtensionLength = 1;
+            wire.Header.ExtensionPayload = new byte[] { 0x10, 0xEF, 0, 0 };
+            Receive(stream, wire);
+
+            var delivered = Assert.Single(received);
+            Assert.Equal(wire.GetBytes(), delivered.GetBytes());
+            Assert.Equal(red, delivered.GetPayloadBytes());
+            Assert.Equal(1u, stream.RtcpSession.PacketsReceivedCount);
+            Assert.Equal((uint)red.Length, stream.RtcpSession.OctetsReceivedCount);
+            Assert.Equal(Ssrc, Assert.Single(stream.RtcpSession.GetRtcpReport().ReceiverReport.ReceptionReports).SSRC);
+            if (videoFec)
+            {
+                foreach (var packet in CreateWire(Vp8Payloads(), 100, 3000).Where(packet => packet.MediaIndex != 1))
+                {
+                    Receive(session.VideoStream, packet.Packet);
+                }
+                Assert.Equal(new byte[] { 1, 1, 2, 2, 3, 3 }, Assert.Single(videoFrames));
+                Assert.Equal(1, session.VideoStream.FecMetrics.PacketsRecovered);
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void NewSsrcContinuesVideoAndRecoveryWithoutBye(bool redPrimary)
+        {
+            using var receiver = new Receiver();
+            receiver.Stream.RemoteTrack.Ssrc = Ssrc;
+            var firstSource = CreateMedia(500, 3000, new byte[] { 0x10, 7, 8 }, true);
+            receiver.Receive(firstSource);
+            var encoder = receiver.Stream.FecEncoder;
+            var config = receiver.Stream.FecConfig;
+            const uint nextSsrc = 0x5678;
+            var switched = CreateWire(Vp8Payloads(), 500, 3000, nextSsrc).Where(packet => packet.MediaIndex != 1).ToList();
+            if (!redPrimary)
+            {
+                foreach (var packet in switched.Where(packet => packet.MediaIndex >= 0))
+                {
+                    RtpRedPayload.TryDecode(packet.Packet.GetPayloadBytes(), out _, out var primary);
+                    packet.Packet = CreateMedia(packet.Packet.Header.SequenceNumber, 3000, primary.Data,
+                        packet.Packet.Header.MarkerBit == 1, nextSsrc);
+                }
+            }
+            foreach (var packet in switched) receiver.Receive(packet.Packet);
+
+            Assert.Equal(2, receiver.Frames.Count);
+            Assert.Equal(new byte[] { 1, 1, 2, 2, 3, 3 }, receiver.Frames[1]);
+            Assert.Equal(new ushort[] { 500, 501, 502 }, receiver.Media.Skip(1).Select(packet => packet.Header.SequenceNumber));
+            Assert.All(receiver.Media.Skip(1), packet => Assert.Equal(nextSsrc, packet.Header.SyncSource));
+            Assert.Equal(nextSsrc, receiver.Stream.RemoteTrack.Ssrc);
+            Assert.Equal((ushort)502, receiver.Stream.RemoteTrack.LastRemoteSeqNum);
+            Assert.Equal(nextSsrc, Assert.Single(receiver.Stream.RtcpSession.GetRtcpReport().ReceiverReport.ReceptionReports).SSRC);
+            Assert.Equal(4u, receiver.Stream.RtcpSession.PacketsReceivedCount);
+            Assert.Equal((uint)(firstSource.GetPayloadLength() + switched.Sum(packet => (long)packet.Packet.GetPayloadLength())),
+                receiver.Stream.RtcpSession.OctetsReceivedCount);
+            Assert.Equal(1, receiver.Stream.FecMetrics.PacketsRecovered);
+            Assert.Same(encoder, receiver.Stream.FecEncoder);
+            Assert.Same(config, receiver.Stream.FecConfig);
+
+            // Returning to an earlier SSRC also clears its old sequence and timestamp history.
+            receiver.Receive(CreateMedia(7, 3000, new byte[] { 0x10, 9, 10 }, true));
+            Assert.Equal(new byte[] { 9, 10 }, receiver.Frames[2]);
+            Assert.Equal(Ssrc, receiver.Stream.RemoteTrack.Ssrc);
+            Assert.Equal(Ssrc, Assert.Single(receiver.Stream.RtcpSession.GetRtcpReport().ReceiverReport.ReceptionReports).SSRC);
+            Assert.Equal(5u, receiver.Stream.RtcpSession.PacketsReceivedCount);
+            Assert.Equal(1, receiver.Stream.FecMetrics.PacketsRecovered);
+        }
+
+        [Fact]
+        public void ForeignRepairAndMalformedRedDoNotSwitchSource()
+        {
+            using var receiver = new Receiver();
+            receiver.Stream.RemoteTrack.Ssrc = Ssrc;
+            var active = CreateWire(Vp8Payloads(), 100, 3000);
+            receiver.Receive(active.Single(packet => packet.MediaIndex == 0).Packet);
+            receiver.Receive(active.Single(packet => packet.MediaIndex == 2).Packet);
+            const uint foreignSsrc = 0x5678;
+            receiver.Receive(CreateWire(Vp8Payloads(), 100, 3000, foreignSsrc).Single(packet => packet.MediaIndex < 0).Packet);
+            foreach (byte[] payload in new[]
+            {
+                new byte[] { 0x80 }, // Truncated RED header.
+                RtpRedPayload.EncodeSingleBlock(new byte[] { 0x10, 99 }, 99), // Unnegotiated inner PT.
+                RtpRedPayload.EncodeSingleBlock(Array.Empty<byte>(), MediaPt)
+            })
+            {
+                var invalid = CreateMedia(100, 3000, payload, true, foreignSsrc);
+                invalid.Header.PayloadType = RedPt;
+                receiver.Receive(invalid);
+            }
+            Assert.Empty(receiver.Frames);
+            Assert.Equal(2u, receiver.Stream.RtcpSession.PacketsReceivedCount);
+            Assert.Equal(Ssrc, receiver.Stream.RemoteTrack.Ssrc);
+            Assert.Equal(Ssrc, Assert.Single(receiver.Stream.RtcpSession.GetRtcpReport().ReceiverReport.ReceptionReports).SSRC);
+            Assert.Single(receiver.Clock.Timers);
+            Assert.False(receiver.Clock.Timers[0].Disposed);
+
+            // The active source's pending group survives every rejected handover.
+            receiver.Receive(active.Single(packet => packet.MediaIndex < 0).Packet);
+            Assert.Equal(new byte[] { 1, 1, 2, 2, 3, 3 }, Assert.Single(receiver.Frames));
+            Assert.All(receiver.Media, packet => Assert.Equal(Ssrc, packet.Header.SyncSource));
+            Assert.Equal(1, receiver.Stream.FecMetrics.PacketsRecovered);
+            Assert.Equal(3u, receiver.Stream.RtcpSession.PacketsReceivedCount);
+        }
+
+        [Fact]
+        public void SsrcHandoverCancelsOldDeadline()
+        {
+            using var receiver = new Receiver();
+            var active = CreateWire(Vp8Payloads(), 100, 3000);
+            receiver.Receive(active.Single(packet => packet.MediaIndex == 0).Packet);
+            receiver.Receive(active.Single(packet => packet.MediaIndex == 2).Packet);
+            var oldTimer = Assert.Single(receiver.Clock.Timers);
+            receiver.Clock.Advance(10);
+            var next = CreateWire(Vp8Payloads(), 100, 3000, 0x5678);
+            receiver.Receive(next.Single(packet => packet.MediaIndex == 0).Packet);
+            receiver.Receive(next.Single(packet => packet.MediaIndex == 2).Packet);
+            Assert.True(oldTimer.Disposed);
+            Assert.Equal(2, receiver.Clock.Timers.Count);
+            receiver.Clock.Advance(10);
+            oldTimer.Callback(); // A callback already queued before disposal.
+            Assert.Empty(receiver.Frames);
+            Assert.Equal(1, receiver.Clock.PendingCount);
+            receiver.Receive(next.Single(packet => packet.MediaIndex < 0).Packet);
+            receiver.Clock.Advance(100);
+
+            Assert.Equal(new byte[] { 1, 1, 2, 2, 3, 3 }, Assert.Single(receiver.Frames));
+            Assert.All(receiver.Media, packet => Assert.Equal(0x5678u, packet.Header.SyncSource));
+            Assert.Equal(5u, receiver.Stream.RtcpSession.PacketsReceivedCount);
+            Assert.Equal(1, receiver.Stream.FecMetrics.PacketsRecovered);
+            Assert.Equal(0, receiver.Clock.PendingCount);
+        }
+
+        [Fact]
+        public void FailedUnprotectCannotSwitchSource()
+        {
+            using var receiver = new Receiver(secure: true);
+            receiver.Stream.RemoteTrack.Ssrc = Ssrc;
+            bool authenticated = true;
+            int Unprotect(byte[] buffer, int length, out int resultLength)
+            {
+                resultLength = length;
+                return authenticated ? 0 : -1;
+            }
+            receiver.Stream.SetSecurityContext(Unprotect, Unprotect, Unprotect, Unprotect);
+            receiver.Receive(CreateMedia(500, 3000, new byte[] { 0x10, 1, 2 }, true));
+            authenticated = false;
+            receiver.Receive(CreateMedia(500, 3000, new byte[] { 0x10, 3, 4 }, true, 0x5678));
+            Assert.Equal(new byte[] { 1, 2 }, Assert.Single(receiver.Frames));
+            Assert.Single(receiver.Clock.Timers);
+            Assert.Equal(Ssrc, receiver.Stream.RemoteTrack.Ssrc);
+            Assert.Equal(1u, receiver.Stream.RtcpSession.PacketsReceivedCount);
+            authenticated = true;
+            receiver.Receive(CreateMedia(501, 6000, new byte[] { 0x10, 5, 6 }, true));
+            Assert.Equal(new byte[] { 5, 6 }, receiver.Frames[1]);
+            Assert.Equal(2u, receiver.Stream.RtcpSession.PacketsReceivedCount);
+        }
+
         [Fact]
         public void LosslessStreamRecoversNothing()
         {
@@ -395,10 +599,10 @@ namespace SIPSorcery.Net.UnitTests
             new byte[] { 0x00, 3, 3 }
         };
 
-        private static RTPPacket CreateMedia(ushort sequence, uint timestamp, byte[] payload, bool marker)
+        private static RTPPacket CreateMedia(ushort sequence, uint timestamp, byte[] payload, bool marker, uint ssrc = Ssrc)
         {
             var packet = new RTPPacket(new ArraySegment<byte>(payload), 0);
-            packet.Header.SyncSource = Ssrc;
+            packet.Header.SyncSource = ssrc;
             packet.Header.SequenceNumber = sequence;
             packet.Header.Timestamp = timestamp;
             packet.Header.PayloadType = MediaPt;
@@ -406,16 +610,16 @@ namespace SIPSorcery.Net.UnitTests
             return packet;
         }
 
-        private static List<WirePacket> CreateWire(byte[][] payloads, ushort sequence, uint timestamp)
+        private static List<WirePacket> CreateWire(byte[][] payloads, ushort sequence, uint timestamp, uint ssrc = Ssrc)
         {
             var encoder = new RtpUlpfecEncoder(RedPt, FecPt, MediaPt);
             var wire = new List<WirePacket>();
             for (int i = 0; i < payloads.Length; i++)
             {
-                var media = CreateMedia(sequence++, timestamp, payloads[i], i == payloads.Length - 1);
+                var media = CreateMedia(sequence++, timestamp, payloads[i], i == payloads.Length - 1, ssrc);
                 encoder.AddMediaPacket(media, () => sequence++, out var repairs);
                 var red = CreateMedia(media.Header.SequenceNumber, timestamp,
-                    RtpRedPayload.EncodeSingleBlock(payloads[i], MediaPt), i == payloads.Length - 1);
+                    RtpRedPayload.EncodeSingleBlock(payloads[i], MediaPt), i == payloads.Length - 1, ssrc);
                 red.Header.PayloadType = RedPt;
                 wire.Add(new WirePacket { Packet = red, MediaIndex = i });
                 wire.AddRange((repairs ?? new List<RTPPacket>()).Select(x => new WirePacket { Packet = x, MediaIndex = -1 }));
@@ -431,16 +635,18 @@ namespace SIPSorcery.Net.UnitTests
 
         private sealed class Receiver : IDisposable
         {
-            private static readonly IPEndPoint Remote = new IPEndPoint(IPAddress.Loopback, 5004);
             public readonly VideoStream Stream;
-            public readonly ManualClock Clock = new ManualClock();
+            public readonly FecTestClock Clock = new FecTestClock();
             public readonly List<byte[]> Frames = new List<byte[]>();
             public readonly List<RTPPacket> Media = new List<RTPPacket>();
 
             public Receiver(string codec = "VP8", bool enableFec = true, TimeSpan? receiveWait = null,
-                TimeSpan? explicitBufferWait = null, bool captureFrames = true)
+                TimeSpan? explicitBufferWait = null, bool captureFrames = true, bool secure = false)
             {
-                Stream = new VideoStream(new RtpSessionConfig(), 0);
+                Stream = new VideoStream(new RtpSessionConfig
+                {
+                    RtpSecureMediaOption = secure ? RtpSecureMediaOptionEnum.DtlsSrtp : RtpSecureMediaOptionEnum.None
+                }, 0);
                 var formats = new List<SDPAudioVideoMediaFormat>
                 {
                     new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, MediaPt, codec, 90000),
@@ -450,7 +656,7 @@ namespace SIPSorcery.Net.UnitTests
                 Stream.LocalTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, formats, MediaStreamStatusEnum.SendRecv);
                 Stream.RemoteTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, true, formats, MediaStreamStatusEnum.SendRecv);
                 Stream.RtcpSession = new RTCPSession(SDPMediaTypesEnum.video, 0x9876) { PayloadSampleRateHz = 90000 };
-                Stream.SetFecReceiveTiming(() => Clock.Now, Clock.Schedule);
+                Stream.SetFecReceiveTiming(() => Clock.Now, Clock.CreateTimer);
                 if (explicitBufferWait.HasValue)
                 {
                     Stream.AddBuffer(explicitBufferWait.Value);
@@ -471,8 +677,7 @@ namespace SIPSorcery.Net.UnitTests
 
             public void Receive(RTPPacket packet)
             {
-                var bytes = packet.GetBytes();
-                Stream.OnReceiveRTPPacket(new RTPHeader(bytes), Remote.Port, Remote, bytes);
+                UlpfecReviewRegressionUnitTest.Receive(Stream, packet);
             }
 
             public void Dispose()
@@ -481,52 +686,12 @@ namespace SIPSorcery.Net.UnitTests
             }
         }
 
-        private sealed class ManualClock
+        private static void Receive(MediaStream stream, RTPPacket packet)
         {
-            private readonly List<ScheduledAction> _actions = new List<ScheduledAction>();
-            public long Now { get; private set; }
-            public int PendingCount => _actions.Count(x => !x.Disposed);
-
-            public IDisposable Schedule(Action action, TimeSpan delay)
-            {
-                var scheduled = new ScheduledAction
-                {
-                    Due = Now + Math.Max(0, (long)Math.Ceiling(delay.TotalMilliseconds)),
-                    Callback = action
-                };
-                _actions.Add(scheduled);
-                return scheduled;
-            }
-
-            public void Advance(TimeSpan duration)
-            {
-                long target = Now + (long)duration.TotalMilliseconds;
-                int callbacks = 0;
-                while (true)
-                {
-                    var next = _actions.Where(x => !x.Disposed && x.Due <= target).OrderBy(x => x.Due).FirstOrDefault();
-                    if (next == null)
-                    {
-                        break;
-                    }
-                    if (++callbacks > 1000)
-                    {
-                        throw new InvalidOperationException("Timer repeatedly scheduled without advancing time.");
-                    }
-                    Now = next.Due;
-                    next.Dispose();
-                    next.Callback();
-                }
-                Now = target;
-            }
-
-            private sealed class ScheduledAction : IDisposable
-            {
-                public long Due;
-                public Action Callback;
-                public bool Disposed;
-                public void Dispose() => Disposed = true;
-            }
+            var bytes = packet.GetBytes();
+            var endpoint = new IPEndPoint(IPAddress.Loopback, 5004);
+            stream.OnReceiveRTPPacket(new RTPHeader(bytes), endpoint.Port, endpoint, bytes);
         }
+
     }
 }

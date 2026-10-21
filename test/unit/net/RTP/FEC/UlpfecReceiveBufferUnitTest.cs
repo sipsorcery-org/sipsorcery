@@ -7,38 +7,6 @@ namespace SIPSorcery.Net.UnitTests
 {
     public class UlpfecReceiveBufferUnitTest
     {
-        private sealed class Scheduled : IDisposable
-        {
-            internal long Due;
-            internal Action Callback;
-            internal bool Cancelled;
-            internal bool Fired;
-            public void Dispose() => Cancelled = true;
-        }
-
-        private sealed class Clock
-        {
-            internal long Now;
-            internal readonly List<Scheduled> Calls = new List<Scheduled>();
-            internal IDisposable Schedule(Action callback, TimeSpan delay)
-            {
-                var call = new Scheduled { Due = Now + (long)Math.Ceiling(delay.TotalMilliseconds), Callback = callback };
-                Calls.Add(call);
-                return call;
-            }
-            internal void Advance(long milliseconds)
-            {
-                Now += milliseconds;
-                while (true)
-                {
-                    var call = Calls.FirstOrDefault(item => !item.Cancelled && !item.Fired && item.Due <= Now);
-                    if (call == null) { return; }
-                    call.Fired = true;
-                    call.Callback();
-                }
-            }
-        }
-
         private static RTPPacket Packet(ushort sequence, uint timestamp, bool start = false, bool marker = false)
         {
             var packet = new RTPPacket(new ArraySegment<byte>(new byte[] { start ? (byte)0x10 : (byte)0x00, (byte)sequence }), 0);
@@ -52,16 +20,102 @@ namespace SIPSorcery.Net.UnitTests
 
         private static bool IsStart(RTPPacket packet) => (packet.GetPayloadByteAt(0) & 0x10) != 0;
 
-        private static RtpFecReceiveBuffer Buffer(Clock clock, List<(RTPPacket Packet, ushort Framing)> delivered,
+        private static RtpFecReceiveBuffer Buffer(FecTestClock clock, List<(RTPPacket Packet, ushort Framing)> delivered,
             TimeSpan? wait = null, bool detectStart = true)
             => new RtpFecReceiveBuffer(wait ?? TimeSpan.FromMilliseconds(20),
-                (packet, framing) => delivered.Add((packet, framing)), () => clock.Now, clock.Schedule,
+                (packet, framing) => delivered.Add((packet, framing)), () => clock.Now, clock.CreateTimer,
                 detectStart ? IsStart : (Func<RTPPacket, bool>)null);
+
+        [Fact]
+        public void OneTimerIsReusedAcrossDeadlinesAndReset()
+        {
+            var clock = new FecTestClock();
+            var delivered = new List<(RTPPacket Packet, ushort Framing)>();
+            var buffer = Buffer(clock, delivered);
+            var timer = Assert.Single(clock.Timers);
+            for (int frame = 0; frame < 100; frame++)
+            {
+                ushort sequence = (ushort)(frame * 4);
+                buffer.AddBatch(new[] { Packet(sequence, (uint)frame, start: true) }, sequence, false);
+                Assert.Equal(1, clock.PendingCount);
+                clock.Advance(20);
+                Assert.Equal(0, buffer.BufferedPacketCount);
+                Assert.Equal(0, clock.PendingCount);
+                buffer.Reset();
+                Assert.False(timer.Disposed);
+            }
+            Assert.Empty(delivered);
+            Assert.Same(timer, Assert.Single(clock.Timers));
+            Assert.True(timer.ChangeCount >= 200);
+            buffer.Dispose();
+            buffer.Dispose();
+            timer.Callback();
+            Assert.Equal(1, timer.DisposeCount);
+            Assert.Equal(0, clock.PendingCount);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void StaleTimerCallbackDoesNotExpireRearmedFrameEarly(bool reset)
+        {
+            var clock = new FecTestClock();
+            var delivered = new List<(RTPPacket Packet, ushort Framing)>();
+            using var buffer = Buffer(clock, delivered);
+            buffer.AddBatch(new[] { Packet(100, 3000, start: true), Packet(102, 3000, marker: true) }, 102, false);
+            var timer = Assert.Single(clock.Timers);
+            if (reset)
+            {
+                clock.Now = 10;
+                buffer.Reset();
+                Assert.Equal(0, clock.PendingCount);
+                buffer.AddBatch(new[] { Packet(100, 3000, start: true), Packet(102, 3000, marker: true) }, 102, false);
+            }
+            else
+            {
+                buffer.SetRepairWait(TimeSpan.FromMilliseconds(30));
+            }
+            clock.Now = 20;
+            timer.Callback(); // The old 20 ms deadline's callback was already queued.
+            Assert.Empty(delivered);
+            Assert.Equal(2, buffer.BufferedPacketCount);
+            Assert.Equal(30L, timer.Due);
+            clock.Advance(9);
+            buffer.AddBatch(new[] { Packet(101, 3000) }, 103, true, new ushort[] { 100, 101, 102 });
+            Assert.Equal(new ushort[] { 100, 101, 102 }, delivered.Select(item => item.Packet.Header.SequenceNumber));
+            Assert.Equal(0, clock.PendingCount);
+            timer.Callback(); // A stopped timer's queued callback cannot deliver again.
+            clock.Advance(100);
+            Assert.Equal(3, delivered.Count);
+            Assert.Single(clock.Timers);
+        }
+
+        [Fact]
+        public void QueuedCallbackAtRearmedDeadlineDisablesIdleTimer()
+        {
+            var clock = new FecTestClock();
+            var delivered = new List<(RTPPacket Packet, ushort Framing)>();
+            using var buffer = Buffer(clock, delivered);
+            buffer.AddBatch(new[] { Packet(100, 3000, start: true), Packet(102, 3000, marker: true) }, 102, false);
+            var timer = Assert.Single(clock.Timers);
+            buffer.SetRepairWait(TimeSpan.FromMilliseconds(30));
+            clock.Now = 30;
+            timer.Callback(); // An old queued callback expires the frame before the current timer fires.
+
+            Assert.Equal(0, buffer.BufferedPacketCount);
+            Assert.Empty(delivered);
+            Assert.Null(timer.Due);
+            Assert.Equal(0, clock.PendingCount);
+            Assert.False(timer.Disposed);
+            buffer.AddBatch(new[] { Packet(104, 6000, start: true, marker: true) }, 104, false);
+            Assert.Equal(104, Assert.Single(delivered).Packet.Header.SequenceNumber);
+            Assert.Single(clock.Timers);
+        }
 
         [Fact]
         public void LostMiddlePacketIsInsertedBeforeWholeFrameIsDelivered()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered);
             buffer.AddBatch(new[] { Packet(100, 3000, start: true) }, 100, false);
@@ -78,7 +132,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void MissingFirstPacketCanExtendTentativeStartupBackwards()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered);
             buffer.AddBatch(new[] { Packet(501, 3000), Packet(502, 3000, marker: true) }, 502, false);
@@ -92,7 +146,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RepairCoverageCanConfirmStartupWithoutCodecSpecificStartDetection()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered, detectStart: false);
             buffer.AddBatch(new[] { Packet(10, 3000), Packet(11, 3000, marker: true) }, 11, false);
@@ -106,7 +160,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void KnownRepairSlotDoesNotIntroduceFramingGapAcrossSequenceWrap()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered);
             buffer.AddBatch(new[] { Packet(65534, 3000, start: true), Packet(65535, 3000) }, 65535, false);
@@ -120,7 +174,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RepairRecoveredTerminalFragmentBeforeMediaDoesNotCommitStartupPrematurely()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered);
 
@@ -144,7 +198,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void DeadlineDropsIncompleteFrameWithoutAnotherArrivalAndLatePacketsCannotResurrectIt()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered);
             buffer.AddBatch(new[] { Packet(500, 3000, start: true), Packet(502, 3000, marker: true) }, 502, false);
@@ -164,7 +218,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void MissingMarkerExpiresOnIdleWithoutAVisibleSequenceGap()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered);
             buffer.AddBatch(new[] { Packet(100, 3000, start: true) }, 100, false);
@@ -179,7 +233,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void LateRepairCannotWinWhenTimerCallbackWasDelayed()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered);
             buffer.AddBatch(new[] { Packet(100, 3000, start: true), Packet(102, 3000, marker: true) }, 102, false);
@@ -195,7 +249,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void AmbiguousStartupExpiresWithoutEmittingAnIncompleteFrame()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered);
             buffer.AddBatch(new[] { Packet(501, 3000), Packet(502, 3000, marker: true) }, 502, false);
@@ -210,7 +264,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ZeroWaitStillOrdersCompleteFramesAndImmediatelyDropsKnownGaps()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered, TimeSpan.Zero);
             buffer.AddBatch(new[] { Packet(100, 3000, start: true) }, 100, false);
@@ -225,7 +279,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void OriginalArrivingAfterRecoveredFrameIsNotDeliveredTwice()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered);
             buffer.AddBatch(new[] { Packet(100, 3000, start: true) }, 100, false);
@@ -241,11 +295,11 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ResetAndDisposeInvalidateAlreadyScheduledTimerCallbacks()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             var buffer = Buffer(clock, delivered);
             buffer.AddBatch(new[] { Packet(100, 3000, start: true) }, 100, false);
-            var stale = clock.Calls.Last().Callback;
+            var stale = clock.Timers.Last().Callback;
             buffer.Reset();
             buffer.AddBatch(new[] { Packet(1, 9000, start: true, marker: true) }, 1, false);
             stale();
@@ -260,7 +314,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CapacityDropsOversizedFrameAndNextValidFrameCanResume()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered);
             var oversized = Enumerable.Range(0, RtpFecReceiveBuffer.MAX_BUFFERED_MEDIA + 1)
@@ -277,7 +331,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void WaitCanBeChangedWithoutDisablingOrderedRecovery()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var delivered = new List<(RTPPacket Packet, ushort Framing)>();
             using var buffer = Buffer(clock, delivered);
             buffer.AddBatch(new[] { Packet(100, 3000, start: true), Packet(102, 3000, marker: true) }, 102, false);
@@ -293,7 +347,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ReentrantArrivalIsSerializedAfterCurrentCompletedFrame()
         {
-            var clock = new Clock();
+            var clock = new FecTestClock();
             var sequences = new List<ushort>();
             RtpFecReceiveBuffer buffer = null;
             buffer = new RtpFecReceiveBuffer(TimeSpan.FromMilliseconds(20), (packet, framing) =>
@@ -303,7 +357,7 @@ namespace SIPSorcery.Net.UnitTests
                 {
                     buffer.AddBatch(new[] { Packet(102, 6000, start: true, marker: true) }, 102, false);
                 }
-            }, () => clock.Now, clock.Schedule, IsStart);
+            }, () => clock.Now, clock.CreateTimer, IsStart);
             using (buffer)
             {
                 buffer.AddBatch(new[] { Packet(100, 3000, start: true), Packet(101, 3000, marker: true) }, 101, false);

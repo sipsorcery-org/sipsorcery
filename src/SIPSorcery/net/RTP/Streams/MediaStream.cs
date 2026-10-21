@@ -61,7 +61,7 @@ namespace SIPSorcery.Net
         private uint? _fecReceiveSsrc;
         private IPEndPoint _fecRemoteEndPoint;
         private Func<long> _fecReceiveClock;
-        private Func<Action, TimeSpan, IDisposable> _fecReceiveScheduler;
+        private Func<Action, IRtpFecReceiveTimer> _fecReceiveTimerFactory;
 
         MediaStreamTrack m_localTrack;
         MediaStreamTrack m_remoteTrack;
@@ -196,14 +196,14 @@ namespace SIPSorcery.Net
                     // Preparing framing state is fenced against reset; application callbacks
                     // run outside the receive lock and cannot populate a replacement framer.
                     if (!IsClosed && ReferenceEquals(_fecReceiveBuffer, receiver)) deliver?.Invoke();
-                }, _fecReceiveClock, _fecReceiveScheduler, IsFecFrameStart);
+                }, _fecReceiveClock, _fecReceiveTimerFactory, IsFecFrameStart);
             return receiver;
         }
 
-        internal void SetFecReceiveTiming(Func<long> clock, Func<Action, TimeSpan, IDisposable> scheduler)
+        internal void SetFecReceiveTiming(Func<long> clock, Func<Action, IRtpFecReceiveTimer> timerFactory)
         {
             _fecReceiveClock = clock;
-            _fecReceiveScheduler = scheduler;
+            _fecReceiveTimerFactory = timerFactory;
         }
 
         internal void ResetFecReceiveState()
@@ -1087,7 +1087,10 @@ namespace SIPSorcery.Net
 
             if (RemoteTrack != null)
             {
-                LogIfWrongSeqNumber($"{MediaType}", hdr, RemoteTrack);
+                if (FecDecoder == null || RemoteTrack.Ssrc == hdr.SyncSource)
+                {
+                    LogIfWrongSeqNumber($"{MediaType}", hdr, RemoteTrack);
+                }
                 ProcessHeaderExtensions(hdr, remoteEndPoint);
             }
 
@@ -1097,10 +1100,11 @@ namespace SIPSorcery.Net
             }
 
             var format = LocalTrack?.GetFormatForPayloadID(rtpPacket.Header.PayloadType);
-            bool isRed = rtpPacket.Header.PayloadType == FecDecoder?.RedPayloadType || format?.IsRed == true;
-            bool isUlpfec = rtpPacket.Header.PayloadType == FecDecoder?.UlpfecPayloadType || format?.IsUlpfec == true;
+            bool isVideo = MediaType == SDPMediaTypesEnum.video;
+            bool isRed = isVideo && (rtpPacket.Header.PayloadType == FecDecoder?.RedPayloadType || format?.IsRed == true);
+            bool isUlpfec = isVideo && (rtpPacket.Header.PayloadType == FecDecoder?.UlpfecPayloadType || format?.IsUlpfec == true);
 
-            if (FecDecoder != null && (isRed || isUlpfec || format?.IsVideoMediaCodec == true))
+            if (isVideo && FecDecoder != null && (isRed || isUlpfec || format?.IsVideoMediaCodec == true))
             {
                 ReceiveWithFec(remoteEndPoint, rtpPacket, isRed, isUlpfec);
                 return;
@@ -1145,10 +1149,10 @@ namespace SIPSorcery.Net
             {
                 receiver = _fecReceiveBuffer;
                 if (IsClosed || receiver == null || FecDecoder == null) return;
-                if (_fecReceiveSsrc.HasValue && _fecReceiveSsrc.Value != wirePacket.Header.SyncSource) return;
+                bool sourceChanged = _fecReceiveSsrc.HasValue && _fecReceiveSsrc.Value != wirePacket.Header.SyncSource;
 
                 // RTCP observes network arrivals, never reconstructed packets or transformed headers.
-                RtcpSession?.RecordRtpPacketReceived(wirePacket);
+                if (!sourceChanged) RtcpSession?.RecordRtpPacketReceived(wirePacket);
                 var repairs = new List<RTPPacket>();
                 RTPPacket primaryMedia = null;
                 if (isRed)
@@ -1178,6 +1182,25 @@ namespace SIPSorcery.Net
                 else
                 {
                     primaryMedia = wirePacket;
+                }
+
+                if (sourceChanged)
+                {
+                    // A primary from an admitted peer selects the next source. Foreign
+                    // repairs and malformed/unknown RED cannot retire the active source.
+                    if (primaryMedia == null || primaryMedia.GetPayloadLength() == 0) return;
+                    uint previousSsrc = _fecReceiveSsrc.Value;
+                    ResetFecReceiveState();
+                    receiver = _fecReceiveBuffer;
+                    if (RemoteTrack != null)
+                    {
+                        RemoteTrack.Ssrc = wirePacket.Header.SyncSource;
+                        RemoteTrack.LastRemoteSeqNum = wirePacket.Header.SequenceNumber;
+                    }
+                    RtcpSession?.RemoveReceptionReport(previousSsrc);
+                    RtcpSession?.RecordRtpPacketReceived(wirePacket);
+                    logger.LogInformation("Video receive SSRC changed from {PreviousSsrc} to {NewSsrc}; reset FEC receive state.",
+                        previousSsrc, wirePacket.Header.SyncSource);
                 }
 
                 if (primaryMedia != null)

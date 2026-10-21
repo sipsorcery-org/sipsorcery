@@ -50,31 +50,30 @@ namespace SIPSorcery.Net
         private readonly Queue<Delivery> _deliveries = new Queue<Delivery>();
         private readonly Action<RTPPacket, ushort> _deliver;
         private readonly Func<long> _getMilliseconds;
-        private readonly Func<Action, TimeSpan, IDisposable> _schedule;
+        private readonly IRtpFecReceiveTimer _timer;
         private readonly Func<RTPPacket, bool> _isFrameStart;
         private TimeSpan _repairWait;
-        private IDisposable _timer;
+        private long? _timerDeadline;
         private long? _newestSequence;
         private long? _committedSequence;
         private long _retiredRepairSlots;
         private int _mediaCount;
         private int _deliveryCount;
         private int _generation;
-        private int _timerVersion;
         private bool _needsFrameStart = true;
         private bool _dispatching;
         private bool _disposed;
 
         internal RtpFecReceiveBuffer(TimeSpan repairWait, Action<RTPPacket, ushort> deliver,
             Func<long> getMilliseconds = null,
-            Func<Action, TimeSpan, IDisposable> schedule = null,
+            Func<Action, IRtpFecReceiveTimer> timerFactory = null,
             Func<RTPPacket, bool> isFrameStart = null)
         {
             ValidateWait(repairWait);
             _repairWait = repairWait;
             _deliver = deliver ?? throw new ArgumentNullException(nameof(deliver));
             _getMilliseconds = getMilliseconds ?? (() => (long)(Stopwatch.GetTimestamp() * 1000.0 / Stopwatch.Frequency));
-            _schedule = schedule ?? ((callback, delay) => new Timer(_ => callback(), null, delay, Timeout.InfiniteTimeSpan));
+            _timer = timerFactory?.Invoke(OnTimer) ?? new RtpFecReceiveTimer(OnTimer);
             _isFrameStart = isFrameStart;
         }
 
@@ -289,26 +288,28 @@ namespace SIPSorcery.Net
             }
         }
 
-        private void Schedule(long now)
+        private void Schedule(long now, bool force = false)
         {
-            _timer?.Dispose();
-            _timer = null;
-            int version = ++_timerVersion;
-            if (_frames.Count == 0 || _disposed) { return; }
-            var frame = OldestFrame();
-            long deadline = Deadline(frame);
-            _timer = _schedule(() => OnTimer(version), TimeSpan.FromMilliseconds(Math.Max(0, deadline - now)));
+            if (_disposed) { return; }
+            long? deadline = _frames.Count == 0 ? (long?)null : Deadline(OldestFrame());
+            if (!force && _timerDeadline == deadline) { return; }
+            _timerDeadline = deadline;
+            _timer.Change(deadline.HasValue
+                ? TimeSpan.FromMilliseconds(Math.Max(0, deadline.Value - now))
+                : Timeout.InfiniteTimeSpan);
         }
 
-        private void OnTimer(int version)
+        private void OnTimer()
         {
             bool dispatch;
             lock (_lock)
             {
-                if (_disposed || version != _timerVersion) { return; }
+                if (_disposed || !_timerDeadline.HasValue) { return; }
                 long now = _getMilliseconds();
+                // Change/stop cannot recall an already queued callback. Always inspect
+                // the current absolute deadline, and rearm if that callback arrived early.
                 Process(now);
-                Schedule(now);
+                Schedule(now, force: true);
                 dispatch = TakeDispatchOwnership();
             }
             if (dispatch) { Dispatch(); }
@@ -353,9 +354,8 @@ namespace SIPSorcery.Net
         private void Clear()
         {
             _generation++;
-            _timerVersion++;
-            _timer?.Dispose();
-            _timer = null;
+            _timerDeadline = null;
+            if (!_disposed) { _timer.Change(Timeout.InfiniteTimeSpan); }
             _frames.Clear();
             _repairSlots.Clear();
             _finishedTimestamps.Clear();
@@ -376,6 +376,7 @@ namespace SIPSorcery.Net
                 if (_disposed) { return; }
                 _disposed = true;
                 Clear();
+                _timer.Dispose();
             }
         }
     }
