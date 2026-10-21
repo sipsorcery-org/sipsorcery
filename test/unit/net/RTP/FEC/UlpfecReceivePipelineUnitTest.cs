@@ -98,6 +98,7 @@ namespace SIPSorcery.Net.UnitTests
             pkt2.Header.SequenceNumber = 102;
             pkt2.Header.Timestamp = 3000;
             pkt2.Header.PayloadType = 96;
+            pkt2.Header.MarkerBit = 1;
 
             // Generate FEC repair packet covering pkt1 and pkt2
             var encoder = new RtpUlpfecEncoder(122, 127, 96);

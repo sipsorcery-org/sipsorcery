@@ -55,6 +55,13 @@ namespace SIPSorcery.Net
         protected SrtpHandler SrtpHandler;
 
         private RTPReorderBuffer RTPReorderBuffer = null;
+        private readonly object _fecReceiveLock = new object();
+        private RtpFecReceiveBuffer _fecReceiveBuffer;
+        private TimeSpan? _explicitReceiveWait;
+        private uint? _fecReceiveSsrc;
+        private IPEndPoint _fecRemoteEndPoint;
+        private Func<long> _fecReceiveClock;
+        private Func<Action, TimeSpan, IDisposable> _fecReceiveScheduler;
 
         MediaStreamTrack m_localTrack;
         MediaStreamTrack m_remoteTrack;
@@ -124,12 +131,23 @@ namespace SIPSorcery.Net
         /// </summary>
         public void EnableUlpfec(int redPayloadType, int ulpfecPayloadType, int mediaPayloadType, RtpUlpfecConfig config = null)
         {
-            FecConfig = config?.Clone() ?? FecConfig ?? new RtpUlpfecConfig();
-            FecConfig.Enabled = true;
-            FecEncoder = new RtpUlpfecEncoder(redPayloadType, ulpfecPayloadType, mediaPayloadType, FecConfig);
-            FecDecoder = new RtpUlpfecDecoder(redPayloadType, ulpfecPayloadType);
-            logger.LogInformation("ULPFEC enabled on {MediaType} stream. RED PT={RedPt}, ULPFEC PT={FecPt}, Media PT={MediaPt}, Overhead={Overhead:P1}.",
-                MediaType, redPayloadType, ulpfecPayloadType, mediaPayloadType, FecConfig.TargetOverheadFraction);
+            lock (_fecReceiveLock)
+            {
+                FecConfig = config?.Clone() ?? FecConfig ?? new RtpUlpfecConfig();
+                if (FecConfig.MaxReceiveRepairWait < TimeSpan.Zero)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(config), "The receive repair wait cannot be negative.");
+                }
+                _fecReceiveBuffer?.Dispose();
+                _fecReceiveSsrc = null;
+                ResetFecFraming();
+                FecConfig.Enabled = true;
+                FecEncoder = new RtpUlpfecEncoder(redPayloadType, ulpfecPayloadType, mediaPayloadType, FecConfig);
+                FecDecoder = new RtpUlpfecDecoder(redPayloadType, ulpfecPayloadType);
+                _fecReceiveBuffer = CreateFecReceiveBuffer();
+                logger.LogInformation("ULPFEC enabled on {MediaType} stream. RED PT={RedPt}, ULPFEC PT={FecPt}, Media PT={MediaPt}, Overhead={Overhead:P1}.",
+                    MediaType, redPayloadType, ulpfecPayloadType, mediaPayloadType, FecConfig.TargetOverheadFraction);
+            }
         }
 
         /// <summary>
@@ -137,16 +155,106 @@ namespace SIPSorcery.Net
         /// </summary>
         public void DisableUlpfec(string reason = null)
         {
-            if (FecEncoder != null || FecDecoder != null)
+            lock (_fecReceiveLock)
             {
-                logger.LogInformation("ULPFEC disabled on {MediaType} stream. Reason: {Reason}", MediaType, reason ?? "Disabled by caller");
-                FecEncoder = null;
-                FecDecoder = null;
+                _fecReceiveBuffer?.Dispose();
+                _fecReceiveBuffer = null;
+                _fecReceiveSsrc = null;
+                ResetFecFraming();
+                if (FecEncoder != null || FecDecoder != null)
+                {
+                    logger.LogInformation("ULPFEC disabled on {MediaType} stream. Reason: {Reason}", MediaType, reason ?? "Disabled by caller");
+                    FecEncoder = null;
+                    FecDecoder = null;
+                }
+                if (FecConfig != null)
+                {
+                    FecConfig.Enabled = false;
+                }
             }
-            if (FecConfig != null)
+        }
+
+        private RtpFecReceiveBuffer CreateFecReceiveBuffer()
+        {
+            RtpFecReceiveBuffer receiver = null;
+            receiver = new RtpFecReceiveBuffer(_explicitReceiveWait ?? FecConfig.MaxReceiveRepairWait,
+                (packet, framingSequence) =>
+                {
+                    Action deliver = null;
+                    lock (_fecReceiveLock)
+                    {
+                        if (!IsClosed && ReferenceEquals(_fecReceiveBuffer, receiver))
+                        {
+                            var format = LocalTrack?.GetFormatForPayloadID(packet.Header.PayloadType);
+                            if (format.HasValue && format.Value.IsVideoMediaCodec)
+                            {
+                                if (RemoteTrack != null) RemoteTrack.LastRemoteSeqNum = packet.Header.SequenceNumber;
+                                deliver = PrepareFecRtpPacket(_fecRemoteEndPoint, packet, format.Value, framingSequence);
+                            }
+                        }
+                    }
+                    // Preparing framing state is fenced against reset; application callbacks
+                    // run outside the receive lock and cannot populate a replacement framer.
+                    if (!IsClosed && ReferenceEquals(_fecReceiveBuffer, receiver)) deliver?.Invoke();
+                }, _fecReceiveClock, _fecReceiveScheduler, IsFecFrameStart);
+            return receiver;
+        }
+
+        internal void SetFecReceiveTiming(Func<long> clock, Func<Action, TimeSpan, IDisposable> scheduler)
+        {
+            _fecReceiveClock = clock;
+            _fecReceiveScheduler = scheduler;
+        }
+
+        internal void ResetFecReceiveState()
+        {
+            lock (_fecReceiveLock)
             {
-                FecConfig.Enabled = false;
+                if (FecDecoder == null && _fecReceiveBuffer == null) return;
+                FecDecoder?.Reset();
+                // Replace the coordinator so an arrival already decoded before this reset cannot
+                // re-enter the new source's window after releasing _fecReceiveLock.
+                _fecReceiveBuffer?.Dispose();
+                _fecReceiveBuffer = FecDecoder != null && !IsClosed ? CreateFecReceiveBuffer() : null;
+                _fecReceiveSsrc = null;
+                ResetFecFraming();
             }
+        }
+
+        protected virtual void ResetFecFraming() { }
+
+        protected virtual Action PrepareFecRtpPacket(IPEndPoint remoteEndPoint, RTPPacket packet,
+            SDPAudioVideoMediaFormat format, ushort framingSequence)
+            => () => ProcessRtpPacket(remoteEndPoint, packet, format);
+
+        private bool IsFecFrameStart(RTPPacket packet)
+        {
+            var format = LocalTrack?.GetFormatForPayloadID(packet.Header.PayloadType);
+            var payload = packet.GetPayloadBytes();
+            if (!format.HasValue || payload.Length == 0) return false;
+            string codec = format.Value.Name();
+            if (codec.Equals("VP8", StringComparison.OrdinalIgnoreCase))
+            {
+                return (payload[0] & 0x1f) == 0x10;
+            }
+            if (format.Value.IsH264)
+            {
+                int nalType = payload[0] & 0x1f;
+                return (nalType >= 1 && nalType <= 24) ||
+                    ((nalType == 28 || nalType == 29) && payload.Length > 1 && (payload[1] & 0x80) != 0);
+            }
+            if (codec.Equals("VP9", StringComparison.OrdinalIgnoreCase)) return (payload[0] & 0x08) != 0;
+            if (codec.Equals("AV1", StringComparison.OrdinalIgnoreCase)) return (payload[0] & 0x80) == 0;
+            if (format.Value.isH265 && payload.Length >= 2)
+            {
+                int nalType = (payload[0] >> 1) & 0x3f;
+                return nalType < 49 || (nalType == 49 && payload.Length > 2 && (payload[2] & 0x80) != 0);
+            }
+            if (codec.Equals("JPEG", StringComparison.OrdinalIgnoreCase) && payload.Length >= 8)
+            {
+                return payload[1] == 0 && payload[2] == 0 && payload[3] == 0;
+            }
+            return false;
         }
 
         /// <summary>
@@ -222,7 +330,7 @@ namespace SIPSorcery.Net
                 ClearPendingPackages();
 
                 FecEncoder?.Reset();
-                FecDecoder?.Reset();
+                ResetFecReceiveState();
 
                 OnIsClosedStateChanged?.Invoke(_isClosed);
             }
@@ -282,6 +390,10 @@ namespace SIPSorcery.Net
             }
             set
             {
+                if (!ReferenceEquals(m_remoteTrack, value))
+                {
+                    ResetFecReceiveState();
+                }
                 m_remoteTrack = value;
             }
         }
@@ -344,12 +456,17 @@ namespace SIPSorcery.Net
 
         public void AddBuffer(TimeSpan dropPacketTimeout)
         {
+            if (dropPacketTimeout < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(dropPacketTimeout));
             RTPReorderBuffer = new RTPReorderBuffer(dropPacketTimeout);
+            _explicitReceiveWait = dropPacketTimeout;
+            _fecReceiveBuffer?.SetRepairWait(dropPacketTimeout);
         }
 
         public void RemoveBuffer(TimeSpan dropPacketTimeout)
         {
             RTPReorderBuffer = null;
+            _explicitReceiveWait = null;
+            _fecReceiveBuffer?.SetRepairWait(FecConfig.MaxReceiveRepairWait);
         }
 
         public bool UseBuffer()
@@ -979,116 +1096,154 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            var format = LocalTrack?.GetFormatForPayloadID(hdr.PayloadType);
+            var format = LocalTrack?.GetFormatForPayloadID(rtpPacket.Header.PayloadType);
+            bool isRed = rtpPacket.Header.PayloadType == FecDecoder?.RedPayloadType || format?.IsRed == true;
+            bool isUlpfec = rtpPacket.Header.PayloadType == FecDecoder?.UlpfecPayloadType || format?.IsUlpfec == true;
 
-            bool isRed = (FecDecoder != null && hdr.PayloadType == FecDecoder.RedPayloadType) || (format != null && format.Value.IsRed);
-            bool isUlpfec = (FecDecoder != null && hdr.PayloadType == FecDecoder.UlpfecPayloadType) || (format != null && format.Value.IsUlpfec);
-
-            if (isRed && rtpPacket != null)
+            if (FecDecoder != null && (isRed || isUlpfec || format?.IsVideoMediaCodec == true))
             {
-                byte[] redPayload = rtpPacket.GetPayloadBytes() ?? rtpPacket.Payload;
-                if (RtpRedPayload.TryDecode(redPayload, out var redundantBlocks, out var primaryBlock))
-                {
-                    // Process redundant ULPFEC blocks if any
-                    foreach (var redBlock in redundantBlocks)
-                    {
-                        if (FecDecoder != null && (redBlock.PayloadType == FecDecoder.UlpfecPayloadType || LocalTrack?.GetFormatForPayloadID(redBlock.PayloadType)?.IsUlpfec == true))
-                        {
-                            var fecPkt = new RTPPacket(new ArraySegment<byte>(redBlock.Data), 0)
-                            {
-                                Header = rtpPacket.Header
-                            };
-                            fecPkt.Header.PayloadType = redBlock.PayloadType;
-                            fecPkt.Payload = redBlock.Data;
-
-                            FecDecoder.AddReceivedFec(fecPkt, out var recList);
-                            DispatchRecoveredPackets(remoteEndPoint, recList);
-                        }
-                    }
-
-                    // Check primary block: can be standalone ULPFEC repair or primary media (e.g. VP8 / H264)
-                    if (FecDecoder != null && (primaryBlock.PayloadType == FecDecoder.UlpfecPayloadType || LocalTrack?.GetFormatForPayloadID(primaryBlock.PayloadType)?.IsUlpfec == true))
-                    {
-                        var fecPkt = new RTPPacket(new ArraySegment<byte>(primaryBlock.Data), 0)
-                        {
-                            Header = rtpPacket.Header
-                        };
-                        fecPkt.Header.PayloadType = primaryBlock.PayloadType;
-                        fecPkt.Payload = primaryBlock.Data;
-
-                        FecDecoder.AddReceivedFec(fecPkt, out var recList);
-                        DispatchRecoveredPackets(remoteEndPoint, recList);
-                    }
-                    else
-                    {
-                        var unwrappedMedia = new RTPPacket(new ArraySegment<byte>(primaryBlock.Data), 0);
-                        unwrappedMedia.Header.SyncSource = rtpPacket.Header.SyncSource;
-                        unwrappedMedia.Header.SequenceNumber = rtpPacket.Header.SequenceNumber;
-                        unwrappedMedia.Header.Timestamp = rtpPacket.Header.Timestamp;
-                        unwrappedMedia.Header.MarkerBit = rtpPacket.Header.MarkerBit;
-                        unwrappedMedia.Header.PayloadType = primaryBlock.PayloadType;
-                        unwrappedMedia.Header.PaddingFlag = rtpPacket.Header.PaddingFlag;
-                        unwrappedMedia.Header.HeaderExtensionFlag = rtpPacket.Header.HeaderExtensionFlag;
-                        unwrappedMedia.Header.CSRCCount = rtpPacket.Header.CSRCCount;
-                        unwrappedMedia.Header.ExtensionProfile = rtpPacket.Header.ExtensionProfile;
-                        unwrappedMedia.Header.ExtensionLength = rtpPacket.Header.ExtensionLength;
-                        unwrappedMedia.Header.ExtensionPayload = rtpPacket.Header.ExtensionPayload;
-                        unwrappedMedia.Payload = primaryBlock.Data;
-
-                        var mediaFmt = LocalTrack?.GetFormatForPayloadID(primaryBlock.PayloadType);
-                        if (mediaFmt != null && !mediaFmt.Value.IsEmpty())
-                        {
-                            if (FecDecoder != null)
-                            {
-                                FecDecoder.AddReceivedMedia(unwrappedMedia, out var recList);
-                                DispatchReceivedMediaPacket(remoteEndPoint, unwrappedMedia, mediaFmt.Value);
-                                DispatchRecoveredPackets(remoteEndPoint, recList);
-                            }
-                            else
-                            {
-                                DispatchReceivedMediaPacket(remoteEndPoint, unwrappedMedia, mediaFmt.Value);
-                            }
-                        }
-                        else
-                        {
-                            logger.LogWarning("Received RED packet with unknown inner payload type {PayloadType} on {MediaType}.", primaryBlock.PayloadType, MediaType);
-                        }
-                    }
-
-                    RtcpSession?.RecordRtpPacketReceived(rtpPacket);
-                    return;
-                }
-            }
-            else if (isUlpfec && rtpPacket != null)
-            {
-                if (FecDecoder != null)
-                {
-                    FecDecoder.AddReceivedFec(rtpPacket, out var recList);
-                    DispatchRecoveredPackets(remoteEndPoint, recList);
-                }
-                RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+                ReceiveWithFec(remoteEndPoint, rtpPacket, isRed, isUlpfec);
                 return;
             }
 
-            if(format == null || format.Value.IsEmpty())
+            if (isRed)
             {
-                logger.LogWarning("Received RTP packet with unknown payload type {PayloadType} for {MediaType} stream from {RemoteEndPoint}.", hdr.PayloadType, MediaType, remoteEndPoint);
-            }
-            else if (rtpPacket != null)
-            {
-                if (FecDecoder != null)
+                RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+                if (RtpRedPayload.TryDecode(rtpPacket.GetPayloadBytes(), out _, out var primary))
                 {
-                    FecDecoder.AddReceivedMedia(rtpPacket, out var recList);
-                    DispatchReceivedMediaPacket(remoteEndPoint, rtpPacket, format.Value);
-                    DispatchRecoveredPackets(remoteEndPoint, recList);
+                    var mediaFormat = LocalTrack?.GetFormatForPayloadID(primary.PayloadType);
+                    if (mediaFormat?.IsVideoMediaCodec == true)
+                    {
+                        var media = CreateRedBlockPacket(rtpPacket.Header, primary);
+                        DispatchReceivedMediaPacket(remoteEndPoint, media, mediaFormat.Value);
+                    }
+                }
+                return;
+            }
+            if (isUlpfec)
+            {
+                RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+                return;
+            }
+            if (!format.HasValue || format.Value.IsEmpty())
+            {
+                logger.LogWarning("Received RTP packet with unknown payload type {PayloadType} for {MediaType} stream from {RemoteEndPoint}.",
+                    rtpPacket.Header.PayloadType, MediaType, remoteEndPoint);
+                return;
+            }
+            DispatchReceivedMediaPacket(remoteEndPoint, rtpPacket, format.Value);
+            RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+        }
+
+        private void ReceiveWithFec(IPEndPoint remoteEndPoint, RTPPacket wirePacket, bool isRed, bool isUlpfec)
+        {
+            var media = new List<RTPPacket>();
+            var protectedSequences = new List<ushort>();
+            bool repairOnly = isUlpfec;
+            RtpFecReceiveBuffer receiver;
+            lock (_fecReceiveLock)
+            {
+                receiver = _fecReceiveBuffer;
+                if (IsClosed || receiver == null || FecDecoder == null) return;
+                if (_fecReceiveSsrc.HasValue && _fecReceiveSsrc.Value != wirePacket.Header.SyncSource) return;
+
+                // RTCP observes network arrivals, never reconstructed packets or transformed headers.
+                RtcpSession?.RecordRtpPacketReceived(wirePacket);
+                var repairs = new List<RTPPacket>();
+                RTPPacket primaryMedia = null;
+                if (isRed)
+                {
+                    if (!RtpRedPayload.TryDecode(wirePacket.GetPayloadBytes(), out var redundant, out var primary)) return;
+                    foreach (var block in redundant)
+                    {
+                        if (block.PayloadType == FecDecoder.UlpfecPayloadType)
+                        {
+                            repairs.Add(CreateRedBlockPacket(wirePacket.Header, block));
+                        }
+                    }
+                    repairOnly = primary.PayloadType == FecDecoder.UlpfecPayloadType;
+                    if (repairOnly)
+                    {
+                        repairs.Add(CreateRedBlockPacket(wirePacket.Header, primary));
+                    }
+                    else if (LocalTrack?.GetFormatForPayloadID(primary.PayloadType)?.IsVideoMediaCodec == true)
+                    {
+                        primaryMedia = CreateRedBlockPacket(wirePacket.Header, primary);
+                    }
+                }
+                else if (isUlpfec)
+                {
+                    repairs.Add(wirePacket);
                 }
                 else
                 {
-                    DispatchReceivedMediaPacket(remoteEndPoint, rtpPacket, format.Value);
+                    primaryMedia = wirePacket;
                 }
 
-                RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+                if (primaryMedia != null)
+                {
+                    if (FecDecoder.TryAddReceivedMedia(primaryMedia, out var recovered)) media.Add(primaryMedia);
+                    AddRecoveredMedia(media, recovered);
+                }
+                foreach (var repair in repairs)
+                {
+                    if (!RtpUlpfecDecoder.TryParseFecPayload(repair.GetPayloadBytes(), out var info)) continue;
+                    // A piggybacked repair may cover its primary media at the same wire
+                    // sequence. A repair-only packet cannot protect itself or future media.
+                    if (info.ProtectedSequenceNumbers.Any(sequence =>
+                        unchecked((short)(sequence - wirePacket.Header.SequenceNumber)) > 0 ||
+                        (sequence == wirePacket.Header.SequenceNumber && primaryMedia == null))) continue;
+                    if (!FecDecoder.TryAddReceivedFec(repair, out var recovered)) continue;
+                    protectedSequences.AddRange(info.ProtectedSequenceNumbers);
+                    AddRecoveredMedia(media, recovered);
+                }
+                // Malformed repair-only packets cannot establish sequence positions or startup coverage.
+                if (repairOnly && protectedSequences.Count == 0) return;
+                if (primaryMedia == null && protectedSequences.Count == 0) return;
+                _fecReceiveSsrc = wirePacket.Header.SyncSource;
+                _fecRemoteEndPoint = remoteEndPoint;
             }
+            // The coordinator serializes timer/transport delivery and invokes consumers outside its state lock.
+            receiver.AddBatch(media, wirePacket.Header.SequenceNumber, repairOnly, protectedSequences);
+        }
+
+        private void AddRecoveredMedia(List<RTPPacket> media, List<RTPPacket> recovered)
+        {
+            foreach (var packet in recovered)
+            {
+                FecMetrics.RecordPacketRecovered();
+                media.Add(packet);
+            }
+        }
+
+        private static RTPPacket CreateRedBlockPacket(RTPHeader header, RtpRedBlock block)
+        {
+            var packet = new RTPPacket(new ArraySegment<byte>(block.Data), 0) { Header = CloneRtpHeader(header) };
+            packet.Header.PayloadType = block.PayloadType;
+            return packet;
+        }
+
+        internal static RTPHeader CloneRtpHeader(RTPHeader source)
+        {
+            return new RTPHeader
+            {
+                Version = source.Version,
+                PaddingFlag = source.PaddingFlag,
+                HeaderExtensionFlag = source.HeaderExtensionFlag,
+                CSRCCount = source.CSRCCount,
+                MarkerBit = source.MarkerBit,
+                PayloadType = source.PayloadType,
+                SequenceNumber = source.SequenceNumber,
+                Timestamp = source.Timestamp,
+                SyncSource = source.SyncSource,
+                CSRCList = source.CSRCList == null ? null : (int[])source.CSRCList.Clone(),
+                ExtensionProfile = source.ExtensionProfile,
+                ExtensionLength = source.ExtensionLength,
+                ExtensionPayload = source.ExtensionPayload == null ? null : (byte[])source.ExtensionPayload.Clone(),
+                PayloadSize = source.PayloadSize,
+                PaddingCount = source.PaddingCount,
+                ReceivedTime = source.ReceivedTime
+            };
         }
 
         private void DispatchReceivedMediaPacket(IPEndPoint remoteEndPoint, RTPPacket packet, SDPAudioVideoMediaFormat format)
@@ -1114,31 +1269,6 @@ namespace SIPSorcery.Net
                     RemoteTrack.LastRemoteSeqNum = packet.Header.SequenceNumber;
                 }
                 ProcessRtpPacket(remoteEndPoint, packet, format);
-            }
-        }
-
-        private void DispatchRecoveredPackets(IPEndPoint remoteEndPoint, List<RTPPacket> recoveredPackets)
-        {
-            if (recoveredPackets == null || recoveredPackets.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var recovered in recoveredPackets)
-            {
-                FecMetrics.RecordPacketRecovered();
-                var recFormat = LocalTrack?.GetFormatForPayloadID(recovered.Header.PayloadType);
-                if (recFormat != null && !recFormat.Value.IsEmpty())
-                {
-                    logger.LogDebug("Dispatching recovered {MediaType} packet SN={SeqNum} TS={Timestamp} PT={PayloadType}.",
-                        MediaType, recovered.Header.SequenceNumber, recovered.Header.Timestamp, recovered.Header.PayloadType);
-                    DispatchReceivedMediaPacket(remoteEndPoint, recovered, recFormat.Value);
-                    RtcpSession?.RecordRtpPacketReceived(recovered);
-                }
-                else
-                {
-                    logger.LogWarning("Recovered packet has unknown payload type {PayloadType}.", recovered.Header.PayloadType);
-                }
             }
         }
 

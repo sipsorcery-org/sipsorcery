@@ -535,44 +535,51 @@ namespace SIPSorcery.Net
         }
 
         public void ProcessVideoRtpFrame(IPEndPoint endpoint, RTPPacket packet, SDPAudioVideoMediaFormat format)
-        {
-            if (OnVideoFrameReceivedByIndex == null)
-            {
-                return;
-            }
+            => ProcessVideoRtpFrame(endpoint, packet, format, packet.Header.SequenceNumber);
 
-            if (RtpVideoFramer != null)
+        protected override void ResetFecFraming() => RtpVideoFramer = null;
+
+        protected override Action PrepareFecRtpPacket(IPEndPoint remoteEndPoint, RTPPacket packet,
+            SDPAudioVideoMediaFormat format, ushort framingSequence)
+        {
+            var frame = OnVideoFrameReceivedByIndex == null ? null : GetVideoRtpFrame(packet, format, framingSequence);
+            return () =>
             {
-                var frame = RtpVideoFramer.GotRtpPacket(packet);
                 if (frame != null)
                 {
-                    OnVideoFrameReceivedByIndex?.Invoke(Index, endpoint, packet.Header.Timestamp, frame, format.ToVideoFormat());
+                    OnVideoFrameReceivedByIndex?.Invoke(Index, remoteEndPoint, packet.Header.Timestamp, frame, format.ToVideoFormat());
                 }
-            }
-            else
+                RaiseOnRtpPacketReceivedByIndex(remoteEndPoint, packet);
+            };
+        }
+
+        private void ProcessVideoRtpFrame(IPEndPoint endpoint, RTPPacket packet,
+            SDPAudioVideoMediaFormat format, ushort framingSequence)
+        {
+            if (OnVideoFrameReceivedByIndex == null) return;
+            var frame = GetVideoRtpFrame(packet, format, framingSequence);
+            if (frame != null)
             {
-                if (format.ToVideoFormat().Codec == VideoCodecsEnum.VP8 ||
-                    format.ToVideoFormat().Codec == VideoCodecsEnum.VP9 ||
-                    format.ToVideoFormat().Codec == VideoCodecsEnum.AV1 ||
-                    format.ToVideoFormat().Codec == VideoCodecsEnum.H264 ||
-                    format.ToVideoFormat().Codec == VideoCodecsEnum.H265 ||
-                    format.ToVideoFormat().Codec == VideoCodecsEnum.JPEG)
-                {
-                    logger.LogDebug("Video depacketisation codec set to {Codec} for SSRC {SSRC}.", format.ToVideoFormat().Codec, packet.Header.SyncSource);
+                OnVideoFrameReceivedByIndex?.Invoke(Index, endpoint, packet.Header.Timestamp, frame, format.ToVideoFormat());
+            }
+        }
 
-                    RtpVideoFramer = new RtpVideoFramer(format.ToVideoFormat().Codec, MaxReconstructedVideoFrameSize);
-
-                    var frame = RtpVideoFramer.GotRtpPacket(packet);
-                    if (frame != null)
-                    {
-                        OnVideoFrameReceivedByIndex?.Invoke(Index, endpoint, packet.Header.Timestamp, frame, format.ToVideoFormat());
-                    }
-                }
-                else
+        private byte[] GetVideoRtpFrame(RTPPacket packet, SDPAudioVideoMediaFormat format, ushort framingSequence)
+        {
+            if (RtpVideoFramer == null)
+            {
+                var codec = format.ToVideoFormat().Codec;
+                if (codec != VideoCodecsEnum.VP8 && codec != VideoCodecsEnum.VP9 &&
+                    codec != VideoCodecsEnum.AV1 && codec != VideoCodecsEnum.H264 &&
+                    codec != VideoCodecsEnum.H265 && codec != VideoCodecsEnum.JPEG)
                 {
                     logger.LogWarning("Video depacketisation logic for codec {CodecName} has not been implemented, PR's welcome!", format.Name());
+                    return null;
                 }
+                logger.LogDebug("Video depacketisation codec set to {Codec} for SSRC {SSRC}.", codec, packet.Header.SyncSource);
+                RtpVideoFramer = new RtpVideoFramer(codec, MaxReconstructedVideoFrameSize);
             }
+            return RtpVideoFramer.GotRtpPacket(packet, framingSequence);
         }
 
         public void CheckVideoFormatsNegotiation()

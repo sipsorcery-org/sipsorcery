@@ -71,6 +71,9 @@ namespace SIPSorcery.Net
         }
 
         public byte[] GotRtpPacket(RTPPacket rtpPacket)
+            => GotRtpPacket(rtpPacket, rtpPacket.Header.SequenceNumber);
+
+        internal byte[] GotRtpPacket(RTPPacket rtpPacket, ushort framingSequence)
         {
             var payload = rtpPacket.GetPayloadBytes();
 
@@ -113,7 +116,7 @@ namespace SIPSorcery.Net
             }
             else if (_codec == VideoCodecsEnum.VP9)
             {
-                var frameStream = _vp9Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
+                var frameStream = _vp9Depacketiser.ProcessRTPPayload(payload, framingSequence, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
 
                 if (frameStream != null)
                 {
@@ -122,7 +125,7 @@ namespace SIPSorcery.Net
             }
             else if (_codec == VideoCodecsEnum.AV1)
             {
-                var frameStream = _av1Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
+                var frameStream = _av1Depacketiser.ProcessRTPPayload(payload, framingSequence, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
 
                 if (frameStream != null)
                 {
@@ -131,7 +134,7 @@ namespace SIPSorcery.Net
             }
             else if (_codec == VideoCodecsEnum.H264)
             {
-                var frameStream = _h264Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
+                var frameStream = _h264Depacketiser.ProcessRTPPayload(payload, framingSequence, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
 
                 if (frameStream != null)
                 {
@@ -140,7 +143,7 @@ namespace SIPSorcery.Net
             }
             else if (_codec == VideoCodecsEnum.H265)
             {
-                var frameStream = _h265Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
+                var frameStream = _h265Depacketiser.ProcessRTPPayload(payload, framingSequence, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
 
                 if (frameStream != null)
                 {
@@ -149,7 +152,7 @@ namespace SIPSorcery.Net
             }
             else if(_codec == VideoCodecsEnum.JPEG)
             {
-                var frameStream = _mJPEGDepacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
+                var frameStream = _mJPEGDepacketiser.ProcessRTPPayload(payload, framingSequence, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
                 if (frameStream != null)
                 {
                     return frameStream.ToArray();

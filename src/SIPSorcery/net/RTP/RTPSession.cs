@@ -2772,6 +2772,7 @@ namespace SIPSorcery.Net
                         //AudioDestinationEndPoint = null;
                         //AudioControlDestinationEndPoint = null;
                         mediaStream.RemoteTrack.Ssrc = 0;
+                        mediaStream.ResetFecReceiveState();
                     }
                     else
                     {

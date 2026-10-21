@@ -74,6 +74,12 @@ namespace SIPSorcery.Net
         public TimeSpan MaxRepairAge { get; set; } = DEFAULT_MAX_REPAIR_AGE;
 
         /// <summary>
+        /// Maximum time to wait for missing received video packets before abandoning an incomplete
+        /// frame. Complete frames are delivered immediately. Zero disables waiting, not ordering.
+        /// </summary>
+        public TimeSpan MaxReceiveRepairWait { get; set; } = TimeSpan.FromMilliseconds(20);
+
+        /// <summary>
         /// If true, use RFC 5109 long mask (48-bit mask / 8-byte Level 0 header) when the group
         /// span exceeds 16 packets. If false, limits group size to 16 packets (short mask).
         /// </summary>
@@ -91,6 +97,7 @@ namespace SIPSorcery.Net
                 MaxGroupPackets = MaxGroupPackets,
                 MinGroupPackets = MinGroupPackets,
                 MaxRepairAge = MaxRepairAge,
+                MaxReceiveRepairWait = MaxReceiveRepairWait,
                 AllowLongMask = AllowLongMask
             };
         }
