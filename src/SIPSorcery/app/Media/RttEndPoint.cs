@@ -20,6 +20,7 @@
 using System;
 using System.Diagnostics;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -50,12 +51,19 @@ namespace SIPSorcery.Media
         public const int DEFAULT_T140_PAYLOAD_TYPE = 98;
         public const int DEFAULT_RED_PAYLOAD_TYPE = 100;
 
+        /// <summary>
+        /// The most characters held for text received before the sink is started.
+        /// </summary>
+        public const int MAX_TEXT_RECEIVED_BEFORE_START = 4096;
+
         private static readonly ILogger logger = LogFactory.CreateLogger<RttEndPoint>();
 
         private readonly int _bufferTimeMilliseconds;
         private readonly int _charactersPerSecond;
         private readonly Stopwatch _clock = Stopwatch.StartNew();
         private readonly object _timerSync = new object();
+        private readonly object _sinkSync = new object();
+        private readonly StringBuilder _textReceivedBeforeStart = new StringBuilder();
 
         private TextFormat _sourceFormat;
         private TextFormat _sinkFormat;
@@ -66,6 +74,7 @@ namespace SIPSorcery.Media
         private bool _sourcePaused;
         private bool _sinkStarted;
         private bool _sinkPaused;
+        private bool _sinkClosed;
 
         /// <summary>
         /// Fires with the RTP payloads to send to the remote party.
@@ -135,17 +144,38 @@ namespace SIPSorcery.Media
 
         public void GotTextRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, int marker, byte[] payload)
         {
-            if (!_sinkStarted || _sinkPaused)
+            if (_sinkPaused || _sinkClosed)
             {
                 return;
             }
 
             var text = _depacketiser.ProcessPayload(ssrc, (ushort)seqnum, payloadID, payload);
 
-            if (text.Length > 0)
+            if (text.Length == 0)
             {
-                OnTextReceived?.Invoke(text);
+                return;
             }
+
+            lock (_sinkSync)
+            {
+                if (!_sinkStarted)
+                {
+                    // The remote party can start sending as soon as it has answered, which can be before
+                    // this side has started its media session, so early text is held until the sink starts.
+                    if (_textReceivedBeforeStart.Length + text.Length <= MAX_TEXT_RECEIVED_BEFORE_START)
+                    {
+                        _textReceivedBeforeStart.Append(text);
+                    }
+                    else
+                    {
+                        logger.LogWarning("RTT text received before the sink was started exceeded {MaxChars} characters, text discarded.", MAX_TEXT_RECEIVED_BEFORE_START);
+                    }
+
+                    return;
+                }
+            }
+
+            OnTextReceived?.Invoke(text);
         }
 
         public TextFormat GetTextSourceFormat() => _sourceFormat;
@@ -207,7 +237,21 @@ namespace SIPSorcery.Media
 
         public Task StartTextSink()
         {
-            _sinkStarted = true;
+            string earlyText;
+
+            lock (_sinkSync)
+            {
+                _sinkStarted = true;
+                _sinkClosed = false;
+                earlyText = _textReceivedBeforeStart.ToString();
+                _textReceivedBeforeStart.Clear();
+            }
+
+            if (earlyText.Length > 0)
+            {
+                OnTextReceived?.Invoke(earlyText);
+            }
+
             return Task.CompletedTask;
         }
 
@@ -267,7 +311,13 @@ namespace SIPSorcery.Media
 
         public Task CloseTextSink()
         {
-            _sinkStarted = false;
+            lock (_sinkSync)
+            {
+                _sinkStarted = false;
+                _sinkClosed = true;
+                _textReceivedBeforeStart.Clear();
+            }
+
             return Task.CompletedTask;
         }
 

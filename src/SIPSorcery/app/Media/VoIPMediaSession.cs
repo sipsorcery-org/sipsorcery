@@ -357,19 +357,18 @@ namespace SIPSorcery.Media
 
         protected void RtpMediaPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
         {
+            // This handler is only subscribed when there is a text sink. It sees the RTP packets for every
+            // media type but audio and video are delivered by their own frame events so are ignored here.
+            if (mediaType != SDPMediaTypesEnum.text || Media.TextSink == null)
+            {
+                return;
+            }
+
             var hdr = rtpPacket.Header;
-            bool marker = rtpPacket.Header.MarkerBit > 0;
 
-            if (mediaType == SDPMediaTypesEnum.text && Media.TextSink != null)
-            {
-                logger.LogTrace(nameof(RtpMediaPacketReceived) + " text RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
+            logger.LogTrace(nameof(RtpMediaPacketReceived) + " text RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
 
-                Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacket.GetPayloadBytes());
-            }
-            else
-            {
-                logger.LogWarning(nameof(RtpMediaPacketReceived) + " RTP packet without a media handler received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
-            }
+            Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacket.GetPayloadBytes());
         }
 
         public async Task PutOnHold()
@@ -394,9 +393,10 @@ namespace SIPSorcery.Media
                 }
             }
 
-            if (HasText)
+            if (HasText && Media.TextSource != null)
             {
-                // TODO can be put on / taken off hold?
+                // Text is not replaced with anything while on hold, the source just stops taking new text.
+                await Media.TextSource.PauseText().ConfigureAwait(false);
             }
         }
 
@@ -433,9 +433,9 @@ namespace SIPSorcery.Media
                 }
             }
 
-            if (HasText)
+            if (HasText && Media.TextSource != null)
             {
-                // TODO can be put on / taken off hold?
+                await Media.TextSource.ResumeText().ConfigureAwait(false);
             }
         }
     }

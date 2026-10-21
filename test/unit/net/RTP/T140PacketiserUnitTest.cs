@@ -305,6 +305,68 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
+        /// The remote party can send text before this side starts its media session. That text
+        /// must be held and delivered when the sink starts rather than dropped.
+        /// </summary>
+        [Fact]
+        public async Task TextReceivedBeforeSinkStartIsDeliveredOnStartUnitTest()
+        {
+            using var rtt = new RttEndPoint(useRedundancy: false);
+            var received = new StringBuilder();
+            rtt.OnTextReceived += text => received.Append(text);
+            var ep = new IPEndPoint(IPAddress.Loopback, 5000);
+
+            rtt.GotTextRtp(ep, 1, 0, 0, T140_PT, 1, Encoding.UTF8.GetBytes("He"));
+            rtt.GotTextRtp(ep, 1, 1, 300, T140_PT, 0, Encoding.UTF8.GetBytes("llo"));
+
+            Assert.Equal(string.Empty, received.ToString());
+
+            await rtt.StartTextSink();
+            Assert.Equal("Hello", received.ToString());
+
+            rtt.GotTextRtp(ep, 1, 2, 600, T140_PT, 0, Encoding.UTF8.GetBytes("!"));
+            Assert.Equal("Hello!", received.ToString());
+        }
+
+        [Fact]
+        public async Task TextReceivedAfterSinkCloseIsDroppedUnitTest()
+        {
+            using var rtt = new RttEndPoint(useRedundancy: false);
+            var received = new StringBuilder();
+            rtt.OnTextReceived += text => received.Append(text);
+            var ep = new IPEndPoint(IPAddress.Loopback, 5000);
+
+            await rtt.StartTextSink();
+            await rtt.CloseTextSink();
+            rtt.GotTextRtp(ep, 1, 0, 0, T140_PT, 1, Encoding.UTF8.GetBytes("late"));
+
+            Assert.Equal(string.Empty, received.ToString());
+        }
+
+        [Fact]
+        public async Task HoldPausesAndResumesTextSourceUnitTest()
+        {
+            using var rtt = new RttEndPoint();
+            var session = new VoIPMediaSession(new MediaEndPoints { TextSource = rtt, TextSink = rtt });
+
+            try
+            {
+                await rtt.StartText();
+                Assert.True(rtt.CanSendText);
+
+                await session.PutOnHold();
+                Assert.False(rtt.CanSendText);
+
+                await session.TakeOffHold();
+                Assert.True(rtt.CanSendText);
+            }
+            finally
+            {
+                session.Close(null);
+            }
+        }
+
+        /// <summary>
         /// The local offer from a session with an RttEndPoint must include both RED and the
         /// t140 format it references.
         /// </summary>
