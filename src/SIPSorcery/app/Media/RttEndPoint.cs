@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RttEndPoint.cs
 //
 // Description: A real-time text (RTT) source and sink implementing RFC 4103
@@ -76,7 +76,7 @@ namespace SIPSorcery.Media
         /// Fires when new text is received from the remote party. Unrecoverable loss is shown
         /// with <see cref="T140Depacketiser.LOSS_MARKER"/>.
         /// </summary>
-        public event Action<string> OnTextReceived;
+        public event Action<TextEventArgs> OnTextReceived;
 
         /// <summary>
         /// The number of received packets whose text was recovered from redundancy.
@@ -144,7 +144,7 @@ namespace SIPSorcery.Media
 
             if (text.Length > 0)
             {
-                OnTextReceived?.Invoke(text);
+                OnTextReceived?.Invoke(new TextEventArgs(ssrc, text, new DateTime(timestamp)));
             }
         }
 
