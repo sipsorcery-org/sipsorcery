@@ -112,7 +112,17 @@ namespace SIPSorcery.SoftPhone
         {
             if (SIPSoftPhoneState.Settings.EnableLog)
             {
+                string errorMsg = null;
                 _logPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SIPSorcery", $"{SIPSoftPhoneState.Settings.SIPFromName}.log");
+
+                try
+                {
+                    System.IO.File.Delete(_logPath);
+                }
+                catch (Exception ex)
+                {
+                    errorMsg = ex.Message;
+                }
 
                 Log.Logger = new LoggerConfiguration()
                     .MinimumLevel.Debug()
@@ -123,7 +133,12 @@ namespace SIPSorcery.SoftPhone
                     .CreateLogger();
 
                 var factory = new Serilog.Extensions.Logging.SerilogLoggerFactory(Log.Logger);
-                SIPSorcery.LogFactory.Set(factory);
+                LogFactory.Set(factory);
+
+                if (errorMsg != null)
+                {
+                    Log.Logger.Warning($"Could not delete existing log file '{_logPath}': {errorMsg}");
+                }
             }
         }
 
@@ -299,6 +314,11 @@ namespace SIPSorcery.SoftPhone
             {
                 _videoArea.Visibility = _client0Video.Visibility == Visibility.Visible || _client1Video.Visibility == Visibility.Visible
                     ? Visibility.Visible : Visibility.Collapsed;
+
+                if (!string.IsNullOrWhiteSpace(_rttOutgoingBox.Text))
+                {
+                    SetMessageComplete(_rttOutgoingBox.Text);
+                }
             });
 
             UpdateRttSendingState();
@@ -863,8 +883,7 @@ namespace SIPSorcery.SoftPhone
                 textToSend = "\r";
 
                 string completeMessage = _rttOutgoingBox.Text.TrimEnd('\r');
-                _ = Task.Run(() => CreateRttMessageEntry(DateTime.Now, completeMessage));
-                _rttOutgoingBox.Clear();
+                SetMessageComplete(completeMessage);
             }
             else if (e.Key == System.Windows.Input.Key.Space)
             {
@@ -875,6 +894,12 @@ namespace SIPSorcery.SoftPhone
             {
                 _sipClients.ForEach(client => _ = Task.Run(() => client.RttEndPoint?.SendText(textToSend)));
             }
+        }
+
+        private void SetMessageComplete(string completeMessage)
+        {
+            _ = Task.Run(() => CreateRttMessageEntry(DateTime.Now, completeMessage));
+            _rttOutgoingBox.Clear();
         }
 
         // this is for user pasting from clipboard
