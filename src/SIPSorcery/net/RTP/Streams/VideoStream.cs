@@ -512,6 +512,12 @@ namespace SIPSorcery.Net
             }
         }
 
+        internal void ResetSendingFormat()
+        {
+            sendingFormat = VideoFormat.Empty;
+            sendingFormatFound = false;
+        }
+
         /// <summary>
         /// Moves the track timestamp on after a frame: by the frame's duration for the duration based methods (as
         /// they always have), or to the explicit timestamp the frame was sent with.
@@ -589,6 +595,7 @@ namespace SIPSorcery.Net
                 OnVideoFormatsNegotiatedByIndex?.Invoke(
                             Index,
                             LocalTrack.Capabilities
+                            .Where(x => x.IsVideoMediaCodec)
                             .Select(x => x.ToVideoFormat()).ToList());
             }
         }

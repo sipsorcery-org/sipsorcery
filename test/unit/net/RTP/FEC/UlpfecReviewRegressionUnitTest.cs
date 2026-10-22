@@ -40,9 +40,11 @@ namespace SIPSorcery.Net.UnitTests
             var videoFrames = new List<byte[]>();
             if (videoFec)
             {
-                session.EnableVideoFec();
                 session.addTrack(new MediaStreamTrack(SDPMediaTypesEnum.video, false,
-                    new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, MediaPt, "VP8", 90000) }));
+                    new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, MediaPt, "VP8", 90000) })
+                {
+                    Redundancy = RtpRedundancyOptions.Red | RtpRedundancyOptions.Ulpfec
+                });
                 var clock = new FecTestClock();
                 session.VideoStream.SetFecReceiveTiming(() => clock.Now, clock.CreateTimer);
                 session.VideoStream.EnableUlpfec(RedPt, FecPt, MediaPt);

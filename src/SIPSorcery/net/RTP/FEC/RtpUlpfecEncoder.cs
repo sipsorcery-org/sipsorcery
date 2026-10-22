@@ -43,7 +43,7 @@ namespace SIPSorcery.Net
         public int UlpfecPayloadType { get; private set; }
         public int MediaPayloadType { get; private set; }
 
-        public bool IsActive { get; private set; }
+        public bool IsActive { get; } = true;
 
         public RtpUlpfecConfig Config
         {
@@ -57,7 +57,6 @@ namespace SIPSorcery.Net
             UlpfecPayloadType = ulpfecPayloadType;
             MediaPayloadType = mediaPayloadType;
             _config = config?.Clone() ?? new RtpUlpfecConfig();
-            IsActive = _config.Enabled;
             _groupStartTimestampTicks = Stopwatch.GetTimestamp();
         }
 

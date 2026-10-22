@@ -1138,6 +1138,7 @@ namespace SIPSorcery.Net
         public RTCSessionDescriptionInit createOffer(RTCOfferOptions options = null)
         {
             List<MediaStream> mediaStreamList = GetMediaStreams();
+            PrepareFecOffer(mediaStreamList);
             //Revert to DefaultStreamStatus
             foreach (var mediaStream in mediaStreamList)
             {

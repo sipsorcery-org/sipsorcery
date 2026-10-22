@@ -86,7 +86,6 @@ namespace SIPSorcery.Net.UnitTests
             // Enable ULPFEC on VideoStream
             var fecConfig = new RtpUlpfecConfig
             {
-                Enabled = true,
                 TargetOverheadFraction = 0.20f,
                 MinGroupPackets = 1
             };

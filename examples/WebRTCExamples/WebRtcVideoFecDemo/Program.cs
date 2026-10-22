@@ -76,18 +76,18 @@ namespace WebRtcVideoFecDemo
                     0,
                     "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f");
 
-                var videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { h264Format }, MediaStreamStatusEnum.SendOnly);
-                videoTrack.AddFecFormats(redPt: 122, ulpfecPt: 127);
-                pc.addTrack(videoTrack);
-
-                // Enable ULPFEC on the session
-                pc.EnableVideoFec(new RtpUlpfecConfig
+                var videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false,
+                    new List<SDPAudioVideoMediaFormat> { h264Format }, MediaStreamStatusEnum.SendOnly)
                 {
-                    Enabled = true,
-                    TargetOverheadFraction = 0.20f, // 20% parity overhead
-                    MaxGroupPackets = 16,
-                    MinGroupPackets = 1
-                });
+                    Redundancy = RtpRedundancyOptions.Red | RtpRedundancyOptions.Ulpfec,
+                    FecConfig = new RtpUlpfecConfig
+                    {
+                        TargetOverheadFraction = 0.20f, // 20% parity overhead
+                        MaxGroupPackets = 16,
+                        MinGroupPackets = 1
+                    }
+                };
+                pc.addTrack(videoTrack);
 
                 pc.onconnectionstatechange += (state) =>
                 {
@@ -104,11 +104,12 @@ namespace WebRtcVideoFecDemo
                                 try
                                 {
                                     var hdr = new RTPHeader(buffer);
-                                    if (hdr.PayloadType == 122 && buffer.Length > hdr.Length)
+                                    var encoder = pc.VideoStream.FecEncoder;
+                                    if (encoder != null && hdr.PayloadType == encoder.RedPayloadType && buffer.Length > hdr.Length)
                                     {
                                         byte redHeader = buffer[hdr.Length];
                                         int innerPt = redHeader & 0x7F;
-                                        if (innerPt == 96) // H.264 primary media
+                                        if (innerPt == encoder.MediaPayloadType) // Negotiated primary media.
                                         {
                                             int count = System.Threading.Interlocked.Increment(ref _packetCounter);
                                             if ((count % _impairmentDropInterval) == 0)

@@ -131,6 +131,7 @@ namespace SIPSorcery.Net
         private ulong m_sdpAnnouncementVersion = 0;     // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
         internal int m_rtpChannelsCount = 0;            // Need to know the number of RTP Channels
         private int m_nextMediaInsertionOrder = 0;      // Need to keep track of insertion order of different media for SDP renegotiation.
+        private readonly RtpFecPayloadTypes _fecPayloadTypes = new RtpFecPayloadTypes();
 
         // The stream used for the underlying RTP session to create a single RTP channel that will
         // be used to multiplex all required media streams. (see addSingleTrack())
@@ -516,23 +517,6 @@ namespace SIPSorcery.Net
         ///  - The video format of the encoded frame.
         /// </remarks>
         public event Action<int, IPEndPoint, uint, byte[], VideoFormat> OnVideoFrameReceivedByIndex;
-
-        /// <summary>
-        /// Forward error correction configuration for video streams created by this session.
-        /// </summary>
-        public RtpUlpfecConfig VideoFecConfig { get; set; }
-
-        /// <summary>
-        /// Enables ULPFEC / RED video forward error correction on this session.
-        /// </summary>
-        public void EnableVideoFec(RtpUlpfecConfig config = null)
-        {
-            VideoFecConfig = config ?? new RtpUlpfecConfig { Enabled = true };
-            if (VideoStream != null)
-            {
-                VideoStream.FecConfig = VideoFecConfig;
-            }
-        }
 
         /// <summary>
         /// It's recommended to use the <see cref="OnAudioFrameReceived"/> and <see cref="OnVideoFrameReceived"/>
@@ -940,6 +924,10 @@ namespace SIPSorcery.Net
             OnAudioFrameReceived?.Invoke(encodedAudioFrame);
         }
 
+        // Both offer entry points share the same session-owned payload assignments.
+        internal void PrepareFecOffer(List<MediaStream> mediaStreams)
+            => _fecPayloadTypes.PrepareOffer(mediaStreams, rtpSessionConfig.IsMediaMultiplexed);
+
         /// <summary>
         /// Generates the SDP for an offer that can be made to a remote user agent.
         /// </summary>
@@ -963,6 +951,7 @@ namespace SIPSorcery.Net
             else
             {
                 List<MediaStream> mediaStreams = GetMediaStreams();
+                PrepareFecOffer(mediaStreams);
 
                 //Revert to DefaultStreamStatus
                 foreach (var mediaStream in mediaStreams)
@@ -1113,10 +1102,6 @@ namespace SIPSorcery.Net
             {
                 VideoStream videoStream = new VideoStream(rtpSessionConfig, index);
                 videoStream.MediaInsertionOrder = Interlocked.Increment(ref m_nextMediaInsertionOrder);
-                if (VideoFecConfig != null)
-                {
-                    videoStream.FecConfig = VideoFecConfig.Clone();
-                }
                 VideoStreamList.Add(videoStream);
                 return videoStream;
             }
@@ -1182,6 +1167,8 @@ namespace SIPSorcery.Net
                     connectionAddress = IPAddress.Parse(sessionDescription.Connection.ConnectionAddress);
                 }
 
+
+                _fecPayloadTypes.SetNegotiationScope(sessionDescription.Media, rtpSessionConfig.IsMediaMultiplexed);
 
                 //Remove Remote Tracks before add new one (this was added to implement renegotiation logic)
                 foreach (var audioStream in AudioStreamList)
@@ -1278,10 +1265,37 @@ namespace SIPSorcery.Net
                         capabilities = remoteTrack.Capabilities;
                         var inactiveLocalTrack = new MediaStreamTrack(currentMediaStream.MediaType, false, remoteTrack.Capabilities, MediaStreamStatusEnum.Inactive);
                         currentMediaStream.LocalTrack = inactiveLocalTrack;
+                        if (currentMediaStream.MediaType == SDPMediaTypesEnum.video)
+                        {
+                            capabilities = _fecPayloadTypes.GetNegotiationCapabilities(currentMediaStream,
+                                remoteTrack.Capabilities, sdpType == SdpType.offer);
+                            currentMediaStream.LocalTrack.Capabilities = capabilities;
+                            remoteTrack.Capabilities = capabilities;
+                        }
                     }
                     else
                     {
-                        capabilities = SDPAudioVideoMediaFormat.GetCompatibleFormats(currentMediaStream.RemoteTrack?.Capabilities, currentMediaStream.LocalTrack?.Capabilities);
+                        var localCapabilities = currentMediaStream.LocalTrack.Capabilities;
+                        if (currentMediaStream.MediaType == SDPMediaTypesEnum.video)
+                        {
+                            localCapabilities = _fecPayloadTypes.GetNegotiationCapabilities(currentMediaStream,
+                                remoteTrack.Capabilities, sdpType == SdpType.offer);
+                        }
+                        capabilities = SDPAudioVideoMediaFormat.GetCompatibleFormats(remoteTrack.Capabilities, localCapabilities);
+                        if (currentMediaStream.MediaType == SDPMediaTypesEnum.video)
+                        {
+                            // Generic codec matching intentionally ignores payload IDs. FEC
+                            // must keep the exact pair selected for this offer/answer.
+                            capabilities.RemoveAll(format => (format.IsRed || format.IsUlpfec) &&
+                                !localCapabilities.Any(candidate => candidate.ID == format.ID &&
+                                    candidate.Kind == format.Kind &&
+                                    string.Equals(candidate.Rtpmap?.Trim(), format.Rtpmap?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                                    string.Equals(candidate.Fmtp?.Trim() ?? string.Empty, format.Fmtp?.Trim() ?? string.Empty, StringComparison.Ordinal)));
+                            if (!capabilities.Any(format => format.IsRed) || !capabilities.Any(format => format.IsUlpfec))
+                            {
+                                capabilities.RemoveAll(format => format.IsRed || format.IsUlpfec);
+                            }
+                        }
 
                         // The offerer gets to set the codec priority.
                         // When receiving an offer: the REMOTE party is the offerer, so their Capabilities are the priority key.
@@ -1289,30 +1303,14 @@ namespace SIPSorcery.Net
                         SDPAudioVideoMediaFormat.SortMediaCapability(capabilities,
                             sdpType == SdpType.offer ? currentMediaStream.RemoteTrack?.Capabilities : currentMediaStream.LocalTrack?.Capabilities);
 
+                        if (currentMediaStream.MediaType == SDPMediaTypesEnum.video && announcement.Port != 0)
+                        {
+                            // Validate the selected FEC bindings before installing a new
+                            // capability list or changing an existing stream's runtime state.
+                            _fecPayloadTypes.RecordNegotiatedFormats(currentMediaStream, capabilities, rtpSessionConfig.IsMediaMultiplexed);
+                        }
                         currentMediaStream.LocalTrack.Capabilities = capabilities;
                         currentMediaStream.RemoteTrack.Capabilities = capabilities;
-
-                        if (currentMediaStream.MediaType == SDPMediaTypesEnum.video)
-                        {
-                            var fecConfig = currentMediaStream.FecConfig ?? VideoFecConfig;
-                            if (fecConfig != null && fecConfig.Enabled)
-                            {
-                                bool hasRed = capabilities.Any(x => x.IsRed);
-                                bool hasUlpfec = capabilities.Any(x => x.IsUlpfec);
-                                var primaryVideoFmt = capabilities.FirstOrDefault(x => x.IsVideoMediaCodec);
-
-                                if (hasRed && hasUlpfec && !primaryVideoFmt.IsEmpty())
-                                {
-                                    var redFmt = capabilities.First(x => x.IsRed);
-                                    var ulpfecFmt = capabilities.First(x => x.IsUlpfec);
-                                    currentMediaStream.EnableUlpfec(redFmt.ID, ulpfecFmt.ID, primaryVideoFmt.ID, fecConfig);
-                                }
-                                else
-                                {
-                                    currentMediaStream.DisableUlpfec("Negotiated video capabilities do not include required RED, ULPFEC, and primary video media formats.");
-                                }
-                            }
-                        }
 
                         if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                         {
@@ -1381,6 +1379,28 @@ namespace SIPSorcery.Net
                         logger.LogDebug("Setting remote {SdpMediaType} track with sdp destination {DestinationEndPoint} and control destination {ControlDestinationEndPoint}.", currentMediaStream.MediaType, currentMediaStream.DestinationEndPoint, currentMediaStream.ControlDestinationEndPoint);
                     }
 
+                    if (currentMediaStream.MediaType == SDPMediaTypesEnum.video)
+                    {
+                        currentMediaStream.LocalTrack.ValidateRedundancy();
+                        bool requested = currentMediaStream.LocalTrack.Redundancy != RtpRedundancyOptions.None;
+                        var primaryVideoFmt = capabilities.FirstOrDefault(format => format.IsVideoMediaCodec);
+                        var redFmt = capabilities.FirstOrDefault(format => format.IsRed);
+                        var ulpfecFmt = capabilities.FirstOrDefault(format => format.IsUlpfec);
+                        bool active = announcement.Port != 0 &&
+                            currentMediaStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive &&
+                            remoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
+
+                        if (requested && active && primaryVideoFmt.IsVideoMediaCodec && redFmt.IsRed && ulpfecFmt.IsUlpfec)
+                        {
+                            currentMediaStream.EnableUlpfec(redFmt.ID, ulpfecFmt.ID, primaryVideoFmt.ID, currentMediaStream.LocalTrack.FecConfig);
+                        }
+                        else
+                        {
+                            currentMediaStream.DisableUlpfec("Video track did not negotiate active RED and ULPFEC protection.");
+                        }
+                        ((VideoStream)currentMediaStream).ResetSendingFormat();
+                    }
+
                     if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                     {
                         if (capabilities?.Where(x => !string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase)).Count() == 0)
@@ -1397,7 +1417,8 @@ namespace SIPSorcery.Net
                     }
                     else if (currentMediaStream.MediaType == SDPMediaTypesEnum.video)
                     {
-                        if (capabilities?.Count == 0 || (currentMediaStream.LocalTrack != null && currentMediaStream.LocalTrack.Capabilities?.Count == 0))
+                        if (capabilities?.Any(format => format.IsVideoMediaCodec) != true ||
+                            currentMediaStream.LocalTrack?.Capabilities?.Any(format => format.IsVideoMediaCodec) != true)
                         {
                             return SetDescriptionResultEnum.VideoIncompatible;
                         }
@@ -1416,6 +1437,11 @@ namespace SIPSorcery.Net
                 //Close old RTCPSessions opened
                 foreach (var videoStream in VideoStreamList)
                 {
+                    if (videoStream.RemoteTrack == null)
+                    {
+                        videoStream.DisableUlpfec("Remote description omitted the video stream.");
+                        videoStream.ResetSendingFormat();
+                    }
                     if (videoStream.RtcpSession != null && videoStream.RemoteTrack == null && videoStream.LocalTrack == null)
                     {
                         videoStream.RtcpSession.Close(null);

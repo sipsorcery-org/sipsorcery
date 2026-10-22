@@ -107,19 +107,19 @@ namespace SIPSorcery.Net
         public int MediaInsertionOrder = -1;
 
         /// <summary>
-        /// Forward error correction configuration options.
+        /// Snapshot of the negotiated track's forward error correction policy.
         /// </summary>
-        public RtpUlpfecConfig FecConfig { get; set; } = new RtpUlpfecConfig { Enabled = false };
+        internal RtpUlpfecConfig FecConfig { get; private set; } = new RtpUlpfecConfig();
 
         /// <summary>
         /// The active RFC 5109 / RFC 2198 FEC encoder when FEC is negotiated and enabled.
         /// </summary>
-        public RtpUlpfecEncoder FecEncoder { get; protected set; }
+        public RtpUlpfecEncoder FecEncoder { get; private set; }
 
         /// <summary>
         /// The active RFC 5109 / RFC 2198 FEC decoder when FEC is negotiated and enabled.
         /// </summary>
-        public RtpUlpfecDecoder FecDecoder { get; protected set; }
+        public RtpUlpfecDecoder FecDecoder { get; private set; }
 
         /// <summary>
         /// Metrics tracking media sends, FEC repair generation, send rates, and impairment drops.
@@ -129,19 +129,19 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Enables ULPFEC / RED forward error correction on this stream with the negotiated payload types.
         /// </summary>
-        public void EnableUlpfec(int redPayloadType, int ulpfecPayloadType, int mediaPayloadType, RtpUlpfecConfig config = null)
+        internal void EnableUlpfec(int redPayloadType, int ulpfecPayloadType, int mediaPayloadType, RtpUlpfecConfig config = null)
         {
+            var fecConfig = config?.Clone() ?? new RtpUlpfecConfig();
+            if (fecConfig.MaxReceiveRepairWait < TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(config), "The receive repair wait cannot be negative.");
+            }
             lock (_fecReceiveLock)
             {
-                FecConfig = config?.Clone() ?? FecConfig ?? new RtpUlpfecConfig();
-                if (FecConfig.MaxReceiveRepairWait < TimeSpan.Zero)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(config), "The receive repair wait cannot be negative.");
-                }
+                FecConfig = fecConfig;
                 _fecReceiveBuffer?.Dispose();
                 _fecReceiveSsrc = null;
                 ResetFecFraming();
-                FecConfig.Enabled = true;
                 FecEncoder = new RtpUlpfecEncoder(redPayloadType, ulpfecPayloadType, mediaPayloadType, FecConfig);
                 FecDecoder = new RtpUlpfecDecoder(redPayloadType, ulpfecPayloadType);
                 _fecReceiveBuffer = CreateFecReceiveBuffer();
@@ -153,7 +153,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Disables forward error correction on this stream.
         /// </summary>
-        public void DisableUlpfec(string reason = null)
+        internal void DisableUlpfec(string reason = null)
         {
             lock (_fecReceiveLock)
             {
@@ -166,10 +166,6 @@ namespace SIPSorcery.Net
                     logger.LogInformation("ULPFEC disabled on {MediaType} stream. Reason: {Reason}", MediaType, reason ?? "Disabled by caller");
                     FecEncoder = null;
                     FecDecoder = null;
-                }
-                if (FecConfig != null)
-                {
-                    FecConfig.Enabled = false;
                 }
             }
         }
@@ -1059,7 +1055,7 @@ namespace SIPSorcery.Net
         public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
             RTPPacket rtpPacket;
-            if (NegotiatedRtpEventPayloadID != 0 && hdr.PayloadType == NegotiatedRtpEventPayloadID)
+            if (MediaType == SDPMediaTypesEnum.audio && NegotiatedRtpEventPayloadID != 0 && hdr.PayloadType == NegotiatedRtpEventPayloadID)
             {
                 if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
                 {
@@ -1488,43 +1484,34 @@ namespace SIPSorcery.Net
         /// <returns>The first compatible media format found for the specified media type.</returns>
         public SDPAudioVideoMediaFormat GetSendingFormat()
         {
-            if (LocalTrack != null || RemoteTrack != null)
-            {
-                if (LocalTrack == null)
-                {
-                    return RemoteTrack.Capabilities.First();
-                }
-                else if (RemoteTrack == null)
-                {
-                    return LocalTrack.Capabilities.First();
-                }
-
-                SDPAudioVideoMediaFormat format;
-                if (MediaType == SDPMediaTypesEnum.audio)
-                {
-                    format = SDPAudioVideoMediaFormat.GetCompatibleFormats(RemoteTrack.Capabilities, LocalTrack.Capabilities)
-                        .Where(x => x.ID != NegotiatedRtpEventPayloadID).FirstOrDefault();
-                }
-                else
-                {
-                    format = SDPAudioVideoMediaFormat.GetCompatibleFormats(RemoteTrack.Capabilities, LocalTrack.Capabilities).First();
-                }
-
-                if (format.IsEmpty())
-                {
-                    // It's not expected that this occurs as a compatibility check is done when the remote session description
-                    // is set. By this point a compatible codec should be available.
-                    throw new ApplicationException($"No compatible sending format could be found for media {MediaType}.");
-                }
-                else
-                {
-                    return format;
-                }
-            }
-            else
+            if (LocalTrack == null && RemoteTrack == null)
             {
                 throw new ApplicationException($"Cannot get the {MediaType} sending format, missing either local or remote {MediaType} track.");
             }
+
+            IEnumerable<SDPAudioVideoMediaFormat> formats = LocalTrack == null
+                ? RemoteTrack.Capabilities
+                : RemoteTrack == null
+                    ? LocalTrack.Capabilities
+                    : SDPAudioVideoMediaFormat.GetCompatibleFormats(RemoteTrack.Capabilities, LocalTrack.Capabilities);
+
+            if (MediaType == SDPMediaTypesEnum.video)
+            {
+                formats = formats?.Where(x => x.IsVideoMediaCodec);
+            }
+            else if (MediaType == SDPMediaTypesEnum.audio && LocalTrack != null && RemoteTrack != null)
+            {
+                formats = formats?.Where(x => x.ID != NegotiatedRtpEventPayloadID);
+            }
+
+            var format = formats == null
+                ? SDPAudioVideoMediaFormat.Empty
+                : formats.DefaultIfEmpty(SDPAudioVideoMediaFormat.Empty).First();
+            if (format.IsEmpty())
+            {
+                throw new ApplicationException($"No compatible sending format could be found for media {MediaType}.");
+            }
+            return format;
         }
 
         public void ProcessHeaderExtensions(RTPHeader header, IPEndPoint remoteEndPoint)

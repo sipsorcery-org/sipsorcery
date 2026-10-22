@@ -66,13 +66,13 @@ namespace SIPSorcery.Net.UnitTests
         public void NegotiatesUlpfecWhenOfferedByPeerTest()
         {
             var session = new RTPSession(new RtpSessionConfig());
-            session.EnableVideoFec(new RtpUlpfecConfig { Enabled = true, TargetOverheadFraction = 0.20f });
 
             var videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat>
             {
                 new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "H264", 90000, 0, "packetization-mode=1")
             });
-            videoTrack.AddFecFormats(redPt: 122, ulpfecPt: 127);
+            videoTrack.Redundancy = RtpRedundancyOptions.Red | RtpRedundancyOptions.Ulpfec;
+            videoTrack.FecConfig = new RtpUlpfecConfig { TargetOverheadFraction = 0.20f };
             session.addTrack(videoTrack);
 
             var offer = CreateRemoteOffer(h264Pt: 96, redPt: 122, ulpfecPt: 127);
@@ -102,13 +102,12 @@ namespace SIPSorcery.Net.UnitTests
         public void AdoptsPeersDynamicPayloadTypeIDsTest()
         {
             var session = new RTPSession(new RtpSessionConfig());
-            session.EnableVideoFec(new RtpUlpfecConfig { Enabled = true });
 
             var videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat>
             {
                 new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "H264", 90000, 0, "packetization-mode=1")
             });
-            videoTrack.AddFecFormats(redPt: 122, ulpfecPt: 127);
+            videoTrack.Redundancy = RtpRedundancyOptions.Red | RtpRedundancyOptions.Ulpfec;
             session.addTrack(videoTrack);
 
             // Peer uses PT 102 for H264, 114 for RED, 116 for ULPFEC
@@ -131,13 +130,12 @@ namespace SIPSorcery.Net.UnitTests
         public void GracefullyFallsBackWhenPeerLacksFecSupportTest()
         {
             var session = new RTPSession(new RtpSessionConfig());
-            session.EnableVideoFec(new RtpUlpfecConfig { Enabled = true });
 
             var videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat>
             {
                 new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "H264", 90000, 0, "packetization-mode=1")
             });
-            videoTrack.AddFecFormats(redPt: 122, ulpfecPt: 127);
+            videoTrack.Redundancy = RtpRedundancyOptions.Red | RtpRedundancyOptions.Ulpfec;
             session.addTrack(videoTrack);
 
             // Peer offers ONLY H264 (no red, no ulpfec)
@@ -158,13 +156,12 @@ namespace SIPSorcery.Net.UnitTests
         public void NegotiatesVp8WithRedAndUlpfecTest()
         {
             var session = new RTPSession(new RtpSessionConfig());
-            session.EnableVideoFec(new RtpUlpfecConfig { Enabled = true });
 
             var videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat>
             {
                 new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000)
             });
-            videoTrack.AddFecFormats(redPt: 122, ulpfecPt: 127);
+            videoTrack.Redundancy = RtpRedundancyOptions.Red | RtpRedundancyOptions.Ulpfec;
             session.addTrack(videoTrack);
 
             var offer = new SDP(System.Net.IPAddress.Loopback);

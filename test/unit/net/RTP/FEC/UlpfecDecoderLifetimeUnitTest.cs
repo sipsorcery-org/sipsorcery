@@ -41,7 +41,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void LosslessThousandMediaPacketsNeverBecomeRecoveredAfterEviction()
         {
-            var decoder = new RtpUlpfecDecoder();
+            var decoder = new RtpUlpfecDecoder(122, 127);
             ushort sequence = 100;
             for (int groupIndex = 0; groupIndex < 200; groupIndex++)
             {
@@ -63,7 +63,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void PendingRepairExpiresBeforeEvictedHistoryCanBeReinterpreted()
         {
-            var decoder = new RtpUlpfecDecoder();
+            var decoder = new RtpUlpfecDecoder(122, 127);
             var oldRepair = Repair(3, Media(1), Media(2));
             decoder.AddReceivedFec(oldRepair, out var initialRecovered);
             Assert.Empty(initialRecovered);
@@ -88,7 +88,7 @@ namespace SIPSorcery.Net.UnitTests
         [InlineData(1)]
         public void StatefulRecoveryAndDuplicateSuppressionCrossSequenceWrap(int lostSequence)
         {
-            var decoder = new RtpUlpfecDecoder();
+            var decoder = new RtpUlpfecDecoder(122, 127);
             var media = new[] { Media(65534), Media(65535), Media(0), Media(1) };
             // Repair arrives first, so pre-wrap originals must extend into the previous cycle.
             decoder.AddReceivedFec(Repair(2, media), out var recovered);
@@ -115,7 +115,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void DuplicateRepairAndLateOriginalDoNotProduceSecondDelivery()
         {
-            var decoder = new RtpUlpfecDecoder();
+            var decoder = new RtpUlpfecDecoder(122, 127);
             var first = Media(10);
             var second = Media(11);
             var repair = Repair(12, first, second);
@@ -139,7 +139,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CompletedRepairIsAdmittedOnceAndNeverQueued()
         {
-            var decoder = new RtpUlpfecDecoder();
+            var decoder = new RtpUlpfecDecoder(122, 127);
             var first = Media(10);
             var second = Media(11);
             decoder.AddReceivedMedia(first, out _);
@@ -155,7 +155,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void OverlappingPendingGroupsRecoverIterativelyWithoutDuplicateHistory()
         {
-            var decoder = new RtpUlpfecDecoder();
+            var decoder = new RtpUlpfecDecoder(122, 127);
             var first = Media(1);
             var second = Media(2);
             var third = Media(3);
@@ -175,7 +175,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void PendingRepairAndMediaHistoryRemainBoundedOnEveryAdmissionPath()
         {
-            var decoder = new RtpUlpfecDecoder();
+            var decoder = new RtpUlpfecDecoder(122, 127);
             for (ushort sequence = 3; sequence < 43; sequence++)
             {
                 decoder.AddReceivedFec(Repair(sequence, Media(1), Media(2)), out var recovered);
@@ -201,7 +201,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void DistinctRepairBlocksSharingOuterSequenceAreNotDeduplicatedTogether()
         {
-            var decoder = new RtpUlpfecDecoder();
+            var decoder = new RtpUlpfecDecoder(122, 127);
             decoder.AddReceivedFec(Repair(10, Media(1), Media(2)), out var recovered);
             Assert.Empty(recovered);
             decoder.AddReceivedFec(Repair(10, Media(3), Media(4)), out recovered);
@@ -219,7 +219,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RedPiggybackRepairCanProtectItsAlreadyRegisteredPrimarySequence()
         {
-            var decoder = new RtpUlpfecDecoder();
+            var decoder = new RtpUlpfecDecoder(122, 127);
             var first = Media(1);
             var second = Media(2);
             var primary = Media(3);
@@ -237,7 +237,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RepairOnlyPacketCannotInventItsOwnOrFutureMediaSequence()
         {
-            var decoder = new RtpUlpfecDecoder();
+            var decoder = new RtpUlpfecDecoder(122, 127);
             decoder.AddReceivedFec(Repair(3, Media(3)), out var recovered);
             Assert.Empty(recovered);
             decoder.AddReceivedFec(Repair(3, Media(4)), out recovered);
@@ -255,7 +255,7 @@ namespace SIPSorcery.Net.UnitTests
         [InlineData("invalid-recovered-header")]
         public void MalformedRepairsDoNotEnterPendingHistoryOrChangeSource(string corruption)
         {
-            var decoder = new RtpUlpfecDecoder();
+            var decoder = new RtpUlpfecDecoder(122, 127);
             var repair = Repair(2, Media(1, 0x11111111));
             var payload = repair.GetPayloadBytes();
             if (corruption == "truncated")
@@ -287,7 +287,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ResetClearsSourceWindowAndPendingRepairIdentity()
         {
-            var decoder = new RtpUlpfecDecoder();
+            var decoder = new RtpUlpfecDecoder(122, 127);
             decoder.AddReceivedFec(Repair(12, Media(10), Media(11)), out var recovered);
             Assert.Empty(recovered);
             Assert.False(decoder.TryAddReceivedMedia(Media(10, 0x11111111), out recovered));

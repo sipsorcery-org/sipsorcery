@@ -73,7 +73,7 @@ namespace SIPSorcery.Net
         public int RedPayloadType { get; set; }
         public int UlpfecPayloadType { get; set; }
 
-        public RtpUlpfecDecoder(int redPayloadType = 122, int ulpfecPayloadType = 127)
+        public RtpUlpfecDecoder(int redPayloadType, int ulpfecPayloadType)
         {
             RedPayloadType = redPayloadType;
             UlpfecPayloadType = ulpfecPayloadType;

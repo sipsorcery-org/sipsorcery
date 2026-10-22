@@ -79,16 +79,14 @@ namespace SIPSorcery.Net.UnitTests
                 "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f");
 
             var videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { h264Format }, MediaStreamStatusEnum.SendOnly);
-            videoTrack.AddFecFormats(redPt: 122, ulpfecPt: 127);
-            pc.addTrack(videoTrack);
-
-            pc.EnableVideoFec(new RtpUlpfecConfig
+            videoTrack.Redundancy = RtpRedundancyOptions.Red | RtpRedundancyOptions.Ulpfec;
+            videoTrack.FecConfig = new RtpUlpfecConfig
             {
-                Enabled = true,
                 TargetOverheadFraction = 0.20f,
                 MaxGroupPackets = 16,
                 MinGroupPackets = 1
-            });
+            };
+            pc.addTrack(videoTrack);
 
             // Parse and apply Chrome's offer
             var setRemoteResult = pc.setRemoteDescription(new RTCSessionDescriptionInit
@@ -141,15 +139,13 @@ namespace SIPSorcery.Net.UnitTests
                 "packetization-mode=1");
 
             var videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { h264Format }, MediaStreamStatusEnum.SendOnly);
-            videoTrack.AddFecFormats(redPt: 122, ulpfecPt: 127);
-            session.addTrack(videoTrack);
-
-            session.EnableVideoFec(new RtpUlpfecConfig
+            videoTrack.Redundancy = RtpRedundancyOptions.Red | RtpRedundancyOptions.Ulpfec;
+            videoTrack.FecConfig = new RtpUlpfecConfig
             {
-                Enabled = true,
                 TargetOverheadFraction = 0.20f,
                 MinGroupPackets = 1
-            });
+            };
+            session.addTrack(videoTrack);
 
             var offer = SDP.ParseSDPDescription(REAL_CHROME_SDP_OFFER);
             session.SetRemoteDescription(SdpType.offer, offer);

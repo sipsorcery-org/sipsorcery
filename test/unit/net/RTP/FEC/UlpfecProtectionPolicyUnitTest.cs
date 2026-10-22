@@ -13,7 +13,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.SIP.App;
 using SIPSorcery.UnitTests;
 using Xunit;
 
@@ -53,7 +56,6 @@ namespace SIPSorcery.Net.UnitTests
 
             var config = new RtpUlpfecConfig
             {
-                Enabled = true,
                 TargetOverheadFraction = 0.20f, // 1 per 5 packets normally
                 MinGroupPackets = 1
             };
@@ -84,7 +86,6 @@ namespace SIPSorcery.Net.UnitTests
 
             var config = new RtpUlpfecConfig
             {
-                Enabled = true,
                 MaxGroupPackets = 5,
                 TargetOverheadFraction = 0.20f,
                 MinGroupPackets = 1
@@ -128,7 +129,6 @@ namespace SIPSorcery.Net.UnitTests
 
             var config = new RtpUlpfecConfig
             {
-                Enabled = true,
                 TargetOverheadFraction = 0.10f, // 1 per 10 normally
                 MinGroupPackets = 1
             };
@@ -151,26 +151,31 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that when FEC is disabled, no repair packets are ever generated.
+        /// Tuning alone must not opt a video track into RED or ULPFEC negotiation.
         /// </summary>
         [Fact]
-        public void DisabledFecGeneratesNoRepairPacketsTest()
+        public void TrackWithoutRedundancyNeverActivatesFecDespiteTuningTest()
         {
-            ushort seqCounter = 4000;
-            Func<ushort> nextSeq = () => ++seqCounter;
-
-            var config = new RtpUlpfecConfig { Enabled = false };
-            var encoder = new RtpUlpfecEncoder(122, 127, 96, config);
-
-            for (int i = 0; i < 20; i++)
+            using var session = new RTPSession(new RtpSessionConfig());
+            var track = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat>
             {
-                var pkt = CreatePacket((ushort)(i + 1), 90000, i == 19 ? 1 : 0);
-                encoder.AddMediaPacket(pkt, nextSeq, out var rep);
-                Assert.Null(rep);
-            }
+                new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000)
+            }) { FecConfig = new RtpUlpfecConfig { TargetOverheadFraction = 0.5f } };
+            session.addTrack(track);
+            var offer = new SDP(IPAddress.Loopback) { Connection = new SDPConnectionInformation(IPAddress.Loopback) };
+            offer.Media.Add(new SDPMediaAnnouncement(SDPMediaTypesEnum.video, 9000, new List<SDPAudioVideoMediaFormat>
+            {
+                new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000),
+                SDPAudioVideoMediaFormat.CreateRedFormat(122),
+                SDPAudioVideoMediaFormat.CreateUlpfecFormat(127)
+            }) { Transport = "RTP/AVP" });
 
-            var flushed = encoder.Flush(nextSeq, force: true);
-            Assert.Null(flushed);
+            Assert.Equal(SetDescriptionResultEnum.OK, session.SetRemoteDescription(SdpType.offer, offer));
+            Assert.Equal(RtpRedundancyOptions.None, track.Redundancy);
+            Assert.Null(session.VideoStream.FecEncoder);
+            Assert.Null(session.VideoStream.FecDecoder);
+            Assert.DoesNotContain(session.CreateAnswer(IPAddress.Loopback).Media.Single().MediaFormats.Values,
+                format => format.IsRed || format.IsUlpfec);
         }
     }
 }

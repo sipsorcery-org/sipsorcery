@@ -47,11 +47,6 @@ namespace SIPSorcery.Net
         public static readonly TimeSpan DEFAULT_MAX_REPAIR_AGE = TimeSpan.FromMilliseconds(20);
 
         /// <summary>
-        /// Whether forward error correction is enabled.
-        /// </summary>
-        public bool Enabled { get; set; } = true;
-
-        /// <summary>
         /// Target repair-to-media ratio (e.g. 0.20 = 20% parity, 1 parity packet per 5 media packets).
         /// Range is 0.0f (no FEC) to 1.0f (100% parity, 1 parity packet per media packet).
         /// </summary>
@@ -92,7 +87,6 @@ namespace SIPSorcery.Net
         {
             return new RtpUlpfecConfig
             {
-                Enabled = Enabled,
                 TargetOverheadFraction = TargetOverheadFraction,
                 MaxGroupPackets = MaxGroupPackets,
                 MinGroupPackets = MinGroupPackets,

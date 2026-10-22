@@ -192,10 +192,10 @@ namespace SIPSorcery.Net
             !MatchesCodecName("rtx") &&
             !_isEmpty;
 
-        public static SDPAudioVideoMediaFormat CreateRedFormat(int id = 122, int clockRate = 90000)
+        internal static SDPAudioVideoMediaFormat CreateRedFormat(int id, int clockRate = 90000)
             => new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, id, "red", clockRate);
 
-        public static SDPAudioVideoMediaFormat CreateUlpfecFormat(int id = 127, int clockRate = 90000)
+        internal static SDPAudioVideoMediaFormat CreateUlpfecFormat(int id, int clockRate = 90000)
             => new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, id, "ulpfec", clockRate);
 
         public bool CheckCompatible()
