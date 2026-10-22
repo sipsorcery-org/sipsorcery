@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: T140PacketiserUnitTest.cs
 //
 // Description: Unit tests for RFC 4103 T.140 real-time text packetisation,
@@ -382,19 +382,19 @@ a=rtpmap:96 t140/1000";
                 var bobDone = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 var aliceDone = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-                bobRtt.OnTextReceived += text =>
+                bobRtt.OnTextReceived += e =>
                 {
                     lock (bobReceived)
                     {
-                        bobReceived.Append(text);
+                        bobReceived.Append(e.Text);
                         if (bobReceived.ToString() == "Hello Bob\u2028") { bobDone.TrySetResult(true); }
                     }
                 };
-                aliceRtt.OnTextReceived += text =>
+                aliceRtt.OnTextReceived += e =>
                 {
                     lock (aliceReceived)
                     {
-                        aliceReceived.Append(text);
+                        aliceReceived.Append(e.Text);
                         if (aliceReceived.ToString() == "Hi") { aliceDone.TrySetResult(true); }
                     }
                 };
