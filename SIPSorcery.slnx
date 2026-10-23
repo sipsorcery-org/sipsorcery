@@ -128,6 +128,7 @@
     <Project Path="examples/WebRTCExamples/WebRTCTestPatternRest/WebRTCTestPatternRest.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCTestPatternServer/WebRTCTestPatternServer.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCtoFfplay/WebRTCtoFfplay.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRtcVideoFecDemo/WebRtcVideoFecDemo.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCWebcamServer/WebRTCWebcamServer.csproj" />
   </Folder>
   <Folder Name="/examples/WebRTCExamples/sipjs/">
