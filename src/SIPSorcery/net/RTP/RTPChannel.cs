@@ -310,7 +310,7 @@ public class RTPChannel : IDisposable
                     m_rtpReceiver.BeginReceiveFrom();
                 }
 
-                sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
+                sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, new SendState(sendSocket, sendOn, dstEndPoint));
                 return SocketError.Success;
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
@@ -358,10 +358,11 @@ public class RTPChannel : IDisposable
     /// <param name="ar">The async result to complete the send with.</param>
     private void EndSendTo(IAsyncResult ar)
     {
+        var sendState = (SendState)ar.AsyncState;
+
         try
         {
-            Socket sendSocket = (Socket)ar.AsyncState;
-            int bytesSent = sendSocket.EndSendTo(ar);
+            int bytesSent = sendState.Socket.EndSendTo(ar);
         }
         catch (SocketException sockExcp)
         {
@@ -370,13 +371,32 @@ public class RTPChannel : IDisposable
             // - the RTP connection may start sending before the remote socket starts listening,
             // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
             //   or new socket during the transition.
-            logger.LogWarning(sockExcp, "SocketException RTPChannel EndSendTo ({SocketErrorCode}). {Message}", sockExcp.ErrorCode, sockExcp.Message);
+            logger.LogWarning(sockExcp, "SocketException RTPChannel EndSendTo ({SocketErrorCode}) on {SendOn} socket to {DestinationEndPoint}. {Message}",
+                sockExcp.ErrorCode, sendState.SendOn, sendState.DestinationEndPoint, sockExcp.Message);
         }
         catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
         { }
         catch (Exception excp)
         {
-            logger.LogError(excp, "Exception RTPChannel EndSendTo. {Message}", excp.Message);
+            logger.LogError(excp, "Exception RTPChannel EndSendTo on {SendOn} socket to {DestinationEndPoint}. {Message}",
+                sendState.SendOn, sendState.DestinationEndPoint, excp.Message);
+        }
+    }
+
+    /// <summary>
+    /// The state for an async send, kept so a send that fails can be reported with where it was going.
+    /// </summary>
+    private sealed class SendState
+    {
+        public Socket Socket { get; }
+        public RTPChannelSocketsEnum SendOn { get; }
+        public IPEndPoint DestinationEndPoint { get; }
+
+        public SendState(Socket socket, RTPChannelSocketsEnum sendOn, IPEndPoint destinationEndPoint)
+        {
+            Socket = socket;
+            SendOn = sendOn;
+            DestinationEndPoint = destinationEndPoint;
         }
     }
 
