@@ -64,7 +64,7 @@ public struct TextFormat
         ClockRate = clockRate;
         Parameters = parameters;
 
-        if (Enum.TryParse<TextCodecsEnum>(FormatName, out var textCodec))
+        if (Enum.TryParse<TextCodecsEnum>(FormatName, true, out var textCodec))
         {
             Codec = textCodec;
         }

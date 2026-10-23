@@ -149,7 +149,7 @@ namespace SIPSorcery.Media
 
             if (Media.TextSource != null)
             {
-                var textTrack = new MediaStreamTrack(config.MediaEndPoint.TextSource.GetTextSourceFormat());
+                var textTrack = new MediaStreamTrack(GetTextTrackFormats(config.MediaEndPoint.TextSource.GetTextSourceFormat()));
                 base.addTrack(textTrack);
                 Media.TextSource.OnTextSourceEncodedSample += base.SendText;
             }
@@ -225,8 +225,32 @@ namespace SIPSorcery.Media
         private void TextFormatsNegotiated(List<TextFormat> textFormats)
         {
             var textFormat = textFormats.First();
-            logger.LogDebug("Setting text sink and source format to {TextFormatID}:{TextCodec}.", textFormat.FormatID, textFormat.Codec);
+            logger.LogDebug("Setting text source format to {TextFormatID}:{TextCodec}.", textFormat.FormatID, textFormat.Codec);
             Media.TextSource?.SetTextSourceFormat(textFormat);
+
+            // The remote party can send any of the negotiated formats. If RED is one of them the sink
+            // needs it since RED identifies both the RED and the t140 payload types (RFC 4103).
+            var sinkFormat = textFormats.Where(x => x.Codec == TextCodecsEnum.RED).DefaultIfEmpty(textFormat).First();
+            logger.LogDebug("Setting text sink format to {TextFormatID}:{TextCodec}.", sinkFormat.FormatID, sinkFormat.Codec);
+            Media.TextSink?.SetTextSinkFormat(sinkFormat);
+        }
+
+        /// <summary>
+        /// A RED text format is only usable if the t140 format it carries is also offered, so it
+        /// gets added to the track alongside RED.
+        /// </summary>
+        private static List<TextFormat> GetTextTrackFormats(TextFormat sourceFormat)
+        {
+            var formats = new List<TextFormat> { sourceFormat };
+
+            if (sourceFormat.Codec == TextCodecsEnum.RED &&
+                T140RedPayload.TryParseFmtp(sourceFormat.Parameters, out int t140PayloadType, out _) &&
+                t140PayloadType != sourceFormat.FormatID)
+            {
+                formats.Add(new TextFormat(TextCodecsEnum.T140, t140PayloadType));
+            }
+
+            return formats;
         }
 
         public async override Task Start()
