@@ -245,6 +245,14 @@ namespace SIPSorcery.Net
         internal List<ChecklistEntry> _checklist = new List<ChecklistEntry>();
 
         /// <summary>
+        /// Whether the OS routing table has a route to an IPv6 remote candidate's address. A host with
+        /// IPv6 enabled but no IPv6 Internet access (for example only unique local addresses) would otherwise
+        /// pair every remote IPv6 candidate and every check sent on those pairs would fail with a network
+        /// unreachable error. Settable for unit tests.
+        /// </summary>
+        internal Func<IPAddress, bool> HasRouteToIPv6 = destination => NetServices.GetLocalAddressForRemote(destination) != null;
+
+        /// <summary>
         /// Lock to co-ordinate access to the _checklist.
         /// </summary>
         private readonly object _checklistLock = new object();
@@ -1135,7 +1143,7 @@ namespace SIPSorcery.Net
         /// <param name="localCandidate">The local candidate for the checklist entry.</param>
         /// <param name="remoteCandidate">The remote candidate to attempt to create a new checklist
         /// entry for.</param>
-        private async Task UpdateChecklist(RTCIceCandidate localCandidate, RTCIceCandidate remoteCandidate)
+        internal async Task UpdateChecklist(RTCIceCandidate localCandidate, RTCIceCandidate remoteCandidate)
         {
             if (localCandidate == null)
             {
@@ -1217,6 +1225,17 @@ namespace SIPSorcery.Net
                     {
                         supportsIPv4 = base.RtpSocket.AddressFamily == AddressFamily.InterNetwork || base.IsDualMode;
                         supportsIPv6 = base.RtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || base.IsDualMode;
+
+                        if (supportsIPv6 &&
+                            remoteCandidateIPAddr.AddressFamily == AddressFamily.InterNetworkV6 &&
+                            !remoteCandidateIPAddr.IsIPv4MappedToIPv6 &&
+                            !HasRouteToIPv6(remoteCandidateIPAddr))
+                        {
+                            // An IPv6 socket alone doesn't mean the remote IPv6 address can be reached. Without a route
+                            // every check on the pair fails with a network unreachable error, so don't create it.
+                            logger.LogDebug("RTP ICE Channel not pairing remote candidate {RemoteCandidate}, no route to its IPv6 address.", remoteCandidate.ToShortString());
+                            supportsIPv6 = false;
+                        }
                     }
 
                     lock (_checklistLock)
