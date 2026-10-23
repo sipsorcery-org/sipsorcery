@@ -178,6 +178,26 @@ namespace SIPSorcery.Net
             }
         }
 
+        public bool IsRed => MatchesCodecName("red");
+
+        public bool IsUlpfec => MatchesCodecName("ulpfec");
+
+        public bool IsFlexfec => MatchesCodecName("flexfec") || MatchesCodecName("flexfec-03");
+
+        public bool IsVideoMediaCodec =>
+            Kind == SDPMediaTypesEnum.video &&
+            !IsRed &&
+            !IsUlpfec &&
+            !IsFlexfec &&
+            !MatchesCodecName("rtx") &&
+            !_isEmpty;
+
+        internal static SDPAudioVideoMediaFormat CreateRedFormat(int id, int clockRate = 90000)
+            => new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, id, "red", clockRate);
+
+        internal static SDPAudioVideoMediaFormat CreateUlpfecFormat(int id, int clockRate = 90000)
+            => new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, id, "ulpfec", clockRate);
+
         public bool CheckCompatible()
         {
             if (IsH264 || IsMJPEG || isH265)

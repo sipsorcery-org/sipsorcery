@@ -34,6 +34,49 @@ namespace SIPSorcery.Net
         /// </summary>
         public SDPMediaTypesEnum Kind { get; private set; }
 
+        private RtpRedundancyOptions _redundancy;
+
+        /// <summary>
+        /// Optional RTP redundancy for this local video track. Set before SDP negotiation;
+        /// changing this value takes effect on the next negotiation. Only None or Red | Ulpfec
+        /// is supported. The default is None.
+        /// </summary>
+        public RtpRedundancyOptions Redundancy
+        {
+            get => _redundancy;
+            set
+            {
+                ValidateRedundancy(value);
+                _redundancy = value;
+            }
+        }
+
+        /// <summary>
+        /// Optional FEC policy for this track. Null uses the library defaults. Assigning a
+        /// policy does not enable redundancy; configure Redundancy before negotiating.
+        /// Policy changes take effect on the next negotiation.
+        /// </summary>
+        public RtpUlpfecConfig FecConfig { get; set; }
+
+        internal void ValidateRedundancy() => ValidateRedundancy(_redundancy);
+
+        private void ValidateRedundancy(RtpRedundancyOptions value)
+        {
+            const RtpRedundancyOptions supported = RtpRedundancyOptions.Red | RtpRedundancyOptions.Ulpfec;
+            if ((value & ~supported) != 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown RTP redundancy options.");
+            }
+            if (value != RtpRedundancyOptions.None && value != supported)
+            {
+                throw new ArgumentException("RED and ULPFEC must be enabled together.", nameof(value));
+            }
+            if (value != RtpRedundancyOptions.None && (Kind != SDPMediaTypesEnum.video || IsRemote))
+            {
+                throw new InvalidOperationException("RTP redundancy can only be enabled on a local video track.");
+            }
+        }
+
         /// <summary>
         /// The value used in the RTP Synchronisation Source header field for media packets
         /// sent using this media stream.
@@ -394,5 +437,6 @@ namespace SIPSorcery.Net
             } while (expectedSeqNum != actualSeqNum); // Try as long as compare-exchange was not successful; in most cases, only one iteration should be needed
             return (ushort)expectedSeqNum;
         }
+
     }
 }

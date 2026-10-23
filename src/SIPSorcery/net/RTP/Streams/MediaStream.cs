@@ -55,6 +55,13 @@ namespace SIPSorcery.Net
         protected SrtpHandler SrtpHandler;
 
         private RTPReorderBuffer RTPReorderBuffer = null;
+        private readonly object _fecReceiveLock = new object();
+        private RtpFecReceiveBuffer _fecReceiveBuffer;
+        private TimeSpan? _explicitReceiveWait;
+        private uint? _fecReceiveSsrc;
+        private IPEndPoint _fecRemoteEndPoint;
+        private Func<long> _fecReceiveClock;
+        private Func<Action, IRtpFecReceiveTimer> _fecReceiveTimerFactory;
 
         MediaStreamTrack m_localTrack;
         MediaStreamTrack m_remoteTrack;
@@ -98,6 +105,153 @@ namespace SIPSorcery.Net
         /// across all media types. Used to preserve m-line ordering per RFC 3264 §8.
         /// </summary>
         public int MediaInsertionOrder = -1;
+
+        /// <summary>
+        /// Snapshot of the negotiated track's forward error correction policy.
+        /// </summary>
+        internal RtpUlpfecConfig FecConfig { get; private set; } = new RtpUlpfecConfig();
+
+        /// <summary>
+        /// The active RFC 5109 / RFC 2198 FEC encoder when FEC is negotiated and enabled.
+        /// </summary>
+        public RtpUlpfecEncoder FecEncoder { get; private set; }
+
+        /// <summary>
+        /// The active RFC 5109 / RFC 2198 FEC decoder when FEC is negotiated and enabled.
+        /// </summary>
+        public RtpUlpfecDecoder FecDecoder { get; private set; }
+
+        /// <summary>
+        /// Metrics tracking media sends, FEC repair generation, send rates, and impairment drops.
+        /// </summary>
+        public RtpFecMetrics FecMetrics { get; } = new RtpFecMetrics();
+
+        /// <summary>
+        /// Enables ULPFEC / RED forward error correction on this stream with the negotiated payload types.
+        /// </summary>
+        internal void EnableUlpfec(int redPayloadType, int ulpfecPayloadType, int mediaPayloadType, RtpUlpfecConfig config = null)
+        {
+            var fecConfig = config?.Clone() ?? new RtpUlpfecConfig();
+            if (fecConfig.MaxReceiveRepairWait < TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(config), "The receive repair wait cannot be negative.");
+            }
+            lock (_fecReceiveLock)
+            {
+                FecConfig = fecConfig;
+                _fecReceiveBuffer?.Dispose();
+                _fecReceiveSsrc = null;
+                ResetFecFraming();
+                FecEncoder = new RtpUlpfecEncoder(redPayloadType, ulpfecPayloadType, mediaPayloadType, FecConfig);
+                FecDecoder = new RtpUlpfecDecoder(redPayloadType, ulpfecPayloadType);
+                _fecReceiveBuffer = CreateFecReceiveBuffer();
+                logger.LogInformation("ULPFEC enabled on {MediaType} stream. RED PT={RedPt}, ULPFEC PT={FecPt}, Media PT={MediaPt}, Overhead={Overhead:P1}.",
+                    MediaType, redPayloadType, ulpfecPayloadType, mediaPayloadType, FecConfig.TargetOverheadFraction);
+            }
+        }
+
+        /// <summary>
+        /// Disables forward error correction on this stream.
+        /// </summary>
+        internal void DisableUlpfec(string reason = null)
+        {
+            lock (_fecReceiveLock)
+            {
+                _fecReceiveBuffer?.Dispose();
+                _fecReceiveBuffer = null;
+                _fecReceiveSsrc = null;
+                ResetFecFraming();
+                if (FecEncoder != null || FecDecoder != null)
+                {
+                    logger.LogInformation("ULPFEC disabled on {MediaType} stream. Reason: {Reason}", MediaType, reason ?? "Disabled by caller");
+                    FecEncoder = null;
+                    FecDecoder = null;
+                }
+            }
+        }
+
+        private RtpFecReceiveBuffer CreateFecReceiveBuffer()
+        {
+            RtpFecReceiveBuffer receiver = null;
+            receiver = new RtpFecReceiveBuffer(_explicitReceiveWait ?? FecConfig.MaxReceiveRepairWait,
+                (packet, framingSequence) =>
+                {
+                    Action deliver = null;
+                    lock (_fecReceiveLock)
+                    {
+                        if (!IsClosed && ReferenceEquals(_fecReceiveBuffer, receiver))
+                        {
+                            var format = LocalTrack?.GetFormatForPayloadID(packet.Header.PayloadType);
+                            if (format.HasValue && format.Value.IsVideoMediaCodec)
+                            {
+                                if (RemoteTrack != null) RemoteTrack.LastRemoteSeqNum = packet.Header.SequenceNumber;
+                                deliver = PrepareFecRtpPacket(_fecRemoteEndPoint, packet, format.Value, framingSequence);
+                            }
+                        }
+                    }
+                    // Preparing framing state is fenced against reset; application callbacks
+                    // run outside the receive lock and cannot populate a replacement framer.
+                    if (!IsClosed && ReferenceEquals(_fecReceiveBuffer, receiver)) deliver?.Invoke();
+                }, _fecReceiveClock, _fecReceiveTimerFactory, IsFecFrameStart);
+            return receiver;
+        }
+
+        internal void SetFecReceiveTiming(Func<long> clock, Func<Action, IRtpFecReceiveTimer> timerFactory)
+        {
+            _fecReceiveClock = clock;
+            _fecReceiveTimerFactory = timerFactory;
+        }
+
+        internal void ResetFecReceiveState()
+        {
+            lock (_fecReceiveLock)
+            {
+                if (FecDecoder == null && _fecReceiveBuffer == null) return;
+                FecDecoder?.Reset();
+                // Replace the coordinator so an arrival already decoded before this reset cannot
+                // re-enter the new source's window after releasing _fecReceiveLock.
+                _fecReceiveBuffer?.Dispose();
+                _fecReceiveBuffer = FecDecoder != null && !IsClosed ? CreateFecReceiveBuffer() : null;
+                _fecReceiveSsrc = null;
+                ResetFecFraming();
+            }
+        }
+
+        protected virtual void ResetFecFraming() { }
+
+        protected virtual Action PrepareFecRtpPacket(IPEndPoint remoteEndPoint, RTPPacket packet,
+            SDPAudioVideoMediaFormat format, ushort framingSequence)
+            => () => ProcessRtpPacket(remoteEndPoint, packet, format);
+
+        private bool IsFecFrameStart(RTPPacket packet)
+        {
+            var format = LocalTrack?.GetFormatForPayloadID(packet.Header.PayloadType);
+            var payload = packet.GetPayloadBytes();
+            if (!format.HasValue || payload.Length == 0) return false;
+            string codec = format.Value.Name();
+            if (codec.Equals("VP8", StringComparison.OrdinalIgnoreCase))
+            {
+                return (payload[0] & 0x1f) == 0x10;
+            }
+            if (format.Value.IsH264)
+            {
+                int nalType = payload[0] & 0x1f;
+                return (nalType >= 1 && nalType <= 24) ||
+                    ((nalType == 28 || nalType == 29) && payload.Length > 1 && (payload[1] & 0x80) != 0);
+            }
+            if (codec.Equals("VP9", StringComparison.OrdinalIgnoreCase)) return (payload[0] & 0x08) != 0;
+            if (codec.Equals("AV1", StringComparison.OrdinalIgnoreCase)) return (payload[0] & 0x80) == 0;
+            if (format.Value.isH265 && payload.Length >= 2)
+            {
+                int nalType = (payload[0] >> 1) & 0x3f;
+                return nalType < 49 || (nalType == 49 && payload.Length > 2 && (payload[2] & 0x80) != 0);
+            }
+            if (codec.Equals("JPEG", StringComparison.OrdinalIgnoreCase) && payload.Length >= 8)
+            {
+                return payload[1] == 0 && payload[2] == 0 && payload[3] == 0;
+            }
+            return false;
+        }
 
         /// <summary>
         /// Fires when the connection for a media type is classified as timed out due to not
@@ -171,6 +325,9 @@ namespace SIPSorcery.Net
                 //Clear previous buffer
                 ClearPendingPackages();
 
+                FecEncoder?.Reset();
+                ResetFecReceiveState();
+
                 OnIsClosedStateChanged?.Invoke(_isClosed);
             }
         }
@@ -229,6 +386,10 @@ namespace SIPSorcery.Net
             }
             set
             {
+                if (!ReferenceEquals(m_remoteTrack, value))
+                {
+                    ResetFecReceiveState();
+                }
                 m_remoteTrack = value;
             }
         }
@@ -291,12 +452,17 @@ namespace SIPSorcery.Net
 
         public void AddBuffer(TimeSpan dropPacketTimeout)
         {
+            if (dropPacketTimeout < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(dropPacketTimeout));
             RTPReorderBuffer = new RTPReorderBuffer(dropPacketTimeout);
+            _explicitReceiveWait = dropPacketTimeout;
+            _fecReceiveBuffer?.SetRepairWait(dropPacketTimeout);
         }
 
         public void RemoveBuffer(TimeSpan dropPacketTimeout)
         {
             RTPReorderBuffer = null;
+            _explicitReceiveWait = null;
+            _fecReceiveBuffer?.SetRepairWait(FecConfig.MaxReceiveRepairWait);
         }
 
         public bool UseBuffer()
@@ -514,10 +680,12 @@ namespace SIPSorcery.Net
                 ProtectRtpPacket protectRtpPacket = SecureContext?.ProtectRtpPacket;
                 int srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
 
+                ushort assignedSeqNum = seqNum ?? LocalTrack.GetNextSeqNum();
+
                 RTPPacket rtpPacket = new RTPPacket(data, srtpProtectionLength);
 
                 rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
-                rtpPacket.Header.SequenceNumber = seqNum ?? LocalTrack.GetNextSeqNum();
+                rtpPacket.Header.SequenceNumber = assignedSeqNum;
                 rtpPacket.Header.Timestamp = timestamp;
                 rtpPacket.Header.MarkerBit = markerBit;
                 rtpPacket.Header.PayloadType = payloadType;
@@ -583,31 +751,41 @@ namespace SIPSorcery.Net
                     rtpPacket.Header.HeaderExtensionFlag = 0;
                 }
 
-                var rtpBuffer = rtpPacket.GetBytes();
-
-                if (protectRtpPacket != null)
+                if (seqNum == null && FecEncoder != null && FecEncoder.IsActive)
                 {
-                    int rtperr = 0;
-                    int outBufLen = 0;
-
-                    rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
-
-                    if (rtperr != 0)
-                    {
-                        logger.LogError("SendRTPPacket protection failed, result {RtpError}.", rtperr);
-                        return;
-                    }
-                    else
-                    {
-                        rtpBuffer = rtpBuffer.AsSpan(0, outBufLen).ToArray();
-                    }
+                    SendRtpRawWithFec(rtpPacket, data, protectRtpPacket, srtpProtectionLength);
+                    return;
                 }
 
-                //logger.LogDebug("Sending key {MediaType} RTP packet {SeqNum} TS {Timestamp} PT {PayloadType} MB {MarkerBit} size {Size} to {EndPoint}.",
-                //    MediaType, rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, rtpPacket.Header.PayloadType,
-                //    rtpPacket.Header.MarkerBit, rtpBuffer.Length,
-                //    IsUsingRelayEndPoint ? RtpRelayEndPoint.RelayServerEndPoint : DestinationEndPoint);
+                SendFinalizedRtpPacket(rtpPacket, protectRtpPacket, srtpProtectionLength);
+            }
+        }
 
+        private void SendFinalizedRtpPacket(RTPPacket rtpPacket, ProtectRtpPacket protectRtpPacket, int srtpProtectionLength)
+        {
+            var rtpBuffer = rtpPacket.GetBytes();
+
+            if (protectRtpPacket != null)
+            {
+                int rtperr = 0;
+                int outBufLen = 0;
+
+                rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
+
+                if (rtperr != 0)
+                {
+                    logger.LogError("SendRTPPacket protection failed, result {RtpError}.", rtperr);
+                    FecMetrics.RecordTransportError();
+                    return;
+                }
+                else
+                {
+                    rtpBuffer = rtpBuffer.AsSpan(0, outBufLen).ToArray();
+                }
+            }
+
+            try
+            {
                 if (IsUsingRelayEndPoint)
                 {
                     rtpChannel.SendRelay(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer, RtpRelayEndPoint.RelayServerEndPoint);
@@ -618,6 +796,55 @@ namespace SIPSorcery.Net
                 }
 
                 RtcpSession?.RecordRtpPacketSend(rtpPacket);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Exception sending RTP packet on {MediaType}.", MediaType);
+                FecMetrics.RecordTransportError();
+            }
+        }
+
+        private void SendRtpRawWithFec(RTPPacket primaryPacket, ArraySegment<byte> data, ProtectRtpPacket protectRtpPacket, int srtpProtectionLength)
+        {
+            // 1. Add canonical media packet to FEC encoder
+            FecEncoder.AddMediaPacket(primaryPacket, () => LocalTrack.GetNextSeqNum(), out var repairPackets);
+
+            // 2. Wrap primary packet in RFC 2198 RED format for transmission
+            byte[] rawMediaBytes = data.ToArray();
+            byte[] redPayload = RtpUlpfecEncoder.WrapInRed(rawMediaBytes, (byte)primaryPacket.Header.PayloadType);
+
+            RTPPacket redMediaPacket = new RTPPacket(new ArraySegment<byte>(redPayload), srtpProtectionLength);
+            redMediaPacket.Header.SyncSource = primaryPacket.Header.SyncSource;
+            redMediaPacket.Header.SequenceNumber = primaryPacket.Header.SequenceNumber;
+            redMediaPacket.Header.Timestamp = primaryPacket.Header.Timestamp;
+            redMediaPacket.Header.MarkerBit = primaryPacket.Header.MarkerBit;
+            redMediaPacket.Header.PayloadType = FecEncoder.RedPayloadType;
+
+            redMediaPacket.Header.HeaderExtensionFlag = primaryPacket.Header.HeaderExtensionFlag;
+            redMediaPacket.Header.ExtensionProfile = primaryPacket.Header.ExtensionProfile;
+            redMediaPacket.Header.ExtensionLength = primaryPacket.Header.ExtensionLength;
+            redMediaPacket.Header.ExtensionPayload = primaryPacket.Header.ExtensionPayload;
+
+            SendFinalizedRtpPacket(redMediaPacket, protectRtpPacket, srtpProtectionLength);
+            FecMetrics.RecordMediaPacket(redPayload.Length);
+
+            // 3. Send any generated repair packets
+            if (repairPackets != null && repairPackets.Count > 0)
+            {
+                foreach (var repairPkt in repairPackets)
+                {
+                    FecMetrics.RecordRepairGenerated();
+
+                    RTPPacket wireRepairPacket = srtpProtectionLength > 0
+                        ? new RTPPacket(new ArraySegment<byte>(repairPkt.GetPayloadBytes()), srtpProtectionLength)
+                        {
+                            Header = repairPkt.Header
+                        }
+                        : repairPkt;
+
+                    SendFinalizedRtpPacket(wireRepairPacket, protectRtpPacket, srtpProtectionLength);
+                    FecMetrics.RecordRepairSent((int)wireRepairPacket.GetPayloadLength());
+                }
             }
         }
 
@@ -828,7 +1055,7 @@ namespace SIPSorcery.Net
         public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
             RTPPacket rtpPacket;
-            if (NegotiatedRtpEventPayloadID != 0 && hdr.PayloadType == NegotiatedRtpEventPayloadID)
+            if (MediaType == SDPMediaTypesEnum.audio && NegotiatedRtpEventPayloadID != 0 && hdr.PayloadType == NegotiatedRtpEventPayloadID)
             {
                 if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
                 {
@@ -856,7 +1083,10 @@ namespace SIPSorcery.Net
 
             if (RemoteTrack != null)
             {
-                LogIfWrongSeqNumber($"{MediaType}", hdr, RemoteTrack);
+                if (FecDecoder == null || RemoteTrack.Ssrc == hdr.SyncSource)
+                {
+                    LogIfWrongSeqNumber($"{MediaType}", hdr, RemoteTrack);
+                }
                 ProcessHeaderExtensions(hdr, remoteEndPoint);
             }
 
@@ -865,41 +1095,199 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            var format = LocalTrack?.GetFormatForPayloadID(hdr.PayloadType);
+            var format = LocalTrack?.GetFormatForPayloadID(rtpPacket.Header.PayloadType);
+            bool isVideo = MediaType == SDPMediaTypesEnum.video;
+            bool isRed = isVideo && (rtpPacket.Header.PayloadType == FecDecoder?.RedPayloadType || format?.IsRed == true);
+            bool isUlpfec = isVideo && (rtpPacket.Header.PayloadType == FecDecoder?.UlpfecPayloadType || format?.IsUlpfec == true);
 
-            if(format == null || format.Value.IsEmpty())
+            if (isVideo && FecDecoder != null && (isRed || isUlpfec || format?.IsVideoMediaCodec == true))
             {
-                logger.LogWarning("Received RTP packet with unknown payload type {PayloadType} for {MediaType} stream from {RemoteEndPoint}.", hdr.PayloadType, MediaType, remoteEndPoint);
+                ReceiveWithFec(remoteEndPoint, rtpPacket, isRed, isUlpfec);
+                return;
             }
-            else if (rtpPacket != null)
+
+            if (isRed)
             {
-                if (UseBuffer())
+                RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+                if (RtpRedPayload.TryDecode(rtpPacket.GetPayloadBytes(), out _, out var primary))
                 {
-                    var reorderBuffer = GetBuffer();
-                    reorderBuffer.Add(rtpPacket);
-                    while (reorderBuffer.Get(out var bufferedPacket))
+                    var mediaFormat = LocalTrack?.GetFormatForPayloadID(primary.PayloadType);
+                    if (mediaFormat?.IsVideoMediaCodec == true)
                     {
-                        if (RemoteTrack != null)
-                        {
-                            LogIfWrongSeqNumber($"{MediaType}", bufferedPacket.Header, RemoteTrack);
-                            RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
-                        }
-                        ProcessRtpPacket(remoteEndPoint, bufferedPacket, format.Value);
+                        var media = CreateRedBlockPacket(rtpPacket.Header, primary);
+                        DispatchReceivedMediaPacket(remoteEndPoint, media, mediaFormat.Value);
                     }
+                }
+                return;
+            }
+            if (isUlpfec)
+            {
+                RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+                return;
+            }
+            if (!format.HasValue || format.Value.IsEmpty())
+            {
+                logger.LogWarning("Received RTP packet with unknown payload type {PayloadType} for {MediaType} stream from {RemoteEndPoint}.",
+                    rtpPacket.Header.PayloadType, MediaType, remoteEndPoint);
+                return;
+            }
+            DispatchReceivedMediaPacket(remoteEndPoint, rtpPacket, format.Value);
+            RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+        }
+
+        private void ReceiveWithFec(IPEndPoint remoteEndPoint, RTPPacket wirePacket, bool isRed, bool isUlpfec)
+        {
+            var media = new List<RTPPacket>();
+            var protectedSequences = new List<ushort>();
+            bool repairOnly = isUlpfec;
+            RtpFecReceiveBuffer receiver;
+            lock (_fecReceiveLock)
+            {
+                receiver = _fecReceiveBuffer;
+                if (IsClosed || receiver == null || FecDecoder == null) return;
+                bool sourceChanged = _fecReceiveSsrc.HasValue && _fecReceiveSsrc.Value != wirePacket.Header.SyncSource;
+
+                // RTCP observes network arrivals, never reconstructed packets or transformed headers.
+                if (!sourceChanged) RtcpSession?.RecordRtpPacketReceived(wirePacket);
+                var repairs = new List<RTPPacket>();
+                RTPPacket primaryMedia = null;
+                if (isRed)
+                {
+                    if (!RtpRedPayload.TryDecode(wirePacket.GetPayloadBytes(), out var redundant, out var primary)) return;
+                    foreach (var block in redundant)
+                    {
+                        if (block.PayloadType == FecDecoder.UlpfecPayloadType)
+                        {
+                            repairs.Add(CreateRedBlockPacket(wirePacket.Header, block));
+                        }
+                    }
+                    repairOnly = primary.PayloadType == FecDecoder.UlpfecPayloadType;
+                    if (repairOnly)
+                    {
+                        repairs.Add(CreateRedBlockPacket(wirePacket.Header, primary));
+                    }
+                    else if (LocalTrack?.GetFormatForPayloadID(primary.PayloadType)?.IsVideoMediaCodec == true)
+                    {
+                        primaryMedia = CreateRedBlockPacket(wirePacket.Header, primary);
+                    }
+                }
+                else if (isUlpfec)
+                {
+                    repairs.Add(wirePacket);
                 }
                 else
                 {
-                    if (RemoteTrack != null)
-                    {
-                        // Must be updated for LogIfWrongSeqNumber to function: with the initial
-                        // value of 0 the sequence discontinuity check never fires, so the
-                        // unbuffered path previously never reported out of order packets.
-                        RemoteTrack.LastRemoteSeqNum = rtpPacket.Header.SequenceNumber;
-                    }
-                    ProcessRtpPacket(remoteEndPoint, rtpPacket, format.Value);
+                    primaryMedia = wirePacket;
                 }
 
-                RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+                if (sourceChanged)
+                {
+                    // A primary from an admitted peer selects the next source. Foreign
+                    // repairs and malformed/unknown RED cannot retire the active source.
+                    if (primaryMedia == null || primaryMedia.GetPayloadLength() == 0) return;
+                    uint previousSsrc = _fecReceiveSsrc.Value;
+                    ResetFecReceiveState();
+                    receiver = _fecReceiveBuffer;
+                    if (RemoteTrack != null)
+                    {
+                        RemoteTrack.Ssrc = wirePacket.Header.SyncSource;
+                        RemoteTrack.LastRemoteSeqNum = wirePacket.Header.SequenceNumber;
+                    }
+                    RtcpSession?.RemoveReceptionReport(previousSsrc);
+                    RtcpSession?.RecordRtpPacketReceived(wirePacket);
+                    logger.LogInformation("Video receive SSRC changed from {PreviousSsrc} to {NewSsrc}; reset FEC receive state.",
+                        previousSsrc, wirePacket.Header.SyncSource);
+                }
+
+                if (primaryMedia != null)
+                {
+                    if (FecDecoder.TryAddReceivedMedia(primaryMedia, out var recovered)) media.Add(primaryMedia);
+                    AddRecoveredMedia(media, recovered);
+                }
+                foreach (var repair in repairs)
+                {
+                    if (!RtpUlpfecDecoder.TryParseFecPayload(repair.GetPayloadBytes(), out var info)) continue;
+                    // A piggybacked repair may cover its primary media at the same wire
+                    // sequence. A repair-only packet cannot protect itself or future media.
+                    if (info.ProtectedSequenceNumbers.Any(sequence =>
+                        unchecked((short)(sequence - wirePacket.Header.SequenceNumber)) > 0 ||
+                        (sequence == wirePacket.Header.SequenceNumber && primaryMedia == null))) continue;
+                    if (!FecDecoder.TryAddReceivedFec(repair, out var recovered)) continue;
+                    protectedSequences.AddRange(info.ProtectedSequenceNumbers);
+                    AddRecoveredMedia(media, recovered);
+                }
+                // Malformed repair-only packets cannot establish sequence positions or startup coverage.
+                if (repairOnly && protectedSequences.Count == 0) return;
+                if (primaryMedia == null && protectedSequences.Count == 0) return;
+                _fecReceiveSsrc = wirePacket.Header.SyncSource;
+                _fecRemoteEndPoint = remoteEndPoint;
+            }
+            // The coordinator serializes timer/transport delivery and invokes consumers outside its state lock.
+            receiver.AddBatch(media, wirePacket.Header.SequenceNumber, repairOnly, protectedSequences);
+        }
+
+        private void AddRecoveredMedia(List<RTPPacket> media, List<RTPPacket> recovered)
+        {
+            foreach (var packet in recovered)
+            {
+                FecMetrics.RecordPacketRecovered();
+                media.Add(packet);
+            }
+        }
+
+        private static RTPPacket CreateRedBlockPacket(RTPHeader header, RtpRedBlock block)
+        {
+            var packet = new RTPPacket(new ArraySegment<byte>(block.Data), 0) { Header = CloneRtpHeader(header) };
+            packet.Header.PayloadType = block.PayloadType;
+            return packet;
+        }
+
+        internal static RTPHeader CloneRtpHeader(RTPHeader source)
+        {
+            return new RTPHeader
+            {
+                Version = source.Version,
+                PaddingFlag = source.PaddingFlag,
+                HeaderExtensionFlag = source.HeaderExtensionFlag,
+                CSRCCount = source.CSRCCount,
+                MarkerBit = source.MarkerBit,
+                PayloadType = source.PayloadType,
+                SequenceNumber = source.SequenceNumber,
+                Timestamp = source.Timestamp,
+                SyncSource = source.SyncSource,
+                CSRCList = source.CSRCList == null ? null : (int[])source.CSRCList.Clone(),
+                ExtensionProfile = source.ExtensionProfile,
+                ExtensionLength = source.ExtensionLength,
+                ExtensionPayload = source.ExtensionPayload == null ? null : (byte[])source.ExtensionPayload.Clone(),
+                PayloadSize = source.PayloadSize,
+                PaddingCount = source.PaddingCount,
+                ReceivedTime = source.ReceivedTime
+            };
+        }
+
+        private void DispatchReceivedMediaPacket(IPEndPoint remoteEndPoint, RTPPacket packet, SDPAudioVideoMediaFormat format)
+        {
+            if (UseBuffer())
+            {
+                var reorderBuffer = GetBuffer();
+                reorderBuffer.Add(packet);
+                while (reorderBuffer.Get(out var bufferedPacket))
+                {
+                    if (RemoteTrack != null)
+                    {
+                        LogIfWrongSeqNumber($"{MediaType}", bufferedPacket.Header, RemoteTrack);
+                        RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
+                    }
+                    ProcessRtpPacket(remoteEndPoint, bufferedPacket, format);
+                }
+            }
+            else
+            {
+                if (RemoteTrack != null)
+                {
+                    RemoteTrack.LastRemoteSeqNum = packet.Header.SequenceNumber;
+                }
+                ProcessRtpPacket(remoteEndPoint, packet, format);
             }
         }
 
@@ -1096,43 +1484,34 @@ namespace SIPSorcery.Net
         /// <returns>The first compatible media format found for the specified media type.</returns>
         public SDPAudioVideoMediaFormat GetSendingFormat()
         {
-            if (LocalTrack != null || RemoteTrack != null)
-            {
-                if (LocalTrack == null)
-                {
-                    return RemoteTrack.Capabilities.First();
-                }
-                else if (RemoteTrack == null)
-                {
-                    return LocalTrack.Capabilities.First();
-                }
-
-                SDPAudioVideoMediaFormat format;
-                if (MediaType == SDPMediaTypesEnum.audio)
-                {
-                    format = SDPAudioVideoMediaFormat.GetCompatibleFormats(RemoteTrack.Capabilities, LocalTrack.Capabilities)
-                        .Where(x => x.ID != NegotiatedRtpEventPayloadID).FirstOrDefault();
-                }
-                else
-                {
-                    format = SDPAudioVideoMediaFormat.GetCompatibleFormats(RemoteTrack.Capabilities, LocalTrack.Capabilities).First();
-                }
-
-                if (format.IsEmpty())
-                {
-                    // It's not expected that this occurs as a compatibility check is done when the remote session description
-                    // is set. By this point a compatible codec should be available.
-                    throw new ApplicationException($"No compatible sending format could be found for media {MediaType}.");
-                }
-                else
-                {
-                    return format;
-                }
-            }
-            else
+            if (LocalTrack == null && RemoteTrack == null)
             {
                 throw new ApplicationException($"Cannot get the {MediaType} sending format, missing either local or remote {MediaType} track.");
             }
+
+            IEnumerable<SDPAudioVideoMediaFormat> formats = LocalTrack == null
+                ? RemoteTrack.Capabilities
+                : RemoteTrack == null
+                    ? LocalTrack.Capabilities
+                    : SDPAudioVideoMediaFormat.GetCompatibleFormats(RemoteTrack.Capabilities, LocalTrack.Capabilities);
+
+            if (MediaType == SDPMediaTypesEnum.video)
+            {
+                formats = formats?.Where(x => x.IsVideoMediaCodec);
+            }
+            else if (MediaType == SDPMediaTypesEnum.audio && LocalTrack != null && RemoteTrack != null)
+            {
+                formats = formats?.Where(x => x.ID != NegotiatedRtpEventPayloadID);
+            }
+
+            var format = formats == null
+                ? SDPAudioVideoMediaFormat.Empty
+                : formats.DefaultIfEmpty(SDPAudioVideoMediaFormat.Empty).First();
+            if (format.IsEmpty())
+            {
+                throw new ApplicationException($"No compatible sending format could be found for media {MediaType}.");
+            }
+            return format;
         }
 
         public void ProcessHeaderExtensions(RTPHeader header, IPEndPoint remoteEndPoint)
