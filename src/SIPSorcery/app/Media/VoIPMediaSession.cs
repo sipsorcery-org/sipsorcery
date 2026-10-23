@@ -149,7 +149,7 @@ namespace SIPSorcery.Media
 
             if (Media.TextSource != null)
             {
-                var textTrack = new MediaStreamTrack(config.MediaEndPoint.TextSource.GetTextSourceFormat());
+                var textTrack = new MediaStreamTrack(GetTextTrackFormats(config.MediaEndPoint.TextSource.GetTextSourceFormat()));
                 base.addTrack(textTrack);
                 Media.TextSource.OnTextSourceEncodedSample += base.SendText;
             }
@@ -225,8 +225,32 @@ namespace SIPSorcery.Media
         private void TextFormatsNegotiated(List<TextFormat> textFormats)
         {
             var textFormat = textFormats.First();
-            logger.LogDebug("Setting text sink and source format to {TextFormatID}:{TextCodec}.", textFormat.FormatID, textFormat.Codec);
+            logger.LogDebug("Setting text source format to {TextFormatID}:{TextCodec}.", textFormat.FormatID, textFormat.Codec);
             Media.TextSource?.SetTextSourceFormat(textFormat);
+
+            // The remote party can send any of the negotiated formats. If RED is one of them the sink
+            // needs it since RED identifies both the RED and the t140 payload types (RFC 4103).
+            var sinkFormat = textFormats.Where(x => x.Codec == TextCodecsEnum.RED).DefaultIfEmpty(textFormat).First();
+            logger.LogDebug("Setting text sink format to {TextFormatID}:{TextCodec}.", sinkFormat.FormatID, sinkFormat.Codec);
+            Media.TextSink?.SetTextSinkFormat(sinkFormat);
+        }
+
+        /// <summary>
+        /// A RED text format is only usable if the t140 format it carries is also offered, so it
+        /// gets added to the track alongside RED.
+        /// </summary>
+        private static List<TextFormat> GetTextTrackFormats(TextFormat sourceFormat)
+        {
+            var formats = new List<TextFormat> { sourceFormat };
+
+            if (sourceFormat.Codec == TextCodecsEnum.RED &&
+                T140RedPayload.TryParseFmtp(sourceFormat.Parameters, out int t140PayloadType, out _) &&
+                t140PayloadType != sourceFormat.FormatID)
+            {
+                formats.Add(new TextFormat(TextCodecsEnum.T140, t140PayloadType));
+            }
+
+            return formats;
         }
 
         public async override Task Start()
@@ -333,19 +357,18 @@ namespace SIPSorcery.Media
 
         protected void RtpMediaPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
         {
+            // This handler is only subscribed when there is a text sink. It sees the RTP packets for every
+            // media type but audio and video are delivered by their own frame events so are ignored here.
+            if (mediaType != SDPMediaTypesEnum.text || Media.TextSink == null)
+            {
+                return;
+            }
+
             var hdr = rtpPacket.Header;
-            bool marker = rtpPacket.Header.MarkerBit > 0;
 
-            if (mediaType == SDPMediaTypesEnum.text && Media.TextSink != null)
-            {
-                logger.LogTrace(nameof(RtpMediaPacketReceived) + " text RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
+            logger.LogTrace(nameof(RtpMediaPacketReceived) + " text RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
 
-                Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacket.GetPayloadBytes());
-            }
-            else
-            {
-                logger.LogWarning(nameof(RtpMediaPacketReceived) + " RTP packet without a media handler received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
-            }
+            Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacket.GetPayloadBytes());
         }
 
         public async Task PutOnHold()
@@ -370,9 +393,10 @@ namespace SIPSorcery.Media
                 }
             }
 
-            if (HasText)
+            if (HasText && Media.TextSource != null)
             {
-                // TODO can be put on / taken off hold?
+                // Text is not replaced with anything while on hold, the source just stops taking new text.
+                await Media.TextSource.PauseText().ConfigureAwait(false);
             }
         }
 
@@ -409,9 +433,9 @@ namespace SIPSorcery.Media
                 }
             }
 
-            if (HasText)
+            if (HasText && Media.TextSource != null)
             {
-                // TODO can be put on / taken off hold?
+                await Media.TextSource.ResumeText().ConfigureAwait(false);
             }
         }
     }
