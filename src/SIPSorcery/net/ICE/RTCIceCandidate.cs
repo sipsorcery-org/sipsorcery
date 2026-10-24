@@ -26,7 +26,14 @@ namespace SIPSorcery.Net
     public class RTCIceCandidate : IRTCIceCandidate
     {
         public const string m_CRLF = "\r\n";
-        public const string TCP_TYPE_KEY = "tcpType";
+        public const string TCP_TYPE_KEY = "tcptype";
+
+        /// <summary>
+        /// The placeholder port used by active TCP candidates (RFC 6544 section 4.5). Active
+        /// candidates only make outbound connections so they have no listening port and use
+        /// the discard port instead. Nothing can be sent to it.
+        /// </summary>
+        public const ushort TCP_ACTIVE_DISCARD_PORT = 9;
         public const string REMOTE_ADDRESS_KEY = "raddr";
         public const string REMOTE_PORT_KEY = "rport";
         public const string CANDIDATE_PREFIX = "candidate";
@@ -125,6 +132,7 @@ namespace SIPSorcery.Net
                 foundation = iceCandidate.foundation;
                 priority = iceCandidate.priority;
                 component = iceCandidate.component;
+                protocol = iceCandidate.protocol;
                 address = iceCandidate.address;
                 port = iceCandidate.port;
                 type = iceCandidate.type;
@@ -187,7 +195,8 @@ namespace SIPSorcery.Net
                     candidate.component = candidateComponent;
                 }
 
-                if (Enum.TryParse<RTCIceProtocol>(candidateFields[2], out var candidateProtocol))
+                // Firefox sends the transport in upper case, e.g. "UDP" and "TCP".
+                if (Enum.TryParse<RTCIceProtocol>(candidateFields[2], true, out var candidateProtocol))
                 {
                     candidate.protocol = candidateProtocol;
                 }
@@ -205,26 +214,29 @@ namespace SIPSorcery.Net
                     candidate.type = candidateType;
                 }
 
-                // TCP Candidates require extra steps to be parsed
+                // The remaining fields are name/value pairs. The order isn't fixed, e.g. for TCP candidates
+                // "tcptype" (RFC 6544) can come before or after "raddr"/"rport", and extensions such as
+                // "generation", "ufrag" and "network-id" can appear anywhere.
                 // {"candidate":"candidate:4 1 TCP 2105458943 10.0.1.16 9 typ host tcptype active","sdpMid":"sdparta_0","sdpMLineIndex":0}
-                var parseIndex = 8;
-                if (candidate.protocol == RTCIceProtocol.tcp)
+                for (int i = 8; i + 1 < candidateFields.Length; i += 2)
                 {
-                    if (candidateFields.Length > parseIndex && candidateFields[parseIndex] == TCP_TYPE_KEY)
+                    var key = candidateFields[i];
+                    var value = candidateFields[i + 1];
+
+                    if (string.Equals(key, REMOTE_ADDRESS_KEY, StringComparison.OrdinalIgnoreCase))
                     {
-                        candidate.relatedAddress = candidateFields[parseIndex + 1];
+                        candidate.relatedAddress = value;
                     }
-                    parseIndex += 2;
-                }
-
-                if (candidateFields.Length > parseIndex && candidateFields[parseIndex] == REMOTE_ADDRESS_KEY)
-                {
-                    candidate.relatedAddress = candidateFields[parseIndex+1];
-                }
-
-                if (candidateFields.Length > parseIndex+2 && candidateFields[parseIndex+2] == REMOTE_PORT_KEY)
-                {
-                    candidate.relatedPort = Convert.ToUInt16(candidateFields[parseIndex+3]);
+                    else if (string.Equals(key, REMOTE_PORT_KEY, StringComparison.OrdinalIgnoreCase))
+                    {
+                        candidate.relatedPort = Convert.ToUInt16(value);
+                    }
+                    else if (candidate.protocol == RTCIceProtocol.tcp &&
+                        string.Equals(key, TCP_TYPE_KEY, StringComparison.OrdinalIgnoreCase) &&
+                        Enum.TryParse<RTCIceTcpCandidateType>(value, true, out var candidateTcpType))
+                    {
+                        candidate.tcpType = candidateTcpType;
+                    }
                 }
 
                 return candidate;
