@@ -283,7 +283,10 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                logger.LogWarning("Excluding unrecognised well known media format ID {FormatID}.", id);
+                                // Endpoints routinely list static payload types the library doesn't know (e.g. ones
+                                // in RFC 3551's unassigned range). Dropping them is the correct handling and needs
+                                // no action, so this is debug detail rather than a warning.
+                                logger.LogDebug("Excluding unrecognised well known media format ID {FormatID}.", id);
                             }
                         }
                     }
