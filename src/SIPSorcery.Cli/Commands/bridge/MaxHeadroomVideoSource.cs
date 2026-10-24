@@ -364,48 +364,52 @@ namespace SIPSorcery.Cli.Commands.Bridge
                     new SKPoint(cx - 220, top), new SKPoint(cx + 220, HEIGHT),
                     new[] { new SKColor(0x10, 0x12, 0x1C), new SKColor(0x28, 0x2C, 0x3A), new SKColor(0x10, 0x12, 0x1C) },
                     new[] { 0f, 0.5f, 1f }, SKShaderTileMode.Clamp);
-                using var path = new SKPath();
-                path.MoveTo(cx - 70, top);
-                path.CubicTo(cx - 150, top + 10, cx - 230, top + 70, cx - 250, HEIGHT);
-                path.LineTo(cx + 250, HEIGHT);
-                path.CubicTo(cx + 230, top + 70, cx + 150, top + 10, cx + 70, top);
-                path.Close();
+                using var builder = new SKPathBuilder();
+                builder.MoveTo(cx - 70, top);
+                builder.CubicTo(cx - 150, top + 10, cx - 230, top + 70, cx - 250, HEIGHT);
+                builder.LineTo(cx + 250, HEIGHT);
+                builder.CubicTo(cx + 230, top + 70, cx + 150, top + 10, cx + 70, top);
+                builder.Close();
+                using var path = builder.Detach();
                 canvas.DrawPath(path, jacket);
             }
 
             // Shirt wedge.
             using (var shirt = new SKPaint { Color = new SKColor(0xC8, 0xD6, 0xE8), IsAntialias = true })
-            using (var path = new SKPath())
+            using (var builder = new SKPathBuilder())
             {
-                path.MoveTo(cx - 46, top - 6);
-                path.LineTo(cx + 46, top - 6);
-                path.LineTo(cx + 30, HEIGHT);
-                path.LineTo(cx - 30, HEIGHT);
-                path.Close();
+                builder.MoveTo(cx - 46, top - 6);
+                builder.LineTo(cx + 46, top - 6);
+                builder.LineTo(cx + 30, HEIGHT);
+                builder.LineTo(cx - 30, HEIGHT);
+                builder.Close();
+                using var path = builder.Detach();
                 canvas.DrawPath(path, shirt);
             }
 
             // Shiny lapels.
             using (var lapel = new SKPaint { Color = new SKColor(0x3A, 0x40, 0x52), IsAntialias = true })
             {
-                using var l = new SKPath();
-                l.MoveTo(cx - 60, top); l.LineTo(cx - 6, top + 18); l.LineTo(cx - 64, top + 120); l.Close();
+                using var builder = new SKPathBuilder();
+                builder.MoveTo(cx - 60, top); builder.LineTo(cx - 6, top + 18); builder.LineTo(cx - 64, top + 120); builder.Close();
+                using var l = builder.Detach();
                 canvas.DrawPath(l, lapel);
-                using var r = new SKPath();
-                r.MoveTo(cx + 60, top); r.LineTo(cx + 6, top + 18); r.LineTo(cx + 64, top + 120); r.Close();
+                builder.MoveTo(cx + 60, top); builder.LineTo(cx + 6, top + 18); builder.LineTo(cx + 64, top + 120); builder.Close();
+                using var r = builder.Detach();
                 canvas.DrawPath(r, lapel);
             }
 
             // Collar knot + tie blade.
             using (var tie = new SKPaint { Color = new SKColor(0x1C, 0x3A, 0x86), IsAntialias = true })
             {
-                using var knot = new SKPath();
-                knot.MoveTo(cx - 14, top + 4); knot.LineTo(cx + 14, top + 4);
-                knot.LineTo(cx + 18, top + 30); knot.LineTo(cx - 18, top + 30); knot.Close();
+                using var builder = new SKPathBuilder();
+                builder.MoveTo(cx - 14, top + 4); builder.LineTo(cx + 14, top + 4);
+                builder.LineTo(cx + 18, top + 30); builder.LineTo(cx - 18, top + 30); builder.Close();
+                using var knot = builder.Detach();
                 canvas.DrawPath(knot, tie);
-                using var blade = new SKPath();
-                blade.MoveTo(cx - 16, top + 30); blade.LineTo(cx + 16, top + 30);
-                blade.LineTo(cx + 22, HEIGHT); blade.LineTo(cx - 22, HEIGHT); blade.Close();
+                builder.MoveTo(cx - 16, top + 30); builder.LineTo(cx + 16, top + 30);
+                builder.LineTo(cx + 22, HEIGHT); builder.LineTo(cx - 22, HEIGHT); builder.Close();
+                using var blade = builder.Detach();
                 canvas.DrawPath(blade, tie);
             }
         }
@@ -426,15 +430,16 @@ namespace SIPSorcery.Cli.Commands.Bridge
         // soft unlit-side shadow for the hard plastic-CGI look.
         private static void DrawFace(SKCanvas canvas, float cx, float cy)
         {
-            using var path = new SKPath();
+            using var builder = new SKPathBuilder();
             float t = cy - 175;   // top of forehead
-            path.MoveTo(cx - 118, t + 30);
-            path.CubicTo(cx - 126, t - 6, cx + 126, t - 6, cx + 118, t + 30);    // forehead
-            path.CubicTo(cx + 150, cy - 40, cx + 140, cy + 10, cx + 110, cy + 70); // right temple/cheek
-            path.CubicTo(cx + 92, cy + 130, cx + 40, cy + 168, cx, cy + 170);      // right jaw -> chin
-            path.CubicTo(cx - 40, cy + 168, cx - 92, cy + 130, cx - 110, cy + 70); // left jaw
-            path.CubicTo(cx - 140, cy + 10, cx - 150, cy - 40, cx - 118, t + 30);  // left temple
-            path.Close();
+            builder.MoveTo(cx - 118, t + 30);
+            builder.CubicTo(cx - 126, t - 6, cx + 126, t - 6, cx + 118, t + 30);    // forehead
+            builder.CubicTo(cx + 150, cy - 40, cx + 140, cy + 10, cx + 110, cy + 70); // right temple/cheek
+            builder.CubicTo(cx + 92, cy + 130, cx + 40, cy + 168, cx, cy + 170);      // right jaw -> chin
+            builder.CubicTo(cx - 40, cy + 168, cx - 92, cy + 130, cx - 110, cy + 70); // left jaw
+            builder.CubicTo(cx - 140, cy + 10, cx - 150, cy - 40, cx - 118, t + 30);  // left temple
+            builder.Close();
+            using var path = builder.Detach();
 
             using (var skin = new SKPaint { IsAntialias = true })
             {
@@ -459,13 +464,14 @@ namespace SIPSorcery.Cli.Commands.Bridge
         private static void DrawHair(SKCanvas canvas, float cx, float cy)
         {
             float t = cy - 175;
-            using var path = new SKPath();
-            path.MoveTo(cx - 122, t + 40);
-            path.CubicTo(cx - 130, t - 60, cx + 130, t - 60, cx + 122, t + 40);  // dome
-            path.CubicTo(cx + 96, t + 6, cx + 60, t + 14, cx + 30, t + 22);      // hairline
-            path.CubicTo(cx + 12, t + 34, cx - 12, t + 34, cx - 30, t + 22);
-            path.CubicTo(cx - 60, t + 14, cx - 96, t + 6, cx - 122, t + 40);
-            path.Close();
+            using var builder = new SKPathBuilder();
+            builder.MoveTo(cx - 122, t + 40);
+            builder.CubicTo(cx - 130, t - 60, cx + 130, t - 60, cx + 122, t + 40);  // dome
+            builder.CubicTo(cx + 96, t + 6, cx + 60, t + 14, cx + 30, t + 22);      // hairline
+            builder.CubicTo(cx + 12, t + 34, cx - 12, t + 34, cx - 30, t + 22);
+            builder.CubicTo(cx - 60, t + 14, cx - 96, t + 6, cx - 122, t + 40);
+            builder.Close();
+            using var path = builder.Detach();
 
             using (var hair = new SKPaint { IsAntialias = true })
             {
@@ -483,9 +489,9 @@ namespace SIPSorcery.Cli.Commands.Bridge
                 for (int i = -5; i <= 5; i++)
                 {
                     float x = cx + i * 20;
-                    using var s = new SKPath();
-                    s.MoveTo(x, t - 40);
-                    s.CubicTo(x + 6, t - 10, x + 6, t + 20, x + 2, t + 50);
+                    builder.MoveTo(x, t - 40);
+                    builder.CubicTo(x + 6, t - 10, x + 6, t + 20, x + 2, t + 50);
+                    using var s = builder.Detach();
                     canvas.DrawPath(s, strand);
                 }
             }
@@ -494,9 +500,9 @@ namespace SIPSorcery.Cli.Commands.Bridge
                 for (int i = -4; i <= 4; i++)
                 {
                     float x = cx + i * 20 + 10;
-                    using var s = new SKPath();
-                    s.MoveTo(x, t - 40);
-                    s.CubicTo(x + 6, t - 10, x + 6, t + 20, x + 2, t + 50);
+                    builder.MoveTo(x, t - 40);
+                    builder.CubicTo(x + 6, t - 10, x + 6, t + 20, x + 2, t + 50);
+                    using var s = builder.Detach();
                     canvas.DrawPath(s, dark);
                 }
             }
@@ -545,12 +551,13 @@ namespace SIPSorcery.Cli.Commands.Bridge
         private static void DrawNose(SKCanvas canvas, float cx, float cy)
         {
             using (var sh = new SKPaint { Color = new SKColor(0x7A, 0x44, 0x18, 0x55), IsAntialias = true })
-            using (var p = new SKPath())
+            using (var builder = new SKPathBuilder())
             {
-                p.MoveTo(cx - 6, cy - 60);
-                p.LineTo(cx + 14, cy + 18);
-                p.CubicTo(cx + 16, cy + 34, cx - 16, cy + 34, cx - 16, cy + 20);
-                p.Close();
+                builder.MoveTo(cx - 6, cy - 60);
+                builder.LineTo(cx + 14, cy + 18);
+                builder.CubicTo(cx + 16, cy + 34, cx - 16, cy + 34, cx - 16, cy + 20);
+                builder.Close();
+                using var p = builder.Detach();
                 canvas.DrawPath(p, sh);
             }
             using (var hl = new SKPaint { Color = new SKColor(0xFF, 0xDC, 0xA0, 0x90), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 4, StrokeCap = SKStrokeCap.Round })
@@ -608,9 +615,10 @@ namespace SIPSorcery.Cli.Commands.Bridge
             if (open > 0.18f)
             {
                 canvas.Save();
-                using (var clip = new SKPath())
+                using (var builder = new SKPathBuilder())
                 {
-                    clip.AddOval(new SKRect(cx - hw, cy - hh, cx + hw, cy + hh));
+                    builder.AddOval(new SKRect(cx - hw, cy - hh, cx + hw, cy + hh));
+                    using var clip = builder.Detach();
                     canvas.ClipPath(clip, SKClipOperation.Intersect, true);
                 }
                 using (var teeth = new SKPaint { Color = new SKColor(0xF1, 0xEF, 0xE8), IsAntialias = true })
@@ -662,7 +670,7 @@ namespace SIPSorcery.Cli.Commands.Bridge
                         _rng.Next(2) == 0 ? new SKColor(0xFF, 0x00, 0x60, 0x60) : new SKColor(0x00, 0xE0, 0xFF, 0x60),
                         SKBlendMode.Screen)
                 };
-                canvas.DrawImage(snapshot, src, dst, tint);
+                canvas.DrawImage(snapshot, src, dst, SKSamplingOptions.Default, tint);
             }
         }
 
