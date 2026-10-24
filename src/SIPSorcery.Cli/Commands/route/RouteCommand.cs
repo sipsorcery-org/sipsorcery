@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 // Filename: RouteCommand.cs
 //
-// Description: The "sipsorcery-diags route" verb: the v0.1 of the stream router.
+// Description: The "sipsorcery route" verb: the v0.1 of the stream router.
 // It builds a small stream graph from a --from source edge and one or more --to
 // sink edges and pumps media through it, then reports what flowed. This is the
 // imperative, one-shot front-end to the graph (the seed of the larger "routing
