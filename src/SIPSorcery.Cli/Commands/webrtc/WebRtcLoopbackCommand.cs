@@ -131,6 +131,13 @@ public sealed class WebRtcLoopbackCommand : CommandBase
                           "ceiling. Pair with --pre-encode and no --decode to get the pure transport (packetise/SRTP) ceiling."
         };
 
+        var patternOption = new Option<string>("--pattern")
+        {
+            Description = LibraryVideoPublisher.PatternDescription + " Here auto picks testcard when --video shows or saves " +
+                          "the video and texture when there is no --video or it is \"null\", so benchmark runs are unchanged.",
+            DefaultValueFactory = _ => LibraryVideoPublisher.PATTERN_AUTO
+        };
+
         var command = new Command("loopback",
             "Publish a test pattern to an in-process WHIP receiver and report on it: a self-contained encode, network and decode loop in one process.");
         command.Options.Add(listenOption);
@@ -148,6 +155,7 @@ public sealed class WebRtcLoopbackCommand : CommandBase
         command.Options.Add(bitrateOption);
         command.Options.Add(preEncodeOption);
         command.Options.Add(maxRateOption);
+        command.Options.Add(patternOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => WebRtcWhipServerCommand.RunReceiverAsync(
@@ -169,7 +177,8 @@ public sealed class WebRtcLoopbackCommand : CommandBase
                 parseResult.GetValue(maxRateOption),
                 parseResult.GetValue(ffmpegPathOption),
                 0,
-                parseResult.GetValue(preEncodeOption)),
+                parseResult.GetValue(preEncodeOption),
+                LibraryVideoPublisher.ResolvePattern(parseResult.GetValue(patternOption), IsVideoShown(parseResult.GetValue(videoOption)))),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -177,4 +186,11 @@ public sealed class WebRtcLoopbackCommand : CommandBase
 
         return command;
     }
+
+    /// <summary>
+    /// True when the received video goes somewhere a person will look at it: an ffplay window, a
+    /// file or stdout. No --video, or "null", is a headless measurement.
+    /// </summary>
+    private static bool IsVideoShown(string? video) =>
+        !string.IsNullOrWhiteSpace(video) && !video.Equals("null", StringComparison.OrdinalIgnoreCase);
 }

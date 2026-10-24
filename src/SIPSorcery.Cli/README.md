@@ -139,6 +139,11 @@ ffmpeg `
 # (videoEncode is false when --pre-encode replays a bitstream; videoDecode follows --decode).
 sipsorcery webrtc loopback --preset 1080p -d 10                 # 1080p30 loop, measure send + receive fps
 sipsorcery webrtc loopback --preset 720p --video play -d 30     # publish + view the received stream
+# --pattern picks the generated video: testcard (colour bars, a moving block and a frame counter, easy
+# to check by eye: a frozen block or a skipping counter is a problem) or texture (a busy shifting
+# pattern that keeps the encoder working, used by the benchmarks). The default, auto, uses testcard
+# when --video shows or saves the video and texture for headless runs; "webrtc whip" defaults to
+# testcard except with --max-rate.
 # By default received frames are passed straight to the sink (ffplay decodes them). Add --decode to
 # instead decode in-process and send raw RGB to the sink, so the picture goes through the library's
 # decode path. --decoder selects ffmpeg (default, any codec; needs the FFmpeg libraries) or vp8.net

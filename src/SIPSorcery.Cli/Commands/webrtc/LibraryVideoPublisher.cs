@@ -10,11 +10,17 @@
 // h264, h265, vp8, vp9 or av1). Frames are sent paced to a target rate, or flat out
 // (MaxRate) to find the send-pipeline ceiling.
 //
+// Two generated patterns: "texture", a shifting textured pattern that gives the
+// encoder full-frame detail and motion (what the benchmarks measure), and
+// "testcard", colour bars with a moving block and a frame counter (TestCardPattern)
+// for when a person is watching the video.
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 15 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 24 Oct 2026	Aaron Clauson	Added the testcard pattern.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -48,11 +54,31 @@ public static class LibraryVideoPublisher
     private const int CONNECT_SETTLE_MS = 200;
     private const double BITS_PER_PIXEL_PER_FRAME = 0.1;
 
+    public const string PATTERN_AUTO = "auto";
+    public const string PATTERN_TESTCARD = "testcard";
+    public const string PATTERN_TEXTURE = "texture";
+
+    /// <summary>The --pattern option description, shared by the verbs that publish.</summary>
+    public const string PatternDescription =
+        "Video pattern: testcard (colour bars, a moving block and a frame counter, easy to check by eye), " +
+        "texture (a shifting textured pattern that keeps the encoder busy, used for benchmarks) or auto (the default).";
+
+    /// <summary>
+    /// Resolves --pattern auto to testcard when someone will be watching the video and texture
+    /// otherwise, so headless measurements keep the benchmark texture. Any other value is returned
+    /// as given (and validated with the rest of the settings).
+    /// </summary>
+    public static string ResolvePattern(string? requested, bool videoShown)
+    {
+        string pattern = string.IsNullOrWhiteSpace(requested) ? PATTERN_AUTO : requested.ToLowerInvariant();
+        return pattern == PATTERN_AUTO ? (videoShown ? PATTERN_TESTCARD : PATTERN_TEXTURE) : pattern;
+    }
+
     /// <summary>
     /// The publish controls. DurationSeconds 0 runs until the cancellation token fires.
     /// PreEncodeFrames > 0 encodes that many frames once before connecting and replays the encoded
     /// bitstream in a loop (no encoder in the send loop), to take the encode stage out of a
-    /// downstream decode measurement.
+    /// downstream decode measurement. Pattern is testcard or texture (see <see cref="ResolvePattern"/>).
     /// </summary>
     public sealed record Settings(
         string Preset,
@@ -64,7 +90,8 @@ public static class LibraryVideoPublisher
         bool MaxRate,
         string? FfmpegPath,
         int DurationSeconds,
-        int PreEncodeFrames = 0);
+        int PreEncodeFrames = 0,
+        string Pattern = PATTERN_TEXTURE);
 
     /// <summary>Outcome and send-side statistics. ExitCode is an <see cref="ExitCodes"/> value.</summary>
     public sealed record Result(
@@ -82,7 +109,7 @@ public static class LibraryVideoPublisher
         double EncodeMsAvg,
         string? Error);
 
-    private sealed record Config(int Width, int Height, VideoCodecsEnum Codec, VideoFormat VideoFormat, bool UseFfmpeg, string CodecName);
+    private sealed record Config(int Width, int Height, VideoCodecsEnum Codec, VideoFormat VideoFormat, bool UseFfmpeg, string CodecName, bool TestCard);
 
     /// <summary>Validates the encoder/codec/frame rate/resolution settings without starting anything.</summary>
     public static bool TryValidate(Settings settings, out string? error) => TryResolveConfig(settings, out _, out error);
@@ -146,10 +173,18 @@ public static class LibraryVideoPublisher
                 logger.LogDebug("Pre-encoding {Count} {Codec} frames before connecting ...", settings.PreEncodeFrames, cfg.CodecName);
                 var captured = new List<byte[]>(settings.PreEncodeFrames);
                 var rawBuf = new byte[I420Size(cfg.Width, cfg.Height)];
+                var preEncodeCard = cfg.TestCard ? new TestCardPattern(cfg.Width, cfg.Height, settings.Fps) : null;
                 double preEncodeMsSum = 0;
                 for (int i = 0; i < settings.PreEncodeFrames; i++)
                 {
-                    FillI420Frame(rawBuf, cfg.Width, cfg.Height, i);
+                    if (preEncodeCard != null)
+                    {
+                        preEncodeCard.Fill(rawBuf, i);
+                    }
+                    else
+                    {
+                        FillI420Frame(rawBuf, cfg.Width, cfg.Height, i);
+                    }
                     long s = Stopwatch.GetTimestamp();
                     byte[]? enc = videoEncoder.EncodeVideo(cfg.Width, cfg.Height, rawBuf, VideoPixelFormatsEnum.I420, cfg.Codec);
                     preEncodeMsSum += (Stopwatch.GetTimestamp() - s) * 1000.0 / Stopwatch.Frequency;
@@ -223,8 +258,12 @@ public static class LibraryVideoPublisher
             catch (OperationCanceledException) { return Fail(ExitCodes.Timeout, pc.connectionState.ToString(), "Cancelled.", cfg, connectTimeMs); }
 
             // ---- Send loop: send paced to the frame rate or flat out. In live mode each frame is
-            // generated and encoded in the loop; in pre-encode mode the encoded ring is replayed. ----
-            byte[][] ring = encodedRing ?? GenerateI420Ring(cfg.Width, cfg.Height, RING_SIZE);
+            // encoded in the loop; in pre-encode mode the encoded ring is replayed. The texture is a
+            // pre-generated ring of raw frames; the test card is drawn per frame (outside the encode
+            // timing) so its counter keeps counting rather than looping with the ring. ----
+            var testCard = encodedRing == null && cfg.TestCard ? new TestCardPattern(cfg.Width, cfg.Height, settings.Fps) : null;
+            byte[] testCardFrame = testCard != null ? new byte[testCard.I420Size] : Array.Empty<byte>();
+            byte[][] ring = encodedRing ?? (testCard != null ? Array.Empty<byte[]>() : GenerateI420Ring(cfg.Width, cfg.Height, RING_SIZE));
             uint rtpDuration = VIDEO_CLOCK_RATE / (uint)settings.Fps;
             int framesSent = 0;
             int framesAttempted = 0;
@@ -244,7 +283,16 @@ public static class LibraryVideoPublisher
                 }
                 else
                 {
-                    byte[] raw = ring[framesAttempted % ring.Length];
+                    byte[] raw;
+                    if (testCard != null)
+                    {
+                        testCard.Fill(testCardFrame, framesAttempted);
+                        raw = testCardFrame;
+                    }
+                    else
+                    {
+                        raw = ring[framesAttempted % ring.Length];
+                    }
                     long start = Stopwatch.GetTimestamp();
                     encoded = videoEncoder.EncodeVideo(cfg.Width, cfg.Height, raw, VideoPixelFormatsEnum.I420, cfg.Codec);
                     encodeMsSum += (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency;
@@ -332,6 +380,13 @@ public static class LibraryVideoPublisher
             return false;
         }
 
+        string pattern = settings.Pattern.ToLowerInvariant();
+        if (pattern != PATTERN_TESTCARD && pattern != PATTERN_TEXTURE)
+        {
+            error = $"Unknown --pattern {settings.Pattern}. Expected auto, testcard or texture.";
+            return false;
+        }
+
         int width, height;
         if (!string.IsNullOrWhiteSpace(settings.Size))
         {
@@ -406,7 +461,7 @@ public static class LibraryVideoPublisher
             return false;
         }
 
-        cfg = new Config(width, height, codec, videoFormat, useFfmpeg, codec.ToString().ToLowerInvariant());
+        cfg = new Config(width, height, codec, videoFormat, useFfmpeg, codec.ToString().ToLowerInvariant(), pattern == PATTERN_TESTCARD);
         return true;
     }
 

@@ -120,7 +120,14 @@ public sealed class WebRtcWhipCommand : CommandBase
             DefaultValueFactory = _ => DEFAULT_DURATION_SECONDS
         };
 
-        var command = new Command("whip", "Publish a test pattern to a WHIP endpoint using the SIPSorcery stack (full send pipeline: encode, RTP/SRTP, ICE/DTLS).");
+        var patternOption = new Option<string>("--pattern")
+        {
+            Description = LibraryVideoPublisher.PatternDescription + " Here auto picks testcard, since a published stream is " +
+                          "normally watched, except with --max-rate (a measurement), which gets texture.",
+            DefaultValueFactory = _ => LibraryVideoPublisher.PATTERN_AUTO
+        };
+
+        var command = new Command("whip","Publish a test pattern to a WHIP endpoint using the SIPSorcery stack (full send pipeline: encode, RTP/SRTP, ICE/DTLS).");
         command.Arguments.Add(urlArg);
         command.Options.Add(presetOption);
         command.Options.Add(sizeOption);
@@ -132,6 +139,7 @@ public sealed class WebRtcWhipCommand : CommandBase
         command.Options.Add(ffmpegPathOption);
         command.Options.Add(tokenOption);
         command.Options.Add(durationOption);
+        command.Options.Add(patternOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
@@ -145,7 +153,8 @@ public sealed class WebRtcWhipCommand : CommandBase
                 parseResult.GetValue(bitrateOption),
                 parseResult.GetValue(maxRateOption),
                 parseResult.GetValue(ffmpegPathOption),
-                parseResult.GetValue(durationOption)),
+                parseResult.GetValue(durationOption),
+                Pattern: LibraryVideoPublisher.ResolvePattern(parseResult.GetValue(patternOption), !parseResult.GetValue(maxRateOption))),
             parseResult.GetValue(tokenOption),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),

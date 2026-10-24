@@ -117,6 +117,7 @@ function Invoke-Cell([string] $encoder, [string] $codec, [string] $preset, [int]
         '--encoder', $encoder,
         '--preset', $preset,
         '--fps', $fps,
+        '--pattern', 'texture',
         '-d', $DurationSeconds,
         '-t', ($DurationSeconds + 60)
     )
