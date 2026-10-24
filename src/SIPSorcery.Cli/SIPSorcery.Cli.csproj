@@ -46,6 +46,8 @@
          WebRTCMaxHeadroom example uses; a heavy native dependency, a candidate to move behind an
          optional agent plugin later so the core tool stays lean. -->
     <PackageReference Include="Microsoft.CognitiveServices.Speech" />
+    <!-- FFT for the Hilbert (analytic signal) audio scope, the route scope-mode hilbert video. -->
+    <PackageReference Include="MathNet.Numerics" />
     <!-- Renders the bridge agent avatar (the Max Headroom face, MaxHeadroomVideoSource). Another
          heavy/native dependency, reinforcing the future optional-avatar-plugin direction. -->
     <PackageReference Include="SkiaSharp" />

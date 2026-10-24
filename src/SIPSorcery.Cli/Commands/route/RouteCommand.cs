@@ -16,8 +16,9 @@
 //                                                    # audio-scope video generated from the call audio
 //
 // The graph repacketises, it does not transcode: frames travel encoded from source
-// to sink. The scope video is the exception by design - it is rendered and encoded
-// by an external ffmpeg process, not a managed node (see AudioScopeTransform).
+// to sink. The scope video is the exception by design - it is encoded by an
+// external ffmpeg process, which also renders the waves/spectrum modes; the hilbert
+// mode is the examples' audio scope, rendered in-process (see AudioScopeTransform).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -25,6 +26,7 @@
 // History:
 // 18 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
 // 23 Jun 2026	Aaron Clauson	Added the sip: source, whip: sink and the --scope audio-scope video.
+// 24 Oct 2026	Aaron Clauson	Added --scope-mode hilbert.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -118,7 +120,8 @@ public sealed class RouteCommand : CommandBase
 
         var scopeModeOption = new Option<string>("--scope-mode")
         {
-            Description = "Scope visualisation: waves (a moving waveform) or spectrum (a scrolling frequency spectrum).",
+            Description = "Scope visualisation: waves (a moving waveform), spectrum (a scrolling frequency spectrum) " +
+                          "or hilbert (the audio scope from the Softphone example: the analytic signal traced as a coloured curve).",
             DefaultValueFactory = _ => DEFAULT_SCOPE_MODE
         };
 
@@ -243,6 +246,26 @@ public sealed class RouteCommand : CommandBase
                 new RouteResult(false, from, to, "invalid argument", 0, 0, 0, null, 0, Array.Empty<SinkReport>(),
                     "The --scope option needs an audio source, e.g. --from sip:music@iptel.org."),
                 ExitCodes.InvalidArgument);
+        }
+
+        if (scope)
+        {
+            string? scopeError = null;
+            if (!AudioScopeTransform.Modes.Contains(scopeMode, StringComparer.OrdinalIgnoreCase))
+            {
+                scopeError = $"Unrecognised --scope-mode {scopeMode}, use one of: {string.Join(", ", AudioScopeTransform.Modes)}.";
+            }
+            else
+            {
+                AudioScopeTransform.TryParseSize(scopeSize, out _, out _, out scopeError);
+            }
+
+            if (scopeError != null)
+            {
+                return WriteResult(asJson, stdoutClaimed,
+                    new RouteResult(false, from, to, "invalid argument", 0, 0, 0, null, 0, Array.Empty<SinkReport>(), scopeError),
+                    ExitCodes.InvalidArgument);
+            }
         }
 
         // Validate the audio codec up front for a clean error before any edge is built.

@@ -21,6 +21,7 @@
     <PackageVersion Include="LanguageExt.Core"                              Version="4.4.9" />
     <PackageVersion Include="Livekit.Server.Sdk.Dotnet"                     Version="1.2.2" />
     <PackageVersion Include="Makaretu.Dns.Multicast"                        Version="0.27.0" />
+    <PackageVersion Include="MathNet.Numerics"                              Version="5.0.0" />
     <PackageVersion Include="Microsoft.Bcl.HashCode"                        Version="6.0.0" />
     <PackageVersion Include="Microsoft.CognitiveServices.Speech"            Version="1.51.1" />
     <PackageVersion Include="Microsoft.Extensions.Http"                     Version="10.0.11" />

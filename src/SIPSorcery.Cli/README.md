@@ -313,15 +313,23 @@ Edges:
 #### The `--scope` audio-scope video
 
 With a `sip:` source, `--scope` adds a second video track that is a live **visualisation of the call
-audio** — a moving waveform (`--scope-mode waves`, the default) or a scrolling spectrum
-(`--scope-mode spectrum`), sized with `--scope-size WxH`. The forwarded audio still travels
-repacketised; the scope is the one transform that decodes to samples, and that rendering plus its H264
-encoding is delegated to an external **ffmpeg** process (the `showwaves`/`showspectrum` filters +
-`libx264`, the same way the sinks shell out to `ffplay`) — never a managed node. ffmpeg must be on the
-`PATH` or located with `--ffmpeg-path`.
+audio**, sized with `--scope-size WxH` (even sides, default 640x360). `--scope-mode` picks the picture:
+
+| Mode | Picture |
+|------|---------|
+| `waves` (default) | A moving waveform (ffmpeg's `showwaves` filter). |
+| `spectrum` | A scrolling frequency spectrum (ffmpeg's `showspectrum` filter). |
+| `hilbert` | The **audio scope** from the Softphone and WebRTCAudioScope examples: the call audio's analytic signal (the audio against its Hilbert transform) traced as a curve with fading trails, coloured by frequency. |
+
+The forwarded audio still travels repacketised; the scope is the one transform that decodes to
+samples. The H264 encoding is delegated to an external **ffmpeg** process (`libx264`, the same way the
+sinks shell out to `ffplay`), which for `waves` and `spectrum` also does the rendering. `hilbert` has
+no ffmpeg filter equivalent, so it is drawn in-process by a small software rasteriser and the raw
+frames are piped to ffmpeg. ffmpeg must be on the `PATH` or located with `--ffmpeg-path`.
 
 ```bash
 sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip --scope --scope-mode spectrum
+sipsorcery route --from sip:music@iptel.org --to web --scope --scope-mode hilbert   # watch the audio scope in a browser
 ```
 
 #### The `web` sink (watch in a browser)
