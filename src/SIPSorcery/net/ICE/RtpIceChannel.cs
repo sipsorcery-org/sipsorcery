@@ -2727,7 +2727,7 @@ namespace SIPSorcery.Net
             }
 
 
-            // Default fallback: do an actual mDNS query via Makaretu.Dns.Multicast.
+            // Default fallback: do an actual mDNS query via MdnsResolver.
             // Dns.GetHostAddressesAsync delegates to the OS resolver which on Windows
             // does not reliably handle .local lookups (depends on whether the OS-level
             // mDNS resolver is enabled, the multicast packet round-trips through the

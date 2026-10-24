@@ -22,7 +22,6 @@
     <PackageReference Include="Concentus" />
     <PackageReference Include="BouncyCastle.Cryptography" />
     <PackageReference Include="DnsClient" />
-    <PackageReference Include="Makaretu.Dns.Multicast" />
     <PackageReference Include="Polyfill">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
