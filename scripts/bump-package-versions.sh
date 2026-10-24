@@ -7,17 +7,23 @@
 #
 # What it edits in every csproj:
 #   <Version>OLD</Version>                  -> <Version>NEW</Version>
-#   <AssemblyVersion>OLD</AssemblyVersion>  -> <AssemblyVersion>NEW</AssemblyVersion>
-#   <FileVersion>OLD</FileVersion>          -> <FileVersion>NEW</FileVersion>
+#   <AssemblyVersion>OLD</AssemblyVersion>  -> <AssemblyVersion>NEW-NUMERIC</AssemblyVersion>
+#   <FileVersion>OLD</FileVersion>          -> <FileVersion>NEW-NUMERIC</FileVersion>
 #   <PackageReleaseNotes>-vOLD: ...         -> <PackageReleaseNotes>-vNEW: TODO
 #                                                -vOLD: ...
+#
+# NEW-NUMERIC is NEW without any pre-release suffix, e.g. 10.1.0 for
+# 10.1.0-pre. AssemblyVersion and FileVersion must be purely numeric
+# (a suffix is compiler error CS7034 / warning CS7035), so only Version,
+# which becomes the NuGet package version, carries the suffix.
 #
 # After running, search the repo for "TODO" inside a PackageReleaseNotes
 # block and replace each with the actual release-note text for the new
 # version before tagging the release.
 #
 # The script targets WSL / any Linux + bash + awk + GNU coreutils
-# environment. Tested with bash 5.x and gawk 5.x (the WSL defaults).
+# environment. Tested with bash 5.x and gawk 5.x (the WSL defaults), and
+# Git Bash on Windows. Line endings are preserved, CRLF, LF or mixed.
 #
 # Author: Aaron Clauson + Claude Opus 4.7
 # License: BSD-3-Clause (matches the rest of the repo).
@@ -52,13 +58,16 @@ The six packages this script targets are:
   src/SIPSorceryMedia.FFmpeg
   src/SIPSorceryMedia.Windows
 
-Each project's Version, AssemblyVersion and FileVersion fields are set
-to <new-version>, and a new line "-v<new-version>: TODO" is prepended
-to PackageReleaseNotes. After the script runs, edit each TODO with the
-actual release note text before tagging.
+Each project's Version field is set to <new-version> and its
+AssemblyVersion and FileVersion fields to <new-version> without any
+pre-release suffix (those two must be numeric). A new line
+"-v<new-version>: TODO" is prepended to PackageReleaseNotes. After the
+script runs, edit each TODO with the actual release note text before
+tagging.
 
 Examples:
   $PROGNAME 10.0.7              # bump all six to 10.0.7
+  $PROGNAME 10.0.8-pre          # Version 10.0.8-pre, Assembly/FileVersion 10.0.8
   $PROGNAME --dry-run 10.0.7    # preview the changes
 EOF
 }
@@ -104,6 +113,9 @@ if ! printf '%s' "$NEW_VERSION" \
   exit 2
 fi
 
+# AssemblyVersion and FileVersion only take the numeric MAJOR.MINOR.PATCH part.
+NUMERIC_VERSION="${NEW_VERSION%%-*}"
+
 # ---------- locate repo root ----------
 
 # The script is expected to live in <repo>/scripts/. Walking up from the
@@ -133,11 +145,12 @@ PROJECTS=(
 # ---------- the awk transform ----------
 #
 # Runs once per file. Reads stdin, writes a transformed copy to stdout.
-# The input version is supplied as -v ver=...
+# The input version is supplied as -v ver=... and its numeric part as -v num=...
 #
 # Transform rules:
-#   - <Version>X</Version>, <AssemblyVersion>X</AssemblyVersion>,
-#     <FileVersion>X</FileVersion>: replace X with the new version.
+#   - <Version>X</Version>: replace X with the new version.
+#   - <AssemblyVersion>X</AssemblyVersion>, <FileVersion>X</FileVersion>:
+#     replace X with the new version minus any pre-release suffix.
 #   - The line containing <PackageReleaseNotes>: split at the opening
 #     tag, emit the prefix-up-to-and-including-the-tag, append a fresh
 #     "-v<ver>: TODO" line, then re-emit the original suffix (which
@@ -158,11 +171,11 @@ read -r -d '' AWK_TRANSFORM <<'AWK_EOF' || true
     print line; next
   }
   if (line ~ /<AssemblyVersion>[^<]+<\/AssemblyVersion>/) {
-    sub(/<AssemblyVersion>[^<]+<\/AssemblyVersion>/, "<AssemblyVersion>" ver "</AssemblyVersion>", line)
+    sub(/<AssemblyVersion>[^<]+<\/AssemblyVersion>/, "<AssemblyVersion>" num "</AssemblyVersion>", line)
     print line; next
   }
   if (line ~ /<FileVersion>[^<]+<\/FileVersion>/) {
-    sub(/<FileVersion>[^<]+<\/FileVersion>/, "<FileVersion>" ver "</FileVersion>", line)
+    sub(/<FileVersion>[^<]+<\/FileVersion>/, "<FileVersion>" num "</FileVersion>", line)
     print line; next
   }
 
@@ -177,7 +190,9 @@ read -r -d '' AWK_TRANSFORM <<'AWK_EOF' || true
     if (pos > 0) {
       head = substr(line, 1, pos + length(tag) - 1)
       tail = substr(line, pos + length(tag))
-      printf "%s-v%s: TODO\n", head, ver
+      # Give the inserted line the same ending as the line it's split from.
+      cr = (line ~ /\r$/) ? "\r" : ""
+      printf "%s-v%s: TODO%s\n", head, ver, cr
       if (length(tail) > 0) {
         print tail
       }
@@ -216,7 +231,9 @@ for rel in "${PROJECTS[@]}"; do
   tmp="$(mktemp)"
   trap 'rm -f "$tmp"' EXIT
 
-  awk -v ver="$NEW_VERSION" "$AWK_TRANSFORM" "$csproj" > "$tmp"
+  # BINMODE=3 stops gawk on Windows (Git Bash / MSYS) reading and writing in text mode,
+  # which strips the CR from CRLF lines. Elsewhere it's ignored.
+  awk -v BINMODE=3 -v ver="$NEW_VERSION" -v num="$NUMERIC_VERSION" "$AWK_TRANSFORM" "$csproj" > "$tmp"
 
   if ! cmp -s "$csproj" "$tmp"; then
     if [ "$DRY_RUN" -eq 1 ]; then

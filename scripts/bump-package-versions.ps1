@@ -6,10 +6,15 @@
 .DESCRIPTION
     What it edits in every csproj:
       <Version>OLD</Version>                  -> <Version>NEW</Version>
-      <AssemblyVersion>OLD</AssemblyVersion>  -> <AssemblyVersion>NEW</AssemblyVersion>
-      <FileVersion>OLD</FileVersion>          -> <FileVersion>NEW</FileVersion>
+      <AssemblyVersion>OLD</AssemblyVersion>  -> <AssemblyVersion>NEW-NUMERIC</AssemblyVersion>
+      <FileVersion>OLD</FileVersion>          -> <FileVersion>NEW-NUMERIC</FileVersion>
       <PackageReleaseNotes>-vOLD: ...         -> <PackageReleaseNotes>-vNEW: TODO
                                                    -vOLD: ...
+
+    NEW-NUMERIC is NEW without any pre-release suffix, e.g. 10.1.0 for
+    10.1.0-pre. AssemblyVersion and FileVersion must be purely numeric
+    (a suffix is compiler error CS7034 / warning CS7035), so only Version,
+    which becomes the NuGet package version, carries the suffix.
 
     After running, search the repo for "TODO" inside a PackageReleaseNotes
     block and replace each with the actual release-note text for the new
@@ -92,13 +97,16 @@ The six packages this script targets are:
   src/SIPSorceryMedia.FFmpeg
   src/SIPSorceryMedia.Windows
 
-Each project's Version, AssemblyVersion and FileVersion fields are set
-to <new-version>, and a new line "-v<new-version>: TODO" is prepended
-to PackageReleaseNotes. After the script runs, edit each TODO with the
-actual release note text before tagging.
+Each project's Version field is set to <new-version> and its
+AssemblyVersion and FileVersion fields to <new-version> without any
+pre-release suffix (those two must be numeric). A new line
+"-v<new-version>: TODO" is prepended to PackageReleaseNotes. After the
+script runs, edit each TODO with the actual release note text before
+tagging.
 
 Examples:
   $ProgName 10.0.7             # bump all six to 10.0.7
+  $ProgName 10.0.8-pre         # Version 10.0.8-pre, Assembly/FileVersion 10.0.8
   $ProgName -DryRun 10.0.7     # preview the changes
 "@
 
@@ -130,6 +138,9 @@ if ($NewVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$') {
     Write-Err "version '$NewVersion' is not in MAJOR.MINOR.PATCH[-prerelease] form"
     exit 2
 }
+
+# AssemblyVersion and FileVersion only take the numeric MAJOR.MINOR.PATCH part.
+$NumericVersion = $NewVersion -replace '-.*$', ''
 
 # ---------- locate repo root ----------
 
@@ -163,8 +174,9 @@ $Projects = @(
 # Takes the whole file text, returns the transformed text.
 #
 # Transform rules:
-#   - <Version>X</Version>, <AssemblyVersion>X</AssemblyVersion>,
-#     <FileVersion>X</FileVersion>: replace X with the new version.
+#   - <Version>X</Version>: replace X with the new version.
+#   - <AssemblyVersion>X</AssemblyVersion>, <FileVersion>X</FileVersion>:
+#     replace X with the new version minus any pre-release suffix.
 #   - The line containing <PackageReleaseNotes>: split at the opening
 #     tag, emit the prefix-up-to-and-including-the-tag plus a fresh
 #     "-v<ver>: TODO", then re-emit the original suffix (which contains
@@ -178,7 +190,8 @@ $Projects = @(
 function Convert-ProjectContent {
     param(
         [Parameter(Mandatory)] [AllowEmptyString()] [string] $Text,
-        [Parameter(Mandatory)] [string] $Version
+        [Parameter(Mandatory)] [string] $Version,
+        [Parameter(Mandatory)] [string] $NumericVersion
     )
 
     $tag = '<PackageReleaseNotes>'
@@ -190,8 +203,8 @@ function Convert-ProjectContent {
     # only and this keeps the two scripts behaving the same.
     $versionRxs = @(
         @{ Rx = [regex]'<Version>[^<]+</Version>'; To = "<Version>$Version</Version>" }
-        @{ Rx = [regex]'<AssemblyVersion>[^<]+</AssemblyVersion>'; To = "<AssemblyVersion>$Version</AssemblyVersion>" }
-        @{ Rx = [regex]'<FileVersion>[^<]+</FileVersion>'; To = "<FileVersion>$Version</FileVersion>" }
+        @{ Rx = [regex]'<AssemblyVersion>[^<]+</AssemblyVersion>'; To = "<AssemblyVersion>$NumericVersion</AssemblyVersion>" }
+        @{ Rx = [regex]'<FileVersion>[^<]+</FileVersion>'; To = "<FileVersion>$NumericVersion</FileVersion>" }
     )
 
     # String.Split on LF keeps every empty entry, unlike the -split
@@ -296,7 +309,7 @@ foreach ($rel in $Projects) {
         continue
     }
 
-    $transformed = Convert-ProjectContent -Text $original -Version $NewVersion
+    $transformed = Convert-ProjectContent -Text $original -Version $NewVersion -NumericVersion $NumericVersion
 
     if ($transformed -ne $original) {
         if ($DryRun) {
