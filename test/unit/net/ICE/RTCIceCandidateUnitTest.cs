@@ -286,9 +286,78 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(RTCIceProtocol.tcp, candidate.protocol);
             Assert.Equal(RTCIceCandidateType.host, candidate.type);
             Assert.Equal(RTCIceTcpCandidateType.active, candidate.tcpType);
-            Assert.Equal("active", candidate.relatedAddress);
+            Assert.Null(candidate.relatedAddress);
             Assert.Equal("10.0.1.16", candidate.address);
             Assert.Equal(9, candidate.port);
+        }
+
+        /// <summary>
+        /// The trickled TCP candidates Chrome sends must keep their protocol and tcptype when they go
+        /// through RTCIceCandidateInit, which is the path for both trickled and SDP candidates.
+        /// </summary>
+        [Fact]
+        public void InitConstructor_ChromeActiveTcpCandidate_KeepsProtocolAndTcpType()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var candidate = new RTCIceCandidate(new RTCIceCandidateInit
+            {
+                candidate = "candidate:3286179282 1 tcp 1518214911 100.122.148.20 9 typ host tcptype active generation 0 ufrag zISE network-id 1 network-cost 50",
+                sdpMid = "0",
+                sdpMLineIndex = 0,
+                usernameFragment = "zISE"
+            });
+
+            Assert.Equal(RTCIceProtocol.tcp, candidate.protocol);
+            Assert.Equal(RTCIceTcpCandidateType.active, candidate.tcpType);
+            Assert.Equal(RTCIceCandidate.TCP_ACTIVE_DISCARD_PORT, candidate.port);
+            Assert.Null(candidate.relatedAddress);
+            Assert.Equal("3286179282 1 tcp 1518214911 100.122.148.20 9 typ host tcptype active generation 0", candidate.ToString());
+        }
+
+        /// <summary>
+        /// Firefox sends the transport in upper case.
+        /// </summary>
+        [Fact]
+        public void Parse_UpperCaseTcpProtocol_ParsesAsTcp()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var candidate = RTCIceCandidate.Parse("4 1 TCP 2105458943 10.0.1.16 9 typ host tcptype active");
+
+            Assert.Equal(RTCIceProtocol.tcp, candidate.protocol);
+            Assert.Equal(RTCIceTcpCandidateType.active, candidate.tcpType);
+        }
+
+        [Theory]
+        [InlineData("1 1 tcp 1518280447 192.168.1.10 50000 typ host tcptype passive generation 0", RTCIceTcpCandidateType.passive)]
+        [InlineData("1 1 tcp 1518280447 192.168.1.10 50000 typ host tcptype so generation 0", RTCIceTcpCandidateType.so)]
+        [InlineData("1 1 tcp 1518280447 192.168.1.10 9 typ host tcptype active generation 0", RTCIceTcpCandidateType.active)]
+        public void Parse_TcpType_ParsesEachType(string candidateLine, RTCIceTcpCandidateType expected)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var candidate = RTCIceCandidate.Parse(candidateLine);
+
+            Assert.Equal(expected, candidate.tcpType);
+            Assert.Null(candidate.relatedAddress);
+        }
+
+        /// <summary>
+        /// Some stacks put tcptype after the related address and port.
+        /// </summary>
+        [Fact]
+        public void Parse_TcpTypeAfterRelatedFields_ParsesAllFields()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var candidate = RTCIceCandidate.Parse("5 1 tcp 1684797439 10.0.75.1 7038 typ srflx raddr 10.0.75.2 rport 7039 tcptype passive");
+
+            Assert.Equal(RTCIceProtocol.tcp, candidate.protocol);
+            Assert.Equal(RTCIceCandidateType.srflx, candidate.type);
+            Assert.Equal(RTCIceTcpCandidateType.passive, candidate.tcpType);
+            Assert.Equal("10.0.75.2", candidate.relatedAddress);
+            Assert.Equal(7039, candidate.relatedPort);
         }
 
         [Theory]

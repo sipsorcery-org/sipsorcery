@@ -674,9 +674,19 @@ namespace SIPSorcery.Net
                 // This implementation currently only supports audio and video multiplexed on a single channel.
                 OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate only supports multiplexed media, excluding remote candidate with non-zero sdpMLineIndex of {candidate.sdpMLineIndex}.");
             }
+            else if (candidate.protocol == RTCIceProtocol.tcp && candidate.tcpType == RTCIceTcpCandidateType.active)
+            {
+                // Active TCP candidates (RFC 6544) only make outbound connections and advertise the discard
+                // port 9 as a placeholder, so there is never anything to connect to. Browsers, e.g. Chrome,
+                // send these alongside their UDP candidates. Even with TCP support they could only be paired
+                // with a local passive candidate.
+                logger.LogDebug("RTP ICE Channel ignoring remote active TCP candidate {Candidate}.", candidate);
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate is an active TCP candidate, which has no listening port that can be connected to.");
+            }
             else if (candidate.protocol != RTCIceProtocol.udp)
             {
                 // This implementation currently only supports UDP for RTP communications.
+                logger.LogDebug("RTP ICE Channel ignoring remote {Protocol} candidate {Candidate}.", candidate.protocol, candidate);
                 OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported transport protocol {candidate.protocol}.");
             }
             else if (IPAddress.TryParse(candidate.address, out var addr) &&
