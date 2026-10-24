@@ -30,9 +30,6 @@
     <PackageReference Include="SIPSorcery.WebSocketSharp" />
     <PackageReference Include="System.Net.WebSockets.Client" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
-
-    <!-- The packages below are transitive references included to overcome vulnerabilities in a top level package. -->
-    <PackageReference Include="System.Net.Security" /> <!-- Vuln version referenced by System.Net.WebSockets.Client. -->
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462' OR '$(TargetFramework)' == 'netstandard2.0'">
