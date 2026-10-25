@@ -84,8 +84,9 @@ public sealed class RouteCommand : CommandBase
 
         var toOption = new Option<string[]>("--to", "-o")
         {
-            Description = "A sink edge to push the stream to: a file path (VP8->IVF, H264/H265->Annex B), \"play\" (ffplay), " +
-                          "\"null\" (discard), \"-\" (bitstream on stdout), whip:<url> (publish to a WebRTC endpoint), " +
+            Description = "A sink edge to push the stream to: a file path (VP8->IVF, H264/H265->Annex B, or *.mkv for video + audio " +
+                          "in Matroska), \"play\" (ffplay), \"null\" (discard), \"-\" (video bitstream on stdout), \"-:mkv\" (video + audio " +
+                          "as Matroska on stdout, e.g. | mpv -), whip:<url> (publish to a WebRTC endpoint), " +
                           "web[:port] (self-host a WHEP server + player page on localhost, default port 8080, to watch in a browser), " +
                           "livekit[:room] (publish into a LiveKit room; needs --url/--api-key/--api-secret) or " +
                           "cloudflare (publish to a Cloudflare Realtime SFU session; needs --app-id/--token). " +
@@ -235,9 +236,9 @@ public sealed class RouteCommand : CommandBase
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(RouteCommand));
 
-        // When a sink claims stdout (--to -), the result is commentary and moves to stderr so the
-        // bitstream on stdout stays a single clean payload.
-        bool stdoutClaimed = to.Contains("-");
+        // When a sink claims stdout (--to - or -:mkv), the result is commentary and moves to stderr so
+        // the bitstream on stdout stays a single clean payload.
+        bool stdoutClaimed = to.Any(t => t == "-" || t.StartsWith("-:", StringComparison.Ordinal));
 
         // The scope video derives from audio, so it only applies to a sip: source.
         if (scope && !IsSipSource(from))

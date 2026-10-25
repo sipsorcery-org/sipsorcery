@@ -309,7 +309,9 @@ Edges:
 | `--to`    | *file path* | VP8 written as IVF, H264/H265 as Annex B. |
 | `--to`    | `play` | An ffplay window (decode delegated to ffplay). |
 | `--to`    | `null` | Discard — exercises the pipeline headlessly and reports throughput. |
-| `--to`    | `-` | The bitstream on stdout (the result JSON then moves to stderr). |
+| `--to`    | `-` | The video bitstream on stdout (the result JSON then moves to stderr). |
+| `--to`    | `-:mkv` | Video **and** audio muxed into a live Matroska stream on stdout, with real timestamps, so a player gets both: `route --from testpattern --to -:mkv \| mpv -`. Repacketised, not transcoded: H264 or VP8 video, Opus or G.711 audio. |
+| `--to`    | *path*`.mkv` | The same Matroska stream written to a file, e.g. to record a SIP call with its scope video. |
 | `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only audio (`--audio-codec`: opus default / pcmu / pcma) + H264 video peer connection. `--token` sets the Authorization. Opus is the default, so endpoints that require it (e.g. Broadcast Box) just work. |
 | `--to`    | `web[:port]` | Self-host a **WHEP server + player page** on `http://localhost:<port>` (default 8080) and stream to any browser that opens it. Many tabs can watch at once — each gets its own peer connection fanned from the one graph tee. H264 video + `--audio-codec` audio (opus is the most broadly supported). `--token` gates the WHEP endpoint; `--no-open` suppresses the browser auto-launch (also never opened with `--json`). |
 | `--to`    | `livekit[:room]` | Publish into a LiveKit **room** (default a random name) as a send-only H264 + OPUS participant. Needs `--url`/`--api-key`/`--api-secret` (or `LIVEKIT_WEBSOCKET_URL`/`LIVEKIT_API_KEY`/`LIVEKIT_API_SECRET`); requires opus, which is the default. The CLI mints its own publisher token locally, so a separate subscriber only needs the same room name + creds. |

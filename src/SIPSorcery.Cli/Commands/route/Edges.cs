@@ -449,10 +449,20 @@ public static class EdgeFactory
             case "sip":
             case "sips":
                 throw new EdgeException(
-                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, whip:<url>, web[:port], livekit[:room], cloudflare). " +
+                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, -:mkv, whip:<url>, web[:port], livekit[:room], cloudflare). " +
                     "A sip: call sink becomes a route sink in a later version.");
 
+            case "-:mkv":
+                // Video + audio muxed into a live Matroska stream on stdout, e.g. | mpv -.
+                return new MatroskaSinkNode(null, spec, logger);
+
             default:
+                // A .mkv file gets video + audio in Matroska rather than the raw video bitstream.
+                if (spec.EndsWith(".mkv", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new MatroskaSinkNode(spec, spec, logger);
+                }
+
                 // Anything else is a VideoSink spec: a file path, "play", "null" or "-".
                 var sink = VideoSink.Create(spec, logger, out string? error);
                 if (error != null)
