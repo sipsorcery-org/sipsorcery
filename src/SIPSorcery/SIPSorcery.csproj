@@ -1,12 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <Compile Remove="net\RTSP\RTSPClient.cs" />
-    <Compile Remove="net\RTSP\RTSPConnection.cs" />
-    <Compile Remove="net\RTSP\RTSPServer.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="core\SIPEvents\Dialog\EventDialogSchema.xsd" />
     <None Remove="core\SIPEvents\Presence\PIDFSchema.xsd" />
     <None Remove="media\Macroform_-_Simplicity.raw" />
@@ -22,7 +16,6 @@
     <PackageReference Include="Concentus" />
     <PackageReference Include="BouncyCastle.Cryptography" />
     <PackageReference Include="DnsClient" />
-    <PackageReference Include="Makaretu.Dns.Multicast" />
     <PackageReference Include="Polyfill">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

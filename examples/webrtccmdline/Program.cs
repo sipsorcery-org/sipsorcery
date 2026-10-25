@@ -34,7 +34,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
-using Makaretu.Dns;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
@@ -124,7 +123,6 @@ namespace SIPSorcery.Examples
         //private const string SIPSORCERY_STUN_SERVER_PASSWORD = "password"; //"stun.sipsorcery.com";
         private const string COMMAND_PROMPT = "Command => ";
         private const string DATA_CHANNEL_LABEL = "dcx";
-        private const int MDNS_TIMEOUT = 2000;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
@@ -178,9 +176,6 @@ namespace SIPSorcery.Examples
             //ManualResetEvent exitMre = new ManualResetEvent(false);
 
             logger = AddConsoleLogger();
-
-            // Start MDNS server.
-            var mdnsServer = new ServiceDiscovery();
 
             if (options.StunServer != null)
             {
@@ -670,7 +665,6 @@ namespace SIPSorcery.Examples
             _peerConnection = new RTCPeerConnection(pcConfiguration, rtpPort);
 
             //_peerConnection.GetRtpChannel().MdnsResolve = (hostname) => Task.FromResult(NetServices.InternetDefaultAddress);
-            _peerConnection.GetRtpChannel().MdnsResolve = MdnsResolve;
             //_peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message type {msg.Header.MessageType}.");
 
             if (!noDataChannel)
@@ -790,35 +784,6 @@ namespace SIPSorcery.Examples
             };
 
             return _peerConnection;
-        }
-
-        private static async Task<IPAddress> MdnsResolve(string service)
-        {
-            logger.LogDebug($"MDNS resolve requested for {service}.");
-
-            var query = new Message();
-            query.Questions.Add(new Question { Name = service, Type = DnsType.ANY });
-            var cancellation = new CancellationTokenSource(MDNS_TIMEOUT);
-
-            using (var mdns = new MulticastService())
-            {
-                mdns.Start();
-                var response = await mdns.ResolveAsync(query, cancellation.Token);
-
-                var ans = response.Answers.Where(x => x.Type == DnsType.A || x.Type == DnsType.AAAA).FirstOrDefault();
-
-                logger.LogDebug($"MDNS result {ans}.");
-
-                switch (ans)
-                {
-                    case ARecord a:
-                        return a.Address;
-                    case AAAARecord aaaa:
-                        return aaaa.Address;
-                    default:
-                        return null;
-                };
-            }
         }
 
         /// <summary>

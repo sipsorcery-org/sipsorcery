@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" />
-    <PackageReference Include="Makaretu.Dns.Multicast" />
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Sinks.Console" />
