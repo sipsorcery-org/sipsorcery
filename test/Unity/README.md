@@ -50,9 +50,9 @@ test/Unity/SipSorceryUnitySmokeTest/
    plugin. The `.meta` sets `validateReferences: 0` and enables the
    plugin on the Editor platform. Without this, Unity's plugin importer
    rejects assemblies whose transitive references can't be resolved
-   (notably `Makaretu.Dns.Multicast → Tmds.LibC`, which is Linux-only and
-   not pulled in by a `netstandard2.1` publish on Windows), and refuses
-   to load SIPSorcery itself.
+   (for example platform-conditional references that a `netstandard2.1`
+   publish on Windows does not include), and refuses to load SIPSorcery
+   itself.
 3. Unity is installed and activated, then run in `-batchmode -runTests`
    for PlayMode; the job parses `playmode-results.xml` and fails on any
    failed test or if zero tests were discovered.

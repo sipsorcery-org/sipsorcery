@@ -6,7 +6,7 @@ namespace SipSorcery.Tests.EditorScripts
     /// <summary>
     /// SIPSorcery's netstandard2.1 publish output drops a few managed
     /// assemblies into Assets/Plugins that carry platform-conditional
-    /// references (notably Makaretu.Dns.Multicast -> Tmds.LibC, which is
+    /// references (historically Makaretu.Dns.Multicast -> Tmds.LibC, which is
     /// Linux-only). Unity's plugin importer rejects the whole assembly when
     /// a reference cannot be resolved, which in turn prevents SIPSorcery
     /// itself from loading and leaves the smoke test with 0 discovered tests.

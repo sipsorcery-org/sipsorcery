@@ -26,7 +26,6 @@
     <PackageVersion Include="Livekit.Server.Sdk.Dotnet" Version="1.2.2" />
     <PackageVersion Include="LLamaSharp" Version="0.27.0" />
     <PackageVersion Include="LLamaSharp.Backend.Cpu" Version="0.27.0" />
-    <PackageVersion Include="Makaretu.Dns.Multicast" Version="0.27.0" />
     <PackageVersion Include="MathNet.Filtering" Version="0.7.0" />
     <PackageVersion Include="MathNet.Numerics" Version="5.0.0" />
     <PackageVersion Include="Microsoft.CognitiveServices.Speech" Version="1.51.1" />
