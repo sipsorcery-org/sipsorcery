@@ -39,6 +39,66 @@ public class RealtimeEventSerialisationUnitTests
     }
 
     [Fact]
+    public void Deserialise_Conversation_Item_Done_Event_Json_Test()
+    {
+        logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod()?.Name);
+
+        // A GA Realtime API assistant message once its audio has finished, as sent on the data channel.
+        string json = @"{
+    ""type"": ""conversation.item.done"",
+    ""event_id"": ""event_CCXGRvq3cSbAGPYYmXZ5W"",
+    ""previous_item_id"": ""item_CCXGRxbY0n6WE4EszhF5w"",
+    ""item"": {
+        ""id"": ""item_CCXGSfazH4dOXQyuGCVK9"",
+        ""type"": ""message"",
+        ""status"": ""completed"",
+        ""role"": ""assistant"",
+        ""content"": [
+            {
+                ""type"": ""output_audio"",
+                ""transcript"": ""Hello, I'm Max Headroom.""
+            }
+        ]
+    }
+}";
+
+        var parsedEvent = JsonSerializer.Deserialize<RealtimeEventBase>(json, JsonOptions.Default);
+
+        var done = Assert.IsType<RealtimeServerEventConversationItemDone>(parsedEvent);
+        Assert.Equal("event_CCXGRvq3cSbAGPYYmXZ5W", done.EventID);
+        Assert.Equal("item_CCXGRxbY0n6WE4EszhF5w", done.PreviousItemID);
+        Assert.Equal("item_CCXGSfazH4dOXQyuGCVK9", done.Item.ID);
+        Assert.Equal(RealtimeConversationContentTypeEnum.output_audio, done.Item.Content!.Single().Type);
+        Assert.Equal("Hello, I'm Max Headroom.", done.Item.Content!.Single().Transcript);
+    }
+
+    [Fact]
+    public void Deserialise_Conversation_Item_Added_Event_Json_Test()
+    {
+        logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod()?.Name);
+
+        // The first item in a conversation has no predecessor, so previous_item_id is null.
+        string json = @"{
+    ""type"": ""conversation.item.added"",
+    ""event_id"": ""event_CCXGRvq3cSbAGPYYmXZ5X"",
+    ""previous_item_id"": null,
+    ""item"": {
+        ""id"": ""item_CCXGRxbY0n6WE4EszhF5w"",
+        ""type"": ""message"",
+        ""status"": ""in_progress"",
+        ""role"": ""assistant"",
+        ""content"": []
+    }
+}";
+
+        var parsedEvent = JsonSerializer.Deserialize<RealtimeEventBase>(json, JsonOptions.Default);
+
+        var added = Assert.IsType<RealtimeServerEventConversationItemAdded>(parsedEvent);
+        Assert.Null(added.PreviousItemID);
+        Assert.Equal("item_CCXGRxbY0n6WE4EszhF5w", added.Item.ID);
+    }
+
+    [Fact]
     public void Deserialise_Transcription_Session__Update_Event_Json_Test()
     {
         logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod()?.Name);
