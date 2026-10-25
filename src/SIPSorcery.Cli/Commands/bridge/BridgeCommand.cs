@@ -8,12 +8,14 @@
 // speech-to-text -> LLM -> Azure text-to-speech voice agent), so:
 //
 //   bridge web agent --open      # open a browser and talk to the agent (e.g. Max Headroom)
+//   bridge term openai --avatar | mpv --vo=tct -   # talk from the terminal, watch in mpv
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 26 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 25 Oct 2026	Aaron Clauson	Added the term endpoint.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -51,8 +53,8 @@ public sealed class BridgeCommand : CommandBase
 
     public override Command Build()
     {
-        var aArg = new Argument<string>("a") { Description = "The first endpoint: web, agent, openai or sip:<uri>." };
-        var bArg = new Argument<string>("b") { Description = "The second endpoint: web, agent, openai or sip:<uri>." };
+        var aArg = new Argument<string>("a") { Description = "The first endpoint: web, term, agent, openai or sip:<uri>." };
+        var bArg = new Argument<string>("b") { Description = "The second endpoint: web, term, agent, openai or sip:<uri>." };
 
         var portOption = new Option<int>("--port")
         {
@@ -111,6 +113,12 @@ public sealed class BridgeCommand : CommandBase
         {
             Description = "Password for the sip: endpoint's --user."
         };
+        var micOption = new Option<string?>("--mic")
+        {
+            Description = "With a term endpoint, the microphone to capture via ffmpeg: a DirectShow device name on " +
+                          "Windows (default: the first audio device ffmpeg lists), an avfoundation device on macOS or a " +
+                          "PulseAudio source on Linux (default: default)."
+        };
         var durationOption = new Option<int>("--duration", "-d")
         {
             Description = "Seconds to run for. 0 (default) runs until a participant leaves or ctrl-c.",
@@ -134,6 +142,7 @@ public sealed class BridgeCommand : CommandBase
         command.Options.Add(avatarOption);
         command.Options.Add(userOption);
         command.Options.Add(passwordOption);
+        command.Options.Add(micOption);
         command.Options.Add(durationOption);
         AddCommonOptions(command);
 
@@ -164,7 +173,8 @@ public sealed class BridgeCommand : CommandBase
                     parseResult.GetValue(avatarOption) ? "max" : null,
                     parseResult.GetValue(userOption),
                     parseResult.GetValue(passwordOption),
-                    parseResult.GetValue(TimeoutOption)),
+                    parseResult.GetValue(TimeoutOption),
+                    parseResult.GetValue(micOption)),
                 parseResult.GetValue(durationOption),
                 asJson,
                 parseResult.GetValue(VerboseOption),
@@ -180,6 +190,9 @@ public sealed class BridgeCommand : CommandBase
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(BridgeCommand));
 
+        // A term endpoint writes its Matroska stream to stdout, so the result moves to stderr.
+        bool stdoutClaimed = IsTerm(a) || IsTerm(b);
+
         // Build both endpoints. A bad spec / missing creds is an argument error before anything starts.
         IBridgeParticipant participantA;
         IBridgeParticipant participantB;
@@ -189,7 +202,7 @@ public sealed class BridgeCommand : CommandBase
         }
         catch (EdgeException ex)
         {
-            return WriteResult(asJson, new BridgeResult(false, a, b, "invalid endpoint", 0, 0, 0, ex.Message), ExitCodes.InvalidArgument);
+            return WriteResult(asJson, stdoutClaimed, new BridgeResult(false, a, b, "invalid endpoint", 0, 0, 0, ex.Message), ExitCodes.InvalidArgument);
         }
 
         try
@@ -199,7 +212,7 @@ public sealed class BridgeCommand : CommandBase
         catch (EdgeException ex)
         {
             await participantA.DisposeAsync().ConfigureAwait(false);
-            return WriteResult(asJson, new BridgeResult(false, a, b, "invalid endpoint", 0, 0, 0, ex.Message), ExitCodes.InvalidArgument);
+            return WriteResult(asJson, stdoutClaimed, new BridgeResult(false, a, b, "invalid endpoint", 0, 0, 0, ex.Message), ExitCodes.InvalidArgument);
         }
 
         // Cue the agent's greeting when the web peer connects, and relay the agent transcript to the
@@ -239,13 +252,15 @@ public sealed class BridgeCommand : CommandBase
         bool success = error == null;
         int exitCode = success ? ExitCodes.Ok : ExitCodes.Failed;
 
-        return WriteResult(asJson,
+        return WriteResult(asJson, stdoutClaimed,
             new BridgeResult(success, participantA.Describe(), participantB.Describe(), stopped,
                 graph.AToBFrames, graph.BToAFrames, (int)stopwatch.ElapsedMilliseconds, error),
             exitCode);
     }
 
     private static bool IsWeb(string spec) => spec.Trim().Equals("web", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsTerm(string spec) => spec.Trim().Equals("term", StringComparison.OrdinalIgnoreCase);
 
     private static void WireGreeting(IBridgeParticipant a, IBridgeParticipant b)
     {
@@ -271,15 +286,16 @@ public sealed class BridgeCommand : CommandBase
         }
     }
 
-    private static int WriteResult(bool asJson, BridgeResult result, int exitCode)
+    private static int WriteResult(bool asJson, bool stdoutClaimed, BridgeResult result, int exitCode)
     {
+        var output = stdoutClaimed ? Console.Error : Console.Out;
         if (asJson)
         {
-            WriteJson(result);
+            output.WriteLine(SerializeResult(result));
         }
         else if (result.Success)
         {
-            Console.WriteLine($"Bridged {result.A} <-> {result.B} ({result.Stopped} after {result.RunMs}ms). " +
+            output.WriteLine($"Bridged {result.A} <-> {result.B} ({result.Stopped} after {result.RunMs}ms). " +
                 $"{result.AToBFrames} frames a->b, {result.BToAFrames} frames b->a.");
         }
         else

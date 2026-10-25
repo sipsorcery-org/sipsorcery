@@ -21,6 +21,9 @@
 // Each stream's RTP clock is mapped to milliseconds from when its first frame
 // arrived, which lines the tracks up without any RTCP sender reports.
 //
+// Also used by the "term" bridge endpoint, which tells it which tracks to expect
+// (audio only without an avatar) and watches Closed to end when mpv quits.
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
@@ -55,6 +58,9 @@ public sealed class MatroskaSinkNode : ISinkNode
     private readonly Channel<(MediaFrame Frame, long ArrivalMs)> _queue;
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private readonly Task _worker;
+    private readonly bool _expectVideo;
+    private readonly bool _expectAudio;
+    private readonly TaskCompletionSource _closed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     // Worker thread state.
     private readonly List<(MediaFrame Frame, long ArrivalMs)> _held = new();
@@ -73,11 +79,18 @@ public sealed class MatroskaSinkNode : ISinkNode
     private int _frames;
     private int _dropped;
 
-    public MatroskaSinkNode(string? filePath, string spec, ILogger logger)
+    /// <param name="filePath">The file to write, or null for stdout.</param>
+    /// <param name="expectVideo">Hold the header for a video track. When the caller knows there is none
+    /// (an audio only stream) set false so the header is written on the first audio frame rather than
+    /// after HEADER_WAIT_MS.</param>
+    /// <param name="expectAudio">Likewise for an audio track.</param>
+    public MatroskaSinkNode(string? filePath, string spec, ILogger logger, bool expectVideo = true, bool expectAudio = true)
     {
         _filePath = filePath;
         _spec = spec;
         _logger = logger;
+        _expectVideo = expectVideo;
+        _expectAudio = expectAudio;
         _queue = Channel.CreateBounded<(MediaFrame, long)>(
             new BoundedChannelOptions(QUEUE_CAPACITY) { FullMode = BoundedChannelFullMode.DropOldest, SingleReader = true },
             _ => Interlocked.Increment(ref _dropped));
@@ -85,6 +98,9 @@ public sealed class MatroskaSinkNode : ISinkNode
     }
 
     public bool IsStdout => _filePath == null;
+
+    /// <summary>Completes if the output stops accepting data, typically the reader (mpv) closing the pipe.</summary>
+    public Task Closed => _closed.Task;
 
     // Nothing to bring up: the output is opened when the header is written.
     public Task StartAsync(CancellationToken ct) => Task.CompletedTask;
@@ -123,11 +139,13 @@ public sealed class MatroskaSinkNode : ISinkNode
                 // Typically the reader (mpv) closed the pipe.
                 _logger.LogWarning("Matroska output closed, no further frames will be written: {Error}", excp.Message);
                 _failed = true;
+                _closed.TrySetResult();
             }
             catch (Exception excp)
             {
                 _logger.LogWarning("Matroska sink failed, no further frames will be written: {Error}", excp.Message);
                 _failed = true;
+                _closed.TrySetResult();
             }
         }
     }
@@ -157,7 +175,7 @@ public sealed class MatroskaSinkNode : ISinkNode
 
         _held.Add((frame, arrivalMs));
 
-        bool bothReady = _videoTrack != null && _audioTrack != null;
+        bool bothReady = (_videoTrack != null || !_expectVideo) && (_audioTrack != null || !_expectAudio);
         bool waitedLongEnough = arrivalMs - _firstArrivalMs >= HEADER_WAIT_MS && (_videoTrack != null || _audioTrack != null);
         if (bothReady || waitedLongEnough || _held.Count >= MAX_HELD_FRAMES)
         {

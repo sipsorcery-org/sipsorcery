@@ -273,6 +273,7 @@ sipsorcery bridge web agent                    # open a browser and TALK to an A
 sipsorcery bridge web openai                   # ...or talk to an OpenAI Realtime agent (OPENAI_API_KEY)
 sipsorcery bridge web openai --avatar          # ...with a lip-synced video face (mouth driven by the speech envelope)
 sipsorcery bridge sip:alice@example.com agent  # ...or let a PHONE caller talk to the agent (G.711 <-> Opus transcoded)
+sipsorcery bridge term openai --avatar | mpv --vo=tct --profile=low-latency -   # ...or talk from the TERMINAL (headphones!)
 
 
 # The realtime fabrics (Cloudflare, LiveKit, OpenAI) have no standalone verbs: each is reached as a
@@ -374,6 +375,7 @@ v0.1 endpoints:
 | Endpoint | Role |
 |----------|------|
 | `web`   | A browser as a **microphone + speaker** over one send/recv Opus peer connection (self-hosts the page on `--port`, default 8080, and **opens it automatically** — suppress with `--no-open`, also never opened with `--json`). When the other side is an agent, the live **conversation transcript is logged to the browser console** (`[you] …` / `[ai] …`) over a data channel. |
+| `term`  | The **terminal** as microphone + speaker: the microphone is captured by an **ffmpeg** process (DirectShow on Windows, the first audio device unless `--mic` names one; avfoundation on macOS; PulseAudio on Linux) and what the other side sends back (an agent's voice and, with `--avatar`, its face) is written to **stdout as Matroska**, for a player to show: `bridge term openai --avatar \| mpv --vo=tct -`. The agent's bursty speech is paced into a continuous audio track (silence in the gaps) so the player keeps sound and picture in sync. There is **no echo cancellation**, so use headphones or the agent hears itself. With `dotnet run`, add `--no-launch-profile` so nothing but the Matroska stream reaches stdout. |
 | `agent` | A locally-assembled **voice agent**: **Azure speech-to-text → LLM → Azure text-to-speech**, with a Max Headroom persona by default. You speak, it listens, thinks and replies. |
 | `openai` | A voice agent backed by the **OpenAI Realtime API** — OpenAI does the listening, thinking and speaking in one hop. Opus passes straight through both ways (repacketise, not transcode). Needs an OpenAI key (`--api-key` or `OPENAI_API_KEY`); `--voice` picks a Realtime voice (marin, alloy, verse, …), `--persona` sets the system prompt. |
 | `sip:<uri>` | A **SIP call** as a full-duplex peer — place a call to `sip:user@host` (or a bare `user@host`) and bridge the caller to the other side, so a **phone can talk to a voice agent**. The G.711 call is transcoded to/from 48 kHz Opus at the boundary (audio is cheap to transcode in managed code), so it drops in against `web`, `agent` or `openai`. `--user`/`--password` authenticate if challenged. With `--avatar` the call becomes a **video call** (a send-only H264 m-line carrying the agent's face); a phone that can't do video just declines it and the call stays audio-only. |

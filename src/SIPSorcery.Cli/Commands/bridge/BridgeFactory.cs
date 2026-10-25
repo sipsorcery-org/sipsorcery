@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 // Filename: BridgeFactory.cs
 //
-// Description: Maps a bridge endpoint spec ("web", "agent") to a participant, the
+// Description: Maps a bridge endpoint spec ("web", "term", "agent") to a participant, the
 // single place endpoints are wired (the bridge counterpart to route's EdgeFactory).
 // Adding a new endpoint (a sip: peer, openai, livekit:) is a new case here.
 //
@@ -39,7 +39,8 @@ public sealed record BridgeOptions(
     string? Avatar = null,
     string? SipUsername = null,
     string? SipPassword = null,
-    int RingTimeoutSeconds = 30);
+    int RingTimeoutSeconds = 30,
+    string? MicDevice = null);
 
 public static class BridgeFactory
 {
@@ -64,16 +65,21 @@ public static class BridgeFactory
             case "agent":
                 return CreateAgent(options, logger);
 
+            case "term":
+                // The local terminal: microphone in via ffmpeg, the other side out as Matroska on stdout. It
+                // carries video only when the other side has an avatar.
+                return new TerminalParticipant(options.MicDevice, options.Avatar != null, logger);
+
             case "openai":
                 return CreateOpenAi(options, loggerFactory, logger);
 
             case "livekit":
                 throw new EdgeException(
-                    $"'{spec}' is not wired into bridge yet (endpoints: web, agent, openai, sip:<uri>). " +
+                    $"'{spec}' is not wired into bridge yet (endpoints: web, term, agent, openai, sip:<uri>). " +
                     "livekit becomes a bridge endpoint in a later version.");
 
             default:
-                throw new EdgeException($"Unknown bridge endpoint '{spec}'. Endpoints: web, agent, openai, sip:<uri>.");
+                throw new EdgeException($"Unknown bridge endpoint '{spec}'. Endpoints: web, term, agent, openai, sip:<uri>.");
         }
     }
 
