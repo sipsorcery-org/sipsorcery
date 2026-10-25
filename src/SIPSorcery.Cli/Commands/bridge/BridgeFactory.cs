@@ -1,8 +1,9 @@
 //-----------------------------------------------------------------------------
 // Filename: BridgeFactory.cs
 //
-// Description: Maps a bridge endpoint spec ("web", "term", "agent") to a participant, the
-// single place endpoints are wired (the bridge counterpart to route's EdgeFactory).
+// Description: Maps a two-way route endpoint spec ("web", "term", "agent") to a
+// participant, the single place duplex endpoints are wired (the two-way counterpart
+// to EdgeFactory, which builds the one-way sources and sinks).
 // Adding a new endpoint (a sip: peer, openai, livekit:) is a new case here.
 //
 // Author(s):
@@ -56,7 +57,19 @@ public static class BridgeFactory
             return CreateSip(trimmed, options, logger);
         }
 
-        switch (trimmed.ToLowerInvariant())
+        string lowered = trimmed.ToLowerInvariant();
+
+        // "web:9000" picks the page's port, as for the one-way web sink.
+        if (lowered.StartsWith("web:", StringComparison.Ordinal))
+        {
+            if (!int.TryParse(lowered[4..], out int port) || port < 1 || port > 65535)
+            {
+                throw new EdgeException($"The web endpoint port '{trimmed[4..]}' is not a valid port number (1-65535), e.g. web:8080.");
+            }
+            return new WebParticipant(port, options.OpenBrowser, options.Avatar != null, logger);
+        }
+
+        switch (lowered)
         {
             case "web":
                 // The page offers a video track only when an avatar is in play (the agent's face).
@@ -75,11 +88,13 @@ public static class BridgeFactory
 
             case "livekit":
                 throw new EdgeException(
-                    $"'{spec}' is not wired into bridge yet (endpoints: web, term, agent, openai, sip:<uri>). " +
-                    "livekit becomes a bridge endpoint in a later version.");
+                    $"'{spec}' is not wired into two-way routes yet (two-way endpoints: web, term, agent, openai, sip:<uri>). " +
+                    "Use it one-way (without --duplex) for now.");
 
             default:
-                throw new EdgeException($"Unknown bridge endpoint '{spec}'. Endpoints: web, term, agent, openai, sip:<uri>.");
+                throw new EdgeException(
+                    $"'{spec}' cannot be used in a two-way route: it does not both send and receive. " +
+                    "Two-way endpoints: web, term, agent, openai, sip:<uri>. Leave out --duplex to route it one way.");
         }
     }
 
@@ -147,7 +162,7 @@ public static class BridgeFactory
         string rest = spec.Contains(':') ? spec[(spec.IndexOf(':') + 1)..] : spec;
         if (string.IsNullOrWhiteSpace(rest))
         {
-            throw new EdgeException("The sip endpoint needs a destination, e.g. bridge sip:music@iptel.org agent.");
+            throw new EdgeException("The sip endpoint needs a destination, e.g. route --from sip:alice@example.com --to agent.");
         }
 
         // SipDestination accepts both "sip:"/"sips:" and a bare user@host, so pass the original spec.

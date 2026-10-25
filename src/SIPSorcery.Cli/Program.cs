@@ -3,7 +3,7 @@
 //
 // Description: Entry point for the "sipsorcery" CLI. Wires up the command tree:
 // the protocol nouns (sip, stun, ice, turn, webrtc) carrying the probe, test and
-// benchmark verbs, and the top level route/bridge verbs for the stream router.
+// benchmark verbs, and the top level route verb for the stream router.
 // Each verb lives in its own class under Commands.
 //
 // Design rules for every verb:
@@ -33,7 +33,7 @@ using SIPSorcery.Cli.Commands;
 // version options RootCommand would normally contribute are added explicitly.
 var rootCommand = new Command("sipsorcery",
     "SIP and WebRTC from the command line, built on the SIPSorcery library: probe, test and benchmark " +
-    "SIP, STUN, TURN, ICE and WebRTC, and route and bridge live media streams between them.");
+    "SIP, STUN, TURN, ICE and WebRTC, and route live media between them, one-way or both ways.");
 rootCommand.Options.Add(new HelpOption());
 rootCommand.Options.Add(new VersionOption());
 
@@ -68,15 +68,13 @@ webrtcCommand.Subcommands.Add(new WebRtcEchoServerCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcVideoBenchCommand().Build());
 rootCommand.Subcommands.Add(webrtcCommand);
 
-// Every realtime fabric (Cloudflare, LiveKit, OpenAI) is reached through a route/bridge edge
-// (cloudflare/livekit:<room> sinks and sources, bridge web openai), not a standalone noun.
+// Every realtime fabric (Cloudflare, LiveKit, OpenAI) is reached through a route edge
+// (cloudflare/livekit:<room> sinks and sources, route --from web --to openai), not a standalone noun.
 
 // route is a top-level verb (not a noun/verb pair): it wires a source edge to one or more sink edges
-// over a stream graph. It is the seed of the stream-routing flagship.
+// over a stream graph, or two endpoints both ways (--duplex, implied with an agent at either end, e.g.
+// talk to a voice agent in a browser with "route --from web --to agent"). It is the seed of the
+// stream-routing flagship.
 rootCommand.Subcommands.Add(new RouteCommand().Build());
-
-// bridge is the duplex counterpart to route: it connects two endpoints both ways (e.g. talk to a
-// voice agent in a browser with "bridge web agent").
-rootCommand.Subcommands.Add(new BridgeCommand().Build());
 
 return await rootCommand.Parse(args).InvokeAsync();

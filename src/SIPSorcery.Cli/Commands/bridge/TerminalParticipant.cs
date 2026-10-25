@@ -7,7 +7,7 @@
 // agent's voice and, with --avatar, its face) is muxed as Matroska on stdout for
 // a player to show, e.g.
 //
-//   bridge term openai --avatar | mpv --vo=tct --profile=low-latency -
+//   route --from term --to openai --avatar | mpv --vo=tct --profile=low-latency -
 //
 // The agents do not produce a continuous audio timeline: speech arrives in bursts
 // with silence between utterances, and the OpenAI voice carries no timestamps at

@@ -6,7 +6,7 @@ The **`sipsorcery`** command: SIP and WebRTC from the command line, built on the
 - **Diagnostics and benchmarking.** The protocol nouns (`sip`, `stun`, `ice`, `turn`, `webrtc`) carry
   probe/test/benchmark verbs: connectivity checks, test calls, registration and load, echo-test peers
   and video pipeline benchmarks. Not a general softphone.
-- **Stream routing.** The top level `route` and `bridge` verbs treat a media **stream** as the
+- **Stream routing.** The top level `route` verb treats a media **stream** as the
   primitive and attach edges to it, moving live media between SIP, WebRTC, the major realtime fabrics
   (Cloudflare Realtime, LiveKit) and AI agents (OpenAI Realtime).
 
@@ -265,19 +265,21 @@ sipsorcery route --from livekit:demo-room --to web                         # ...
 sipsorcery route --from testpattern --to cloudflare                        # publish into a Cloudflare Realtime SFU session (creds via --app-id/--token or CLOUDFLARE_APPID/CLOUDFLARE_API_TOKEN)
 sipsorcery route --from cloudflare:<sessionId> --to web                    # ...and in a SEPARATE process, pull that session (id printed by the sink) and watch it in a browser
 
-# Bridge: connect two duplex endpoints BOTH ways (full duplex). Where route is directional (--from/--to),
-# bridge is symmetric and order-agnostic. v0.1 endpoints: web (a browser mic+speaker page), agent (an
-# Azure speech-to-text -> LLM -> Azure text-to-speech voice agent), openai (the OpenAI Realtime API) and
-# sip:<uri> (a phone call, transcoded G.711 <-> Opus). See "The bridge verb" below.
-sipsorcery bridge web agent                    # open a browser and TALK to an Azure voice agent (e.g. Max Headroom)
-sipsorcery bridge web openai                   # ...or talk to an OpenAI Realtime agent (OPENAI_API_KEY)
-sipsorcery bridge web openai --avatar          # ...with a lip-synced video face (mouth driven by the speech envelope)
-sipsorcery bridge sip:alice@example.com agent  # ...or let a PHONE caller talk to the agent (G.711 <-> Opus transcoded)
-sipsorcery bridge term openai --avatar | mpv --vo=tct --profile=low-latency -   # ...or talk from the TERMINAL (headphones!)
+# Two-way: with --duplex, or automatically when either end is an agent, --from and --to each send to and
+# receive from the other (full duplex). Two-way endpoints: web (a browser mic+speaker page), term (the
+# terminal: mic via ffmpeg, Matroska on stdout), agent (an Azure speech-to-text -> LLM -> Azure
+# text-to-speech voice agent), openai (the OpenAI Realtime API) and sip:<uri> (a phone call, transcoded
+# G.711 <-> Opus). See "Two-way routes" below.
+sipsorcery route --from web --to agent                    # open a browser and TALK to an Azure voice agent (e.g. Max Headroom)
+sipsorcery route --from web --to openai                   # ...or talk to an OpenAI Realtime agent (OPENAI_API_KEY)
+sipsorcery route --from web --to openai --avatar          # ...with a lip-synced video face (mouth driven by the speech envelope)
+sipsorcery route --from sip:alice@example.com --to agent  # ...or let a PHONE caller talk to the agent (G.711 <-> Opus transcoded)
+sipsorcery route --from term --to openai --avatar | mpv --vo=tct --profile=low-latency -   # ...or talk from the TERMINAL (headphones!)
+sipsorcery route --from term --to sip:alice@example.com --duplex | mpv -   # no agent, so ask for two-way: a phone call from the terminal
 
 
 # The realtime fabrics (Cloudflare, LiveKit, OpenAI) have no standalone verbs: each is reached as a
-# route/bridge edge, shown above. The probe/test verbs for them (turn allocate, ice gather, webrtc ...)
+# route edge, shown above. The probe/test verbs for them (turn allocate, ice gather, webrtc ...)
 # are listed under Diagnostics.
 ```
 
@@ -363,28 +365,36 @@ and subscribe to (pull) one — so running the two in separate processes is a fu
 a later version, at which point `route --from sip:… --to livekit:room` bridges a call into a room with no
 bespoke command.
 
-### The bridge verb
+### Two-way routes
 
-`route` is directional — `--from` → `--to`. A conversation is **duplex**, and `--from/--to` reads wrong
-for that, so the duplex case has its own verb: **`bridge <a> <b>`** connects two endpoints **both ways**
-(`a` → `b` *and* `b` → `a`). The endpoints are **symmetric / order-agnostic** — `bridge web agent` and
-`bridge agent web` are the same.
+A route is **one-way** by default — `--from` → `--to`. A conversation is **duplex**, so a route can also
+run **both ways** between exactly two endpoints (`--from` → `--to` *and* `--to` → `--from`):
 
-v0.1 endpoints:
+- **`--duplex`** asks for it, e.g. a phone call: `route --from term --to sip:alice@example.com --duplex`.
+- It is **automatic when either end is an agent** (`openai` or `agent`), since an agent that cannot hear
+  is useless: `route --from web --to agent` needs no flag.
+
+One-way is the default so that a **microphone** (`term`, `web`) is only ever opened for a route that is
+clearly a conversation: `route --from sip:music@iptel.org --to term` just plays the call, and never sends
+your microphone to it. The two endpoints are order-agnostic — `--from web --to agent` and
+`--from agent --to web` are the same. A two-way route always uses Opus, takes a single `--to`, and has no
+`--scope`.
+
+Two-way endpoints:
 
 | Endpoint | Role |
 |----------|------|
 | `web`   | A browser as a **microphone + speaker** over one send/recv Opus peer connection (self-hosts the page on `--port`, default 8080, and **opens it automatically** — suppress with `--no-open`, also never opened with `--json`). When the other side is an agent, the live **conversation transcript is logged to the browser console** (`[you] …` / `[ai] …`) over a data channel. |
-| `term`  | The **terminal** as microphone + speaker: the microphone is captured by an **ffmpeg** process (DirectShow on Windows, the first audio device unless `--mic` names one; avfoundation on macOS; PulseAudio on Linux) and what the other side sends back (an agent's voice and, with `--avatar`, its face) is written to **stdout as Matroska**, for a player to show: `bridge term openai --avatar \| mpv --vo=tct -`. The agent's bursty speech is paced into a continuous audio track (silence in the gaps) so the player keeps sound and picture in sync. There is **no echo cancellation**, so use headphones or the agent hears itself. With `dotnet run`, add `--no-launch-profile` so nothing but the Matroska stream reaches stdout. |
+| `term`  | The **terminal** as microphone + speaker: the microphone is captured by an **ffmpeg** process (DirectShow on Windows, the first audio device unless `--mic` names one; avfoundation on macOS; PulseAudio on Linux) and what the other side sends back (an agent's voice and, with `--avatar`, its face) is written to **stdout as Matroska**, for a player to show: `route --from term --to openai --avatar \| mpv --vo=tct -`. The agent's bursty speech is paced into a continuous audio track (silence in the gaps) so the player keeps sound and picture in sync. There is **no echo cancellation**, so use headphones or the agent hears itself. With `dotnet run`, add `--no-launch-profile` so nothing but the Matroska stream reaches stdout. |
 | `agent` | A locally-assembled **voice agent**: **Azure speech-to-text → LLM → Azure text-to-speech**, with a Max Headroom persona by default. You speak, it listens, thinks and replies. |
 | `openai` | A voice agent backed by the **OpenAI Realtime API** — OpenAI does the listening, thinking and speaking in one hop. Opus passes straight through both ways (repacketise, not transcode). Needs an OpenAI key (`--api-key` or `OPENAI_API_KEY`); `--voice` picks a Realtime voice (marin, alloy, verse, …), `--persona` sets the system prompt. |
-| `sip:<uri>` | A **SIP call** as a full-duplex peer — place a call to `sip:user@host` (or a bare `user@host`) and bridge the caller to the other side, so a **phone can talk to a voice agent**. The G.711 call is transcoded to/from 48 kHz Opus at the boundary (audio is cheap to transcode in managed code), so it drops in against `web`, `agent` or `openai`. `--user`/`--password` authenticate if challenged. With `--avatar` the call becomes a **video call** (a send-only H264 m-line carrying the agent's face); a phone that can't do video just declines it and the call stays audio-only. |
+| `sip:<uri>` | A **SIP call** as a full-duplex peer — place a call to `sip:user@host` (or a bare `user@host`) and bridge the caller to the other side, so a **phone can talk to a voice agent**. The G.711 call is transcoded to/from 48 kHz Opus at the boundary (audio is cheap to transcode in managed code), so it drops in against `web`, `agent` or `openai`. `--username`/`--password` authenticate if challenged. With `--avatar` the call becomes a **video call** (a send-only H264 m-line carrying the agent's face); a phone that can't do video just declines it and the call stays audio-only. |
 
 ```bash
 # Set the agent's credentials (or pass --azure-key/--azure-region/--llm), then:
 export AZURE_SPEECH_KEY=…  AZURE_SPEECH_REGION=westeurope
 export LLM_ENDPOINT=http://localhost:11434/v1/chat/completions  LLM_MODEL=llama3.2   # e.g. Ollama
-sipsorcery bridge web agent
+sipsorcery route --from web --to agent
 ```
 
 Open the page, grant the microphone, and **talk to Max** — full duplex (the browser's echo canceller
@@ -396,16 +406,16 @@ whole listen→think→speak in one hop:
 
 ```bash
 export OPENAI_API_KEY=sk-…
-sipsorcery bridge web openai                                 # talk to OpenAI Realtime
-sipsorcery bridge web openai --voice verse --persona "You are a terse pirate."
+sipsorcery route --from web --to openai                                 # talk to OpenAI Realtime
+sipsorcery route --from web --to openai --voice verse --persona "You are a terse pirate."
 ```
 
 Add **`--avatar`** to put a lip-synced **video face** (the SkiaSharp Max Headroom avatar) on the voice —
 the browser then shows his face alongside the audio, on either agent:
 
 ```bash
-sipsorcery bridge web agent  --avatar                       # mouth driven by Azure TTS visemes (phoneme-accurate)
-sipsorcery bridge web openai --avatar                       # mouth driven by the speech envelope (no visemes)
+sipsorcery route --from web --to agent  --avatar                       # mouth driven by Azure TTS visemes (phoneme-accurate)
+sipsorcery route --from web --to openai --avatar                       # mouth driven by the speech envelope (no visemes)
 ```
 
 The two avatars differ in how the mouth is driven: the Azure `agent` has a viseme timeline, so its
@@ -417,9 +427,9 @@ the other side, so someone on a handset can speak to the agent. The endpoints ar
 agent can be on either side:
 
 ```bash
-sipsorcery bridge sip:alice@example.com agent          # call alice, bridge her to the Azure agent
-sipsorcery bridge sip:alice@example.com openai         # ...or to the OpenAI Realtime agent
-sipsorcery bridge sip:1001@pbx.local agent --user 1000 --password secret   # authenticate the call
+sipsorcery route --from sip:alice@example.com --to agent          # call alice, bridge her to the Azure agent
+sipsorcery route --from sip:alice@example.com --to openai         # ...or to the OpenAI Realtime agent
+sipsorcery route --from sip:1001@pbx.local --to agent --username 1000 --password secret   # authenticate the call
 ```
 
 The SIP leg is **G.711** (8 kHz); every other endpoint speaks **48 kHz Opus**, so this peer transcodes
@@ -431,8 +441,8 @@ agent's lip-synced face is sent down it, so a **video softphone** (Linphone, Zoi
 while you talk to it — the same `--avatar` that paints the face in the browser, no extra flag:
 
 ```bash
-sipsorcery bridge sip:alice@example.com agent  --avatar    # Azure agent, viseme lip-sync, on the phone
-sipsorcery bridge sip:alice@example.com openai --avatar    # OpenAI agent, envelope lip-sync, on the phone
+sipsorcery route --from sip:alice@example.com --to agent  --avatar    # Azure agent, viseme lip-sync, on the phone
+sipsorcery route --from sip:alice@example.com --to openai --avatar    # OpenAI agent, envelope lip-sync, on the phone
 ```
 
 An audio-only phone simply rejects the video m-line and the call carries on as audio. Pluggable/external
@@ -456,8 +466,8 @@ connectivity checks, including Cloudflare TURN. SIP DNS resolution and further v
 
 Early. The `route` engine carries audio and video over a single source → N sinks (a free tee), with
 `whep:`/`sip:`/`livekit:`/`cloudflare:` sources, `whip:`/`web`/`livekit:`/`cloudflare` sinks and an
-ffmpeg-backed audio-scope transform wired in. The `bridge` verb adds the duplex case (two endpoints both ways), with `web`, a
-local Azure voice `agent`, an `openai` Realtime agent and a `sip:` phone peer (transcoded G.711 ↔ Opus)
+ffmpeg-backed audio-scope transform wired in. Two-way routes (`--duplex`, automatic with an agent) add the duplex
+case, with `web`, `term`, a local Azure voice `agent`, an `openai` Realtime agent and a `sip:` phone peer (transcoded G.711 ↔ Opus)
 as the endpoints, the agents each with an optional lip-synced `--avatar`. Streaming verbs default to
 `-d 0` (run until ctrl-c); pass a positive `--duration` for a fixed window. Fan-in, richer transforms,
 the remaining transport edges, pluggable/external avatars, and the authoring layers above the graph

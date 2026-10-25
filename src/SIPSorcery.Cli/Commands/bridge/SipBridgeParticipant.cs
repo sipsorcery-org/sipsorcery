@@ -3,7 +3,7 @@
 //
 // Description: The "sip" bridge endpoint: a SIP call as a full-duplex participant,
 // so someone on a phone can talk to the other side of the bridge (a browser, or a
-// voice agent: "bridge sip:alice@host agent" lets a caller speak to Max Headroom).
+// voice agent: "route --from sip:alice@host --to agent" lets a caller speak to Max Headroom).
 //
 // The SIP leg is G.711 (8 kHz PCMU/PCMA); every other bridge endpoint works in
 // 48 kHz WebRTC Opus. So unlike the web<->openai passthrough this peer TRANSCODES at
