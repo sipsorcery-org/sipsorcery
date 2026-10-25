@@ -8,6 +8,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Lets the net8.0 tool run on newer installed runtimes without a reinstall. -->
     <RollForward>Major</RollForward>
+    <!-- The Wav2Lip avatar's per-pixel compositing loops use pointers. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -48,6 +50,11 @@
     <PackageReference Include="Microsoft.CognitiveServices.Speech" />
     <!-- FFT for the Hilbert (analytic signal) audio scope, the route scope-mode hilbert video. -->
     <PackageReference Include="MathNet.Numerics" />
+    <!-- Runs the Wav2Lip model for the default photoreal agent avatar (Wav2LipAvatarRenderer). The
+         DirectML build: ~30fps on any DX12 GPU (CPU fallback on Windows without one) against ~16fps
+         for the CPU-only build. It ships Windows natives only, so on Linux/macOS the agent avatar
+         falls back to the SkiaSharp max face. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" />
     <!-- Renders the bridge agent avatar (the Max Headroom face, MaxHeadroomVideoSource). Another
          heavy/native dependency, reinforcing the future optional-avatar-plugin direction. -->
     <PackageReference Include="SkiaSharp" />

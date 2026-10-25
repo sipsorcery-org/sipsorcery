@@ -115,15 +115,9 @@ public static class BridgeFactory
         string? llmModel = options.LlmModel ?? Environment.GetEnvironmentVariable("LLM_MODEL");
         string? llmApiKey = options.LlmApiKey ?? Environment.GetEnvironmentVariable("LLM_API_KEY");
 
-        // Only the built-in "max" avatar exists for now; anything else is a clear error.
-        bool avatar = options.Avatar != null;
-        if (avatar && !options.Avatar!.Equals("max", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new EdgeException($"Unknown avatar '{options.Avatar}'. The only built-in avatar is 'max'.");
-        }
-
+        // The avatar name (wav2lip, max, or "" for the default) is checked by AgentAvatar.
         return new AzureAgentParticipant(azureKey!, azureRegion!, voice, options.Persona,
-            llm, llmModel, llmApiKey, options.Greeting, avatar, logger);
+            llm, llmModel, llmApiKey, options.Greeting, options.Avatar, logger);
     }
 
     private static IBridgeParticipant CreateOpenAi(BridgeOptions options, ILoggerFactory loggerFactory, ILogger logger)
@@ -146,14 +140,8 @@ public static class BridgeFactory
                 $"Unknown OpenAI voice '{options.Voice}'. Choose one of: {string.Join(", ", Enum.GetNames<RealtimeVoicesEnum>())}.");
         }
 
-        // Only the built-in "max" avatar exists for now; anything else is a clear error.
-        bool avatar = options.Avatar != null;
-        if (avatar && !options.Avatar!.Equals("max", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new EdgeException($"Unknown avatar '{options.Avatar}'. The only built-in avatar is 'max'.");
-        }
-
-        return new OpenAiAgentParticipant(apiKey!, voice, options.Persona, options.Greeting, avatar, loggerFactory, logger);
+        // The avatar name (wav2lip, max, or "" for the default) is checked by AgentAvatar.
+        return new OpenAiAgentParticipant(apiKey!, voice, options.Persona, options.Greeting, options.Avatar, loggerFactory, logger);
     }
 
     private static IBridgeParticipant CreateSip(string spec, BridgeOptions options, ILogger logger)

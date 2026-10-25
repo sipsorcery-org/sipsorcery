@@ -272,7 +272,7 @@ sipsorcery route --from cloudflare:<sessionId> --to web                    # ...
 # G.711 <-> Opus). See "Two-way routes" below.
 sipsorcery route --from web --to agent                    # open a browser and TALK to an Azure voice agent (e.g. Max Headroom)
 sipsorcery route --from web --to openai                   # ...or talk to an OpenAI Realtime agent (OPENAI_API_KEY)
-sipsorcery route --from web --to openai --avatar          # ...with a lip-synced video face (mouth driven by the speech envelope)
+sipsorcery route --from web --to openai --avatar          # ...with a lip-synced video face (the photoreal Wav2Lip Max Headroom head)
 sipsorcery route --from sip:alice@example.com --to agent  # ...or let a PHONE caller talk to the agent (G.711 <-> Opus transcoded)
 sipsorcery route --from term --to openai --avatar | mpv --vo=tct --profile=low-latency -   # ...or talk from the TERMINAL (headphones!)
 sipsorcery route --from term --to sip:alice@example.com --duplex | mpv -   # no agent, so ask for two-way: a phone call from the terminal
@@ -410,17 +410,19 @@ sipsorcery route --from web --to openai                                 # talk t
 sipsorcery route --from web --to openai --voice verse --persona "You are a terse pirate."
 ```
 
-Add **`--avatar`** to put a lip-synced **video face** (the SkiaSharp Max Headroom avatar) on the voice —
-the browser then shows his face alongside the audio, on either agent:
+Add **`--avatar`** to put a lip-synced **video face** on the voice — the browser then shows his face
+alongside the audio, on either agent. There are two faces:
+
+| `--avatar` | Face |
+|------------|------|
+| *(no name)* or `wav2lip` | The default: the **photoreal Max Headroom head** from the [maxheadroom](https://github.com/sipsorcery/maxheadroom) repo. The **Wav2Lip** model animates the mouth from the agent's actual voice, run in-process with onnxruntime on the GPU via **DirectML** (~30fps; CPU fallback). Windows only, and it needs the model and persona files, which are not bundled (Wav2Lip is licensed for non-commercial use): `WAV2LIP_ONNX` (else `C:\tools\wav2lip\wav2lip-onnx\checkpoints\wav2lip_gan.onnx` or `wav2lip.onnx`), `NEURAL_PERSONA` (else `C:\tools\wav2lip\persona.jpg/.png/.webp`) and `NEURAL_MATTE` (else `C:\tools\wav2lip\persona_alpha.png`). If it cannot run, a plain `--avatar` falls back to `max` with a warning; `--avatar wav2lip` reports why instead. |
+| `max` | The **SkiaSharp cartoon** Max Headroom, drawn in-process with no extra files. The Azure `agent` drives its mouth from the TTS viseme timeline (phoneme-accurate); the `openai` voice has no visemes, so its mouth follows the speech envelope. |
 
 ```bash
-sipsorcery route --from web --to agent  --avatar                       # mouth driven by Azure TTS visemes (phoneme-accurate)
-sipsorcery route --from web --to openai --avatar                       # mouth driven by the speech envelope (no visemes)
+sipsorcery route --from web --to openai --avatar                       # the photoreal Wav2Lip head
+sipsorcery route --from web --to agent  --avatar max                   # the cartoon, lip-synced from Azure TTS visemes
+sipsorcery route --from web --to openai --avatar max                   # the cartoon, mouth following the speech envelope
 ```
-
-The two avatars differ in how the mouth is driven: the Azure `agent` has a viseme timeline, so its
-lip-sync is phoneme-accurate; the `openai` voice has none, so its mouth is **audio-driven** from the
-speech envelope (reads as generic talking that tracks the speech).
 
 Either agent also answers the **phone**: a `sip:<uri>` peer places a SIP call and bridges the caller to
 the other side, so someone on a handset can speak to the agent. The endpoints are symmetric, so the

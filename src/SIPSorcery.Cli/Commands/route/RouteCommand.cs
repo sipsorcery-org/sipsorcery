@@ -106,7 +106,7 @@ public sealed class RouteCommand : CommandBase
         string? ApiKey,
         string? ApiSecret,
         string? AppId,
-        bool Avatar,
+        string? Avatar,
         string? Voice,
         string? Persona,
         string? Greeting,
@@ -244,10 +244,13 @@ public sealed class RouteCommand : CommandBase
                           "Defaults to the CLOUDFLARE_APPID environment variable (token: CLOUDFLARE_API_TOKEN)."
         };
 
-        var avatarOption = new Option<bool>("--avatar")
+        var avatarOption = new Option<string?>("--avatar")
         {
-            Description = "Give an agent a lip-synced video face (the Max Headroom avatar): a video track to a web or term peer, " +
-                          "or a video call to a sip: peer."
+            Description = "Give an agent a lip-synced video face: a video track to a web or term peer, or a video call to a sip: " +
+                          "peer. Optionally name it: wav2lip (the default, the photoreal Max Headroom head; Windows, needs its model " +
+                          "and persona via WAV2LIP_ONNX/NEURAL_PERSONA or C:\\tools\\wav2lip, else falls back to max) or max (the " +
+                          "SkiaSharp cartoon).",
+            Arity = ArgumentArity.ZeroOrOne
         };
 
         var voiceOption = new Option<string?>("--voice")
@@ -346,7 +349,8 @@ public sealed class RouteCommand : CommandBase
                 parseResult.GetValue(apiKeyOption),
                 parseResult.GetValue(apiSecretOption),
                 parseResult.GetValue(appIdOption),
-                parseResult.GetValue(avatarOption),
+                // --avatar alone selects the default face; absent means no avatar.
+                parseResult.GetResult(avatarOption) is null ? null : parseResult.GetValue(avatarOption) ?? AgentAvatar.DEFAULT,
                 parseResult.GetValue(voiceOption),
                 parseResult.GetValue(personaOption),
                 parseResult.GetValue(greetingOption),
@@ -404,14 +408,14 @@ public sealed class RouteCommand : CommandBase
             {
                 return "The --scope option is for one-way routes from a sip: source; leave out --duplex to use it.";
             }
-            if (args.Avatar && !IsAgent(args.From) && !IsAgent(args.To[0]))
+            if (args.Avatar != null && !IsAgent(args.From) && !IsAgent(args.To[0]))
             {
                 return "The --avatar option gives an agent a face, so one end needs to be an agent (openai or agent).";
             }
             return null;
         }
 
-        if (args.Avatar)
+        if (args.Avatar != null)
         {
             return "The --avatar option gives an agent a face, so one end needs to be an agent (openai or agent).";
         }
@@ -550,7 +554,7 @@ public sealed class RouteCommand : CommandBase
             args.LlmModel,
             args.ApiKey,
             args.Greeting,
-            args.Avatar ? "max" : null,
+            args.Avatar,
             args.Username,
             args.Password,
             args.TimeoutSeconds,
