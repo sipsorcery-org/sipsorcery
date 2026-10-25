@@ -8,27 +8,29 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Lets the net8.0 tool run on newer installed runtimes without a reinstall. -->
     <RollForward>Major</RollForward>
+    <!-- The Wav2Lip avatar's per-pixel compositing loops use pointers. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup>
     <PackAsTool>true</PackAsTool>
-    <!-- The flagship/application tool installs as the bare "sipsorcery" command (the diagnostics
-         tool is "sipsorcery-diags"). -->
+    <!-- Installs as the bare "sipsorcery" command. The probe/test verbs that used to ship as the
+         separate SIPSorcery.Diagnostics ("sipsorcery-diags") tool are now part of this one. -->
     <ToolCommandName>sipsorcery</ToolCommandName>
     <PackageId>SIPSorcery.Cli</PackageId>
     <Version>0.8.0-beta</Version>
     <Authors>Aaron Clauson</Authors>
-    <Description>SIPSorcery CLI: route and bridge live media streams between SIP, WebRTC and the major realtime fabrics (Cloudflare Realtime, LiveKit) and AI agents (OpenAI Realtime), built on the SIPSorcery library. A stream is the primitive; verbs attach edges to it. Human and agent friendly with JSON output and meaningful exit codes.</Description>
+    <Description>SIPSorcery CLI, built on the SIPSorcery library. Diagnostics and benchmarking for SIP and WebRTC: OPTIONS pings, test calls, registration and load, STUN/TURN/ICE connectivity probes, WHEP/WHIP and echo-test peers, and video pipeline benchmarks. Plus routing and bridging of live media streams between SIP, WebRTC, the major realtime fabrics (Cloudflare Realtime, LiveKit) and AI agents (OpenAI Realtime). Human and agent friendly with JSON output and meaningful exit codes.</Description>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>SIP;VoIP;WebRTC;streams;routing;Cloudflare;LiveKit;OpenAI;CLI</PackageTags>
+    <PackageTags>SIP;VoIP;WebRTC;STUN;TURN;ICE;diagnostics;streams;routing;Cloudflare;LiveKit;OpenAI;CLI</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
-  <!-- Make the shared CommandBase/ExitCodes/CloudflareTurn/AudioSink/VideoSink visible to every
+  <!-- Make the Common CommandBase/ExitCodes/CloudflareTurn/AudioSink/VideoSink visible to every
        verb without a per-file using (ImplicitUsings turns this into a global using). -->
   <ItemGroup>
     <Using Include="SIPSorcery.Cli.Common" />
@@ -46,6 +48,13 @@
          WebRTCMaxHeadroom example uses; a heavy native dependency, a candidate to move behind an
          optional agent plugin later so the core tool stays lean. -->
     <PackageReference Include="Microsoft.CognitiveServices.Speech" />
+    <!-- FFT for the Hilbert (analytic signal) audio scope, the route scope-mode hilbert video. -->
+    <PackageReference Include="MathNet.Numerics" />
+    <!-- Runs the Wav2Lip model for the default photoreal agent avatar (Wav2LipAvatarRenderer). The
+         DirectML build: ~30fps on any DX12 GPU (CPU fallback on Windows without one) against ~16fps
+         for the CPU-only build. It ships Windows natives only, so on Linux/macOS the agent avatar
+         falls back to the SkiaSharp max face. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" />
     <!-- Renders the bridge agent avatar (the Max Headroom face, MaxHeadroomVideoSource). Another
          heavy/native dependency, reinforcing the future optional-avatar-plugin direction. -->
     <PackageReference Include="SkiaSharp" />
@@ -53,9 +62,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SIPSorcery.Cli.Common\SIPSorcery.Cli.Common.csproj" />
-    <ProjectReference Include="..\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
     <ProjectReference Include="..\SIPSorcery\SIPSorcery.csproj" />
+    <!-- VideoSink uses the IVideoEncoder / VideoFormat abstractions directly. -->
+    <ProjectReference Include="..\SIPSorceryMedia.Abstractions\SIPSorceryMedia.Abstractions.csproj" />
+    <!-- Native (FFmpeg.AutoGen) IVideoEncoder for the route edges, the webrtc video-bench ffmpeg
+         stage and whep decode. -->
+    <ProjectReference Include="..\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
+    <!-- VP8 encoder for the test pattern video published via LibraryVideoPublisher (webrtc verbs). -->
+    <ProjectReference Include="..\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
     <!-- WebRTC client for the OpenAI Realtime API, used by the "bridge web openai" agent endpoint. -->
     <ProjectReference Include="..\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
   </ItemGroup>

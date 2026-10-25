@@ -1,8 +1,9 @@
 //-----------------------------------------------------------------------------
 // Filename: BridgeFactory.cs
 //
-// Description: Maps a bridge endpoint spec ("web", "agent") to a participant, the
-// single place endpoints are wired (the bridge counterpart to route's EdgeFactory).
+// Description: Maps a two-way route endpoint spec ("web", "term", "agent") to a
+// participant, the single place duplex endpoints are wired (the two-way counterpart
+// to EdgeFactory, which builds the one-way sources and sinks).
 // Adding a new endpoint (a sip: peer, openai, livekit:) is a new case here.
 //
 // Author(s):
@@ -39,7 +40,8 @@ public sealed record BridgeOptions(
     string? Avatar = null,
     string? SipUsername = null,
     string? SipPassword = null,
-    int RingTimeoutSeconds = 30);
+    int RingTimeoutSeconds = 30,
+    string? MicDevice = null);
 
 public static class BridgeFactory
 {
@@ -55,7 +57,19 @@ public static class BridgeFactory
             return CreateSip(trimmed, options, logger);
         }
 
-        switch (trimmed.ToLowerInvariant())
+        string lowered = trimmed.ToLowerInvariant();
+
+        // "web:9000" picks the page's port, as for the one-way web sink.
+        if (lowered.StartsWith("web:", StringComparison.Ordinal))
+        {
+            if (!int.TryParse(lowered[4..], out int port) || port < 1 || port > 65535)
+            {
+                throw new EdgeException($"The web endpoint port '{trimmed[4..]}' is not a valid port number (1-65535), e.g. web:8080.");
+            }
+            return new WebParticipant(port, options.OpenBrowser, options.Avatar != null, logger);
+        }
+
+        switch (lowered)
         {
             case "web":
                 // The page offers a video track only when an avatar is in play (the agent's face).
@@ -64,16 +78,23 @@ public static class BridgeFactory
             case "agent":
                 return CreateAgent(options, logger);
 
+            case "term":
+                // The local terminal: microphone in via ffmpeg, the other side out as Matroska on stdout. It
+                // carries video only when the other side has an avatar.
+                return new TerminalParticipant(options.MicDevice, options.Avatar != null, logger);
+
             case "openai":
                 return CreateOpenAi(options, loggerFactory, logger);
 
             case "livekit":
                 throw new EdgeException(
-                    $"'{spec}' is not wired into bridge yet (endpoints: web, agent, openai, sip:<uri>). " +
-                    "livekit becomes a bridge endpoint in a later version.");
+                    $"'{spec}' is not wired into two-way routes yet (two-way endpoints: web, term, agent, openai, sip:<uri>). " +
+                    "Use it one-way (without --duplex) for now.");
 
             default:
-                throw new EdgeException($"Unknown bridge endpoint '{spec}'. Endpoints: web, agent, openai, sip:<uri>.");
+                throw new EdgeException(
+                    $"'{spec}' cannot be used in a two-way route: it does not both send and receive. " +
+                    "Two-way endpoints: web, term, agent, openai, sip:<uri>. Leave out --duplex to route it one way.");
         }
     }
 
@@ -94,15 +115,9 @@ public static class BridgeFactory
         string? llmModel = options.LlmModel ?? Environment.GetEnvironmentVariable("LLM_MODEL");
         string? llmApiKey = options.LlmApiKey ?? Environment.GetEnvironmentVariable("LLM_API_KEY");
 
-        // Only the built-in "max" avatar exists for now; anything else is a clear error.
-        bool avatar = options.Avatar != null;
-        if (avatar && !options.Avatar!.Equals("max", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new EdgeException($"Unknown avatar '{options.Avatar}'. The only built-in avatar is 'max'.");
-        }
-
+        // The avatar name (wav2lip, max, or "" for the default) is checked by AgentAvatar.
         return new AzureAgentParticipant(azureKey!, azureRegion!, voice, options.Persona,
-            llm, llmModel, llmApiKey, options.Greeting, avatar, logger);
+            llm, llmModel, llmApiKey, options.Greeting, options.Avatar, logger);
     }
 
     private static IBridgeParticipant CreateOpenAi(BridgeOptions options, ILoggerFactory loggerFactory, ILogger logger)
@@ -125,14 +140,8 @@ public static class BridgeFactory
                 $"Unknown OpenAI voice '{options.Voice}'. Choose one of: {string.Join(", ", Enum.GetNames<RealtimeVoicesEnum>())}.");
         }
 
-        // Only the built-in "max" avatar exists for now; anything else is a clear error.
-        bool avatar = options.Avatar != null;
-        if (avatar && !options.Avatar!.Equals("max", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new EdgeException($"Unknown avatar '{options.Avatar}'. The only built-in avatar is 'max'.");
-        }
-
-        return new OpenAiAgentParticipant(apiKey!, voice, options.Persona, options.Greeting, avatar, loggerFactory, logger);
+        // The avatar name (wav2lip, max, or "" for the default) is checked by AgentAvatar.
+        return new OpenAiAgentParticipant(apiKey!, voice, options.Persona, options.Greeting, options.Avatar, loggerFactory, logger);
     }
 
     private static IBridgeParticipant CreateSip(string spec, BridgeOptions options, ILogger logger)
@@ -141,7 +150,7 @@ public static class BridgeFactory
         string rest = spec.Contains(':') ? spec[(spec.IndexOf(':') + 1)..] : spec;
         if (string.IsNullOrWhiteSpace(rest))
         {
-            throw new EdgeException("The sip endpoint needs a destination, e.g. bridge sip:music@iptel.org agent.");
+            throw new EdgeException("The sip endpoint needs a destination, e.g. route --from sip:alice@example.com --to agent.");
         }
 
         // SipDestination accepts both "sip:"/"sips:" and a bare user@host, so pass the original spec.

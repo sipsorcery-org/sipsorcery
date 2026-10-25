@@ -20,12 +20,14 @@
     <PackageVersion Include="FFmpeg.AutoGen"                                Version="8.1.0" />
     <PackageVersion Include="LanguageExt.Core"                              Version="4.4.9" />
     <PackageVersion Include="Livekit.Server.Sdk.Dotnet"                     Version="1.2.2" />
+    <PackageVersion Include="MathNet.Numerics"                              Version="5.0.0" />
     <PackageVersion Include="Microsoft.Bcl.HashCode"                        Version="6.0.0" />
     <PackageVersion Include="Microsoft.CognitiveServices.Speech"            Version="1.51.1" />
     <PackageVersion Include="Microsoft.Extensions.Http"                     Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Logging"                  Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions"     Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console"          Version="10.0.11" />
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime.DirectML"             Version="1.24.4" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub"                   Version="10.0.400" />
     <PackageVersion Include="NAudio"                                        Version="3.0.0" />
     <!-- NAudio 3.0 ships two asset groups: net9.0 and net9.0-windows10.0.19041. A project on a

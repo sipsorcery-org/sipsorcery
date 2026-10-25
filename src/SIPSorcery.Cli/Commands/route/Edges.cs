@@ -239,6 +239,13 @@ public static class EdgeFactory
             case "cloudflare":
                 return CreateCloudflareSource(rest, options, logger);
 
+            case "term":
+            case "web":
+                // Only meaningful two-way (a microphone + speaker); the one-way form of these is a sink.
+                throw new EdgeException(
+                    $"'{scheme}' as a --from source captures your microphone, so it needs a two-way route: add --duplex " +
+                    "(it is two-way automatically when the other end is an agent).");
+
             case "whip":
                 throw new EdgeException(
                     $"'{scheme}' as a --from source is not wired into route yet (sources: testpattern, whep:<url>, sip:<uri>, livekit[:room], cloudflare:<sessionId>). " +
@@ -449,10 +456,22 @@ public static class EdgeFactory
             case "sip":
             case "sips":
                 throw new EdgeException(
-                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, whip:<url>, web[:port], livekit[:room], cloudflare). " +
+                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, -:mkv, term, whip:<url>, web[:port], livekit[:room], cloudflare). " +
                     "A sip: call sink becomes a route sink in a later version.");
 
+            case "-:mkv":
+            case "term":
+                // Video + audio muxed into a live Matroska stream on stdout, e.g. | mpv -. One-way, "term"
+                // is the same thing: it only opens the microphone in a two-way route.
+                return new MatroskaSinkNode(null, spec, logger);
+
             default:
+                // A .mkv file gets video + audio in Matroska rather than the raw video bitstream.
+                if (spec.EndsWith(".mkv", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new MatroskaSinkNode(spec, spec, logger);
+                }
+
                 // Anything else is a VideoSink spec: a file path, "play", "null" or "-".
                 var sink = VideoSink.Create(spec, logger, out string? error);
                 if (error != null)

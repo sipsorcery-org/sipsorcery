@@ -1756,7 +1756,9 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning("Remote ICE candidate not added as no available ICE session for component {Component}.", candidate.component);
+                // Peers commonly also send candidates for a separate RTCP component. RTCP is multiplexed
+                // with RTP on the one ICE session here, so ignoring them is correct and needs no action.
+                logger.LogDebug("Remote ICE candidate not added as no available ICE session for component {Component}.", candidate.component);
             }
         }
 

@@ -48,9 +48,6 @@ jobs:
       - name: Pack SIPSorcery.Cli
         run: dotnet pack src/SIPSorcery.Cli/SIPSorcery.Cli.csproj -c Release --no-build -o ./artifacts
         
-      - name: Pack SIPSorcery.Diagnostics
-        run: dotnet pack src/SIPSorcery.Diagnostics/SIPSorcery.Diagnostics.csproj -c Release --no-build -o ./artifacts
-      
       - name: NuGet login (trusted publishing)
         uses: NuGet/login@v1
         id: nuget-login

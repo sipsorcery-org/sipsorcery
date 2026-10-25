@@ -25,8 +25,10 @@ public static class RealtimeEventTypes
 
             // Realtime Server Events.
             [RealtimeServerEventConversationCreated.TypeName] = typeof(RealtimeServerEventConversationCreated),
+            [RealtimeServerEventConversationItemAdded.TypeName] = typeof(RealtimeServerEventConversationItemAdded),
             [RealtimeServerEventConversationItemCreated.TypeName] = typeof(RealtimeServerEventConversationItemCreated),
             [RealtimeServerEventConversationItemDeleted.TypeName] = typeof(RealtimeServerEventConversationItemDeleted),
+            [RealtimeServerEventConversationItemDone.TypeName] = typeof(RealtimeServerEventConversationItemDone),
             [RealtimeServerEventConversationItemInputAudioTranscriptionCompleted.TypeName] = typeof(RealtimeServerEventConversationItemInputAudioTranscriptionCompleted),
             [RealtimeServerEventConversationItemInputAudioTranscriptionDelta.TypeName] = typeof(RealtimeServerEventConversationItemInputAudioTranscriptionDelta),
             [RealtimeServerEventConversationItemInputAudioTranscriptionFailed.TypeName] = typeof(RealtimeServerEventConversationItemInputAudioTranscriptionFailed),

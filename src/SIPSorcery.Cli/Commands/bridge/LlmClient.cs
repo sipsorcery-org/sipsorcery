@@ -9,7 +9,7 @@
 // the latency that matters for a live conversation.
 //
 // Ported from the WebRTCMaxHeadroom example's LocalLlmClient; the system prompt
-// (persona) is a constructor parameter here so the "bridge ... agent --persona"
+// (persona) is a constructor parameter here so the "route ... --to agent --persona"
 // option can override it.
 //
 // Author(s):

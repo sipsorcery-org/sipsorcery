@@ -1,8 +1,7 @@
-﻿using SIPSorcery.Diagnostics.Commands;
+﻿using SIPSorcery.Cli.Commands;
 using SIPSorcery.Cli.Common;
 using SIPSorcery.SIP;
 using Xunit;
-using DiagnosticsExitCodes = SIPSorcery.Diagnostics.ExitCodes;
 
 namespace SIPSorcery.Cli.UnitTest;
 
@@ -100,7 +99,7 @@ public class HTTPDigestStoreTests
             .Parse(new[] { "sip:alice@example.com", "--password", "secret", "--digest-store", "missing.txt", "--json" })
             .InvokeAsync();
 
-        Assert.Equal(DiagnosticsExitCodes.InvalidArgument, exitCode);
+        Assert.Equal(ExitCodes.InvalidArgument, exitCode);
     }
 
     private static string CreateTempDirectory()

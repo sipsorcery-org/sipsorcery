@@ -23,7 +23,7 @@
 // send-only tracks unchanged. Browsers play H264 + Opus (and Chrome/Firefox also
 // G.711), so the defaults work; use --audio-codec opus for the broadest support.
 //
-// The server side HTTP+answer plumbing mirrors the diagnostics tool's
+// The server side HTTP+answer plumbing mirrors the
 // "webrtc whip-server" verb (an HttpListener that answers an SDP offer), kept as
 // raw HttpListener so the packaged tool stays lean (no ASP.NET dependency).
 //

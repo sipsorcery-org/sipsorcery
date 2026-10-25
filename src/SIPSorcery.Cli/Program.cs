@@ -1,11 +1,12 @@
 //-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: Entry point for the "sipsorcery" CLI: the application/streams tool
-// (as opposed to the "sipsorcery-diags" probe/test harness). It wires the
-// noun/verb tree for the realtime fabrics and the stream router.
+// Description: Entry point for the "sipsorcery" CLI. Wires up the command tree:
+// the protocol nouns (sip, stun, ice, turn, webrtc) carrying the probe, test and
+// benchmark verbs, and the top level route verb for the stream router.
+// Each verb lives in its own class under Commands.
 //
-// Design rules for every verb (shared with SIPSorcery.Diagnostics):
+// Design rules for every verb:
 //  - Human readable output to stdout by default, a single JSON object to stdout
 //    with --json. Logs and diagnostics always go to stderr so JSON stays pipeable.
 //  - Meaningful exit codes, see ExitCodes.
@@ -16,6 +17,7 @@
 //
 // History:
 // 18 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 24 Oct 2026	Aaron Clauson	Merged in the SIPSorcery.Diagnostics (sipsorcery-diags) verbs.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -30,20 +32,49 @@ using SIPSorcery.Cli.Commands;
 // cannot be "sipsorcery" because of the SIPSorcery.dll collision, see the csproj). The help and
 // version options RootCommand would normally contribute are added explicitly.
 var rootCommand = new Command("sipsorcery",
-    "SIPSorcery CLI: route and bridge live media streams between SIP, WebRTC and the realtime fabrics.");
+    "SIP and WebRTC from the command line, built on the SIPSorcery library: probe, test and benchmark " +
+    "SIP, STUN, TURN, ICE and WebRTC, and route live media between them, one-way or both ways.");
 rootCommand.Options.Add(new HelpOption());
 rootCommand.Options.Add(new VersionOption());
 
-// The CLI is two verbs. Every realtime fabric (Cloudflare, LiveKit, OpenAI) is reached through a
-// route/bridge edge (cloudflare/livekit:<room> sinks and sources, bridge web openai), not a standalone
-// noun. The probe/test commands for those fabrics live in the sibling "sipsorcery-diags" tool.
+var sipCommand = new Command("sip", "SIP operations: send requests, make test calls, registrations.");
+sipCommand.Subcommands.Add(new SipOptionsCommand().Build());
+sipCommand.Subcommands.Add(new SipCallCommand().Build());
+sipCommand.Subcommands.Add(new SipRegisterCommand().Build());
+sipCommand.Subcommands.Add(new SipLoadCommand().Build());
+sipCommand.Subcommands.Add(new SipDigestCommand().Build());
+sipCommand.Subcommands.Add(new SipTransferCommand().Build());
+rootCommand.Subcommands.Add(sipCommand);
+
+var stunCommand = new Command("stun", "STUN operations: public address lookups, NAT diagnostics.");
+stunCommand.Subcommands.Add(new StunLookupCommand().Build());
+rootCommand.Subcommands.Add(stunCommand);
+
+var iceCommand = new Command("ice", "ICE operations: candidate gathering, STUN/TURN connectivity probes.");
+iceCommand.Subcommands.Add(new IceGatherCommand().Build());
+rootCommand.Subcommands.Add(iceCommand);
+
+var turnCommand = new Command("turn", "TURN operations: relay allocation checks.");
+turnCommand.Subcommands.Add(new TurnAllocateCommand().Build());
+rootCommand.Subcommands.Add(turnCommand);
+
+var webrtcCommand = new Command("webrtc", "WebRTC operations: full connection probes with ICE, DTLS and media.");
+webrtcCommand.Subcommands.Add(new WebRtcWhepCommand().Build());
+webrtcCommand.Subcommands.Add(new WebRtcWhipCommand().Build());
+webrtcCommand.Subcommands.Add(new WebRtcWhipServerCommand().Build());
+webrtcCommand.Subcommands.Add(new WebRtcLoopbackCommand().Build());
+webrtcCommand.Subcommands.Add(new WebRtcEchoCommand().Build());
+webrtcCommand.Subcommands.Add(new WebRtcEchoServerCommand().Build());
+webrtcCommand.Subcommands.Add(new WebRtcVideoBenchCommand().Build());
+rootCommand.Subcommands.Add(webrtcCommand);
+
+// Every realtime fabric (Cloudflare, LiveKit, OpenAI) is reached through a route edge
+// (cloudflare/livekit:<room> sinks and sources, route --from web --to openai), not a standalone noun.
 
 // route is a top-level verb (not a noun/verb pair): it wires a source edge to one or more sink edges
-// over a stream graph. It is the seed of the stream-routing flagship.
+// over a stream graph, or two endpoints both ways (--duplex, implied with an agent at either end, e.g.
+// talk to a voice agent in a browser with "route --from web --to agent"). It is the seed of the
+// stream-routing flagship.
 rootCommand.Subcommands.Add(new RouteCommand().Build());
-
-// bridge is the duplex counterpart to route: it connects two endpoints both ways (e.g. talk to a
-// voice agent in a browser with "bridge web agent").
-rootCommand.Subcommands.Add(new BridgeCommand().Build());
 
 return await rootCommand.Parse(args).InvokeAsync();
