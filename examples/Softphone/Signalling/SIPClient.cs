@@ -126,7 +126,11 @@ namespace SIPSorcery.SoftPhone
         /// <param name="destination">The SIP URI to place a call to. The destination can be a full SIP URI in which case the call will
         /// be placed anonymously directly to that URI. Alternatively it can be just the user portion of a URI in which case it will
         /// be sent to the configured SIP server.</param>
-        public async Task Call(string destination, SIPProtocolsEnum protocol, bool useAudio, bool useVideo, bool useText)
+        /// <param name="protocol">Choose protocol to be used for the media streams of this SIP call</param>
+        /// <param name="useAudio">Offer audio media type</param>
+        /// <param name="useVideo">Offer video media type</param>
+        /// <param name="useText">Offer text media type (RTT)</param>
+        public async Task Call(string destination, SIPProtocolsEnum protocol = SIPProtocolsEnum.udp, bool useAudio = true, bool useVideo = true, bool useText = false)
         {
             // Determine if this is a direct anonymous call or whether it should be placed using the pre-configured SIP server account. 
             SIPURI callURI = null;
