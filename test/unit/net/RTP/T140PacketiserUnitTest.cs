@@ -313,7 +313,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             using var rtt = new RttEndPoint(useRedundancy: false);
             var received = new StringBuilder();
-            rtt.OnTextReceived += text => received.Append(text);
+            rtt.OnTextReceived += textData => received.Append(textData.Text);
             var ep = new IPEndPoint(IPAddress.Loopback, 5000);
 
             rtt.GotTextRtp(ep, 1, 0, 0, T140_PT, 1, Encoding.UTF8.GetBytes("He"));
