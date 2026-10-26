@@ -66,6 +66,8 @@ namespace SIPSorcery.SoftPhone
         public event VideoSinkSampleDecodedDelegate OnRemoteVideo;    // Fires when a decoded video sample from the remote peer is ready.
         public event VideoSinkSampleDecodedDelegate OnAudioScopeFrame; // Fires when an audio scope frame is ready to be drawn locally.
 
+        public event Action<SIPClient, TextEventArgs> TextReceived;// Fires when a realtime text block was received
+
         /// <summary>
         /// Once a call is established this holds the properties of the established SIP dialogue.
         /// </summary>
@@ -91,6 +93,9 @@ namespace SIPSorcery.SoftPhone
         {
             get { return m_userAgent.IsOnLocalHold || m_userAgent.IsOnRemoteHold; }
         }
+
+        /// <summary>Endpoint for sending and receiving realtime text</summary>
+        public RttEndPoint RttEndPoint { get; set; }
 
         /// <summary>
         /// True once the call has negotiated a video stream from the remote party, which is what
@@ -121,7 +126,11 @@ namespace SIPSorcery.SoftPhone
         /// <param name="destination">The SIP URI to place a call to. The destination can be a full SIP URI in which case the call will
         /// be placed anonymously directly to that URI. Alternatively it can be just the user portion of a URI in which case it will
         /// be sent to the configured SIP server.</param>
-        public async Task Call(string destination)
+        /// <param name="protocol">Choose protocol to be used for the media streams of this SIP call</param>
+        /// <param name="useAudio">Offer audio media type</param>
+        /// <param name="useVideo">Offer video media type</param>
+        /// <param name="useText">Offer text media type (RTT)</param>
+        public async Task Call(string destination, SIPProtocolsEnum protocol = SIPProtocolsEnum.udp, bool useAudio = true, bool useVideo = true, bool useText = false)
         {
             // Determine if this is a direct anonymous call or whether it should be placed using the pre-configured SIP server account. 
             SIPURI callURI = null;
@@ -144,6 +153,11 @@ namespace SIPSorcery.SoftPhone
                 fromHeader = (new SIPFromHeader(m_sipFromName, new SIPURI(m_sipUsername, m_sipServer, null), null)).ToString();
             }
 
+            if (!destination.Contains("transport"))
+            {
+                callURI.Protocol = protocol;
+            }
+
             StatusMessage(this, $"Starting call to {callURI}.");
 
             var dstEndpoint = await SIPDns.ResolveAsync(callURI, false, _cts.Token);
@@ -160,7 +174,7 @@ namespace SIPSorcery.SoftPhone
 
                 // On an outgoing call there is no way to know whether the remote party has video
                 // until the answer arrives, so offer it and decide what to do with it afterwards.
-                MediaSession = !m_useWebRTCMedia ? CreateVoIPMediaSession() : CreateWebRtcMediaSession(offerVideo: true);
+                MediaSession = !m_useWebRTCMedia ? CreateVoIPMediaSession(useAudio, useVideo, useText) : CreateWebRtcMediaSession(offerVideo: useVideo);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
@@ -206,17 +220,21 @@ namespace SIPSorcery.SoftPhone
                 // audio only call.
                 bool hasAudio = true;
                 bool hasVideo = false;
+                bool hasText = false;
 
                 if (sipRequest.Body != null)
                 {
                     SDP offerSDP = SDP.ParseSDPDescription(sipRequest.Body);
                     hasAudio = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
                     hasVideo = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
+                    hasText = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.text && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
+
+                    System.Diagnostics.Debug.WriteLine(sipRequest.Body);
                 }
 
                 // The offer already says whether the remote party has video, and an answer must not
                 // add an m-line the offer did not contain, so only take a video stream if it did.
-                MediaSession = !m_useWebRTCMedia ? CreateVoIPMediaSession() : CreateWebRtcMediaSession(offerVideo: hasVideo);
+                MediaSession = !m_useWebRTCMedia ? CreateVoIPMediaSession(hasAudio, hasVideo, hasText) : CreateWebRtcMediaSession(offerVideo: hasVideo);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
@@ -351,35 +369,51 @@ namespace SIPSorcery.SoftPhone
         /// Creates the media session to use with the SIP call.
         /// </summary>
         /// <returns>A new media session object.</returns>
-        private VoIPMediaSession CreateVoIPMediaSession()
+        private VoIPMediaSession CreateVoIPMediaSession(bool hasAudio, bool hasVideo, bool hasText)
         {
-            var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), m_audioOutDeviceIndex);
+            var windowsAudioEndPoint = hasAudio ? new WindowsAudioEndPoint(new AudioEncoder(), m_audioOutDeviceIndex) : null;
+
+            if (hasText)
+            {
+                RttEndPoint = new RttEndPoint();
+                RttEndPoint.OnTextReceived += (e) => TextReceived?.Invoke(this, e);
+            }
+            else
+            {
+                RttEndPoint = null;
+            }
 
             MediaEndPoints mediaEndPoints = new MediaEndPoints
             {
                 AudioSink = windowsAudioEndPoint,
-                AudioSource = windowsAudioEndPoint
+                AudioSource = windowsAudioEndPoint,
+                TextSink = RttEndPoint,
+                TextSource = RttEndPoint,
             };
 
-            // VoIPMediaSession drives the lifecycle of whatever is in MediaEndPoints and sends its
-            // encoded samples, so a generated source goes in as the video source with an encoder of
-            // its own, and a separate end point decodes the remote party's video.
-            var rawVideoSource = CreateRawVideoSource(new FFmpegVideoEncoder());
+            IVideoSource rawVideoSource = null;
             FFmpegVideoEndPoint videoSinkEndPoint = null;
-
-            if (_videoSource is SoftphoneVideoSourcesEnum.Webcam)
+            if (hasVideo)
             {
-                var windowsVideoEndPoint = new WindowsVideoEndPoint(new FFmpegVideoEncoder());
+                // VoIPMediaSession drives the lifecycle of whatever is in MediaEndPoints and sends its
+                // encoded samples, so a generated source goes in as the video source with an encoder of
+                // its own, and a separate end point decodes the remote party's video.
+                rawVideoSource = CreateRawVideoSource(new FFmpegVideoEncoder());
 
-                mediaEndPoints.VideoSink = windowsVideoEndPoint;
-                mediaEndPoints.VideoSource = windowsVideoEndPoint;
-            }
-            else if (rawVideoSource != null)
-            {
-                videoSinkEndPoint = new FFmpegVideoEndPoint();
+                if (_videoSource is SoftphoneVideoSourcesEnum.Webcam)
+                {
+                    var windowsVideoEndPoint = new WindowsVideoEndPoint(new FFmpegVideoEncoder());
 
-                mediaEndPoints.VideoSource = rawVideoSource;
-                mediaEndPoints.VideoSink = videoSinkEndPoint;
+                    mediaEndPoints.VideoSink = windowsVideoEndPoint;
+                    mediaEndPoints.VideoSource = windowsVideoEndPoint;
+                }
+                else if (rawVideoSource != null)
+                {
+                    videoSinkEndPoint = new FFmpegVideoEndPoint();
+
+                    mediaEndPoints.VideoSource = rawVideoSource;
+                    mediaEndPoints.VideoSink = videoSinkEndPoint;
+                } 
             }
 
             var mediaSession = new VoIPMediaSession(mediaEndPoints);

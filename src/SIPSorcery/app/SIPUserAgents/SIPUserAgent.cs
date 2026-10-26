@@ -1977,6 +1977,11 @@ namespace SIPSorcery.SIP.App
         {
             _ringTimeout?.Dispose();
 
+            if (!string.IsNullOrWhiteSpace(sipResponse.Body))
+            {
+                logger.LogDebug(sipResponse.Body);
+            }
+
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 if (sipResponse.Body == null && ((MediaSession as RTPSession)?.IsAudioStarted ?? false))

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RttEndPoint.cs
 //
 // Description: A real-time text (RTT) source and sink implementing RFC 4103
@@ -18,7 +18,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -63,7 +65,7 @@ namespace SIPSorcery.Media
         private readonly Stopwatch _clock = Stopwatch.StartNew();
         private readonly object _timerSync = new object();
         private readonly object _sinkSync = new object();
-        private readonly StringBuilder _textReceivedBeforeStart = new StringBuilder();
+        private readonly List<TextEventArgs> _textReceivedBeforeStart = new List<TextEventArgs>();
 
         private TextFormat _sourceFormat;
         private TextFormat _sinkFormat;
@@ -85,7 +87,7 @@ namespace SIPSorcery.Media
         /// Fires when new text is received from the remote party. Unrecoverable loss is shown
         /// with <see cref="T140Depacketiser.LOSS_MARKER"/>.
         /// </summary>
-        public event Action<string> OnTextReceived;
+        public event Action<TextEventArgs> OnTextReceived;
 
         /// <summary>
         /// The number of received packets whose text was recovered from redundancy.
@@ -156,15 +158,17 @@ namespace SIPSorcery.Media
                 return;
             }
 
+            var textData = new TextEventArgs(ssrc, text, new DateTime(timestamp));
+
             lock (_sinkSync)
             {
                 if (!_sinkStarted)
                 {
                     // The remote party can start sending as soon as it has answered, which can be before
                     // this side has started its media session, so early text is held until the sink starts.
-                    if (_textReceivedBeforeStart.Length + text.Length <= MAX_TEXT_RECEIVED_BEFORE_START)
+                    if (_textReceivedBeforeStart.Select(e => e.Text.Length).Sum() + text.Length <= MAX_TEXT_RECEIVED_BEFORE_START)
                     {
-                        _textReceivedBeforeStart.Append(text);
+                        _textReceivedBeforeStart.Add(textData);
                     }
                     else
                     {
@@ -175,7 +179,7 @@ namespace SIPSorcery.Media
                 }
             }
 
-            OnTextReceived?.Invoke(text);
+            OnTextReceived?.Invoke(textData);
         }
 
         public TextFormat GetTextSourceFormat() => _sourceFormat;
@@ -237,19 +241,22 @@ namespace SIPSorcery.Media
 
         public Task StartTextSink()
         {
-            string earlyText;
+            List<TextEventArgs> earlyText;
 
             lock (_sinkSync)
             {
                 _sinkStarted = true;
                 _sinkClosed = false;
-                earlyText = _textReceivedBeforeStart.ToString();
+                earlyText = new List<TextEventArgs>(_textReceivedBeforeStart);
                 _textReceivedBeforeStart.Clear();
             }
 
-            if (earlyText.Length > 0)
+            foreach (TextEventArgs e in earlyText)
             {
-                OnTextReceived?.Invoke(earlyText);
+                if (e.Text.Length > 0)
+                {
+                    OnTextReceived?.Invoke(e);
+                }
             }
 
             return Task.CompletedTask;
