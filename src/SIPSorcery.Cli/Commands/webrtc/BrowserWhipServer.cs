@@ -89,9 +89,17 @@ public sealed class BrowserWhipServer : IAsyncDisposable
     private BrowserStatsReport? _latestBrowserStats;
     // The page load whose offer we answered. Stats posts from any other are ignored; see HandleAsync.
     private string? _acceptedSessionId;
+    // The sender's video SSRC, learned from the first RTP packet; 0 until then.
+    private uint _remoteVideoSsrc;
 
     /// <summary>Raised for each depacketised video frame, on the RTP receive thread.</summary>
     public event Action<byte[], uint, VideoFormat>? OnVideoFrame;
+
+    /// <summary>How long to wait for a decodable frame before asking the sender for a key frame.</summary>
+    private const int KEY_FRAME_REQUEST_INTERVAL_MS = 700;
+
+    /// <summary>How many key frame requests to make before giving up and letting the run report it.</summary>
+    private const int MAX_KEY_FRAME_REQUESTS = 8;
 
     public BrowserWhipServer(Settings settings, List<VideoFormat> offeredVideoFormats, ILogger logger)
     {
@@ -309,6 +317,26 @@ public sealed class BrowserWhipServer : IAsyncDisposable
         // publishes no audio track, so there is nothing for an audio counter to describe.
         pc.OnRtpPacketReceived += RtpStreamStats.CreateRtpHandler(new RtpStreamStats(), _videoStats, _logger);
 
+        // The SSRC a key frame request has to name. Taken from the RTP itself rather than from the
+        // track, whose Ssrc is not populated for a recvonly track we answered with.
+        pc.OnRtpPacketReceived += (remoteEndPoint, mediaType, rtpPacket) =>
+        {
+            if (mediaType != SDPMediaTypesEnum.video)
+            {
+                return;
+            }
+
+            // The very first video packet is both where the SSRC comes from and the earliest moment
+            // a key frame can be asked for. Asking here rather than on a timer is what makes it
+            // reliable: the request goes out as soon as there is a stream to name, instead of at
+            // some fixed point that may land before any RTP has arrived at all.
+            if (Interlocked.CompareExchange(ref _remoteVideoSsrc, rtpPacket.Header.SyncSource, 0) == 0)
+            {
+                // Off the RTP receive thread: this sends an RTCP report and must not block it.
+                _ = Task.Run(() => RequestKeyFrame(pc, 1));
+            }
+        };
+
         pc.OnVideoFormatsNegotiated += (formats) =>
         {
             if (formats.Count > 0)
@@ -337,6 +365,7 @@ public sealed class BrowserWhipServer : IAsyncDisposable
             if (state == RTCPeerConnectionState.connected)
             {
                 _connected.TrySetResult(true);
+                _ = RequestKeyFramesUntilDecodingAsync(pc);
             }
             else if (state == RTCPeerConnectionState.failed || state == RTCPeerConnectionState.closed)
             {
@@ -375,6 +404,84 @@ public sealed class BrowserWhipServer : IAsyncDisposable
         string resourcePath = $"/whip/{Guid.NewGuid().ToString("N")[..8]}";
         context.Response.AddHeader("Location", resourcePath);
         await RespondAsync(context, HttpStatusCode.Created, "application/sdp", answer.sdp).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asks the sender for a key frame until one actually decodes, or until the attempts run out.
+    ///
+    /// A receiver joins mid-stream: the session comes up while the sender is already encoding, and
+    /// the leading packets of the opening key frame can be missed while the SRTP context is still
+    /// settling. Every codec needs a key frame before a single frame can be handed on, so without
+    /// a Picture Loss Indication the run then waits for the sender's own key frame cadence, which
+    /// in WebRTC is normally "only when asked".
+    ///
+    /// Nothing in the stack sent a PLI before this, which went unnoticed because a small key frame
+    /// usually survives the join. AV1 is where it shows: its key frames are the largest and span
+    /// the most RTP packets, so they are the most likely to be lost at exactly the wrong moment,
+    /// and the session then sits there producing nothing.
+    /// </summary>
+    private async Task RequestKeyFramesUntilDecodingAsync(RTCPeerConnection pc)
+    {
+        var ct = _cts?.Token ?? CancellationToken.None;
+
+        try
+        {
+            // The first request is made from the RTP handler the instant a stream can be named.
+            // This loop is the follow-up: keep asking while nothing decodes, in case the reply was
+            // lost or the key frame is still not getting through intact.
+            for (int attempt = 2; attempt <= MAX_KEY_FRAME_REQUESTS; attempt++)
+            {
+                await Task.Delay(KEY_FRAME_REQUEST_INTERVAL_MS, ct).ConfigureAwait(false);
+
+                if (VideoFramesReceived > 0 || pc.connectionState != RTCPeerConnectionState.connected)
+                {
+                    return;
+                }
+
+                RequestKeyFrame(pc, attempt);
+            }
+
+            _logger.LogWarning("Still no decodable video after {Max} key frame requests; the sender may not be " +
+                               "honouring PLI, or the frames are arriving but cannot be depacketised.", MAX_KEY_FRAME_REQUESTS);
+        }
+        catch (OperationCanceledException)
+        {
+            // The run ended; nothing to request.
+        }
+        catch (Exception excp)
+        {
+            _logger.LogDebug("Key frame request loop stopped: {Error}", excp.Message);
+        }
+    }
+
+    /// <summary>Sends one PLI for the video stream, best effort.</summary>
+    private void RequestKeyFrame(RTCPeerConnection pc, int attempt)
+    {
+        try
+        {
+            // The sender SSRC has to be one the far end already associates with us, which is the
+            // SSRC our own RTCP receiver reports go out under - not the local track's, which is
+            // never assigned for the recvonly track we answered with.
+            uint localSsrc = pc.VideoRtcpSession?.Ssrc ?? pc.VideoStream?.LocalTrack?.Ssrc ?? 0;
+            uint remoteSsrc = Volatile.Read(ref _remoteVideoSsrc);
+
+            if (remoteSsrc == 0)
+            {
+                // No RTP seen yet, so there is no stream to name in the report.
+                _logger.LogDebug("Cannot request a key frame yet: no video RTP has arrived to name a stream.");
+                return;
+            }
+
+            pc.SendRtcpFeedback(SDPMediaTypesEnum.video,
+                new RTCPFeedback(localSsrc, remoteSsrc, PSFBFeedbackTypesEnum.PLI));
+
+            _logger.LogDebug("Sent key frame request {Attempt} of {Max} (PLI, sender ssrc {LocalSsrc}, media ssrc {RemoteSsrc}).",
+                attempt, MAX_KEY_FRAME_REQUESTS, localSsrc, remoteSsrc);
+        }
+        catch (Exception excp)
+        {
+            _logger.LogDebug("Could not send a key frame request: {Error}", excp.Message);
+        }
     }
 
     /// <summary>
