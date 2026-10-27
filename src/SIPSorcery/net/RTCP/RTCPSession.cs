@@ -187,11 +187,25 @@ namespace SIPSorcery.Net
         /// <param name="mediaType">The media type this reporting session will be measuring.</param>
         /// <param name="ssrc">The SSRC of the RTP stream being sent.</param>
         public RTCPSession(SDPMediaTypesEnum mediaType, uint ssrc)
+            : this(mediaType, ssrc, null)
+        { }
+
+        /// <summary>
+        /// Constructor that allows the CNAME to be supplied by the owning RTP session.
+        /// </summary>
+        /// <param name="mediaType">The media type this reporting session will be measuring.</param>
+        /// <param name="ssrc">The SSRC of the RTP stream being sent.</param>
+        /// <param name="cname">The CNAME to use in SDES reports. All the RTCP sessions belonging to
+        /// one RTP session must use the same CNAME, it is what tells the remote party the streams
+        /// share a wall clock and can therefore be synchronised with each other, see RFC3550
+        /// section 6.5.1. If not supplied a CNAME unique to this reporting session is generated,
+        /// which means the stream cannot be synchronised against any other stream.</param>
+        public RTCPSession(SDPMediaTypesEnum mediaType, uint ssrc, string cname)
         {
             MediaType = mediaType;
             Ssrc = ssrc;
             CreatedAt = DateTime.Now;
-            Cname = Guid.NewGuid().ToString();
+            Cname = string.IsNullOrWhiteSpace(cname) ? Guid.NewGuid().ToString() : cname;
         }
 
         public void Start()
@@ -242,7 +256,7 @@ namespace SIPSorcery.Net
                 m_receptionReport = new ReceptionReport(rtpPacket.Header.SyncSource);
             }
 
-            var arrivalTimestamp = PayloadSampleRateHz == 0 ? DateTimeToNtpTimestamp32(DateTime.Now) : (uint)((DateTime.Now - CreatedAt).TotalSeconds * PayloadSampleRateHz);
+            var arrivalTimestamp = PayloadSampleRateHz == 0 ? DateTimeToNtpTimestamp32(DateTime.Now) : SecondsToRtpUnits((DateTime.Now - CreatedAt).TotalSeconds);
             m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, arrivalTimestamp);
         }
 
@@ -398,8 +412,7 @@ namespace SIPSorcery.Net
             if (PacketsSentCount > m_previousPacketsSentCount)
             {
                 // If we have sent a packet since the last report then we send an RTCP Sender Report.
-                // TODO: RTP timestamp should corresponds to the same time as the NTP timestamp
-                var senderReport = new RTCPSenderReport(Ssrc, ntcTime, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, (rr != null) ? new List<ReceptionReportSample> { rr } : null);
+                var senderReport = new RTCPSenderReport(Ssrc, ntcTime, GetSenderReportRtpTimestamp(ntcTime), PacketsSentCount, OctetsSentCount, (rr != null) ? new List<ReceptionReportSample> { rr } : null);
                 return new RTCPCompoundPacket(senderReport, sdesReport);
             }
             else
@@ -416,6 +429,64 @@ namespace SIPSorcery.Net
                     return new RTCPCompoundPacket(receiverReport, sdesReport);
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets the RTP timestamp to place in a sender report alongside the supplied NTP timestamp.
+        /// </summary>
+        /// <remarks>
+        /// RFC3550 section 6.4.1 requires the sender report's RTP timestamp to correspond to the
+        /// same instant as its NTP timestamp, and notes that "in most cases this timestamp will not
+        /// be equal to the RTP timestamp in any adjacent data packet. Rather, it MUST be calculated
+        /// from the corresponding NTP timestamp using the relationship between the RTP timestamp
+        /// counter and real time". The last timestamp sent is therefore extrapolated forward to the
+        /// report instant using the RTP clock rate. Without this the pair is out by however long it
+        /// has been since the last packet was sent, which is what a receiver's estimate of the
+        /// sender's wall clock, and hence any synchronisation against another stream, is out by.
+        /// 
+        /// Note the local track's RTP timestamp only advances as media is sent, so a long send
+        /// pause will leave the extrapolated report ahead of the data packets that follow it. Fully
+        /// resolving that needs the send path to stamp from a wall clock, see issue #1751.
+        /// </remarks>
+        /// <param name="ntpReportTimestamp">The NTP timestamp being placed in the report.</param>
+        /// <returns>The RTP timestamp corresponding to <paramref name="ntpReportTimestamp"/>.</returns>
+        private uint GetSenderReportRtpTimestamp(ulong ntpReportTimestamp)
+        {
+            if (PayloadSampleRateHz <= 0 || LastNtpTimestampSent == 0)
+            {
+                // The RTP clock rate is not known, or nothing has been sent yet, so there is no
+                // relationship available to extrapolate with.
+                return LastRtpTimestampSent;
+            }
+
+            var elapsedSeconds = Ntp64Timestamp.GetElapsedSeconds(LastNtpTimestampSent, ntpReportTimestamp);
+
+            if (!(elapsedSeconds > 0))
+            {
+                // The clock went backwards, or the NTP era rolled over between the two timestamps.
+                return LastRtpTimestampSent;
+            }
+
+            // The RTP timestamp is a 32 bit counter that is expected to wrap.
+            return unchecked(LastRtpTimestampSent + SecondsToRtpUnits(elapsedSeconds));
+        }
+
+        /// <summary>
+        /// Converts a number of seconds to RTP timestamp units at this session's RTP clock rate.
+        /// </summary>
+        /// <param name="seconds">The number of seconds to convert.</param>
+        /// <returns>The equivalent number of RTP timestamp units, reduced into the 32 bit RTP
+        /// timestamp space. A 90kHz clock only takes about 13 hours to exhaust that space, and
+        /// casting a double that is outside a uint's range to uint has no defined result, so the
+        /// reduction has to happen before the conversion rather than after it.</returns>
+        private uint SecondsToRtpUnits(double seconds)
+        {
+            if (!(seconds > 0))
+            {
+                return 0;
+            }
+
+            return (uint)(long)((seconds * PayloadSampleRateHz) % 4294967296.0);
         }
 
         /// <summary>

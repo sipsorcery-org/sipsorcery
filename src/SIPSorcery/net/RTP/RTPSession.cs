@@ -362,6 +362,15 @@ namespace SIPSorcery.Net
         /// </summary>
         public bool IsClosed { get; private set; }
 
+        /// <summary>
+        /// The RTCP CNAME for this session. Every stream in the session reports this same CNAME in
+        /// its RTCP SDES packets and SDP ssrc attributes. RFC3550 section 6.5.1 makes the CNAME the
+        /// binding between the SSRCs that belong to one sender, and a receiver needs that binding
+        /// before it is allowed to synchronise the streams against each other, so a per stream
+        /// CNAME would stop audio and video from being lip synced.
+        /// </summary>
+        public string Cname { get; private set; } = Guid.NewGuid().ToString();
+
         [Obsolete("Use IsAudioStarted.")]
         public bool IsStarted => IsAudioStarted;
 
@@ -745,7 +754,7 @@ namespace SIPSorcery.Net
 
         private void CreateRtcpSession(MediaStream mediaStream)
         {
-            if (mediaStream.CreateRtcpSession())
+            if (mediaStream.CreateRtcpSession(Cname))
             {
                 mediaStream.OnTimeoutByIndex += RaiseOnTimeOut;
                 mediaStream.OnSendReportByIndex += RaiseOnSendReport;
@@ -1311,6 +1320,10 @@ namespace SIPSorcery.Net
                         }
                         currentMediaStream.LocalTrack.Capabilities = capabilities;
                         currentMediaStream.RemoteTrack.Capabilities = capabilities;
+
+                        // The reporting session needs the RTP clock rate to pair the NTP and RTP
+                        // timestamps in its sender reports and to measure jitter in RTP units.
+                        currentMediaStream.SetRtcpRtpClockRate(capabilities);
 
                         if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                         {
