@@ -381,6 +381,11 @@ public sealed class WebRtcWhipServerCommand : CommandBase
             // Count depacketised video frames and timestamp the first and last for the frame rate
             // stat (measured first frame to last frame, independent of any sink). When a sink is
             // active, hand the frame to it (the sink decodes if --decode was set).
+            // Ask the sender for a key frame until video decodes. A WebRTC sender emits one at
+            // the start and then only when asked, so a receiver that joins after it produces
+            // nothing for the whole session. See KeyFrameRequester.
+            using var keyFrameRequester = KeyFrameRequester.Attach(pc, logger, ct);
+
             int videoFramesReceived = 0;
             long firstFrameTicks = 0;
             long lastFrameTicks = 0;
