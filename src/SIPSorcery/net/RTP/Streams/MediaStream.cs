@@ -1451,20 +1451,82 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Creates a new RTCP session for a media track belonging to this RTP session.
+        /// Creates a new RTCP session for a media track belonging to this RTP session. The
+        /// reporting session gets a CNAME of its own, which means the stream cannot be
+        /// synchronised against any other stream. Prefer the overload that takes the owning RTP
+        /// session's CNAME.
         /// </summary>
         /// <returns>A new RTCPSession object. The RTCPSession must have its Start method called
         /// in order to commence sending RTCP reports.</returns>
         public bool CreateRtcpSession()
         {
+            return CreateRtcpSession(null);
+        }
+
+        /// <summary>
+        /// Creates a new RTCP session for a media track belonging to this RTP session.
+        /// </summary>
+        /// <param name="cname">The CNAME for the RTP session this stream belongs to. All the
+        /// streams of one RTP session must share a CNAME for the remote party to be able to
+        /// synchronise them against each other. If null a CNAME unique to this stream is
+        /// generated.</param>
+        /// <returns>A new RTCPSession object. The RTCPSession must have its Start method called
+        /// in order to commence sending RTCP reports.</returns>
+        public bool CreateRtcpSession(string cname)
+        {
             if (RtcpSession == null)
             {
-                RtcpSession = new RTCPSession(MediaType, 0);
+                RtcpSession = new RTCPSession(MediaType, 0, cname);
                 RtcpSession.OnTimeout += RaiseOnTimeoutByIndex;
 
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Sets the RTP clock rate on this stream's reporting session from the negotiated media
+        /// format. The reporting session needs it to put an RTP timestamp in its sender reports
+        /// that corresponds to the report's NTP timestamp, and to measure interarrival jitter in
+        /// RTP timestamp units as RFC3550 section 6.4.1 requires.
+        /// </summary>
+        /// <param name="capabilities">The negotiated formats for this stream, highest priority first.
+        /// The rate is taken from the first format that is a media codec rather than a telephone
+        /// event, which carries its own clock rate but is not the stream's media clock.</param>
+        internal void SetRtcpRtpClockRate(List<SDPAudioVideoMediaFormat> capabilities)
+        {
+            if (RtcpSession == null || RtcpSession.PayloadSampleRateHz != 0 || capabilities == null)
+            {
+                // Leave a rate that has already been set alone, it may have been set by the application.
+                return;
+            }
+
+            foreach (var format in capabilities)
+            {
+                if (format.IsEmpty() ||
+                    string.Equals(format.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var clockRate = format.RtpClockRate();
+
+                    if (clockRate > 0)
+                    {
+                        RtcpSession.PayloadSampleRateHz = clockRate;
+                        return;
+                    }
+                }
+                catch (ApplicationException excp)
+                {
+                    // A malformed rtpmap makes the AudioFormat, VideoFormat and TextFormat
+                    // constructors throw this. It should not stop the stream being set up; if no
+                    // rate can be determined the reporting session falls back to not extrapolating.
+                    logger.LogWarning(excp, "Could not determine the RTP clock rate for {MediaType} format {Format}. {ErrorMessage}", MediaType, format.ID, excp.Message);
+                }
+            }
         }
 
         /// <summary>

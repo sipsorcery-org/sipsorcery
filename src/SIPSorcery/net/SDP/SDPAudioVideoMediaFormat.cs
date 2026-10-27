@@ -366,6 +366,28 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// The clock rate that this format's RTP timestamps are expressed in. This is the same as
+        /// <seealso cref="ClockRate"/> except for G722, where RFC3551 section 4.5.2 keeps the RTP
+        /// clock rate at 8000 even though the codec samples at 16000.
+        /// </summary>
+        /// <returns>The RTP timestamp clock rate in Hz.</returns>
+        public int RtpClockRate()
+        {
+            if (Kind == SDPMediaTypesEnum.video)
+            {
+                return ToVideoFormat().ClockRate;
+            }
+            else if (Kind == SDPMediaTypesEnum.text)
+            {
+                return ToTextFormat().ClockRate;
+            }
+            else
+            {
+                return ToAudioFormat().RtpClockRate;
+            }
+        }
+
         public int Channels() => Kind == SDPMediaTypesEnum.video || Kind == SDPMediaTypesEnum.text
                 ? 0
                 : TryParseRtpmap(Rtpmap, out _, out _, out var channels) ? channels : DEFAULT_AUDIO_CHANNEL_COUNT;
