@@ -17,6 +17,13 @@
 -->
 <Suppressions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 
+  <!-- NOTE: making the SharpSRTP types internal (see the section further down) also
+       made the within-package BouncyCastleExtensions and SIPSorcery.Net.SharpSRTP.*
+       entries that used to live here redundant, because those types are no longer
+       compared across frameworks at all. Package validation treats an unnecessary
+       suppression as an error, so they were deleted rather than left behind.
+  -->
+
   <!-- ==========================================================================
        Baseline validation (new package vs. the published baseline).
 
@@ -135,231 +142,225 @@
        ========================================================================== -->
 
   <!-- BouncyCastle cipher extension methods: span overloads on net8.0+, ArraySegment/byte[] overloads below it. -->
-  <Suppression>
-    <DiagnosticId>CP0001</DiagnosticId>
-    <Target>T:BouncyCastleExtensions.&lt;G&gt;$04B95E1E534F564A204CCCA9DC7AC2C1.&lt;M&gt;$4C07FA85E1E9A131F8176095C7B4E109</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0001</DiagnosticId>
-    <Target>T:BouncyCastleExtensions.&lt;G&gt;$CB0B324AB0B26A8D2A22738DB3B00F2F.&lt;M&gt;$407B43685305425602DD9B666331C9D0</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:BouncyCastleExtensions.DoFinal(Org.BouncyCastle.Crypto.Modes.IAeadBlockCipher,System.ArraySegment{System.Byte})</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:BouncyCastleExtensions.ProcessAadBytes(Org.BouncyCastle.Crypto.Modes.IAeadBlockCipher,System.ArraySegment{System.Byte})</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:BouncyCastleExtensions.ProcessBlock(Org.BouncyCastle.Crypto.IBlockCipher,System.ArraySegment{System.Byte},System.ArraySegment{System.Byte})</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:BouncyCastleExtensions.ProcessBlock(Org.BouncyCastle.Crypto.IBlockCipher,System.Byte[],System.ArraySegment{System.Byte})</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:BouncyCastleExtensions.ProcessBlock(Org.BouncyCastle.Crypto.IBlockCipher,System.Byte[],System.Byte[])</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:BouncyCastleExtensions.ProcessBytes(Org.BouncyCastle.Crypto.Modes.IAeadBlockCipher,System.ArraySegment{System.Byte},System.ArraySegment{System.Byte})</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
 
   <!-- ISrtpContext and its implementations: the protect/unprotect members take spans on net8.0+. -->
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext.ProtectRtcp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext.ProtectRtp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext.UnprotectRtcp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext.UnprotectRtp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContext.ProtectRtcp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContext.ProtectRtp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContext.UnprotectRtcp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContext.UnprotectRtp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContextExtensions.ProtectRtcp(SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext,System.Byte[],System.Int32,System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContextExtensions.ProtectRtp(SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext,System.Byte[],System.Int32,System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContextExtensions.UnprotectRtcp(SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext,System.Byte[],System.Int32,System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContextExtensions.UnprotectRtp(SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext,System.Byte[],System.Int32,System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.SrtpSessionContext.ProtectRtcp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.SrtpSessionContext.ProtectRtp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.SrtpSessionContext.UnprotectRtcp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.SrtpSessionContext.UnprotectRtp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.ThreadSafeSrtpSessionContext.ProtectRtcp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.ThreadSafeSrtpSessionContext.ProtectRtp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.ThreadSafeSrtpSessionContext.UnprotectRtcp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.ThreadSafeSrtpSessionContext.UnprotectRtp(System.ArraySegment{System.Byte},System.Byte[],System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0006</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext.ProtectRtcp(System.ReadOnlySpan{System.Byte},System.Span{System.Byte},System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0006</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext.ProtectRtp(System.ReadOnlySpan{System.Byte},System.Span{System.Byte},System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0006</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext.UnprotectRtcp(System.ReadOnlySpan{System.Byte},System.Span{System.Byte},System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
-  <Suppression>
-    <DiagnosticId>CP0006</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext.UnprotectRtp(System.ReadOnlySpan{System.Byte},System.Span{System.Byte},System.Int32@)</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
-  </Suppression>
 
   <!-- SRTP authentication/encryption primitives (HMAC, AEAD, CTR, F8): same span-vs-ArraySegment split. -->
+
+  <!-- ==========================================================================
+       The vendored DTLS-SRTP implementation under net/DtlsSrtp/Lib was made
+       internal. Every type in it had been declared public, so 32 types formed
+       part of this package's API without having been designed as such. Nothing
+       outside the library used them: no example, no SIPSorcery.Cli, no other
+       project in src. BouncyCastleExtensions is in the list for a related but
+       separate reason: it was a public static class in the GLOBAL namespace, so
+       every consumer of the package picked up its extension methods on
+       BouncyCastle types in global scope.
+
+       These removals are real binary breaks and were made knowingly. As with the
+       RTSP entries above, <Left>/<Right> are omitted so one entry per type covers
+       all nine target frameworks rather than nine copies each.
+       ========================================================================== -->
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:BouncyCastleExtensions</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLS.DtlsAlertEventArgs</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLS.DtlsCertificateUtils</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLS.DtlsClient</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLS.DtlsHandshakeCompletedEventArgs</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLS.DtlsServer</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLS.IDtlsPeer</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLSSRTP.DtlsSessionStartedEventArgs</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLSSRTP.DtlsSrtpClient</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLSSRTP.DtlsSrtpKeys</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLSSRTP.DtlsSrtpProtocol</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLSSRTP.DtlsSrtpServer</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLSSRTP.IDtlsSrtpPeer</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.Authentication.HMAC</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.Encryption.AEAD</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.Encryption.CTR</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.Encryption.F8</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.Readers.RtcpReader</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.Readers.RtpReader</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpAuth</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpCiphers</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContext</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContextExtensions</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContextType</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpCryptoSuites</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpKeys</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpProtectionProfileConfiguration</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpProtocol</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpSessionContext</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SsrcSrtpContext</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.ThreadSafeSrtpSessionContext</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+
+  <!-- ==========================================================================
+       Four members had to be demoted with the types they expose, which the C#
+       compiler requires (CS0051/CS0053). DtlsSrtpTransport.Keys and the two
+       Context properties had no readers anywhere in the library; they were public
+       surface and nothing more.
+       ========================================================================== -->
   <Suppression>
     <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.Authentication.HMAC.GenerateAuthTag(Org.BouncyCastle.Crypto.Macs.HMac,System.ArraySegment{System.Byte})</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
+    <Target>M:SIPSorcery.Net.DtlsSrtpTransport.#ctor(SIPSorcery.Net.SharpSRTP.DTLSSRTP.IDtlsSrtpPeer)</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
   </Suppression>
   <Suppression>
     <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.Encryption.AEAD.Encrypt(Org.BouncyCastle.Crypto.Modes.IAeadBlockCipher,System.Boolean,System.ArraySegment{System.Byte},System.ArraySegment{System.Byte},System.Byte[],Org.BouncyCastle.Crypto.Parameters.KeyParameter,System.Int32,System.ArraySegment{System.Byte})</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
+    <Target>M:SIPSorcery.Net.DtlsSrtpTransport.get_Context</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
   </Suppression>
   <Suppression>
     <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.Encryption.AEAD.Encrypt(Org.BouncyCastle.Crypto.Modes.IAeadBlockCipher,System.Boolean,System.ArraySegment{System.Byte},System.ArraySegment{System.Byte},System.Byte[],System.Byte[],System.Int32,System.ArraySegment{System.Byte})</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
+    <Target>M:SIPSorcery.Net.DtlsSrtpTransport.get_Keys</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
   </Suppression>
   <Suppression>
     <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.Encryption.CTR.Encrypt(Org.BouncyCastle.Crypto.IBlockCipher,System.ReadOnlySpan{System.Byte},System.Span{System.Byte},System.Byte[])</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
+    <Target>M:SIPSorcery.Net.SrtpHandler.get_Context</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
   </Suppression>
+
+  <!-- ==========================================================================
+       A consequence of internalising the IDtlsSrtpPeer constructor parameter:
+       DtlsSrtpTransport's only constructor is now internal, so to a consumer the
+       type is effectively sealed. It can no longer be constructed OR subclassed
+       from outside this assembly. If that extension point turns out to be needed,
+       the fix is to keep IDtlsSrtpPeer, DtlsSrtpClient and DtlsSrtpServer public
+       and delete this entry along with the CP0002 constructor entry above.
+       ========================================================================== -->
   <Suppression>
-    <DiagnosticId>CP0002</DiagnosticId>
-    <Target>M:SIPSorcery.Net.SharpSRTP.SRTP.Encryption.F8.GenerateRtpMessageKeyIV(Org.BouncyCastle.Crypto.IBlockCipher,System.Byte[],System.Byte[],System.ReadOnlySpan{System.Byte},System.UInt32,System.Byte[])</Target>
-    <Left>lib/net6.0/SIPSorcery.dll</Left>
-    <Right>lib/net8.0/SIPSorcery.dll</Right>
+    <DiagnosticId>CP0009</DiagnosticId>
+    <Target>T:SIPSorcery.Net.DtlsSrtpTransport</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
   </Suppression>
 
 </Suppressions>
