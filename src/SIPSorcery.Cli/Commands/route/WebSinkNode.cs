@@ -32,6 +32,8 @@
 //
 // History:
 // 25 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 27 Oct 2026	Aaron Clauson	Player page plays an audio-only route: attach tracks on unmute rather
+//                              than stalling on the empty video track, and unmute once playing.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -348,8 +350,9 @@ public sealed class WebSinkNode : ISinkNode
 
     /// <summary>
     /// The auto-connecting WHEP player page. It offers two recvonly transceivers, waits for ICE
-    /// gathering to complete, POSTs the offer to /whep and applies the answer. Single quoted JS braces
-    /// are literal in the $$ raw string; {{...}} are the interpolation holes.
+    /// gathering to complete, POSTs the offer to /whep and applies the answer, then plays the tracks
+    /// that actually carry media (an audio-only route leaves the negotiated video track empty). Single
+    /// quoted JS braces are literal in the $$ raw string; {{...}} are the interpolation holes.
     /// </summary>
     private string BuildPlayerPage()
     {
@@ -375,13 +378,58 @@ public sealed class WebSinkNode : ISinkNode
               <video id="v" autoplay playsinline controls muted></video>
               <script>
                 const statusEl = document.getElementById('status');
+                const videoEl = document.getElementById('v');
                 const pc = new RTCPeerConnection();
                 pc.addTransceiver('video', { direction: 'recvonly' });
                 pc.addTransceiver('audio', { direction: 'recvonly' });
-                pc.ontrack = (e) => { document.getElementById('v').srcObject = e.streams[0]; };
+
+                // The element is muted in the markup so autoplay is always permitted, but an audio-only
+                // route would then be silent. Unmute as soon as there is something to play and fall back
+                // to a click prompt if the browser's autoplay policy refuses to start unmuted.
+                let prompted = false;
+                const play = async () => {
+                  videoEl.muted = false;
+                  try {
+                    await videoEl.play();
+                  } catch (err) {
+                    videoEl.muted = true;
+                    try { await videoEl.play(); } catch (ignored) { /* nothing more to try */ }
+                    if (!prompted) {
+                      prompted = true;
+                      statusEl.textContent = 'click to unmute';
+                      statusEl.style.display = '';
+                      statusEl.style.cursor = 'pointer';
+                      statusEl.addEventListener('click', () => {
+                        videoEl.muted = false;
+                        videoEl.play();
+                        statusEl.style.display = 'none';
+                      }, { once: true });
+                    }
+                  }
+                };
+
+                // The sink answers every viewer with both an audio and a video track, but a source may
+                // only fill one of them: a sip: call is audio-only unless --scope adds the generated
+                // scope video. A media element whose stream holds a track that never delivers a frame
+                // stays at readyState 0 and never starts - which would silently swallow the audio that
+                // IS arriving - so attach each track only once it is actually producing.
+                const stream = new MediaStream();
+                const attach = (track) => {
+                  if (stream.getTracks().includes(track)) { return; }
+                  stream.addTrack(track);
+                  videoEl.srcObject = stream;
+                  play();
+                };
+                pc.ontrack = (e) => {
+                  if (e.track.muted) { e.track.addEventListener('unmute', () => attach(e.track), { once: true }); }
+                  else { attach(e.track); }
+                };
                 pc.onconnectionstatechange = () => {
+                  if (prompted) { return; }
                   statusEl.textContent = pc.connectionState;
-                  if (pc.connectionState === 'connected') { setTimeout(() => { statusEl.style.display = 'none'; }, 1500); }
+                  if (pc.connectionState === 'connected') {
+                    setTimeout(() => { if (!prompted) { statusEl.style.display = 'none'; } }, 1500);
+                  }
                 };
                 (async () => {
                   try {
