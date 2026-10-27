@@ -132,6 +132,21 @@ public sealed class WebRtcWhipServerCommand : CommandBase
             Description = "Directory containing the FFmpeg shared libraries for the ffmpeg --decoder. Defaults to the system path."
         };
 
+        var audioCodecOption = new Option<string?>(CodecSelection.AUDIO_OPTION)
+        {
+            Description = "Force the audio codec offered to the publisher: exactly one of " +
+                          $"{CodecSelection.AudioNamesList}. Without it every supported codec is offered and the " +
+                          "publisher picks. Pinned, the publisher must use that codec or the session fails, which " +
+                          "is how one codec is tested end to end."
+        };
+
+        var videoCodecOption = new Option<string?>(CodecSelection.VIDEO_OPTION)
+        {
+            Description = "Force the video codec offered to the publisher: exactly one of " +
+                          $"{CodecSelection.VideoNamesList}. Without it every supported codec is offered and the " +
+                          "publisher picks. Pinned, the publisher must use that codec or the session fails."
+        };
+
         var command = new Command("whip-server", "Act as a WHIP endpoint: accept a publisher's offer (e.g. from ffmpeg or OBS) and report on the received media.");
         command.Options.Add(listenOption);
         command.Options.Add(tokenOption);
@@ -140,6 +155,8 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         command.Options.Add(decodeOption);
         command.Options.Add(decoderOption);
         command.Options.Add(ffmpegPathOption);
+        command.Options.Add(audioCodecOption);
+        command.Options.Add(videoCodecOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunReceiverAsync(
@@ -150,6 +167,8 @@ public sealed class WebRtcWhipServerCommand : CommandBase
             parseResult.GetValue(decodeOption),
             parseResult.GetValue(decoderOption)!,
             parseResult.GetValue(ffmpegPathOption),
+            parseResult.GetValue(audioCodecOption),
+            parseResult.GetValue(videoCodecOption),
             // No in-process publisher: this verb is a pure receiver for an external publisher.
             publishSettings: null,
             parseResult.GetValue(TimeoutOption),
@@ -167,11 +186,22 @@ public sealed class WebRtcWhipServerCommand : CommandBase
     /// self-contained loop (this is what the "webrtc loopback" verb uses).
     /// </summary>
     internal static async Task<int> RunReceiverAsync(string listenUrl, string? token, int durationSeconds, string? videoOut,
-        bool decode, string decoderName, string? ffmpegPath, LibraryVideoPublisher.Settings? publishSettings,
-        int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
+        bool decode, string decoderName, string? ffmpegPath, string? audioCodec, string? videoCodec,
+        LibraryVideoPublisher.Settings? publishSettings, int timeoutSeconds, bool asJson, bool verbose,
+        CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(WebRtcWhipServerCommand));
+
+        // A forced codec has to be a known name: a typo must stop the run here, because falling through
+        // to the full offer would answer "that codec works" with a session that used a different one.
+        if (!WebRtcWhepCommand.TryResolveOfferedFormats(audioCodec, videoCodec, out var offeredAudioFormats,
+                out var offeredVideoFormats, out string? codecError))
+        {
+            return WriteResult(asJson, stdoutClaimed: false,
+                new WhipServerResult(false, listenUrl, "new", null, null, 0, 0, 0, 0, 0, 0, 0, 0, codecError),
+                ExitCodes.InvalidArgument);
+        }
 
         bool publish = publishSettings != null;
 
@@ -339,14 +369,10 @@ public sealed class WebRtcWhipServerCommand : CommandBase
             // ---- Create the receiving peer connection. ----
             pc = new RTCPeerConnection();
 
-            pc.addTrack(new MediaStreamTrack(new List<AudioFormat>
-            {
-                AudioCommonlyUsedFormats.OpusWebRTC,
-                new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-                new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA)
-            }, MediaStreamStatusEnum.RecvOnly));
+            // Every codec the library supports, or just the one --audio-codec / --video-codec pinned.
+            pc.addTrack(new MediaStreamTrack(offeredAudioFormats, MediaStreamStatusEnum.RecvOnly));
 
-            pc.addTrack(new MediaStreamTrack(Helper.GetSupportedVideoFormats(), MediaStreamStatusEnum.RecvOnly));
+            pc.addTrack(new MediaStreamTrack(offeredVideoFormats, MediaStreamStatusEnum.RecvOnly));
 
             var audioStats = new RtpStreamStats();
             var videoStats = new RtpStreamStats();

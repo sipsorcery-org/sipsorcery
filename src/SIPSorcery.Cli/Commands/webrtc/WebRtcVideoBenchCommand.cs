@@ -141,7 +141,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             DefaultValueFactory = _ => "none"
         };
 
-        var codecOption = new Option<string>("--codec")
+        var codecOption = new Option<string>("--codec", CodecSelection.VIDEO_OPTION)
         {
             Description = "The video codec to encode/packetise as: vp8, vp9, h264, h265 (alias hevc) or av1. The in-process " +
                           "ffmpeg encoder supports all five; vp8.net is VP8 only and ffmpeg-piped supports vp8 and vp9 (IVF) only.",

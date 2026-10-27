@@ -101,6 +101,7 @@ public sealed class RouteCommand : CommandBase
         string? Username,
         string? Password,
         string AudioCodec,
+        string? VideoCodec,
         bool NoOpen,
         string? Url,
         string? ApiKey,
@@ -210,10 +211,19 @@ public sealed class RouteCommand : CommandBase
 
         var audioCodecOption = new Option<string>("--audio-codec")
         {
-            Description = "Audio codec the sinks offer / a generated source produces: opus (default, the universal " +
-                          "WebRTC codec) or pcmu/pcma for an endpoint that only accepts G.711. A G.711 sip: call is " +
-                          "transcoded up to opus automatically, so opus needs no flag. Two-way routes always use opus.",
+            Description = "Force the audio codec the sinks offer / a generated source produces: exactly one of " +
+                          $"{CodecSelection.AudioNamesList}. opus is the default (the universal WebRTC codec); " +
+                          "pcmu/pcma are for an endpoint that only accepts G.711. A G.711 sip: call is transcoded " +
+                          "up to opus automatically, so opus needs no flag. Two-way routes always use opus.",
             DefaultValueFactory = _ => DEFAULT_AUDIO_CODEC
+        };
+
+        var videoCodecOption = new Option<string?>(CodecSelection.VIDEO_OPTION)
+        {
+            Description = "Force the video codec the route's edges send and receive: exactly one of " +
+                          $"{CodecSelection.VideoNamesList}. Without it a sending edge uses h264 and a receiving " +
+                          "edge offers every supported codec. Pinned, the codec has to be negotiated or the run " +
+                          "fails, which is what makes it useful for testing one codec end to end."
         };
 
         var noOpenOption = new Option<bool>("--no-open")
@@ -313,6 +323,7 @@ public sealed class RouteCommand : CommandBase
         command.Options.Add(usernameOption);
         command.Options.Add(passwordOption);
         command.Options.Add(audioCodecOption);
+        command.Options.Add(videoCodecOption);
         command.Options.Add(noOpenOption);
         command.Options.Add(urlOption);
         command.Options.Add(apiKeyOption);
@@ -344,6 +355,7 @@ public sealed class RouteCommand : CommandBase
                 parseResult.GetValue(usernameOption),
                 parseResult.GetValue(passwordOption),
                 parseResult.GetValue(audioCodecOption)!,
+                parseResult.GetValue(videoCodecOption),
                 parseResult.GetValue(noOpenOption),
                 parseResult.GetValue(urlOption),
                 parseResult.GetValue(apiKeyOption),
@@ -412,6 +424,13 @@ public sealed class RouteCommand : CommandBase
             {
                 return "The --avatar option gives an agent a face, so one end needs to be an agent (openai or agent).";
             }
+            if (!string.IsNullOrWhiteSpace(args.VideoCodec))
+            {
+                // A two-way route runs on the bridge endpoints, whose video (an agent avatar, a browser
+                // track) is produced H264 by its own encoder rather than negotiated per edge, so there is
+                // nothing here for a forced codec to pin. Say so rather than accept it and ignore it.
+                return "The --video-codec option applies to one-way routes; a two-way route's video is always H264.";
+            }
             return null;
         }
 
@@ -436,9 +455,38 @@ public sealed class RouteCommand : CommandBase
             {
                 return sizeError;
             }
+            // The scope video comes out of an external ffmpeg process wired for H264, so it cannot
+            // follow a forced codec. Better to say so than to pin a codec the frames will not be in.
+            if (!string.IsNullOrWhiteSpace(args.VideoCodec) &&
+                !string.Equals(args.VideoCodec!.Trim(), "h264", StringComparison.OrdinalIgnoreCase))
+            {
+                return "The --scope video is generated as H264, so it cannot be combined with --video-codec " +
+                       $"{args.VideoCodec.Trim()}.";
+            }
         }
 
-        return RouteAudio.TryResolveCodec(args.AudioCodec, out _, out string? audioCodecError) ? null : audioCodecError;
+        if (!RouteAudio.TryResolveCodec(args.AudioCodec, out _, out string? audioCodecError))
+        {
+            return audioCodecError;
+        }
+
+        return ResolveVideoCodecError(args);
+    }
+
+    /// <summary>
+    /// Checks --video-codec, which is optional: left out, each edge keeps its own default (h264 when
+    /// sending, every supported codec when receiving). Given, it must name exactly one known codec -
+    /// a typo has to be an argument error, because silently falling back would make a run that was
+    /// meant to prove one codec works prove nothing.
+    /// </summary>
+    private static string? ResolveVideoCodecError(RouteArgs args)
+    {
+        if (string.IsNullOrWhiteSpace(args.VideoCodec))
+        {
+            return null;
+        }
+
+        return RouteVideo.TryResolveCodec(args.VideoCodec, out _, out string? error) ? null : error;
     }
 
     /// <summary>A one-way route: one source fanned out to the --to sinks.</summary>
@@ -451,7 +499,8 @@ public sealed class RouteCommand : CommandBase
         // --no-open is set.
         bool openBrowser = !args.NoOpen && !args.AsJson;
         var edgeOptions = new EdgeOptions(args.Fps, args.Token, args.TimeoutSeconds, args.Scope, args.ScopeMode, args.ScopeSize,
-            args.FfmpegPath, args.Username, args.Password, args.AudioCodec, openBrowser, args.Url, args.ApiKey, args.ApiSecret, args.AppId);
+            args.FfmpegPath, args.Username, args.Password, args.AudioCodec, args.VideoCodec, openBrowser, args.Url,
+            args.ApiKey, args.ApiSecret, args.AppId);
 
         // Build the edges. A bad spec is an argument error before anything starts.
         ISourceNode source;

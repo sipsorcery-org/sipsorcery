@@ -37,6 +37,7 @@ public sealed class WhipSinkNode : ISinkNode
 {
     private readonly string _url;
     private readonly AudioFormat _audioFormat;
+    private readonly VideoFormat _videoFormat;
     private readonly string? _token;
     private readonly int _timeoutSeconds;
     private readonly ILogger _logger;
@@ -48,10 +49,11 @@ public sealed class WhipSinkNode : ISinkNode
     private long _bytesSent;
     private int _dropped;
 
-    public WhipSinkNode(string url, AudioFormat audioFormat, string? token, int timeoutSeconds, ILogger logger)
+    public WhipSinkNode(string url, AudioFormat audioFormat, VideoFormat videoFormat, string? token, int timeoutSeconds, ILogger logger)
     {
         _url = url;
         _audioFormat = audioFormat;
+        _videoFormat = videoFormat;
         _token = token;
         _timeoutSeconds = timeoutSeconds;
         _logger = logger;
@@ -61,11 +63,12 @@ public sealed class WhipSinkNode : ISinkNode
 
     public async Task StartAsync(CancellationToken ct)
     {
-        // Send-only audio (the --audio-codec, Opus by default) and H264 video, offered as the exact format
-        // the source produces so the payloads relay unchanged (repacketise, not transcode);
-        // packetization-mode=1 lets the large H264 NAL units be fragmented across RTP packets.
+        // Send-only audio (the --audio-codec, Opus by default) and video (the --video-codec, H264 by
+        // default), offered as the exact format the source produces so the payloads relay unchanged
+        // (repacketise, not transcode); H264 carries packetization-mode=1 so its large NAL units can be
+        // fragmented across RTP packets.
         _pc.addTrack(new MediaStreamTrack(new List<AudioFormat> { _audioFormat }, MediaStreamStatusEnum.SendOnly));
-        _pc.addTrack(new MediaStreamTrack(new List<VideoFormat> { RouteVideoFormats.H264 }, MediaStreamStatusEnum.SendOnly));
+        _pc.addTrack(new MediaStreamTrack(new List<VideoFormat> { _videoFormat }, MediaStreamStatusEnum.SendOnly));
 
         var connected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pc.onconnectionstatechange += (state) =>

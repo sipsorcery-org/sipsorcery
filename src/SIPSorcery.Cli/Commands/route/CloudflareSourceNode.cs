@@ -59,6 +59,7 @@ public sealed class CloudflareSourceNode : ISourceNode
     private readonly string _token;
     private readonly string _publisherSessionId;
     private readonly int _timeoutSeconds;
+    private readonly List<VideoFormat> _videoFormats;
     private readonly ILogger _logger;
 
     private readonly HttpClient _httpClient;
@@ -80,9 +81,11 @@ public sealed class CloudflareSourceNode : ISourceNode
 
     public long? ConnectTimeMs => _connectTimeMs;
 
-    public CloudflareSourceNode(string appId, string token, string publisherSessionId, int timeoutSeconds, ILogger logger)
+    public CloudflareSourceNode(string appId, string token, string publisherSessionId, List<VideoFormat> videoFormats,
+        int timeoutSeconds, ILogger logger)
     {
         _appId = appId;
+        _videoFormats = videoFormats;
         _token = token;
         _publisherSessionId = publisherSessionId;
         _timeoutSeconds = timeoutSeconds;
@@ -129,7 +132,7 @@ public sealed class CloudflareSourceNode : ISourceNode
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA)
         }, MediaStreamStatusEnum.RecvOnly));
-        pc.addTrack(new MediaStreamTrack(RouteVideoFormats.All(), MediaStreamStatusEnum.RecvOnly));
+        pc.addTrack(new MediaStreamTrack(_videoFormats, MediaStreamStatusEnum.RecvOnly));
 
         WireReceive(pc);
 

@@ -60,6 +60,7 @@ public sealed class WebSinkNode : ISinkNode
 
     private readonly int _port;
     private readonly AudioFormat _audioFormat;
+    private readonly VideoFormat _videoFormat;
     private readonly string? _token;
     private readonly bool _openBrowser;
     private readonly ILogger _logger;
@@ -87,10 +88,11 @@ public sealed class WebSinkNode : ISinkNode
         public volatile bool Connected;
     }
 
-    public WebSinkNode(int port, AudioFormat audioFormat, string? token, bool openBrowser, ILogger logger)
+    public WebSinkNode(int port, AudioFormat audioFormat, VideoFormat videoFormat, string? token, bool openBrowser, ILogger logger)
     {
         _port = port;
         _audioFormat = audioFormat;
+        _videoFormat = videoFormat;
         _token = token;
         _openBrowser = openBrowser;
         _logger = logger;
@@ -255,16 +257,16 @@ public sealed class WebSinkNode : ISinkNode
         }
 
         // Logged at debug (shown with --verbose) to diagnose codec/direction negotiation, e.g. a video
-        // m-line the browser offers that does not match the H264 the sink answers with.
+        // m-line the browser offers that does not match the codec the sink answers with.
         _logger.LogDebug("web sink received viewer offer SDP:\n{Sdp}", offerSdp);
 
         var pc = new RTCPeerConnection();
 
-        // Send-only tracks the browser (a recvonly WHEP player) will receive: the graph's H264 video and
-        // the --audio-codec audio, offered as the exact formats the source produces so payloads relay
-        // unchanged (repacketise, not transcode).
+        // Send-only tracks the browser (a recvonly WHEP player) will receive: the graph's video (the
+        // --video-codec, H264 by default) and the --audio-codec audio, offered as the exact formats the
+        // source produces so payloads relay unchanged (repacketise, not transcode).
         pc.addTrack(new MediaStreamTrack(new List<AudioFormat> { _audioFormat }, MediaStreamStatusEnum.SendOnly));
-        pc.addTrack(new MediaStreamTrack(new List<VideoFormat> { RouteVideoFormats.H264 }, MediaStreamStatusEnum.SendOnly));
+        pc.addTrack(new MediaStreamTrack(new List<VideoFormat> { _videoFormat }, MediaStreamStatusEnum.SendOnly));
 
         var viewer = new Viewer { Pc = pc };
 

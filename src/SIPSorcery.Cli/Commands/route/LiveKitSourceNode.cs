@@ -58,6 +58,7 @@ public sealed class LiveKitSourceNode : ISourceNode
     private readonly string _room;
     private readonly string _identity;
     private readonly int _timeoutSeconds;
+    private readonly List<VideoFormat> _videoFormats;
     private readonly ILogger _logger;
 
     private readonly ClientWebSocket _ws = new();
@@ -82,9 +83,11 @@ public sealed class LiveKitSourceNode : ISourceNode
 
     public long? ConnectTimeMs => _connectTimeMs;
 
-    public LiveKitSourceNode(string url, string apiKey, string apiSecret, string room, int timeoutSeconds, ILogger logger)
+    public LiveKitSourceNode(string url, string apiKey, string apiSecret, string room, List<VideoFormat> videoFormats,
+        int timeoutSeconds, ILogger logger)
     {
         _url = url;
+        _videoFormats = videoFormats;
         _apiKey = apiKey;
         _apiSecret = apiSecret;
         _room = room;
@@ -264,7 +267,7 @@ public sealed class LiveKitSourceNode : ISourceNode
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA)
         }, MediaStreamStatusEnum.RecvOnly));
 
-        pc.addTrack(new MediaStreamTrack(RouteVideoFormats.All(), MediaStreamStatusEnum.RecvOnly));
+        pc.addTrack(new MediaStreamTrack(_videoFormats, MediaStreamStatusEnum.RecvOnly));
 
         pc.OnVideoFrameReceived += (_, timestamp, frame, format) =>
         {

@@ -40,6 +40,7 @@ public sealed class WhepSourceNode : ISourceNode
     private readonly string _url;
     private readonly string? _token;
     private readonly int _timeoutSeconds;
+    private readonly List<VideoFormat> _videoFormats;
     private readonly ILogger _logger;
     private readonly RTCPeerConnection _pc = new();
     private readonly HttpClient _http;
@@ -54,9 +55,10 @@ public sealed class WhepSourceNode : ISourceNode
 
     public long? ConnectTimeMs => _connectTimeMs;
 
-    public WhepSourceNode(string url, string? token, int timeoutSeconds, ILogger logger)
+    public WhepSourceNode(string url, List<VideoFormat> videoFormats, string? token, int timeoutSeconds, ILogger logger)
     {
         _url = url;
+        _videoFormats = videoFormats;
         _token = token;
         _timeoutSeconds = timeoutSeconds;
         _logger = logger;
@@ -82,7 +84,7 @@ public sealed class WhepSourceNode : ISourceNode
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA)
         }, MediaStreamStatusEnum.RecvOnly));
 
-        _pc.addTrack(new MediaStreamTrack(RouteVideoFormats.All(), MediaStreamStatusEnum.RecvOnly));
+        _pc.addTrack(new MediaStreamTrack(_videoFormats, MediaStreamStatusEnum.RecvOnly));
 
         _pc.OnVideoFrameReceived += (_, timestamp, frame, format) =>
             OnFrame?.Invoke(MediaFrame.ForVideo(frame, timestamp, format));

@@ -304,8 +304,8 @@ Edges:
 
 | Direction | Edge | Notes |
 |-----------|------|-------|
-| `--from`  | `testpattern` | A generated H264 video pattern **+ music** (codec via `--audio-codec`: opus default / pcmu / pcma), so it can feed a `whip:` sink with audio and video. `--fps` sets the video rate. |
-| `--from`  | `whep:<url>` | A live WebRTC ingress (full ICE/DTLS/SRTP). `--token` sets a bearer/stream key. |
+| `--from`  | `testpattern` | A generated video pattern **+ music** (video codec via `--video-codec`: h264 default / vp8 / vp9 / h265 / av1; audio via `--audio-codec`: opus default / pcmu / pcma), so it can feed a `whip:` sink with audio and video. `--fps` sets the video rate. |
+| `--from`  | `whep:<url>` | A live WebRTC ingress (full ICE/DTLS/SRTP). `--token` sets a bearer/stream key. Offers every supported video codec unless `--video-codec` pins one. |
 | `--from`  | `sip:<uri>` | Place a SIP call and forward its received audio. It offers **opus first, then a G.711 fallback**, so a modern endpoint is carried in opus end to end and a G.711-only gateway is **auto-transcoded** up to the graph codec (opus by default) — no flag needed either way. `sip:music@iptel.org`, `sips:…` or a bare `user@host`; `-u`/`--password` authenticate. |
 | `--from`  | `livekit:<room>` | Subscribe to a LiveKit **room** and emit the received H264 video + OPUS audio. Needs `--url`/`--api-key`/`--api-secret` (or `LIVEKIT_*` env). Mints its own subscribe-only token, so it only needs the room name + creds. Start the publisher first so the track is in the room when this joins. |
 | `--from`  | `cloudflare:<sessionId>` | Pull (subscribe to) a **Cloudflare Realtime SFU** session published by the `cloudflare` sink, emitting its received video + audio. The session id is the one the sink printed; the pulled track names are the sink's (`cli-video`/`cli-audio`). Needs `--app-id`/`--token` (or `CLOUDFLARE_APPID`/`CLOUDFLARE_API_TOKEN`). Start the publisher first. |
@@ -315,10 +315,37 @@ Edges:
 | `--to`    | `-` | The video bitstream on stdout (the result JSON then moves to stderr). |
 | `--to`    | `-:mkv` | Video **and** audio muxed into a live Matroska stream on stdout, with real timestamps, so a player gets both: `route --from testpattern --to -:mkv \| mpv -`. Repacketised, not transcoded: H264 or VP8 video, Opus or G.711 audio. |
 | `--to`    | *path*`.mkv` | The same Matroska stream written to a file, e.g. to record a SIP call with its scope video. |
-| `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only audio (`--audio-codec`: opus default / pcmu / pcma) + H264 video peer connection. `--token` sets the Authorization. Opus is the default, so endpoints that require it (e.g. Broadcast Box) just work. |
-| `--to`    | `web[:port]` | Self-host a **WHEP server + player page** on `http://localhost:<port>` (default 8080) and stream to any browser that opens it. Many tabs can watch at once — each gets its own peer connection fanned from the one graph tee. H264 video + `--audio-codec` audio (opus is the most broadly supported). `--token` gates the WHEP endpoint; `--no-open` suppresses the browser auto-launch (also never opened with `--json`). |
+| `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only audio (`--audio-codec`: opus default / pcmu / pcma) + video (`--video-codec`: h264 default) peer connection. `--token` sets the Authorization. Opus is the default, so endpoints that require it (e.g. Broadcast Box) just work. |
+| `--to`    | `web[:port]` | Self-host a **WHEP server + player page** on `http://localhost:<port>` (default 8080) and stream to any browser that opens it. Many tabs can watch at once — each gets its own peer connection fanned from the one graph tee. `--video-codec` video (h264 by default) + `--audio-codec` audio (opus is the most broadly supported). `--token` gates the WHEP endpoint; `--no-open` suppresses the browser auto-launch (also never opened with `--json`). |
 | `--to`    | `livekit[:room]` | Publish into a LiveKit **room** (default a random name) as a send-only H264 + OPUS participant. Needs `--url`/`--api-key`/`--api-secret` (or `LIVEKIT_WEBSOCKET_URL`/`LIVEKIT_API_KEY`/`LIVEKIT_API_SECRET`); requires opus, which is the default. The CLI mints its own publisher token locally, so a separate subscriber only needs the same room name + creds. |
 | `--to`    | `cloudflare` | Publish into a **Cloudflare Realtime SFU** session as a send-only H264 + `--audio-codec` peer (opus recommended). Needs `--app-id`/`--token` (or `CLOUDFLARE_APPID`/`CLOUDFLARE_API_TOKEN`). Cloudflare allocates the session id, so the sink prints it plus the track names; a subscriber pulls the media by (session id, track name). |
+
+#### Forcing one codec (`--audio-codec` / `--video-codec`)
+
+Each flag takes **exactly one** codec name, matched case-insensitively: `--audio-codec` one of opus
+(the default), pcmu, pcma; `--video-codec` one of vp8, vp9, h264, h265, av1. There is no list, no
+priority order and no fallback — the point is "use this codec and nothing else", so a codec the far
+end will not accept **fails the run** instead of quietly negotiating something else, and an
+unrecognised name is an argument error (exit 2) listing the valid values rather than a silent
+fall-through to the defaults.
+
+Left out, `--video-codec` leaves each edge on its own default: H264 for a sending edge, every
+supported codec for a receiving one. It does not apply to a two-way (`--duplex`) route, whose video
+is always H264, nor to the H264 `--scope` video.
+
+```bash
+# Pin VP9 end to end: a VP9 graph into the browser page, then prove it with the WHEP client.
+sipsorcery route --from testpattern --to web:8099 --video-codec vp9 --no-open --duration 30
+sipsorcery webrtc whep http://localhost:8099/whep --video-codec vp9 --duration 6 --json
+
+# A codec the other side is not offering fails, which is the whole point.
+sipsorcery webrtc whep http://localhost:8099/whep --video-codec h264 --json   # -> HTTP 400, exit 1
+```
+
+The receiving `webrtc` verbs take the same two flags to pin what they offer the far side: `webrtc
+whep <url> --video-codec vp9` and `webrtc whip-server --video-codec vp9`. The publishing verbs
+(`webrtc whip`, `webrtc loopback`, `webrtc video-bench`) already force a single send codec with
+`--codec`, which also answers to `--video-codec`.
 
 #### The `--scope` audio-scope video
 
