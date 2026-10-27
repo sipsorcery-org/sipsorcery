@@ -461,7 +461,7 @@ namespace SIPSorcery.Net
 
             var elapsedSeconds = Ntp64Timestamp.GetElapsedSeconds(LastNtpTimestampSent, ntpReportTimestamp);
 
-            if (!(elapsedSeconds > 0))
+            if (double.IsNaN(elapsedSeconds) || elapsedSeconds <= 0)
             {
                 // The clock went backwards, or the NTP era rolled over between the two timestamps.
                 return LastRtpTimestampSent;
@@ -478,10 +478,12 @@ namespace SIPSorcery.Net
         /// <returns>The equivalent number of RTP timestamp units, reduced into the 32 bit RTP
         /// timestamp space. A 90kHz clock only takes about 13 hours to exhaust that space, and
         /// casting a double that is outside a uint's range to uint has no defined result, so the
-        /// reduction has to happen before the conversion rather than after it.</returns>
+        /// reduction has to happen before the conversion rather than after it. Zero is returned
+        /// for anything that is not a positive number of seconds, NaN included, so that the
+        /// conversion below is only ever reached with a value it is defined for.</returns>
         private uint SecondsToRtpUnits(double seconds)
         {
-            if (!(seconds > 0))
+            if (double.IsNaN(seconds) || seconds <= 0)
             {
                 return 0;
             }

@@ -1505,10 +1505,11 @@ namespace SIPSorcery.Net
                         return;
                     }
                 }
-                catch (Exception excp)
+                catch (ApplicationException excp)
                 {
-                    // A malformed rtpmap should not stop the stream being set up. If no rate can be
-                    // determined the reporting session falls back to not extrapolating.
+                    // A malformed rtpmap makes the AudioFormat, VideoFormat and TextFormat
+                    // constructors throw this. It should not stop the stream being set up; if no
+                    // rate can be determined the reporting session falls back to not extrapolating.
                     logger.LogWarning(excp, "Could not determine the RTP clock rate for {MediaType} format {Format}. {ErrorMessage}", MediaType, format.ID, excp.Message);
                 }
             }
