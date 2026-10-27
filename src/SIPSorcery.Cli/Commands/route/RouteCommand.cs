@@ -66,6 +66,7 @@ public sealed class RouteCommand : CommandBase
     private const string DEFAULT_AUDIO_CODEC = "opus";
     private const string DEFAULT_SCOPE_MODE = "waves";
     private const string DEFAULT_SCOPE_SIZE = "640x360";
+    private const string DEFAULT_BROWSER_SIZE = "640x360";
     private const int DEFAULT_WEB_PORT = 8080;
 
     /// <summary>The result shape written with --json. Stable field names; additive changes only.</summary>
@@ -97,6 +98,7 @@ public sealed class RouteCommand : CommandBase
         bool Scope,
         string ScopeMode,
         string ScopeSize,
+        string BrowserSize,
         string? FfmpegPath,
         string? Username,
         string? Password,
@@ -192,6 +194,13 @@ public sealed class RouteCommand : CommandBase
         {
             Description = "Scope video size WxH.",
             DefaultValueFactory = _ => DEFAULT_SCOPE_SIZE
+        };
+
+        var browserSizeOption = new Option<string>("--browser-size")
+        {
+            Description = "Canvas size WxH for the browser source's generated test pattern, or a preset " +
+                          $"({VideoPresets.Names}). The frame rate comes from --fps.",
+            DefaultValueFactory = _ => DEFAULT_BROWSER_SIZE
         };
 
         var ffmpegPathOption = new Option<string?>("--ffmpeg-path")
@@ -319,6 +328,7 @@ public sealed class RouteCommand : CommandBase
         command.Options.Add(scopeOption);
         command.Options.Add(scopeModeOption);
         command.Options.Add(scopeSizeOption);
+        command.Options.Add(browserSizeOption);
         command.Options.Add(ffmpegPathOption);
         command.Options.Add(usernameOption);
         command.Options.Add(passwordOption);
@@ -351,6 +361,7 @@ public sealed class RouteCommand : CommandBase
                 parseResult.GetValue(scopeOption),
                 parseResult.GetValue(scopeModeOption)!,
                 parseResult.GetValue(scopeSizeOption)!,
+                parseResult.GetValue(browserSizeOption)!,
                 parseResult.GetValue(ffmpegPathOption),
                 parseResult.GetValue(usernameOption),
                 parseResult.GetValue(passwordOption),
@@ -500,7 +511,7 @@ public sealed class RouteCommand : CommandBase
         bool openBrowser = !args.NoOpen && !args.AsJson;
         var edgeOptions = new EdgeOptions(args.Fps, args.Token, args.TimeoutSeconds, args.Scope, args.ScopeMode, args.ScopeSize,
             args.FfmpegPath, args.Username, args.Password, args.AudioCodec, args.VideoCodec, openBrowser, args.Url,
-            args.ApiKey, args.ApiSecret, args.AppId);
+            args.ApiKey, args.ApiSecret, args.AppId, args.BrowserSize);
 
         // Build the edges. A bad spec is an argument error before anything starts.
         ISourceNode source;

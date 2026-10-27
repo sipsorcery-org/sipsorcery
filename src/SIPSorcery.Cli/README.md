@@ -438,6 +438,41 @@ sipsorcery route --from testpattern --to web                 # open http://local
 sipsorcery route --from sip:music@iptel.org --to web --scope
 ```
 
+#### The `browser` source (Chrome as the publisher)
+
+`--from browser` is the mirror of the `web` sink: instead of the CLI streaming *to* a browser, a
+browser tab publishes *into* the graph. It binds a local `HttpListener` that serves the same canvas
+test-pattern page `webrtc browser-test` uses (`GET /` the page, `POST /whip` the offer/answer, one
+port, localhost only — pick another with `browser:9000`), and emits each depacketised frame into the
+graph. Like the `web` sink it **listens** rather than dialling out, but unlike it `StartAsync` waits
+for a tab to actually connect (bounded by `--timeout`), so a Matroska sink does not write a container
+header for a stream that may never arrive. Pass `--open` to launch the tab instead of opening the
+printed URL by hand.
+
+What makes it worth having over `testpattern`: the frames entering the graph were packetised by
+**libwebrtc**, not by us. Anything downstream is therefore carrying real external RTP that our
+depacketisers reassembled, so it doubles as an interop check on whatever path you point it at.
+
+```bash
+# Watch Chrome's feed live in a player, via a Matroska stream on stdout.
+sipsorcery route --from browser --to -:mkv | mpv -
+sipsorcery route --from browser --to -:mkv | ffplay -i -
+
+# Record it, or forward it on with no transcode.
+sipsorcery route --from browser --to chrome.mkv -d 30
+sipsorcery route --from browser --to whip:http://localhost:8081/whip
+
+# Pin the codec on BOTH ends (our answer offers only it, the page pins it with setCodecPreferences)
+# and set the canvas size; the frame rate comes from --fps.
+sipsorcery route --from browser:8090 --to -:mkv --video-codec h264 --browser-size 1280x720
+```
+
+Video only: the page publishes a canvas capture and no audio track, so no audio is negotiated and
+none is carried. A Matroska sink handles a video-only stream, which is what makes the pipe work.
+Keep the tab visible — a background tab throttles its timers and collapses the frame rate. One
+session at a time: a second tab is refused while a live session is carrying media, but a reload after
+the previous tab went away takes over cleanly.
+
 The `livekit:` and `cloudflare:` **source and sink** are both wired — publish into a room / SFU session,
 and subscribe to (pull) one — so running the two in separate processes is a full round trip
 (`route --from testpattern --to cloudflare` in one, `route --from cloudflare:<id> --to web` in another).
@@ -548,7 +583,7 @@ and STUN/TURN/ICE
 connectivity checks, including Cloudflare TURN. SIP DNS resolution and further verbs are planned.
 
 Early. The `route` engine carries audio and video over a single source → N sinks (a free tee), with
-`whep:`/`sip:`/`livekit:`/`cloudflare:` sources, `whip:`/`web`/`livekit:`/`cloudflare` sinks and an
+`whep:`/`browser`/`sip:`/`livekit:`/`cloudflare:` sources, `whip:`/`web`/`livekit:`/`cloudflare` sinks and an
 ffmpeg-backed audio-scope transform wired in. Two-way routes (`--duplex`, automatic with an agent) add the duplex
 case, with `web`, `term`, a local Azure voice `agent`, an `openai` Realtime agent and a `sip:` phone peer (transcoded G.711 ↔ Opus)
 as the endpoints, the agents each with an optional lip-synced `--avatar`. Streaming verbs default to

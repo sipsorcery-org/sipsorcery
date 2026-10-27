@@ -57,7 +57,8 @@ public sealed record EdgeOptions(
     string? LiveKitUrl = null,
     string? LiveKitApiKey = null,
     string? LiveKitApiSecret = null,
-    string? CloudflareAppId = null);
+    string? CloudflareAppId = null,
+    string BrowserSize = "640x360");
 
 /// <summary>Resolves the --audio-codec name to the audio format a source produces and a sink offers.</summary>
 public static class RouteAudio
@@ -224,6 +225,13 @@ public static class EdgeFactory
                 }
                 return new WhepSourceNode(rest!, ResolveReceiveVideoFormats(options), options.Token, options.TimeoutSeconds, logger);
 
+            case "browser":
+                // A browser tab as the publisher: the demand-driven mirror of whep: (that one dials
+                // out, this one waits to be dialled). The spec is an optional port, as for the web
+                // sink. Frames entering the graph were packetised by libwebrtc, so a sink downstream
+                // is carrying genuinely external RTP that our depacketisers reassembled.
+                return CreateBrowserSource(rest, options, logger);
+
             case "sip":
             case "sips":
                 if (string.IsNullOrWhiteSpace(rest))
@@ -245,11 +253,12 @@ public static class EdgeFactory
                 // Only meaningful two-way (a microphone + speaker); the one-way form of these is a sink.
                 throw new EdgeException(
                     $"'{scheme}' as a --from source captures your microphone, so it needs a two-way route: add --duplex " +
-                    "(it is two-way automatically when the other end is an agent).");
+                    "(it is two-way automatically when the other end is an agent). For a browser publishing a " +
+                    "generated video test pattern one-way, use --from browser.");
 
             case "whip":
                 throw new EdgeException(
-                    $"'{scheme}' as a --from source is not wired into route yet (sources: testpattern, whep:<url>, sip:<uri>, livekit[:room], cloudflare:<sessionId>). " +
+                    $"'{scheme}' as a --from source is not wired into route yet (sources: testpattern, browser[:port], whep:<url>, sip:<uri>, livekit[:room], cloudflare:<sessionId>). " +
                     "Use whep:<url> to receive a WHIP/WHEP stream today.");
 
             default:
@@ -258,7 +267,7 @@ public static class EdgeFactory
                 {
                     return CreateSipSource(spec, options, logger);
                 }
-                throw new EdgeException($"Unknown --from edge '{spec}'. Sources: testpattern, whep:<url>, sip:<uri>, livekit[:room], cloudflare:<sessionId>.");
+                throw new EdgeException($"Unknown --from edge '{spec}'. Sources: testpattern, browser[:port], whep:<url>, sip:<uri>, livekit[:room], cloudflare:<sessionId>.");
         }
     }
 
@@ -405,6 +414,48 @@ public static class EdgeFactory
         }
 
         return new LiveKitSourceNode(url!, apiKey!, apiSecret!, rest!, ResolveReceiveVideoFormats(options), options.TimeoutSeconds, logger);
+    }
+
+    /// <summary>
+    /// Builds a browser: source. The "rest" is an optional port (as for the web sink); the canvas
+    /// resolution comes from --browser-size and the frame rate from --fps. When --video-codec pins a
+    /// codec it is pinned on BOTH ends - our answer offers only it, and the page pins it with
+    /// setCodecPreferences - so the graph carries that codec or the run fails rather than quietly
+    /// negotiating something else.
+    /// </summary>
+    private static ISourceNode CreateBrowserSource(string? rest, EdgeOptions options, ILogger logger)
+    {
+        int port = 8080;
+        if (!string.IsNullOrWhiteSpace(rest))
+        {
+            if (!int.TryParse(rest, out port) || port < 1 || port > 65535)
+            {
+                throw new EdgeException($"The browser source port '{rest}' is not a valid port number (1-65535), e.g. --from browser:8080.");
+            }
+        }
+
+        if (!VideoPresets.TryResolveSize(options.BrowserSize, options.BrowserSize, out int width, out int height,
+                out string? sizeError, "--browser-size"))
+        {
+            throw new EdgeException(sizeError!);
+        }
+
+        // Pinning only our end would let the browser pick a different codec and make the result
+        // meaningless, so a codec the page cannot name to the browser has to be an error here.
+        string? browserMimeType = null;
+        if (!string.IsNullOrWhiteSpace(options.VideoCodec))
+        {
+            browserMimeType = BrowserTestPage.TryGetMimeType(options.VideoCodec);
+            if (browserMimeType == null)
+            {
+                throw new EdgeException(
+                    $"The browser source cannot pin {CodecSelection.VIDEO_OPTION} '{options.VideoCodec!.Trim()}' in the browser. " +
+                    "Use one of: vp8, vp9, h264, h265, av1.");
+            }
+        }
+
+        return new BrowserSourceNode(port, width, height, options.Fps, browserMimeType,
+            ResolveReceiveVideoFormats(options), options.OpenBrowser, options.TimeoutSeconds, logger);
     }
 
     /// <summary>Resolves the verb's --audio-codec to a format, throwing <see cref="EdgeException"/> if invalid.</summary>
