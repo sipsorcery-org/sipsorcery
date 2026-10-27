@@ -69,6 +69,9 @@ public sealed class MatroskaSinkNode : ISinkNode
     private bool _failed;
     private long _firstArrivalMs = -1;
     private byte[]? _avcC;
+    private Av1.SequenceHeader? _av1SequenceHeader;
+    private byte[]? _hvcC;
+    private H265.SpsInfo? _h265Sps;
     private MatroskaTrack? _videoTrack;
     private MatroskaTrack? _audioTrack;
     private bool _warnedVideoCodec;
@@ -232,14 +235,34 @@ public sealed class MatroskaSinkNode : ISinkNode
             clock = _videoClock;
             clockRate = frame.VideoFormat.ClockRate > 0 ? frame.VideoFormat.ClockRate : 90000;
 
-            if (frame.VideoFormat.Codec == VideoCodecsEnum.H264)
+            // Each codec says "key frame" in its own place: H264 in an IDR NAL, VP8 in the frame
+            // tag's P bit, VP9 in the uncompressed header's frame_type, AV1 in a shown frame whose
+            // frame_type is KEY_FRAME. Everything except H264 is written through unchanged - the
+            // Matroska payload for VP8/VP9/AV1 is the frame exactly as it came off the wire.
+            switch (frame.VideoFormat.Codec)
             {
-                data = H264.ToLengthPrefixed(frame.Payload, out keyFrame);
-            }
-            else
-            {
-                data = frame.Payload;
-                keyFrame = (frame.Payload[0] & 0x01) == 0;   // VP8: the frame tag's P bit is 0 for a key frame.
+                case VideoCodecsEnum.H264:
+                    data = H264.ToLengthPrefixed(frame.Payload, out keyFrame);
+                    break;
+
+                case VideoCodecsEnum.H265:
+                    data = H265.ToLengthPrefixed(frame.Payload, out keyFrame);
+                    break;
+
+                case VideoCodecsEnum.VP9:
+                    data = frame.Payload;
+                    keyFrame = Vp9.TryReadFrameInfo(frame.Payload, out var vp9Frame) && vp9Frame.IsKeyFrame;
+                    break;
+
+                case VideoCodecsEnum.AV1:
+                    data = frame.Payload;
+                    keyFrame = Av1.IsKeyFrame(frame.Payload, _av1SequenceHeader?.ReducedStillPictureHeader ?? false);
+                    break;
+
+                default:
+                    data = frame.Payload;
+                    keyFrame = (frame.Payload[0] & 0x01) == 0;   // VP8: the frame tag's P bit is 0 for a key frame.
+                    break;
             }
 
             // A decoder can only start on a key frame, so drop video until the first one.
@@ -290,10 +313,37 @@ public sealed class MatroskaSinkNode : ISinkNode
                 int height = BinaryPrimitives.ReadUInt16LittleEndian(frame.Payload.AsSpan(8)) & 0x3FFF;
                 return new MatroskaTrack(VIDEO_TRACK, true, "V_VP8", Width: width, Height: height);
 
+            case VideoCodecsEnum.H265:
+                // hvcC needs the VPS, SPS and PPS, which travel in-band with the IRAP pictures.
+                _hvcC ??= H265.TryBuildHvcC(frame.Payload, out _h265Sps);
+                return _hvcC == null || _h265Sps == null ? null
+                    : new MatroskaTrack(VIDEO_TRACK, true, "V_MPEGH/ISO/HEVC", _hvcC,
+                        Width: _h265Sps.Width, Height: _h265Sps.Height);
+
+            case VideoCodecsEnum.VP9:
+                // Like VP8, VP9 needs no CodecPrivate; the dimensions come from a key frame's
+                // uncompressed header, so wait for one.
+                if (!Vp9.TryReadFrameInfo(frame.Payload, out var vp9) || !vp9.IsKeyFrame)
+                {
+                    return null;
+                }
+                return new MatroskaTrack(VIDEO_TRACK, true, "V_VP9", Width: vp9.Width, Height: vp9.Height);
+
+            case VideoCodecsEnum.AV1:
+                // av1C needs the sequence header OBU, which travels in-band at the start of every
+                // coded video sequence, so wait for a temporal unit that carries one.
+                _av1SequenceHeader ??= Av1.TryParseSequenceHeader(frame.Payload);
+                if (_av1SequenceHeader == null)
+                {
+                    return null;
+                }
+                return new MatroskaTrack(VIDEO_TRACK, true, "V_AV1", Av1.BuildAv1C(_av1SequenceHeader),
+                    Width: _av1SequenceHeader.MaxFrameWidth, Height: _av1SequenceHeader.MaxFrameHeight);
+
             default:
                 if (!_warnedVideoCodec)
                 {
-                    _logger.LogWarning("The Matroska sink does not support {Codec} video yet (H264 and VP8 only); the video is left out.", frame.VideoFormat.Codec);
+                    _logger.LogWarning("The Matroska sink does not support {Codec} video yet (H264, H265, VP8, VP9 and AV1); the video is left out.", frame.VideoFormat.Codec);
                     _warnedVideoCodec = true;
                 }
                 return null;
