@@ -48,4 +48,42 @@ public static class VideoPresets
 
         return true;
     }
+
+    /// <summary>The frame dimensions accepted by <see cref="TryResolveSize"/>, for help and error text.</summary>
+    public const int MIN_DIMENSION = 16;
+    public const int MAX_WIDTH = 7680;
+    public const int MAX_HEIGHT = 4320;
+
+    /// <summary>
+    /// Resolves an explicit "WxH" size, falling back to a preset name when no size was given. Shared
+    /// by the verbs that take both, so --size and --preset mean the same thing everywhere.
+    /// </summary>
+    /// <param name="size">An explicit size as WxH, or null/blank to use <paramref name="preset"/>.</param>
+    /// <param name="preset">The preset name to fall back on.</param>
+    /// <param name="sizeOptionName">The option the size came from, for the error message.</param>
+    public static bool TryResolveSize(string? size, string preset, out int width, out int height,
+        out string? error, string sizeOptionName = "--size")
+    {
+        width = 0;
+        height = 0;
+        error = null;
+
+        if (string.IsNullOrWhiteSpace(size))
+        {
+            return TryResolve(preset, out width, out height, out error);
+        }
+
+        var parts = size.Split('x', 'X');
+        if (parts.Length != 2 || !int.TryParse(parts[0], out width) || !int.TryParse(parts[1], out height) ||
+            width < MIN_DIMENSION || height < MIN_DIMENSION || width > MAX_WIDTH || height > MAX_HEIGHT)
+        {
+            width = 0;
+            height = 0;
+            error = $"Could not parse {sizeOptionName} \"{size}\" as WxH in the range " +
+                    $"{MIN_DIMENSION}x{MIN_DIMENSION} to {MAX_WIDTH}x{MAX_HEIGHT}, e.g. 1280x720.";
+            return false;
+        }
+
+        return true;
+    }
 }

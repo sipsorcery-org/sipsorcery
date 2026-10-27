@@ -39,6 +39,45 @@ public class EdgeFactoryTests
     public void Source_whep_requires_a_url()
         => AssertEdgeError(() => EdgeFactory.CreateSource("whep:", Options(), Log), "whep source needs a URL");
 
+    [Theory]
+    [InlineData("browser")]
+    [InlineData("browser:9100")]
+    public void Source_browser_builds_with_an_optional_port(string spec)
+    {
+        // Constructing the node must not bind the listener: StartAsync does that, so a spec check
+        // stays free of side effects and these tests touch no sockets.
+        var node = EdgeFactory.CreateSource(spec, Options(), Log);
+
+        Assert.IsType<BrowserSourceNode>(node);
+        Assert.Contains(spec.Contains(':') ? "9100" : "8080", node.Describe());
+    }
+
+    [Theory]
+    [InlineData("browser:0")]
+    [InlineData("browser:70000")]
+    [InlineData("browser:eighty")]
+    public void Source_browser_rejects_a_bad_port(string spec)
+        => AssertEdgeError(() => EdgeFactory.CreateSource(spec, Options(), Log), "is not a valid port number");
+
+    [Fact]
+    public void Source_browser_rejects_a_size_that_is_not_a_usable_WxH()
+        => AssertEdgeError(() => EdgeFactory.CreateSource("browser", Options() with { BrowserSize = "1280" }, Log),
+            "--browser-size");
+
+    [Fact]
+    public void Source_browser_pins_the_video_codec_on_both_ends()
+    {
+        // Pinning only our end would let the browser pick a different codec, so a --video-codec the
+        // page cannot name to the browser has to fail rather than half-apply.
+        var node = EdgeFactory.CreateSource("browser", Options() with { VideoCodec = "vp9" }, Log);
+
+        Assert.IsType<BrowserSourceNode>(node);
+    }
+
+    [Fact]
+    public void Source_web_points_at_the_browser_source_for_a_one_way_route()
+        => AssertEdgeError(() => EdgeFactory.CreateSource("web", Options(), Log), "--from browser");
+
     [Fact]
     public void Source_livekit_requires_a_room()
         => AssertEdgeError(() => EdgeFactory.CreateSource("livekit:", Options(), Log), "needs a room name");

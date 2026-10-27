@@ -251,17 +251,7 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
             return false;
         }
 
-        if (!string.IsNullOrWhiteSpace(size))
-        {
-            var parts = size.Split('x', 'X');
-            if (parts.Length != 2 || !int.TryParse(parts[0], out width) || !int.TryParse(parts[1], out height) ||
-                width < 16 || height < 16 || width > 7680 || height > 4320)
-            {
-                error = $"Could not parse --size \"{size}\" as WxH in the range 16x16 to 7680x4320, e.g. 1280x720.";
-                return false;
-            }
-        }
-        else if (!VideoPresets.TryResolve(preset, out width, out height, out error))
+        if (!VideoPresets.TryResolveSize(size, preset, out width, out height, out error))
         {
             return false;
         }
@@ -335,37 +325,23 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
             encoder = ffmpegEncoder;
         }
 
-        using var listener = new HttpListener();
-        listener.Prefixes.Add(url);
+        // One listener serving the page, the WHIP answer and the stats posts. Shared with the route
+        // graph's "browser" source edge so the answer path and the reloaded-tab rule exist once.
+        await using var server = new BrowserWhipServer(
+            new BrowserWhipServer.Settings(port, mode, browserMimeType, width, height, fps, durationSeconds, echo),
+            offeredVideoFormats, logger);
 
-        RTCPeerConnection? pc = null;
-        // Replaced wholesale when a reloaded tab takes over the run, so the counters only ever
-        // describe the session that actually carried the media.
-        var videoStats = new RtpStreamStats();
-
-        // Set by the HTTP handlers (listener threads) and read by the run loop, so everything shared
-        // is either interlocked or a volatile reference to an immutable record.
-        int videoFramesReceived = 0;
-        long firstFrameTicks = 0;
-        long lastFrameTicks = 0;
-        string? negotiatedCodec = null;
-        BrowserStatsReport? latestBrowserStats = null;
-
-        var connected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var browserFinished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var offerSeen = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var overallCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 
         try
         {
-            listener.Start();
+            server.Start(overallCts.Token);
         }
         catch (HttpListenerException excp)
         {
             return WriteResult(asJson, Fail(url, mode, videoCodec,
                 $"Could not listen on {url}: {excp.Message} (is the port already in use?)."), ExitCodes.TransportError);
         }
-
-        using var overallCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 
         try
         {
@@ -376,205 +352,31 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
 
             if (open)
             {
-                TryOpenBrowser(url, logger);
+                server.TryOpenBrowser();
             }
-
-            // ---- Serve the page, the offer and the stats posts until the run ends. ----
-            var serveLoop = Task.Run(async () =>
-            {
-                while (!overallCts.IsCancellationRequested && listener.IsListening)
-                {
-                    HttpListenerContext context;
-                    try
-                    {
-                        context = await listener.GetContextAsync().ConfigureAwait(false);
-                    }
-                    catch (Exception)
-                    {
-                        return;     // Listener stopped; the run is over.
-                    }
-
-                    try
-                    {
-                        var request = context.Request;
-                        string path = request.Url?.AbsolutePath ?? "/";
-
-                        if (request.HttpMethod == "GET" && (path == "/" || path == "/index.html"))
-                        {
-                            string page = BrowserTestPage.Build(mode, browserMimeType, width, height, fps, durationSeconds);
-                            await RespondAsync(context, HttpStatusCode.OK, "text/html; charset=utf-8", page).ConfigureAwait(false);
-                        }
-                        else if (request.HttpMethod == "POST" && path.TrimEnd('/').EndsWith("/whip", StringComparison.OrdinalIgnoreCase))
-                        {
-                            // One session at a time, because two tabs publishing at once would blend
-                            // their counters into a meaningless result. A reload before any media has
-                            // arrived is the common case though - the page is opened by hand, and an
-                            // early refresh is normal - so a fresh offer REPLACES a session that has
-                            // not depacketised a frame yet, taking fresh counters with it. Once frames
-                            // are flowing the measurement is in progress and a second offer is refused.
-                            if (!offerSeen.TrySetResult(true))
-                            {
-                                if (Volatile.Read(ref videoFramesReceived) > 0)
-                                {
-                                    logger.LogWarning("Rejected a second browser offer; a session is already carrying media.");
-                                    Respond(context, HttpStatusCode.Conflict);
-                                    continue;
-                                }
-
-                                logger.LogDebug("A new browser offer arrived before any media; replacing the previous session.");
-                                pc?.Close("replaced by a reloaded browser tab");
-                                videoStats = new RtpStreamStats();
-                                Interlocked.Exchange(ref firstFrameTicks, 0);
-                                Interlocked.Exchange(ref lastFrameTicks, 0);
-                                negotiatedCodec = null;
-                            }
-
-                            string offerSdp;
-                            using (var reader = new StreamReader(request.InputStream, Encoding.UTF8))
-                            {
-                                offerSdp = await reader.ReadToEndAsync().ConfigureAwait(false);
-                            }
-
-                            logger.LogDebug("Browser offer SDP:\n{Sdp}", offerSdp);
-
-                            pc = new RTCPeerConnection();
-
-                            // publish: we only receive. echo: we send the generated pattern AND receive
-                            // what the browser hands back, on the one bidirectional track.
-                            pc.addTrack(new MediaStreamTrack(offeredVideoFormats,
-                                echo ? MediaStreamStatusEnum.SendRecv : MediaStreamStatusEnum.RecvOnly));
-
-                            pc.OnRtpPacketReceived += RtpStreamStats.CreateRtpHandler(new RtpStreamStats(), videoStats, logger);
-
-                            pc.OnVideoFormatsNegotiated += (formats) =>
-                            {
-                                if (formats.Count > 0)
-                                {
-                                    negotiatedCodec = formats[0].Codec.ToString();
-                                    logger.LogDebug("Negotiated video format {Codec} (payload {Id}).", formats[0].Codec, formats[0].FormatID);
-                                }
-                            };
-
-                            pc.OnVideoFrameReceived += (remoteEndPoint, timestamp, frame, format) =>
-                            {
-                                long nowTicks = Stopwatch.GetTimestamp();
-                                if (Interlocked.Increment(ref videoFramesReceived) == 1)
-                                {
-                                    Interlocked.Exchange(ref firstFrameTicks, nowTicks);
-                                    negotiatedCodec ??= format.Codec.ToString();
-                                }
-                                Interlocked.Exchange(ref lastFrameTicks, nowTicks);
-                            };
-
-                            pc.onconnectionstatechange += (state) =>
-                            {
-                                logger.LogDebug("Peer connection state changed to {State}.", state);
-                                if (state == RTCPeerConnectionState.connected)
-                                {
-                                    connected.TrySetResult(true);
-                                }
-                                else if (state == RTCPeerConnectionState.failed || state == RTCPeerConnectionState.closed)
-                                {
-                                    connected.TrySetResult(false);
-                                }
-                            };
-
-                            var setOfferResult = pc.setRemoteDescription(new RTCSessionDescriptionInit
-                            {
-                                type = RTCSdpType.offer,
-                                sdp = offerSdp
-                            });
-
-                            if (setOfferResult != SetDescriptionResultEnum.OK)
-                            {
-                                await RespondAsync(context, HttpStatusCode.BadRequest, "text/plain",
-                                    $"The browser's SDP offer could not be applied: {setOfferResult}.").ConfigureAwait(false);
-                                connected.TrySetResult(false);
-                                continue;
-                            }
-
-                            var answer = pc.createAnswer();
-                            await pc.setLocalDescription(answer).ConfigureAwait(false);
-                            logger.LogDebug("Answer SDP:\n{Sdp}", answer.sdp);
-
-                            // A rejected video m-line (port 0, or no formats) means the browser's offer
-                            // and the pinned codec had nothing in common. Say so now: letting it connect
-                            // would just time out with no media and no reason given.
-                            if (!HasNegotiatedVideo(answer.sdp, out string? negotiateError))
-                            {
-                                await RespondAsync(context, HttpStatusCode.BadRequest, "text/plain",
-                                    $"{negotiateError} Requested codec: {videoCodec ?? "(any)"}.").ConfigureAwait(false);
-                                connected.TrySetResult(false);
-                                continue;
-                            }
-
-                            string resourcePath = $"/whip/{Guid.NewGuid().ToString("N")[..8]}";
-                            context.Response.AddHeader("Location", resourcePath);
-                            await RespondAsync(context, HttpStatusCode.Created, "application/sdp", answer.sdp).ConfigureAwait(false);
-                        }
-                        else if (request.HttpMethod == "POST" && path.TrimEnd('/').EndsWith("/stats", StringComparison.OrdinalIgnoreCase))
-                        {
-                            string body;
-                            using (var reader = new StreamReader(request.InputStream, Encoding.UTF8))
-                            {
-                                char[] buffer = new char[BrowserStatsReport.MAX_BODY_BYTES];
-                                int read = await reader.ReadBlockAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-                                body = new string(buffer, 0, read);
-                            }
-
-                            if (BrowserStatsReport.TryParse(body, out var report, out string? parseError))
-                            {
-                                latestBrowserStats = report;
-                                if (report!.Final)
-                                {
-                                    browserFinished.TrySetResult(true);
-                                }
-                            }
-                            else
-                            {
-                                logger.LogWarning("Could not parse a browser stats post: {Error}", parseError);
-                            }
-
-                            Respond(context, HttpStatusCode.NoContent);
-                        }
-                        else if (request.HttpMethod == "DELETE")
-                        {
-                            Respond(context, HttpStatusCode.OK);
-                            browserFinished.TrySetResult(true);
-                        }
-                        else
-                        {
-                            Respond(context, HttpStatusCode.NotFound);
-                        }
-                    }
-                    catch (Exception excp)
-                    {
-                        logger.LogDebug("Request handling failed: {Error}", excp.Message);
-                        Respond(context, HttpStatusCode.InternalServerError);
-                    }
-                }
-            }, overallCts.Token);
 
             // ---- Wait for the browser to connect. ----
             var connectStopwatch = Stopwatch.StartNew();
-            var connectCompleted = await Task.WhenAny(connected.Task,
+            var connectCompleted = await Task.WhenAny(server.Connected,
                 Task.Delay(TimeSpan.FromSeconds(timeoutSeconds), overallCts.Token)).ConfigureAwait(false);
 
-            if (connectCompleted != connected.Task || !await connected.Task.ConfigureAwait(false))
+            if (connectCompleted != server.Connected || !await server.Connected.ConfigureAwait(false))
             {
                 // The page posts a final report carrying its own reason (e.g. "no video/H265
                 // capability for sending") before giving up, so prefer that over the generic wording.
-                string reason = latestBrowserStats?.Error
+                string reason = server.LatestBrowserStats?.Error
                     ?? (ct.IsCancellationRequested ? "Cancelled."
-                        : connectCompleted == connected.Task
-                            ? $"The peer connection failed (state {pc?.connectionState})."
-                            : offerSeen.Task.IsCompleted
+                        : connectCompleted == server.Connected
+                            ? $"The peer connection failed (state {server.PeerConnection?.connectionState})."
+                            : server.OfferSeen
                                 ? $"The browser offered but the peer connection did not reach connected within {timeoutSeconds}s."
                                 : $"No browser connected to {url} within {timeoutSeconds}s.");
 
-                return WriteResult(asJson, new BrowserTestResult(false, url, mode, pc?.connectionState.ToString() ?? "new",
-                    videoCodec, negotiatedCodec, null, null, videoStats.Packets, videoStats.Lost, videoStats.OutOfOrder,
-                    videoStats.Duplicates, videoFramesReceived, null, null, null, null, latestBrowserStats, reason),
+                var failedStats = server.VideoStats;
+                return WriteResult(asJson, new BrowserTestResult(false, url, mode,
+                    server.PeerConnection?.connectionState.ToString() ?? "new", videoCodec, server.NegotiatedCodec,
+                    null, null, failedStats.Packets, failedStats.Lost, failedStats.OutOfOrder, failedStats.Duplicates,
+                    server.VideoFramesReceived, null, null, null, null, server.LatestBrowserStats, reason),
                     ExitCodes.Timeout);
             }
 
@@ -584,10 +386,11 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
 
             // ---- In echo mode, publish the generated test card for the window. ----
             Task<SendResult>? sendTask = null;
-            var sendCts = CancellationTokenSource.CreateLinkedTokenSource(overallCts.Token);
+            using var sendCts = CancellationTokenSource.CreateLinkedTokenSource(overallCts.Token);
             if (echo)
             {
-                sendTask = SendTestCardAsync(pc!, encoder!, width, height, fps, offeredVideoFormats[0].Codec, logger, sendCts.Token);
+                sendTask = SendTestCardAsync(server.PeerConnection!, encoder!, width, height, fps,
+                    offeredVideoFormats[0].Codec, logger, sendCts.Token);
             }
 
             // ---- The media window. It ends when the page posts its final report (the normal path,
@@ -595,7 +398,7 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
             // grace elapses, whichever comes first. ----
             var mediaWindow = Stopwatch.StartNew();
             await Task.WhenAny(
-                browserFinished.Task,
+                server.BrowserFinished,
                 Task.Delay(TimeSpan.FromSeconds(durationSeconds) + TimeSpan.FromMilliseconds(2 * BrowserTestPage.STATS_INTERVAL_MS), overallCts.Token))
                 .ConfigureAwait(false);
             mediaWindow.Stop();
@@ -607,20 +410,15 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
                 sent = await sendTask.ConfigureAwait(false);
             }
 
-            double? videoFps = null;
-            long first = Interlocked.Read(ref firstFrameTicks);
-            long last = Interlocked.Read(ref lastFrameTicks);
-            if (videoFramesReceived > 1 && last > first)
-            {
-                videoFps = Math.Round((videoFramesReceived - 1) / ((last - first) / (double)Stopwatch.Frequency), 1);
-            }
+            var stats = server.VideoStats;
+            bool gotMedia = stats.Packets > 0 && server.VideoFramesReceived > 0;
 
-            bool gotMedia = videoStats.Packets > 0 && videoFramesReceived > 0;
-
-            return WriteResult(asJson, new BrowserTestResult(gotMedia, url, mode, pc!.connectionState.ToString(),
-                videoCodec, negotiatedCodec, connectTimeMs, (int)mediaWindow.ElapsedMilliseconds,
-                videoStats.Packets, videoStats.Lost, videoStats.OutOfOrder, videoStats.Duplicates,
-                videoFramesReceived, videoFps, sent?.Frames, sent?.Bytes, sent?.Fps, latestBrowserStats,
+            return WriteResult(asJson, new BrowserTestResult(gotMedia, url, mode,
+                server.PeerConnection!.connectionState.ToString(), videoCodec, server.NegotiatedCodec,
+                connectTimeMs, (int)mediaWindow.ElapsedMilliseconds,
+                stats.Packets, stats.Lost, stats.OutOfOrder, stats.Duplicates,
+                server.VideoFramesReceived, server.MeasuredFps, sent?.Frames, sent?.Bytes, sent?.Fps,
+                server.LatestBrowserStats,
                 gotMedia ? null : "The browser connected but no video frames were depacketised."),
                 gotMedia ? ExitCodes.Ok : ExitCodes.Failed);
         }
@@ -635,12 +433,7 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
         finally
         {
             overallCts.Cancel();
-            pc?.Close("browser test complete");
             (encoder as IDisposable)?.Dispose();
-            if (listener.IsListening)
-            {
-                listener.Stop();
-            }
         }
     }
 
@@ -708,88 +501,10 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
         }, ct);
     }
 
-    /// <summary>
-    /// Checks an answer SDP actually accepted video. A port of 0, a missing video m-line or an empty
-    /// format list all mean the offer and the pinned codec had nothing in common, which has to be a
-    /// clear error rather than a connection that goes quiet.
-    /// </summary>
-    public static bool HasNegotiatedVideo(string answerSdp, out string? error)
-    {
-        error = null;
 
-        SDP parsed;
-        try
-        {
-            parsed = SDP.ParseSDPDescription(answerSdp);
-        }
-        catch (Exception excp)
-        {
-            error = $"The answer SDP could not be parsed back ({excp.Message}).";
-            return false;
-        }
-
-        var video = parsed.Media.FirstOrDefault(m => m.Media == SDPMediaTypesEnum.video);
-
-        if (video == null)
-        {
-            error = "The answer has no video media announcement, so nothing was negotiated.";
-            return false;
-        }
-
-        if (video.Port == 0 || video.MediaFormats.Count == 0)
-        {
-            error = "The browser's offer and the codec the CLI offered had no video format in common, " +
-                    "so the video m-line was rejected.";
-            return false;
-        }
-
-        return true;
-    }
-
+    /// <summary>A result for a run that failed before any session existed (bad options, no listener).</summary>
     private static BrowserTestResult Fail(string url, string mode, string? videoCodec, string? error) =>
         new(false, url, mode, "new", videoCodec, null, null, null, 0, 0, 0, 0, 0, null, null, null, null, null, error);
-
-    private static void TryOpenBrowser(string url, ILogger logger)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        }
-        catch (Exception excp)
-        {
-            logger.LogDebug("Could not open a browser automatically ({Error}); open {Url} manually.", excp.Message, url);
-        }
-    }
-
-    private static void Respond(HttpListenerContext context, HttpStatusCode statusCode)
-    {
-        try
-        {
-            context.Response.StatusCode = (int)statusCode;
-            context.Response.Close();
-        }
-        catch (Exception)
-        {
-            // The connection may already be gone; nothing to do.
-        }
-    }
-
-    private static async Task RespondAsync(HttpListenerContext context, HttpStatusCode statusCode, string contentType, string body)
-    {
-        try
-        {
-            byte[] bytes = Encoding.UTF8.GetBytes(body);
-            context.Response.StatusCode = (int)statusCode;
-            context.Response.ContentType = contentType;
-            context.Response.ContentLength64 = bytes.Length;
-            await context.Response.OutputStream.WriteAsync(bytes).ConfigureAwait(false);
-            context.Response.Close();
-        }
-        catch (Exception)
-        {
-            // The browser may have navigated away; nothing to do.
-        }
-    }
 
     private static int WriteResult(bool asJson, BrowserTestResult result, int exitCode)
     {

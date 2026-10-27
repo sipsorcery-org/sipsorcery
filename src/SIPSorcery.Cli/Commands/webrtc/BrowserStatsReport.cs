@@ -75,7 +75,10 @@ public sealed record BrowserStatsReport(
     bool Final = false,
     string? Error = null,
     BrowserVideoStats? Outbound = null,
-    BrowserVideoStats? Inbound = null)
+    BrowserVideoStats? Inbound = null,
+    // Identifies the page load the report came from, so reports from a tab whose offer was refused
+    // can be ignored. Without it a rejected tab's "final" error report would end the live session.
+    string? SessionId = null)
 {
     /// <summary>The largest stats body accepted, a guard against an unbounded POST on the listener.</summary>
     public const int MAX_BODY_BYTES = 64 * 1024;
