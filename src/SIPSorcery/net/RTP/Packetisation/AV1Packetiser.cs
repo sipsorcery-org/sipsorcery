@@ -21,17 +21,39 @@ using System.Collections.Generic;
 
 namespace SIPSorcery.Net;
 
+[Flags]
+internal enum AV1ObuHeaderFlags : byte
+{
+    None = 0,
+    HasSizeField = 0x02,
+    Extension = 0x04
+}
+
+[Flags]
+internal enum AV1AggregationHeaderFlags : byte
+{
+    None = 0,
+    NewCodedVideoSequence = 0x08, // N bit.
+    LastObuContinues = 0x40, // Y bit.
+    FirstObuIsContinuation = 0x80 // Z bit.
+}
+
 public class AV1Packetiser
 {
     public const int AV1_AGGREGATION_HEADER_LENGTH = 1;
 
-    private const byte Z_MASK = 0x80;
-    private const byte Y_MASK = 0x40;
-    private const byte N_MASK = 0x08;
+    internal const int OBU_HEADER_LENGTH = 1;
+    internal const int OBU_EXTENSION_HEADER_LENGTH = 1;
     private const byte OBU_TYPE_MASK = 0x78;
     private const int OBU_TYPE_SHIFT = 3;
-    private const byte OBU_EXTENSION_FLAG_MASK = 0x04;
-    private const byte OBU_HAS_SIZE_FIELD_MASK = 0x02;
+    private const int MIN_OBU_FRAGMENT_LENGTH = OBU_HEADER_LENGTH;
+    private const int MIN_LEB128_LENGTH = 1;
+    private const int MIN_OBU_ELEMENT_LENGTH = MIN_OBU_FRAGMENT_LENGTH + MIN_LEB128_LENGTH;
+    private const int MIN_RTP_PAYLOAD_LENGTH = AV1_AGGREGATION_HEADER_LENGTH + MIN_OBU_ELEMENT_LENGTH + OBU_EXTENSION_HEADER_LENGTH;
+    private const int LEB128_BITS_PER_BYTE = 7;
+    private const byte LEB128_VALUE_MASK = 0x7f;
+    private const byte LEB128_CONTINUATION_MASK = 0x80;
+    private const int MAX_LEB128_LENGTH = 8; // AV1 limits leb128() to eight bytes.
 
     public enum AV1ObuType : byte
     {
@@ -59,272 +81,341 @@ public class AV1Packetiser
         }
     }
 
-        public static List<AV1RtpPacket> Packetize(byte[] temporalUnit, int maxPayloadSize)
+    private readonly struct Obu
+    {
+        // Reference the source by offsets so packetisation also supports stack-backed spans.
+        public int Start { get; }
+        public int SourceLength { get; }
+        public int HeaderLength { get; }
+        private int PayloadOffset { get; }
+        public int Length => HeaderLength + SourceLength - PayloadOffset;
+        public AV1ObuType Type { get; }
+
+        public Obu(int start, int sourceLength, int headerLength, int payloadOffset, AV1ObuType type)
         {
-            if (temporalUnit == null || temporalUnit.Length == 0)
-            {
-                return new List<AV1RtpPacket>();
-            }
+            Start = start;
+            SourceLength = sourceLength;
+            HeaderLength = headerLength;
+            PayloadOffset = payloadOffset;
+            Type = type;
+        }
 
-            if (maxPayloadSize <= AV1_AGGREGATION_HEADER_LENGTH + 2)
+        public void CopyFragmentTo(ReadOnlySpan<byte> temporalUnit, int offset, Span<byte> destination)
+        {
+            var source = temporalUnit.Slice(Start, SourceLength);
+            int written = 0;
+            if (offset < HeaderLength)
             {
-                throw new ArgumentException("The maximum RTP payload size is too small for AV1 packetisation.", nameof(maxPayloadSize));
-            }
-
-            var packets = new List<AV1RtpPacket>();
-            var transmittedObus = new List<byte[]>();
-
-            foreach (var obu in ParseObus(temporalUnit))
-            {
-                if (!ShouldSkipObu(GetObuType(obu)))
+                written = Math.Min(HeaderLength - offset, destination.Length);
+                source.Slice(offset, written).CopyTo(destination);
+                if (offset == 0)
                 {
-                    transmittedObus.Add(obu);
+                    destination[0] = (byte)((AV1ObuHeaderFlags)destination[0] & ~AV1ObuHeaderFlags.HasSizeField);
                 }
+                offset += written;
             }
 
-            if (transmittedObus.Count == 0)
+            if (written < destination.Length)
             {
-                return packets;
+                source.Slice(PayloadOffset + offset - HeaderLength, destination.Length - written)
+                    .CopyTo(destination.Slice(written));
             }
+        }
+    }
 
-            bool startsCodedVideoSequence = GetObuType(transmittedObus[0]) == AV1ObuType.SequenceHeader;
-            var currentPacketObus = new List<byte[]>();
-            int currentPacketSize = AV1_AGGREGATION_HEADER_LENGTH;
+    private readonly struct ObuFragment
+    {
+        public Obu Obu { get; }
+        public int Offset { get; }
+        public int Length { get; }
 
-            for (int i = 0; i < transmittedObus.Count; i++)
+        public ObuFragment(Obu obu, int offset, int length)
+        {
+            Obu = obu;
+            Offset = offset;
+            Length = length;
+        }
+    }
+
+    [Obsolete("Use Packetize(ReadOnlySpan<byte>, int) instead. Pass array.AsSpan() for byte arrays.")]
+    public static List<AV1RtpPacket> Packetize(byte[] temporalUnit, int maxPayloadSize)
+        => Packetize(temporalUnit.AsSpan(), maxPayloadSize);
+
+    public static List<AV1RtpPacket> Packetize(ReadOnlySpan<byte> temporalUnit, int maxPayloadSize)
+    {
+        if (temporalUnit.IsEmpty)
+        {
+            return new List<AV1RtpPacket>();
+        }
+
+        if (maxPayloadSize < MIN_RTP_PAYLOAD_LENGTH)
+        {
+            throw new ArgumentException("The maximum RTP payload size is too small for AV1 packetisation.", nameof(maxPayloadSize));
+        }
+
+        var packets = new List<AV1RtpPacket>();
+        var transmittedObus = new List<Obu>();
+
+        int parseOffset = 0;
+        while (TryParseObu(temporalUnit, ref parseOffset, out var obu))
+        {
+            if (!ShouldSkipObu(obu.Type))
             {
-                var obu = transmittedObus[i];
-                int obuCost = GetLeb128Size(obu.Length) + obu.Length;
-
-                if (obuCost + AV1_AGGREGATION_HEADER_LENGTH > maxPayloadSize)
-                {
-                    if (currentPacketObus.Count > 0)
-                    {
-                        packets.Add(CreatePacket(currentPacketObus, false, false, startsCodedVideoSequence && packets.Count == 0, false));
-                        currentPacketObus.Clear();
-                        currentPacketSize = AV1_AGGREGATION_HEADER_LENGTH;
-                    }
-
-                    foreach (var fragment in FragmentObu(obu, maxPayloadSize, startsCodedVideoSequence && packets.Count == 0))
-                    {
-                        packets.Add(fragment);
-                    }
-
-                    continue;
-                }
-
-                if (currentPacketSize + obuCost > maxPayloadSize)
-                {
-                    packets.Add(CreatePacket(currentPacketObus, false, false, startsCodedVideoSequence && packets.Count == 0, false));
-                    currentPacketObus = new List<byte[]>();
-                    currentPacketSize = AV1_AGGREGATION_HEADER_LENGTH;
-                }
-
-                currentPacketObus.Add(obu);
-                currentPacketSize += obuCost;
+                transmittedObus.Add(obu);
             }
+        }
 
-            if (currentPacketObus.Count > 0)
-            {
-                packets.Add(CreatePacket(currentPacketObus, false, false, startsCodedVideoSequence && packets.Count == 0, false));
-            }
-
-            if (packets.Count > 0)
-            {
-                packets[packets.Count - 1] = new AV1RtpPacket(packets[packets.Count - 1].Payload, true);
-            }
-
+        if (transmittedObus.Count == 0)
+        {
             return packets;
         }
 
-        public static IEnumerable<byte[]> ParseObus(byte[] temporalUnit)
+        bool startsCodedVideoSequence = transmittedObus[0].Type == AV1ObuType.SequenceHeader;
+        int obuIndex = 0;
+        int obuOffset = 0;
+        var elements = new List<ObuFragment>();
+
+        while (obuIndex < transmittedObus.Count)
         {
-            if (temporalUnit == null)
+            elements.Clear();
+            int capacity = maxPayloadSize - AV1_AGGREGATION_HEADER_LENGTH;
+            bool firstObuIsContinuation = obuOffset > 0;
+            bool lastObuContinues = false;
+
+            while (obuIndex < transmittedObus.Count && capacity >= MIN_OBU_ELEMENT_LENGTH)
             {
-                yield break;
+                var obu = transmittedObus[obuIndex];
+                int fragmentLength = GetMaxFragmentLength(obu.Length - obuOffset, capacity);
+                if (obuOffset == 0 && fragmentLength < obu.HeaderLength)
+                {
+                    // Keep the complete OBU header in its first fragment.
+                    break;
+                }
+
+                elements.Add(new ObuFragment(obu, obuOffset, fragmentLength));
+                capacity -= GetLeb128Size(fragmentLength) + fragmentLength;
+                obuOffset += fragmentLength;
+                lastObuContinues = obuOffset < obu.Length;
+                if (lastObuContinues)
+                {
+                    break;
+                }
+
+                obuIndex++;
+                obuOffset = 0;
             }
 
-            int offset = 0;
-            while (offset < temporalUnit.Length)
-            {
-                int obuStart = offset;
-                byte obuHeader = temporalUnit[offset++];
-                bool hasExtension = (obuHeader & OBU_EXTENSION_FLAG_MASK) != 0;
-                bool hasSizeField = (obuHeader & OBU_HAS_SIZE_FIELD_MASK) != 0;
-
-                if (hasExtension)
-                {
-                    if (offset >= temporalUnit.Length)
-                    {
-                        throw new ApplicationException("The AV1 OBU extension header was truncated.");
-                    }
-
-                    offset++;
-                }
-
-                if (!hasSizeField)
-                {
-                    var finalObu = new byte[temporalUnit.Length - obuStart];
-                    Buffer.BlockCopy(temporalUnit, obuStart, finalObu, 0, finalObu.Length);
-                    yield return finalObu;
-                    yield break;
-                }
-
-                if (!TryReadLeb128(temporalUnit, ref offset, out int obuPayloadSize, out _))
-                {
-                    throw new ApplicationException("The AV1 OBU size field could not be parsed.");
-                }
-
-                if (offset + obuPayloadSize > temporalUnit.Length)
-                {
-                    throw new ApplicationException("The AV1 OBU payload exceeded the source buffer.");
-                }
-
-                int totalObuLength = (offset - obuStart) + obuPayloadSize;
-                var obu = new byte[totalObuLength];
-                Buffer.BlockCopy(temporalUnit, obuStart, obu, 0, totalObuLength);
-
-                offset += obuPayloadSize;
-                yield return obu;
-            }
+            // Fill the remaining space with the next OBU's first fragment, rather
+            // than sending a sequence header separately from a large frame OBU.
+            packets.Add(CreatePacket(temporalUnit, elements, firstObuIsContinuation, lastObuContinues, startsCodedVideoSequence && packets.Count == 0,
+                obuIndex == transmittedObus.Count));
         }
 
-        public static AV1ObuType GetObuType(byte[] obu)
-        {
-            if (obu == null || obu.Length == 0)
-            {
-                return AV1ObuType.Reserved;
-            }
+        return packets;
+    }
 
-            return (AV1ObuType)((obu[0] & OBU_TYPE_MASK) >> OBU_TYPE_SHIFT);
+    public static IEnumerable<byte[]> ParseObus(byte[] temporalUnit)
+    {
+        int offset = 0;
+        while (TryParseObu(temporalUnit, ref offset, out var obu))
+        {
+            yield return temporalUnit.AsMemory(obu.Start, obu.SourceLength).ToArray();
         }
+    }
 
-        public static bool TryReadLeb128(byte[] buffer, ref int offset, out int value, out int leb128Length)
+    private static bool TryParseObu(ReadOnlySpan<byte> temporalUnit, ref int offset, out Obu obu)
+    {
+        obu = default;
+        if (offset >= temporalUnit.Length)
         {
-            value = 0;
-            leb128Length = 0;
-            int shift = 0;
-
-            while (offset < buffer.Length && leb128Length < 8)
-            {
-                byte current = buffer[offset++];
-                leb128Length++;
-                value |= (current & 0x7f) << shift;
-
-                if ((current & 0x80) == 0)
-                {
-                    return true;
-                }
-
-                shift += 7;
-            }
-
-            value = 0;
             return false;
         }
 
-        public static byte[] WriteLeb128(int value)
+        int obuStart = offset;
+        var obuHeader = (AV1ObuHeaderFlags)temporalUnit[offset++];
+        var obuType = (AV1ObuType)(((byte)obuHeader & OBU_TYPE_MASK) >> OBU_TYPE_SHIFT);
+
+        if (obuHeader.HasFlag(AV1ObuHeaderFlags.Extension))
         {
-            if (value < 0)
+            if (offset >= temporalUnit.Length)
             {
-                throw new ArgumentException("AV1 leb128 values must be non-negative.", nameof(value));
+                throw new FormatException("The AV1 OBU extension header was truncated.");
             }
 
-            var bytes = new List<byte>();
-            int remainder = value;
+            offset += OBU_EXTENSION_HEADER_LENGTH;
+        }
 
-            do
+        if (!obuHeader.HasFlag(AV1ObuHeaderFlags.HasSizeField))
+        {
+            int headerLength = offset - obuStart;
+            obu = new Obu(obuStart, temporalUnit.Length - obuStart, headerLength, headerLength, obuType);
+            offset = temporalUnit.Length;
+            return true;
+        }
+
+        int payloadHeaderLength = offset - obuStart;
+        if (!TryReadLeb128(temporalUnit, ref offset, out int obuPayloadSize, out _))
+        {
+            throw new FormatException("The AV1 OBU size field could not be parsed.");
+        }
+
+        if (obuPayloadSize > temporalUnit.Length - offset)
+        {
+            throw new FormatException("The AV1 OBU payload exceeded the source buffer.");
+        }
+
+        int totalObuLength = (offset - obuStart) + obuPayloadSize;
+        obu = new Obu(obuStart, totalObuLength, payloadHeaderLength, offset - obuStart, obuType);
+        offset += obuPayloadSize;
+        return true;
+    }
+
+    public static AV1ObuType GetObuType(byte[] obu)
+        => GetObuType(obu.AsSpan());
+
+    public static AV1ObuType GetObuType(ReadOnlySpan<byte> obu)
+    {
+        if (obu.IsEmpty)
+        {
+            return AV1ObuType.Reserved;
+        }
+
+        return (AV1ObuType)((obu[0] & OBU_TYPE_MASK) >> OBU_TYPE_SHIFT);
+    }
+
+    public static bool TryReadLeb128(byte[] buffer, ref int offset, out int value, out int leb128Length)
+        => TryReadLeb128(buffer.AsSpan(), ref offset, out value, out leb128Length);
+
+    public static bool TryReadLeb128(ReadOnlySpan<byte> buffer, ref int offset, out int value, out int leb128Length)
+    {
+        value = 0;
+        leb128Length = 0;
+        if (offset < 0)
+        {
+            return false;
+        }
+
+        ulong result = 0;
+        while (offset < buffer.Length && leb128Length < MAX_LEB128_LENGTH)
+        {
+            byte current = buffer[offset++];
+            result |= (ulong)(current & LEB128_VALUE_MASK) << (LEB128_BITS_PER_BYTE * leb128Length);
+            leb128Length++;
+
+            if ((current & LEB128_CONTINUATION_MASK) == 0)
             {
-                byte current = (byte)(remainder & 0x7f);
-                remainder >>= 7;
-                if (remainder > 0)
+                if (result > int.MaxValue)
                 {
-                    current |= 0x80;
+                    return false;
                 }
 
-                bytes.Add(current);
-            } while (remainder > 0);
-
-            return bytes.ToArray();
+                value = (int)result;
+                return true;
+            }
         }
 
-        private static IEnumerable<AV1RtpPacket> FragmentObu(byte[] obu, int maxPayloadSize, bool startsCodedVideoSequence)
+        value = 0;
+        return false;
+    }
+
+    public static byte[] WriteLeb128(int value)
+    {
+        if (value < 0)
         {
-            int payloadCapacity = maxPayloadSize - AV1_AGGREGATION_HEADER_LENGTH;
-            int offset = 0;
-            bool isFirstFragment = true;
-
-            while (offset < obu.Length)
-            {
-                int fragmentLength = GetMaxFragmentLength(obu.Length - offset, payloadCapacity);
-                var fragment = new byte[fragmentLength];
-                Buffer.BlockCopy(obu, offset, fragment, 0, fragmentLength);
-
-                bool z = !isFirstFragment;
-                bool y = offset + fragmentLength < obu.Length;
-                bool n = startsCodedVideoSequence && isFirstFragment;
-
-                yield return CreatePacket(new List<byte[]> { fragment }, z, y, n, false);
-
-                offset += fragmentLength;
-                isFirstFragment = false;
-            }
+            throw new ArgumentException("AV1 leb128 values must be non-negative.", nameof(value));
         }
 
-        private static AV1RtpPacket CreatePacket(List<byte[]> obuElements, bool z, bool y, bool n, bool isLast)
+        var bytes = new byte[GetLeb128Size(value)];
+        WriteLeb128(value, bytes.AsSpan());
+        return bytes;
+    }
+
+    internal static int WriteLeb128(int value, Span<byte> destination)
+    {
+        int written = 0;
+        int remainder = value;
+
+        do
         {
-            int payloadLength = AV1_AGGREGATION_HEADER_LENGTH;
-            for (int i = 0; i < obuElements.Count; i++)
+            byte current = (byte)(remainder & LEB128_VALUE_MASK);
+            remainder >>= LEB128_BITS_PER_BYTE;
+            if (remainder > 0)
             {
-                payloadLength += GetLeb128Size(obuElements[i].Length) + obuElements[i].Length;
+                current |= LEB128_CONTINUATION_MASK;
             }
 
-            var payload = new byte[payloadLength];
-            payload[0] = (byte)((z ? Z_MASK : 0) | (y ? Y_MASK : 0) | (n ? N_MASK : 0));
+            destination[written++] = current;
+        } while (remainder > 0);
 
-            int dstOffset = 1;
-            for (int i = 0; i < obuElements.Count; i++)
-            {
-                var leb128 = WriteLeb128(obuElements[i].Length);
-                Buffer.BlockCopy(leb128, 0, payload, dstOffset, leb128.Length);
-                dstOffset += leb128.Length;
+        return written;
+    }
 
-                Buffer.BlockCopy(obuElements[i], 0, payload, dstOffset, obuElements[i].Length);
-                dstOffset += obuElements[i].Length;
-            }
-
-            return new AV1RtpPacket(payload, isLast);
-        }
-
-        private static bool ShouldSkipObu(AV1ObuType obuType) =>
-            obuType == AV1ObuType.TemporalDelimiter || obuType == AV1ObuType.TileList;
-
-        private static int GetLeb128Size(int value)
+    private static AV1RtpPacket CreatePacket(ReadOnlySpan<byte> temporalUnit, List<ObuFragment> obuElements,
+        bool firstObuIsContinuation, bool lastObuContinues, bool startsCodedVideoSequence, bool isLast)
+    {
+        int payloadLength = AV1_AGGREGATION_HEADER_LENGTH;
+        for (int i = 0; i < obuElements.Count; i++)
         {
-            int size = 1;
-            int remainder = value >> 7;
-            while (remainder > 0)
-            {
-                size++;
-                remainder >>= 7;
-            }
-
-            return size;
+            payloadLength += GetLeb128Size(obuElements[i].Length) + obuElements[i].Length;
         }
 
-        private static int GetMaxFragmentLength(int remainingBytes, int payloadCapacity)
+        var payload = new byte[payloadLength];
+        var header = AV1AggregationHeaderFlags.None;
+        if (firstObuIsContinuation)
         {
-            int fragmentLength = Math.Min(remainingBytes, payloadCapacity - 1);
-            while (fragmentLength > 0 && fragmentLength + GetLeb128Size(fragmentLength) > payloadCapacity)
-            {
-                fragmentLength--;
-            }
-
-            if (fragmentLength <= 0)
-            {
-                throw new ApplicationException("Unable to fit an AV1 OBU fragment into the RTP payload.");
-            }
-
-            return fragmentLength;
+            header |= AV1AggregationHeaderFlags.FirstObuIsContinuation;
         }
+        if (lastObuContinues)
+        {
+            header |= AV1AggregationHeaderFlags.LastObuContinues;
+        }
+        if (startsCodedVideoSequence)
+        {
+            header |= AV1AggregationHeaderFlags.NewCodedVideoSequence;
+        }
+        payload[0] = (byte)header;
+
+        int dstOffset = AV1_AGGREGATION_HEADER_LENGTH;
+        for (int i = 0; i < obuElements.Count; i++)
+        {
+            var element = obuElements[i];
+            dstOffset += WriteLeb128(element.Length, payload.AsSpan(dstOffset));
+            element.Obu.CopyFragmentTo(temporalUnit, element.Offset, payload.AsSpan(dstOffset, element.Length));
+            dstOffset += element.Length;
+        }
+
+        return new AV1RtpPacket(payload, isLast);
+    }
+
+    private static bool ShouldSkipObu(AV1ObuType obuType) =>
+        obuType is AV1ObuType.TemporalDelimiter or AV1ObuType.TileList or AV1ObuType.Padding;
+
+    internal static int GetLeb128Size(int value)
+    {
+        int size = MIN_LEB128_LENGTH;
+        int remainder = value >> LEB128_BITS_PER_BYTE;
+        while (remainder > 0)
+        {
+            size++;
+            remainder >>= LEB128_BITS_PER_BYTE;
+        }
+
+        return size;
+    }
+
+    private static int GetMaxFragmentLength(int remainingBytes, int payloadCapacity)
+    {
+        int fragmentLength = Math.Min(remainingBytes, payloadCapacity - MIN_LEB128_LENGTH);
+        while (fragmentLength > 0 && fragmentLength + GetLeb128Size(fragmentLength) > payloadCapacity)
+        {
+            fragmentLength--;
+        }
+
+        if (fragmentLength <= 0)
+        {
+            throw new InvalidOperationException("Unable to fit an AV1 OBU fragment into the RTP payload.");
+        }
+
+        return fragmentLength;
+    }
 }

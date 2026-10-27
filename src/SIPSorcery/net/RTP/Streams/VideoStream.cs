@@ -347,7 +347,7 @@ namespace SIPSorcery.Net
                 {
                     bool sentPacket = false;
 
-                    foreach (var packet in AV1Packetiser.Packetize(temporalUnit, RTPSession.RTP_MAX_PAYLOAD))
+                    foreach (var packet in AV1Packetiser.Packetize(temporalUnit.AsSpan(), RTPSession.RTP_MAX_PAYLOAD))
                     {
                         int markerBit = packet.IsLast ? 1 : 0;
 
