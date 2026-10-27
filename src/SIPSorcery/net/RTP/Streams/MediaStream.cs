@@ -1451,14 +1451,28 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Creates a new RTCP session for a media track belonging to this RTP session.
+        /// Creates a new RTCP session for a media track belonging to this RTP session. The
+        /// reporting session gets a CNAME of its own, which means the stream cannot be
+        /// synchronised against any other stream. Prefer the overload that takes the owning RTP
+        /// session's CNAME.
         /// </summary>
-        /// <param name="cname">Optional. The CNAME for the RTP session this stream belongs to. All
-        /// the streams of one RTP session must share a CNAME for the remote party to be able to
-        /// synchronise them against each other.</param>
         /// <returns>A new RTCPSession object. The RTCPSession must have its Start method called
         /// in order to commence sending RTCP reports.</returns>
-        public bool CreateRtcpSession(string cname = null)
+        public bool CreateRtcpSession()
+        {
+            return CreateRtcpSession(null);
+        }
+
+        /// <summary>
+        /// Creates a new RTCP session for a media track belonging to this RTP session.
+        /// </summary>
+        /// <param name="cname">The CNAME for the RTP session this stream belongs to. All the
+        /// streams of one RTP session must share a CNAME for the remote party to be able to
+        /// synchronise them against each other. If null a CNAME unique to this stream is
+        /// generated.</param>
+        /// <returns>A new RTCPSession object. The RTCPSession must have its Start method called
+        /// in order to commence sending RTCP reports.</returns>
+        public bool CreateRtcpSession(string cname)
         {
             if (RtcpSession == null)
             {
