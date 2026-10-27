@@ -30,6 +30,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Cli.Common;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 
@@ -48,6 +49,7 @@ public sealed class WhepSourceNode : ISourceNode
 
     private Uri? _resource;
     private long? _connectTimeMs;
+    private KeyFrameRequester? _keyFrameRequester;
 
     public event Action<MediaFrame>? OnFrame;
 
@@ -88,6 +90,11 @@ public sealed class WhepSourceNode : ISourceNode
 
         _pc.OnVideoFrameReceived += (_, timestamp, frame, format) =>
             OnFrame?.Invoke(MediaFrame.ForVideo(frame, timestamp, format));
+
+        // Ask the sender for a key frame until video decodes. A WebRTC sender emits one at the
+        // start and then only when asked, so a receiver that joins after it produces nothing for
+        // the whole session. See KeyFrameRequester.
+        _keyFrameRequester = KeyFrameRequester.Attach(_pc, _logger, ct);
 
         var connected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pc.onconnectionstatechange += (state) =>
@@ -178,6 +185,8 @@ public sealed class WhepSourceNode : ISourceNode
 
     public async ValueTask DisposeAsync()
     {
+        _keyFrameRequester?.Dispose();
+
         // Best effort WHEP session teardown then close the peer connection.
         if (_resource != null)
         {
