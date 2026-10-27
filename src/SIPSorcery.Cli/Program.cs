@@ -66,6 +66,7 @@ webrtcCommand.Subcommands.Add(new WebRtcLoopbackCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcEchoCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcEchoServerCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcVideoBenchCommand().Build());
+webrtcCommand.Subcommands.Add(new WebRtcBrowserTestCommand().Build());
 rootCommand.Subcommands.Add(webrtcCommand);
 
 // Every realtime fabric (Cloudflare, LiveKit, OpenAI) is reached through a route edge
