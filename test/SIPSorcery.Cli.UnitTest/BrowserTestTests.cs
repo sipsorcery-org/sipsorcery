@@ -133,6 +133,23 @@ public class BrowserStatsReportTests
     }
 
     [Fact]
+    public void Carries_the_page_load_identity_so_a_refused_tab_can_be_ignored()
+    {
+        // A tab whose offer was refused (409) still runs its failure path and posts a final error
+        // report. Without the session id the CLI would honour it and end the session the ACCEPTED
+        // tab is in the middle of carrying - which is exactly what happened before this was added.
+        const string json = """
+            { "sessionId": "4e1b0f2a-0000-4000-8000-000000000001", "mode": "publish", "final": true,
+              "error": "the CLI rejected the offer: HTTP 409" }
+            """;
+
+        Assert.True(BrowserStatsReport.TryParse(json, out var report, out _));
+
+        Assert.Equal("4e1b0f2a-0000-4000-8000-000000000001", report!.SessionId);
+        Assert.True(report.Final);
+    }
+
+    [Fact]
     public void Carries_the_pages_own_error_back()
     {
         // The page posts this when it cannot pin the codec, which is how an h265 run explains itself
@@ -289,6 +306,9 @@ public class BrowserTestPageTests
         Assert.Contains("pc.getStats()", page);
         Assert.Contains("fetch('/stats'", page);
         Assert.Contains("fetch('/whip'", page);
+        // The page load identity must reach the CLI on both the offer and every stats post.
+        Assert.Contains("'X-Session-Id': SESSION", page);
+        Assert.Contains("sessionId: SESSION", page);
         // The counters the result is read on have to actually be collected.
         foreach (string counter in new[] { "framesEncoded", "framesDecoded", "framesDropped", "freezeCount", "keyFramesDecoded", "pliCount", "nackCount" })
         {
@@ -468,7 +488,7 @@ public class BrowserTestAnswerTests
     [Fact]
     public void Accepts_an_answer_that_negotiated_video()
     {
-        Assert.True(WebRtcBrowserTestCommand.HasNegotiatedVideo(ACCEPTED_ANSWER, out string? error));
+        Assert.True(BrowserWhipServer.HasNegotiatedVideo(ACCEPTED_ANSWER, out string? error));
         Assert.Null(error);
     }
 
@@ -477,7 +497,7 @@ public class BrowserTestAnswerTests
     {
         // This is what a codec the browser would not offer looks like coming back: the run has to
         // say "no format in common" rather than connect and go quiet.
-        Assert.False(WebRtcBrowserTestCommand.HasNegotiatedVideo(REJECTED_ANSWER, out string? error));
+        Assert.False(BrowserWhipServer.HasNegotiatedVideo(REJECTED_ANSWER, out string? error));
         Assert.Contains("no video format in common", error);
     }
 
@@ -494,7 +514,7 @@ public class BrowserTestAnswerTests
             a=rtpmap:111 opus/48000/2
             """;
 
-        Assert.False(WebRtcBrowserTestCommand.HasNegotiatedVideo(audioOnly, out string? error));
+        Assert.False(BrowserWhipServer.HasNegotiatedVideo(audioOnly, out string? error));
         Assert.Contains("no video media announcement", error);
     }
 }

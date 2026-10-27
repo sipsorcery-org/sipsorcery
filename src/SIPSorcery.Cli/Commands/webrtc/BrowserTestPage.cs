@@ -127,6 +127,11 @@ public static class BrowserTestPage
                 const STATS_MS = {{STATS_INTERVAL_MS}};
                 const ECHO = MODE === 'echo';
 
+                // Identifies THIS page load to the CLI. It goes on the WHIP offer and on every stats
+                // post, so the CLI can ignore reports from a tab whose offer it refused - otherwise a
+                // rejected tab posting its "final" error report would end the live session.
+                const SESSION = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2));
+
                 const stateEl = document.getElementById('state');
                 const logEl = document.getElementById('log');
                 const canvas = document.getElementById('cv');
@@ -216,7 +221,8 @@ public static class BrowserTestPage
 
                 const post = async (body) => {
                   try {
-                    await fetch('/stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                    await fetch('/stats', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(Object.assign({ sessionId: SESSION }, body)) });
                   } catch (err) { /* the CLI may already have finished and closed the listener */ }
                 };
 
@@ -288,7 +294,9 @@ public static class BrowserTestPage
                       pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { resolve(); } });
                     });
 
-                    const resp = await fetch('/whip', { method: 'POST', headers: { 'Content-Type': 'application/sdp' }, body: pc.localDescription.sdp });
+                    const resp = await fetch('/whip', { method: 'POST',
+                      headers: { 'Content-Type': 'application/sdp', 'X-Session-Id': SESSION },
+                      body: pc.localDescription.sdp });
                     if (!resp.ok) {
                       await fail('the CLI rejected the offer: HTTP ' + resp.status + ' ' + (await resp.text()).slice(0, 300));
                       return;
@@ -311,13 +319,19 @@ public static class BrowserTestPage
                     };
 
                     const statsTimer = setInterval(() => tick(false), STATS_MS);
-                    setTimeout(async () => {
-                      clearInterval(statsTimer);
-                      clearInterval(drawTimer);
-                      await tick(true);
-                      log('done; closing the peer connection', 'ok');
-                      pc.close();
-                    }, DURATION_MS);
+                    // DURATION_MS 0 means run until the tab is closed, which is what an open-ended
+                    // route wants; a measured run stops itself and posts a final report.
+                    if (DURATION_MS > 0) {
+                      setTimeout(async () => {
+                        clearInterval(statsTimer);
+                        clearInterval(drawTimer);
+                        await tick(true);
+                        log('done; closing the peer connection', 'ok');
+                        pc.close();
+                      }, DURATION_MS);
+                    } else {
+                      log('running until this tab is closed', 'warn');
+                    }
                   } catch (err) {
                     await fail('error: ' + err);
                     try { pc.close(); } catch (ignored) { /* already gone */ }
