@@ -247,7 +247,37 @@ public static class Av1
     /// <see cref="AV1Packetiser.ParseObus"/> so the leb128 size handling lives in one place; only
     /// the per-OBU header decode (to find where the payload starts) is done here.
     /// </summary>
-    private static IEnumerable<(AV1Packetiser.AV1ObuType Type, byte[] Obu, int PayloadOffset, int PayloadLength)> EnumerateObus(byte[] temporalUnit)
+    private static List<(AV1Packetiser.AV1ObuType Type, byte[] Obu, int PayloadOffset, int PayloadLength)> EnumerateObus(
+        byte[] temporalUnit, out bool truncated)
+    {
+        var result = new List<(AV1Packetiser.AV1ObuType, byte[], int, int)>();
+        truncated = false;
+
+        // ParseObus THROWS FormatException on a malformed OBU (a truncated extension header, an
+        // unreadable leb128 size, or a declared payload longer than the buffer). A temporal unit
+        // reassembled from a keyframe spread over many RTP packets can hit that when a fragment is
+        // lost, and this runs on the sink's worker thread, where an escaping exception kills the
+        // sink for the rest of the run. So enumeration stops at the bad OBU and keeps what came
+        // before it: one damaged frame is skipped instead of ending the stream.
+        try
+        {
+            foreach (var obu in ParseObusOrPartial(temporalUnit))
+            {
+                result.Add(obu);
+            }
+        }
+        catch (FormatException)
+        {
+            // Keep whatever parsed cleanly; the caller treats a missing sequence header or frame
+            // header as "nothing usable in this temporal unit", and reports the truncation so a
+            // run that loses video has something to point at.
+            truncated = true;
+        }
+
+        return result;
+    }
+
+    private static IEnumerable<(AV1Packetiser.AV1ObuType Type, byte[] Obu, int PayloadOffset, int PayloadLength)> ParseObusOrPartial(byte[] temporalUnit)
     {
         foreach (byte[] obu in AV1Packetiser.ParseObus(temporalUnit))
         {
@@ -285,9 +315,17 @@ public static class Av1
     /// Finds and parses the sequence header OBU in a temporal unit, or returns null if there is
     /// none (every non-key temporal unit) or it could not be read.
     /// </summary>
-    public static SequenceHeader? TryParseSequenceHeader(byte[] temporalUnit)
+    public static SequenceHeader? TryParseSequenceHeader(byte[] temporalUnit) =>
+        TryParseSequenceHeader(temporalUnit, out _);
+
+    /// <summary>
+    /// As <see cref="TryParseSequenceHeader(byte[])"/>, also reporting whether the temporal unit
+    /// was malformed (an OBU that could not be walked), as opposed to simply not containing a
+    /// sequence header. The two look the same to the caller but mean very different things.
+    /// </summary>
+    public static SequenceHeader? TryParseSequenceHeader(byte[] temporalUnit, out bool truncated)
     {
-        foreach (var (type, obu, payloadOffset, payloadLength) in EnumerateObus(temporalUnit))
+        foreach (var (type, obu, payloadOffset, payloadLength) in EnumerateObus(temporalUnit, out truncated))
         {
             if (type != AV1Packetiser.AV1ObuType.SequenceHeader || payloadLength <= 0)
             {
@@ -516,9 +554,15 @@ public static class Av1
     /// True if the temporal unit contains a frame whose frame_type is KEY_FRAME and which is shown.
     /// A decoder can only start here, so it is what the Matroska key frame flag has to mean.
     /// </summary>
-    public static bool IsKeyFrame(byte[] temporalUnit, bool reducedStillPictureHeader)
+    public static bool IsKeyFrame(byte[] temporalUnit, bool reducedStillPictureHeader) =>
+        IsKeyFrame(temporalUnit, reducedStillPictureHeader, out _);
+
+    /// <summary>
+    /// As <see cref="IsKeyFrame(byte[], bool)"/>, also reporting a malformed temporal unit.
+    /// </summary>
+    public static bool IsKeyFrame(byte[] temporalUnit, bool reducedStillPictureHeader, out bool truncated)
     {
-        foreach (var (type, obu, payloadOffset, payloadLength) in EnumerateObus(temporalUnit))
+        foreach (var (type, obu, payloadOffset, payloadLength) in EnumerateObus(temporalUnit, out truncated))
         {
             if (type != AV1Packetiser.AV1ObuType.Frame && type != AV1Packetiser.AV1ObuType.FrameHeader)
             {

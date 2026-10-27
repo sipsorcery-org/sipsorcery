@@ -50,6 +50,7 @@ public sealed class MatroskaSinkNode : ISinkNode
     private const int AUDIO_TRACK = 2;
     private const int QUEUE_CAPACITY = 512;
     private const int HEADER_WAIT_MS = 3000;   // How long to hold frames waiting for the other track.
+    private const int KEY_FRAME_WARN_AFTER = 90;   // ~3s at 30fps of video with no key frame yet.
     private const int MAX_HELD_FRAMES = 1024;
 
     private readonly string? _filePath;   // null for stdout
@@ -72,6 +73,9 @@ public sealed class MatroskaSinkNode : ISinkNode
     private Av1.SequenceHeader? _av1SequenceHeader;
     private byte[]? _hvcC;
     private H265.SpsInfo? _h265Sps;
+    private int _videoDroppedBeforeKeyFrame;
+    private int _av1TruncatedUnits;
+    private bool _warnedAv1Truncated;
     private MatroskaTrack? _videoTrack;
     private MatroskaTrack? _audioTrack;
     private bool _warnedVideoCodec;
@@ -256,7 +260,9 @@ public sealed class MatroskaSinkNode : ISinkNode
 
                 case VideoCodecsEnum.AV1:
                     data = frame.Payload;
-                    keyFrame = Av1.IsKeyFrame(frame.Payload, _av1SequenceHeader?.ReducedStillPictureHeader ?? false);
+                    keyFrame = Av1.IsKeyFrame(frame.Payload, _av1SequenceHeader?.ReducedStillPictureHeader ?? false,
+                        out bool av1Truncated);
+                    ReportAv1Truncation(av1Truncated);
                     break;
 
                 default:
@@ -265,9 +271,20 @@ public sealed class MatroskaSinkNode : ISinkNode
                     break;
             }
 
-            // A decoder can only start on a key frame, so drop video until the first one.
+            // A decoder can only start on a key frame, so drop video until the first one. If that
+            // never happens the container ends up with a video track and no frames in it, which is
+            // indistinguishable from "the codec is unsupported" when looking at the output. Say so
+            // once rather than leaving a silent failure: it means key frame detection did not
+            // recognise anything the source sent.
             if (!clock.Started && !keyFrame)
             {
+                if (++_videoDroppedBeforeKeyFrame == KEY_FRAME_WARN_AFTER)
+                {
+                    _logger.LogWarning(
+                        "No {Codec} key frame found in the first {Count} video frames, so none have been written yet. " +
+                        "The stream may have started mid-GOP (a key frame should follow), or key frame detection did not recognise it.",
+                        frame.VideoFormat.Codec, KEY_FRAME_WARN_AFTER);
+                }
                 return;
             }
         }
@@ -293,6 +310,28 @@ public sealed class MatroskaSinkNode : ISinkNode
         long timestampMs = clock.ToMilliseconds(frame.RtpTimestamp, clockRate, arrivalMs - _firstArrivalMs);
         _writer!.WriteFrame(track, timestampMs, keyFrame, data);
         _frames++;
+    }
+
+    /// <summary>
+    /// Counts AV1 temporal units that could not be walked and says so once. A malformed temporal
+    /// unit is skipped rather than failing the sink (a reassembled keyframe that lost a fragment
+    /// would otherwise end the whole stream), but if they keep coming that is the reason video is
+    /// missing, and silence here would leave nothing to diagnose from.
+    /// </summary>
+    private void ReportAv1Truncation(bool truncated)
+    {
+        if (!truncated)
+        {
+            return;
+        }
+
+        _av1TruncatedUnits++;
+        if (!_warnedAv1Truncated)
+        {
+            _warnedAv1Truncated = true;
+            _logger.LogWarning("An AV1 temporal unit could not be parsed and was skipped; it is malformed or lost a " +
+                               "fragment in reassembly. Video may be missing until the next usable key frame.");
+        }
     }
 
     private MatroskaTrack? TryCreateVideoTrack(MediaFrame frame)
@@ -332,7 +371,11 @@ public sealed class MatroskaSinkNode : ISinkNode
             case VideoCodecsEnum.AV1:
                 // av1C needs the sequence header OBU, which travels in-band at the start of every
                 // coded video sequence, so wait for a temporal unit that carries one.
-                _av1SequenceHeader ??= Av1.TryParseSequenceHeader(frame.Payload);
+                if (_av1SequenceHeader == null)
+                {
+                    _av1SequenceHeader = Av1.TryParseSequenceHeader(frame.Payload, out bool truncated);
+                    ReportAv1Truncation(truncated);
+                }
                 if (_av1SequenceHeader == null)
                 {
                     return null;
