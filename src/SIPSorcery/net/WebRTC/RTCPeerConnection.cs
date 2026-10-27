@@ -1492,7 +1492,6 @@ namespace SIPSorcery.Net
             offerSdp.SessionId = LocalSdpSessionID;
 
             string dtlsFingerprint = this.DtlsCertificateFingerprint.ToString();
-            bool iceCandidatesAdded = false;
 
             // Local function to add ICE candidates to one of the media announcements.
             void AddIceCandidates(SDPMediaAnnouncement announcement)
@@ -1582,12 +1581,6 @@ namespace SIPSorcery.Net
                     announcement.IceRole = IceRole;
                     announcement.DtlsFingerprint = dtlsFingerprint;
 
-                    if (iceCandidatesAdded == false && !excludeIceCandidates)
-                    {
-                        AddIceCandidates(announcement);
-                        iceCandidatesAdded = true;
-                    }
-
                     if (mediaStream.LocalTrack.Ssrc != 0)
                     {
                         string trackCname = mediaStream.RtcpSession?.Cname;
@@ -1630,12 +1623,6 @@ namespace SIPSorcery.Net
                     dataChannelAnnouncement.IceRole = IceRole;
                     dataChannelAnnouncement.DtlsFingerprint = dtlsFingerprint;
 
-                    if (iceCandidatesAdded == false && !excludeIceCandidates)
-                    {
-                        AddIceCandidates(dataChannelAnnouncement);
-                        iceCandidatesAdded = true;
-                    }
-
                     offerSdp.Media.Add(dataChannelAnnouncement);
                 }
             }
@@ -1643,10 +1630,23 @@ namespace SIPSorcery.Net
             // Set the Bundle attribute to indicate all media announcements are being multiplexed.
             if (offerSdp.Media?.Count > 0)
             {
+                var bundledAnnouncements = offerSdp.Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID).ToList();
+
                 offerSdp.Group = BUNDLE_ATTRIBUTE;
-                foreach (var ann in offerSdp.Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
+                foreach (var ann in bundledAnnouncements)
                 {
                     offerSdp.Group += $" {ann.MediaID}";
+                }
+
+                // Per RFC 8843 the ICE attributes are only read from the m= section matching the
+                // BUNDLE-tag, which is the first identification-tag in the a=group:BUNDLE list.
+                // The media announcements are not generated in m= line order (the local media
+                // stream list is always ordered audio, video, text) so the candidates have to be
+                // placed on the BUNDLE-tag announcement rather than the first announcement that
+                // happens to get generated (issue #1763).
+                if (!excludeIceCandidates)
+                {
+                    AddIceCandidates(bundledAnnouncements[0]);
                 }
             }
 
