@@ -41,13 +41,13 @@ using Bytes = byte[];
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP
 {
-    public enum SrtpContextType
+    internal enum SrtpContextType
     {
         RTP,
         RTCP
     }
 
-    public class SsrcSrtpContext
+    internal class SsrcSrtpContext
     {
         public const int REPLAY_WINDOW_SIZE = 64; // Minumum is 64 according to the RFC, our current implmentation is using a bit mask, so it won't allow more than 64.
 
@@ -160,7 +160,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
     /// <summary>
     /// SRTP context used for protecting/unprotecting RTP/RTCP packets as defined in RFC 3711.
     /// </summary>
-    public class SrtpContext : ISrtpContext
+    internal class SrtpContext : ISrtpContext
     {
         public Dictionary<uint, SsrcSrtpContext> ReplayProtection { get; } = new Dictionary<uint, SsrcSrtpContext>();
 

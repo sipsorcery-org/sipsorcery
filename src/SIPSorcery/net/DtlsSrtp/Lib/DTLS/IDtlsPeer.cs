@@ -86,7 +86,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
         Unassigned = 255
     }
 
-    public class DtlsAlertEventArgs : EventArgs
+    internal class DtlsAlertEventArgs : EventArgs
     {
         public TlsAlertLevelsEnum Level { get; }
         public TlsAlertTypesEnum AlertType { get; }
@@ -100,7 +100,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
         }
     }
 
-    public class DtlsHandshakeCompletedEventArgs : EventArgs
+    internal class DtlsHandshakeCompletedEventArgs : EventArgs
     {
         public SecurityParameters SecurityParameters { get; }
 
@@ -110,7 +110,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
         }
     }
 
-    public interface IDtlsPeer
+    internal interface IDtlsPeer
     {
         event EventHandler<DtlsAlertEventArgs> OnAlert;
         event EventHandler<DtlsHandshakeCompletedEventArgs> OnHandshakeCompleted;

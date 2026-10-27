@@ -31,7 +31,7 @@ using System.Collections.Generic;
 namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
     // Useful link for troubleshooting WebRTC in Chrome/Edge: https://learn.microsoft.com/en-us/azure/communication-services/resources/troubleshooting/voice-video-calling/references/how-to-collect-browser-verbose-log
-    public class DtlsSrtpServer : DtlsServer, IDtlsSrtpPeer
+    internal class DtlsSrtpServer : DtlsServer, IDtlsSrtpPeer
     {
         /// <summary>
         /// Used in WebRTC to tell the server to not use MKI even if the client requested it.

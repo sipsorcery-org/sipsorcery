@@ -29,7 +29,7 @@ using ReadOnlyBytes = System.ArraySegment<byte>;
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP.Authentication
 {
-    public static class HMAC
+    internal static class HMAC
     {
         public static byte[] GenerateAuthTag(HMac hmac, ReadOnlyBytes payload)
         {

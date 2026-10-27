@@ -24,7 +24,7 @@ using SIPSorcery.Net.SharpSRTP.SRTP;
 
 namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
-    public class DtlsSrtpKeys
+    internal class DtlsSrtpKeys
     {
         public SrtpProtectionProfileConfiguration ProtectionProfile { get; }
         public ReadOnlyMemory<byte> Mki { get; }
