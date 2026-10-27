@@ -112,6 +112,21 @@ public sealed class WebRtcWhepCommand : CommandBase
             Description = "Directory containing the FFmpeg shared libraries for --decode. Defaults to the system path."
         };
 
+        var audioCodecOption = new Option<string?>(CodecSelection.AUDIO_OPTION)
+        {
+            Description = "Force the audio codec offered to the server: exactly one of " +
+                          $"{CodecSelection.AudioNamesList}. Without it every supported codec is offered and the " +
+                          "server picks. Pinned, the server must answer with that codec or the run fails, which is " +
+                          "how one codec is tested end to end."
+        };
+
+        var videoCodecOption = new Option<string?>(CodecSelection.VIDEO_OPTION)
+        {
+            Description = "Force the video codec offered to the server: exactly one of " +
+                          $"{CodecSelection.VideoNamesList}. Without it every supported codec is offered and the " +
+                          "server picks. Pinned, the server must answer with that codec or the run fails."
+        };
+
         var command = new Command("whep", "Connect to a WHEP endpoint (full ICE/DTLS/SRTP) and verify media is received.");
         command.Arguments.Add(urlArg);
         command.Options.Add(tokenOption);
@@ -119,6 +134,8 @@ public sealed class WebRtcWhepCommand : CommandBase
         command.Options.Add(videoOption);
         command.Options.Add(decodeOption);
         command.Options.Add(ffmpegPathOption);
+        command.Options.Add(audioCodecOption);
+        command.Options.Add(videoCodecOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
@@ -128,6 +145,8 @@ public sealed class WebRtcWhepCommand : CommandBase
             parseResult.GetValue(videoOption),
             parseResult.GetValue(decodeOption),
             parseResult.GetValue(ffmpegPathOption),
+            parseResult.GetValue(audioCodecOption),
+            parseResult.GetValue(videoCodecOption),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -136,11 +155,62 @@ public sealed class WebRtcWhepCommand : CommandBase
         return command;
     }
 
+
+    /// <summary>
+    /// The formats a receive-only peer offers: everything the library supports, or just the single
+    /// codec --audio-codec / --video-codec pinned. Each flag takes exactly one codec name and an
+    /// unknown one is an argument error, so a pinned codec that the server will not answer with
+    /// fails the run instead of quietly negotiating something else.
+    /// </summary>
+    internal static bool TryResolveOfferedFormats(string? audioCodec, string? videoCodec,
+        out List<AudioFormat> audioFormats, out List<VideoFormat> videoFormats, out string? error)
+    {
+        audioFormats = new List<AudioFormat>
+        {
+            AudioCommonlyUsedFormats.OpusWebRTC,
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA)
+        };
+        videoFormats = Helper.GetSupportedVideoFormats();
+
+        if (!string.IsNullOrWhiteSpace(audioCodec))
+        {
+            if (!CodecSelection.TryResolveAudio(audioCodec, CodecSelection.AUDIO_OPTION, out var audioFormat, out error))
+            {
+                return false;
+            }
+            audioFormats = new List<AudioFormat> { audioFormat };
+        }
+
+        if (!string.IsNullOrWhiteSpace(videoCodec))
+        {
+            if (!CodecSelection.TryResolveVideo(videoCodec, CodecSelection.VIDEO_OPTION, out var videoFormat, out error))
+            {
+                return false;
+            }
+            videoFormats = new List<VideoFormat> { videoFormat };
+        }
+
+        error = null;
+        return true;
+    }
+
     private static async Task<int> RunAsync(string url, string? token, int durationSeconds, string? videoOut,
-        bool decode, string? ffmpegPath, int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
+        bool decode, string? ffmpegPath, string? audioCodec, string? videoCodec, int timeoutSeconds, bool asJson,
+        bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(WebRtcWhepCommand));
+
+        // A forced codec has to be a known name: a typo must stop the run here, because falling through
+        // to the full offer would answer "that codec works" with a session that used a different one.
+        if (!TryResolveOfferedFormats(audioCodec, videoCodec, out var audioFormats, out var videoFormats,
+                out string? codecError))
+        {
+            return WriteResult(asJson, stdoutClaimed: false,
+                new WhepResult(false, url, null, "new", null, null, 0, 0, 0, 0, 0, 0, 0, 0, codecError),
+                ExitCodes.InvalidArgument);
+        }
 
         if (!Uri.TryCreate(url, UriKind.Absolute, out var endpointUri) ||
             (endpointUri.Scheme != Uri.UriSchemeHttp && endpointUri.Scheme != Uri.UriSchemeHttps))
@@ -192,16 +262,12 @@ public sealed class WebRtcWhepCommand : CommandBase
         try
         {
             // Receive only tracks. Offer the codecs the library can negotiate so the server can
-            // match whatever the publisher is sending. No decoding is done, packets are counted.
-            var audioTrack = new MediaStreamTrack(new List<AudioFormat>
-            {
-                AudioCommonlyUsedFormats.OpusWebRTC,
-                new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-                new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA)
-            }, MediaStreamStatusEnum.RecvOnly);
+            // match whatever the publisher is sending, or just the one --audio-codec/--video-codec
+            // pinned. No decoding is done, packets are counted.
+            var audioTrack = new MediaStreamTrack(audioFormats, MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(audioTrack);
 
-            var videoTrack = new MediaStreamTrack(Helper.GetSupportedVideoFormats(), MediaStreamStatusEnum.RecvOnly);
+            var videoTrack = new MediaStreamTrack(videoFormats, MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(videoTrack);
 
             var audioStats = new RtpStreamStats();

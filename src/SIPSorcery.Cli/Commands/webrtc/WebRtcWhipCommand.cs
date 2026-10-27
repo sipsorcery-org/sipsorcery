@@ -89,9 +89,10 @@ public sealed class WebRtcWhipCommand : CommandBase
             DefaultValueFactory = _ => DEFAULT_ENCODER
         };
 
-        var codecOption = new Option<string?>("--codec")
+        var codecOption = new Option<string?>("--codec", CodecSelection.VIDEO_OPTION)
         {
-            Description = "Codec for the ffmpeg encoder: h264 (default), h265, vp8, vp9 or av1. Ignored for vp8.net, which is always VP8."
+            Description = "Force the codec the ffmpeg encoder publishes, exactly one of: h264 (default), h265, vp8, vp9 or av1. " +
+                          "Ignored for vp8.net, which is always VP8. Also spelled --video-codec, as on the receiving verbs."
         };
 
         var bitrateOption = new Option<int>("--bitrate")

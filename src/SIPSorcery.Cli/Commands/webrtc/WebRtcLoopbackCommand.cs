@@ -108,9 +108,10 @@ public sealed class WebRtcLoopbackCommand : CommandBase
             DefaultValueFactory = _ => DEFAULT_FPS
         };
 
-        var codecOption = new Option<string?>("--codec")
+        var codecOption = new Option<string?>("--codec", CodecSelection.VIDEO_OPTION)
         {
-            Description = "Codec for the ffmpeg encoder: h264 (default), h265, vp8, vp9 or av1. Ignored for vp8.net, which is always VP8."
+            Description = "Force the codec the ffmpeg encoder publishes, exactly one of: h264 (default), h265, vp8, vp9 or av1. " +
+                          "Ignored for vp8.net, which is always VP8. Also spelled --video-codec, as on the receiving verbs."
         };
 
         var bitrateOption = new Option<int>("--bitrate")
@@ -166,6 +167,10 @@ public sealed class WebRtcLoopbackCommand : CommandBase
             parseResult.GetValue(decodeOption),
             parseResult.GetValue(decoderOption)!,
             parseResult.GetValue(ffmpegPathOption),
+            // The receiver offers every supported codec: the in-process publisher already sends exactly
+            // one (--codec), so the loop is a single-codec test without pinning the receive side too.
+            audioCodec: null,
+            videoCodec: null,
             // DurationSeconds 0: the publisher runs until the receiver stops it at the end of the media window.
             new LibraryVideoPublisher.Settings(
                 parseResult.GetValue(presetOption)!,
