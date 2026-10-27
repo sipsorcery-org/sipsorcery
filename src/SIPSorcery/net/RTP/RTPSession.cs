@@ -2217,6 +2217,7 @@ namespace SIPSorcery.Net
             int audioMediaIndex = 0;
             int videoMediaIndex = 0;
             int textMediaIndex = 0;
+            int nextMediaIndex = RemoteDescription?.Media.Count ?? 0;
 
             foreach (var mediaStream in mediaStreamList)
             {
@@ -2244,6 +2245,12 @@ namespace SIPSorcery.Net
                     {
                         (mindex, midTag) = RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, textMediaIndex);
                         textMediaIndex++;
+                    }
+
+                    // New media streams must follow the existing SDP media sections (RFC 3264 section 8.1).
+                    if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
+                    {
+                        mindex = nextMediaIndex++;
                     }
                 }
                 mediaIndex++;

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTPSessionCreateOfferUnitTest.cs
 //
 // Description: Characterization tests for RTPSession.CreateOffer (the
@@ -96,6 +96,30 @@ namespace SIPSorcery.Net.UnitTests
                 session.CreateOffer(IPAddress.Loopback);
 
                 Assert.True(session.RequireRenegotiation);
+            }
+        }
+
+        [Theory]
+        [InlineData(SdpType.offer)]
+        [InlineData(SdpType.answer)]
+        public void AddingTextToAudioCall_AppendsTextInSerialisedOffer(SdpType remoteDescriptionType)
+        {
+            using (var session = new RtpSessionBuilder().WithAudioTrack().Build())
+            {
+                session.CreateOffer(IPAddress.Loopback);
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    session.SetRemoteDescription(remoteDescriptionType,
+                        SDP.ParseSDPDescription(SdpFixtures.AudioOnlyOfferPcmu)));
+
+                if (remoteDescriptionType == SdpType.offer)
+                {
+                    session.CreateAnswer(IPAddress.Loopback);
+                }
+
+                session.addTrack(new MediaStreamTrack(new TextFormat(TextCodecsEnum.T140, 98)));
+                var offer = session.CreateOffer(IPAddress.Loopback);
+
+                SdpAssert.HasMediaLines(SDP.ParseSDPDescription(offer.ToString()), "audio", "text");
             }
         }
 
