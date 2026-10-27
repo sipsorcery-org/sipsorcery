@@ -34,6 +34,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Buffers.Binary;
 using System.IO;
 using SIPSorcery.Net;
 
@@ -88,6 +89,33 @@ public sealed class BitReader
         {
             Overran = true;
         }
+    }
+
+    /// <summary>
+    /// Reads an unsigned exp-Golomb value, ue(v) in H.264/H.265. The leading-zero run is capped at
+    /// 32 so a run of zero bytes (which is what a misaligned read looks like) ends as an overrun
+    /// rather than spinning.
+    /// </summary>
+    public uint Ue()
+    {
+        int leadingZeros = 0;
+        while (leadingZeros < 32 && !Overran && F(1) == 0)
+        {
+            leadingZeros++;
+        }
+
+        if (leadingZeros == 0)
+        {
+            return 0;
+        }
+
+        if (leadingZeros >= 32)
+        {
+            Overran = true;
+            return 0;
+        }
+
+        return (uint)((1 << leadingZeros) - 1) + F(leadingZeros);
     }
 }
 
@@ -549,5 +577,269 @@ public static class Av1
         av1C.Write(sh.ObuBytes, 0, sh.ObuBytes.Length);
 
         return av1C.ToArray();
+    }
+}
+
+/// <summary>
+/// The H265 (HEVC) Annex B to Matroska (ISO/HEVC) conversions: length-prefixed NAL units, the
+/// HEVCDecoderConfigurationRecord ("hvcC") for CodecPrivate, and the SPS fields hvcC and the track
+/// need. NAL splitting is shared with H264 - the Annex B start code scan is the same for both.
+/// </summary>
+public static class H265
+{
+    // nal_unit_type values (H.265 table 7-1). 16..23 are the IRAP range: a decoder can start on any
+    // of them, which is exactly what the Matroska key frame flag means.
+    private const int NAL_IRAP_FIRST = 16;
+    private const int NAL_IRAP_LAST = 23;
+    private const int NAL_VPS = 32;
+    private const int NAL_SPS = 33;
+    private const int NAL_PPS = 34;
+    private const int NAL_AUD = 35;
+
+    /// <summary>The nal_unit_type from a two byte H265 NAL header.</summary>
+    public static int NalType(byte firstByte) => (firstByte >> 1) & 0x3F;
+
+    /// <summary>The SPS fields hvcC and the Matroska video track need.</summary>
+    public sealed record SpsInfo(
+        byte[] ProfileTierLevel,     // the 12 aligned bytes hvcC copies verbatim
+        int ChromaFormatIdc,
+        int BitDepthLumaMinus8,
+        int BitDepthChromaMinus8,
+        int NumTemporalLayers,
+        bool TemporalIdNested,
+        int Width,
+        int Height);
+
+    /// <summary>
+    /// Converts an Annex B access unit to 4 byte length-prefixed NAL units, dropping access unit
+    /// delimiters. <paramref name="keyFrame"/> is true if it contains an IRAP picture.
+    /// </summary>
+    public static byte[] ToLengthPrefixed(byte[] au, out bool keyFrame)
+    {
+        keyFrame = false;
+        var output = new MemoryStream(au.Length + 16);
+        Span<byte> length = stackalloc byte[4];
+
+        foreach (var (offset, len) in MatroskaSinkNode.H264.SplitAnnexB(au))
+        {
+            if (len < 2)
+            {
+                continue;
+            }
+
+            int type = NalType(au[offset]);
+            if (type == NAL_AUD)
+            {
+                continue;
+            }
+
+            if (type >= NAL_IRAP_FIRST && type <= NAL_IRAP_LAST)
+            {
+                keyFrame = true;
+            }
+
+            BinaryPrimitives.WriteUInt32BigEndian(length, (uint)len);
+            output.Write(length);
+            output.Write(au, offset, len);
+        }
+
+        return output.ToArray();
+    }
+
+    /// <summary>
+    /// Builds an hvcC from the first VPS, SPS and PPS in an access unit, or null until all three
+    /// have been seen. They travel in-band ahead of each IRAP picture, as for H264's avcC.
+    /// </summary>
+    public static byte[]? TryBuildHvcC(byte[] au, out SpsInfo? spsInfo)
+    {
+        spsInfo = null;
+        byte[]? vps = null, sps = null, pps = null;
+
+        foreach (var (offset, len) in MatroskaSinkNode.H264.SplitAnnexB(au))
+        {
+            if (len < 2)
+            {
+                continue;
+            }
+
+            switch (NalType(au[offset]))
+            {
+                case NAL_VPS when vps == null: vps = au.AsSpan(offset, len).ToArray(); break;
+                case NAL_SPS when sps == null: sps = au.AsSpan(offset, len).ToArray(); break;
+                case NAL_PPS when pps == null: pps = au.AsSpan(offset, len).ToArray(); break;
+            }
+        }
+
+        if (vps == null || sps == null || pps == null)
+        {
+            return null;
+        }
+
+        spsInfo = TryParseSps(sps);
+        if (spsInfo == null)
+        {
+            return null;
+        }
+
+        var hvcC = new MemoryStream();
+        hvcC.WriteByte(1);                                              // configurationVersion
+        hvcC.Write(spsInfo.ProfileTierLevel, 0, 12);                    // profile_space .. general_level_idc
+        hvcC.WriteByte(0xF0);                                           // 4 reserved bits + min_spatial_segmentation_idc high
+        hvcC.WriteByte(0x00);                                           // min_spatial_segmentation_idc low (0: not signalled)
+        hvcC.WriteByte(0xFC);                                           // 6 reserved bits + parallelismType 0 (unknown)
+        hvcC.WriteByte((byte)(0xFC | (spsInfo.ChromaFormatIdc & 0x03)));
+        hvcC.WriteByte((byte)(0xF8 | (spsInfo.BitDepthLumaMinus8 & 0x07)));
+        hvcC.WriteByte((byte)(0xF8 | (spsInfo.BitDepthChromaMinus8 & 0x07)));
+        hvcC.WriteByte(0x00);                                           // avgFrameRate high (0: not signalled)
+        hvcC.WriteByte(0x00);                                           // avgFrameRate low
+        // constantFrameRate 0 (unknown) + numTemporalLayers + temporalIdNested + lengthSizeMinusOne 3.
+        hvcC.WriteByte((byte)(
+            (0 << 6) |
+            ((spsInfo.NumTemporalLayers & 0x07) << 3) |
+            ((spsInfo.TemporalIdNested ? 1 : 0) << 2) |
+            0x03));
+        hvcC.WriteByte(3);                                              // numOfArrays: VPS, SPS, PPS
+
+        WriteArray(hvcC, NAL_VPS, vps);
+        WriteArray(hvcC, NAL_SPS, sps);
+        WriteArray(hvcC, NAL_PPS, pps);
+
+        return hvcC.ToArray();
+    }
+
+    /// <summary>Writes one hvcC NAL array: array_completeness 0, the type, then the single NAL.</summary>
+    private static void WriteArray(MemoryStream hvcC, int nalType, byte[] nal)
+    {
+        hvcC.WriteByte((byte)(nalType & 0x3F));
+        hvcC.WriteByte(0);
+        hvcC.WriteByte(1);                                              // numNalus
+        hvcC.WriteByte((byte)(nal.Length >> 8));
+        hvcC.WriteByte((byte)nal.Length);
+        hvcC.Write(nal, 0, nal.Length);
+    }
+
+    /// <summary>
+    /// Parses the SPS fields hvcC and the track need. The profile_tier_level block is copied as 12
+    /// whole bytes, which is exact: it starts one byte into the RBSP (sps_video_parameter_set_id,
+    /// sps_max_sub_layers_minus1 and sps_temporal_id_nesting_flag fill a byte between them) and its
+    /// general part is 96 bits, so it is byte aligned at both ends. Everything after it needs the
+    /// bit reader, because the ue(v) fields are not aligned.
+    /// </summary>
+    public static SpsInfo? TryParseSps(byte[] spsNal)
+    {
+        // The RBSP, with emulation prevention bytes removed, starting after the 2 byte NAL header.
+        byte[] rbsp = RemoveEmulationPrevention(spsNal, 2);
+
+        if (rbsp.Length < 13)
+        {
+            return null;
+        }
+
+        int maxSubLayersMinus1 = (rbsp[0] >> 1) & 0x07;
+        bool temporalIdNested = (rbsp[0] & 0x01) != 0;
+
+        var profileTierLevel = new byte[12];
+        Array.Copy(rbsp, 1, profileTierLevel, 0, 12);
+
+        var r = new BitReader(rbsp);
+        r.Skip(8);                                      // sps_video_parameter_set_id .. nesting flag
+        r.Skip(96);                                     // the general profile_tier_level just copied
+
+        // The sub-layer part of profile_tier_level, present only with more than one temporal
+        // sub-layer. WebRTC streams are single layer, but a conforming reader has to step over it
+        // or every field after this lands at the wrong offset.
+        Span<bool> profilePresent = stackalloc bool[8];
+        Span<bool> levelPresent = stackalloc bool[8];
+        for (int i = 0; i < maxSubLayersMinus1; i++)
+        {
+            profilePresent[i] = r.Flag();
+            levelPresent[i] = r.Flag();
+        }
+
+        if (maxSubLayersMinus1 > 0)
+        {
+            r.Skip(2 * (8 - maxSubLayersMinus1));       // reserved_zero_2bits
+        }
+
+        for (int i = 0; i < maxSubLayersMinus1; i++)
+        {
+            if (profilePresent[i])
+            {
+                r.Skip(88);
+            }
+            if (levelPresent[i])
+            {
+                r.Skip(8);
+            }
+        }
+
+        r.Ue();                                         // sps_seq_parameter_set_id
+        int chromaFormatIdc = (int)r.Ue();
+        if (chromaFormatIdc == 3)
+        {
+            r.Skip(1);                                  // separate_colour_plane_flag
+        }
+
+        int width = (int)r.Ue();                        // pic_width_in_luma_samples
+        int height = (int)r.Ue();                       // pic_height_in_luma_samples
+
+        if (r.Flag())                                   // conformance_window_flag
+        {
+            int left = (int)r.Ue();
+            int right = (int)r.Ue();
+            int top = (int)r.Ue();
+            int bottom = (int)r.Ue();
+
+            // The window is in chroma units, so the luma crop depends on the chroma format
+            // (4:2:0 halves both axes, 4:2:2 only the horizontal one).
+            int subWidthC = chromaFormatIdc == 1 || chromaFormatIdc == 2 ? 2 : 1;
+            int subHeightC = chromaFormatIdc == 1 ? 2 : 1;
+            width -= subWidthC * (left + right);
+            height -= subHeightC * (top + bottom);
+        }
+
+        int bitDepthLumaMinus8 = (int)r.Ue();
+        int bitDepthChromaMinus8 = (int)r.Ue();
+
+        if (r.Overran || width <= 0 || height <= 0 || chromaFormatIdc > 3 ||
+            bitDepthLumaMinus8 > 7 || bitDepthChromaMinus8 > 7)
+        {
+            return null;
+        }
+
+        return new SpsInfo(profileTierLevel, chromaFormatIdc, bitDepthLumaMinus8, bitDepthChromaMinus8,
+            maxSubLayersMinus1 + 1, temporalIdNested, width, height);
+    }
+
+    /// <summary>
+    /// Returns the RBSP from <paramref name="startOffset"/>: the NAL payload with the emulation
+    /// prevention byte stripped out of every 00 00 03 sequence. Parsing the bits without this reads
+    /// a 0x03 that is not part of the syntax, and every field after it lands at the wrong offset.
+    /// </summary>
+    public static byte[] RemoveEmulationPrevention(byte[] nal, int startOffset)
+    {
+        if (startOffset >= nal.Length)
+        {
+            return Array.Empty<byte>();
+        }
+
+        var rbsp = new List<byte>(nal.Length - startOffset);
+        int zeros = 0;
+
+        for (int i = startOffset; i < nal.Length; i++)
+        {
+            byte b = nal[i];
+
+            if (zeros >= 2 && b == 0x03)
+            {
+                zeros = 0;
+                continue;       // the emulation prevention byte itself
+            }
+
+            rbsp.Add(b);
+            zeros = b == 0 ? zeros + 1 : 0;
+        }
+
+        return rbsp.ToArray();
     }
 }

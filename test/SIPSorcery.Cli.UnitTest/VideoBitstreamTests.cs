@@ -54,6 +54,22 @@ internal sealed class BitWriter
 
     public BitWriter Flag(bool value) => F(1, value ? 1u : 0u);
 
+    /// <summary>Writes an unsigned exp-Golomb value: (bits-1) zeros, then value+1 in `bits` bits.</summary>
+    public BitWriter Ue(uint value)
+    {
+        uint n = value + 1;
+        int bits = 0;
+        for (uint v = n; v > 0; v >>= 1)
+        {
+            bits++;
+        }
+        F(bits - 1, 0);
+        return F(bits, n);
+    }
+
+    /// <summary>Pads to the next byte boundary with zeroes.</summary>
+    public BitWriter Align() => (_bitCount & 7) == 0 ? this : F(8 - (_bitCount & 7), 0);
+
     public byte[] ToArray() => _bytes.ToArray();
 }
 
@@ -409,6 +425,318 @@ public class BitReaderTests
     {
         var reader = new BitReader(new byte[] { 0xFF, 0xFF });
         reader.Skip(17);
+
+        Assert.True(reader.Overran);
+    }
+}
+
+[Trait("Category", "unit")]
+public class H265BitstreamTests
+{
+    private const int NAL_TRAIL_R = 1;
+    private const int NAL_IDR_W_RADL = 19;
+    private const int NAL_CRA = 21;
+    private const int NAL_VPS = 32;
+    private const int NAL_SPS = 33;
+    private const int NAL_PPS = 34;
+    private const int NAL_AUD = 35;
+
+    /// <summary>A NAL with its two byte H265 header: nal_unit_type, layer 0, temporal id 0.</summary>
+    private static byte[] Nal(int type, params byte[] payload)
+    {
+        var nal = new byte[2 + payload.Length];
+        nal[0] = (byte)(type << 1);
+        nal[1] = 0x01;
+        payload.CopyTo(nal, 2);
+        return nal;
+    }
+
+    /// <summary>Wraps NALs in an Annex B access unit with 4 byte start codes, as the depacketiser emits.</summary>
+    private static byte[] AnnexB(params byte[][] nals)
+    {
+        var au = new List<byte>();
+        foreach (var nal in nals)
+        {
+            au.AddRange(new byte[] { 0, 0, 0, 1 });
+            au.AddRange(nal);
+        }
+        return au.ToArray();
+    }
+
+    /// <summary>
+    /// An SPS for the single-layer 4:2:0 8 bit stream WebRTC sends. Field order is H.265 7.3.2.2:
+    /// the first byte packs sps_video_parameter_set_id, sps_max_sub_layers_minus1 and
+    /// sps_temporal_id_nesting_flag, then the 12 byte profile_tier_level, then the ue(v) fields.
+    /// </summary>
+    private static byte[] Sps(int width = 640, int height = 360, int chromaFormatIdc = 1,
+        int levelIdc = 93, (int Left, int Right, int Top, int Bottom)? conformanceWindow = null)
+    {
+        var w = new BitWriter()
+            .F(4, 0)                        // sps_video_parameter_set_id
+            .F(3, 0)                        // sps_max_sub_layers_minus1 -> single layer
+            .F(1, 1);                       // sps_temporal_id_nesting_flag
+
+        // profile_tier_level: general_profile_space 0, tier 0, profile_idc 1 (Main), then the
+        // 32 compatibility bits, the 48 constraint bits and general_level_idc. 12 bytes exactly.
+        w.F(2, 0).F(1, 0).F(5, 1)
+         .F(32, 0x60000000)
+         .F(24, 0x900000).F(24, 0x000000)
+         .F(8, (uint)levelIdc);
+
+        w.Ue(0)                             // sps_seq_parameter_set_id
+         .Ue((uint)chromaFormatIdc);
+        if (chromaFormatIdc == 3)
+        {
+            w.Flag(false);                  // separate_colour_plane_flag
+        }
+
+        w.Ue((uint)width).Ue((uint)height);
+
+        if (conformanceWindow is { } cw)
+        {
+            w.Flag(true).Ue((uint)cw.Left).Ue((uint)cw.Right).Ue((uint)cw.Top).Ue((uint)cw.Bottom);
+        }
+        else
+        {
+            w.Flag(false);                  // conformance_window_flag
+        }
+
+        w.Ue(0)                             // bit_depth_luma_minus8
+         .Ue(0)                             // bit_depth_chroma_minus8
+         .Align();
+
+        return Nal(NAL_SPS, w.ToArray());
+    }
+
+    [Fact]
+    public void Reads_the_sps_dimensions()
+    {
+        var info = H265.TryParseSps(Sps(1280, 720));
+
+        Assert.NotNull(info);
+        Assert.Equal(1280, info!.Width);
+        Assert.Equal(720, info.Height);
+        Assert.Equal(1, info.ChromaFormatIdc);
+        Assert.Equal(0, info.BitDepthLumaMinus8);
+        Assert.Equal(1, info.NumTemporalLayers);
+        Assert.True(info.TemporalIdNested);
+    }
+
+    [Fact]
+    public void Applies_the_conformance_window_crop()
+    {
+        // 4:2:0 means the window is in 2x2 chroma units, so a right offset of 2 crops 4 luma
+        // columns. Reporting the uncropped size would stretch the picture in the player.
+        var info = H265.TryParseSps(Sps(640, 368, conformanceWindow: (0, 2, 0, 4)));
+
+        Assert.NotNull(info);
+        Assert.Equal(640 - 2 * 2, info!.Width);
+        Assert.Equal(368 - 2 * 4, info.Height);
+    }
+
+    [Fact]
+    public void A_444_conformance_window_crops_one_to_one()
+    {
+        var info = H265.TryParseSps(Sps(640, 360, chromaFormatIdc: 3, conformanceWindow: (0, 2, 0, 2)));
+
+        Assert.NotNull(info);
+        Assert.Equal(638, info!.Width);
+        Assert.Equal(358, info.Height);
+    }
+
+    [Fact]
+    public void Copies_the_profile_tier_level_verbatim_into_hvcC()
+    {
+        byte[] au = AnnexB(Nal(NAL_VPS, 0x0C), Sps(levelIdc: 93), Nal(NAL_PPS, 0xC1), Nal(NAL_IDR_W_RADL, 0xAF));
+
+        byte[]? hvcC = H265.TryBuildHvcC(au, out var sps);
+
+        Assert.NotNull(hvcC);
+        Assert.NotNull(sps);
+        Assert.Equal(1, hvcC![0]);                                  // configurationVersion
+        Assert.Equal(sps!.ProfileTierLevel, hvcC.Skip(1).Take(12).ToArray());
+        Assert.Equal(93, hvcC[12]);                                 // general_level_idc, last of the 12
+        // chromaFormat 1 and both bit depths 0, each in the low bits with the reserved bits set.
+        Assert.Equal(0xFC | 1, hvcC[16]);
+        Assert.Equal(0xF8 | 0, hvcC[17]);
+        Assert.Equal(0xF8 | 0, hvcC[18]);
+        Assert.Equal(3, hvcC[22]);                                  // numOfArrays: VPS, SPS, PPS
+    }
+
+    [Fact]
+    public void The_hvcC_arrays_carry_the_parameter_sets()
+    {
+        byte[] vps = Nal(NAL_VPS, 0x0C);
+        byte[] sps = Sps();
+        byte[] pps = Nal(NAL_PPS, 0xC1);
+
+        byte[]? hvcC = H265.TryBuildHvcC(AnnexB(vps, sps, pps, Nal(NAL_IDR_W_RADL, 0xAF)), out _);
+
+        Assert.NotNull(hvcC);
+        int offset = 23;                                            // first array header
+        foreach (var (type, nal) in new[] { (NAL_VPS, vps), (NAL_SPS, sps), (NAL_PPS, pps) })
+        {
+            Assert.Equal(type, hvcC![offset] & 0x3F);
+            Assert.Equal(1, (hvcC[offset + 1] << 8) | hvcC[offset + 2]);    // numNalus
+            int length = (hvcC[offset + 3] << 8) | hvcC[offset + 4];
+            Assert.Equal(nal.Length, length);
+            Assert.Equal(nal, hvcC.Skip(offset + 5).Take(length).ToArray());
+            offset += 5 + length;
+        }
+        Assert.Equal(hvcC!.Length, offset);
+    }
+
+    [Theory]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(false, false, true)]
+    public void No_hvcC_until_every_parameter_set_has_arrived(bool vps, bool sps, bool pps)
+    {
+        var nals = new List<byte[]>();
+        if (vps) { nals.Add(Nal(NAL_VPS, 0x0C)); }
+        if (sps) { nals.Add(Sps()); }
+        if (pps) { nals.Add(Nal(NAL_PPS, 0xC1)); }
+        nals.Add(Nal(NAL_IDR_W_RADL, 0xAF));
+
+        Assert.Null(H265.TryBuildHvcC(AnnexB(nals.ToArray()), out _));
+    }
+
+    [Theory]
+    [InlineData(NAL_IDR_W_RADL, true)]
+    [InlineData(NAL_CRA, true)]
+    [InlineData(16, true)]          // BLA_W_LP, the first of the IRAP range
+    [InlineData(23, true)]          // the last of the IRAP range
+    [InlineData(NAL_TRAIL_R, false)]
+    [InlineData(24, false)]         // just past the IRAP range
+    public void Key_frames_are_the_irap_nal_types(int nalType, bool expected)
+    {
+        H265.ToLengthPrefixed(AnnexB(Nal(nalType, 0xAF, 0x01)), out bool keyFrame);
+
+        Assert.Equal(expected, keyFrame);
+    }
+
+    [Fact]
+    public void Length_prefixes_the_nals_and_drops_the_access_unit_delimiter()
+    {
+        byte[] slice = Nal(NAL_TRAIL_R, 0xAF, 0x01, 0x02);
+
+        byte[] converted = H265.ToLengthPrefixed(AnnexB(Nal(NAL_AUD, 0x50), slice), out _);
+
+        // Only the slice survives, carrying a 4 byte big-endian length in place of the start code.
+        Assert.Equal(4 + slice.Length, converted.Length);
+        Assert.Equal(slice.Length, (converted[0] << 24) | (converted[1] << 16) | (converted[2] << 8) | converted[3]);
+        Assert.Equal(slice, converted.Skip(4).ToArray());
+    }
+
+    [Fact]
+    public void Strips_emulation_prevention_bytes()
+    {
+        // 00 00 03 in the NAL is an escaped 00 00; the 0x03 is not part of the syntax and parsing
+        // the bits without removing it puts every field after it at the wrong offset.
+        byte[] nal = { 0x42, 0x01, 0x00, 0x00, 0x03, 0x01, 0x00, 0x00, 0x03, 0x02, 0xAA };
+
+        byte[] rbsp = H265.RemoveEmulationPrevention(nal, 2);
+
+        Assert.Equal(new byte[] { 0x00, 0x00, 0x01, 0x00, 0x00, 0x02, 0xAA }, rbsp);
+    }
+
+    [Fact]
+    public void Leaves_a_03_that_is_not_an_escape_alone()
+    {
+        byte[] nal = { 0x42, 0x01, 0x03, 0x00, 0x03, 0xFF };
+
+        // Only a 0x03 preceded by two zero bytes is an escape; the leading one is real data, and
+        // the one after a single 0x00 is too.
+        Assert.Equal(new byte[] { 0x03, 0x00, 0x03, 0xFF }, H265.RemoveEmulationPrevention(nal, 2));
+    }
+
+    [Fact]
+    public void Reads_a_sps_through_its_emulation_prevention_bytes()
+    {
+        // A width whose ue(v) encoding produces a run of zero bytes forces the escape into the SPS,
+        // so this fails if the parser reads the raw NAL instead of the RBSP.
+        byte[] sps = Sps(640, 360);
+        var escaped = new List<byte>(sps.Take(2));
+        int zeros = 0;
+        foreach (byte b in sps.Skip(2))
+        {
+            if (zeros >= 2 && b <= 0x03)
+            {
+                escaped.Add(0x03);
+                zeros = 0;
+            }
+            escaped.Add(b);
+            zeros = b == 0 ? zeros + 1 : 0;
+        }
+
+        var info = H265.TryParseSps(escaped.ToArray());
+
+        Assert.NotNull(info);
+        Assert.Equal(640, info!.Width);
+        Assert.Equal(360, info.Height);
+    }
+
+    [Fact]
+    public void Rejects_a_truncated_sps()
+    {
+        byte[] sps = Sps();
+
+        Assert.Null(H265.TryParseSps(sps.AsSpan(0, 8).ToArray()));
+    }
+
+    [Fact]
+    public void Survives_arbitrary_bytes()
+    {
+        var random = new Random(99);
+        for (int i = 0; i < 200; i++)
+        {
+            byte[] junk = new byte[random.Next(1, 96)];
+            random.NextBytes(junk);
+
+            var exception = Record.Exception(() =>
+            {
+                H265.TryParseSps(junk);
+                H265.TryBuildHvcC(junk, out _);
+                H265.ToLengthPrefixed(junk, out _);
+            });
+
+            Assert.Null(exception);
+        }
+    }
+}
+
+[Trait("Category", "unit")]
+public class ExpGolombTests
+{
+    [Theory]
+    [InlineData(0b1000_0000, 0u)]            // '1'
+    [InlineData(0b0100_0000, 1u)]            // '010'
+    [InlineData(0b0110_0000, 2u)]            // '011'
+    [InlineData(0b0010_0000, 3u)]            // '00100'
+    [InlineData(0b0011_1000, 6u)]            // '00111'
+    public void Reads_small_exp_golomb_values(byte data, uint expected)
+    {
+        Assert.Equal(expected, new BitReader(new[] { data }).Ue());
+    }
+
+    [Fact]
+    public void Round_trips_a_range_of_values()
+    {
+        foreach (uint value in new uint[] { 0, 1, 2, 7, 8, 100, 639, 640, 1279, 65535 })
+        {
+            var reader = new BitReader(new BitWriter().Ue(value).Align().ToArray());
+
+            Assert.Equal(value, reader.Ue());
+            Assert.False(reader.Overran);
+        }
+    }
+
+    [Fact]
+    public void A_long_run_of_zeroes_is_an_overrun_not_a_hang()
+    {
+        var reader = new BitReader(new byte[8]);
+
+        reader.Ue();
 
         Assert.True(reader.Overran);
     }

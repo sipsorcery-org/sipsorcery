@@ -70,6 +70,8 @@ public sealed class MatroskaSinkNode : ISinkNode
     private long _firstArrivalMs = -1;
     private byte[]? _avcC;
     private Av1.SequenceHeader? _av1SequenceHeader;
+    private byte[]? _hvcC;
+    private H265.SpsInfo? _h265Sps;
     private MatroskaTrack? _videoTrack;
     private MatroskaTrack? _audioTrack;
     private bool _warnedVideoCodec;
@@ -243,6 +245,10 @@ public sealed class MatroskaSinkNode : ISinkNode
                     data = H264.ToLengthPrefixed(frame.Payload, out keyFrame);
                     break;
 
+                case VideoCodecsEnum.H265:
+                    data = H265.ToLengthPrefixed(frame.Payload, out keyFrame);
+                    break;
+
                 case VideoCodecsEnum.VP9:
                     data = frame.Payload;
                     keyFrame = Vp9.TryReadFrameInfo(frame.Payload, out var vp9Frame) && vp9Frame.IsKeyFrame;
@@ -307,6 +313,13 @@ public sealed class MatroskaSinkNode : ISinkNode
                 int height = BinaryPrimitives.ReadUInt16LittleEndian(frame.Payload.AsSpan(8)) & 0x3FFF;
                 return new MatroskaTrack(VIDEO_TRACK, true, "V_VP8", Width: width, Height: height);
 
+            case VideoCodecsEnum.H265:
+                // hvcC needs the VPS, SPS and PPS, which travel in-band with the IRAP pictures.
+                _hvcC ??= H265.TryBuildHvcC(frame.Payload, out _h265Sps);
+                return _hvcC == null || _h265Sps == null ? null
+                    : new MatroskaTrack(VIDEO_TRACK, true, "V_MPEGH/ISO/HEVC", _hvcC,
+                        Width: _h265Sps.Width, Height: _h265Sps.Height);
+
             case VideoCodecsEnum.VP9:
                 // Like VP8, VP9 needs no CodecPrivate; the dimensions come from a key frame's
                 // uncompressed header, so wait for one.
@@ -330,7 +343,7 @@ public sealed class MatroskaSinkNode : ISinkNode
             default:
                 if (!_warnedVideoCodec)
                 {
-                    _logger.LogWarning("The Matroska sink does not support {Codec} video yet (H264, VP8, VP9 and AV1); the video is left out.", frame.VideoFormat.Codec);
+                    _logger.LogWarning("The Matroska sink does not support {Codec} video yet (H264, H265, VP8, VP9 and AV1); the video is left out.", frame.VideoFormat.Codec);
                     _warnedVideoCodec = true;
                 }
                 return null;

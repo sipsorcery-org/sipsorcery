@@ -366,7 +366,7 @@ Edges:
 | `--to`    | `play` | An ffplay window (decode delegated to ffplay). |
 | `--to`    | `null` | Discard — exercises the pipeline headlessly and reports throughput. |
 | `--to`    | `-` | The video bitstream on stdout (the result JSON then moves to stderr). |
-| `--to`    | `-:mkv` | Video **and** audio muxed into a live Matroska stream on stdout, with real timestamps, so a player gets both: `route --from testpattern --to -:mkv \| mpv -`. Repacketised, not transcoded: H264, VP8, VP9 or AV1 video, Opus or G.711 audio. (H265 is not carried yet: the sink logs that the video is left out.) |
+| `--to`    | `-:mkv` | Video **and** audio muxed into a live Matroska stream on stdout, with real timestamps, so a player gets both: `route --from testpattern --to -:mkv \| mpv -`. Repacketised, not transcoded: H264, H265, VP8, VP9 or AV1 video, Opus or G.711 audio. |
 | `--to`    | *path*`.mkv` | The same Matroska stream written to a file, e.g. to record a SIP call with its scope video. |
 | `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only audio (`--audio-codec`: opus default / pcmu / pcma) + video (`--video-codec`: h264 default) peer connection. `--token` sets the Authorization. Opus is the default, so endpoints that require it (e.g. Broadcast Box) just work. |
 | `--to`    | `web[:port]` | Self-host a **WHEP server + player page** on `http://localhost:<port>` (default 8080) and stream to any browser that opens it. Many tabs can watch at once — each gets its own peer connection fanned from the one graph tee. `--video-codec` video (h264 by default) + `--audio-codec` audio (opus is the most broadly supported). `--token` gates the WHEP endpoint; `--no-open` suppresses the browser auto-launch (also never opened with `--json`). |
