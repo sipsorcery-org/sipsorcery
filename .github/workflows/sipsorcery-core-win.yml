@@ -20,3 +20,12 @@ jobs:
       run: dotnet build SIPSorcery.slnf -c Release --no-restore
     - name: Test
       run:  dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --no-restore --verbosity normal -f net10.0
+
+    # Package validation (EnablePackageValidation in src/SIPSorcery/SIPSorcery.csproj) only
+    # runs on the Pack target, so the build and test steps above would never exercise it.
+    # This diffs the packed assemblies against PackageValidationBaselineVersion and fails on
+    # any binary-breaking change that is not listed in src/SIPSorcery/CompatibilitySuppressions.xml.
+    # Windows only: it is the one runner that can build every target framework (net462 included),
+    # and the answer is platform independent.
+    - name: Pack SIPSorcery (API compatibility check against last published package)
+      run: dotnet pack src/SIPSorcery/SIPSorcery.csproj -c Release --no-build -o ./artifacts

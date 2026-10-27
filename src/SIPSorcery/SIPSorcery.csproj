@@ -107,6 +107,15 @@
     <FileVersion>10.0.18</FileVersion>
   </PropertyGroup>
 
+  <PropertyGroup Label="PackageValidation">
+    <!-- Diff the packed assemblies against the last published package so that accidental
+         binary-breaking changes (e.g. replacing Foo() with Foo(string x = null)) fail the
+         build instead of shipping. Runs on 'dotnet pack'. Deliberate, already-shipped
+         breaks are listed in CompatibilitySuppressions.xml with a reason. -->
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion>10.0.18-pre</PackageValidationBaselineVersion>
+  </PropertyGroup>
+
   <PropertyGroup Label="SourceLink">
     <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
