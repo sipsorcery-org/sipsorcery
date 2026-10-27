@@ -26,7 +26,7 @@ using System.Collections.Generic;
 
 namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
-    public static class DtlsSrtpProtocol
+    internal static class DtlsSrtpProtocol
     {
         public static readonly Dictionary<int, SrtpProtectionProfileConfiguration> DtlsProtectionProfiles;
 

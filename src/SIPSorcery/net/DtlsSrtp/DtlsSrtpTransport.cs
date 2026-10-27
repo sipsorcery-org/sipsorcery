@@ -52,9 +52,9 @@ namespace SIPSorcery.Net
 
         public DatagramTransport Transport { get; internal set; }
         public bool IsClient { get { return _connection is DtlsSrtpClient; } }
-        public SrtpKeys Keys { get; private set; }
+        internal SrtpKeys Keys { get; private set; }
 
-        public ThreadSafeSrtpSessionContext Context { get; private set; }
+        internal ThreadSafeSrtpSessionContext Context { get; private set; }
 
         public int TimeoutMilliseconds { get { return _connection.TimeoutMilliseconds; } set { _connection.TimeoutMilliseconds = value; } }
 
@@ -62,7 +62,7 @@ namespace SIPSorcery.Net
 
         public event OnDtlsAlertEvent OnAlert;
 
-        public DtlsSrtpTransport(IDtlsSrtpPeer connection)
+        internal DtlsSrtpTransport(IDtlsSrtpPeer connection)
         {
             this._connection = connection;
             this._connection.OnSessionStarted += DtlsSrtpTransport_OnSessionStarted;

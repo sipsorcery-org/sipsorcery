@@ -35,7 +35,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
     /// This class ensures that the underlying SRTP session context is accessed in a thread-safe manner by using locks for each of the 
     /// protect/unprotect operations.
     /// </summary>
-    public class ThreadSafeSrtpSessionContext : ISrtpContext
+    internal class ThreadSafeSrtpSessionContext : ISrtpContext
     {
         private object _syncEncodeRtpContext = new object();
         private object _syncDecodeRtpContext = new object();

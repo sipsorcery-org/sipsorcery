@@ -29,7 +29,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
     /// <summary>
     /// Currently registered SRTP Crypto Suites https://www.iana.org/assignments/sdp-security-descriptions/sdp-security-descriptions.xhtml
     /// </summary>
-    public abstract class SrtpCryptoSuites
+    internal abstract class SrtpCryptoSuites
     {
         public const string AES_CM_128_HMAC_SHA1_80 = "AES_CM_128_HMAC_SHA1_80";
         public const string AES_CM_128_HMAC_SHA1_32 = "AES_CM_128_HMAC_SHA1_32";
@@ -50,7 +50,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         public const string AEAD_AES_256_GCM = "AEAD_AES_256_GCM";
     }
 
-    public static class SrtpProtocol
+    internal static class SrtpProtocol
     {
         private static SecureRandom _rand = new SecureRandom();
 

@@ -29,7 +29,7 @@ using Bytes = byte[];
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP
 {
-    public class SrtpSessionContext : ISrtpContext
+    internal class SrtpSessionContext : ISrtpContext
     {
         public SrtpContext EncodeRtpContext { get; private set; }
         public SrtpContext EncodeRtcpContext { get; private set; }

@@ -30,7 +30,7 @@ using System.Collections.Generic;
 
 namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
-    public class DtlsSrtpClient : DtlsClient, IDtlsSrtpPeer
+    internal class DtlsSrtpClient : DtlsClient, IDtlsSrtpPeer
     {
         private UseSrtpData _srtpData;
 

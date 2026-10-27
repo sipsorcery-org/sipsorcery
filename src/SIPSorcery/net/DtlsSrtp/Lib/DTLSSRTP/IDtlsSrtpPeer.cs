@@ -26,7 +26,7 @@ using System;
 
 namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
-    public class DtlsSessionStartedEventArgs : EventArgs
+    internal class DtlsSessionStartedEventArgs : EventArgs
     {
         public SrtpSessionContext Context { get; private set; }
         public Certificate PeerCertificate { get; private set;  }
@@ -40,7 +40,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
         }
     }
 
-    public interface IDtlsSrtpPeer : IDtlsPeer
+    internal interface IDtlsSrtpPeer : IDtlsPeer
     {
         event EventHandler<DtlsSessionStartedEventArgs> OnSessionStarted;
         SrtpSessionContext CreateSessionContext(SecurityParameters securityParameters);

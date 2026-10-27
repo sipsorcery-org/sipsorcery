@@ -4,7 +4,7 @@ using Org.BouncyCastle.Crypto.Parameters;
 using System;
 using System.Runtime.CompilerServices;
 
-public static class BouncyCastleExtensions
+internal static class BouncyCastleExtensions
 {
     extension(KeyParameter)
     {

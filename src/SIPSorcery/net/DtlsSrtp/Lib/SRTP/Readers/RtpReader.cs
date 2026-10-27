@@ -23,7 +23,7 @@ using System;
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP.Readers
 {
-    public static class RtpReader
+    internal static class RtpReader
     {
         public static uint ReadSsrc(ReadOnlySpan<byte> rtpPacket)
         {

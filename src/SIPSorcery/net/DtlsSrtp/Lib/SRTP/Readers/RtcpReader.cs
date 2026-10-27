@@ -24,7 +24,7 @@ using System.Buffers.Binary;
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP.Readers
 {
-    public static class RtcpReader
+    internal static class RtcpReader
     {
         public static int GetHeaderLen()
         {

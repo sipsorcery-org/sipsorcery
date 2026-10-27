@@ -39,7 +39,7 @@ using System;
 
 namespace SIPSorcery.Net.SharpSRTP.DTLS
 {
-    public class DtlsCertificateUtils
+    internal class DtlsCertificateUtils
     {
         public static (Certificate Certificate, AsymmetricKeyParameter PrivateKey) GenerateCertificate(
             string name,

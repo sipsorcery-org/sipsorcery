@@ -34,7 +34,7 @@ using ReadOnlyBytes = byte[];
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
 {
-    public static class CTR
+    internal static class CTR
     {
         public const int BLOCK_SIZE = 16;
 
