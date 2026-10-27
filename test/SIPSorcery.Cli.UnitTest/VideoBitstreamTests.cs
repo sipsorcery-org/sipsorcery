@@ -356,6 +356,56 @@ public class Av1BitstreamTests
     }
 
     [Fact]
+    public void A_malformed_temporal_unit_is_reported_not_thrown()
+    {
+        // An OBU whose declared size runs past the buffer: what a keyframe reassembled from RTP
+        // looks like when a fragment is lost. AV1Packetiser.ParseObus throws FormatException on
+        // this, and the Matroska sink runs on a worker thread whose catch-all disables the sink
+        // for the rest of the run - so one damaged frame used to end the whole stream.
+        byte[] lying = { (byte)((OBU_SEQUENCE_HEADER << 3) | 0x02), 0x40, 0x01, 0x02 };
+
+        var exception = Record.Exception(() =>
+        {
+            Assert.Null(Av1.TryParseSequenceHeader(lying, out bool truncated));
+            Assert.True(truncated);
+
+            Assert.False(Av1.IsKeyFrame(lying, false, out bool keyTruncated));
+            Assert.True(keyTruncated);
+        });
+
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public void A_good_temporal_unit_is_not_reported_as_truncated()
+    {
+        var tu = TemporalUnit(
+            Obu(OBU_SEQUENCE_HEADER, SequenceHeaderPayload()),
+            Obu(OBU_FRAME, FramePayload(keyFrame: true)));
+
+        Assert.NotNull(Av1.TryParseSequenceHeader(tu, out bool truncated));
+        Assert.False(truncated);
+        Assert.True(Av1.IsKeyFrame(tu, false, out bool keyTruncated));
+        Assert.False(keyTruncated);
+    }
+
+    [Fact]
+    public void Keeps_the_obus_that_parsed_before_a_malformed_one()
+    {
+        // A good sequence header followed by a truncated OBU still yields the sequence header, so
+        // a damaged tail does not cost the track.
+        var tu = TemporalUnit(
+            Obu(OBU_SEQUENCE_HEADER, SequenceHeaderPayload(800, 600)),
+            new byte[] { (byte)((OBU_FRAME << 3) | 0x02), 0x7F, 0x00 });
+
+        var sh = Av1.TryParseSequenceHeader(tu, out bool truncated);
+
+        Assert.NotNull(sh);
+        Assert.Equal(800, sh!.MaxFrameWidth);
+        Assert.True(truncated);
+    }
+
+    [Fact]
     public void Survives_arbitrary_bytes()
     {
         var random = new Random(1234);
@@ -364,19 +414,12 @@ public class Av1BitstreamTests
             byte[] junk = new byte[random.Next(1, 64)];
             random.NextBytes(junk);
 
-            // Neither call may throw, whatever the bytes are: they come off the network.
+            // No call may throw, whatever the bytes are: they come off the network, and an escaping
+            // exception reaches the sink's worker loop and kills it for the rest of the run.
             var exception = Record.Exception(() =>
             {
-                try
-                {
-                    Av1.TryParseSequenceHeader(junk);
-                    Av1.IsKeyFrame(junk, false);
-                }
-                catch (FormatException)
-                {
-                    // AV1Packetiser.ParseObus rejects a malformed OBU this way; the sink treats it
-                    // as "no track yet", which is the same outcome as a null parse.
-                }
+                Av1.TryParseSequenceHeader(junk);
+                Av1.IsKeyFrame(junk, false);
                 Vp9.TryReadFrameInfo(junk, out _);
             });
 
