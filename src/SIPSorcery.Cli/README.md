@@ -171,6 +171,59 @@ sipsorcery webrtc whip https://b.siobud.com/api/whip --token key --preset 1080p 
 # "webrtc whip-server" running as the ingest in another terminal, or use "webrtc loopback" (above) to
 # run the publisher and receiver in a single process.
 
+# WebRTC browser interop test: check the library's video packetiser and depacketiser against a REAL
+# external implementation (libwebrtc, in Chrome) rather than against itself. "webrtc loopback" is
+# introspective -- it packetises and depacketises with the same code, so a packetiser and a
+# depacketiser that share a misreading of an RFC agree with each other perfectly and the loopback
+# stays green. Only an independent implementation on the other end finds that class of fault, and a
+# browser is the one almost every real deployment is talking to.
+#
+# The verb serves a self-contained page on one localhost port (no camera, no permission prompt: the
+# page draws its own test pattern into a <canvas> and publishes canvas.captureStream). Open the
+# printed URL, or pass --open. http://localhost is a secure context, so no TLS is needed; testing
+# from ANOTHER DEVICE would need HTTPS, which this verb does not serve.
+sipsorcery webrtc browser-test --video-codec vp8 -d 10 --open
+sipsorcery webrtc browser-test --video-codec av1 --preset 720p -d 20 --json
+# --mode picks the direction:
+#   publish (default) - the browser publishes its canvas and the CLI receives. One encode in the
+#                       path, so a fault is ours: libwebrtc's packetiser into OUR depacketiser.
+#   echo              - the CLI publishes a generated test card and the page hands the track back.
+#                       NOTE a browser cannot bounce RTP the way "webrtc echo-server" does with
+#                       SendRtpRaw: feeding an ontrack track into a sender makes Chrome DECODE and
+#                       RE-ENCODE it, so the return leg is Chrome's own bitstream, not ours coming
+#                       back. That is still the test worth having (our packetiser into Chrome's
+#                       depacketiser out, Chrome's packetiser into ours back), but there is no
+#                       byte-exact comparison: judge it on decode success and frame counts. Echo
+#                       mode encodes in-process and so needs the FFmpeg shared libraries.
+sipsorcery webrtc browser-test --mode echo --video-codec h264 -d 10 --open
+# --video-codec pins the codec on BOTH ends -- the CLI offers only that codec, and the page pins it
+# with transceiver.setCodecPreferences() over the filtered capability list (the supported API, no SDP
+# munging) -- so a green run is evidence about THAT codec rather than about whatever the two happened
+# to agree on. The capability list is filtered by mime type only, so the browser keeps all its fmtp
+# variants (e.g. every H264 profile it offers) and the CLI still picks the one it supports.
+#
+# The result carries BOTH sides, which is the thing loopback can never do: ours (videoPackets,
+# videoLost, videoFrames, videoFps) and the browser's own pc.getStats() view (framesEncoded,
+# framesDecoded, framesDropped, freezeCount, keyFramesDecoded, pliCount, nackCount). The signature
+# worth knowing: a climbing pliCount or freezeCount while videoLost stays 0 means every packet
+# arrived and a usable frame still could not be assembled -- a packetisation or reassembly fault,
+# not a network one.
+#
+# Keep the tab VISIBLE. A background tab throttles the page's timers (setInterval is clamped to
+# about 1s), which does not invalidate the interop result but collapses the frame rate and makes the
+# sample far too small to be worth much.
+#
+# h265 is conditional rather than unavailable. A browser's H265 SEND support rides on a HARDWARE
+# encoder, so the same Chrome version has it on one machine and not on another. Where it is present
+# (Chrome on Windows advertises level-id=93;profile-id=1;tier-flag=0;tx-mode=SRST) h265 tests end to
+# end like any other codec; where it is absent the page detects that from
+# RTCRtpSender.getCapabilities and says so instead of timing out. An h265 PASS is therefore only
+# evidence about the browser and machine that ran it.
+#
+# Verified against Chrome on Windows, publish mode, 640x360@30 for 10s, every codec frame-exact with
+# zero sequence gaps and zero PLIs: vp8 (291 encoded / 291 depacketised), vp9 (244/246), h264
+# (238/238), av1 (291/291) and h265 (220/220).
+
 # WebRTC echo test (https://github.com/sipsorcery/webrtc-echoes): the echo-server answers offers
 # and echoes RTP and data channel messages; the echo client verifies the data channel round trips.
 # The two pair for a self-contained interop test:
@@ -490,7 +543,8 @@ avatars are planned.
 ## Status
 
 Early preview. The diagnostics verbs cover SIP (OPTIONS, calls, registration, load, transfer), WebRTC
-(WHEP, WHIP publish, WHIP server, loopback, echo test peers, video send benchmark) and STUN/TURN/ICE
+(WHEP, WHIP publish, WHIP server, loopback, browser interop test, echo test peers, video send benchmark)
+and STUN/TURN/ICE
 connectivity checks, including Cloudflare TURN. SIP DNS resolution and further verbs are planned.
 
 Early. The `route` engine carries audio and video over a single source → N sinks (a free tee), with
