@@ -3023,11 +3023,15 @@ namespace SIPSorcery.Net
                     return mediaStream;
                 }
             }
-            else if (rtcpPkt.Feedback is { } feedback)
+            else if (rtcpPkt.Feedback != null)
             {
-                if (GetMediaStream(feedback.SenderSSRC) is { } mediaStream)
+                foreach (var feedback in rtcpPkt.FeedbackMessages)
                 {
-                    return mediaStream;
+                    if (feedback.MediaSSRC != 0 &&
+                        GetMediaStream(feedback.MediaSSRC) is { } mediaStream)
+                    {
+                        return mediaStream;
+                    }
                 }
             }
             else if (rtcpPkt.TWCCFeedback != null)
