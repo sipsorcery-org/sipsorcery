@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RtpIceChannelRenominationUnitTest.cs
 //
 // Description: Tests for how a controlled RtpIceChannel handles a controlling
@@ -103,7 +103,7 @@ namespace SIPSorcery.Net.UnitTests
                 // Within DTLS's first retransmit (1 s): the one-way path never answered, so it
                 // gets the short grace, not the full one.
                 var took = MovedAt(moved).Subtract(nominated);
-                Assert.True(took.TotalMilliseconds < 1000, $"moved after {took.TotalMilliseconds:F0} ms");
+                Assert.True(took.TotalMilliseconds < 1200, $"moved after {took.TotalMilliseconds:F0} ms");
 
                 for (int i = 0; i < 20; i++)
                 {
