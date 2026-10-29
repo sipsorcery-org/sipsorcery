@@ -66,12 +66,12 @@ namespace SIPSorcery.Net
 
             if (fieldCount > 0)
             {
-                connectionInfo.ConnectionNetworkType = connectionLine[fields[0]].Trim().ToString();
+                connectionInfo.ConnectionNetworkType = GetNetworkType(connectionLine[fields[0]].Trim());
             }
 
             if (fieldCount > 1)
             {
-                connectionInfo.ConnectionAddressType = connectionLine[fields[1]].Trim().ToString();
+                connectionInfo.ConnectionAddressType = GetAddressType(connectionLine[fields[1]].Trim());
             }
 
             if (fieldCount > 2)
@@ -81,6 +81,17 @@ namespace SIPSorcery.Net
 
             return connectionInfo;
         }
+
+        internal static string GetNetworkType(ReadOnlySpan<char> networkType)
+            => networkType is "IN" ? "IN" : networkType.ToString();
+
+        internal static string GetAddressType(ReadOnlySpan<char> addressType)
+            => addressType switch
+            {
+                CONNECTION_ADDRESS_TYPE_IPV4 => CONNECTION_ADDRESS_TYPE_IPV4,
+                CONNECTION_ADDRESS_TYPE_IPV6 => CONNECTION_ADDRESS_TYPE_IPV6,
+                _ => addressType.ToString()
+            };
 
         public override string ToString()
         {

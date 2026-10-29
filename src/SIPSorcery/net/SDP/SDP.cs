@@ -203,11 +203,20 @@ namespace SIPSorcery.Net
             AddressType = (address.AddressFamily == AddressFamily.InterNetworkV6) ? ADDRESS_TYPE_IPV6 : ADDRESS_TYPE_IPV4;
         }
 
+        /// <summary>
+        /// Parses an SDP description, preserving the original text for <see cref="RawString"/>.
+        /// </summary>
         public static SDP ParseSDPDescription(string sdpDescription)
-            => ParseSDPDescription(sdpDescription.AsSpan());
+            => ParseSDPDescription(sdpDescription.AsSpan(), sdpDescription);
 
 #nullable enable
+        /// <summary>
+        /// Parses an SDP description, preserving a copy of the input for <see cref="RawString"/>.
+        /// </summary>
         public static SDP? ParseSDPDescription(ReadOnlySpan<char> sdpDescription)
+            => ParseSDPDescription(sdpDescription, null);
+
+        private static SDP? ParseSDPDescription(ReadOnlySpan<char> sdpDescription, string? rawSdp)
         {
             if (sdpDescription.IsEmptyOrWhiteSpace())
             {
@@ -216,7 +225,10 @@ namespace SIPSorcery.Net
 
             try
             {
-                var sdp = new SDP();
+                var sdp = new SDP
+                {
+                    m_rawSdp = rawSdp ?? sdpDescription.ToString()
+                };
 
                 var mLineIndex = 0;
                 SDPMediaAnnouncement? activeAnnouncement = null;
@@ -322,8 +334,8 @@ namespace SIPSorcery.Net
                             sdp.Username = value[fields[0]].ToString();
                             sdp.SessionId = value[fields[1]].ToString();
                             sdp.AnnouncementVersion = ulong.TryParse(value[fields[2]], out var version) ? version : 0;
-                            sdp.NetworkType = value[fields[3]].ToString();
-                            sdp.AddressType = value[fields[4]].ToString();
+                            sdp.NetworkType = SDPConnectionInformation.GetNetworkType(value[fields[3]]);
+                            sdp.AddressType = SDPConnectionInformation.GetAddressType(value[fields[4]]);
                             sdp.AddressOrHost = count > 5 ? value[fields[5]].ToString() : null;
                         }
                         else
@@ -479,7 +491,18 @@ namespace SIPSorcery.Net
                             // Parse transport
                             var transportEndOffset = input[i..].IndexOfAny(SearchValueHelpers.WhiteSpaceChars);
                             var transportEnd = transportEndOffset == -1 ? input.Length : i + transportEndOffset;
-                            transport = input[i..transportEnd].ToString();
+                            transport = input[i..transportEnd] switch
+                            {
+                                RTPSession.RTP_MEDIA_PROFILE => RTPSession.RTP_MEDIA_PROFILE,
+                                RTPSession.RTP_SECUREMEDIA_PROFILE => RTPSession.RTP_SECUREMEDIA_PROFILE,
+                                "RTP/AVPF" => "RTP/AVPF",
+                                "RTP/SAVPF" => "RTP/SAVPF",
+                                "UDP/TLS/RTP/SAVP" => "UDP/TLS/RTP/SAVP",
+                                "UDP/TLS/RTP/SAVPF" => "UDP/TLS/RTP/SAVPF",
+                                "DTLS/SCTP" => "DTLS/SCTP",
+                                "UDP/DTLS/SCTP" => "UDP/DTLS/SCTP",
+                                _ => input[i..transportEnd].ToString()
+                            };
 
                             i = transportEnd;
 
@@ -627,8 +650,14 @@ namespace SIPSorcery.Net
                                         if (activeAnnouncement.Media is SDPMediaTypesEnum.audio or SDPMediaTypesEnum.video or SDPMediaTypesEnum.text)
                                         {
                                             // Parse the rtpmap attribute for audio/video announcements.
-                                            if (TryParseNumericIdAndStringAttribute(attrValue, out var formatId, out var rtpmap))
+                                            if (TrySplitIdAndStringAttribute(attrValue, out var formatIdRange, out var rtpmap))
                                             {
+                                                if (!int.TryParse(attrValue[formatIdRange], out var formatId))
+                                                {
+                                                    logger.LogSdpInvalidMediaFormatAttribute(line);
+                                                    break;
+                                                }
+
                                                 if (activeAnnouncement.MediaFormats.TryGetValue(formatId, out var mediaFormat))
                                                 {
                                                     activeAnnouncement.MediaFormats[formatId] = mediaFormat.WithUpdatedRtpmap(attrValue[rtpmap].ToString());
@@ -651,8 +680,7 @@ namespace SIPSorcery.Net
                                             }
                                             else
                                             {
-                                                // This is a recognised rtpmap attribute with an invalid numeric payload ID.
-                                                // Drop it instead of preserving it as an unknown extra attribute.
+                                                activeAnnouncement.AddExtra(line.ToString());
                                             }
                                         }
                                         else
@@ -688,8 +716,14 @@ namespace SIPSorcery.Net
                                         if (activeAnnouncement.Media is SDPMediaTypesEnum.audio or SDPMediaTypesEnum.video or SDPMediaTypesEnum.text)
                                         {
                                             // Parse the fmtp attribute for audio/video announcements.
-                                            if (TryParseNumericIdAndStringAttribute(attrValue, out var avFormatID, out var fmtp))
+                                            if (TrySplitIdAndStringAttribute(attrValue, out var avFormatIdRange, out var fmtp))
                                             {
+                                                if (!int.TryParse(attrValue[avFormatIdRange], out var avFormatID))
+                                                {
+                                                    logger.LogSdpInvalidMediaFormatAttribute(line);
+                                                    break;
+                                                }
+
                                                 if (activeAnnouncement.MediaFormats.TryGetValue(avFormatID, out var mediaFormat))
                                                 {
                                                     activeAnnouncement.MediaFormats[avFormatID] = mediaFormat.WithUpdatedFmtp(attrValue[fmtp].ToString());
@@ -973,39 +1007,48 @@ namespace SIPSorcery.Net
                                     }
                                     break;
                                 }
+                            default:
+                                {
+                                    if (activeAnnouncement is { })
+                                    {
+                                        activeAnnouncement.AddExtra(line.ToString());
+                                    }
+                                    else
+                                    {
+                                        sdp.AddExtra(line.ToString());
+                                    }
+                                    break;
+                                }
                         }
                     }
 
-                    /// <summary>^(?&lt;id&gt;\d+)\s+(?&lt;attribute&gt;.*)$</summary>
-                    static bool TryParseNumericIdAndStringAttribute(ReadOnlySpan<char> input, out int id, [NotNullWhen(true)] out Range attribute)
+                    /// <summary>Splits a whitespace-delimited ID and attribute without allocating strings.</summary>
+                    static bool TrySplitIdAndStringAttribute(ReadOnlySpan<char> input, out Range id, out Range attribute)
                     {
                         id = default;
                         attribute = default;
 
-                        var digitEnd = input.IndexOfAnyExcept(SearchValueHelpers.DigitChars);
-
-                        if (digitEnd <= 0)
+                        var trimmedInput = input.TrimStart();
+                        var idEnd = trimmedInput.IndexOfAny(SearchValueHelpers.WhiteSpaceChars);
+                        if (idEnd <= 0)
                         {
-                            // No digits at start or input is all digits (no attribute)
                             return false;
                         }
 
-                        _ = int.TryParse(input[..digitEnd], out id); // not expected to fail
-
-                        input = input[digitEnd..];
-                        var nonWhitespaceIndex = input.IndexOfAnyExcept(SearchValueHelpers.WhiteSpaceChars);
-
-                        if (nonWhitespaceIndex < 0)
+                        var attributeSpan = trimmedInput[idEnd..].TrimStart();
+                        if (attributeSpan.IsEmpty)
                         {
-                            // No non white spaces after id
                             return false;
                         }
 
-                        attribute = (digitEnd + nonWhitespaceIndex)..;
+                        var idStart = input.Length - trimmedInput.Length;
+                        id = idStart..(idStart + idEnd);
+                        attribute = (input.Length - attributeSpan.Length)..;
+
                         return true;
                     }
 
-                    /// <summary>^(?&lt;id&gt;\S+)\s+(?&lt;attribute&gt;.*)$</summary>
+                    /// <summary>Parses a whitespace-delimited string ID and its attribute.</summary>
                     static bool TryParseStringIdAndStringAttribute(
                         ReadOnlySpan<char> input,
                         [NotNullWhen(true)] out string? id,
@@ -1014,27 +1057,19 @@ namespace SIPSorcery.Net
                         id = default;
                         attribute = default;
 
-                        // Find the first whitespace (end of ID)
-                        var idEnd = input.IndexOfAny(SearchValueHelpers.WhiteSpaceChars);
-                        if (idEnd <= 0)
+                        if (!TrySplitIdAndStringAttribute(input, out var idRange, out var attributeRange))
                         {
-                            // Either starts with whitespace or no whitespace at all
                             return false;
                         }
 
-                        id = input[..idEnd].ToString();
-
-                        // Skip all whitespace after the ID
-                        var attrStart = input[idEnd..].IndexOfAnyExcept(SearchValueHelpers.WhiteSpaceChars);
-                        attribute = attrStart == -1
-                            ? string.Empty
-                            : input[(idEnd + attrStart)..].ToString();
+                        id = input[idRange].ToString();
+                        attribute = input[attributeRange].ToString();
 
                         return true;
                     }
 
 
-                    /// <summary>^(?&lt;id&gt;\d+)\s+(?&lt;url&gt;.*)$</summary>
+                    /// <summary>Parses a numeric extension ID followed by a single URL token.</summary>
                     static bool TryParseNumericIdAndUrl(
                         ReadOnlySpan<char> input,
                         out int id,
@@ -1043,24 +1078,14 @@ namespace SIPSorcery.Net
                         id = default;
                         url = default;
 
-                        // Find where the digits end
-                        var digitEnd = input.IndexOfAnyExcept(SearchValueHelpers.DigitChars);
-                        if (digitEnd <= 0 || digitEnd >= input.Length)
+                        if (!TrySplitIdAndStringAttribute(input, out var idRange, out var urlRange) ||
+                            !int.TryParse(input[idRange], out id))
                         {
                             return false;
                         }
 
-                        // Expect exactly one space after the digits
-                        if (input[digitEnd] != ' ')
-                        {
-                            return false;
-                        }
-
-                        _ = int.TryParse(input[..digitEnd], out id); // not expected to fail
-
-                        // The URL must be non-empty and contain no whitespace
-                        var urlSpan = input[(digitEnd + 1)..];
-                        if (urlSpan.IsEmpty || urlSpan.IndexOfAny(SearchValueHelpers.WhiteSpaceChars) != -1)
+                        var urlSpan = input[urlRange];
+                        if (urlSpan.IndexOfAny(SearchValueHelpers.WhiteSpaceChars) != -1)
                         {
                             return false;
                         }
@@ -1089,6 +1114,9 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Returns the original parsed text, or a generated description for a new instance.
+        /// </summary>
         public string RawString()
         {
             if (string.IsNullOrWhiteSpace(this.m_rawSdp))

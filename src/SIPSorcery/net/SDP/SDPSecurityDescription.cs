@@ -8,11 +8,14 @@
 // rj2
 
 using System;
+using System.Buffers;
 #if NET9_0_OR_GREATER
 using System.Collections.Frozen;
 #endif
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
+using Polyfills;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -287,18 +290,17 @@ namespace SIPSorcery.Net
                     return true;
                 }
 
-                static bool ParseKeyInfo(ReadOnlySpan<char> keyInfo, out string mkiValue, out string mkiLen, out string lifeTimeString, out string base64KeySalt)
+                static bool ParseKeyInfo(ReadOnlySpan<char> keyInfo, out string mkiValue, out string mkiLen, out string lifeTimeString, out ReadOnlySpan<char> base64KeySalt)
                 {
                     mkiValue = null;
                     mkiLen = null;
                     lifeTimeString = null;
-                    base64KeySalt = null;
-                    //KeyInfo must only contain visible printing characters
-                    //and 40 char long, as its is the base64representation of concatenated Key and Salt
+                    base64KeySalt = default;
+                    // The Base64 portion contains concatenated key and salt; its length depends on the suite.
                     var pospipe1 = keyInfo.IndexOf(PIPE);
                     if (pospipe1 > 0)
                     {
-                        base64KeySalt = keyInfo.Slice(0, pospipe1).ToString();
+                        base64KeySalt = keyInfo.Slice(0, pospipe1);
                         //find lifetime and mki
                         //both may be omitted, but mki is recognized by a colon
                         //usually lifetime comes before mki, if specified
@@ -337,7 +339,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        base64KeySalt = keyInfo.ToString();
+                        base64KeySalt = keyInfo;
                     }
 
                     return true;
@@ -360,7 +362,7 @@ namespace SIPSorcery.Net
                                     return false;
                                 }
 
-                                if (!string.IsNullOrWhiteSpace(sBase64KeySalt))
+                                if (!sBase64KeySalt.IsEmptyOrWhiteSpace())
                                 {
                                     if (!parseKeySaltBase64(cryptoSuite, sBase64KeySalt, out var bKey, out var bSalt)
                                         || !IsValidKey(bKey)
@@ -425,24 +427,13 @@ namespace SIPSorcery.Net
                 return false;
             }
 
-            private static bool parseKeySaltBase64(CryptoSuites cryptoSuite, string base64KeySalt, out byte[] key, out byte[] salt)
+            private static bool parseKeySaltBase64(CryptoSuites cryptoSuite, ReadOnlySpan<char> base64KeySalt, out byte[] key, out byte[] salt)
             {
                 key = null;
                 salt = null;
 
-                byte[] keysalt;
-                try
-                {
-                    keysalt = Convert.FromBase64String(base64KeySalt);
-                }
-                catch
-                {
-                    return false;
-                }
-
                 int keyLength = 0;
                 int saltLength = 0;
-                int saltOffset = 0;
 
                 switch (cryptoSuite)
                 {
@@ -451,7 +442,6 @@ namespace SIPSorcery.Net
                     case CryptoSuites.F8_128_HMAC_SHA1_80:
                     case CryptoSuites.AEAD_AES_128_GCM:
                         keyLength = 128 / 8;
-                        saltOffset = 128 / 8;
                         saltLength = (cryptoSuite == CryptoSuites.AEAD_AES_128_GCM) ? 96 / 8 : 112 / 8;
                         break;
                     case CryptoSuites.AES_192_CM_HMAC_SHA1_80:
@@ -459,12 +449,10 @@ namespace SIPSorcery.Net
                     case CryptoSuites.AES_CM_192_HMAC_SHA1_80:
                     case CryptoSuites.AES_CM_192_HMAC_SHA1_32:
                         keyLength = 192 / 8;
-                        saltOffset = 192 / 8;
                         saltLength = 112 / 8;
                         break;
                     case CryptoSuites.AEAD_AES_256_GCM:
                         keyLength = 256 / 8;
-                        saltOffset = 256 / 8;
                         saltLength = 96 / 8;
                         break;
                     case CryptoSuites.AES_256_CM_HMAC_SHA1_80:
@@ -472,25 +460,42 @@ namespace SIPSorcery.Net
                     case CryptoSuites.AES_CM_256_HMAC_SHA1_80:
                     case CryptoSuites.AES_CM_256_HMAC_SHA1_32:
                         keyLength = 256 / 8;
-                        saltOffset = 256 / 8;
                         saltLength = 112 / 8;
                         break;
                     default:
                         return false;
                 }
 
-                if (keysalt.Length < keyLength + saltLength)
+                const int stackBufferLength = 64;
+                var maxDecodedLength = base64KeySalt.Length / 4 * 3;
+                byte[] rentedBuffer = null;
+
+                // Oversized key material is accepted, but must not cause unbounded stack allocation.
+                Span<byte> keysalt = maxDecodedLength <= stackBufferLength
+                    ? stackalloc byte[stackBufferLength]
+                    : rentedBuffer = ArrayPool<byte>.Shared.Rent(maxDecodedLength);
+
+                try
                 {
-                    return false;
+                    if (!Convert.TryFromBase64Chars(base64KeySalt, keysalt, out var bytesWritten)
+                        || bytesWritten < keyLength + saltLength)
+                    {
+                        return false;
+                    }
+
+                    key = keysalt.Slice(0, keyLength).ToArray();
+                    salt = keysalt.Slice(keyLength, saltLength).ToArray();
+
+                    return true;
                 }
-
-                key = new byte[keyLength];
-                Array.Copy(keysalt, 0, key, 0, keyLength);
-
-                salt = new byte[saltLength];
-                Array.Copy(keysalt, saltOffset, salt, 0, saltLength);
-
-                return true;
+                finally
+                {
+                    CryptographicOperations.ZeroMemory(keysalt);
+                    if (rentedBuffer is not null)
+                    {
+                        ArrayPool<byte>.Shared.Return(rentedBuffer);
+                    }
+                }
             }
 
             private static bool IsValidLifeTime(ulong value)

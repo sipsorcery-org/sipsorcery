@@ -242,6 +242,26 @@ internal static partial class NetSdpLoggingExtensions
 
     [LoggerMessage(
         EventId = 0,
+        EventName = "SdpInvalidMediaFormatAttribute",
+        Level = LogLevel.Warning,
+        Message = "Invalid media format attribute in SDP: {SdpLine}",
+        SkipEnabledCheck = true)]
+    private static partial void LogSdpInvalidMediaFormatAttributeUnchecked(
+        this ILogger logger,
+        string sdpLine);
+
+    public static void LogSdpInvalidMediaFormatAttribute(
+        this ILogger logger,
+        ReadOnlySpan<char> sdpLine)
+    {
+        if (logger.IsEnabled(LogLevel.Warning))
+        {
+            LogSdpInvalidMediaFormatAttributeUnchecked(logger, sdpLine.ToString());
+        }
+    }
+
+    [LoggerMessage(
+        EventId = 0,
         EventName = "SdpInvalidVersion",
         Level = LogLevel.Warning,
         Message = "The Version value in an SDP description could not be parsed as a decimal: {SdpLine}.",

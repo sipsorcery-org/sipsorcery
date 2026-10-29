@@ -44,6 +44,10 @@ namespace SIPSorcery.Net
 
         private static readonly string[] s_wellKnownMediaFormatNames = CreateWellKnownMediaFormatNames();
 
+        internal static bool IsWellKnownFormat(int id)
+            => (uint)id < (uint)s_wellKnownMediaFormatNames.Length
+                && s_wellKnownMediaFormatNames[id] is not null;
+
         private static string[] CreateWellKnownMediaFormatNames()
         {
             var names = new string[(int)SDPWellKnownMediaFormatsEnum.H263 + 1];
@@ -232,6 +236,7 @@ namespace SIPSorcery.Net
                 return false;
             }
 
+            var found = false;
             Span<Range> keyValueRange = stackalloc Range[2];
             var inputSpan = input.AsSpan();
             foreach (var pairRange in inputSpan.Split(';'))
@@ -241,11 +246,11 @@ namespace SIPSorcery.Net
                     pair[keyValueRange[0]].Trim().Equals(name, StringComparison.OrdinalIgnoreCase))
                 {
                     value = pair[keyValueRange[1]].Trim();
-                    return true;
+                    found = true;
                 }
             }
 
-            return false;
+            return found;
         }
 
         private bool MatchesCodecName(string codecName)

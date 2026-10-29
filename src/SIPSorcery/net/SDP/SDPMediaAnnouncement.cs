@@ -281,10 +281,9 @@ namespace SIPSorcery.Net
                         && !MediaFormats.ContainsKey(id)
                         && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
                     {
-                        if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), id) &&
-                            Enum.TryParse<SDPWellKnownMediaFormatsEnum>(formatIDSpan, out var wellKnown))
+                        if (SDPAudioVideoMediaFormat.IsWellKnownFormat(id))
                         {
-                            MediaFormats.Add(id, new SDPAudioVideoMediaFormat(wellKnown));
+                            MediaFormats.Add(id, new SDPAudioVideoMediaFormat((SDPWellKnownMediaFormatsEnum)id));
                         }
                         else
                         {

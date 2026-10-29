@@ -15,6 +15,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
 using Xunit;
@@ -167,12 +168,14 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// RawString returns the verbatim input, independently of changes to parsed fields.
+        /// Both parser overloads retain the verbatim input independently of changes to parsed fields.
         /// </summary>
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void RawStringPreservesOriginalInput(bool changeSessionName)
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        [InlineData(true, true)]
+        public void RawStringPreservesOriginalInput(bool changeSessionName, bool useSpan)
         {
             // Arrange
 
@@ -180,7 +183,9 @@ namespace SIPSorcery.Net.UnitTests
 
             // Act
 
-            var sdp = SDP.ParseSDPDescription(sdpText);
+            var sdp = useSpan
+                ? SDP.ParseSDPDescription(sdpText.AsSpan())
+                : SDP.ParseSDPDescription(sdpText);
             if (changeSessionName)
             {
                 sdp.SessionName = "changed";
@@ -258,6 +263,8 @@ namespace SIPSorcery.Net.UnitTests
         [Theory]
         [InlineData(0x0020)]
         [InlineData(0x0009)]
+        [InlineData(0x000B)]
+        [InlineData(0x00A0)]
         public void MediaFormatAttributesAcceptLeadingWhitespace(int codePoint)
         {
             // Arrange
@@ -316,6 +323,8 @@ namespace SIPSorcery.Net.UnitTests
         [InlineData(0x0020, 2)]
         [InlineData(0x0009, 1)]
         [InlineData(0x0009, 2)]
+        [InlineData(0x000B, 1)]
+        [InlineData(0x00A0, 2)]
         public void ExtensionMapsAcceptWhitespaceSeparators(int codePoint, int count)
         {
             // Arrange
@@ -342,11 +351,54 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
+        /// Reusing known protocol tokens must preserve the spelling of all other tokens.
+        /// </summary>
+        [Theory]
+        [InlineData("IN", "IP4", "RTP/AVP")]
+        [InlineData("IN", "IP6", "RTP/SAVP")]
+        [InlineData("IN", "IP4", "RTP/AVPF")]
+        [InlineData("IN", "IP4", "RTP/SAVPF")]
+        [InlineData("IN", "IP4", "UDP/TLS/RTP/SAVP")]
+        [InlineData("IN", "IP6", "UDP/TLS/RTP/SAVPF")]
+        [InlineData("IN", "IP4", "DTLS/SCTP")]
+        [InlineData("IN", "IP4", "UDP/DTLS/SCTP")]
+        [InlineData("in", "ip4", "rtp/avp")]
+        [InlineData("IN", "ip6", "udp/tls/rtp/savpf")]
+        [InlineData("X-NET", "X-ADDR", "CUSTOM/PROFILE")]
+        public void ProtocolTokenSpellingSurvivesParsingAndSerialization(string networkType, string addressType, string transport)
+        {
+            // Arrange
+
+            var sdpText = SessionHeader.Replace("IN IP4", $"{networkType} {addressType}") +
+                $"m=audio 12345 {transport} 0{CRLF}";
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText);
+            var roundTrip = SDP.ParseSDPDescription(sdp.ToString());
+
+            // Assert
+
+            Assert.Equal(networkType, sdp.NetworkType);
+            Assert.Equal(addressType, sdp.AddressType);
+            Assert.Equal(networkType, sdp.Connection.ConnectionNetworkType);
+            Assert.Equal(addressType, sdp.Connection.ConnectionAddressType);
+            Assert.Equal(transport, sdp.Media[0].Transport);
+            Assert.Equal(networkType, roundTrip.NetworkType);
+            Assert.Equal(addressType, roundTrip.AddressType);
+            Assert.Equal(networkType, roundTrip.Connection.ConnectionNetworkType);
+            Assert.Equal(addressType, roundTrip.Connection.ConnectionAddressType);
+            Assert.Equal(transport, roundTrip.Media[0].Transport);
+        }
+
+        /// <summary>
         /// Duplicate packetization-mode parameters retain the existing last-value-wins behavior.
         /// </summary>
         [Theory]
         [InlineData("packetization-mode=1;packetization-mode=0", false)]
         [InlineData("packetization-mode=0;packetization-mode=1", true)]
+        [InlineData("packetization-mode=1;profile-level-id=42e01f;packetization-mode=0", false)]
+        [InlineData("packetization-mode=0;profile-level-id=42e01f;PACKETIZATION-MODE=1", true)]
         public void DuplicatePacketizationModeUsesLastValue(string fmtp, bool expectedCompatible)
         {
             // Arrange

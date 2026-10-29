@@ -56,7 +56,7 @@ internal static class SearchValueHelpers
 #else
             =>
 #endif
-            "\r\n\f\u0085\u2028\u2029"
+            "\r\n"
 #if NET8_0_OR_GREATER
             )
 #else
