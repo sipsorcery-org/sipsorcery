@@ -32,12 +32,19 @@ namespace SIPSorcery.Net
     public class RTCPCompoundPacket
     {
         private static readonly ILogger logger = LogFactory.CreateLogger<RTCPCompoundPacket>();
+        private List<RTCPFeedback> _feedbackMessages;
 
         public RTCPSenderReport SenderReport { get; private set; }
         public RTCPReceiverReport ReceiverReport { get; private set; }
         public RTCPSDesReport SDesReport { get; private set; }
         public RTCPBye Bye { get; set; }
         public RTCPFeedback Feedback { get; set; }
+        /// <summary>
+        /// All feedback messages parsed from this packet, in wire order.
+        /// The Feedback property retains the last message for existing callers.
+        /// </summary>
+        public IReadOnlyList<RTCPFeedback> FeedbackMessages =>
+            _feedbackMessages ?? (IReadOnlyList<RTCPFeedback>)Array.Empty<RTCPFeedback>();
         public RTCPTWCCFeedback TWCCFeedback { get; set; }
 
         protected internal RTCPCompoundPacket()
@@ -112,7 +119,7 @@ namespace SIPSorcery.Net
                                     offset += twccFeedbackLength;
                                     break;
                                 default:
-                                    Feedback = new RTCPFeedback(buffer);
+                                    AddFeedback(new RTCPFeedback(buffer));
                                     int rtpfbFeedbackLength = Feedback.GetBytes().Length;
                                     offset += rtpfbFeedbackLength;
                                     break;
@@ -120,7 +127,7 @@ namespace SIPSorcery.Net
                             break;
                         case (byte)RTCPReportTypesEnum.PSFB:
                             // TODO: Interpret Payload specific feedback reports.
-                            Feedback = new RTCPFeedback(buffer);
+                            AddFeedback(new RTCPFeedback(buffer));
                             int psfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
                             offset += psfbFeedbackLength;
                             //var psfbHeader = new RTCPHeader(buffer);
@@ -205,6 +212,12 @@ namespace SIPSorcery.Net
             return sb.ToString().TrimEnd('\n');
         }
 
+        private void AddFeedback(RTCPFeedback feedback)
+        {
+            Feedback = feedback;
+            (_feedbackMessages ??= new List<RTCPFeedback>()).Add(feedback);
+        }
+
         public static bool TryParse(
             ReadOnlySpan<byte> packet,
             out RTCPCompoundPacket rtcpCompoundPacket,
@@ -278,7 +291,7 @@ namespace SIPSorcery.Net
                             {
                                 default:
                                     {
-                                        rtcpCompoundPacket.Feedback = new RTCPFeedback(buffer);
+                                        rtcpCompoundPacket.AddFeedback(new RTCPFeedback(buffer));
                                         int rtpfbFeedbackLength = (rtcpCompoundPacket.Feedback != null) ? rtcpCompoundPacket.Feedback.GetBytes().Length : Int32.MaxValue;
                                         offset += rtpfbFeedbackLength;
                                     }
@@ -294,7 +307,7 @@ namespace SIPSorcery.Net
                             break;
                         case (byte)RTCPReportTypesEnum.PSFB:
                             // TODO: Interpret Payload specific feedback reports.
-                            rtcpCompoundPacket.Feedback = new RTCPFeedback(buffer);
+                            rtcpCompoundPacket.AddFeedback(new RTCPFeedback(buffer));
                             int psfbFeedbackLength = (rtcpCompoundPacket.Feedback != null) ? rtcpCompoundPacket.Feedback.GetBytes().Length : Int32.MaxValue;
                             offset += psfbFeedbackLength;
                             //var psfbHeader = new RTCPHeader(buffer);
