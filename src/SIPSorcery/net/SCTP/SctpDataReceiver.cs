@@ -271,12 +271,17 @@ namespace SIPSorcery.Net
                     if (dataChunk.Begining && dataChunk.Ending)
                     {
                         // Single packet chunk.
+                        // Uses ToArray() to maintain exact behavior.
+                        // Avoiding ToArray() requires public API change of UserData (ReadOnlySpan<> or ReadOnlyMemory<>).
+                        var userData = dataChunk.UserData.Length == dataChunk.UserDataLength
+                            ? dataChunk.UserData
+                            : dataChunk.UserData.AsSpan(0, dataChunk.UserDataLength).ToArray();
                         frame = new SctpDataFrame(
                             dataChunk.Unordered,
                             dataChunk.StreamID,
                             dataChunk.StreamSeqNum,
                             dataChunk.PPID,
-                            dataChunk.UserData);
+                            userData);
                     }
                     else
                     {
@@ -504,24 +509,32 @@ namespace SIPSorcery.Net
         {
             unchecked
             {
-                byte[] full = new byte[MAX_FRAME_SIZE];
-                int posn = 0;
                 var beginChunk = fragments[beginTSN];
-                var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full);
-
-                uint afterEndTSN = endTSN + 1;
+                int posn = 0;
                 uint tsn = beginTSN;
-
+                uint afterEndTSN = endTSN + 1;
+                
+                // calculate full buffer length upfront
                 while (tsn != afterEndTSN)
                 {
-                    var fragment = fragments[tsn].UserData;
-                    Buffer.BlockCopy(fragment, 0, full, posn, fragment.Length);
-                    posn += fragment.Length;
+                    posn += fragments[tsn].UserDataLength;
+                    tsn++;
+                }
+                byte[] full = new byte[posn];
+                
+                // copy fragments to full buffer
+                tsn = beginTSN;
+                posn = 0;
+                while (tsn != afterEndTSN)
+                {
+                    var fragment = fragments[tsn];
+                    Buffer.BlockCopy(fragment.UserData, 0, full, posn, fragment.UserDataLength);
+                    posn += fragment.UserDataLength;
                     fragments.Remove(tsn);
                     tsn++;
                 }
 
-                frame.UserData = frame.UserData.AsSpan(0, posn).ToArray();
+                var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full);
 
                 return frame;
             }
