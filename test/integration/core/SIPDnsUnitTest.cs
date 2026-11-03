@@ -204,7 +204,7 @@ namespace SIPSorcery.SIP.IntegrationTests
             var result = await SIPDns.ResolveAsync(new SIPURI(null, "sipsorcery.com", null, SIPSchemesEnum.sips, SIPProtocolsEnum.tls), false, cts.Token);
 
             Assert.NotNull(result);
-            Assert.Equal("67.222.131.147", result.Address.ToString());
+            Assert.Equal("165.245.201.146", result.Address.ToString());
             Assert.Equal(5061, result.Port);
             Assert.Equal(SIPProtocolsEnum.tls, result.Protocol);
 
