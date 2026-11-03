@@ -361,5 +361,163 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(expectedCompatible, compatible);
         }
+
+        /// <summary>
+        /// Only msrp:// paths are parsed into the message media format. Other path URIs, such as
+        /// msrps:// for MSRP over TLS, are not understood and must be kept as unknown attributes so
+        /// they survive serialization.
+        /// </summary>
+        [Theory]
+        [InlineData("a=path:msrps://atlanta.example.com:7654/jshA7weztas;tcp")]
+        [InlineData("a=path:x-custom")]
+        public void NonMsrpPathAttributesArePreservedAndRoundTripped(string attribute)
+        {
+            // Arrange
+
+            var sdpText = SessionHeader +
+                $"m=message 7654 TCP/TLS/MSRP *{CRLF}" +
+                attribute + CRLF;
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText);
+            var serialized = sdp.ToString();
+            var roundTrip = SDP.ParseSDPDescription(serialized);
+
+            // Assert
+
+            Assert.Equal(new[] { attribute }, sdp.Media[0].ExtraMediaAttributes);
+            Assert.Contains(attribute + CRLF, serialized);
+            Assert.Equal(new[] { attribute }, roundTrip.Media[0].ExtraMediaAttributes);
+        }
+
+        /// <summary>
+        /// An msrp:// path is parsed into its address, port and endpoint.
+        /// </summary>
+        [Fact]
+        public void MsrpPathAttributeIsParsed()
+        {
+            // Arrange
+
+            var sdpText = SessionHeader +
+                $"m=message 7654 TCP/MSRP *{CRLF}" +
+                $"a=path:msrp://192.168.0.105:7654/jshA7weztas;tcp{CRLF}";
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText);
+
+            // Assert
+
+            var messageFormat = sdp.Media[0].MessageMediaFormat;
+            Assert.Equal("192.168.0.105", messageFormat.IP);
+            Assert.Equal("7654", messageFormat.Port);
+            Assert.Equal("jshA7weztas;tcp", messageFormat.Endpoint);
+            Assert.Empty(sdp.Media[0].ExtraMediaAttributes);
+        }
+
+        /// <summary>
+        /// An ssrc attribute carrying only the SSRC value still registers that SSRC on the
+        /// announcement, and the SSRC survives serialization.
+        /// </summary>
+        [Fact]
+        public void SsrcAttributeWithoutAttributeValueRegistersSsrc()
+        {
+            // Arrange
+
+            var sdpText = SessionHeader +
+                $"m=audio 12345 RTP/AVP 0{CRLF}" +
+                $"a=ssrc:1234{CRLF}";
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText);
+            var roundTrip = SDP.ParseSDPDescription(sdp.ToString());
+
+            // Assert
+
+            var ssrcAttribute = Assert.Single(sdp.Media[0].SsrcAttributes);
+            Assert.Equal(1234U, ssrcAttribute.SSRC);
+            Assert.Null(ssrcAttribute.Cname);
+            Assert.Equal(1234U, Assert.Single(roundTrip.Media[0].SsrcAttributes).SSRC);
+        }
+
+        /// <summary>
+        /// The port and port count must be whole whitespace-delimited numeric tokens. A media line
+        /// with trailing characters on the port is invalid and must not create an announcement, rather
+        /// than being split into a truncated port and a bogus transport.
+        /// </summary>
+        [Theory]
+        [InlineData("m=audio 12345x RTP/AVP 0")]
+        [InlineData("m=audio 123x45 RTP/AVP 0")]
+        [InlineData("m=audio 12345/2x RTP/AVP 0")]
+        [InlineData("m=audio 12345/x RTP/AVP 0")]
+        public void MediaLineWithMalformedPortIsRejected(string mediaLine)
+        {
+            // Arrange
+
+            var sdpText = SessionHeader + mediaLine + CRLF;
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText);
+
+            // Assert
+
+            Assert.Empty(sdp.Media);
+        }
+
+        /// <summary>
+        /// Valid port and port count forms remain accepted.
+        /// </summary>
+        [Theory]
+        [InlineData("m=audio 12345 RTP/AVP 0", 12345, 0)]
+        [InlineData("m=audio 12345/2 RTP/AVP 0", 12345, 2)]
+        [InlineData("m=audio\t12345\tRTP/AVP\t0", 12345, 0)]
+        public void MediaLineWithValidPortIsParsed(string mediaLine, int expectedPort, int expectedPortCount)
+        {
+            // Arrange
+
+            var sdpText = SessionHeader + mediaLine + CRLF;
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText);
+
+            // Assert
+
+            var announcement = Assert.Single(sdp.Media);
+            Assert.Equal(expectedPort, announcement.Port);
+            Assert.Equal(expectedPortCount, announcement.PortCount);
+            Assert.Equal("RTP/AVP", announcement.Transport);
+            Assert.Equal(new[] { 0 }, announcement.MediaFormats.Keys);
+        }
+
+        /// <summary>
+        /// Whitespace between the setup attribute's colon and its role is tolerated at both session
+        /// and media level.
+        /// </summary>
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void SetupAttributeAcceptsWhitespaceBeforeRole(bool mediaLevel)
+        {
+            // Arrange
+
+            const string attribute = "a=setup: active";
+            var sdpText = SessionHeader +
+                (mediaLevel ? "" : attribute + CRLF) +
+                $"m=audio 12345 RTP/AVP 0{CRLF}" +
+                (mediaLevel ? attribute + CRLF : "");
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText);
+
+            // Assert
+
+            var role = mediaLevel ? sdp.Media[0].IceRole : sdp.IceRole;
+            Assert.Equal(IceRolesEnum.active, role);
+        }
     }
 }
