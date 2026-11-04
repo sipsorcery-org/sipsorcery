@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIPSorcery Softphone</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" data-icon="logo"></span>
+        <span class="brand-name">SIPSorcery</span>
+        <span class="brand-divider"></span>
+        <span class="brand-sub">Softphone</span>
+      </div>
+      <div class="topbar-right">
+        <div class="privacy" id="privacy" role="group" aria-label="All calls"></div>
+        <button class="icon-btn settings-btn" id="settingsBtn" data-act="settings" aria-label="Settings" title="Settings">
+          <span data-icon="settings"></span>
+        </button>
+      </div>
+    </header>
+
+    <form class="dialbar" id="dialForm" autocomplete="off">
+      <div class="field field-account">
+        <div class="field-label-row">
+          <label class="field-label" for="accountSelect">Call from</label>
+          <span class="reg-status" id="regStatus"></span>
+        </div>
+        <select id="accountSelect"></select>
+        <button type="button" class="btn btn-small account-manage" id="manageAccounts" data-act="accounts" title="Manage SIP accounts">
+          <span id="manageIcon" data-icon="users"></span><span>Manage accounts</span><span class="pending-dot" id="accountsPending" hidden></span>
+        </button>
+      </div>
+      <div class="field field-dest">
+        <label class="field-label" for="destInput">Number or SIP address</label>
+        <div class="dest-wrap">
+          <input id="destInput" type="text" placeholder="Name, number or SIP address" spellcheck="false"
+            role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="dialSuggest">
+          <div class="dial-suggest" id="dialSuggest" role="listbox" aria-label="Recent calls and contacts" hidden></div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-call">
+        <span data-icon="phone"></span><span>New call</span>
+      </button>
+    </form>
+
+    <div class="body">
+      <aside class="lines" id="sidebar" aria-label="Calls">
+        <!-- Phones only: the sidebar is a strip, so the two sections become tabs. -->
+        <div class="side-tabs" role="tablist" aria-label="Sidebar">
+          <button role="tab" id="tabCalls" data-act="side-tab" data-tab="calls">Calls <span class="call-count" id="tabCallCount"></span></button>
+          <button role="tab" id="tabHistory" data-act="side-tab" data-tab="history">History <span class="missed-count" id="tabMissed"></span></button>
+        </div>
+        <div class="side-scroll">
+          <section class="side-section active-section" aria-labelledby="activeHead">
+            <div class="lines-head">
+              <span id="activeHead">Active calls</span>
+              <span class="call-count" id="callCount"></span>
+            </div>
+            <ol class="line-list" id="callList"></ol>
+          </section>
+          <section class="side-section history-section" aria-labelledby="historyHead">
+            <div class="lines-head">
+              <button type="button" class="section-toggle" id="historyToggle" data-act="history-toggle" aria-expanded="true" aria-controls="historyBody">
+                <span class="caret">▾</span><span id="historyHead">History</span>
+              </button>
+              <span class="missed-count" id="missedCount" title="Missed calls you haven't looked at"></span>
+            </div>
+            <div id="historyBody">
+              <ol class="history-list" id="historyList"></ol>
+              <button type="button" class="see-all" id="seeAllHistory" data-act="history">See all history</button>
+            </div>
+          </section>
+        </div>
+      </aside>
+
+      <main class="stage" id="stage"></main>
+    </div>
+
+    <footer class="statusbar">
+      <button class="diag-toggle" id="diagToggle" aria-expanded="false">
+        <span class="caret">▸</span> Diagnostics
+      </button>
+    </footer>
+
+    <section class="diagnostics" id="diagnostics" hidden>
+      <div class="diag-actions">
+        <span class="diag-title">Prototype controls</span>
+        <button class="btn btn-small" data-sim="incoming">Simulate incoming call</button>
+        <button class="btn btn-small" data-sim="remote-hangup">Remote hangs up selected</button>
+        <button class="btn btn-small" data-sim="remote-hangup-other">Remote hangs up another call</button>
+        <button class="btn btn-small" data-sim="missed">Missed call</button>
+        <button class="btn btn-small" data-sim="burst">3 calls at once</button>
+        <button class="btn btn-small" data-sim="hold-skip">Held calls +1 min</button>
+        <button class="btn btn-small" data-sim="net-bad">My network is poor</button>
+        <button class="btn btn-small" data-sim="text-remote">Remote types a message</button>
+        <button class="btn btn-small" data-sim="text-unsupported">Remote doesn't support text</button>
+        <button class="btn btn-small" data-sim="reg-fail">Break a registration</button>
+        <button class="btn btn-small" data-sim="clear">Clear log</button>
+      </div>
+      <pre class="diag-log" id="diagLog"></pre>
+    </section>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <div class="modal-backdrop" id="modal" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
