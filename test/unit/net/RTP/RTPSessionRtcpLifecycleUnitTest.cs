@@ -17,11 +17,17 @@
 //
 // History:
 // 23 May 2026	Claude Code - Opus 4.7	Created.
+// 05 Nov 2026	Claude Code - Opus 5.5	Added tests for not starting RTCP on
+//                                      streams the remote did not negotiate.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net.UnitTests.Helpers;
 using SIPSorcery.SIP.App;
@@ -161,6 +167,186 @@ namespace SIPSorcery.Net.UnitTests
                     "Audio RTCP must stay open when only video is rejected.");
                 Assert.True(session.VideoStream.RtcpSession.IsClosed,
                     "Video RTCP must close when video is rejected.");
+            }
+        }
+
+        /// <summary>
+        /// An audio and video session answering an audio only offer must not start
+        /// the video RTCP session. Nothing will ever arrive on that stream so its
+        /// inactivity timer would fire OnTimeout and SIPUserAgent would hang up a
+        /// healthy audio call.
+        /// </summary>
+        [Fact]
+        public async Task AnswerAudioOnlyOffer_WithAudioVideoSession_DoesNotStartVideoRtcp()
+        {
+            using (var session = new RtpSessionBuilder()
+                .WithAudioTrack()
+                .WithVideoTrack()
+                .Build())
+            {
+                SDP offer = SDP.ParseSDPDescription(SdpFixtures.AudioOnlyOfferPcmu);
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    session.SetRemoteDescription(SdpType.offer, offer));
+
+                var answer = session.CreateAnswer(IPAddress.Loopback);
+                Assert.DoesNotContain(answer.Media, m => m.Media == SDPMediaTypesEnum.video && m.Port != 0);
+
+                await session.Start();
+
+                Assert.True(session.IsAudioStarted);
+                Assert.NotEqual(DateTime.MinValue, session.AudioStream.RtcpSession.StartedAt);
+
+                Assert.False(session.IsVideoStarted);
+                Assert.Equal(DateTime.MinValue, session.VideoStream.RtcpSession.StartedAt);
+            }
+        }
+
+        /// <summary>
+        /// Same scenario as above but with a short inactivity timeout, confirming the
+        /// unnegotiated video stream never raises OnTimeout. The RTCP report timer first
+        /// fires 2.5 to 7.5 seconds after a session is started, so wait for the (silent,
+        /// but negotiated) audio stream to time out and then check video did not.
+        /// </summary>
+        [Fact]
+        public async Task AnswerAudioOnlyOffer_WithAudioVideoSession_DoesNotRaiseVideoTimeout()
+        {
+            using (var session = new RtpSessionBuilder()
+                .WithAudioTrack()
+                .WithVideoTrack()
+                .Build())
+            {
+                session.AudioStream.RtcpSession.NoActivityTimeoutMilliseconds = 1;
+                session.VideoStream.RtcpSession.NoActivityTimeoutMilliseconds = 1;
+
+                var audioTimedOut = new ManualResetEventSlim(false);
+                bool videoTimedOut = false;
+                session.OnTimeout += (mediaType) =>
+                {
+                    if (mediaType == SDPMediaTypesEnum.video)
+                    {
+                        videoTimedOut = true;
+                    }
+                    else if (mediaType == SDPMediaTypesEnum.audio)
+                    {
+                        audioTimedOut.Set();
+                    }
+                };
+
+                SDP offer = SDP.ParseSDPDescription(SdpFixtures.AudioOnlyOfferPcmu);
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    session.SetRemoteDescription(SdpType.offer, offer));
+                session.CreateAnswer(IPAddress.Loopback);
+                await session.Start();
+
+                Assert.True(audioTimedOut.Wait(10000), "Audio RTCP session should have timed out.");
+                Assert.False(videoTimedOut, "Unnegotiated video RTCP session must not time out.");
+                Assert.False(session.VideoStream.RtcpSession.IsTimedOut);
+            }
+        }
+
+        /// <summary>
+        /// When both audio and video are negotiated both RTCP sessions start.
+        /// Guards against the start condition being too restrictive.
+        /// </summary>
+        [Fact]
+        public async Task AnswerAudioVideoOffer_StartsBothRtcpSessions()
+        {
+            using (var session = new RtpSessionBuilder()
+                .WithAudioTrack()
+                .WithVideoTrack()
+                .Build())
+            {
+                SDP offer = SDP.ParseSDPDescription(SdpFixtures.AudioVideoOfferAudioFirst);
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    session.SetRemoteDescription(SdpType.offer, offer));
+                session.CreateAnswer(IPAddress.Loopback);
+
+                await session.Start();
+
+                Assert.True(session.IsAudioStarted);
+                Assert.True(session.IsVideoStarted);
+                Assert.NotEqual(DateTime.MinValue, session.VideoStream.RtcpSession.StartedAt);
+            }
+        }
+
+        /// <summary>
+        /// A call that starts audio only and later accepts a re-INVITE adding video
+        /// must start the video RTCP session on the next Start call (SIPUserAgent
+        /// calls MediaSession.Start after answering a re-INVITE that adds a stream).
+        /// </summary>
+        [Fact]
+        public async Task ReInviteAddingVideo_StartsVideoRtcpOnNextStart()
+        {
+            using (var session = new RtpSessionBuilder()
+                .WithAudioTrack()
+                .WithVideoTrack()
+                .Build())
+            {
+                SDP offer = SDP.ParseSDPDescription(SdpFixtures.AudioOnlyOfferPcmu);
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    session.SetRemoteDescription(SdpType.offer, offer));
+                session.CreateAnswer(IPAddress.Loopback);
+                await session.Start();
+                Assert.False(session.IsVideoStarted);
+
+                SDP reoffer = SDP.ParseSDPDescription(SdpFixtures.AudioVideoOfferAudioFirst);
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    session.SetRemoteDescription(SdpType.offer, reoffer));
+                session.CreateAnswer(IPAddress.Loopback);
+                await session.Start();
+
+                Assert.True(session.IsVideoStarted);
+                Assert.NotEqual(DateTime.MinValue, session.VideoStream.RtcpSession.StartedAt);
+                Assert.False(session.VideoStream.RtcpSession.IsClosed);
+            }
+        }
+
+        /// <summary>
+        /// The caller side of SIPUserAgent.AddVideo: an audio call sends a re-INVITE
+        /// offering video and the far end refuses it with m=video 0. The video RTCP
+        /// session must not be started and audio must be unaffected.
+        /// </summary>
+        [Fact]
+        public async Task ReInviteVideoRefusedWithPortZero_DoesNotStartVideoRtcp()
+        {
+            using (var session = new RtpSessionBuilder()
+                .WithAudioTrack()
+                .WithVideoTrack()
+                .Build())
+            {
+                SDP offer = SDP.ParseSDPDescription(SdpFixtures.AudioOnlyOfferPcmu);
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    session.SetRemoteDescription(SdpType.offer, offer));
+                session.CreateAnswer(IPAddress.Loopback);
+                await session.Start();
+
+                // Local re-INVITE offering video, answered with the video port set to 0.
+                session.CreateOffer(IPAddress.Loopback);
+                SDP answer = SDP.ParseSDPDescription(SdpFixtures.ReInviteRejectsVideoPortZero);
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    session.SetRemoteDescription(SdpType.answer, answer));
+                await session.Start();
+
+                Assert.False(session.IsVideoStarted);
+                Assert.Equal(DateTime.MinValue, session.VideoStream.RtcpSession.StartedAt);
+                Assert.True(session.IsAudioStarted);
+                Assert.False(session.AudioStream.RtcpSession.IsClosed);
+            }
+        }
+
+        /// <summary>
+        /// An RTP session used without SDP negotiation (no remote description set)
+        /// must still start its RTCP session.
+        /// </summary>
+        [Fact]
+        public async Task StartWithoutRemoteDescription_StartsRtcp()
+        {
+            using (var session = new RtpSessionBuilder().WithAudioTrack().Build())
+            {
+                await session.Start();
+
+                Assert.True(session.IsAudioStarted);
+                Assert.NotEqual(DateTime.MinValue, session.AudioStream.RtcpSession.StartedAt);
             }
         }
 

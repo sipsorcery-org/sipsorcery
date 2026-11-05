@@ -2319,11 +2319,33 @@ namespace SIPSorcery.SIP.App
                 return;
             }
 
+            if (mediaType != SDPMediaTypesEnum.audio && IsAudioActive())
+            {
+                // A secondary stream, such as video, has stopped but the audio is still flowing. The call
+                // itself is still good so don't hang it up.
+                logger.LogWarning("RTP has timed out for media {MediaType} but audio is still active, not hanging up call.", mediaType);
+                return;
+            }
+
             if (!IsOnLocalHold && !IsOnRemoteHold)
             {
                 logger.LogWarning("RTP has timed out for media {MediaType} hanging up call.", mediaType);
                 Hangup();
             }
+        }
+
+        /// <summary>
+        /// Checks whether the media session has an audio stream whose RTCP session is running and
+        /// has not timed out, i.e. audio is still being received from the remote party.
+        /// </summary>
+        private bool IsAudioActive()
+        {
+            var audioRtcp = (MediaSession as RTPSession)?.AudioStream?.RtcpSession;
+
+            return audioRtcp != null &&
+                audioRtcp.StartedAt != DateTime.MinValue &&
+                !audioRtcp.IsClosed &&
+                !audioRtcp.IsTimedOut;
         }
 
         /// <summary>

@@ -2429,6 +2429,43 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Determines whether a media stream is part of the negotiated session and should have
+        /// its RTCP session started. A stream that is not negotiated will never receive any media,
+        /// so starting its RTCP session would only result in its inactivity timer firing a
+        /// spurious timeout (which for a SIP call results in the call being hung up).
+        /// </summary>
+        /// <remarks>
+        /// If no remote description has been set the session is being used without SDP negotiation
+        /// (e.g. with a manually set destination) and the stream is treated as ready.
+        /// </remarks>
+        /// <param name="stream">The media stream to check.</param>
+        /// <returns>True if the stream's RTCP session should be started.</returns>
+        private bool IsStreamReadyToStart(MediaStream stream)
+        {
+            if (stream.RtcpSession == null || stream.RtcpSession.IsClosed)
+            {
+                return false;
+            }
+
+            if (stream.LocalTrack == null || stream.LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
+            {
+                // The local track may have been disabled if there were no matching capabilities with
+                // the remote party, or the remote party rejected the stream with a port of 0.
+                return false;
+            }
+
+            if (RemoteDescription != null &&
+                (stream.RemoteTrack == null || stream.RemoteTrack.StreamStatus == MediaStreamStatusEnum.Inactive))
+            {
+                // The remote description has no media announcement for this stream, e.g. an audio and
+                // video session answering an audio only offer.
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Starts the RTCP session(s) that monitor this RTP session.
         /// </summary>
         public virtual Task Start()
@@ -2437,7 +2474,7 @@ namespace SIPSorcery.Net
             {
                 foreach (var audioStream in AudioStreamList)
                 {
-                    if (audioStream.HasAudio && audioStream.RtcpSession != null && audioStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
+                    if (audioStream.HasAudio && IsStreamReadyToStart(audioStream))
                     {
                         // The local audio track may have been disabled if there were no matching capabilities with
                         // the remote party.
@@ -2451,7 +2488,7 @@ namespace SIPSorcery.Net
             {
                 foreach (var videoStream in VideoStreamList)
                 {
-                    if (videoStream.HasVideo && videoStream.RtcpSession != null && videoStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
+                    if (videoStream.HasVideo && IsStreamReadyToStart(videoStream))
                     {
                         // The local video track may have been disabled if there were no matching capabilities with
                         // the remote party.
@@ -2465,7 +2502,7 @@ namespace SIPSorcery.Net
             {
                 foreach (var textStream in TextStreamList)
                 {
-                    if (textStream.HasText && textStream.RtcpSession != null && textStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
+                    if (textStream.HasText && IsStreamReadyToStart(textStream))
                     {
                         // The local video track may have been disabled if there were no matching capabilities with
                         // the remote party.
