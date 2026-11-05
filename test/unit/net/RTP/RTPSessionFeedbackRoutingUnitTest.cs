@@ -138,6 +138,81 @@ public class RTPSessionFeedbackRoutingUnitTest
         Assert.Equal("REMB", compound.FeedbackMessages[1].UniqueID);
     }
 
+    /// <summary>
+    /// A standalone reduced-size PLI (RFC 5506) is exactly 12 bytes. It must get through the
+    /// receive sanity check and be routed to the video stream by its media SSRC.
+    /// </summary>
+    [Fact]
+    public void StandaloneTwelveBytePictureLossIsReceived()
+    {
+        using var session = new RTPSession(false, false, false);
+        session.addTrack(new MediaStreamTrack(new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+            MediaStreamStatusEnum.SendRecv));
+        session.addTrack(new MediaStreamTrack(new VideoFormat(VideoCodecsEnum.VP8, 96),
+            MediaStreamStatusEnum.SendRecv));
+
+        var pli = new RTCPFeedback(0x11223344, session.VideoLocalTrack.Ssrc, PSFBFeedbackTypesEnum.PLI);
+        byte[] bytes = pli.GetBytes();
+        Assert.Equal(12, bytes.Length);
+
+        SDPMediaTypesEnum? receivedMedia = null;
+        RTCPCompoundPacket receivedPacket = null;
+        session.OnReceiveReport += (_, media, packet) =>
+        {
+            receivedMedia = media;
+            receivedPacket = packet;
+        };
+
+        InvokeOnReceive(session, bytes);
+
+        Assert.Equal(SDPMediaTypesEnum.video, receivedMedia);
+        Assert.NotNull(receivedPacket);
+        var received = Assert.Single(receivedPacket.FeedbackMessages);
+        Assert.Equal(PSFBFeedbackTypesEnum.PLI, received.Header.PayloadFeedbackMessageType);
+        Assert.Equal(session.VideoLocalTrack.Ssrc, received.MediaSSRC);
+    }
+
+    /// <summary>
+    /// An empty receiver report is 8 bytes and must parse without throwing.
+    /// </summary>
+    [Fact]
+    public void EightByteReceiverReportParses()
+    {
+        byte[] bytes = { 0x80, (byte)RTCPReportTypesEnum.RR, 0x00, 0x01, 0x01, 0x02, 0x03, 0x04 };
+
+        var packet = new RTCPCompoundPacket(bytes);
+
+        Assert.NotNull(packet.ReceiverReport);
+        Assert.Equal(0x01020304u, packet.ReceiverReport.SSRC);
+        Assert.Empty(packet.ReceiverReport.ReceptionReports);
+    }
+
+    /// <summary>
+    /// Anything shorter than an RTCP header plus sender SSRC is still discarded.
+    /// </summary>
+    [Fact]
+    public void SevenByteBufferIsIgnored()
+    {
+        using var session = new RTPSession(false, false, false);
+        session.addTrack(new MediaStreamTrack(new VideoFormat(VideoCodecsEnum.VP8, 96),
+            MediaStreamStatusEnum.SendRecv));
+
+        bool reportRaised = false;
+        session.OnReceiveReport += (_, _, _) => reportRaised = true;
+
+        byte[] bytes = { 0x81, (byte)RTCPReportTypesEnum.PSFB, 0x00, 0x02, 0x11, 0x22, 0x33 };
+        InvokeOnReceive(session, bytes);
+
+        Assert.False(reportRaised);
+    }
+
+    private static void InvokeOnReceive(RTPSession session, byte[] buffer)
+    {
+        var onReceive = typeof(RTPSession).GetMethod("OnReceive", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(onReceive);
+        onReceive.Invoke(session, new object[] { 0, new IPEndPoint(IPAddress.Loopback, 5005), buffer });
+    }
+
     private static RTCPFeedback CreateRemb(uint receiverSsrc, uint videoSsrc) =>
         new RTCPFeedback(receiverSsrc, 0, PSFBFeedbackTypesEnum.AFB)
         {
