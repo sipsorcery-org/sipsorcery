@@ -4,7 +4,8 @@
 //
 // What the stage shows during a call, from the UX prototype (prototype/web):
 //  - their video, while frames are arriving;
-//  - their initial, if video was agreed but nothing is arriving ("Their camera is off" after 2 s);
+//  - their initial, if video was agreed but nothing is arriving ("Their camera is off" after 2 s;
+//    another softphone sends a placeholder instead, see placeholderTrack);
 //  - an audio-only view, if the call has no video at all: two rows of frequency bars, theirs
 //    above the centre line and yours below, with notes when audio isn't flowing one way.
 // The Audio | Video switch beside Call picks the kind of call. An audio call has no video line;
@@ -93,6 +94,66 @@ function cameraWanted() {
   return before && state.videoAllowed !== false && callType === "video" && !testCameraOff;
 }
 
+// While your camera is off (or there's none) on a video call, the call sends a placeholder
+// instead of nothing: your initial on a plain background, a few frames a second. Video never
+// stops, so every SIP phone just sees a picture rather than a frozen frame or a dead stream,
+// NAT bindings and media timers stay alive, and turning the camera on is a track swap with the
+// encoder already running. It's drawn on a canvas and sent at the camera's size, so the far
+// end doesn't see the picture change shape.
+const PLACEHOLDER_FPS = 5;   // a still picture costs a few kbps; much sparser upsets some decoders
+let placeholder = null;      // { canvas, track, timer, drawn }
+
+function placeholderTrack() {
+  if (!placeholder) {
+    const canvas = Object.assign(document.createElement("canvas"), { width: 1280, height: 720 });
+    // Frame rate 0 and requestFrame: a frame goes out each time one is drawn and asked for. A
+    // canvas only produces a frame after a draw, so the picture is redrawn every time.
+    const track = canvas.captureStream(0).getVideoTracks()[0];
+    placeholder = { canvas, track, timer: setInterval(placeholderFrame, 1000 / PLACEHOLDER_FPS) };
+    placeholderFrame();
+  }
+  return placeholder.track;
+}
+
+function placeholderFrame() {
+  const { canvas, track } = placeholder;
+  const label = state.me ? initial(state.me) : "";
+  const g = canvas.getContext("2d");
+  const { width: w, height: h } = canvas;
+  g.fillStyle = "#1f3a31";
+  g.fillRect(0, 0, w, h);
+  g.strokeStyle = g.fillStyle = "#a9c2b8";
+  g.lineWidth = 4;
+  g.beginPath();
+  g.arc(w / 2, h / 2, 120, 0, 2 * Math.PI);
+  g.stroke();
+  if (label) {
+    g.font = '300 120px "Segoe UI", system-ui, sans-serif';
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText(label, w / 2, h / 2 + 6);
+  } else {
+    // No name to show: a head and shoulders.
+    g.beginPath();
+    g.arc(w / 2, h / 2 - 30, 38, 0, 2 * Math.PI);
+    g.fill();
+    g.beginPath();
+    g.ellipse(w / 2, h / 2 + 70, 70, 50, 0, Math.PI, 2 * Math.PI);
+    g.fill();
+  }
+  track.requestFrame();
+}
+
+function stopPlaceholder() {
+  if (!placeholder) return;
+  clearInterval(placeholder.timer);
+  placeholder.track.stop();
+  placeholder = null;
+}
+
+// What the call's video sender should carry: the camera when it's on and open, else the placeholder.
+const videoToSend = () => (call.camOn && localTrack("video")) || placeholderTrack();
+
 // Opens or closes the camera to match cameraWanted(), and puts it on the call when it should be sent.
 function syncCamera() {
   cameraBusy = (cameraBusy ?? Promise.resolve()).then(async () => {
@@ -120,8 +181,10 @@ function syncCamera() {
     // Always match the call's sender to the camera, even when the camera itself didn't change:
     // a new call (or the new connection after Add video) has a new sender, and a camera left
     // open from the preview or the last call must still be put on it.
-    const send = call?.camOn ? localTrack("video") : null;
-    if (call?.videoSender && call.videoSender.track !== send) await call.videoSender.replaceTrack(send);
+    if (call?.videoSender) {
+      const send = videoToSend();
+      if (call.videoSender.track !== send) await call.videoSender.replaceTrack(send);
+    }
     const shown = $("self").srcObject?.getVideoTracks()[0] ?? null;
     if (shown !== localTrack("video")) {
       $("self").srcObject = localTrack("video") ? new MediaStream([localTrack("video")]) : null;
@@ -168,9 +231,10 @@ async function onMediaOffer(sdp) {
     if (kind === "video") {
       call.hasVideo = true;
       call.videoSender = tr.sender;
-      // Always sendrecv when there's a camera, so it can be turned on later without
-      // renegotiating; a camera that's off just sends nothing.
-      tr.direction = hasCamera ? "sendrecv" : "recvonly";
+      // Always sendrecv, camera or not: the placeholder goes out until the camera does, so it
+      // can be turned on later without renegotiating. Sent now, so video flows from the start.
+      tr.direction = "sendrecv";
+      await tr.sender.replaceTrack(placeholderTrack());
     } else {
       const track = localTrack("audio");
       tr.direction = track ? "sendrecv" : "recvonly";
@@ -211,14 +275,15 @@ function closeMedia() {
   lastStats = null;
   for (const a of [call?.remoteAnalyser, call?.localAnalyser]) a?.source.disconnect();
   call = null;
+  stopPlaceholder();
   $("remote").srcObject = null;
 }
 
-// Camera on or off during a video call. Off closes the camera, not just the stream to them.
+// Camera on or off during a video call. Off swaps in the placeholder, then closes the camera.
 async function setCamera(on) {
   if (!call?.videoSender || !hasCamera) return;
   call.camOn = on;
-  if (!on) await call.videoSender.replaceTrack(null);
+  if (!on) await call.videoSender.replaceTrack(placeholderTrack());
   log(`camera ${on ? "on" : "off"}`);
   render();
   await syncCamera();
@@ -432,13 +497,13 @@ function render() {
       break;
     case "ringing": {
       title.textContent = remote;
-      sub.textContent = "Incoming call";
+      sub.textContent = state.incomingVideo ? "Incoming video call" : "Incoming call";
       const answer = button("btn-primary", "Answer", () => post({ type: "answer" }));
-      actions.append(
-        button("btn-danger", "Decline", () => post({ type: "decline" })),
-        // Answers with your camera off; you still see them, and can turn it on any time.
-        button("", "Answer, camera off", () => { answerCamera = false; post({ type: "answer" }); }),
-        answer);
+      actions.append(button("btn-danger", "Decline", () => post({ type: "decline" })));
+      // Only a video call can be answered with your camera off (you still see them, and can turn
+      // it on any time). An audio call has no camera to choose about.
+      if (state.incomingVideo) actions.append(button("", "Answer, camera off", () => { answerCamera = false; post({ type: "answer" }); }));
+      actions.append(answer);
       answer.focus();
       break;
     }

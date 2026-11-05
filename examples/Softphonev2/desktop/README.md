@@ -35,13 +35,20 @@ the desktop app, using the media design the video spike
 - **Answer, camera off** answers a ringing video call without sending your camera.
 - **Camera on/off** during a video call turns it on or off with no renegotiation: the page keeps
   the video sendrecv and swaps the track in and out (`replaceTrack`).
+- **Video never stops while your camera is off.** A video call with your camera off, or with no
+  camera at all, sends a placeholder: your initial (from the account's display name or user
+  name, or a head-and-shoulders icon with no account) in a circle, drawn on a canvas at
+  1280×720 and sent at 5 fps. A still picture costs a few kbps. So any SIP phone just shows a
+  picture, not a frozen last frame or a stream that looks broken. NAT bindings and media timers
+  on the video port stay alive, and turning the camera on is a track swap with the encoder
+  already running. Your own self view still says "Camera off".
 
 The stage then shows one of three things:
 
 | They send video | What you see |
 |---|---|
 | Yes | Their video. |
-| Agreed, but nothing arriving for 2 s | Their initial and "Their camera is off". |
+| Agreed, but nothing arriving for 2 s | Their initial and "Their camera is off". Another softphone sends its placeholder instead, so this is for far ends that really stop sending. |
 | No video on the call (`m=video` refused or never offered) | An "Audio only" label and two rows of frequency bars: their audio above the centre line, yours below. With reduced motion on, each row is a single level bar. |
 
 The bars also show **one-way audio**, the classic SIP/NAT fault. If no audio packets arrive for
@@ -112,14 +119,15 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 |---|---|
 | Softphone to softphone, audio call | Both stages show the audio-only bars and Add video. |
 | Softphone to softphone, video call (`--video`) | Audio at 50 pkt/s each way; video at 30 fps each way, VP8. The first stats sample, at 5 s, already shows video. |
-| Video call with `--camera-off` on the caller | The caller sees the callee's video at 30 fps and its self view says "Camera off"; the callee sees "Their camera is off". |
-| Audio call, caller presses Add video (`--add-video 4`) | re-INVITE accepted; both relays rebuilt with VP8. The callee shows the caller's video at 30 fps; the caller sees "Their camera is off", since the callee accepted with its camera off. |
+| Video call with `--camera-off` on the caller | The caller sees the callee's video at 30 fps and its self view says "Camera off". The callee gets the caller's placeholder at 5 fps (640×360 at first, 1280×720 once the encoder ramps up): the initial with an account, the icon without. |
+| Same, then Camera on, then Camera off | The callee's video goes 5 fps placeholder, then 30 fps camera, then 5 fps placeholder, without a gap. The caller's camera opens and closes with it. |
+| Audio call, caller presses Add video (`--add-video 4`) | re-INVITE accepted; both relays rebuilt with VP8. The callee shows the caller's video at 30 fps; the caller gets the callee's placeholder at 5 fps, since the callee accepted with its camera off. |
 | Three video calls in a row, the caller's camera already open from the preview (`--video --dial-count 3`, callee `--hangup-after 9`) | The callee shows the caller's video on every call. |
 | Same, but the callee has `--no-video` | The callee answers `m=video 0`; the caller logs "they didn't take video", shows *No video*, and both stay on the audio bars. |
 | Softphone to spike far end, H264 720p30 | 30 fps at 1280x720 in, decoded by `D3D11VideoDecoder` (hardware); camera out at 30 fps. |
 
 Not tested yet: the one-way audio warnings (there's no easy way to break one direction yet),
-turning the camera on part way through a call, the far end adding video to our audio call
+the placeholder on a non-SIPSorcery far end, the far end adding video to our audio call
 (only SIPSorcery to SIPSorcery so far, where we're both), a real SIP server with registration, a hardware desk phone or another softphone
 brand, calls across NAT, or the real camera and microphone in this app (the spike covered the
 camera).
@@ -142,6 +150,9 @@ camera).
     weren't affected. Fixed in #1884. The relay used to pad each PLI with an SDES packet.
   The PLI's media SSRC is the one learned from received RTP, since SIPSorcery routes feedback
   by it.
+- **A canvas only produces a frame after it's drawn on.** The placeholder track is
+  `captureStream(0)` with `requestFrame()` on a timer. Requesting frames of an unchanged canvas
+  sent nothing, 0 fps, so the picture is redrawn before every request.
 - **SIPSorcery hung up calls 30 s in because of the idle video stream.** It ends a call when a
   stream has had no RTP or RTCP for 30 s. Our sessions carry a video stream so video can be
   added, and on an audio call (or after the far end refuses video) nothing ever arrives on it.

@@ -160,7 +160,10 @@ internal sealed class MainForm : Form
         registration = _phone.Registration,
         registrationDetail = _phone.RegistrationDetail,
         account = _settings.HasAccount ? $"{_settings.Account!.Username}@{_settings.Account.Server}" : null,
+        // Our name, for the placeholder the page sends while the camera is off.
+        me = _settings.HasAccount ? (string.IsNullOrWhiteSpace(_settings.Account!.DisplayName) ? _settings.Account.Username : _settings.Account.DisplayName) : null,
         videoAllowed = _settings.OfferVideo,
+        incomingVideo = _phone.IncomingVideo,
     };
 
     private void Post(object message)

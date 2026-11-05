@@ -26,6 +26,13 @@ public sealed class Phone : IDisposable
 
     public CallState State { get; private set; } = CallState.Idle;
     public string Remote { get; private set; } = "";
+
+    /// <summary>
+    /// Whether the ringing call offers video we'd take: an m=video line that isn't turned down
+    /// (port 0), and video allowed here. An INVITE with no SDP counts as yes, as we'd make the
+    /// offer, with video in it.
+    /// </summary>
+    public bool IncomingVideo { get; private set; }
     public string? EndReason { get; private set; }
     public string Registration { get; private set; } = "none";
     public string? RegistrationDetail { get; private set; }
@@ -282,10 +289,18 @@ public sealed class Phone : IDisposable
             Remote = req.Header.From.FromURI.ToString();
             var name = req.Header.From.FromName;
             if (!string.IsNullOrWhiteSpace(name)) Remote = $"{name} <{Remote}>";
+            IncomingVideo = _settings.OfferVideo && OffersVideo(req.Body);
             SetState(CallState.Ringing);
         }
         _incoming!.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
         await Task.CompletedTask;
+    }
+
+    private static bool OffersVideo(string? sdp)
+    {
+        if (string.IsNullOrWhiteSpace(sdp)) return true;
+        try { return SDP.ParseSDPDescription(sdp).Media.Any(m => m.Media == SDPMediaTypesEnum.video && m.Port != 0); }
+        catch { return true; }
     }
 
     private SIPUserAgent NewUserAgent()
