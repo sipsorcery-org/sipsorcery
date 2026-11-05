@@ -20,11 +20,14 @@ internal sealed class MainForm : Form
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
     private string? _pendingOffer;
     private bool _pageReady;
+    private Phone.CallState _lastState;
+    private int _dialsLeft;
     private readonly StreamWriter _logFile;
 
     public MainForm(Settings settings)
     {
         _settings = settings;
+        _dialsLeft = settings.DialCount;
         _phone = new Phone(settings);
         var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SIPSorcery", "Softphonev2");
         Directory.CreateDirectory(logDir);
@@ -37,8 +40,15 @@ internal sealed class MainForm : Form
         _phone.Changed += () =>
         {
             Post(StateMessage());
-            if (_settings.AutoAnswer && _phone.State == Phone.CallState.Ringing)
+            var state = _phone.State;
+            if (_settings.AutoAnswer && state == Phone.CallState.Ringing)
                 _ = Task.Delay(1000).ContinueWith(_ => _phone.AnswerAsync());
+            // Testing switches: hang up after a while, and dial again once a call has ended.
+            if (state == Phone.CallState.Connected && _lastState != state && _settings.HangupAfter is { } secs)
+                _ = Task.Delay(secs * 1000).ContinueWith(_ => { if (_phone.State == Phone.CallState.Connected) _phone.Hangup(); });
+            if (state == Phone.CallState.Ended && _lastState != state && --_dialsLeft > 0 && !string.IsNullOrWhiteSpace(_settings.Dial))
+                _ = Task.Delay(2000).ContinueWith(_ => _phone.DialAsync(_settings.Dial, _settings.VideoCall));
+            _lastState = state;
         };
         _phone.Log += WriteLog;
         _phone.Trace += text => { lock (_logFile) _logFile.WriteLine(text); };

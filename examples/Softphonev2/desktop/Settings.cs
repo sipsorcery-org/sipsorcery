@@ -48,6 +48,12 @@ public sealed class Settings
     /// <summary>Testing: press Add video this many seconds into an audio call.</summary>
     public int? AddVideoAfter { get; set; }
 
+    /// <summary>Testing: hang up a connected call after this many seconds.</summary>
+    public int? HangupAfter { get; set; }
+
+    /// <summary>Testing: how many calls --dial places, one after another (default 1).</summary>
+    public int DialCount { get; set; } = 1;
+
     public bool HasAccount => !string.IsNullOrWhiteSpace(Account?.Server) && !string.IsNullOrWhiteSpace(Account?.Username);
 
     public static Settings Load(string[] args)
@@ -75,6 +81,8 @@ public sealed class Settings
                 case "--camera-off": settings.CameraOff = true; break;
                 case "--video": settings.VideoCall = true; break;
                 case "--add-video" when i + 1 < args.Length: settings.AddVideoAfter = int.Parse(args[++i]); break;
+                case "--hangup-after" when i + 1 < args.Length: settings.HangupAfter = int.Parse(args[++i]); break;
+                case "--dial-count" when i + 1 < args.Length: settings.DialCount = int.Parse(args[++i]); break;
             }
         }
         return settings;

@@ -116,12 +116,17 @@ function syncCamera() {
       local.removeTrack(track);
       track.stop();
       log("camera closed");
-    } else {
-      return;
     }
-    if (call?.videoSender) await call.videoSender.replaceTrack(call.camOn ? localTrack("video") : null);
-    $("self").srcObject = localTrack("video") ? new MediaStream([localTrack("video")]) : null;
-    render();
+    // Always match the call's sender to the camera, even when the camera itself didn't change:
+    // a new call (or the new connection after Add video) has a new sender, and a camera left
+    // open from the preview or the last call must still be put on it.
+    const send = call?.camOn ? localTrack("video") : null;
+    if (call?.videoSender && call.videoSender.track !== send) await call.videoSender.replaceTrack(send);
+    const shown = $("self").srcObject?.getVideoTracks()[0] ?? null;
+    if (shown !== localTrack("video")) {
+      $("self").srcObject = localTrack("video") ? new MediaStream([localTrack("video")]) : null;
+      render();
+    }
   });
   return cameraBusy;
 }

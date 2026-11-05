@@ -76,6 +76,8 @@ Switches, mostly for testing:
 | `--no-video` | No video at all: the switch is locked to Audio, and video offers or Add video from the other side are turned down. (Will be the per-account "Video calls" setting.) |
 | `--camera-off` | Calls and answers start with the camera off. |
 | `--add-video <s>` | Press Add video this many seconds into an audio call. |
+| `--hangup-after <s>` | Hang up a call this many seconds after it connects. |
+| `--dial-count <n>` | With `--dial`, place `n` calls one after another, each 2 s after the last one ends. |
 
 The log, with every full SIP message, goes to
 `%LOCALAPPDATA%\SIPSorcery\Softphonev2\softphone-<profile>.log`. Every 5 seconds during a call it
@@ -112,6 +114,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Softphone to softphone, video call (`--video`) | Audio at 50 pkt/s each way; video at 30 fps each way, VP8. The first stats sample, at 5 s, already shows video. |
 | Video call with `--camera-off` on the caller | The caller sees the callee's video at 30 fps and its self view says "Camera off"; the callee sees "Their camera is off". |
 | Audio call, caller presses Add video (`--add-video 4`) | re-INVITE accepted; both relays rebuilt with VP8. The callee shows the caller's video at 30 fps; the caller sees "Their camera is off", since the callee accepted with its camera off. |
+| Three video calls in a row, the caller's camera already open from the preview (`--video --dial-count 3`, callee `--hangup-after 9`) | The callee shows the caller's video on every call. |
 | Same, but the callee has `--no-video` | The callee answers `m=video 0`; the caller logs "they didn't take video", shows *No video*, and both stay on the audio bars. |
 | Softphone to spike far end, H264 720p30 | 30 fps at 1280x720 in, decoded by `D3D11VideoDecoder` (hardware); camera out at 30 fps. |
 
