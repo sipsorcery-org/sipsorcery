@@ -516,12 +516,13 @@ namespace SIPSorceryMedia.FFmpeg
                 _codecID = codecID;
 
                 var codec = GetCodec(codecID, isEncoder: false);
-                var decOpts = GetCodecOptions(GetNameString(codec->name));
 
                 if (codec == null)
                 {
                     throw new ApplicationException($"Decoder codec could not be found for {codecID}.");
                 }
+
+                var decOpts = GetCodecOptions(GetNameString(codec->name));
 
                 _decoderContext = ffmpeg.avcodec_alloc_context3(codec);
                 if (_decoderContext == null)
@@ -538,7 +539,8 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     try
                     {
-                        ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, 0).ThrowExceptionIfError();
+                        // Options must target the decoder context and be applied before avcodec_open2.
+                        ffmpeg.av_opt_set(_decoderContext->priv_data, option.Key, option.Value, 0).ThrowExceptionIfError();
                     }
                     catch (Exception excp)
                     {
