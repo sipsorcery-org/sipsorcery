@@ -3060,6 +3060,21 @@ namespace SIPSorcery.Net
                     {
                         return mediaStream;
                     }
+
+                    // A Full Intra Request sets the media source SSRC to 0 and carries the
+                    // target SSRCs in its FCI entries (RFC 5104 section 4.3.1).
+                    if (feedback.Header.PacketType == RTCPReportTypesEnum.PSFB &&
+                        feedback.Header.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.FIR &&
+                        feedback.FeedbackSSRCs != null)
+                    {
+                        foreach (var targetSsrc in feedback.FeedbackSSRCs)
+                        {
+                            if (targetSsrc != 0 && GetMediaStream(targetSsrc) is { } firStream)
+                            {
+                                return firStream;
+                            }
+                        }
+                    }
                 }
             }
             else if (rtcpPkt.TWCCFeedback != null)

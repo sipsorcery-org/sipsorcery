@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
@@ -601,9 +602,9 @@ namespace SIPSorcery.Net
                                 .Append(mediaFormat.Rtpmap).Append(m_CRLF);
                         }
 
-                        // Leaving out the feedback attribute for now. It should only be added where it's present in a parsed SDP packet or
-                        // is opted in in a produced SDP packet. AC 7 Nov 2024, see also https://github.com/sipsorcery-org/sipsorcery/issues/1130.
-
+                        // RTCP feedback (RFC 4585). Local video formats offer SDPAudioVideoMediaFormat.DefaultVideoRtcpFeedbackMessages,
+                        // parsed formats carry what the remote party listed and negotiated formats the intersection of both.
+                        // See also https://github.com/sipsorcery-org/sipsorcery/issues/1130.
                         if (mediaFormat.Kind == SDPMediaTypesEnum.video)
                         {
                             foreach (var rtcpFeedbackMessage in mediaFormat.SupportedRtcpFeedbackMessages)
@@ -620,6 +621,53 @@ namespace SIPSorcery.Net
                         }
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// RTCP feedback attributes ("a=rtcp-fb:pt type") collected while parsing, keyed by payload type
+        /// ("*" for the wildcard). They are applied to the media formats once the whole SDP has been parsed
+        /// since they can appear before or after the matching rtpmap attribute.
+        /// </summary>
+        private List<(string FormatID, string Feedback, string Line)> _parsedRtcpFeedback;
+
+        /// <summary>
+        /// Records an "a=rtcp-fb" attribute found while parsing an SDP.
+        /// </summary>
+        internal void AddParsedRtcpFeedback(string formatID, string feedback, string line)
+        {
+            (_parsedRtcpFeedback ??= new List<(string, string, string)>()).Add((formatID, feedback, line));
+        }
+
+        /// <summary>
+        /// Called at the end of parsing. Every video format gets an explicit feedback list,
+        /// empty if the remote party listed none for it, so parsed formats never pick up the local defaults.
+        /// Attributes for payload types that have no matching format are kept as extra attributes so
+        /// they still round trip.
+        /// </summary>
+        internal void ApplyParsedRtcpFeedback()
+        {
+            if (Media != SDPMediaTypesEnum.video)
+            {
+                return;
+            }
+
+            var parsed = _parsedRtcpFeedback ?? new List<(string FormatID, string Feedback, string Line)>();
+            _parsedRtcpFeedback = null;
+
+            foreach (var id in MediaFormats.Keys.ToList())
+            {
+                var idString = id.ToString();
+                var feedback = parsed
+                    .Where(x => x.FormatID == "*" || x.FormatID == idString)
+                    .Select(x => x.Feedback);
+                MediaFormats[id] = MediaFormats[id].WithUpdatedRtcpFeedbackMessages(feedback);
+            }
+
+            foreach (var unmatched in parsed.Where(x => x.FormatID != "*" &&
+                !(int.TryParse(x.FormatID, out var id) && MediaFormats.ContainsKey(id))))
+            {
+                AddExtra(unmatched.Line);
             }
         }
 
