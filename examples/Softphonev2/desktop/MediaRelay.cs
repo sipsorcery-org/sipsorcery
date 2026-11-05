@@ -182,24 +182,9 @@ public sealed class MediaRelay : IDisposable
 
         var offer = pc.createOffer();
         await pc.setLocalDescription(offer);
-        return AddKeyframeFeedback(offer.sdp, Video);
-    }
-
-    /// <summary>
-    /// SIPSorcery only offers transport-cc feedback, so without this the browser may not send
-    /// keyframe requests (PLI/FIR) or NACKs at all, and a decoder that joins late waits for the
-    /// sender's next keyframe, which a WebRTC encoder only makes when asked.
-    /// </summary>
-    private static string AddKeyframeFeedback(string sdp, SDPAudioVideoMediaFormat? video)
-    {
-        if (!video.HasValue) return sdp;
-        var id = video.Value.ID;
-        var anchor = $"a=rtpmap:{id} ";
-        var lines = sdp.Split("\r\n").ToList();
-        int at = lines.FindIndex(l => l.StartsWith(anchor));
-        if (at < 0) return sdp;
-        lines.InsertRange(at + 1, [$"a=rtcp-fb:{id} nack", $"a=rtcp-fb:{id} nack pli", $"a=rtcp-fb:{id} ccm fir"]);
-        return string.Join("\r\n", lines);
+        // SIPSorcery's video formats offer "nack pli" and "ccm fir", so the browser asks for
+        // keyframes when it needs one.
+        return offer.sdp;
     }
 
     /// <summary>
@@ -244,23 +229,16 @@ public sealed class MediaRelay : IDisposable
 
     /// <summary>
     /// Asks the sender of the video this session receives for a keyframe. The far end routes
-    /// feedback by its media SSRC, so that has to be the SSRC its video actually arrives with:
-    /// the one learned from RTP, since the SDP often doesn't carry one (the track's would be 0
-    /// or stale, and the request silently dropped).
+    /// feedback by its media SSRC, so it's the SSRC their video actually arrives with, learned
+    /// from RTP, falling back to the one in their SDP.
     /// </summary>
     private static void RequestKeyframe(RTPSession session, uint learnedSsrc)
     {
         if (session.IsClosed || !session.HasVideo || session.VideoRemoteTrack == null) return;
         var mediaSsrc = learnedSsrc != 0 ? learnedSsrc : session.VideoRemoteTrack.Ssrc;
         if (mediaSsrc == 0) return;
-        var ourSsrc = session.VideoLocalTrack.Ssrc;
-        var pli = new RTCPFeedback(ourSsrc, mediaSsrc, PSFBFeedbackTypesEnum.PLI);
-        // A PLI on its own is 12 bytes, and SIPSorcery's receive path drops any packet that isn't
-        // longer than an RTP header (12), so another SIPSorcery end never sees it. An SDES (CNAME)
-        // after it gets it through while keeping it routed by the PLI's media SSRC; a receiver
-        // report wouldn't, as the far end can't match ours when our camera is off.
-        var bytes = pli.GetBytes().Concat(new RTCPSDesReport(ourSsrc, "softphone").GetBytes()).ToArray();
-        session.SendRtcpRaw(SDPMediaTypesEnum.video, bytes);
+        var pli = new RTCPFeedback(session.VideoLocalTrack.Ssrc, mediaSsrc, PSFBFeedbackTypesEnum.PLI);
+        session.SendRtcpFeedback(SDPMediaTypesEnum.video, pli);
     }
 
     public void Dispose()

@@ -123,20 +123,18 @@ camera).
   B sent G722, both from the list the two sides had agreed. So the page's connection offers every
   audio codec both SIP ends support, not just the one we send. Otherwise the page drops the
   other side's packets.
-- **SIPSorcery's SDP offers no keyframe feedback** (`SDPAudioVideoMediaFormat` only offers
-  `transport-cc`). With no `nack pli` in the SDP, the browser never asks for a keyframe, and
-  incoming video took about 20 seconds to appear. `MediaRelay.AddKeyframeFeedback` adds `nack`,
-  `nack pli` and `ccm fir` to the page offer. The SIP side still doesn't offer them, which matters
-  for desk phones that wait to be asked.
-- **SIPSorcery drops a PLI sent on its own.** A bare PLI is 12 bytes, and `RTPSession.OnReceive`
-  only accepts packets *longer* than an RTP header (`buffer.Length > RTPHeader.MIN_HEADER_LEN`,
-  12). So between two SIPSorcery ends no keyframe request ever arrived, and a page that missed
-  the first keyframe never showed video (it only worked when the first keyframe happened to
-  land). Browsers send PLIs inside a compound packet, so they aren't affected. The relay sends
-  each PLI followed by an SDES (CNAME) packet. A receiver report in front wouldn't do: SIPSorcery
-  routes a packet with a receiver report by the report's SSRC, which the far end doesn't know
-  while our camera is off. The PLI's media SSRC is the one learned from received RTP. The
-  library should accept short RTCP packets.
+- **Keyframe requests need both ends to agree on them, and to get through.** Two library
+  fixes came out of this prototype:
+  - SIPSorcery's SDP offered no keyframe feedback, only `transport-cc`. With no `nack pli`, the
+    browser never asked for a keyframe, and incoming video took about 20 seconds to appear.
+    Fixed in #1883, which offers `nack pli` and `ccm fir` on both the SIP side and the page
+    offer. The relay used to add these lines to the page offer itself.
+  - SIPSorcery dropped any RTCP packet of 12 bytes or less, and a PLI on its own is exactly 12.
+    So between two SIPSorcery ends no keyframe request ever arrived, and a page that missed the
+    first keyframe never showed video. Browsers send PLIs inside a compound packet, so they
+    weren't affected. Fixed in #1884. The relay used to pad each PLI with an SDES packet.
+  The PLI's media SSRC is the one learned from received RTP, since SIPSorcery routes feedback
+  by it.
 - **SIPSorcery makes a video stream for any `m=video` it's offered**, with an inactive local
   track, even when we have no video codecs. So "the call has video" has to mean our local video
   track is active and their video port isn't 0, not just `HasVideo`.
