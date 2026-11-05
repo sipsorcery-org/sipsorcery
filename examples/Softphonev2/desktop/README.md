@@ -57,7 +57,7 @@ There is no settings screen, call history, contacts, DTMF, hold, transfer or dev
 dotnet run -c Release
 ```
 
-On its own it listens on port 5060 (UDP and TCP), or on a random free port if 5060 is taken (the log says which), and makes direct calls: type
+On its own it listens on port 5060 (UDP and TCP), or if that's taken on a port the OS picks (the log says which), and makes direct calls: type
 `sip:user@host[:port]` or `user@host` and press Call. To register with a server, copy
 `softphone.sample.json` to `softphone.json` next to the exe and fill it in. The password is stored
 in plain text for now.
@@ -145,6 +145,14 @@ camera).
   So the callee hung up about 30 s in, and both ends logged "They hung up". The pair tests were
   all shorter than that, so they never caught it. Fixed in #1885: RTCP doesn't start on a stream
   that wasn't negotiated, and a video timeout no longer hangs up a call while audio flows.
+- **Don't insist that SIP over UDP and TCP share a port.** The fallback used to ask the OS for
+  a UDP port and then open TCP on the same number. Windows hands out UDP ports sequentially,
+  and blocks of about 100 ports are reserved for TCP (by Hyper-V and WSL:
+  `netsh int ipv4 show excludedportrange protocol=tcp`). With the counter in such a block,
+  every retry got a neighbouring port TCP couldn't bind, and a second softphone failed to start
+  until the counter moved on. Each channel advertises its own port in Via and Contact, so now
+  each takes an OS-assigned port. TCP tries UDP's number first, but takes its own if that's
+  reserved.
 - **SIPSorcery makes a video stream for any `m=video` it's offered**, with an inactive local
   track, even when we have no video codecs. So "the call has video" has to mean our local video
   track is active and their video port isn't 0, not just `HasVideo`.

@@ -51,45 +51,42 @@ public sealed class Phone : IDisposable
         _transport.SIPResponseOutTraceEvent += (l, r, resp) => { Log?.Invoke($"-> {r} {resp.ShortDescription}"); Trace?.Invoke($"-> {r}\n{resp}"); };
     }
 
-    /// <summary>Set when the configured SIP port was taken and a random one was used instead.</summary>
+    /// <summary>Set when the configured SIP port was taken and another one was used instead.</summary>
     public string? PortNote { get; private set; }
 
     /// <summary>
-    /// Listens for SIP on UDP and TCP on the same port: the configured one if it's free, otherwise
-    /// a random one (another softphone often has 5060). Incoming direct calls then need the new
-    /// port, but registered calls and outgoing calls work as normal.
+    /// Listens for SIP on UDP and TCP: on the configured port if it's free (another softphone
+    /// often has 5060), otherwise on a port the OS picks, as RTPChannel does. Incoming direct
+    /// calls then need the new port, but registered and outgoing calls work as normal.
+    ///
+    /// UDP and TCP use the same port when they can, but don't have to: each channel puts its own
+    /// port in Via and Contact. Insisting on one port made the OS's pick fail for TCP whenever it
+    /// landed in a block Windows reserves for TCP (Hyper-V and WSL; see
+    /// `netsh int ipv4 show excludedportrange protocol=tcp`). Retries were no help, as Windows
+    /// hands out UDP ports sequentially, so they all landed in the same block.
     /// </summary>
     private void OpenChannels(int port)
     {
-        if (TryOpenChannels(port)) return;
-        for (int attempt = 0; attempt < 10; attempt++)
+        var udp = TryChannel(() => new SIPUDPChannel(new IPEndPoint(IPAddress.Any, port)))
+            ?? new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0));
+        var tcp = TryChannel(() => new SIPTCPChannel(new IPEndPoint(IPAddress.Any, udp.Port)))
+            ?? new SIPTCPChannel(new IPEndPoint(IPAddress.Any, 0));
+        _transport.AddSIPChannel(udp);
+        _transport.AddSIPChannel(tcp);
+
+        if (udp.Port != port || tcp.Port != port)
         {
-            if (TryOpenChannels(0))
-            {
-                PortNote = $"SIP port {port} is in use, using {_transport.GetSIPChannels().First().Port} instead";
-                return;
-            }
+            PortNote = udp.Port == tcp.Port ? $"SIP port {port} isn't available, using {udp.Port} instead"
+                : udp.Port == port ? $"SIP port {port} isn't available for TCP, using {tcp.Port} for TCP"
+                : $"SIP port {port} isn't available, using UDP {udp.Port} and TCP {tcp.Port} instead";
         }
-        throw new ApplicationException($"Unable to find a free port for SIP (port {port} is in use).");
     }
 
-    /// <summary>Opens UDP then TCP on the port (0 = any free one, which TCP then shares), or neither.</summary>
-    private bool TryOpenChannels(int port)
+    /// <summary>Creates a channel, or returns null if its port can't be bound.</summary>
+    private static T? TryChannel<T>(Func<T> create) where T : SIPChannel
     {
-        SIPUDPChannel? udp = null;
-        try
-        {
-            udp = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, port));
-            var tcp = new SIPTCPChannel(new IPEndPoint(IPAddress.Any, udp.Port));
-            _transport.AddSIPChannel(udp);
-            _transport.AddSIPChannel(tcp);
-            return true;
-        }
-        catch (Exception ex) when (ex is ApplicationException or System.Net.Sockets.SocketException)
-        {
-            udp?.Close();
-            return false;
-        }
+        try { return create(); }
+        catch (Exception ex) when (ex is ApplicationException or System.Net.Sockets.SocketException) { return null; }
     }
 
     public string ListeningOn =>string.Join(", ", _transport.GetSIPChannels().Select(c => c.ListeningSIPEndPoint.ToString()));
