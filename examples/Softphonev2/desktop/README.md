@@ -135,6 +135,12 @@ camera).
     weren't affected. Fixed in #1884. The relay used to pad each PLI with an SDES packet.
   The PLI's media SSRC is the one learned from received RTP, since SIPSorcery routes feedback
   by it.
+- **SIPSorcery hung up calls 30 s in because of the idle video stream.** It ends a call when a
+  stream has had no RTP or RTCP for 30 s. Our sessions carry a video stream so video can be
+  added, and on an audio call (or after the far end refuses video) nothing ever arrives on it.
+  So the callee hung up about 30 s in, and both ends logged "They hung up". The pair tests were
+  all shorter than that, so they never caught it. Fixed in #1885: RTCP doesn't start on a stream
+  that wasn't negotiated, and a video timeout no longer hangs up a call while audio flows.
 - **SIPSorcery makes a video stream for any `m=video` it's offered**, with an inactive local
   track, even when we have no video codecs. So "the call has video" has to mean our local video
   track is active and their video port isn't 0, not just `HasVideo`.
