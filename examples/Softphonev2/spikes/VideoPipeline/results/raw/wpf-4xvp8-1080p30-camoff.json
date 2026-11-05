@@ -1,0 +1,157 @@
+{
+  "label": "wpf-4xvp8-1080p30-camoff",
+  "config": {
+    "path": "Wpf",
+    "streams": 4,
+    "codec": "VP8",
+    "resolution": "1080p30",
+    "camera": "Off",
+    "cameraMode": "Shared",
+    "hwDecode": true,
+    "farEnd": "127.0.0.1:5090",
+    "width": 1600,
+    "height": 900,
+    "cameraBitrateKbps": 1500,
+    "codecName": "vp8",
+    "clipName": "vp8-1080p30",
+    "callUri": "sip:vp8-1080p30@127.0.0.1:5090",
+    "label": "wpf-4xvp8-1080p30-camoff"
+  },
+  "machine": {
+    "info": {
+      "cpu": "Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz",
+      "logicalCpus": 20,
+      "gpus": [
+        "NVIDIA Quadro T2000",
+        "Intel(R) UHD Graphics 630"
+      ],
+      "display": [
+        "3840 1600 59"
+      ],
+      "gpuLuids": {
+        "0x00000000_0x000110AD": "NVIDIA Quadro T2000",
+        "0x00000000_0x00012E32": "Intel(R) UHD Graphics 630",
+        "0x00000000_0x00012DF3": "Microsoft Basic Render Driver"
+      },
+      "os": "Microsoft Windows NT 10.0.26200.0",
+      "webView2": "156.0.4314.58"
+    },
+    "nearEndAffinity": "all"
+  },
+  "when": "2026-11-05T11:19:30.5112634+00:00",
+  "warmupSeconds": 8,
+  "resources": {
+    "seconds": 31.42,
+    "cpuPercentOfOneCore": 171.7,
+    "cpuPercentOfMachine": 8.6,
+    "logicalCpus": 20,
+    "processes": 1,
+    "privateMB": 381,
+    "cpuByProcess": {
+      "NearEnd.Wpf": 171.7
+    },
+    "gpuOurs": {
+      "0x00000000_0x000110AD 3D": 18.5
+    },
+    "gpuSystem": {
+      "0x00000000_0x000110AD Copy": 1.5,
+      "0x00000000_0x000110AD 3D": 23.8,
+      "0x00000000_0x000110AD VideoDecode": 2.3
+    }
+  },
+  "nearEnd": {
+    "windowSeconds": 34.13,
+    "latencyMethod": "SIP receive in C# to the WPF render tick that copied the frame into its bitmap, plus one display refresh (16.7 ms) for the compositor",
+    "tiles": [
+      {
+        "tile": 0,
+        "kind": "remote",
+        "framesReceived": 1024,
+        "framesDecoded": 1024,
+        "framesPresented": 978,
+        "framesDropped": 47,
+        "presentedFps": 28.7,
+        "stalls": 0,
+        "longestGapMs": 80.5,
+        "latency": {
+          "samples": 978,
+          "p50": 32.9,
+          "p95": 49.9,
+          "max": 57.4
+        },
+        "avgDecodeMs": 4.76,
+        "decoder": "vp8",
+        "hardwareDecode": false,
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "tile": 1,
+        "kind": "remote",
+        "framesReceived": 1024,
+        "framesDecoded": 1024,
+        "framesPresented": 964,
+        "framesDropped": 61,
+        "presentedFps": 28.2,
+        "stalls": 0,
+        "longestGapMs": 80.5,
+        "latency": {
+          "samples": 964,
+          "p50": 31,
+          "p95": 47.3,
+          "max": 57.3
+        },
+        "avgDecodeMs": 4.96,
+        "decoder": "vp8",
+        "hardwareDecode": false,
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "tile": 2,
+        "kind": "remote",
+        "framesReceived": 1024,
+        "framesDecoded": 1024,
+        "framesPresented": 948,
+        "framesDropped": 77,
+        "presentedFps": 27.8,
+        "stalls": 0,
+        "longestGapMs": 78,
+        "latency": {
+          "samples": 948,
+          "p50": 30.3,
+          "p95": 45.4,
+          "max": 54.1
+        },
+        "avgDecodeMs": 4.74,
+        "decoder": "vp8",
+        "hardwareDecode": false,
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "tile": 3,
+        "kind": "remote",
+        "framesReceived": 1024,
+        "framesDecoded": 1024,
+        "framesPresented": 927,
+        "framesDropped": 98,
+        "presentedFps": 27.2,
+        "stalls": 0,
+        "longestGapMs": 78,
+        "latency": {
+          "samples": 927,
+          "p50": 29.2,
+          "p95": 43,
+          "max": 52.9
+        },
+        "avgDecodeMs": 4.8,
+        "decoder": "vp8",
+        "hardwareDecode": false,
+        "width": 1920,
+        "height": 1080
+      }
+    ],
+    "notes": []
+  }
+}

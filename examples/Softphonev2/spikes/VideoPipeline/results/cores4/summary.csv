@@ -1,0 +1,13 @@
+run,path,streams,codec,res,camera,cpu (1 core = 100),cpu % of machine,gpu 3d %,gpu decode %,gpu encode %,min tile fps,avg tile fps,dropped %,stalls,latency p50 ms,latency p95 ms,decoder,hw decode,camera encoder,camera fps/leg,private MB
+buffer-4xh264-720p30-camfake-shared-4cpu,buffer,4,h264,720p30,fake shared,107,5.3,17.3 NVIDIA,21.1 NVIDIA,6.6 NVIDIA,29.9,30.0,0.1,0,28,42,h264+d3d11va,True,h264_nvenc x1 (hw),30,713
+relay-4xh264-720p30-camfake-shared-4cpu,relay,4,h264,720p30,fake shared,60,3.0,12.5 NVIDIA,25.9 NVIDIA,0,29.9,30.0,0.3,0,54,56,ExternalDecoder (D3D11VideoDecoder),True,OpenH264 x1,30,402
+wpf-4xh264-720p30-camfake-shared-4cpu,wpf,4,h264,720p30,fake shared,150,7.5,22.9 NVIDIA,23.8 NVIDIA,7.1 NVIDIA,28.7,29.1,3.0,0,38,50,h264+d3d11va,True,h264_nvenc x1 (hw),30,660
+buffer-8xh264-720p30-camfake-shared-4cpu,buffer,8,h264,720p30,fake shared,211,10.5,25.5 NVIDIA,47.3 NVIDIA,7 NVIDIA,29.9,30.0,0.2,0,31,48,h264+d3d11va,True,h264_nvenc x1 (hw),30,947
+relay-8xh264-720p30-camfake-shared-4cpu,relay,8,h264,720p30,fake shared,86,4.3,7.4 NVIDIA,44.2 NVIDIA,0,30.0,30.0,0.2,0,40,60,ExternalDecoder (D3D11VideoDecoder),True,OpenH264 x1,30,533
+wpf-8xh264-720p30-camfake-shared-4cpu,wpf,8,h264,720p30,fake shared,249,12.5,27.1 NVIDIA,33.2 NVIDIA,5.3 NVIDIA,28.3,29.1,3.0,0,31,56,h264+d3d11va,True,h264_nvenc x1 (hw),30,964
+buffer-4xvp8-720p30-camfake-shared-4cpu,buffer,4,vp8,720p30,fake shared,132,6.6,17.9 NVIDIA,0,0,30.0,30.0,0.0,0,24,26,vp8,False,libvpx x1,30,344
+relay-4xvp8-720p30-camfake-shared-4cpu,relay,4,vp8,720p30,fake shared,103,5.1,8.3 NVIDIA,0,0,30.0,30.0,0.0,0,49,52,libvpx,False,libvpx x1,30,461
+wpf-4xvp8-720p30-camfake-shared-4cpu,wpf,4,vp8,720p30,fake shared,154,7.7,20 NVIDIA,0,0,28.1,28.8,4.0,0,34,48,vp8,False,libvpx x1,30,321
+buffer-8xvp8-720p30-camfake-shared-4cpu,buffer,8,vp8,720p30,fake shared,185,9.2,12.9 NVIDIA,0,0,29.9,30.0,0.2,0,27,30,vp8,False,libvpx x1,30,459
+relay-8xvp8-720p30-camfake-shared-4cpu,relay,8,vp8,720p30,fake shared,90,4.5,8.8 NVIDIA,0,0,29.6,30.0,0.4,7,53,56,libvpx,False,libvpx x1,30.1,634
+wpf-8xvp8-720p30-camfake-shared-4cpu,wpf,8,vp8,720p30,fake shared,233,11.6,22.7 NVIDIA,0,0,26.8,27.8,7.2,0,31,47,vp8,False,libvpx x1,30,455

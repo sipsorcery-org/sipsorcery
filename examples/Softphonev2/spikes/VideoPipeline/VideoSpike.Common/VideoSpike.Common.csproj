@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
+    <ProjectReference Include="..\..\..\..\..\src\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
+  </ItemGroup>
+
+</Project>

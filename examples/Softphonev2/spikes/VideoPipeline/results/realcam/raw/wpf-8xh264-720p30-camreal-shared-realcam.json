@@ -1,0 +1,283 @@
+{
+  "label": "wpf-8xh264-720p30-camreal-shared-realcam",
+  "config": {
+    "path": "Wpf",
+    "streams": 8,
+    "codec": "H264",
+    "resolution": "720p30",
+    "camera": "Real",
+    "cameraMode": "Shared",
+    "hwDecode": true,
+    "farEnd": "127.0.0.1:5090",
+    "width": 1600,
+    "height": 900,
+    "cameraBitrateKbps": 1500,
+    "codecName": "h264",
+    "clipName": "h264-720p30",
+    "callUri": "sip:h264-720p30@127.0.0.1:5090",
+    "label": "wpf-8xh264-720p30-camreal-shared"
+  },
+  "machine": {
+    "info": {
+      "cpu": "Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz",
+      "logicalCpus": 20,
+      "gpus": [
+        "NVIDIA Quadro T2000",
+        "Intel(R) UHD Graphics 630"
+      ],
+      "display": [
+        "3840 1600 59"
+      ],
+      "gpuLuids": {
+        "0x00000000_0x000110AD": "NVIDIA Quadro T2000",
+        "0x00000000_0x00012E32": "Intel(R) UHD Graphics 630",
+        "0x00000000_0x00012DF3": "Microsoft Basic Render Driver"
+      },
+      "os": "Microsoft Windows NT 10.0.26200.0",
+      "webView2": "156.0.4314.58"
+    },
+    "nearEndAffinity": "all"
+  },
+  "when": "2026-11-05T12:33:03.7525777+00:00",
+  "warmupSeconds": 8,
+  "resources": {
+    "seconds": 31.5,
+    "cpuPercentOfOneCore": 322.2,
+    "cpuPercentOfMachine": 16.1,
+    "logicalCpus": 20,
+    "processes": 1,
+    "privateMB": 985,
+    "cpuByProcess": {
+      "NearEnd.Wpf": 322.2
+    },
+    "gpuOurs": {
+      "0x00000000_0x000110AD VideoEncode": 5.1,
+      "0x00000000_0x000110AD VideoDecode": 31.8,
+      "0x00000000_0x000110AD 3D": 34.9
+    },
+    "gpuSystem": {
+      "0x00000000_0x000110AD Copy": 0.1,
+      "0x00000000_0x000110AD VideoDecode": 31.8,
+      "0x00000000_0x000110AD 3D": 35.7,
+      "0x00000000_0x000110AD VideoEncode": 5.1
+    }
+  },
+  "nearEnd": {
+    "windowSeconds": 33.68,
+    "latencyMethod": "SIP receive in C# to the WPF render tick that copied the frame into its bitmap, plus one display refresh (16.7 ms) for the compositor",
+    "tiles": [
+      {
+        "tile": 0,
+        "kind": "remote",
+        "framesReceived": 1011,
+        "framesDecoded": 1010,
+        "framesPresented": 998,
+        "framesDropped": 13,
+        "presentedFps": 29.6,
+        "stalls": 0,
+        "longestGapMs": 77.6,
+        "latency": {
+          "samples": 998,
+          "p50": 37.6,
+          "p95": 49.3,
+          "max": 58.1
+        },
+        "avgDecodeMs": 6.43,
+        "decoder": "h264\u002Bd3d11va",
+        "hardwareDecode": true,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 1,
+        "kind": "remote",
+        "framesReceived": 1011,
+        "framesDecoded": 1011,
+        "framesPresented": 1000,
+        "framesDropped": 10,
+        "presentedFps": 29.7,
+        "stalls": 0,
+        "longestGapMs": 77.6,
+        "latency": {
+          "samples": 1000,
+          "p50": 37.8,
+          "p95": 50,
+          "max": 60.5
+        },
+        "avgDecodeMs": 7.52,
+        "decoder": "h264\u002Bd3d11va",
+        "hardwareDecode": true,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 2,
+        "kind": "remote",
+        "framesReceived": 1011,
+        "framesDecoded": 1011,
+        "framesPresented": 1000,
+        "framesDropped": 10,
+        "presentedFps": 29.7,
+        "stalls": 0,
+        "longestGapMs": 77.6,
+        "latency": {
+          "samples": 1000,
+          "p50": 36.7,
+          "p95": 49.1,
+          "max": 58.7
+        },
+        "avgDecodeMs": 9.55,
+        "decoder": "h264\u002Bd3d11va",
+        "hardwareDecode": true,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 3,
+        "kind": "remote",
+        "framesReceived": 1011,
+        "framesDecoded": 1010,
+        "framesPresented": 985,
+        "framesDropped": 26,
+        "presentedFps": 29.2,
+        "stalls": 0,
+        "longestGapMs": 74.2,
+        "latency": {
+          "samples": 985,
+          "p50": 37.1,
+          "p95": 45,
+          "max": 55.2
+        },
+        "avgDecodeMs": 3.51,
+        "decoder": "h264\u002Bd3d11va",
+        "hardwareDecode": true,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 4,
+        "kind": "remote",
+        "framesReceived": 1011,
+        "framesDecoded": 1011,
+        "framesPresented": 992,
+        "framesDropped": 18,
+        "presentedFps": 29.5,
+        "stalls": 0,
+        "longestGapMs": 74.2,
+        "latency": {
+          "samples": 992,
+          "p50": 37.9,
+          "p95": 47,
+          "max": 60.7
+        },
+        "avgDecodeMs": 8.63,
+        "decoder": "h264\u002Bd3d11va",
+        "hardwareDecode": true,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 5,
+        "kind": "remote",
+        "framesReceived": 1011,
+        "framesDecoded": 1010,
+        "framesPresented": 984,
+        "framesDropped": 27,
+        "presentedFps": 29.2,
+        "stalls": 0,
+        "longestGapMs": 77.6,
+        "latency": {
+          "samples": 984,
+          "p50": 36.6,
+          "p95": 44.5,
+          "max": 54.4
+        },
+        "avgDecodeMs": 5.85,
+        "decoder": "h264\u002Bd3d11va",
+        "hardwareDecode": true,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 6,
+        "kind": "remote",
+        "framesReceived": 1011,
+        "framesDecoded": 1011,
+        "framesPresented": 965,
+        "framesDropped": 45,
+        "presentedFps": 28.7,
+        "stalls": 0,
+        "longestGapMs": 80.6,
+        "latency": {
+          "samples": 965,
+          "p50": 23.6,
+          "p95": 41.8,
+          "max": 48.1
+        },
+        "avgDecodeMs": 2.45,
+        "decoder": "h264\u002Bd3d11va",
+        "hardwareDecode": true,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 7,
+        "kind": "remote",
+        "framesReceived": 1011,
+        "framesDecoded": 1011,
+        "framesPresented": 969,
+        "framesDropped": 41,
+        "presentedFps": 28.8,
+        "stalls": 0,
+        "longestGapMs": 77.6,
+        "latency": {
+          "samples": 969,
+          "p50": 36,
+          "p95": 42,
+          "max": 53.7
+        },
+        "avgDecodeMs": 5.37,
+        "decoder": "h264\u002Bd3d11va",
+        "hardwareDecode": true,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 8,
+        "kind": "self",
+        "framesReceived": 0,
+        "framesDecoded": 0,
+        "framesPresented": 982,
+        "framesDropped": 28,
+        "presentedFps": 29.2,
+        "stalls": 0,
+        "longestGapMs": 80.2,
+        "latency": {
+          "samples": 982,
+          "p50": 24.3,
+          "p95": 33.9,
+          "max": 43.5
+        },
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "camera": {
+      "source": "MX Brio 1280x720 rawvideo/AV_PIX_FMT_NV12",
+      "framesCaptured": 1011,
+      "captureFps": 30,
+      "encoders": 1,
+      "framesEncoded": 1011,
+      "encodeFpsPerEncoder": 30,
+      "framesSentToSip": 8088,
+      "sentFpsPerLeg": 30,
+      "avgEncodeMs": 0.46,
+      "sentKbpsPerEncoder": 1498,
+      "encoder": "h264_nvenc",
+      "hardwareEncode": true,
+      "width": 1280,
+      "height": 720
+    },
+    "notes": []
+  }
+}

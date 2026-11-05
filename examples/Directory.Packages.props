@@ -40,6 +40,7 @@
     <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.24.4" />
     <PackageVersion Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
+    <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
     <PackageVersion Include="NAudio" Version="3.0.0" />
     <PackageVersion Include="NBitcoin" Version="10.0.9" />
     <PackageVersion Include="Net.Codecrete.QrCodeGenerator" Version="3.1.0" />
@@ -62,6 +63,8 @@
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="4.151.1" />
     <PackageVersion Include="Stateless" Version="5.20.1" />
     <PackageVersion Include="System.Configuration.ConfigurationManager" Version="10.0.11" />
+    <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="10.0.11" />
+    <PackageVersion Include="System.Management" Version="10.0.11" />
     <PackageVersion Include="System.Net.WebSockets.Client" Version="4.3.2" />
     <PackageVersion Include="System.Reactive" Version="7.0.0" />
     <PackageVersion Include="WebSocketSharp-netstandard" Version="1.0.1" />

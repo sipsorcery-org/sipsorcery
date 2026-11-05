@@ -1,0 +1,224 @@
+{
+  "label": "relay-4xvp8-720p30-camfake-shared-4cpu",
+  "config": {
+    "path": "Relay",
+    "streams": 4,
+    "codec": "VP8",
+    "resolution": "720p30",
+    "camera": "Fake",
+    "cameraMode": "Shared",
+    "hwDecode": true,
+    "farEnd": "127.0.0.1:5090",
+    "width": 1600,
+    "height": 900,
+    "cameraBitrateKbps": 1500,
+    "codecName": "vp8",
+    "clipName": "vp8-720p30",
+    "callUri": "sip:vp8-720p30@127.0.0.1:5090",
+    "label": "relay-4xvp8-720p30-camfake-shared"
+  },
+  "machine": {
+    "info": {
+      "cpu": "Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz",
+      "logicalCpus": 20,
+      "gpus": [
+        "NVIDIA Quadro T2000",
+        "Intel(R) UHD Graphics 630"
+      ],
+      "display": [
+        "3840 1600 59"
+      ],
+      "gpuLuids": {
+        "0x00000000_0x000110AD": "NVIDIA Quadro T2000",
+        "0x00000000_0x00012E32": "Intel(R) UHD Graphics 630",
+        "0x00000000_0x00012DF3": "Microsoft Basic Render Driver"
+      },
+      "os": "Microsoft Windows NT 10.0.26200.0",
+      "webView2": "156.0.4314.58"
+    },
+    "nearEndAffinity": "0xF"
+  },
+  "when": "2026-11-05T11:39:27.5781694+00:00",
+  "warmupSeconds": 8,
+  "resources": {
+    "seconds": 31.34,
+    "cpuPercentOfOneCore": 102.5,
+    "cpuPercentOfMachine": 5.1,
+    "logicalCpus": 20,
+    "processes": 8,
+    "privateMB": 461,
+    "cpuByProcess": {
+      "NearEnd.Web": 9.8,
+      "webview2-browser": 1.9,
+      "webview2-crashpad-handler": 0.1,
+      "webview2-gpu-process": 26.8,
+      "webview2-utility:NetworkService": 5.1,
+      "webview2-utility:StorageService": 0,
+      "webview2-renderer": 56.5,
+      "webview2-utility:VideoCaptureService": 2.3
+    },
+    "gpuOurs": {
+      "0x00000000_0x000110AD Copy": 0,
+      "0x00000000_0x000110AD 3D": 8.3
+    },
+    "gpuSystem": {
+      "0x00000000_0x000110AD Copy": 1.5,
+      "0x00000000_0x000110AD 3D": 11.9,
+      "0x00000000_0x000110AD VideoDecode": 3.2
+    }
+  },
+  "nearEnd": {
+    "windowSeconds": 57.14,
+    "clockOffsetMs": 0.1,
+    "clockRttMs": 0.23,
+    "latencyMethod": "SIP receive in C# to the browser\u0027s expectedDisplayTime for that RTP timestamp (requestVideoFrameCallback), clocks aligned by ping calibration",
+    "tiles": [
+      {
+        "tile": 0,
+        "kind": "remote",
+        "framesReceived": 1714,
+        "framesDecoded": 1714,
+        "framesPresented": 1714,
+        "framesDropped": 0,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 67.1,
+        "latency": {
+          "samples": 1712,
+          "p50": 49.6,
+          "p95": 52.2,
+          "max": 85.2
+        },
+        "toBrowserReceive": {
+          "samples": 1712,
+          "p50": 0.6,
+          "p95": 1.7,
+          "max": 4.8
+        },
+        "avgDecodeMs": 3.34,
+        "avgJitterBufferMs": 8.72,
+        "decoder": "libvpx",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 1,
+        "kind": "remote",
+        "framesReceived": 1715,
+        "framesDecoded": 1714,
+        "framesPresented": 1714,
+        "framesDropped": 1,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 49.9,
+        "latency": {
+          "samples": 1712,
+          "p50": 48.7,
+          "p95": 51.4,
+          "max": 53.9
+        },
+        "toBrowserReceive": {
+          "samples": 1712,
+          "p50": 0.5,
+          "p95": 1.4,
+          "max": 4.7
+        },
+        "avgDecodeMs": 3.33,
+        "avgJitterBufferMs": 8.54,
+        "decoder": "libvpx",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 2,
+        "kind": "remote",
+        "framesReceived": 1715,
+        "framesDecoded": 1714,
+        "framesPresented": 1715,
+        "framesDropped": 0,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 50.2,
+        "latency": {
+          "samples": 1713,
+          "p50": 48.3,
+          "p95": 51.2,
+          "max": 53.7
+        },
+        "toBrowserReceive": {
+          "samples": 1713,
+          "p50": 0.4,
+          "p95": 1.2,
+          "max": 5.3
+        },
+        "avgDecodeMs": 3.29,
+        "avgJitterBufferMs": 8.48,
+        "decoder": "libvpx",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 3,
+        "kind": "remote",
+        "framesReceived": 1715,
+        "framesDecoded": 1714,
+        "framesPresented": 1714,
+        "framesDropped": 1,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 50,
+        "latency": {
+          "samples": 1712,
+          "p50": 49.4,
+          "p95": 51.7,
+          "max": 54.3
+        },
+        "toBrowserReceive": {
+          "samples": 1712,
+          "p50": 0.5,
+          "p95": 1.8,
+          "max": 6.8
+        },
+        "avgDecodeMs": 3.25,
+        "avgJitterBufferMs": 8.82,
+        "decoder": "libvpx",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 4,
+        "kind": "self",
+        "framesReceived": 0,
+        "framesDecoded": 0,
+        "framesPresented": 1714,
+        "framesDropped": 0,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 53.1,
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "camera": {
+      "source": "fake_device_0",
+      "framesCaptured": 1714,
+      "captureFps": 30,
+      "encoders": 1,
+      "framesEncoded": 1714,
+      "encodeFpsPerEncoder": 30,
+      "framesSentToSip": 6864,
+      "sentFpsPerLeg": 30,
+      "avgEncodeMs": 3.42,
+      "encoder": "libvpx",
+      "hardwareEncode": false,
+      "qualityLimitation": "none",
+      "width": 1280,
+      "height": 720
+    },
+    "notes": []
+  }
+}

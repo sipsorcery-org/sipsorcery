@@ -1,0 +1,254 @@
+{
+  "label": "buffer-8xh264-720p30-camoff-swdec",
+  "config": {
+    "path": "Buffer",
+    "streams": 8,
+    "codec": "H264",
+    "resolution": "720p30",
+    "camera": "Off",
+    "cameraMode": "Shared",
+    "hwDecode": false,
+    "farEnd": "127.0.0.1:5090",
+    "width": 1600,
+    "height": 900,
+    "cameraBitrateKbps": 1500,
+    "codecName": "h264",
+    "clipName": "h264-720p30",
+    "callUri": "sip:h264-720p30@127.0.0.1:5090",
+    "label": "buffer-8xh264-720p30-camoff-swdec"
+  },
+  "machine": {
+    "info": {
+      "cpu": "Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz",
+      "logicalCpus": 20,
+      "gpus": [
+        "NVIDIA Quadro T2000",
+        "Intel(R) UHD Graphics 630"
+      ],
+      "display": [
+        "3840 1600 59"
+      ],
+      "gpuLuids": {
+        "0x00000000_0x000110AD": "NVIDIA Quadro T2000",
+        "0x00000000_0x00012E32": "Intel(R) UHD Graphics 630",
+        "0x00000000_0x00012DF3": "Microsoft Basic Render Driver"
+      },
+      "os": "Microsoft Windows NT 10.0.26200.0",
+      "webView2": "156.0.4314.58"
+    },
+    "nearEndAffinity": "all"
+  },
+  "when": "2026-11-05T11:31:57.9346578+00:00",
+  "warmupSeconds": 8,
+  "resources": {
+    "seconds": 30.76,
+    "cpuPercentOfOneCore": 120.6,
+    "cpuPercentOfMachine": 6,
+    "logicalCpus": 20,
+    "processes": 7,
+    "privateMB": 406,
+    "cpuByProcess": {
+      "NearEnd.Web": 89.5,
+      "webview2-browser": 0.3,
+      "webview2-crashpad-handler": 0.1,
+      "webview2-gpu-process": 18.2,
+      "webview2-utility:NetworkService": 0.1,
+      "webview2-utility:StorageService": 0,
+      "webview2-renderer": 12.6
+    },
+    "gpuOurs": {
+      "0x00000000_0x000110AD Copy": 0,
+      "0x00000000_0x000110AD 3D": 9.3
+    },
+    "gpuSystem": {
+      "0x00000000_0x000110AD Copy": 1.5,
+      "0x00000000_0x000110AD 3D": 12.8,
+      "0x00000000_0x000110AD VideoDecode": 3.2
+    }
+  },
+  "nearEnd": {
+    "windowSeconds": 35.77,
+    "clockOffsetMs": -0,
+    "clockRttMs": 0.17,
+    "latencyMethod": "SIP receive in C# to the page\u0027s requestAnimationFrame that uploaded and drew the frame, plus one display refresh (16.7 ms) for the compositor to put it on screen",
+    "tiles": [
+      {
+        "tile": 0,
+        "kind": "remote",
+        "framesReceived": 1073,
+        "framesDecoded": 1073,
+        "framesPresented": 1073,
+        "framesDropped": 0,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 49.8,
+        "latency": {
+          "samples": 1073,
+          "p50": 26.7,
+          "p95": 28.3,
+          "max": 43.1
+        },
+        "avgDecodeMs": 0.72,
+        "decoder": "h264",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 1,
+        "kind": "remote",
+        "framesReceived": 1073,
+        "framesDecoded": 1073,
+        "framesPresented": 1073,
+        "framesDropped": 0,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 49.8,
+        "latency": {
+          "samples": 1073,
+          "p50": 25.5,
+          "p95": 27.1,
+          "max": 41.5
+        },
+        "avgDecodeMs": 0.83,
+        "decoder": "h264",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 2,
+        "kind": "remote",
+        "framesReceived": 1073,
+        "framesDecoded": 1073,
+        "framesPresented": 1073,
+        "framesDropped": 0,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 49.8,
+        "latency": {
+          "samples": 1073,
+          "p50": 24.8,
+          "p95": 26.5,
+          "max": 40.9
+        },
+        "avgDecodeMs": 0.8,
+        "decoder": "h264",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 3,
+        "kind": "remote",
+        "framesReceived": 1073,
+        "framesDecoded": 1073,
+        "framesPresented": 1073,
+        "framesDropped": 0,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 49.8,
+        "latency": {
+          "samples": 1073,
+          "p50": 24.5,
+          "p95": 26.2,
+          "max": 39.9
+        },
+        "avgDecodeMs": 0.72,
+        "decoder": "h264",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 4,
+        "kind": "remote",
+        "framesReceived": 1074,
+        "framesDecoded": 1074,
+        "framesPresented": 1073,
+        "framesDropped": 0,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 49.8,
+        "latency": {
+          "samples": 1073,
+          "p50": 25.2,
+          "p95": 26.8,
+          "max": 41.2
+        },
+        "avgDecodeMs": 0.85,
+        "decoder": "h264",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 5,
+        "kind": "remote",
+        "framesReceived": 1074,
+        "framesDecoded": 1074,
+        "framesPresented": 1073,
+        "framesDropped": 0,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 49.8,
+        "latency": {
+          "samples": 1073,
+          "p50": 25.8,
+          "p95": 27.4,
+          "max": 41.9
+        },
+        "avgDecodeMs": 0.82,
+        "decoder": "h264",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 6,
+        "kind": "remote",
+        "framesReceived": 1074,
+        "framesDecoded": 1074,
+        "framesPresented": 1073,
+        "framesDropped": 0,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 49.8,
+        "latency": {
+          "samples": 1073,
+          "p50": 26.1,
+          "p95": 27.7,
+          "max": 42.2
+        },
+        "avgDecodeMs": 0.8,
+        "decoder": "h264",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 7,
+        "kind": "remote",
+        "framesReceived": 1074,
+        "framesDecoded": 1074,
+        "framesPresented": 1073,
+        "framesDropped": 0,
+        "presentedFps": 30,
+        "stalls": 0,
+        "longestGapMs": 49.8,
+        "latency": {
+          "samples": 1073,
+          "p50": 26.4,
+          "p95": 28,
+          "max": 42.9
+        },
+        "avgDecodeMs": 0.77,
+        "decoder": "h264",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "notes": []
+  }
+}

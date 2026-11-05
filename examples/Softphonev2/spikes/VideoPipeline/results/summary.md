@@ -1,0 +1,46 @@
+| run | path | streams | codec | res | camera | cpu (1 core = 100) | cpu % of machine | gpu 3d % | gpu decode % | gpu encode % | min tile fps | avg tile fps | dropped % | stalls | latency p50 ms | latency p95 ms | decoder | hw decode | camera encoder | camera fps/leg | private MB |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| buffer-4xh264-1080p30-camoff | buffer | 4 | h264 | 1080p30 | off | 198 | 9.9 | 22.4 NVIDIA | 39.8 NVIDIA | 0 | 30.0 | 30.0 | 0.0 | 0 | 38 | 41 | h264+d3d11va | True |  |  | 576 |
+| relay-4xh264-1080p30-camoff | relay | 4 | h264 | 1080p30 | off | 37 | 1.8 | 2.3 NVIDIA | 41.5 NVIDIA | 0 | 30.0 | 30.0 | 0.1 | 0 | 30 | 32 |  |  |  |  | 387 |
+| wpf-4xh264-1080p30-camoff | wpf | 4 | h264 | 1080p30 | off | 257 | 12.9 | 18.9 NVIDIA | 34.4 NVIDIA | 0 | 27.1 | 27.8 | 7.4 | 0 | 38 | 59 | h264+d3d11va | True |  |  | 558 |
+| buffer-1xh264-720p30-camoff | buffer | 1 | h264 | 720p30 | off | 33 | 1.7 | 3.3 NVIDIA | 5.9 NVIDIA | 0 | 30.0 | 30.0 | 0.1 | 0 | 34 | 36 | h264+d3d11va | True |  |  | 323 |
+| relay-1xh264-720p30-camoff | relay | 1 | h264 | 720p30 | off | 15 | 0.7 | 1.5 NVIDIA | 6.3 NVIDIA | 0 | 30.0 | 30.0 | 0.0 | 0 | 43 | 44 |  |  |  |  | 263 |
+| wpf-1xh264-720p30-camoff | wpf | 1 | h264 | 720p30 | off | 31 | 1.6 | 4 NVIDIA | 5.2 NVIDIA | 0 | 29.6 | 29.6 | 1.5 | 0 | 34 | 48 | h264+d3d11va | True |  |  | 218 |
+| buffer-4xh264-720p30-camoff | buffer | 4 | h264 | 720p30 | off | 125 | 6.2 | 9.7 NVIDIA | 24.1 NVIDIA | 0 | 30.0 | 30.0 | 0.0 | 0 | 37 | 39 | h264+d3d11va | True |  |  | 489 |
+| relay-4xh264-720p30-camoff | relay | 4 | h264 | 720p30 | off | 31 | 1.6 | 5.6 NVIDIA | 31.3 NVIDIA | 0 | 30.0 | 30.0 | 0.0 | 0 | 29 | 62 |  |  |  |  | 363 |
+| wpf-4xh264-720p30-camoff | wpf | 4 | h264 | 720p30 | off | 141 | 7.0 | 10.5 NVIDIA | 16.6 NVIDIA | 0 | 27.5 | 28.3 | 6.0 | 0 | 37 | 50 | h264+d3d11va | True |  |  | 447 |
+| buffer-8xh264-720p30-camoff | buffer | 8 | h264 | 720p30 | off | 286 | 14.3 | 11.9 NVIDIA | 40.5 NVIDIA | 0 | 30.0 | 30.0 | 0.0 | 0 | 38 | 42 | h264+d3d11va | True |  |  | 698 |
+| buffer-8xh264-720p30-camoff-swdec | buffer | 8 | h264 | 720p30 | off | 121 | 6.0 | 9.3 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.0 | 0 | 26 | 28 | h264 | False |  |  | 406 |
+| relay-8xh264-720p30-camoff | relay | 8 | h264 | 720p30 | off | 50 | 2.5 | 1.9 NVIDIA | 51.1 NVIDIA | 0 | 26.1 | 28.7 | 4.4 | 12 | 48 | 51 |  |  |  |  | 495 |
+| wpf-8xh264-720p30-camoff | wpf | 8 | h264 | 720p30 | off | 367 | 18.3 | 18.8 NVIDIA | 37.6 NVIDIA | 0 | 27.5 | 28.0 | 6.8 | 0 | 37 | 56 | h264+d3d11va | True |  |  | 742 |
+| wpf-8xh264-720p30-camoff-swdec | wpf | 8 | h264 | 720p30 | off | 186 | 9.3 | 17.3 NVIDIA | 0 | 0 | 27.2 | 28.1 | 6.4 | 0 | 26 | 48 | h264 | False |  |  | 433 |
+| buffer-4xh264-720p30-camfake-shared | buffer | 4 | h264 | 720p30 | fake shared | 123 | 6.2 | 11.8 NVIDIA | 21.8 NVIDIA | 6.8 NVIDIA | 30.0 | 30.0 | 0.1 | 0 | 28 | 30 | h264+d3d11va | True | h264_nvenc x1 (hw) | 30 | 709 |
+| relay-4xh264-720p30-camfake-shared | relay | 4 | h264 | 720p30 | fake shared | 56 | 2.8 | 4.4 NVIDIA | 22.4 NVIDIA | 0 | 30.0 | 30.0 | 0.2 | 0 | 53 | 55 | ExternalDecoder (D3D11VideoDecoder) | True | OpenH264 x1 | 30 | 397 |
+| wpf-4xh264-720p30-camfake-shared | wpf | 4 | h264 | 720p30 | fake shared | 157 | 7.9 | 25 NVIDIA | 16.3 NVIDIA | 5.3 NVIDIA | 28.1 | 29.0 | 3.3 | 0 | 28 | 47 | h264+d3d11va | True | h264_nvenc x1 (hw) | 30 | 657 |
+| buffer-8xh264-720p30-camfake-percall | buffer | 8 | h264 | 720p30 | fake percall | 273 | 13.6 | 14.3 NVIDIA | 31.5 NVIDIA | 39.8 NVIDIA | 29.9 | 30.0 | 0.1 | 0 | 35 | 37 | h264+d3d11va | True | h264_nvenc x8 (hw) | 30 | 2304 |
+| buffer-8xh264-720p30-camfake-shared | buffer | 8 | h264 | 720p30 | fake shared | 268 | 13.4 | 13.8 NVIDIA | 36.5 NVIDIA | 5.8 NVIDIA | 30.0 | 30.0 | 0.0 | 0 | 31 | 47 | h264+d3d11va | True | h264_nvenc x1 (hw) | 30 | 948 |
+| relay-8xh264-720p30-camfake-percall | relay | 8 | h264 | 720p30 | fake percall | 278 | 13.9 | 4.3 NVIDIA | 36.9 NVIDIA | 0 | 29.3 | 29.8 | 0.9 | 0 | 44 | 93 | ExternalDecoder (D3D11VideoDecoder) | True | OpenH264 x8 | 30 | 697 |
+| relay-8xh264-720p30-camfake-shared | relay | 8 | h264 | 720p30 | fake shared | 80 | 4.0 | 4.6 NVIDIA | 43.2 NVIDIA | 0 | 29.2 | 29.8 | 0.7 | 0 | 39 | 91 | ExternalDecoder (D3D11VideoDecoder) | True | OpenH264 x1 | 30 | 552 |
+| wpf-8xh264-720p30-camfake-percall | wpf | 8 | h264 | 720p30 | fake percall | 367 | 18.4 | 26 NVIDIA | 32.3 NVIDIA | 40.6 NVIDIA | 24.6 | 26.5 | 11.6 | 0 | 34 | 56 | h264+d3d11va | True | h264_nvenc x8 (hw) | 30 | 2313 |
+| wpf-8xh264-720p30-camfake-shared | wpf | 8 | h264 | 720p30 | fake shared | 370 | 18.5 | 20.5 NVIDIA | 34.7 NVIDIA | 5.6 NVIDIA | 27.7 | 28.3 | 5.9 | 0 | 30 | 60 | h264+d3d11va | True | h264_nvenc x1 (hw) | 30 | 976 |
+| buffer-4xvp8-1080p30-camoff | buffer | 4 | vp8 | 1080p30 | off | 99 | 5.0 | 9.6 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.1 | 0 | 32 | 34 | vp8 | False |  |  | 372 |
+| relay-4xvp8-1080p30-camoff | relay | 4 | vp8 | 1080p30 | off | 31 | 1.5 | 13.5 NVIDIA | 0 | 0 | 29.7 | 29.9 | 0.6 | 0 | 24 | 58 |  |  |  |  | 488 |
+| wpf-4xvp8-1080p30-camoff | wpf | 4 | vp8 | 1080p30 | off | 172 | 8.6 | 18.5 NVIDIA | 0 | 0 | 27.2 | 28.0 | 6.9 | 0 | 31 | 50 | vp8 | False |  |  | 381 |
+| buffer-1xvp8-720p30-camoff | buffer | 1 | vp8 | 720p30 | off | 24 | 1.2 | 7.1 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.0 | 0 | 27 | 29 | vp8 | False |  |  | 250 |
+| relay-1xvp8-720p30-camoff | relay | 1 | vp8 | 720p30 | off | 20 | 1.0 | 3.1 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.1 | 0 | 51 | 53 |  |  |  |  | 263 |
+| wpf-1xvp8-720p30-camoff | wpf | 1 | vp8 | 720p30 | off | 16 | 0.8 | 6.6 NVIDIA | 0 | 0 | 29.7 | 29.7 | 0.9 | 0 | 22 | 39 | vp8 | False |  |  | 150 |
+| buffer-4xvp8-720p30-camoff | buffer | 4 | vp8 | 720p30 | off | 58 | 2.9 | 6.5 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.0 | 0 | 31 | 32 | vp8 | False |  |  | 293 |
+| relay-4xvp8-720p30-camoff | relay | 4 | vp8 | 720p30 | off | 28 | 1.4 | 5.1 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.0 | 0 | 22 | 24 |  |  |  |  | 374 |
+| wpf-4xvp8-720p30-camoff | wpf | 4 | vp8 | 720p30 | off | 60 | 3.0 | 12.3 NVIDIA | 0 | 0 | 29.7 | 29.7 | 0.9 | 0 | 26 | 39 | vp8 | False |  |  | 263 |
+| buffer-8xvp8-720p30-camoff | buffer | 8 | vp8 | 720p30 | off | 127 | 6.3 | 9.9 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.0 | 0 | 34 | 35 | vp8 | False |  |  | 361 |
+| relay-8xvp8-720p30-camoff | relay | 8 | vp8 | 720p30 | off | 43 | 2.2 | 6.2 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.1 | 0 | 25 | 60 |  |  |  |  | 546 |
+| wpf-8xvp8-720p30-camoff | wpf | 8 | vp8 | 720p30 | off | 164 | 8.2 | 19.8 NVIDIA | 0 | 0 | 25.7 | 27.0 | 10.0 | 0 | 29 | 49 | vp8 | False |  |  | 388 |
+| buffer-4xvp8-720p30-camfake-shared | buffer | 4 | vp8 | 720p30 | fake shared | 111 | 5.6 | 8.5 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.0 | 0 | 21 | 23 | vp8 | False | libvpx x1 | 30 | 344 |
+| relay-4xvp8-720p30-camfake-shared | relay | 4 | vp8 | 720p30 | fake shared | 61 | 3.0 | 6.7 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.1 | 0 | 46 | 64 | libvpx | False | libvpx x1 | 30 | 476 |
+| wpf-4xvp8-720p30-camfake-shared | wpf | 4 | vp8 | 720p30 | fake shared | 161 | 8.0 | 12.4 NVIDIA | 0 | 0 | 28.7 | 29.0 | 3.4 | 0 | 32 | 45 | vp8 | False | libvpx x1 | 30 | 320 |
+| buffer-8xvp8-720p30-camfake-percall | buffer | 8 | vp8 | 720p30 | fake percall | 855 | 42.7 | 10.9 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.0 | 0 | 28 | 30 | vp8 | False | libvpx x8 | 30 | 711 |
+| buffer-8xvp8-720p30-camfake-shared | buffer | 8 | vp8 | 720p30 | fake shared | 172 | 8.6 | 11.3 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.0 | 0 | 24 | 26 | vp8 | False | libvpx x1 | 30 | 433 |
+| relay-8xvp8-720p30-camfake-percall | relay | 8 | vp8 | 720p30 | fake percall | 379 | 19.0 | 9.2 NVIDIA | 0 | 0 | 27.5 | 29.7 | 1.2 | 3 | 53 | 87 | libvpx | False | libvpx x8 | 30.1 | 1052 |
+| relay-8xvp8-720p30-camfake-shared | relay | 8 | vp8 | 720p30 | fake shared | 93 | 4.7 | 7.5 NVIDIA | 0 | 0 | 30.0 | 30.0 | 0.1 | 0 | 48 | 51 | libvpx | False | libvpx x1 | 30.1 | 656 |
+| wpf-8xvp8-720p30-camfake-percall | wpf | 8 | vp8 | 720p30 | fake percall | 1012 | 50.6 | 22.1 NVIDIA | 0 | 0 | 27.4 | 28.7 | 4.5 | 8 | 24 | 45 | vp8 | False | libvpx x8 | 30 | 740 |
+| wpf-8xvp8-720p30-camfake-shared | wpf | 8 | vp8 | 720p30 | fake shared | 290 | 14.5 | 21 NVIDIA | 0 | 0 | 22.5 | 26.1 | 13.3 | 0 | 33 | 51 | vp8 | False | libvpx x1 | 30 | 446 |

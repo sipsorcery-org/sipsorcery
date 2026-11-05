@@ -1,0 +1,245 @@
+{
+  "label": "wpf-8xvp8-720p30-camoff",
+  "config": {
+    "path": "Wpf",
+    "streams": 8,
+    "codec": "VP8",
+    "resolution": "720p30",
+    "camera": "Off",
+    "cameraMode": "Shared",
+    "hwDecode": true,
+    "farEnd": "127.0.0.1:5090",
+    "width": 1600,
+    "height": 900,
+    "cameraBitrateKbps": 1500,
+    "codecName": "vp8",
+    "clipName": "vp8-720p30",
+    "callUri": "sip:vp8-720p30@127.0.0.1:5090",
+    "label": "wpf-8xvp8-720p30-camoff"
+  },
+  "machine": {
+    "info": {
+      "cpu": "Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz",
+      "logicalCpus": 20,
+      "gpus": [
+        "NVIDIA Quadro T2000",
+        "Intel(R) UHD Graphics 630"
+      ],
+      "display": [
+        "3840 1600 59"
+      ],
+      "gpuLuids": {
+        "0x00000000_0x000110AD": "NVIDIA Quadro T2000",
+        "0x00000000_0x00012E32": "Intel(R) UHD Graphics 630",
+        "0x00000000_0x00012DF3": "Microsoft Basic Render Driver"
+      },
+      "os": "Microsoft Windows NT 10.0.26200.0",
+      "webView2": "156.0.4314.58"
+    },
+    "nearEndAffinity": "all"
+  },
+  "when": "2026-11-05T11:16:17.7849708+00:00",
+  "warmupSeconds": 8,
+  "resources": {
+    "seconds": 32.06,
+    "cpuPercentOfOneCore": 163.6,
+    "cpuPercentOfMachine": 8.2,
+    "logicalCpus": 20,
+    "processes": 1,
+    "privateMB": 388,
+    "cpuByProcess": {
+      "NearEnd.Wpf": 163.6
+    },
+    "gpuOurs": {
+      "0x00000000_0x000110AD 3D": 19.8
+    },
+    "gpuSystem": {
+      "0x00000000_0x000110AD Copy": 1.6,
+      "0x00000000_0x000110AD 3D": 24.9,
+      "0x00000000_0x000110AD VideoDecode": 2.8
+    }
+  },
+  "nearEnd": {
+    "windowSeconds": 34.57,
+    "latencyMethod": "SIP receive in C# to the WPF render tick that copied the frame into its bitmap, plus one display refresh (16.7 ms) for the compositor",
+    "tiles": [
+      {
+        "tile": 0,
+        "kind": "remote",
+        "framesReceived": 1038,
+        "framesDecoded": 1038,
+        "framesPresented": 982,
+        "framesDropped": 56,
+        "presentedFps": 28.4,
+        "stalls": 0,
+        "longestGapMs": 73.3,
+        "latency": {
+          "samples": 982,
+          "p50": 31.8,
+          "p95": 48.7,
+          "max": 54.9
+        },
+        "avgDecodeMs": 2.1,
+        "decoder": "vp8",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 1,
+        "kind": "remote",
+        "framesReceived": 1038,
+        "framesDecoded": 1038,
+        "framesPresented": 965,
+        "framesDropped": 73,
+        "presentedFps": 27.9,
+        "stalls": 0,
+        "longestGapMs": 73.3,
+        "latency": {
+          "samples": 965,
+          "p50": 30.7,
+          "p95": 47.3,
+          "max": 52.6
+        },
+        "avgDecodeMs": 2.16,
+        "decoder": "vp8",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 2,
+        "kind": "remote",
+        "framesReceived": 1038,
+        "framesDecoded": 1038,
+        "framesPresented": 954,
+        "framesDropped": 84,
+        "presentedFps": 27.6,
+        "stalls": 0,
+        "longestGapMs": 73.3,
+        "latency": {
+          "samples": 954,
+          "p50": 29.1,
+          "p95": 45.4,
+          "max": 51.9
+        },
+        "avgDecodeMs": 2.72,
+        "decoder": "vp8",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 3,
+        "kind": "remote",
+        "framesReceived": 1038,
+        "framesDecoded": 1038,
+        "framesPresented": 940,
+        "framesDropped": 98,
+        "presentedFps": 27.2,
+        "stalls": 0,
+        "longestGapMs": 73.3,
+        "latency": {
+          "samples": 940,
+          "p50": 29.2,
+          "p95": 45.2,
+          "max": 51.1
+        },
+        "avgDecodeMs": 2.25,
+        "decoder": "vp8",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 4,
+        "kind": "remote",
+        "framesReceived": 1038,
+        "framesDecoded": 1038,
+        "framesPresented": 925,
+        "framesDropped": 113,
+        "presentedFps": 26.8,
+        "stalls": 0,
+        "longestGapMs": 73.3,
+        "latency": {
+          "samples": 925,
+          "p50": 28.7,
+          "p95": 44.7,
+          "max": 51
+        },
+        "avgDecodeMs": 2.37,
+        "decoder": "vp8",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 5,
+        "kind": "remote",
+        "framesReceived": 1038,
+        "framesDecoded": 1037,
+        "framesPresented": 916,
+        "framesDropped": 123,
+        "presentedFps": 26.5,
+        "stalls": 0,
+        "longestGapMs": 73.3,
+        "latency": {
+          "samples": 916,
+          "p50": 28.2,
+          "p95": 44.2,
+          "max": 50.8
+        },
+        "avgDecodeMs": 2.68,
+        "decoder": "vp8",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 6,
+        "kind": "remote",
+        "framesReceived": 1038,
+        "framesDecoded": 1038,
+        "framesPresented": 903,
+        "framesDropped": 135,
+        "presentedFps": 26.1,
+        "stalls": 0,
+        "longestGapMs": 73.3,
+        "latency": {
+          "samples": 903,
+          "p50": 27.8,
+          "p95": 43.9,
+          "max": 50.7
+        },
+        "avgDecodeMs": 2.75,
+        "decoder": "vp8",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "tile": 7,
+        "kind": "remote",
+        "framesReceived": 1038,
+        "framesDecoded": 1038,
+        "framesPresented": 890,
+        "framesDropped": 148,
+        "presentedFps": 25.7,
+        "stalls": 0,
+        "longestGapMs": 73.3,
+        "latency": {
+          "samples": 890,
+          "p50": 27.9,
+          "p95": 43.9,
+          "max": 49.2
+        },
+        "avgDecodeMs": 2.5,
+        "decoder": "vp8",
+        "hardwareDecode": false,
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "notes": []
+  }
+}

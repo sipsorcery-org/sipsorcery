@@ -1,0 +1,92 @@
+{
+  "label": "wpf-1xh264-720p30-camoff",
+  "config": {
+    "path": "Wpf",
+    "streams": 1,
+    "codec": "H264",
+    "resolution": "720p30",
+    "camera": "Off",
+    "cameraMode": "Shared",
+    "hwDecode": true,
+    "farEnd": "127.0.0.1:5090",
+    "width": 1600,
+    "height": 900,
+    "cameraBitrateKbps": 1500,
+    "codecName": "h264",
+    "clipName": "h264-720p30",
+    "callUri": "sip:h264-720p30@127.0.0.1:5090",
+    "label": "wpf-1xh264-720p30-camoff"
+  },
+  "machine": {
+    "info": {
+      "cpu": "Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz",
+      "logicalCpus": 20,
+      "gpus": [
+        "NVIDIA Quadro T2000",
+        "Intel(R) UHD Graphics 630"
+      ],
+      "display": [
+        "3840 1600 59"
+      ],
+      "gpuLuids": {
+        "0x00000000_0x000110AD": "NVIDIA Quadro T2000",
+        "0x00000000_0x00012E32": "Intel(R) UHD Graphics 630",
+        "0x00000000_0x00012DF3": "Microsoft Basic Render Driver"
+      },
+      "os": "Microsoft Windows NT 10.0.26200.0",
+      "webView2": "156.0.4314.58"
+    },
+    "nearEndAffinity": "all"
+  },
+  "when": "2026-11-05T11:32:43.9043783+00:00",
+  "warmupSeconds": 8,
+  "resources": {
+    "seconds": 31.68,
+    "cpuPercentOfOneCore": 31.2,
+    "cpuPercentOfMachine": 1.6,
+    "logicalCpus": 20,
+    "processes": 1,
+    "privateMB": 218,
+    "cpuByProcess": {
+      "NearEnd.Wpf": 31.2
+    },
+    "gpuOurs": {
+      "0x00000000_0x000110AD VideoDecode": 5.2,
+      "0x00000000_0x000110AD 3D": 4
+    },
+    "gpuSystem": {
+      "0x00000000_0x000110AD Copy": 1.7,
+      "0x00000000_0x000110AD VideoDecode": 8,
+      "0x00000000_0x000110AD 3D": 10.3
+    }
+  },
+  "nearEnd": {
+    "windowSeconds": 33.92,
+    "latencyMethod": "SIP receive in C# to the WPF render tick that copied the frame into its bitmap, plus one display refresh (16.7 ms) for the compositor",
+    "tiles": [
+      {
+        "tile": 0,
+        "kind": "remote",
+        "framesReceived": 1018,
+        "framesDecoded": 1017,
+        "framesPresented": 1004,
+        "framesDropped": 15,
+        "presentedFps": 29.6,
+        "stalls": 0,
+        "longestGapMs": 76.7,
+        "latency": {
+          "samples": 1004,
+          "p50": 33.9,
+          "p95": 48.1,
+          "max": 62.1
+        },
+        "avgDecodeMs": 3.12,
+        "decoder": "h264\u002Bd3d11va",
+        "hardwareDecode": true,
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "notes": []
+  }
+}
