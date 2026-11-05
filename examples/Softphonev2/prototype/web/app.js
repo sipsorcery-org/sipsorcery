@@ -65,13 +65,13 @@ const now = () => Date.now();
 const ACCOUNTS = [
   { id: "sipsorcery", name: "SIPSorcery", displayName: "Aaron", user: "aaron", domain: "sipsorcery.cloud", registrar: "", proxy: "",
     transport: "TLS", authUser: "aaron", hasPassword: true, register: true, expiry: 3600, enabled: true,
-    stun: "stun.sipsorcery.com", srtp: "Optional", dtmf: "RFC 4733", rtt: true, reg: { state: "registered", expiresAt: now() + 52 * 60_000 } },
+    stun: "stun.sipsorcery.com", srtp: "Optional", dtmf: "RFC 4733", video: true, rtt: true, reg: { state: "registered", expiresAt: now() + 52 * 60_000 } },
   { id: "iptel", name: "iptel.org", displayName: "Aaron", user: "aaron", domain: "iptel.org", registrar: "", proxy: "",
     transport: "UDP", authUser: "aaron", hasPassword: true, register: true, expiry: 600, enabled: true,
-    stun: "stun.iptel.org", srtp: "Off", dtmf: "RFC 4733", rtt: true, reg: { state: "registered", expiresAt: now() + 7 * 60_000 } },
+    stun: "stun.iptel.org", srtp: "Off", dtmf: "RFC 4733", video: true, rtt: true, reg: { state: "registered", expiresAt: now() + 7 * 60_000 } },
   { id: "local", name: "Local (no registrar)", displayName: "Aaron", user: "aaron", domain: "192.168.0.50", registrar: "", proxy: "",
     transport: "UDP", authUser: "", hasPassword: false, register: false, expiry: 3600, enabled: true,
-    stun: "", srtp: "Off", dtmf: "RFC 4733", rtt: false, reg: { state: "off" } },
+    stun: "", srtp: "Off", dtmf: "RFC 4733", video: true, rtt: false, reg: { state: "off" } },
 ];
 
 // The editable fields, grouped as they appear in the Accounts form.
@@ -85,6 +85,8 @@ const ACCOUNT_FIELDS = [
   ["Registration", [["register", "Register with the server so this account can receive calls", "check"], ["expiry", "Expiry (seconds)", "number"]]],
   ["Network & media", [["stun", "STUN server", "text", "None"], ["srtp", "Media encryption (SRTP)", ["Off", "Optional", "Required"]],
     ["dtmf", "Keypad tones (DTMF)", ["RFC 4733", "SIP INFO", "In-band"]],
+    // Off leaves video out of every offer, for the odd server or gateway that rejects calls with it.
+    ["video", "Offer video on calls (turn off for servers that can't handle it)", "check"],
     ["rtt", "Offer real-time text on calls (RFC 4103)", "check"]]],
 ];
 const ACCOUNT_KEYS = ACCOUNT_FIELDS.flatMap(([, fields]) => fields.map(([k]) => k)).filter((k) => k !== "password");
@@ -103,6 +105,9 @@ const CONTACTS = [
   { name: "Echo test", uri: "sip:echo@sipsorcery.cloud" },
   { name: "Music on hold", uri: "sip:music@iptel.org" },
   { name: "Support line", uri: "tel:+35315550100" },
+  { name: "Lobby desk phone", uri: "sip:lobby-phone@example.com" },
+  { name: "Sam (camera off)", uri: "sip:sam-nocam@example.org" },
+  { name: "Kiosk (can't see you)", uri: "sip:kiosk-noview@example.org" },
 ];
 const H = 3_600_000, D = 24 * H;
 const RECENTS = [
@@ -168,9 +173,15 @@ const state = {
   view: loadPref("view", "focus"),
   // Local camera preview ("You" box) in the selected call's tile. On by default.
   selfView: loadPref("selfView", "on") === "on",
+  // The Audio | Video switch beside Call: what kind of call Call places. Audio by default, since
+  // most SIP calls go to phones and an audio offer never trips anything up; remembered after that.
+  callType: loadPref("callType", "audio"),
   // Emergency privacy toggles that apply to every call, including new ones, while on.
   muteAll: false,
   cameraAllOff: false,
+  // Diagnostics: this computer has no camera (or it's in use or blocked). Calls still offer
+  // video, receive-only, so you can see them.
+  noCamera: false,
   // Accounts view. open stays true while you step away to a call, until it's closed.
   // drafts holds unsaved edits per account, so switching to a call loses nothing.
   acct: { open: false, selected: null, drafts: {}, error: null, confirmRemove: null, nextId: 1 },
@@ -319,6 +330,8 @@ function holdCurrent(reason) {
   }
 }
 
+// The Audio | Video switch decides whether the call offers video. A phone number, or an account
+// with video turned off, is always audio. An audio call can add video later (a re-INVITE).
 function placeCall(dest, name) {
   dest = dest.trim();
   if (!dest) { document.getElementById("destInput").focus(); return; }
@@ -331,11 +344,14 @@ function placeCall(dest, name) {
   // containing "notext") decline the m=text line.
   const offerText = accountById(state.accountId)?.rtt !== false;
   const textOk = !/^tel:/.test(uri) && !/notext/i.test(uri);
-  const line = addCall({ name: name || displayName(uri), uri, status: "dialing", dir: "out", video: !/^tel:/.test(uri),
-    rtt: offerText && textOk, rttSupported: textOk });
+  const tel = /^tel:/.test(uri);
+  const videoOk = accountById(state.accountId)?.video !== false;
+  const wantVideo = state.callType === "video";
+  const line = addCall({ name: name || displayName(uri), uri, status: "dialing", dir: "out", video: !tel && videoOk && wantVideo,
+    noVideo: tel ? "tel" : !videoOk ? "account" : !wantVideo ? "chosen" : undefined, rtt: offerText && textOk, rttSupported: textOk });
   state.selected = line.id;
   state.audioFocus = line.id;
-  log(`Call ${line.id}: INVITE ${uri} via ${accountName(state.accountId)}`);
+  log(`Call ${line.id}: INVITE ${uri} via ${accountName(state.accountId)} (${line.video ? `audio + video${state.noCamera ? ", video recvonly: no camera" : !camOn(line) ? ", video recvonly: camera off" : ""}` : "audio only, no m=video"})`);
   const input = document.getElementById("destInput");
   input.value = "";
   input.blur(); // So shortcuts like M work straight away.
@@ -353,8 +369,9 @@ function placeCall(dest, name) {
         line.status = "connected";
         line.startedAt = now();
         if (offerText && !line.rtt) line.rttDeclined = true;
+        applyRemoteVideo(line);
         if (line.rtt && state.textFirst) line.textOpen = true;
-        log(`Call ${line.id}: 200 OK, ACK — media flowing (${[line.video ? "audio+video" : "audio", line.rtt ? "text" : ""].filter(Boolean).join(" + ")}${line.rttDeclined ? "; text declined, m=text 0" : ""})`);
+        log(`Call ${line.id}: 200 OK, ACK — media flowing (${[videoDesc(line), line.rtt ? "text" : ""].filter(Boolean).join(" + ")}${line.rttDeclined ? "; text declined, m=text 0" : ""})`);
         render();
       }
     }, 1600);
@@ -363,19 +380,85 @@ function placeCall(dest, name) {
   timers.set(line.id, id);
 }
 
-function answer(no, holdOthers = true) {
+// How the far end's answer (or their offer) treats video, from words in the mock address:
+// "phone" = a phone with no video (m=video 0), "nocam" = they won't send video (recvonly),
+// "noview" = they send but won't take ours (sendonly).
+function applyRemoteVideo(l) {
+  if (!l.video) return;
+  if (/phone/i.test(l.uri)) { l.video = false; l.noVideo = "rejected"; return; }
+  if (/nocam/i.test(l.uri)) l.theirCam = false;
+  if (/noview/i.test(l.uri)) l.theySee = false;
+}
+
+const videoDesc = (l) => !l.video ? (l.noVideo === "rejected" ? "audio; video declined, m=video 0" : "audio only")
+  : l.theirCam === false ? "audio+video; video recvonly, they aren't sending" : l.theySee === false ? "audio+video; video sendonly, they don't take ours" : "audio+video";
+
+// Why a call has no video, in words for the tile and the icons.
+const noVideoText = (l) => l.noVideo === "rejected" ? "Their phone doesn't do video"
+  : l.noVideo === "tel" ? "Phone number · audio only"
+  : l.noVideo === "account" ? "Video is off for this account" : "Audio call";
+
+// An audio call can't simply switch the camera on: video has to be added with a re-INVITE carrying
+// an m=video line. Plenty of phones and gateways refuse it (m=video 0), so say so plainly.
+const canAddVideo = (l) => !l.video && l.noVideo !== "tel" && l.noVideo !== "account" && l.noVideo !== "rejected"
+  && accountById(l.account)?.video !== false;
+
+function addVideo(l) {
+  if (!l || !canAddVideo(l) || l.videoAdding || l.status !== "connected") return;
+  l.videoAdding = true;
+  log(`Call ${l.id}: re-INVITE adding m=video (VP8, H264)${state.noCamera ? ", recvonly: no camera" : state.cameraAllOff ? ", recvonly: camera off" : ""} → ${l.name}`);
+  render();
+  setTimeout(() => {
+    l.videoAdding = false;
+    if (l.status === "ended") return;
+    l.video = true;
+    l.noVideo = undefined;
+    l.camera = true;
+    applyRemoteVideo(l);
+    if (l.video) {
+      log(`Call ${l.id}: 200 OK — video on (${videoDesc(l)})`);
+    } else {
+      log(`Call ${l.id}: 200 OK with m=video 0 — ${l.name}'s phone declined video`);
+      toast({ key: `video-${l.id}`, tone: "warn", icon: "videoOff", text: `<b>${esc(l.name)}</b>'s phone doesn't do video. The call carries on as audio.` });
+    }
+    render();
+  }, 900);
+}
+
+// Diagnostics: their camera stops (or starts). Video is still agreed; frames just stop arriving,
+// so the tile waits a couple of seconds before saying so, rather than flickering on a short gap.
+function toggleTheirCamera() {
+  const l = callById(state.selected);
+  if (!l || l.status !== "connected" || !l.video) { log("Select a connected video call first"); return; }
+  if (l.theirCam === false) {
+    l.theirCam = true;
+    log(`Call ${l.id}: video frames from ${l.name} again`);
+    render();
+    return;
+  }
+  log(`Call ${l.id}: ${l.name} turned their camera off (frames stop)`);
+  setTimeout(() => {
+    if (l.status !== "connected" && l.status !== "held") return;
+    l.theirCam = false;
+    log(`Call ${l.id}: no video from ${l.name} for 2 s: showing "Their camera is off"`);
+    render();
+  }, 2000);
+}
+
+// withCamera false answers with your camera off: video is still agreed, so you see them.
+function answer(no, holdOthers = true, withCamera = true) {
   const l = callById(no);
   if (!l || l.status !== "incoming") return;
   if (holdOthers) holdCurrent("answering " + l.name);
   l.status = "connected";
   l.startedAt = now();
   l.muted = false;
-  l.camera = true;
+  l.camera = withCamera;
   if (l.rtt && state.textFirst) l.textOpen = true;
   delete l.returnTo; // Once answered, it's a normal call; the Accounts view is one click away.
   state.selected = no;
   state.audioFocus = no;
-  log(`Call ${no}: 200 OK → <b>${l.name}</b> answered`);
+  log(`Call ${no}: 200 OK → <b>${l.name}</b> answered (${videoDesc(l)}${l.video && !camOn(l) ? ", your camera off: video recvonly" : ""})`);
   render();
 }
 
@@ -412,7 +495,7 @@ function endCall(l, { kind = "local", sip = "BYE", target = "", quiet = false } 
     sip: kind === "failed" ? sip : undefined });
 
   if (!quiet && kind !== "declined") {
-    const ended = { id: l.id, name: l.name, uri: l.uri, video: l.video, account: l.account, kind, title, sub, sip, duration };
+    const ended = { id: l.id, name: l.name, uri: l.uri, video: l.video, noVideo: l.noVideo, account: l.account, kind, title, sub, sip, duration };
     // An unanswered call that interrupted Accounts or History hands straight back to that view.
     const handBack = state.selected === l.id && l.returnTo != null && nextSelection(l.returnTo) === l.returnTo;
     if (handBack) state.selected = l.returnTo;
@@ -537,7 +620,8 @@ function simulateIncoming() {
   const callers = [
     ["Dana", "sip:dana@example.org"], ["Eve", "sip:eve@biloxi.example.com"],
     ["Frank", "sip:frank@atlanta.example.com"], ["+353 1 555 0199", "tel:+35315550199"],
-    ["Grace", "sip:grace@example.net"],
+    ["Grace", "sip:grace@example.net"], ["Lobby desk phone", "sip:lobby-phone@example.com"],
+    ["Sam", "sip:sam-nocam@example.org"],
   ];
   const free = callers.filter(([, u]) => !state.calls.some((l) => l.uri === u));
   const pool = free.length ? free : callers;
@@ -545,7 +629,10 @@ function simulateIncoming() {
   // Only a registered account can be reached.
   const acc = ACCOUNTS.find((a) => a.enabled && a.register && a.reg.state === "registered");
   if (!acc) { log(`No registered account, so the INVITE from ${uri} never arrives`); return; }
-  const line = addCall({ name, uri, status: "incoming", dir: "in", video: uri.startsWith("sip:"), account: acc.id,
+  // A desk phone ("phone" in the address) offers no video at all.
+  const line = addCall({ name, uri, status: "incoming", dir: "in", video: uri.startsWith("sip:") && !/phone/i.test(uri),
+    noVideo: uri.startsWith("tel:") ? "tel" : /phone/i.test(uri) ? "rejected" : undefined,
+    theirCam: /nocam/i.test(uri) ? false : undefined, account: acc.id,
     rtt: acc.rtt !== false && uri.startsWith("sip:"), rttSupported: uri.startsWith("sip:") });
   if (!line) { log(`Incoming INVITE from ${uri} rejected: 486 Busy Here (${MAX_CALLS} active calls)`); return; }
   log(`Call ${line.id}: INVITE from ${uri} → 180 Ringing`);
@@ -816,6 +903,149 @@ function renderToasts() {
 
 const talk = { who: "pause", until: 0 };
 let lastNudge = 0;
+
+// ---------- Call audio, drawn ----------
+// An audio-only call has no picture, so its card shows the conversation instead, as two rows of
+// frequency bars that stay put and only change height: what you hear from them grows up from
+// the centre line, what you send grows down from it. Bars rise quickly and fall slowly, so the
+// picture settles rather than flickers. Quiet and broken look different on purpose: quiet is a
+// row of small resting pills; no packets at all (one-way audio, the classic SIP/NAT fault) makes
+// the bars vanish, leaving one thin line, and after 2 s a note says which way it's broken. Only the call with the audio
+// focus is heard, so other calls are flat and dimmed, and a held call freezes. With reduced
+// motion on, each lane is a still level bar instead.
+//
+// In the real app the bands come from an AnalyserNode (getByteFrequencyData) on the received
+// track and on the microphone; here they're shaped from the simulated speech level.
+
+const VIZ_BANDS = 28;
+const VIZ_TARGET_MS = 70;        // new band targets ~14 times a second; bars ease between them
+const VIZ_FALL_MS = 260;         // how slowly a bar sinks once the sound behind it stops
+const vizState = new Map();      // call id -> { them, me, themTarget, meTarget, level }
+let vizLastFrame = 0, vizLastTarget = 0;
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+// Speech comes in syllables: a level that rises and falls a few times a second.
+const speech = (seed) => Math.min(1, (0.25 + Math.random() * 0.75) * (0.35 + 0.65 * Math.abs(Math.sin(now() / 110 + seed))));
+
+function vizSample(l) {
+  const heard = l.id === state.audioFocus && l.status === "connected";
+  const them = l.rxDead ? null : !heard ? 0 : talk.who === "them" ? speech(l.id) : Math.random() * 0.04;
+  // Your lane is what your mic sends; muted is flat (a choice), not dashed (a fault).
+  const me = !heard || micMuted(l) ? 0 : talk.who === "me" ? speech(l.id + 7) : Math.random() * 0.04;
+  return { them, me };
+}
+
+// A voice's energy sits low: a strong band around the fundamental and first formant, a weaker
+// one higher up, little at the top. The formants drift a little so it doesn't look stamped.
+function speechSpectrum(level, seed, out) {
+  const drift = 0.04 * Math.sin(now() / 420 + seed);
+  for (let b = 0; b < VIZ_BANDS; b++) {
+    const x = b / (VIZ_BANDS - 1);
+    const shape = Math.exp(-(((x - 0.18 - drift) / 0.16) ** 2)) + 0.55 * Math.exp(-(((x - 0.48 + drift) / 0.13) ** 2)) + 0.12 * (1 - x);
+    out[b] = level === null ? 0 : Math.min(1, level * shape * (0.7 + Math.random() * 0.45));
+  }
+}
+
+function vizFrame(t) {
+  const dt = Math.min(250, t - (vizLastFrame || t));
+  vizLastFrame = t;
+  const newTargets = t - vizLastTarget >= VIZ_TARGET_MS;
+  if (newTargets) vizLastTarget = t;
+  const fall = Math.exp(-dt / VIZ_FALL_MS);
+  for (const l of state.calls) {
+    if (l.video || !isLive(l)) { vizState.delete(l.id); continue; }
+    let v = vizState.get(l.id);
+    if (!v) {
+      v = { them: new Float32Array(VIZ_BANDS), me: new Float32Array(VIZ_BANDS), themTarget: new Float32Array(VIZ_BANDS), meTarget: new Float32Array(VIZ_BANDS), level: { them: 0, me: 0 } };
+      vizState.set(l.id, v);
+    }
+    if (l.status === "held") continue;   // frozen
+    if (newTargets) {
+      const s = vizSample(l);
+      v.level = s;
+      speechSpectrum(s.them, l.id, v.themTarget);
+      speechSpectrum(s.me, l.id + 7, v.meTarget);
+    }
+    for (const k of ["them", "me"]) {
+      const bars = v[k], target = v[`${k}Target`];
+      for (let b = 0; b < VIZ_BANDS; b++) {
+        // Rise most of the way at once; sink slowly.
+        bars[b] = target[b] > bars[b] ? bars[b] + (target[b] - bars[b]) * 0.6 : Math.max(target[b], bars[b] * fall);
+      }
+    }
+  }
+  document.querySelectorAll("canvas[data-viz]").forEach((c) => {
+    const l = callById(Number(c.dataset.viz));
+    const v = l && vizState.get(l.id);
+    if (v) drawViz(c, l, v);
+  });
+  requestAnimationFrame(vizFrame);
+}
+
+function drawViz(c, l, v) {
+  const dpr = devicePixelRatio || 1;
+  const w = Math.round(c.clientWidth * dpr), ht = Math.round(c.clientHeight * dpr);
+  if (!w || !ht) return;
+  if (c.width !== w || c.height !== ht) { c.width = w; c.height = ht; }
+  const g = c.getContext("2d");
+  g.clearRect(0, 0, w, ht);
+  const css = getComputedStyle(c);
+  const colour = { them: css.color, me: (l.txDead ? css.getPropertyValue("--viz-warn") : css.getPropertyValue("--viz-me")).trim() };
+  const dead = { them: !!l.rxDead, me: false };
+  const mid = ht / 2, gap = 3 * dpr, room = mid - gap - 2 * dpr;
+  const lanes = [["them", -1], ["me", 1]];   // them grows up from the centre, you grow down
+
+  for (const [k, dir] of lanes) {
+    const base = mid + dir * gap;
+    g.fillStyle = colour[k];
+    if (dead[k]) {
+      // No packets: no bars at all, just one thin line, unlike the resting pills of a quiet line.
+      g.globalAlpha = 0.45;
+      g.fillRect(0, base - dpr / 2, w, dpr);
+      continue;
+    }
+    if (reducedMotion.matches) {
+      // Still: one level bar per lane, its length the loudness.
+      const level = v.level[k] ?? 0;
+      g.globalAlpha = 0.9;
+      g.fillRect(0, mid + dir * room / 2 - 3 * dpr, Math.max(2 * dpr, Math.min(1, level * 1.6) * w), 6 * dpr);
+      continue;
+    }
+    const slot = w / VIZ_BANDS, bar = Math.max(2 * dpr, slot * 0.6), pad = (slot - bar) / 2;
+    g.globalAlpha = 0.9;
+    for (let b = 0; b < VIZ_BANDS; b++) {
+      const len = Math.max(2 * dpr, v[k][b] * room);
+      const x = b * slot + pad, y = dir < 0 ? base - len : base;
+      g.beginPath();
+      g.roundRect ? g.roundRect(x, y, bar, len, Math.min(bar, len) / 2) : g.rect(x, y, bar, len);
+      g.fill();
+    }
+  }
+  g.globalAlpha = 1;
+}
+
+// Diagnostics: one-way audio. "rx": their packets stop arriving. "tx": their receiver reports
+// show none of yours arriving. The note waits 2 s, so a short gap isn't called a fault.
+function toggleAudioFault(kind) {
+  const l = callById(state.selected);
+  if (!l || !isLive(l)) { log("Select a live call first"); return; }
+  const dead = kind === "rx" ? "rxDead" : "txDead", shown = `${dead}Shown`;
+  if (l[dead]) {
+    l[dead] = false;
+    l[shown] = false;
+    log(`Call ${l.id}: ${kind === "rx" ? `audio from ${l.name} is arriving again` : `${l.name} is getting your audio again`}`);
+    render();
+    return;
+  }
+  l[dead] = true;
+  log(`Call ${l.id}: ${kind === "rx" ? `RTP from ${l.name} stopped` : `RTCP from ${l.name}: none of your packets arriving`}${l.video ? " (the waveform shows on audio-only calls)" : ""}`);
+  setTimeout(() => {
+    if (!l[dead] || !isLive(l)) return;
+    l[shown] = true;
+    log(`Call ${l.id}: no audio ${kind === "rx" ? `from ${l.name}` : `reaching ${l.name}`} for 2 s: showing a note`);
+    render();
+  }, 2000);
+}
 
 function speechTick() {
   const t = now();
@@ -1437,7 +1667,7 @@ function addAccount() {
   const id = "new";
   if (!state.acct.drafts[id]) {
     state.acct.drafts[id] = { name: "", displayName: "", user: "", domain: "", registrar: "", proxy: "", transport: "UDP",
-      authUser: "", password: "", register: true, expiry: 3600, stun: "", srtp: "Optional", dtmf: "RFC 4733", rtt: true };
+      authUser: "", password: "", register: true, expiry: 3600, stun: "", srtp: "Optional", dtmf: "RFC 4733", video: true, rtt: true };
   }
   state.acct.selected = id;
   state.acct.error = null;
@@ -1559,9 +1789,11 @@ function mediaIconsHtml(l) {
     : held ? ["mic", "idle", "On hold: mic paused"]
     : focus ? ["mic", "live", "Your mic is live"]
     : ["mic", "idle", "Mic unmuted, but audio is on another call"];
-  const cam = !l.video ? ["videoOff", "idle", "Audio-only call"]
+  const cam = !l.video ? ["videoOff", "idle", noVideoText(l)]
+    : state.noCamera ? ["videoOff", "idle", "No camera: you can see them, they can't see you"]
     : !camOn(l) ? ["videoOff", "off", state.cameraAllOff ? "Camera off (all calls)" : "Camera off"]
     : held ? ["video", "idle", "On hold: camera paused"]
+    : l.theySee === false ? ["video", "idle", "They aren't receiving your video"]
     : ["video", "live", "Sending your camera"];
   // Text only appears once it's set up on the call: typing pulses, unread gets a dot.
   const txt = !l.rtt ? null
@@ -1612,10 +1844,11 @@ function renderBanners(sel) {
         <span class="banner-icon">${icon("incoming")}</span>
         <div class="banner-text">
           <div class="banner-title">${esc(l.name)} is calling</div>
-          <div class="banner-sub">${esc(l.uri)} · ${esc(accountName(l.account))}</div>
+          <div class="banner-sub">${l.video ? "Video call" : "Audio call"} · ${esc(l.uri)} · ${esc(accountName(l.account))}</div>
         </div>
         <button class="btn btn-ghost" data-act="decline" data-call="${l.id}">Decline</button>
-        <button class="btn btn-primary" data-act="answer" data-call="${l.id}">${hasCurrent ? "Answer &amp; hold current" : "Answer"}</button>
+        ${l.video ? `<button class="btn" data-act="answer-nocam" data-call="${l.id}" title="Answer with your camera off. You'll still see them, and can turn it on any time.">${icon("videoOff")}Camera off</button>` : ""}
+        <button class="btn btn-primary" data-act="answer" data-call="${l.id}">${icon(l.video ? "video" : "phone")}${hasCurrent ? "Answer &amp; hold current" : "Answer"}</button>
       </div>`;
     }).join("");
 }
@@ -1648,26 +1881,56 @@ function stackedBannerHtml(queue, alsoOnScreen) {
   </div>`;
 }
 
+// An audio-only call's picture: two lanes, them above and you below, with who's who at the start
+// of each lane and a note when audio isn't flowing one way.
+function audioVizHtml(l) {
+  const heard = l.id === state.audioFocus && l.status === "connected";
+  const note = (lane, text, tone) => `<span class="viz-note ${lane} ${tone}"><span>${text}</span></span>`;
+  return `<div class="audio-viz-wrap ${heard ? "" : "dim"}">
+      <span class="viz-who them" title="${esc(l.name)}">${esc(initial(l.name))}</span>
+      <span class="viz-who me" title="You">You</span>
+      <canvas class="audio-viz" data-viz="${l.id}" role="img" aria-label="Audio from ${esc(l.name)} above, your audio below"></canvas>
+      ${l.rxDeadShown ? note("them", `No audio arriving from ${esc(l.name)}`, "bad") : ""}
+      ${l.txDeadShown ? note("me", `${esc(l.name)} isn't getting your audio`, "bad")
+        : l.status === "connected" && micMuted(l) ? note("me", "You're muted", "muted") : ""}
+    </div>`;
+}
+
 // side: the text panel, shown beside the video inside the main card.
 function tileHtml(l, kind, footer = "", side = "") {
   const bg = tileColour(l);
-  const showVideo = l.video && l.status !== "held";
+  // Their video shows only when it's agreed and actually arriving; otherwise their initials
+  // stay up with a plain note saying why, and never a "waiting for video" spinner.
+  const theirVideo = l.video && l.theirCam !== false;
+  const showVideo = theirVideo && l.status !== "held";
+  const note = l.status !== "connected" && l.status !== "held" ? ""
+    : l.video && !theirVideo ? "Their camera is off" : "";
+  // An audio call keeps the same tile; a small label says so and the waveform of what you hear
+  // takes the picture's place.
+  const audioViz = !l.video && isLive(l);
   const overlay = l.status === "held" ? `<div class="tile-overlay"><div>On hold<span class="overlay-time" data-since="${l.heldAt}">${fmtDuration(now() - l.heldAt)}</span></div></div>`
     : l.status === "dialing" ? `<div class="tile-overlay">Calling…</div>`
     : l.status === "ended" ? `<div class="tile-overlay">${esc(l.endReason)}</div>` : "";
-  const label = l.video ? "Test feed" : "Audio only";
+  const label = !l.video
+    ? `<span class="audio-chip" title="${esc(noVideoText(l))}">${icon("phone")}Audio only${l.noVideo === "rejected" ? " · their phone has no video" : l.noVideo === "tel" ? " · phone number" : l.noVideo === "account" ? " · video off for this account" : ""}</span>`
+    : theirVideo ? "Test feed" : "Video";
   const isSel = l.id === state.selected;
-  const canSelfView = isSel && l.status === "connected" && l.video && camOn(l);
-  const selfView = canSelfView && state.selfView ? `<div class="self-view">You</div>` : "";
+  const canSelfView = isSel && l.status === "connected" && l.video;
+  const selfView = !canSelfView || !state.selfView ? ""
+    : state.noCamera ? `<div class="self-view none">${icon("videoOff")}<span>No camera</span></div>`
+    : !camOn(l) ? `<div class="self-view none" title="They can't see you. You can still see them.">${icon("videoOff")}<span>Camera off</span></div>`
+    : l.theySee === false ? `<div class="self-view unseen" title="They accepted video but aren't receiving yours">You<span>They can't see you</span></div>`
+    : `<div class="self-view">You</div>`;
   const time = isLive(l) ? `<span class="tile-time" data-since="${l.startedAt}">${fmtDuration(now() - l.startedAt)}</span>` : "";
   const action = kind === "main"
     ? (canSelfView ? `<button class="btn btn-small meta-toggle ${state.selfView ? "on" : ""}" data-act="selfview" aria-pressed="${state.selfView}"
         title="${state.selfView ? "Hide" : "Show"} your camera preview (V)">${icon("selfView")}Self view</button>` : "")
     : kind !== "grid" ? ""
     : isSel ? `<span class="tile-badge">Selected</span>` : "";
-  const feed = `<div class="tile-feed ${showVideo ? "live" : "off"}" style="--tile-bg:${bg}">
+  const feed = `<div class="tile-feed ${showVideo ? "live" : "off"} ${!l.video ? "audio" : ""}" style="--tile-bg:${bg}">
       <span class="tile-label">${label}</span>
-      <span class="avatar" data-speak="${l.id}">${esc(initial(l.name))}</span>
+      ${audioViz ? audioVizHtml(l)
+        : `<div class="tile-who"><span class="avatar" data-speak="${l.id}">${esc(initial(l.name))}</span>${note ? `<span class="tile-note">${esc(note)}</span>` : ""}</div>`}
       ${time}${overlay}${selfView}${kind === "main" && !l.textOpen && l.rtt ? textPeekHtml(l) : ""}
     </div>`;
   // In the grid a click anywhere on a tile opens that call in Focus view.
@@ -1718,7 +1981,7 @@ function renderStage() {
     // Calls are started from the bar at the top; the stage only ever shows existing calls.
     html += `<div class="empty"><div>
       <h2>No active calls</h2>
-      <p>Enter a number or SIP address above and press <b>New call</b>.</p>
+      <p>Enter a number or SIP address above and press <b>Call</b>. The switch beside it picks an audio or a video call.</p>
     </div></div>`;
   } else if (sel.status === "incoming") {
     const hasCurrent = callById(state.audioFocus)?.status === "connected";
@@ -1726,11 +1989,12 @@ function renderStage() {
       <div class="avatar">${esc(initial(sel.name))}</div>
       <div class="eyebrow">Incoming call · ${esc(accountName(sel.account))}</div>
       <h2>${esc(sel.name)}</h2>
-      <p>${esc(sel.uri)}${sel.video ? " · video offered" : ""}</p>
+      <p>${esc(sel.uri)} · ${sel.video ? "video call" : "audio call"}</p>
       <div class="actions">
         <button class="btn btn-danger" data-act="decline" data-call="${sel.id}">${icon("hangup")}Decline</button>
         ${hasCurrent ? `<button class="btn" data-act="answer-only" data-call="${sel.id}">Answer, keep current</button>` : ""}
-        <button class="btn btn-primary" data-act="answer" data-call="${sel.id}">${icon("phone")}${hasCurrent ? "Answer &amp; hold current" : "Answer"}</button>
+        ${sel.video ? `<button class="btn" data-act="answer-nocam" data-call="${sel.id}" title="Answer with your camera off. You'll still see them, and can turn it on any time.">${icon("videoOff")}Answer, camera off</button>` : ""}
+        <button class="btn btn-primary" data-act="answer" data-call="${sel.id}">${icon(sel.video ? "video" : "phone")}${hasCurrent ? "Answer &amp; hold current" : "Answer"}</button>
       </div>
     </div></div>`;
   } else {
@@ -1945,8 +2209,17 @@ function controlButtons(l) {
         ${state.menu === "mic" ? deviceMenuHtml("mic") : ""}
       </div>
       <div class="split">
-        <button class="btn ${camOff ? "on warn" : ""}" data-act="camera" ${dis(connected && l.video)} aria-pressed="${camOff}"
-          ${state.cameraAllOff ? 'title="Camera is off for all calls. Click to turn it on for just this call."' : ""}>${icon(camOff ? "videoOff" : "video")}${camOff ? "Camera off" : "Camera"}</button>
+        ${!l.video && canAddVideo(l)
+          // An audio call: video can be added (a re-INVITE), though their phone may say no.
+          ? `<button class="btn" data-act="add-video" ${dis(connected && !l.videoAdding)}
+              title="Add video to this call. They'll be asked; some phones can't.">${icon("video")}${l.videoAdding ? "Adding video…" : "Add video"}</button>`
+          : !l.video
+          // No video possible (their phone, a phone number, or the account), so nothing to turn on.
+          ? `<button class="btn" disabled title="${esc(noVideoText(l))}">${icon("videoOff")}No video</button>`
+          : state.noCamera
+          ? `<button class="btn" disabled title="No camera found. You can still see them.">${icon("videoOff")}No camera</button>`
+          : `<button class="btn ${camOff ? "on warn" : ""}" data-act="camera" ${dis(connected)} aria-pressed="${camOff}"
+          ${state.cameraAllOff ? 'title="Camera is off for all calls. Click to turn it on for just this call."' : ""}>${icon(camOff ? "videoOff" : "video")}${camOff ? "Camera off" : "Camera"}</button>`}
         ${caret("camera", "Choose camera", camOff)}
         ${state.menu === "camera" ? deviceMenuHtml("camera") : ""}
       </div>
@@ -2112,7 +2385,34 @@ function renderModal() {
   }
 }
 
+// The Audio | Video switch beside Call. Locked to Audio when the account has video turned off.
+function renderCallType() {
+  const locked = accountById(state.accountId)?.video === false;
+  const type = locked ? "audio" : state.callType;
+  document.querySelectorAll("#callType [data-type]").forEach((el) => {
+    const on = el.dataset.type === type;
+    el.classList.toggle("on", on);
+    el.setAttribute("aria-checked", String(on));
+    el.tabIndex = on ? 0 : -1;
+    el.disabled = locked && el.dataset.type === "video";
+  });
+  document.getElementById("callType").title = locked ? "Video is turned off for this account"
+    : type === "video" ? "Video call: you'll see each other. You can turn your camera off once it connects."
+    : "Audio call. You can add video once it connects.";
+  const call = document.getElementById("callBtn");
+  call.querySelector("[data-icon]").innerHTML = icon(type === "video" ? "video" : "phone");
+  call.querySelector(".label").textContent = type === "video" ? "Video call" : "Call";
+}
+
+function setCallType(type) {
+  if (accountById(state.accountId)?.video === false) return;
+  state.callType = type;
+  savePref("callType", type);
+  renderCallType();
+}
+
 function render() {
+  renderCallType();
   renderAccount();
   renderPrivacy();
   renderCallList();
@@ -2131,6 +2431,17 @@ document.querySelectorAll("[data-icon]").forEach((el) => (el.innerHTML = icon(el
 document.getElementById("dialForm").addEventListener("submit", (e) => {
   e.preventDefault();
   placeCall(document.getElementById("destInput").value);
+});
+document.getElementById("callType").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-type]");
+  if (btn && !btn.disabled) setCallType(btn.dataset.type);
+});
+// A radio group: the arrow keys move between Audio and Video.
+document.getElementById("callType").addEventListener("keydown", (e) => {
+  if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+  e.preventDefault();
+  setCallType(state.callType === "video" ? "audio" : "video");
+  document.querySelector(`#callType [data-type="${state.callType}"]`)?.focus();
 });
 
 document.getElementById("accountSelect").addEventListener("change", (e) => {
@@ -2187,6 +2498,7 @@ document.addEventListener("click", (e) => {
     case "banner-toggle": state.bannerOpen = !state.bannerOpen; renderStage(); break;
     case "net-pop": showNetPop(btn); break; // Tap shows it; tapping anywhere else hides it.
     case "answer-only": answer(no, false); break;
+    case "answer-nocam": answer(no, true, false); break;
     case "decline": decline(no); break;
     case "select": select(no); break;
     case "tile": focusCall(no); break;
@@ -2194,6 +2506,7 @@ document.addEventListener("click", (e) => {
     case "selfview": toggleSelfView(); break;
     case "mute": toggleCallMute(l); break;
     case "camera": toggleCallCamera(l); break;
+    case "add-video": addVideo(l); break;
     case "mute-all": toggleMuteAll(); break;
     case "camera-all": toggleCameraAll(); break;
     case "hold": toggleHold(l); break;
@@ -2344,6 +2657,15 @@ document.querySelector(".diag-actions").addEventListener("click", (e) => {
     render();
   }
   if (sim === "clear") { state.log = []; renderLog(); }
+  if (sim === "their-camera") toggleTheirCamera();
+  if (sim === "rx-dead") toggleAudioFault("rx");
+  if (sim === "tx-dead") toggleAudioFault("tx");
+  if (sim === "no-camera") {
+    state.noCamera = !state.noCamera;
+    e.target.closest("[data-sim]").classList.toggle("on", state.noCamera);
+    log(state.noCamera ? "Camera: none found (new calls offer video recvonly)" : "Camera: found again");
+    render();
+  }
   if (sim === "text-remote") {
     const sel = callById(state.selected);
     const l = sel?.status === "connected" && sel.rtt ? sel : callsNewestFirst().find((x) => x.status === "connected" && x.rtt);
@@ -2406,6 +2728,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 setInterval(speechTick, 100);
+requestAnimationFrame(vizFrame);
 setInterval(netTick, 2000);
 setInterval(holdTick, 1000);
 

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIPSorcery Softphone</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 10v3M6 6v11M10 3v18M14 8v7M18 5v13M22 10v3"/></svg>
+        <span class="brand-name">SIPSorcery</span>
+        <span class="brand-divider"></span>
+        <span class="brand-sub">Softphone</span>
+      </div>
+      <div class="reg" id="reg"></div>
+    </header>
+
+    <form class="dialbar" id="dialForm" autocomplete="off">
+      <input id="address" type="text" placeholder="Number or SIP address, e.g. sip:alice@example.com" spellcheck="false" aria-label="Number or SIP address">
+      <!-- What kind of call Call places. Audio leaves video out of the offer; it can be added later. -->
+      <div class="call-type" id="callType" role="radiogroup" aria-label="Call type">
+        <button type="button" role="radio" data-type="audio"></button>
+        <button type="button" role="radio" data-type="video"></button>
+      </div>
+      <button type="submit" class="btn btn-primary" id="callBtn">Call</button>
+    </form>
+
+    <main class="stage" id="stage" data-mode="card">
+      <video id="remote" class="remote" autoplay playsinline></video>
+
+      <div class="card" id="card">
+        <div class="card-title" id="cardTitle">Ready</div>
+        <div class="card-sub" id="cardSub">Type an address above to start a call.</div>
+        <div class="card-actions" id="cardActions"></div>
+      </div>
+
+      <!-- Video agreed, but nothing arriving: their initial, and after 2 s a note. -->
+      <div class="nocam" id="nocam">
+        <span class="avatar" id="nocamInitial"></span>
+        <span class="nocam-note" id="nocamNote"></span>
+      </div>
+
+      <!-- No video on the call: the conversation as two rows of frequency bars. -->
+      <div class="audio-view" id="audioView">
+        <span class="audio-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg>Audio only</span>
+        <div class="viz-wrap">
+          <span class="viz-who them" id="vizThem"></span>
+          <span class="viz-who me">You</span>
+          <canvas class="viz" id="viz" role="img" aria-label="Their audio above, yours below"></canvas>
+          <span class="viz-note them bad" id="noteThem" hidden><span></span></span>
+          <span class="viz-note me" id="noteMe" hidden><span></span></span>
+        </div>
+      </div>
+
+      <video id="self" class="self" autoplay muted playsinline></video>
+      <div class="self self-off" id="selfOff" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M2 2l20 20"/></svg>
+        <span id="selfOffText">Camera off</span>
+      </div>
+      <div class="info" id="info" hidden><span id="infoName"></span><span class="timer" id="timer"></span></div>
+    </main>
+
+    <div class="controls" id="controls" hidden>
+      <button class="btn" id="muteBtn" aria-pressed="false">Mute</button>
+      <button class="btn" id="camBtn" aria-pressed="false">Camera off</button>
+      <button class="btn btn-danger" id="hangupBtn">Hang up</button>
+    </div>
+
+    <details class="log">
+      <summary>SIP log</summary>
+      <pre id="log"></pre>
+    </details>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

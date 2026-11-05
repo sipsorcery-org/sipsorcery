@@ -1,0 +1,132 @@
+/* Tokens from the UX prototype (prototype/web/styles.css). */
+:root {
+  --page: #e9edeb; --surface: #ffffff; --surface-2: #f4f6f5; --border: #dde4e1; --border-strong: #c9d3cf;
+  --text: #1b2925; --muted: #677670; --accent: #1f6f5c; --accent-hover: #185a4a; --accent-ink: #ffffff;
+  --ok: #2f8a6c; --warn-ink: #8a5a12; --danger: #b3354e; --danger-soft: #fbe8ec; --tile: #dcebe3; --tile-ink: #5b7268;
+  --radius: 12px; --radius-sm: 8px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #0f1513; --surface: #171f1c; --surface-2: #1c2622; --border: #2a3632; --border-strong: #37453f;
+    --text: #e4ece8; --muted: #9aa9a3; --accent: #3ea486; --accent-hover: #4bb594; --accent-ink: #06130f;
+    --ok: #4cc29b; --warn-ink: #e6b86a; --danger: #e0718a; --danger-soft: #3a1f26; --tile: #1f3a31; --tile-ink: #a9c2b8;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--page); color: var(--text); font: 14px/1.4 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+.shell { height: 100%; display: grid; grid-template-rows: auto auto 1fr auto auto; gap: 12px; padding: 12px 16px 12px; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark { width: 22px; height: 22px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; }
+.brand-name { font-size: 18px; font-weight: 600; }
+.brand-divider { width: 1px; height: 18px; background: var(--border-strong); }
+.brand-sub { color: var(--muted); }
+.reg { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.reg::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
+.reg.registered::before { background: var(--ok); }
+.reg.registering::before { background: var(--warn-ink); }
+.reg.failed { color: var(--danger); }
+.reg.failed::before { background: var(--danger); }
+
+.dialbar { display: flex; gap: 8px; }
+.dialbar input {
+  flex: 1; min-width: 0; height: 40px; padding: 0 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit;
+}
+.dialbar input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+.btn {
+  height: 40px; padding: 0 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-strong);
+  background: var(--surface); color: var(--text); font: inherit; font-weight: 600; cursor: pointer;
+}
+.btn:hover { background: var(--surface-2); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn[aria-pressed="true"] { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+.icon-btn { width: 40px; padding: 0; display: grid; place-items: center; flex: none; }
+.icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* The start-camera toggle is amber while off, like the prototype's. */
+/* Audio | Video: two halves of one control, the chosen one filled. */
+.call-type { display: inline-flex; flex: none; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
+.call-type button { display: inline-flex; align-items: center; gap: 6px; padding: 0 11px; border: 0; border-radius: 7px; background: transparent;
+  color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.call-type svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.call-type button:hover:not(:disabled):not(.on) { color: var(--text); }
+.call-type button.on { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); }
+.call-type button:disabled { opacity: 0.45; cursor: not-allowed; }
+.call-type button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#callBtn { min-width: 118px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+#callBtn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn-danger:hover { background: var(--danger); filter: brightness(1.08); }
+
+.stage { position: relative; min-height: 0; border-radius: var(--radius); overflow: hidden; background: var(--tile); }
+/* The stage shows one of: card (no call, or calling/ringing/ended), video, nocam (video agreed
+   but none arriving) or audio (no video on the call). */
+.remote { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: none; }
+.stage[data-mode="video"] .remote { display: block; }
+.card { position: absolute; inset: 0; display: none; place-content: center; text-align: center; gap: 6px; color: var(--tile-ink); padding: 16px; }
+.stage[data-mode="card"] .card { display: grid; }
+.card-title { font-size: 22px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.card-sub { overflow-wrap: anywhere; }
+.card-actions { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+.card-actions:empty { display: none; }
+.self {
+  position: absolute; right: 12px; bottom: 12px; width: 22%; max-width: 260px; min-width: 120px; aspect-ratio: 16 / 9;
+  object-fit: cover; border-radius: var(--radius-sm); background: #000; transform: scaleX(-1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .3);
+}
+.self[hidden] { display: none; }
+.self-off { display: grid; place-content: center; justify-items: center; gap: 4px; transform: none; background: #3a3f3d; color: #b9c2be; font-size: 12px; }
+.self-off svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.stage[data-mode="audio"] .self { display: none; }
+
+.nocam { position: absolute; inset: 0; display: none; place-content: center; justify-items: center; gap: 12px; color: var(--tile-ink); }
+.stage[data-mode="nocam"] .nocam { display: grid; }
+.avatar { width: 96px; height: 96px; border-radius: 50%; border: 1.5px solid currentColor; display: grid; place-items: center; font-size: 40px; font-weight: 300; opacity: .6; }
+.nocam-note { font-size: 14px; min-height: 1.4em; }
+
+/* An audio-only call: a small label, and the conversation as two rows of frequency bars, theirs
+   growing up from the centre line and yours growing down. */
+.audio-view { position: absolute; inset: 0; display: none; }
+.stage[data-mode="audio"] .audio-view { display: block; }
+.audio-chip {
+  position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px 3px 7px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--tile-ink); font-size: 12px; font-weight: 500;
+}
+.audio-chip svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; }
+.viz-wrap { position: absolute; inset: 18% 6%; }
+.viz { position: absolute; left: 44px; top: 0; width: calc(100% - 44px); height: 100%; color: var(--tile-ink); --viz-me: var(--accent); --viz-warn: var(--danger); }
+.viz-who {
+  position: absolute; left: 0; width: 30px; height: 30px; transform: translateY(-50%); display: grid; place-items: center;
+  border-radius: 50%; border: 1.5px solid currentColor; color: var(--tile-ink); font-size: 13px; font-weight: 500;
+}
+.viz-who.them { top: 25%; }
+.viz-who.me { top: 75%; color: var(--accent); font-size: 10px; }
+.viz-note { position: absolute; left: 44px; right: 0; transform: translateY(-50%); text-align: center; pointer-events: none; }
+.viz-note[hidden] { display: none; }
+.viz-note.them { top: 22%; }
+.viz-note.me { top: 78%; }
+.viz-note > span { display: inline-block; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 85%, transparent); font-size: 13px; font-weight: 500; color: var(--muted); }
+.viz-note.bad > span { color: var(--danger); }
+.info {
+  position: absolute; left: 12px; top: 12px; display: flex; gap: 10px; padding: 6px 10px; border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, .55); color: #fff; font-size: 13px;
+}
+.timer { font-variant-numeric: tabular-nums; opacity: .85; }
+
+.controls { display: flex; justify-content: center; gap: 8px; }
+.controls[hidden] { display: none; }
+
+.log summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.log pre {
+  margin: 8px 0 0; max-height: 160px; overflow: auto; padding: 8px 10px; border-radius: var(--radius-sm);
+  background: var(--surface); border: 1px solid var(--border); font: 12px/1.45 Consolas, monospace; white-space: pre-wrap;
+}

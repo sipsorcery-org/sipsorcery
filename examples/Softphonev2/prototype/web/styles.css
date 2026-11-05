@@ -170,7 +170,17 @@ svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-widt
 .field-dest .field-label { grid-area: 1 / 2; }
 .dest-wrap { grid-area: 2 / 2; position: relative; min-width: 0; display: grid; }
 .dest-wrap input { width: 100%; }
-.btn-call { grid-area: 2 / 3; }
+.call-buttons { grid-area: 2 / 3; display: flex; gap: 8px; }
+/* Audio | Video: what kind of call Call places. Two halves of one control; the chosen half is filled. */
+.call-type { display: inline-flex; flex: none; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
+.call-type button { display: inline-flex; align-items: center; gap: 6px; padding: 0 11px; border: 0; border-radius: 7px; background: transparent;
+  color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.call-type button svg { width: 15px; height: 15px; }
+.call-type button:hover:not(:disabled):not(.on) { color: var(--text); }
+.call-type button.on { background: var(--accent-soft); color: var(--accent); }
+.call-type button:disabled { opacity: 0.45; cursor: not-allowed; }
+.call-type button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.btn-call { min-width: 118px; justify-content: center; }
 .account-manage { grid-area: 3 / 1; justify-self: start; position: relative; gap: 6px; margin-top: 2px; }
 .account-manage svg { width: 15px; height: 15px; }
 .account-manage.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
@@ -562,6 +572,55 @@ svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-widt
 }
 .tile.main .avatar { width: 96px; height: 96px; font-size: 40px; }
 .tile-feed.off .avatar { opacity: .45; }
+/* Initials plus, when there's no video, a plain note saying why ("Their camera is off"). */
+.tile-who { display: grid; justify-items: center; gap: 10px; text-align: center; }
+.tile-note { font-size: 13px; opacity: .9; padding: 0 12px; }
+.tile.grid .tile-note { font-size: 12px; }
+/* An audio-only call keeps the video tile's shape. A small label says it's audio only, and a
+   waveform of what you're hearing from them fills the space. */
+.audio-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 8px 3px 6px; border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  text-transform: none; letter-spacing: 0; font-size: 11.5px; font-weight: 500;
+}
+.audio-chip svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; }
+/* Two lanes: them above the centre line, you below. Dimmed when it isn't the call you're hearing. */
+.audio-viz-wrap { position: absolute; inset: 16% 5%; transition: opacity .2s; }
+.audio-viz-wrap.dim { opacity: .45; }
+.audio-viz {
+  position: absolute; left: 40px; top: 0; width: calc(100% - 40px); height: 100%;
+  color: var(--tile-ink); --viz-me: var(--accent); --viz-warn: var(--danger);
+}
+.viz-who {
+  position: absolute; left: 0; width: 28px; height: 28px; transform: translateY(-50%);
+  display: grid; place-items: center; border-radius: 50%;
+  border: 1.5px solid currentColor; color: var(--tile-ink);
+  font-size: 12px; font-weight: 500;
+}
+.viz-who.them { top: 25%; }
+.viz-who.me { top: 75%; color: var(--accent); font-size: 9.5px; letter-spacing: .02em; }
+.viz-note { position: absolute; left: 40px; right: 0; transform: translateY(-50%); text-align: center; pointer-events: none; }
+.viz-note.them { top: 22%; }
+.viz-note.me { top: 78%; }
+.viz-note > span {
+  display: inline-block; padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  font-size: 12.5px; font-weight: 500;
+}
+.viz-note.bad > span { color: var(--danger); }
+.viz-note.muted > span { color: var(--muted); }
+.tile.grid .audio-viz-wrap { inset: 22% 4%; }
+.tile.grid .viz-who { width: 22px; height: 22px; font-size: 10px; }
+.tile.grid .viz-who.me { font-size: 8px; }
+.tile.grid .audio-viz, .tile.grid .viz-note { left: 30px; }
+.tile.grid .audio-viz { width: calc(100% - 30px); }
+.tile.grid .viz-note > span { font-size: 11px; padding: 2px 8px; }
+.self-view.none, .self-view.unseen { display: grid; place-content: center; gap: 4px; text-align: center; }
+.self-view.none svg { width: 18px; height: 18px; margin: 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.self-view.none { background: #3a3f3d; color: #b9c2be; }
+.self-view.unseen { opacity: .75; border-style: dashed; }
+.self-view.unseen span { font-size: 10px; }
 .overlay-time { display: block; text-align: center; font-weight: 400; font-size: 13px; margin-top: 2px; font-variant-numeric: tabular-nums; }
 .tile-overlay {
   position: absolute; inset: 0; display: grid; place-items: center;
@@ -911,7 +970,7 @@ svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-widt
   .shell { margin: 0; height: auto; min-height: 100vh; border-radius: 0; border: 0; }
   .topbar, .dialbar, .statusbar, .diagnostics { padding-left: 16px; padding-right: 16px; }
   .dialbar { grid-template-columns: 1fr; }
-  .btn-call { width: 100%; }
+  .call-buttons .btn-call { flex: 1; }
   .dialbar > *, .dialbar .field-label-row, .dialbar .field-label, #accountSelect, .dest-wrap { grid-area: auto; }
   .account-manage { margin: 0 0 8px; }
   .acct-grid { grid-template-columns: minmax(0, 1fr); }

@@ -92,6 +92,54 @@ Then open http://localhost:5179.
   says so. In Settings, *Open the text panel on every call* is for people who mainly talk by text.
   *Save text conversations in call history* is off by default. When it's on, the transcript is
   shown in the call's history details (Grace's call from yesterday has one as an example).
+- **Video, or not.** Video is something a call has or doesn't, and it can change. The call is
+  shown as soon as it connects, and it never waits for video.
+  - **One Call button, with an Audio | Video switch beside it.** The switch picks the kind of
+    call: *Audio* leaves video out of the offer, *Video* offers it (and the button reads "Video
+    call"). It starts on Audio, because most SIP calls go to phones and an audio offer never
+    trips anything up, and then remembers your last choice. It's locked to Audio when the
+    account has video turned off. Phone numbers are always audio.
+    (Earlier tries: separate *Video call* and *Audio call* buttons, which looked odd side by
+    side; then a camera toggle where every call offered video and the toggle only decided
+    whether you sent yours, which made "off" ambiguous.)
+  - **Add video.** An audio call has an *Add video* button where Camera would be. It sends a
+    re-INVITE with `m=video`. If their phone refuses (`m=video 0`, try *Lobby desk phone*),
+    a notice says so and the call carries on as audio, with a disabled *No video* button.
+  - On a video call, *Camera* turns your camera off and on with no re-INVITE.
+  - **Servers that can't take video:** each account has *Offer video on calls* (Accounts →
+    Network & media). Off leaves video out of every offer from that account. That's where the
+    "no `m=video`" choice belongs, because it's about the server, not the call.
+  - An incoming video call offers *Camera off* next to *Answer*. It answers with your camera
+    off, and you still see them.
+  - A call with no video at all (their phone, a phone number, or the account) keeps the same card as a video call. A small *Audio only* label sits in the
+    corner, and the conversation takes the picture's place.
+    - **Two rows of frequency bars.** Their audio grows up from the centre line and yours grows
+      down from it, in the accent colour. Their initial and "You" mark each row. The bars stay
+      in place and only change height: they rise quickly and sink slowly, so the picture
+      settles rather than flickers. Voice energy sits in the lower bands, as real speech does.
+      You can see who's talking, who talks over whom, and that your mic works. (An earlier
+      scrolling waveform was too busy.) In the real app the bands would come from an
+      `AnalyserNode` on the received track and on the microphone.
+    - **Muted** is a flat lower lane with "You're muted".
+    - **Quiet and broken look different.** Quiet is a row of small resting pills. With no
+      packets at all, the bars vanish and leave one thin line. After 2 s a note says which way
+      it's broken: "No audio arriving from Dana", or "Dana isn't getting your audio", with your
+      bars in red. Try *No audio from them* and *They can't hear me* in Diagnostics. In the
+      real app these come from the relay's packet counts and from RTCP receiver reports.
+    - A call you aren't listening to is drawn flat and dimmed, and a held call freezes.
+    - With reduced motion on, each row is a single level bar instead.
+    - The Camera button becomes *Add video*, or a disabled **No video** with a tooltip
+      saying why, when video isn't possible.
+  - If their phone turns video down, the label reads "Audio only · their phone has no video". This happens with `phone` in the address, as with *Lobby desk phone*, and with
+    `tel:` numbers, which never offer video.
+  - Video agreed but not arriving shows their initials with "Their camera is off". This
+    happens with `nocam` in the address (*Sam*), or with the *Their camera off / on* diagnostic.
+    The mock waits 2 seconds before showing this, so a short gap doesn't flicker.
+  - If they take video but don't receive yours (`noview`, *Kiosk*), your self view goes dashed
+    with "They can't see you".
+  - *I have no camera* in Diagnostics: calls still offer video, receive only, so you can see
+    them. The self view says "No camera", and the Camera button is disabled.
+  - The camera icon in the Active calls list says which of these applies when you hover over it.
 - **New call.** This adds a call to the top of the list and holds the current call. Focusing
   the address field (or `/`) lists recent calls and contacts; typing filters them. Typing part
   of a name highlights the first match. Enter or a click calls the highlighted entry, ↑/↓ move
@@ -130,6 +178,8 @@ Then open http://localhost:5179.
 - **Diagnostics.** The footer toggle opens a mock SIP log, plus buttons to simulate an
   incoming call, a remote hang-up of the selected call or another call, a missed call, three
   calls ringing at once, held calls skipping a minute ahead, your own network going bad, the other
+  person's camera stopping or starting, having no camera yourself, one-way audio in either
+  direction, the other
   person typing a message, the other side dropping text, or a broken registration. Bob also
   types a message in the background a few seconds after the page loads.
 
