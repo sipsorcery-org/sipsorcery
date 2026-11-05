@@ -355,7 +355,7 @@ namespace SIPSorcery.Net
                     lock (m_rtcpReportTimer)
                     {
                         if ((LastActivityAt != DateTime.MinValue && DateTime.Now.Subtract(LastActivityAt).TotalMilliseconds > NoActivityTimeoutMilliseconds) ||
-                            (LastActivityAt == DateTime.MinValue && DateTime.Now.Subtract(CreatedAt).TotalMilliseconds > NoActivityTimeoutMilliseconds))
+                            (LastActivityAt == DateTime.MinValue && DateTime.Now.Subtract(StartedAt).TotalMilliseconds > NoActivityTimeoutMilliseconds))
                         {
                             if (!IsTimedOut)
                             {

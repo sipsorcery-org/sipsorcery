@@ -469,6 +469,25 @@ namespace SIPSorcery.SIP.App
         public bool PrackSupported { get; set; } = true;
 
         /// <summary>
+        /// Gets fired when no RTP or RTCP packets have been received on one of the call's media
+        /// streams for longer than the stream's RTCP session no activity timeout. The parameter is
+        /// the media type of the stream that timed out. It is fired regardless of the
+        /// <see cref="HangupOnRtpTimeout"/> setting, so an application that sets that to false can
+        /// use this event to decide for itself what to do, e.g. hang up, re-INVITE or just notify
+        /// the user.
+        /// </summary>
+        public event Action<SDPMediaTypesEnum> OnRtpTimeout;
+
+        /// <summary>
+        /// Determines whether the agent hangs up the call when an RTP timeout occurs, see
+        /// <see cref="OnRtpTimeout"/>. Defaults to true so that calls whose remote party has gone
+        /// away without sending a BYE get cleaned up. Even when true a timeout is ignored if the call
+        /// is on hold, if the stream is text, or if the stream is not audio and the audio stream is
+        /// still active. Set to false to leave the decision to the application.
+        /// </summary>
+        public bool HangupOnRtpTimeout { get; set; } = true;
+
+        /// <summary>
         /// Creates a new instance where the user agent has exclusive control of the SIP transport.
         /// This is significant for incoming requests. WIth exclusive control the agent knows that
         /// any requests are for it and can handle accordingly. If the transport needs to be shared 
@@ -653,7 +672,7 @@ namespace SIPSorcery.SIP.App
             {
                 MediaSession = mediaSession;
                 MediaSession.OnRtpEvent += OnRemoteRtpEvent;
-                MediaSession.OnTimeout += OnRtpTimeout;
+                MediaSession.OnTimeout += MediaSessionTimedOut;
 
                 //var sdpAnnounceAddress = mediaSession.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
 
@@ -878,7 +897,7 @@ namespace SIPSorcery.SIP.App
 
                 MediaSession = mediaSession;
                 MediaSession.OnRtpEvent += OnRemoteRtpEvent;
-                MediaSession.OnTimeout += OnRtpTimeout;
+                MediaSession.OnTimeout += MediaSessionTimedOut;
                 MediaSession.OnRtpClosed += (reason) =>
                 {
                     if (MediaSession?.IsClosed == false)
@@ -2310,12 +2329,35 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Event handler for the audio or video RTP session timing out.
         /// </summary>
-        /// <param name="mediaType">The media type, aduio or video, that timed out.</param>
-        private void OnRtpTimeout(SDPMediaTypesEnum mediaType)
+        /// <param name="mediaType">The media type, audio or video, that timed out.</param>
+        private void MediaSessionTimedOut(SDPMediaTypesEnum mediaType)
         {
+            try
+            {
+                OnRtpTimeout?.Invoke(mediaType);
+            }
+            catch (Exception excp)
+            {
+                logger.LogError(excp, "Exception in OnRtpTimeout event handler. {ErrorMessage}", excp.Message);
+            }
+
+            if (!HangupOnRtpTimeout)
+            {
+                logger.LogWarning("RTP has timed out for media {MediaType}, automatic hangup is disabled.", mediaType);
+                return;
+            }
+
             // RtpTimeout on text media type is normal situation since there isn't a constant data flow.
             if (mediaType == SDPMediaTypesEnum.text)
             {
+                return;
+            }
+
+            if (mediaType != SDPMediaTypesEnum.audio && IsAudioActive())
+            {
+                // A secondary stream, such as video, has stopped but the audio is still flowing. The call
+                // itself is still good so don't hang it up.
+                logger.LogWarning("RTP has timed out for media {MediaType} but audio is still active, not hanging up call.", mediaType);
                 return;
             }
 
@@ -2324,6 +2366,20 @@ namespace SIPSorcery.SIP.App
                 logger.LogWarning("RTP has timed out for media {MediaType} hanging up call.", mediaType);
                 Hangup();
             }
+        }
+
+        /// <summary>
+        /// Checks whether the media session has an audio stream whose RTCP session is running and
+        /// has not timed out, i.e. audio is still being received from the remote party.
+        /// </summary>
+        private bool IsAudioActive()
+        {
+            var audioRtcp = (MediaSession as RTPSession)?.AudioStream?.RtcpSession;
+
+            return audioRtcp != null &&
+                audioRtcp.StartedAt != DateTime.MinValue &&
+                !audioRtcp.IsClosed &&
+                !audioRtcp.IsTimedOut;
         }
 
         /// <summary>
