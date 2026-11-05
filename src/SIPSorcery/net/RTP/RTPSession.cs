@@ -2623,7 +2623,7 @@ namespace SIPSorcery.Net
             }
 
             // Quick sanity check on whether this is not an RTP or RTCP packet.
-            if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
+            if (IsPlausibleRtpOrRtcpPacket(buffer))
             {
                 if ((rtpSessionConfig.IsSecure || rtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
                 {
@@ -2642,6 +2642,27 @@ namespace SIPSorcery.Net
                     DispatchReceivedPacket(localPort, remoteEndPoint, buffer);
                 }
             }
+        }
+
+        /// <summary>
+        /// Checks the version bits and minimum length of a received packet. RTCP packets can be
+        /// as short as 8 bytes (an empty receiver report) or 12 bytes (a reduced-size standalone
+        /// PLI, RFC 5506), so they can't be held to the 12 byte RTP header minimum.
+        /// </summary>
+        private static bool IsPlausibleRtpOrRtcpPacket(byte[] buffer)
+        {
+            if (buffer == null || buffer.Length < RTCPHeader.HEADER_BYTES_LENGTH + 4 || buffer[0] < 128 || buffer[0] > 191)
+            {
+                return false;
+            }
+
+            if (Enum.IsDefined(typeof(RTCPReportTypesEnum), buffer[1]))
+            {
+                // RTCP header plus the sender SSRC.
+                return true;
+            }
+
+            return buffer.Length > RTPHeader.MIN_HEADER_LEN;
         }
 
         private void DispatchReceivedPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
@@ -3038,6 +3059,21 @@ namespace SIPSorcery.Net
                         GetMediaStream(feedback.MediaSSRC) is { } mediaStream)
                     {
                         return mediaStream;
+                    }
+
+                    // A Full Intra Request sets the media source SSRC to 0 and carries the
+                    // target SSRCs in its FCI entries (RFC 5104 section 4.3.1).
+                    if (feedback.Header.PacketType == RTCPReportTypesEnum.PSFB &&
+                        feedback.Header.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.FIR &&
+                        feedback.FeedbackSSRCs != null)
+                    {
+                        foreach (var targetSsrc in feedback.FeedbackSSRCs)
+                        {
+                            if (targetSsrc != 0 && GetMediaStream(targetSsrc) is { } firStream)
+                            {
+                                return firStream;
+                            }
+                        }
                     }
                 }
             }
