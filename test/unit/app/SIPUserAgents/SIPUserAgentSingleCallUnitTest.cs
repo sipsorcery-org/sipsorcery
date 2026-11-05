@@ -102,7 +102,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         /// <summary>
         /// Establishes a dialog on the agent by injecting an INVITE and answering it.
         /// </summary>
-        private static async Task<(string callId, MockMediaSession mediaSession)> EstablishDialogAsync(
+        internal static async Task<(string callId, MockMediaSession mediaSession)> EstablishDialogAsync(
             SIPUserAgent agent,
             RecordingMockSIPChannel channel,
             IPEndPoint channelEndPoint)
