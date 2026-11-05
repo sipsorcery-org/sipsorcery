@@ -1005,6 +1005,31 @@ namespace SIPSorcery.Net
                                     }
                                     break;
 
+                                case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_FEEDBACK_PREFIX, StringComparison.Ordinal) &&
+                                    activeAnnouncement?.Media == SDPMediaTypesEnum.video:
+                                    {
+                                        // a=rtcp-fb:<pt|*> <type> [<subtype>], RFC 4585 section 4.2. Only video formats
+                                        // write feedback attributes, so for other media the lines are kept as extras.
+                                        if (TrySplitAttributeValue(
+                                            l,
+                                            SDPMediaAnnouncement.MEDIA_FORMAT_FEEDBACK_PREFIX.Length,
+                                            out var fbFormatIDStart,
+                                            out var fbFormatIDLength,
+                                            out var fbStart) &&
+                                            fbStart < l.Length)
+                                        {
+                                            activeAnnouncement.AddParsedRtcpFeedback(
+                                                l.Slice(fbFormatIDStart, fbFormatIDLength).ToString(),
+                                                l.Slice(fbStart).Trim().ToString(),
+                                                sdpLineTrimmedSpan.ToString());
+                                        }
+                                        else
+                                        {
+                                            activeAnnouncement.AddExtra(sdpLineTrimmedSpan.ToString());
+                                        }
+                                    }
+                                    break;
+
                                 default:
                                     if (activeAnnouncement != null)
                                     {
@@ -1021,6 +1046,11 @@ namespace SIPSorcery.Net
                     finally
                     {
                         ArrayPool<Range>.Shared.Return(sdpLineRangeBuffer);
+                    }
+
+                    foreach (var announcement in sdp.Media)
+                    {
+                        announcement.ApplyParsedRtcpFeedback();
                     }
 
                     return sdp;
