@@ -28,6 +28,10 @@ the desktop app, using the media design the video spike
   an error, or no answer in 8 s), the button becomes a disabled *No video*. Video you add
   starts with your camera on. When the *other* side adds video, it's accepted with your camera
   off, so a request from them never turns your camera on by itself.
+- **The camera is only open when it's needed:** before a call while the switch is on Video (as
+  a preview in the self view), and during a video call with your camera on. With the switch on
+  Audio, on an audio call, or with your camera turned off, it's closed: no self view and no
+  camera light. The microphone is opened once, at start.
 - **Answer, camera off** answers a ringing video call without sending your camera.
 - **Camera on/off** during a video call turns it on or off with no renegotiation: the page keeps
   the video sendrecv and swaps the track in and out (`replaceTrack`).

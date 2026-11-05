@@ -61,18 +61,69 @@ function shortName(remote) {
 }
 const initial = (name) => (name ?? "?").replace(/^\+/, "").charAt(0).toUpperCase() || "#";
 
+// The microphone is opened once, at start. The camera is only opened while it's wanted (see
+// cameraWanted), so on an audio call, or with the switch on Audio, it's off: no self view, and
+// the camera's light stays off.
+let hasCamera = false;     // a camera exists (and hasn't failed to open)
+let cameraBusy = null;     // the open or close in progress, so they never overlap
+
 async function openDevices() {
   try {
     local = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
     });
   } catch (err) {
-    log(`camera/microphone unavailable: ${err.name} ${err.message}`);
-    // Try the microphone alone, so a missing or busy camera doesn't stop calls.
-    try { local = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch { /* no devices at all */ }
+    log(`microphone unavailable: ${err.name} ${err.message}`);
+    local = new MediaStream();
   }
-  $("self").srcObject = local;
+  try {
+    hasCamera = (await navigator.mediaDevices.enumerateDevices()).some((d) => d.kind === "videoinput");
+  } catch { hasCamera = false; }
+}
+
+// Whether the camera should be open: during a video call with your camera on, or, before a
+// call, while the switch is on Video (a preview of what they'll see).
+function cameraWanted() {
+  if (!hasCamera) return false;
+  if (call) return call.hasVideo && call.camOn;
+  // Connected, but the media isn't set up yet: leave the camera as it is, so a video call's
+  // preview carries straight on into the call.
+  if (state.call === "connected") return !!localTrack("video");
+  const before = state.call === "idle" || state.call === "ended" || state.call === "calling";
+  return before && state.videoAllowed !== false && callType === "video" && !testCameraOff;
+}
+
+// Opens or closes the camera to match cameraWanted(), and puts it on the call when it should be sent.
+function syncCamera() {
+  cameraBusy = (cameraBusy ?? Promise.resolve()).then(async () => {
+    const want = cameraWanted();
+    let track = localTrack("video");
+    if (want && !track) {
+      try {
+        const cam = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+        });
+        track = cam.getVideoTracks()[0];
+        if (!cameraWanted()) { track.stop(); return; }   // changed while it was opening
+        local.addTrack(track);
+        log("camera opened");
+      } catch (err) {
+        log(`camera unavailable: ${err.name} ${err.message}`);
+        hasCamera = false;
+        if (call) call.camOn = false;
+      }
+    } else if (!want && track) {
+      local.removeTrack(track);
+      track.stop();
+      log("camera closed");
+    } else {
+      return;
+    }
+    if (call?.videoSender) await call.videoSender.replaceTrack(call.camOn ? localTrack("video") : null);
+    $("self").srcObject = localTrack("video") ? new MediaStream([localTrack("video")]) : null;
+    render();
+  });
+  return cameraBusy;
 }
 
 // ---- Media from the host ----
@@ -83,12 +134,11 @@ async function openDevices() {
 async function onMediaOffer(sdp) {
   const midCall = !!call;
   closeMedia();
-  const camVideo = localTrack("video");
   const wantCamera = addingVideo ? true : midCall ? false : (answerCamera ?? !testCameraOff);
   addingVideo = false;
   call = {
     hasVideo: false,             // the call has video at all (an m=video line from the host)
-    camOn: wantCamera && !!camVideo,
+    camOn: wantCamera && hasCamera,
     muted: !localTrack("audio")?.enabled,
     videoSender: null,
     framesDecoded: -1, lastFrameAt: 0,   // when the decoder last produced a frame
@@ -110,16 +160,21 @@ async function onMediaOffer(sdp) {
   await pc.setRemoteDescription({ type: "offer", sdp });
   for (const tr of pc.getTransceivers()) {
     const kind = tr.receiver.track.kind;
-    const track = localTrack(kind);
     if (kind === "video") {
       call.hasVideo = true;
       call.videoSender = tr.sender;
+      // Always sendrecv when there's a camera, so it can be turned on later without
+      // renegotiating; a camera that's off just sends nothing.
+      tr.direction = hasCamera ? "sendrecv" : "recvonly";
+    } else {
+      const track = localTrack("audio");
+      tr.direction = track ? "sendrecv" : "recvonly";
+      if (track) await tr.sender.replaceTrack(track);
     }
-    // Always sendrecv when we have the device, so the camera can be turned on later without
-    // renegotiating; a camera that's off just sends nothing.
-    tr.direction = track ? "sendrecv" : "recvonly";
-    if (track && (kind === "audio" || call.camOn)) await tr.sender.replaceTrack(track);
   }
+  // Opens the camera (and puts it on the call) if this is a video call with it on; closes it
+  // if this is an audio call. Not awaited: the answer doesn't depend on it.
+  syncCamera();
   if (localTrack("audio")) call.localAnalyser = analyserFor(localTrack("audio"));
   await pc.setLocalDescription(await pc.createAnswer());
   await new Promise((resolve) => {
@@ -154,12 +209,14 @@ function closeMedia() {
   $("remote").srcObject = null;
 }
 
+// Camera on or off during a video call. Off closes the camera, not just the stream to them.
 async function setCamera(on) {
-  if (!call?.videoSender || !localTrack("video")) return;
+  if (!call?.videoSender || !hasCamera) return;
   call.camOn = on;
-  await call.videoSender.replaceTrack(on ? localTrack("video") : null);
+  if (!on) await call.videoSender.replaceTrack(null);
   log(`camera ${on ? "on" : "off"}`);
   render();
+  await syncCamera();
 }
 
 // ---- Audio levels: frequency bars ----
@@ -295,7 +352,7 @@ function render() {
   $("infoName").textContent = remote || "";
 
   // The Audio | Video switch beside Call. Locked to Audio if video is off (--no-video).
-  const camAvailable = !!localTrack("video");
+  const camAvailable = hasCamera;
   const videoAllowed = state.videoAllowed !== false;
   const type = videoAllowed ? callType : "audio";
   for (const el of document.querySelectorAll("#callType [data-type]")) {
@@ -331,11 +388,16 @@ function render() {
   note("noteMe", !connected ? "" : call.txLost ? `${name} isn't getting your audio` : call.muted ? "You're muted" : "", connected && call.txLost);
 
   // Self view: your camera, or a placeholder saying why there isn't one.
-  const camOn = connected ? call.camOn : camAvailable && !testCameraOff;
-  const selfText = !camAvailable ? "No camera" : camOn ? null : "Camera off";
-  $("self").hidden = !!selfText;
+  // Self view: only for video. On a video call it's your camera, or a placeholder saying why
+  // not; before a call it's a preview while the switch is on Video. Audio shows none.
+  const before = phase === "idle" || phase === "ended" || phase === "calling";
+  const showSelf = connected ? call.hasVideo : before && type === "video";
+  const camOn = connected ? call.camOn : !testCameraOff;
+  const selfText = !showSelf ? null : !camAvailable ? "No camera" : !camOn ? "Camera off" : null;
+  $("self").hidden = !showSelf || !!selfText || !localTrack("video");
   $("selfOff").hidden = !selfText;
   $("selfOffText").textContent = selfText ?? "";
+  if (cameraWanted() !== !!localTrack("video")) syncCamera();
 
   // In-call camera button. On an audio call it's Add video, unless video can't be had.
   const cam = $("camBtn");
@@ -490,4 +552,5 @@ chrome.webview.addEventListener("message", async (e) => {
 
 await openDevices();
 render();
+syncCamera();
 post({ type: "ready" });

@@ -123,6 +123,7 @@ body { background: var(--page); color: var(--text); font: 14px/1.4 "Segoe UI Var
 .timer { font-variant-numeric: tabular-nums; opacity: .85; }
 
 .controls { display: flex; justify-content: center; gap: 8px; }
+.info[hidden] { display: none; }
 .controls[hidden] { display: none; }
 
 .log summary { cursor: pointer; color: var(--muted); font-size: 13px; }
