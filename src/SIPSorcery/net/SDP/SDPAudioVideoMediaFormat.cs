@@ -42,6 +42,23 @@ namespace SIPSorcery.Net
 
         public static SDPAudioVideoMediaFormat Empty = new SDPAudioVideoMediaFormat() { _isEmpty = true };
 
+        private static readonly string[] s_wellKnownMediaFormatNames = CreateWellKnownMediaFormatNames();
+
+        internal static bool IsWellKnownFormat(int id)
+            => (uint)id < (uint)s_wellKnownMediaFormatNames.Length
+                && s_wellKnownMediaFormatNames[id] is not null;
+
+        private static string[] CreateWellKnownMediaFormatNames()
+        {
+            var names = new string[(int)SDPWellKnownMediaFormatsEnum.H263 + 1];
+            foreach (SDPWellKnownMediaFormatsEnum format in Enum.GetValues(typeof(SDPWellKnownMediaFormatsEnum)))
+            {
+                names[(int)format] = format.ToString();
+            }
+
+            return names;
+        }
+
         /// <summary>
         /// Indicates whether the format is for audio or video.
         /// </summary>
@@ -124,6 +141,13 @@ namespace SIPSorcery.Net
         /// Formats parsed from an SDP always carry an explicit (possibly empty) list.
         /// </summary>
         private string[] _rtcpFeedbackMessages;
+
+        /// <summary>
+        /// The empty list <see cref="WithUpdatedRtcpFeedbackMessages"/> sets when LINQ shares one (.NET 10 does),
+        /// or null when LINQ allocates a new empty array each time. Formats compare this list by reference, so
+        /// parsed formats share an empty list only when LINQ would.
+        /// </summary>
+        private static readonly string[] s_sharedEmptyRtcpFeedbackMessages = GetSharedEmptyRtcpFeedbackMessages();
 
         /// <summary>
         /// True if an explicit RTCP feedback list has been set, for example because the format was
@@ -236,38 +260,38 @@ namespace SIPSorcery.Net
         {
             if (IsH264 || IsMJPEG || isH265)
             {
-                var parameters = ParseWebRtcParameters(Fmtp);
-                if (parameters.TryGetValue("packetization-mode", out string packetizationMode))
+                if (TryGetWebRtcParameter(Fmtp, "packetization-mode", out var packetizationMode) &&
+                    !packetizationMode.SequenceEqual("1".AsSpan()))
                 {
-                    if (packetizationMode != "1")
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
             return true;
         }
 
-        private static Dictionary<string, string> ParseWebRtcParameters(string input)
+        private static bool TryGetWebRtcParameter(string input, ReadOnlySpan<char> name, out ReadOnlySpan<char> value)
         {
-            var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            value = default;
             if (string.IsNullOrEmpty(input))
             {
-                return parameters;
+                return false;
             }
 
+            var found = false;
             Span<Range> keyValueRange = stackalloc Range[3];
             var inputSpan = input.AsSpan();
             foreach (var pairRange in inputSpan.Split(';'))
             {
                 var pair = inputSpan[pairRange];
-                if (pair.Split(keyValueRange, '=') == 2)
+                if (pair.Split(keyValueRange, '=') == 2 &&
+                    pair[keyValueRange[0]].Trim().Equals(name, StringComparison.OrdinalIgnoreCase))
                 {
-                    parameters[pair[keyValueRange[0]].Trim().ToString()] = pair[keyValueRange[1]].Trim().ToString();
+                    value = pair[keyValueRange[1]].Trim();
+                    found = true;
                 }
             }
 
-            return parameters;
+            return found;
         }
 
         private bool MatchesCodecName(string codecName)
@@ -433,10 +457,10 @@ namespace SIPSorcery.Net
             {
                 return name;
             }
-            else if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), ID))
+            else if ((uint)ID < (uint)s_wellKnownMediaFormatNames.Length)
             {
                 // If no rtpmap available then it must be a well known format.
-                return Enum.ToObject(typeof(SDPWellKnownMediaFormatsEnum), ID).ToString();
+                return s_wellKnownMediaFormatNames[ID];
             }
             else
             {
@@ -493,6 +517,45 @@ namespace SIPSorcery.Net
         /// </summary>
         private static string NormaliseRtcpFeedback(string feedback) =>
             string.Join(" ", feedback.Split(new[] { ' ', '	' }, StringSplitOptions.RemoveEmptyEntries));
+
+        /// <summary>
+        /// Gets the same text as <see cref="NormaliseRtcpFeedback"/> for a feedback type parsed from an SDP, which
+        /// has no leading or trailing white space, without allocating for the common types.
+        /// </summary>
+        internal static string GetNormalisedRtcpFeedback(ReadOnlySpan<char> feedback) => feedback switch
+        {
+            RTCP_FEEDBACK_NACK => RTCP_FEEDBACK_NACK,
+            RTCP_FEEDBACK_NACK_PLI => RTCP_FEEDBACK_NACK_PLI,
+            RTCP_FEEDBACK_CCM_FIR => RTCP_FEEDBACK_CCM_FIR,
+            RTCP_FEEDBACK_TRANSPORT_CC => RTCP_FEEDBACK_TRANSPORT_CC,
+            RTCP_FEEDBACK_GOOG_REMB => RTCP_FEEDBACK_GOOG_REMB,
+
+            // Without a tab or a double space there is no white space to collapse.
+            _ when feedback.IndexOf('\t') < 0 && feedback.IndexOf("  ".AsSpan()) < 0 => feedback.ToString(),
+            _ => NormaliseRtcpFeedback(feedback.ToString()),
+        };
+
+        /// <summary>
+        /// Creates a new format with the feedback types parsed from an SDP, already normalised and with case
+        /// insensitive duplicates removed, giving the same result as <see cref="WithUpdatedRtcpFeedbackMessages"/>.
+        /// </summary>
+        internal SDPAudioVideoMediaFormat WithParsedRtcpFeedbackMessages(ReadOnlySpan<string> rtcpFeedbackMessages)
+        {
+            var copy = this;
+
+            // Span ToArray always returns a shared empty array, so a new one is created when LINQ would create one.
+            copy._rtcpFeedbackMessages = rtcpFeedbackMessages.IsEmpty
+                ? s_sharedEmptyRtcpFeedbackMessages ?? new string[0]
+                : rtcpFeedbackMessages.ToArray();
+            return copy;
+        }
+
+        private static string[] GetSharedEmptyRtcpFeedbackMessages()
+        {
+            var first = default(SDPAudioVideoMediaFormat).WithUpdatedRtcpFeedbackMessages(new List<string>())._rtcpFeedbackMessages;
+            var second = default(SDPAudioVideoMediaFormat).WithUpdatedRtcpFeedbackMessages(new List<string>())._rtcpFeedbackMessages;
+            return ReferenceEquals(first, second) ? first : null;
+        }
 
         /// <summary>
         /// Maps an audio SDP media type to a media abstraction layer audio format.
@@ -737,7 +800,7 @@ namespace SIPSorcery.Net
         /// <returns>An SDP media format with a compatible RTP event format.</returns>
         public static SDPAudioVideoMediaFormat GetCommonRtpEventFormat(List<SDPAudioVideoMediaFormat> a, List<SDPAudioVideoMediaFormat> b)
         {
-            if (a == null || b == null || a.Count == 0 || b.Count() == 0)
+            if (a == null || b == null || a.Count == 0 || b.Count == 0)
             {
                 return Empty;
             }

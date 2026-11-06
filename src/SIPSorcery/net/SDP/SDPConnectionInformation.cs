@@ -52,24 +52,35 @@ namespace SIPSorcery.Net
         }
 
         public static SDPConnectionInformation ParseConnectionInformation(string connectionLine)
+            => ParseConnectionFields(connectionLine.AsSpan(2));
+
+        public static SDPConnectionInformation ParseConnectionInformation(ReadOnlySpan<char> connectionLine)
+            => ParseConnectionFields(connectionLine.Slice(2));
+
+        /// <summary>
+        /// Parses the "&lt;nettype&gt; &lt;addrtype&gt; &lt;connection-address&gt;" fields of a connection line.
+        /// </summary>
+        private static SDPConnectionInformation ParseConnectionFields(ReadOnlySpan<char> connectionFields)
         {
-            SDPConnectionInformation connectionInfo = new SDPConnectionInformation();
-            var connectionFields = connectionLine.AsSpan(2).Trim();
+            var connectionInfo = new SDPConnectionInformation();
+            connectionFields = connectionFields.Trim();
+
+            // Fields are separated by single spaces, so consecutive spaces produce empty fields.
             var fieldIndex = 0;
             foreach (var fieldRange in connectionFields.Split(' '))
             {
-                var field = connectionFields[fieldRange].Trim().ToString();
+                var field = connectionFields[fieldRange].Trim();
                 if (fieldIndex == 0)
                 {
-                    connectionInfo.ConnectionNetworkType = field;
+                    connectionInfo.ConnectionNetworkType = GetNetworkType(field);
                 }
                 else if (fieldIndex == 1)
                 {
-                    connectionInfo.ConnectionAddressType = field;
+                    connectionInfo.ConnectionAddressType = GetAddressType(field);
                 }
                 else if (fieldIndex == 2)
                 {
-                    connectionInfo.ConnectionAddress = field;
+                    connectionInfo.ConnectionAddress = field.ToString();
                     break;
                 }
 
@@ -78,6 +89,17 @@ namespace SIPSorcery.Net
 
             return connectionInfo;
         }
+
+        internal static string GetNetworkType(ReadOnlySpan<char> networkType)
+            => networkType is "IN" ? "IN" : networkType.ToString();
+
+        internal static string GetAddressType(ReadOnlySpan<char> addressType)
+            => addressType switch
+            {
+                CONNECTION_ADDRESS_TYPE_IPV4 => CONNECTION_ADDRESS_TYPE_IPV4,
+                CONNECTION_ADDRESS_TYPE_IPV6 => CONNECTION_ADDRESS_TYPE_IPV6,
+                _ => addressType.ToString()
+            };
 
         public override string ToString()
         {

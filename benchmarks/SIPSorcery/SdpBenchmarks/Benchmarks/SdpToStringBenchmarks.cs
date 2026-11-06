@@ -24,7 +24,7 @@ public class SdpToStringBenchmarks
     public string? SdpWriteString()
     {
 #if LibVersion
-        return 0;
+        throw new UnreachableException("Config runs *WriteString benchmarks only on the current job, because the baseline package has no SDP.WriteString.");
 #else
         Debug.Assert(_builder is not null);
         _builder.Clear();
