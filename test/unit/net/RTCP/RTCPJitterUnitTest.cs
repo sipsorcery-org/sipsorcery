@@ -97,8 +97,7 @@ a=sendrecv";
         private static uint GetJitter(RTCPSession rtcpSession)
         {
             var report = rtcpSession.GetRtcpReport();
-            var reports = report.SenderReport?.ReceptionReports ?? report.ReceiverReport?.ReceptionReports;
-            Assert.NotNull(reports);
+            var reports = report.SenderReport?.ReceptionReports ?? report.ReceiverReport?.ReceptionReports ?? new List<ReceptionReportSample>();
             Assert.Single(reports);
             return reports[0].Jitter;
         }
@@ -224,7 +223,7 @@ a=sendrecv";
 
                 for (int i = 0; i < 400; i++)
                 {
-                    var arrival = start.AddMilliseconds(i * PACKET_DURATION_MS + (i % 2 == 1 ? 5 : 0));
+                    var arrival = start.AddMilliseconds((double)i * PACKET_DURATION_MS + (i % 2 == 1 ? 5 : 0));
                     rtcpSession.RecordRtpPacketReceived(ReceivedPacket(PCMU_PAYLOAD_ID, seq++, rtpTimestamp), arrival);
                     rtpTimestamp += PCMU_RTP_CLOCK_RATE * PACKET_DURATION_MS / 1000;
                 }
