@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -279,20 +280,9 @@ namespace SIPSorcery.Net
         /// previous packet, or <see cref="PayloadSampleRateHz"/> if there has not been one.</param>
         public void SetReceivePayloadClockRates(IDictionary<int, int> clockRates)
         {
-            var rates = new Dictionary<int, int>();
-
-            if (clockRates != null)
-            {
-                foreach (var entry in clockRates)
-                {
-                    if (entry.Value > 0)
-                    {
-                        rates[entry.Key] = entry.Value;
-                    }
-                }
-            }
-
-            m_receivePayloadClockRates = rates;
+            m_receivePayloadClockRates = clockRates == null
+                ? new Dictionary<int, int>()
+                : clockRates.Where(entry => entry.Value > 0).ToDictionary(entry => entry.Key, entry => entry.Value);
         }
 
         /// <summary>
