@@ -32,6 +32,12 @@ the desktop app, using the media design the video spike
   a preview in the self view), and during a video call with your camera on. With the switch on
   Audio, on an audio call, or with your camera turned off, it's closed: no self view and no
   camera light. The microphone is opened once, at start.
+- **A camera in use elsewhere is waited for, not given up on.** Windows lets one app have a
+  camera at a time, so a second softphone (or Teams, say) gets `NotReadableError`. The page
+  used to treat that as "no camera" for the rest of the run. Now it shows "Camera in use" in
+  the self view, sends the placeholder on a call, and retries every 2 s. It gets the camera a
+  few seconds after the other app lets go, for example when the other softphone's switch goes
+  to Audio. A missing camera or a refused permission is still "No camera".
 - **Answer, camera off** answers a ringing video call without sending your camera.
 - **Camera on/off** during a video call turns it on or off with no renegotiation: the page keeps
   the video sendrecv and swaps the track in and out (`replaceTrack`).
@@ -121,6 +127,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Softphone to softphone, video call (`--video`) | Audio at 50 pkt/s each way; video at 30 fps each way, VP8. The first stats sample, at 5 s, already shows video. |
 | Video call with `--camera-off` on the caller | The caller sees the callee's video at 30 fps and its self view says "Camera off". The callee gets the caller's placeholder at 5 fps (640×360 at first, 1280×720 once the encoder ramps up): the initial with an account, the icon without. |
 | Same, then Camera on, then Camera off | The callee's video goes 5 fps placeholder, then 30 fps camera, then 5 fps placeholder, without a gap. The caller's camera opens and closes with it. |
+| Two softphones on Video with the real camera, then the first switched to Audio | The second logs "camera in use, will keep trying" and shows "Camera in use", then opens the camera about 4 s after the first closes it. The same the other way round. |
 | Audio call, caller presses Add video (`--add-video 4`) | re-INVITE accepted; both relays rebuilt with VP8. The callee shows the caller's video at 30 fps; the caller gets the callee's placeholder at 5 fps, since the callee accepted with its camera off. |
 | Three video calls in a row, the caller's camera already open from the preview (`--video --dial-count 3`, callee `--hangup-after 9`) | The callee shows the caller's video on every call. |
 | Same, but the callee has `--no-video` | The callee answers `m=video 0`; the caller logs "they didn't take video", shows *No video*, and both stay on the audio bars. |

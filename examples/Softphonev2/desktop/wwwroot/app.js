@@ -65,8 +65,14 @@ const initial = (name) => (name ?? "?").replace(/^\+/, "").charAt(0).toUpperCase
 // The microphone is opened once, at start. The camera is only opened while it's wanted (see
 // cameraWanted), so on an audio call, or with the switch on Audio, it's off: no self view, and
 // the camera's light stays off.
-let hasCamera = false;     // a camera exists (and hasn't failed to open)
+// A camera another app (or another copy of this one) is using can't be opened on Windows. That
+// isn't "no camera": it stays wanted, the call sends the placeholder meanwhile, and opening it is
+// retried every few seconds until the other app lets go.
+let hasCamera = false;     // a camera exists (and hasn't failed to open for good)
+let cameraInUse = false;   // the camera is wanted but something else has it
+let cameraRetry = 0;       // timer for the next try while it's in use
 let cameraBusy = null;     // the open or close in progress, so they never overlap
+const CAMERA_RETRY_MS = 2000;
 
 async function openDevices() {
   try {
@@ -159,6 +165,7 @@ function syncCamera() {
   cameraBusy = (cameraBusy ?? Promise.resolve()).then(async () => {
     const want = cameraWanted();
     let track = localTrack("video");
+    if (!want && cameraInUse) { cameraInUse = false; render(); }   // no longer wanted: stop trying
     if (want && !track) {
       try {
         const cam = await navigator.mediaDevices.getUserMedia({
@@ -168,9 +175,22 @@ function syncCamera() {
         if (!cameraWanted()) { track.stop(); return; }   // changed while it was opening
         local.addTrack(track);
         log("camera opened");
+        if (cameraInUse) { cameraInUse = false; render(); }
       } catch (err) {
+        if (err.name === "NotReadableError" || err.name === "AbortError") {
+          if (!cameraInUse) {
+            log(`camera in use, will keep trying: ${err.name} ${err.message}`);
+            cameraInUse = true;
+            render();
+          }
+          clearTimeout(cameraRetry);
+          cameraRetry = setTimeout(syncCamera, CAMERA_RETRY_MS);
+          return;
+        }
+        // Missing, or permission refused: no camera for this run.
         log(`camera unavailable: ${err.name} ${err.message}`);
         hasCamera = false;
+        cameraInUse = false;
         if (call) call.camOn = false;
       }
     } else if (!want && track) {
@@ -457,13 +477,13 @@ function render() {
   note("noteThem", connected && call.rxDead ? `No audio arriving from ${name}` : "", true);
   note("noteMe", !connected ? "" : call.txLost ? `${name} isn't getting your audio` : call.muted ? "You're muted" : "", connected && call.txLost);
 
-  // Self view: your camera, or a placeholder saying why there isn't one.
   // Self view: only for video. On a video call it's your camera, or a placeholder saying why
   // not; before a call it's a preview while the switch is on Video. Audio shows none.
   const before = phase === "idle" || phase === "ended" || phase === "calling";
   const showSelf = connected ? call.hasVideo : before && type === "video";
   const camOn = connected ? call.camOn : !testCameraOff;
-  const selfText = !showSelf ? null : !camAvailable ? "No camera" : !camOn ? "Camera off" : null;
+  const selfText = !showSelf ? null : !camAvailable ? "No camera" : !camOn ? "Camera off"
+    : cameraInUse ? "Camera in use" : null;
   $("self").hidden = !showSelf || !!selfText || !localTrack("video");
   $("selfOff").hidden = !selfText;
   $("selfOffText").textContent = selfText ?? "";
