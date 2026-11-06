@@ -143,6 +143,13 @@ namespace SIPSorcery.Net
         private string[] _rtcpFeedbackMessages;
 
         /// <summary>
+        /// The empty list <see cref="WithUpdatedRtcpFeedbackMessages"/> sets when LINQ shares one (.NET 10 does),
+        /// or null when LINQ allocates a new empty array each time. Formats compare this list by reference, so
+        /// parsed formats share an empty list only when LINQ would.
+        /// </summary>
+        private static readonly string[] s_sharedEmptyRtcpFeedbackMessages = GetSharedEmptyRtcpFeedbackMessages();
+
+        /// <summary>
         /// True if an explicit RTCP feedback list has been set, for example because the format was
         /// parsed from a remote SDP or negotiated, rather than falling back to the defaults.
         /// </summary>
@@ -510,6 +517,45 @@ namespace SIPSorcery.Net
         /// </summary>
         private static string NormaliseRtcpFeedback(string feedback) =>
             string.Join(" ", feedback.Split(new[] { ' ', '	' }, StringSplitOptions.RemoveEmptyEntries));
+
+        /// <summary>
+        /// Gets the same text as <see cref="NormaliseRtcpFeedback"/> for a feedback type parsed from an SDP, which
+        /// has no leading or trailing white space, without allocating for the common types.
+        /// </summary>
+        internal static string GetNormalisedRtcpFeedback(ReadOnlySpan<char> feedback) => feedback switch
+        {
+            RTCP_FEEDBACK_NACK => RTCP_FEEDBACK_NACK,
+            RTCP_FEEDBACK_NACK_PLI => RTCP_FEEDBACK_NACK_PLI,
+            RTCP_FEEDBACK_CCM_FIR => RTCP_FEEDBACK_CCM_FIR,
+            RTCP_FEEDBACK_TRANSPORT_CC => RTCP_FEEDBACK_TRANSPORT_CC,
+            RTCP_FEEDBACK_GOOG_REMB => RTCP_FEEDBACK_GOOG_REMB,
+
+            // Without a tab or a double space there is no white space to collapse.
+            _ when feedback.IndexOf('\t') < 0 && feedback.IndexOf("  ".AsSpan()) < 0 => feedback.ToString(),
+            _ => NormaliseRtcpFeedback(feedback.ToString()),
+        };
+
+        /// <summary>
+        /// Creates a new format with the feedback types parsed from an SDP, already normalised and with case
+        /// insensitive duplicates removed, giving the same result as <see cref="WithUpdatedRtcpFeedbackMessages"/>.
+        /// </summary>
+        internal SDPAudioVideoMediaFormat WithParsedRtcpFeedbackMessages(ReadOnlySpan<string> rtcpFeedbackMessages)
+        {
+            var copy = this;
+
+            // Span ToArray always returns a shared empty array, so a new one is created when LINQ would create one.
+            copy._rtcpFeedbackMessages = rtcpFeedbackMessages.IsEmpty
+                ? s_sharedEmptyRtcpFeedbackMessages ?? new string[0]
+                : rtcpFeedbackMessages.ToArray();
+            return copy;
+        }
+
+        private static string[] GetSharedEmptyRtcpFeedbackMessages()
+        {
+            var first = default(SDPAudioVideoMediaFormat).WithUpdatedRtcpFeedbackMessages(new List<string>())._rtcpFeedbackMessages;
+            var second = default(SDPAudioVideoMediaFormat).WithUpdatedRtcpFeedbackMessages(new List<string>())._rtcpFeedbackMessages;
+            return ReferenceEquals(first, second) ? first : null;
+        }
 
         /// <summary>
         /// Maps an audio SDP media type to a media abstraction layer audio format.

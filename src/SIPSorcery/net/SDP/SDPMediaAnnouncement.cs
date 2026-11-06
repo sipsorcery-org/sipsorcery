@@ -630,18 +630,54 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// RTCP feedback attributes ("a=rtcp-fb:pt type") collected while parsing, keyed by payload type
-        /// ("*" for the wildcard). They are applied to the media formats once the whole SDP has been parsed
-        /// since they can appear before or after the matching rtpmap attribute.
+        /// RTCP feedback attributes ("a=rtcp-fb:pt type") collected while parsing, in document order. They are
+        /// applied to the media formats once the whole SDP has been parsed since they can appear before or after
+        /// the matching rtpmap attribute. FormatID is null for the "*" wildcard and for payload types that are not
+        /// numbers. Feedback is the normalised type, or null if it can never apply to a format. Line is the attribute
+        /// to keep as an extra attribute if no format ends up with the payload type.
         /// </summary>
-        private List<(string FormatID, string Feedback, string Line)> _parsedRtcpFeedback;
+        private List<(int? FormatID, string Feedback, string Line)> _parsedRtcpFeedback;
 
         /// <summary>
         /// Records an "a=rtcp-fb" attribute found while parsing an SDP.
         /// </summary>
-        internal void AddParsedRtcpFeedback(string formatID, string feedback, string line)
+        internal void AddParsedRtcpFeedback(ReadOnlySpan<char> formatID, ReadOnlySpan<char> feedback, ReadOnlySpan<char> line)
         {
-            (_parsedRtcpFeedback ??= new List<(string, string, string)>()).Add((formatID, feedback, line));
+            int? id = null;
+            string normalisedFeedback = null;
+            string extraLine = null;
+
+            if (formatID is "*")
+            {
+                normalisedFeedback = SDPAudioVideoMediaFormat.GetNormalisedRtcpFeedback(feedback);
+            }
+            else if (int.TryParse(formatID, out var parsedID))
+            {
+                id = parsedID;
+
+                // Payload types match format IDs as text, so for example "096" never applies to format 96.
+                if (formatID.SequenceEqual(parsedID.ToString().AsSpan()))
+                {
+                    normalisedFeedback = SDPAudioVideoMediaFormat.GetNormalisedRtcpFeedback(feedback);
+                }
+
+                // Formats are only ever added while parsing, so one that exists now will still exist when the
+                // feedback is applied and the attribute will not be needed as an extra attribute.
+                if (!MediaFormats.ContainsKey(parsedID))
+                {
+                    extraLine = line.ToString();
+                }
+                else if (normalisedFeedback is null)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                extraLine = line.ToString();
+            }
+
+            (_parsedRtcpFeedback ??= new List<(int?, string, string)>()).Add((id, normalisedFeedback, extraLine));
         }
 
         /// <summary>
@@ -657,22 +693,103 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            var parsed = _parsedRtcpFeedback ?? new List<(string FormatID, string Feedback, string Line)>();
+            var parsed = _parsedRtcpFeedback;
             _parsedRtcpFeedback = null;
 
-            foreach (var id in MediaFormats.Keys.ToList())
+            // The IDs are copied since .NET Framework does not allow values to be replaced while enumerating.
+            var ids = MediaFormats.Keys.ToArray();
+
+            if (parsed is null)
             {
-                var idString = id.ToString();
-                var feedback = parsed
-                    .Where(x => x.FormatID == "*" || x.FormatID == idString)
-                    .Select(x => x.Feedback);
-                MediaFormats[id] = MediaFormats[id].WithUpdatedRtcpFeedbackMessages(feedback);
+                foreach (var id in ids)
+                {
+                    MediaFormats[id] = MediaFormats[id].WithParsedRtcpFeedbackMessages(default);
+                }
+
+                return;
             }
 
-            foreach (var unmatched in parsed.Where(x => x.FormatID != "*" &&
-                !(int.TryParse(x.FormatID, out var id) && MediaFormats.ContainsKey(id))))
+            // Each format gets the feedback that applies to it in document order with case insensitive duplicates
+            // removed, as WithUpdatedRtcpFeedbackMessages does, collected in a buffer shared by all the formats.
+            // Rather than every format going through every attribute, the attributes for a payload type are sorted
+            // by payload type and then position, so each format only goes through its own attributes, merged in
+            // document order with the "*" ones.
+            var keys = ArrayPool<long>.Shared.Rent(parsed.Count);
+            var wildcards = ArrayPool<int>.Shared.Rent(parsed.Count);
+            var buffer = ArrayPool<string>.Shared.Rent(parsed.Count);
+            try
             {
-                AddExtra(unmatched.Line);
+                int keyCount = 0, wildcardCount = 0;
+                for (var i = 0; i < parsed.Count; i++)
+                {
+                    var (formatID, feedback, _) = parsed[i];
+                    if (feedback is null)
+                    {
+                        continue;
+                    }
+
+                    if (formatID is { } id)
+                    {
+                        // The payload type in the high half and the position in the low half, so negative payload
+                        // types sort first and the attributes for a payload type keep their document order.
+                        keys[keyCount++] = ((long)id << 32) | (uint)i;
+                    }
+                    else
+                    {
+                        wildcards[wildcardCount++] = i;
+                    }
+                }
+
+                Array.Sort(keys, 0, keyCount);
+
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var id in ids)
+                {
+                    var k = Array.BinarySearch(keys, 0, keyCount, (long)id << 32);
+                    k = k < 0 ? ~k : k;
+                    var w = 0;
+                    var count = 0;
+                    while (true)
+                    {
+                        // The position of the format's next attribute or the next "*" one, whichever comes first.
+                        var index = k < keyCount && keys[k] >> 32 == id ? (int)keys[k] : int.MaxValue;
+                        if (w < wildcardCount && wildcards[w] < index)
+                        {
+                            index = wildcards[w++];
+                        }
+                        else if (index == int.MaxValue)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            k++;
+                        }
+
+                        var feedback = parsed[index].Feedback;
+                        if (seen.Add(feedback))
+                        {
+                            buffer[count++] = feedback;
+                        }
+                    }
+
+                    seen.Clear();
+                    MediaFormats[id] = MediaFormats[id].WithParsedRtcpFeedbackMessages(buffer.AsSpan(0, count));
+                }
+            }
+            finally
+            {
+                ArrayPool<long>.Shared.Return(keys);
+                ArrayPool<int>.Shared.Return(wildcards);
+                ArrayPool<string>.Shared.Return(buffer, clearArray: true);
+            }
+
+            foreach (var (formatID, _, line) in parsed)
+            {
+                if (line is not null && !(formatID is { } id && MediaFormats.ContainsKey(id)))
+                {
+                    AddExtra(line);
+                }
             }
         }
 

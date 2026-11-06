@@ -1029,9 +1029,9 @@ namespace SIPSorcery.Net
                             // attributes, so for other media, and at session level, the lines are kept as extra attributes.
                             case SDPMediaAnnouncement.MEDIA_FORMAT_FEEDBACK_NAME when hasColon && activeAnnouncement is { Media: SDPMediaTypesEnum.video }:
                                 {
-                                    if (TryParseStringIdAndStringAttribute(attrValue, out var formatID, out var feedback))
+                                    if (TrySplitIdAndStringAttribute(attrValue, out var formatIDRange, out var feedbackRange))
                                     {
-                                        activeAnnouncement.AddParsedRtcpFeedback(formatID, feedback, line.ToString());
+                                        activeAnnouncement.AddParsedRtcpFeedback(attrValue[formatIDRange], attrValue[feedbackRange], line);
                                     }
                                     else
                                     {
@@ -1171,7 +1171,6 @@ namespace SIPSorcery.Net
 
                         return true;
                     }
-
 
                     /// <summary>Parses a numeric extension ID followed by a single URL token without allocating the URL.</summary>
                     static bool TryParseNumericIdAndUrl(

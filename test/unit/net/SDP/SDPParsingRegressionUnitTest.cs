@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
@@ -607,6 +608,185 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(expected, sdp.ToString());
             Assert.Equal(3, sdp.Media.Count);
+        }
+
+        /// <summary>
+        /// Video RTCP feedback attributes, for a payload type or the "*" wildcard and before or after the format's
+        /// rtpmap, give each format its feedback types in document order with white space collapsed and case
+        /// insensitive duplicates removed.
+        /// </summary>
+        [Fact]
+        public void RtcpFeedbackAppliesInDocumentOrderWithoutDuplicates()
+        {
+            // Arrange
+
+            var sdpText = SessionHeader +
+                "m=video 5000 RTP/AVPF 96 97 98" + CRLF +
+                "a=rtcp-fb:98 nack" + CRLF +
+                "a=rtcp-fb:96 NACK PLI" + CRLF +
+                "a=rtcp-fb:* nack pli" + CRLF +
+                "a=rtcp-fb:96 ccm\tfir" + CRLF +
+                "a=rtcp-fb:96 ccm  fir" + CRLF +
+                "a=rtcp-fb:97 goog-remb" + CRLF +
+                "a=rtcp-fb:* transport-cc" + CRLF +
+                "a=rtpmap:96 VP8/90000" + CRLF +
+                "a=rtpmap:97 H264/90000" + CRLF +
+                "a=rtpmap:98 VP9/90000" + CRLF;
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText);
+
+            // Assert
+
+            var announcement = Assert.Single(sdp.Media);
+            Assert.Equal(new[] { "NACK PLI", "ccm fir", "transport-cc" }, announcement.MediaFormats[96].SupportedRtcpFeedbackMessages);
+            Assert.Equal(new[] { "nack pli", "goog-remb", "transport-cc" }, announcement.MediaFormats[97].SupportedRtcpFeedbackMessages);
+            Assert.Equal(new[] { "nack", "nack pli", "transport-cc" }, announcement.MediaFormats[98].SupportedRtcpFeedbackMessages);
+            Assert.Empty(announcement.ExtraMediaAttributes);
+        }
+
+        /// <summary>
+        /// Video RTCP feedback attributes only apply to the format whose ID is written exactly as their payload type.
+        /// Those whose payload type is not a number or is the ID of no format are kept as extra attributes, after the
+        /// other extra attributes, while those whose payload type is the ID of a format written differently, such as
+        /// 096, are dropped. An attribute without a feedback type is kept in place as an extra attribute.
+        /// </summary>
+        [Fact]
+        public void RtcpFeedbackMatchingNoFormatIsKeptAsExtraAttributeOrDropped()
+        {
+            // Arrange
+
+            var sdpText = SessionHeader +
+                "m=video 5000 RTP/AVPF 96 97" + CRLF +
+                "a=rtpmap:96 VP8/90000" + CRLF +
+                "a=rtcp-fb:120 nack" + CRLF +
+                "a=x-custom:1" + CRLF +
+                "a=rtcp-fb:96" + CRLF +
+                "a=rtcp-fb:abc nack" + CRLF +
+                "a=rtcp-fb:096 nack" + CRLF +
+                "a=rtcp-fb:097 nack" + CRLF +
+                "a=rtcp-fb:0121 ccm fir" + CRLF +
+                "a=rtcp-fb:96 goog-remb" + CRLF +
+                "a=rtpmap:97 H264/90000" + CRLF;
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText);
+
+            // Assert
+
+            var announcement = Assert.Single(sdp.Media);
+            Assert.Equal(new[] { "goog-remb" }, announcement.MediaFormats[96].SupportedRtcpFeedbackMessages);
+            Assert.Empty(announcement.MediaFormats[97].SupportedRtcpFeedbackMessages);
+            Assert.Equal(
+                new[] { "a=x-custom:1", "a=rtcp-fb:96", "a=rtcp-fb:120 nack", "a=rtcp-fb:abc nack", "a=rtcp-fb:0121 ccm fir" },
+                announcement.ExtraMediaAttributes);
+        }
+
+        /// <summary>
+        /// Video RTCP feedback attributes whose payload type is negative or larger than any format ID apply to no format
+        /// and are kept as extra attributes in document order, even when they come between those for the formats and
+        /// the "*" wildcard, which still give each format its feedback types in document order without duplicates.
+        /// </summary>
+        [Fact]
+        public void RtcpFeedbackForNegativeOrLargePayloadTypesAppliesToNoFormat()
+        {
+            // Arrange
+
+            var sdpText = SessionHeader +
+                "m=video 5000 RTP/AVPF 96 98 100 127" + CRLF +
+                "a=rtpmap:96 VP8/90000" + CRLF +
+                "a=rtpmap:98 VP9/90000" + CRLF +
+                "a=rtpmap:100 H264/90000" + CRLF +
+                "a=rtpmap:127 H264/90000" + CRLF +
+                "a=rtcp-fb:100 goog-remb" + CRLF +
+                "a=rtcp-fb:2147483647 nack pli" + CRLF +
+                "a=rtcp-fb:-1 nack" + CRLF +
+                "a=rtcp-fb:* NACK" + CRLF +
+                "a=rtcp-fb:98 ccm fir" + CRLF +
+                "a=rtcp-fb:100 nack" + CRLF +
+                "a=rtcp-fb:-2147483648 ccm fir" + CRLF +
+                "a=rtcp-fb:* goog-remb" + CRLF +
+                "a=rtcp-fb:98 Goog-REMB" + CRLF +
+                "a=rtcp-fb:128 transport-cc" + CRLF;
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText);
+
+            // Assert
+
+            var announcement = Assert.Single(sdp.Media);
+            Assert.Equal(new[] { "NACK", "goog-remb" }, announcement.MediaFormats[96].SupportedRtcpFeedbackMessages);
+            Assert.Equal(new[] { "NACK", "ccm fir", "goog-remb" }, announcement.MediaFormats[98].SupportedRtcpFeedbackMessages);
+            Assert.Equal(new[] { "goog-remb", "NACK" }, announcement.MediaFormats[100].SupportedRtcpFeedbackMessages);
+            Assert.Equal(new[] { "NACK", "goog-remb" }, announcement.MediaFormats[127].SupportedRtcpFeedbackMessages);
+            Assert.Equal(
+                new[] { "a=rtcp-fb:2147483647 nack pli", "a=rtcp-fb:-1 nack", "a=rtcp-fb:-2147483648 ccm fir", "a=rtcp-fb:128 transport-cc" },
+                announcement.ExtraMediaAttributes);
+        }
+
+        /// <summary>
+        /// RTCP feedback attributes at session level or in a media announcement other than video are kept as extra
+        /// attributes and do not apply to any format.
+        /// </summary>
+        [Fact]
+        public void RtcpFeedbackOutsideVideoIsKeptAsExtraAttribute()
+        {
+            // Arrange
+
+            var sdpText = SessionHeader +
+                "a=rtcp-fb:* nack" + CRLF +
+                "m=audio 5000 RTP/AVP 0" + CRLF +
+                "a=rtcp-fb:0 nack" + CRLF +
+                "m=video 5002 RTP/AVPF 96" + CRLF +
+                "a=rtpmap:96 VP8/90000" + CRLF;
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText);
+
+            // Assert
+
+            Assert.Equal(new[] { "a=rtcp-fb:* nack" }, sdp.ExtraSessionAttributes);
+            Assert.Equal(new[] { "a=rtcp-fb:0 nack" }, sdp.Media[0].ExtraMediaAttributes);
+            Assert.False(sdp.Media[0].MediaFormats[0].HasExplicitRtcpFeedbackMessages);
+            Assert.Empty(sdp.Media[1].MediaFormats[96].SupportedRtcpFeedbackMessages);
+            Assert.Empty(sdp.Media[1].ExtraMediaAttributes);
+        }
+
+        /// <summary>
+        /// Formats compare their RTCP feedback lists by reference, so the same video format parsed twice compares
+        /// equal exactly when two formats given the same feedback types through WithUpdatedRtcpFeedbackMessages do,
+        /// which for no feedback types depends on whether the runtime shares one empty array.
+        /// </summary>
+        [Theory]
+        [InlineData("")]
+        [InlineData("a=rtcp-fb:97 nack\r\n")]
+        [InlineData("a=rtcp-fb:96 nack\r\n", "nack")]
+        public void ParsedFormatsCompareLikeFormatsWithTheSameFeedback(string feedbackAttribute, params string[] expectedFeedback)
+        {
+            // Arrange
+
+            var sdpText = SessionHeader +
+                "m=video 5000 RTP/AVPF 96 97" + CRLF +
+                feedbackAttribute +
+                "a=rtpmap:96 VP8/90000" + CRLF +
+                "a=rtpmap:97 H264/90000" + CRLF;
+            var format = new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8/90000");
+            var expectedEquality = format.WithUpdatedRtcpFeedbackMessages(new List<string>(expectedFeedback))
+                .Equals(format.WithUpdatedRtcpFeedbackMessages(new List<string>(expectedFeedback)));
+
+            // Act
+
+            var first = SDP.ParseSDPDescription(sdpText).Media[0].MediaFormats[96];
+            var second = SDP.ParseSDPDescription(sdpText).Media[0].MediaFormats[96];
+
+            // Assert
+
+            Assert.Equal(expectedFeedback, first.SupportedRtcpFeedbackMessages);
+            Assert.Equal(expectedEquality, first.Equals(second));
         }
     }
 }
