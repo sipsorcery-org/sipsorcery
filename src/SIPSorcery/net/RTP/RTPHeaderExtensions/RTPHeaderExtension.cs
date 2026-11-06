@@ -15,6 +15,20 @@ namespace SIPSorcery.Net
         /// <param name="uri">URI of the extension - for example: "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time" or "urn:3gpp:video-orientation" </param>
         /// <returns>A Specific RTPHeaderExtension</returns>
         public static RTPHeaderExtension GetRTPHeaderExtension(int id, string uri, SDPMediaTypesEnum media)
+            => GetRTPHeaderExtensionCore(id, uri.AsSpan(), media);
+
+        /// <summary>
+        /// Creates an RTP header extension from URI characters without allocating a URI string.
+        /// </summary>
+        /// <remarks>
+        /// The distinct name avoids overload ambiguity with <see cref="GetRTPHeaderExtension(int, string, SDPMediaTypesEnum)"/>
+        /// for <see langword="null"/> arguments. A <see langword="null"/> URI maps to an empty span, which matches no extension.
+        /// </remarks>
+        /// <param name="id">The extmap ID.</param>
+        /// <param name="uri">The extension URI characters.</param>
+        /// <param name="media">The media type the extension is for.</param>
+        /// <returns>The matching extension, or <see langword="null"/> if the URI is unknown or the media type is not supported.</returns>
+        internal static RTPHeaderExtension GetRTPHeaderExtensionCore(int id, ReadOnlySpan<char> uri, SDPMediaTypesEnum media)
         {
             RTPHeaderExtension result = null;
             switch (uri)

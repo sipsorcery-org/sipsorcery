@@ -1491,15 +1491,23 @@ namespace SIPSorcery.Net
         /// RTP timestamp units as RFC3550 section 6.4.1 requires.
         /// </summary>
         /// <param name="capabilities">The negotiated formats for this stream, highest priority first.
-        /// The rate is taken from the first format that is a media codec rather than a telephone
-        /// event, which carries its own clock rate but is not the stream's media clock.</param>
+        /// The sending rate is taken from the first format that is a media codec rather than a
+        /// telephone event, which carries its own clock rate but is not the stream's media clock.
+        /// The receiving rate of every media codec is set per payload type, since the remote
+        /// party is free to send a different one of them.</param>
         internal void SetRtcpRtpClockRate(List<SDPAudioVideoMediaFormat> capabilities)
         {
-            if (RtcpSession == null || RtcpSession.PayloadSampleRateHz != 0 || capabilities == null)
+            if (RtcpSession == null || capabilities == null)
             {
-                // Leave a rate that has already been set alone, it may have been set by the application.
                 return;
             }
+
+            // The remote party can send any of the negotiated formats, not just the first one,
+            // so the reporting session gets the clock rate of each of them to measure the
+            // jitter of received packets in their own RTP timestamp units. These always come from
+            // the negotiation: the rate of a payload type is fixed by its rtpmap.
+            var receiveClockRates = new Dictionary<int, int>();
+            int firstClockRate = 0;
 
             foreach (var format in capabilities)
             {
@@ -1515,8 +1523,12 @@ namespace SIPSorcery.Net
 
                     if (clockRate > 0)
                     {
-                        RtcpSession.PayloadSampleRateHz = clockRate;
-                        return;
+                        receiveClockRates[format.ID] = clockRate;
+
+                        if (firstClockRate == 0)
+                        {
+                            firstClockRate = clockRate;
+                        }
                     }
                 }
                 catch (ApplicationException excp)
@@ -1526,6 +1538,14 @@ namespace SIPSorcery.Net
                     // rate can be determined the reporting session falls back to not extrapolating.
                     logger.LogWarning(excp, "Could not determine the RTP clock rate for {MediaType} format {Format}. {ErrorMessage}", MediaType, format.ID, excp.Message);
                 }
+            }
+
+            RtcpSession.SetReceivePayloadClockRates(receiveClockRates);
+
+            // Leave a sending rate that has already been set alone, it may have been set by the application.
+            if (RtcpSession.PayloadSampleRateHz == 0 && firstClockRate > 0)
+            {
+                RtcpSession.PayloadSampleRateHz = firstClockRate;
             }
         }
 
