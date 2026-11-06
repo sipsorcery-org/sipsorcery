@@ -209,6 +209,12 @@ namespace SIPSorcery.Net
         private uint m_transit;
 
         /// <summary>
+        /// True once m_transit holds a previous packet's transit time that the next packet's
+        /// can be compared with.
+        /// </summary>
+        private bool m_transitSet;
+
+        /// <summary>
         /// Estimated jitter.
         /// </summary>
         private uint m_jitter;
@@ -307,6 +313,17 @@ namespace SIPSorcery.Net
 
             // Estimating the Interarrival Jitter as defined in RFC3550 Appendix A.8.
             uint transit = arrivalTimestamp - rtpTimestamp;
+
+            if (!m_transitSet)
+            {
+                // There is no previous transit time to take a difference from. The relative
+                // transit time includes the arbitrary offset between the two clocks, so taking a
+                // difference from the initial zero would add a meaningless amount of jitter.
+                m_transit = transit;
+                m_transitSet = true;
+                return;
+            }
+
             int d = (int)(transit - m_transit);
             m_transit = transit;
             if (d < 0)
@@ -316,6 +333,17 @@ namespace SIPSorcery.Net
             m_jitter += (uint)(d - ((m_jitter + 8) >> 4));
 
             //return ready;
+        }
+
+        /// <summary>
+        /// Discards the previous packet's transit time so the next packet does not contribute
+        /// to the jitter estimate. Used when the units of the RTP or arrival timestamps change,
+        /// for example when the remote party switches to a codec with a different RTP clock
+        /// rate. The jitter already estimated is kept.
+        /// </summary>
+        internal void ResetJitterTransit()
+        {
+            m_transitSet = false;
         }
 
         /// <summary>
