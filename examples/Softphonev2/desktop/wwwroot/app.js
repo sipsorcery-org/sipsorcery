@@ -4,8 +4,9 @@
 //
 // What the stage shows during a call, from the UX prototype (prototype/web):
 //  - their video, while frames are arriving;
-//  - their initial, if video was agreed but nothing is arriving ("Their camera is off" after 2 s;
-//    another softphone sends a placeholder instead, see placeholderTrack);
+//  - their initial, if video was agreed but nothing is arriving ("No video arriving from X" after
+//    2 s; another softphone sends a placeholder while its camera is off, see placeholderTrack, so
+//    this means the video has stalled or the far end stopped sending);
 //  - an audio-only view, if the call has no video at all: two rows of frequency bars, theirs
 //    above the centre line and yours below, with notes when audio isn't flowing one way.
 // The Audio | Video switch beside Call picks the kind of call. An audio call has no video line;
@@ -21,25 +22,34 @@ const NO_AUDIO_MS = 2000;    // how long without audio packets before saying non
 const ICON = {
   phone: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg>',
   video: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
   videoOff: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M2 2l20 20"/></svg>',
+  mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>',
+  micOff: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/><path d="M3 3l18 18"/></svg>',
+  chevronDown: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+  selfView: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect x="12" y="13" width="10" height="7" rx="2"/></svg>',
+  hangup: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7a2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91"/><path d="M22 2 2 22"/></svg>',
 };
 
-let local = null;          // MediaStream from getUserMedia
+let local = null;          // our tracks: the microphone during a call, the camera while it's wanted
 let pc = null;
 let state = { call: "idle" };
 let connectedAt = 0;
 let timerId = 0;
 let call = null;           // media state for the connected call, see onMediaOffer
-let answerCamera = null;   // "Answer, camera off" sets this to false for the call being answered
+let answerCamera = null;   // the Answer button's menu: camera on (true) or off (false) for the call being answered; null follows camPref
 let addingVideo = false;   // we asked the host to add video; cleared by the new offer or a refusal
 let videoRefused = false;  // the far end turned video down on this call
 
-// The Audio | Video switch: audio by default (most SIP calls go to phones), then the last choice.
+// The Audio | Video switch: always Audio at start (most SIP calls go to phones, and the camera
+// stays off until you ask for video).
 let callType = "audio";
-try { callType = localStorage.getItem("callType") === "video" ? "video" : "audio"; } catch { /* no storage */ }
 const params = new URLSearchParams(location.search);
 if (params.get("call") === "video") callType = "video";          // --video (testing)
-const testCameraOff = params.get("camera") === "off";            // --camera-off (testing)
+// Whether calls start with your camera on: the Camera button before a call (--camera-off starts
+// it off). The Answer button's ▾ can override it for one call.
+let camPref = params.get("camera") !== "off";
 const testAddVideo = Number(params.get("addvideo")) || 0;        // --add-video <s> (testing)
 
 const localTrack = (kind) => local?.getTracks().find((t) => t.kind === kind) ?? null;
@@ -62,42 +72,90 @@ function shortName(remote) {
 }
 const initial = (name) => (name ?? "?").replace(/^\+/, "").charAt(0).toUpperCase() || "#";
 
-// The microphone is opened once, at start. The camera is only opened while it's wanted (see
+// The microphone is only open during a call (see openMic). The camera is only opened while it's wanted (see
 // cameraWanted), so on an audio call, or with the switch on Audio, it's off: no self view, and
 // the camera's light stays off.
 // A camera another app (or another copy of this one) is using can't be opened on Windows. That
-// isn't "no camera": it stays wanted, the call sends the placeholder meanwhile, and opening it is
-// retried every few seconds until the other app lets go.
+// isn't "no camera", so it says "Camera in use", and the call sends the placeholder. It is NOT
+// retried by itself: the camera is only ever opened because of something you did (switching to
+// Video, placing or answering a video call, Add video, Camera on). Otherwise it would start
+// streaming on its own the moment the other app let go.
+// The microphone, speaker and camera you picked from the menus on Mute and Camera, remembered
+// between runs. Empty means the system default.
+let devices = { mic: "", speaker: "", camera: "" };
+try { Object.assign(devices, JSON.parse(localStorage.getItem("devices") ?? "{}")); } catch { /* storage unavailable */ }
+const saveDevices = () => { try { localStorage.setItem("devices", JSON.stringify(devices)); } catch { /* storage unavailable */ } };
+const MIC_CONSTRAINTS = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+
 let hasCamera = false;     // a camera exists (and hasn't failed to open for good)
-let cameraInUse = false;   // the camera is wanted but something else has it
-let cameraRetry = 0;       // timer for the next try while it's in use
+let cameraInUse = false;   // the last try found it in use; cleared by your next camera action
 let cameraBusy = null;     // the open or close in progress, so they never overlap
-const CAMERA_RETRY_MS = 2000;
+
+// Like the camera, the microphone is only open while it's needed: from placing or answering a
+// call until it ends. So the mic light (on a webcam, say) is off between calls. Mute works
+// before a call too: it's remembered, and the call's microphone opens muted.
+let hasMic = false;        // a microphone exists
+let micMuted = false;
+let micOpening = null;     // the open in progress, so placing a call and its media share one
 
 async function openDevices() {
+  local = new MediaStream();
   try {
-    local = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-    });
-  } catch (err) {
-    log(`microphone unavailable: ${err.name} ${err.message}`);
-    local = new MediaStream();
-  }
-  try {
-    hasCamera = (await navigator.mediaDevices.enumerateDevices()).some((d) => d.kind === "videoinput");
-  } catch { hasCamera = false; }
+    const list = await navigator.mediaDevices.enumerateDevices();
+    hasMic = list.some((d) => d.kind === "audioinput");
+    hasCamera = list.some((d) => d.kind === "videoinput");
+  } catch { hasMic = hasCamera = false; }
+  if (devices.speaker) $("remote").setSinkId?.(devices.speaker).catch(() => { devices.speaker = ""; });
+}
+
+// Opens the microphone (the remembered one, or the default if it's gone) unless it's open.
+// Resolves to the track, or null if there's no microphone to be had.
+function openMic() {
+  if (localTrack("audio")) return Promise.resolve(localTrack("audio"));
+  micOpening ??= (async () => {
+    const open = (id) => navigator.mediaDevices.getUserMedia({ audio: { ...MIC_CONSTRAINTS, ...(id ? { deviceId: { exact: id } } : {}) } });
+    try {
+      // Exactly ("ideal" isn't always honoured), falling back to the default if it's unplugged.
+      const stream = await open(devices.mic).catch((err) => {
+        if (!devices.mic) throw err;
+        log(`remembered microphone unavailable (${err.name}), using the default`);
+        return open("");
+      });
+      const track = stream.getAudioTracks()[0];
+      track.enabled = !micMuted;
+      local.addTrack(track);
+      log(`microphone opened: ${track.label}`);
+      return track;
+    } catch (err) {
+      log(`microphone unavailable: ${err.name} ${err.message}`);
+      return null;
+    } finally {
+      micOpening = null;
+      render();
+    }
+  })();
+  return micOpening;
+}
+
+function closeMic() {
+  const track = localTrack("audio");
+  if (!track) return;
+  local.removeTrack(track);
+  track.stop();
+  log("microphone closed");
 }
 
 // Whether the camera should be open: during a video call with your camera on, or, before a
 // call, while the switch is on Video (a preview of what they'll see).
 function cameraWanted() {
-  if (!hasCamera) return false;
+  if (!local || !videoAvailable()) return false;   // not before the microphone's open (local is set)
   if (call) return call.hasVideo && call.camOn;
   // Connected, but the media isn't set up yet: leave the camera as it is, so a video call's
   // preview carries straight on into the call.
   if (state.call === "connected") return !!localTrack("video");
   const before = state.call === "idle" || state.call === "ended" || state.call === "calling";
-  return before && state.videoAllowed !== false && callType === "video" && !testCameraOff;
+  // The preview is only for you, so with Self view off the camera stays closed until the call.
+  return before && state.videoAllowed !== false && callType === "video" && camPref && selfViewOn;
 }
 
 // While your camera is off (or there's none) on a video call, the call sends a placeholder
@@ -157,34 +215,258 @@ function stopPlaceholder() {
   placeholder = null;
 }
 
+// ---- Test pattern (diagnostics) ----
+// In diagnostics mode, the video source can be a test pattern instead of the camera. It stands
+// in for the camera exactly: it's opened and closed when the camera would be, becomes the
+// video track in `local`, and Camera off swaps in the placeholder as usual. The picture has
+// colour bars and a grey ramp (colour and banding), a dial whose hand steps once per frame
+// drawn (a dropped frame shows as a skipped tick), a clock to the millisecond (compare the
+// receiver's picture with the sender's screen for the delay) and a frame counter. It's picked
+// from the Camera button's menu.
+// "Audio bars" is the other diagnostic source: your microphone's frequency bars, drawn the way
+// the audio-only view draws them, with the same clock. The far end sees what you're sending as
+// audio, so they can tell sound from silence (or a muted or dead microphone) at a glance, and
+// judge lip sync: a bar should jump as they hear the sound. The microphone only opens with a
+// call, so before one the picture says so.
+const TEST_FPS = 30;
+let videoSource = "camera";   // "camera", "test" or "bars"; back to camera when diagnostics goes off
+let testPattern = null;       // { kind, canvas, track, timer, frame, and for bars the analyser and levels }
+const SOURCE_LABEL = { test: "Test pattern", bars: "Audio bars" };
+
+// Whether there's a video source to open: the test pattern always; a camera if there is one
+// and it isn't in use elsewhere.
+const videoAvailable = () => videoSource !== "camera" || (hasCamera && !cameraInUse);
+const isTestTrack = (track) => !!track && track === testPattern?.track;
+
+function openTestPattern() {
+  const canvas = Object.assign(document.createElement("canvas"), { width: 1280, height: 720 });
+  const track = canvas.captureStream(0).getVideoTracks()[0];
+  testPattern = {
+    kind: videoSource, canvas, track, frame: 0, timer: setInterval(testPatternFrame, 1000 / TEST_FPS),
+    analyser: null, micTrack: null, levels: new Float32Array(BANDS), target: new Float32Array(BANDS), last: performance.now(),
+  };
+  testPatternFrame();
+  return track;
+}
+
+const testPatternFrame = () => (testPattern.kind === "bars" ? audioBarsFrame() : patternFrame());
+
+// The band along the bottom of every diagnostic source: a clock to the millisecond, who's
+// sending, size and rate, and a frame counter.
+function sourceFooter(g, W, H, frame) {
+  const pad = (n, w = 2) => String(n).padStart(w, "0");
+  const now = new Date();
+  g.textBaseline = "middle";
+  g.fillStyle = "#101418";
+  g.fillRect(0, 530, W, H - 530);
+  g.fillStyle = "#fff";
+  g.font = "600 64px Consolas, monospace";
+  g.textAlign = "center";
+  g.fillText(`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${pad(now.getMilliseconds(), 3)}`, W / 2, 600);
+  g.font = "28px Consolas, monospace";
+  g.fillStyle = "#9fb3ad";
+  g.textAlign = "left";
+  g.fillText(state.me || state.address || "", 40, 680);
+  g.textAlign = "center";
+  g.fillText(`${W}×${H} · ${TEST_FPS} fps`, W / 2, 680);
+  g.textAlign = "right";
+  g.fillText(`frame ${pad(frame, 6)}`, W - 40, 680);
+}
+
+function closeVideoTrack(track) {
+  local.removeTrack(track);
+  track.stop();
+  if (isTestTrack(track)) {
+    clearInterval(testPattern.timer);
+    testPattern.analyser?.source.disconnect();
+    testPattern = null;
+  }
+}
+
+function patternFrame() {
+  const { canvas, track } = testPattern;
+  const frame = testPattern.frame++;
+  const g = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height, pad = (n, w = 2) => String(n).padStart(w, "0");
+  g.textBaseline = "middle";
+  g.lineCap = "butt";
+
+  // 75% colour bars, a stepped grey ramp, and a smooth gradient for banding.
+  const bars = ["#c0c0c0", "#c0c000", "#00c0c0", "#00c000", "#c000c0", "#c00000", "#0000c0"];
+  const bw = W / bars.length, barH = 430;
+  bars.forEach((c, i) => { g.fillStyle = c; g.fillRect(Math.round(i * bw), 0, Math.ceil(bw), barH); });
+  for (let i = 0; i < 11; i++) {
+    const v = Math.round(i * 25.5);
+    g.fillStyle = `rgb(${v},${v},${v})`;
+    g.fillRect(Math.round(i * W / 11), barH, Math.ceil(W / 11), 70);
+  }
+  const grad = g.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, "#000");
+  grad.addColorStop(1, "#fff");
+  g.fillStyle = grad;
+  g.fillRect(0, barH + 70, W, 30);
+  // A marker across the ramp, once every 4 s: smooth motion.
+  g.fillStyle = "#ff2d55";
+  g.fillRect(((frame % (TEST_FPS * 4)) / (TEST_FPS * 4)) * W - 3, barH, 6, 100);
+
+  sourceFooter(g, W, H, frame);
+
+  // The dial: one tick per frame of a second, the hand on this frame's tick.
+  const cx = W / 2, cy = 215, r = 150, tick = frame % TEST_FPS;
+  g.fillStyle = "rgba(16,20,24,0.88)";
+  g.beginPath();
+  g.arc(cx, cy, r + 18, 0, 2 * Math.PI);
+  g.fill();
+  for (let i = 0; i < TEST_FPS; i++) {
+    const a = (i / TEST_FPS) * 2 * Math.PI - Math.PI / 2, lit = i === tick;
+    g.strokeStyle = lit ? "#ffd60a" : "#56645f";
+    g.lineWidth = lit ? 6 : 3;
+    g.beginPath();
+    g.moveTo(cx + Math.cos(a) * (r - 22), cy + Math.sin(a) * (r - 22));
+    g.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+    g.stroke();
+  }
+  const a = (tick / TEST_FPS) * 2 * Math.PI - Math.PI / 2;
+  g.strokeStyle = "#ffd60a";
+  g.lineWidth = 8;
+  g.lineCap = "round";
+  g.beginPath();
+  g.moveTo(cx, cy);
+  g.lineTo(cx + Math.cos(a) * (r - 30), cy + Math.sin(a) * (r - 30));
+  g.stroke();
+  g.fillStyle = "#fff";
+  g.font = "600 36px Consolas, monospace";
+  g.textAlign = "center";
+  // The tick number sits opposite the hand, so the hand never covers it.
+  g.fillText(pad(tick), cx - Math.cos(a) * 62, cy - Math.sin(a) * 62);
+
+  track.requestFrame();
+}
+
+function audioBarsFrame() {
+  const tp = testPattern;
+  const { canvas, track } = tp;
+  const frame = tp.frame++;
+  const g = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+
+  // Follow the microphone: it opens with the call, and can be switched mid-call.
+  const mic = localTrack("audio");
+  if (mic !== tp.micTrack) {
+    tp.analyser?.source.disconnect();
+    tp.analyser = mic ? analyserFor(mic) : null;
+    tp.micTrack = mic;
+  }
+  const level = bands(mic?.enabled ? tp.analyser : null, tp.target);
+  const t = performance.now(), fall = Math.exp(-Math.min(250, t - tp.last) / FALL_MS);
+  tp.last = t;
+  for (let b = 0; b < BANDS; b++) {
+    const v = tp.levels[b], to = tp.target[b];
+    tp.levels[b] = to > v ? v + (to - v) * 0.6 : Math.max(to, v * fall);
+  }
+
+  g.fillStyle = "#0f1a17";
+  g.fillRect(0, 0, W, H);
+  g.textBaseline = "middle";
+
+  // Top: what this is, and the microphone's state.
+  g.font = "600 30px 'Segoe UI', system-ui, sans-serif";
+  g.textAlign = "left";
+  g.fillStyle = "#e4ece8";
+  // Below where the far end's name-and-timer overlay sits.
+  g.fillText("Audio bars", 48, 116);
+  const status = !mic ? "Microphone opens with the call" : !mic.enabled ? "Muted" : mic.label;
+  g.font = "24px 'Segoe UI', system-ui, sans-serif";
+  g.fillStyle = !mic || !mic.enabled ? "#e6b86a" : "#9fb3ad";
+  g.fillText(status, 48, 156);
+  // A level meter, top right.
+  g.fillStyle = "#24332e";
+  g.fillRect(W - 48 - 320, 108, 320, 16);
+  g.fillStyle = "#4cc29b";
+  g.fillRect(W - 48 - 320, 108, 320 * Math.min(1, level * 2), 16);
+
+  // The bars, mirrored about a centre line, as in the audio-only view.
+  const mid = 340, room = 130, left = 64, width = W - 128;
+  const slot = width / BANDS, bar = slot * 0.6, gap = (slot - bar) / 2;
+  g.fillStyle = "#3ea486";
+  for (let b = 0; b < BANDS; b++) {
+    const len = Math.max(4, tp.levels[b] * room);
+    g.beginPath();
+    g.roundRect(left + b * slot + gap, mid - len, bar, len * 2, Math.min(bar, len) / 2);
+    g.fill();
+  }
+  g.fillStyle = "#24332e";
+  g.fillRect(left, mid - 1, width, 2);
+  g.font = "18px Consolas, monospace";
+  g.fillStyle = "#677670";
+  g.textAlign = "left";
+  g.fillText("100 Hz", left, mid + room + 30);
+  g.textAlign = "right";
+  g.fillText("6 kHz", left + width, mid + room + 30);
+
+  sourceFooter(g, W, H, frame);
+  track.requestFrame();
+}
+
+// Switches the video source (or, with reopen, the camera). Whatever's open closes, and
+// syncCamera opens the new one if video is wanted (so a camera that's off stays off).
+function setVideoSource(source, reopen = false) {
+  if (source === videoSource && !reopen) return;
+  videoSource = source;
+  if (source === "camera") cameraInUse = false;   // a fresh try, because you asked
+  log(`video source: ${source}`);
+  if (!local) return;   // at start, before the devices are open; the first syncCamera picks it up
+  const track = localTrack("video");
+  if (track) closeVideoTrack(track);
+  syncCamera();
+}
+
 // What the call's video sender should carry: the camera when it's on and open, else the placeholder.
 const videoToSend = () => (call.camOn && localTrack("video")) || placeholderTrack();
+
+// Puts what's sent (or, before a call, what would be) in the self view. Only the camera is
+// mirrored, so the placeholder's initial reads the right way round. The placeholder is stopped
+// once neither the self view nor a call needs it.
+function showSelfVideo(show) {
+  const el = $("self");
+  const track = !show ? null : call?.videoSender ? videoToSend() : localTrack("video") ?? placeholderTrack();
+  if ((el.srcObject?.getVideoTracks()[0] ?? null) !== track) el.srcObject = track ? new MediaStream([track]) : null;
+  el.hidden = !track;
+  el.classList.toggle("mirror", !!track && track === localTrack("video") && !isTestTrack(track));
+  if (placeholder && track !== placeholder.track && !call?.videoSender) stopPlaceholder();
+}
 
 // Opens or closes the camera to match cameraWanted(), and puts it on the call when it should be sent.
 function syncCamera() {
   cameraBusy = (cameraBusy ?? Promise.resolve()).then(async () => {
     const want = cameraWanted();
     let track = localTrack("video");
-    if (!want && cameraInUse) { cameraInUse = false; render(); }   // no longer wanted: stop trying
-    if (want && !track) {
+    if (want && !track && videoSource !== "camera") {
+      local.addTrack(openTestPattern());
+      log(`${SOURCE_LABEL[videoSource].toLowerCase()} opened`);
+    } else if (want && !track) {
       try {
-        const cam = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+        // The chosen camera exactly, or if it's gone, the default.
+        const open = (id) => navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, ...(id ? { deviceId: { exact: id } } : {}) },
+        });
+        const cam = await open(devices.camera).catch((err) => {
+          if (!devices.camera || err.name !== "OverconstrainedError" && err.name !== "NotFoundError") throw err;
+          log("chosen camera not found, using the default");
+          return open("");
         });
         track = cam.getVideoTracks()[0];
-        if (!cameraWanted()) { track.stop(); return; }   // changed while it was opening
+        // Changed while it was opening (including a switch to the test pattern).
+        if (!cameraWanted() || videoSource !== "camera") { track.stop(); return; }
         local.addTrack(track);
         log("camera opened");
-        if (cameraInUse) { cameraInUse = false; render(); }
       } catch (err) {
         if (err.name === "NotReadableError" || err.name === "AbortError") {
-          if (!cameraInUse) {
-            log(`camera in use, will keep trying: ${err.name} ${err.message}`);
-            cameraInUse = true;
-            render();
-          }
-          clearTimeout(cameraRetry);
-          cameraRetry = setTimeout(syncCamera, CAMERA_RETRY_MS);
+          // In use elsewhere. Your camera goes off; trying again is up to you.
+          log(`camera in use: ${err.name} ${err.message}`);
+          cameraInUse = true;
+          if (call) call.camOn = false;
+          render();
           return;
         }
         // Missing, or permission refused: no camera for this run.
@@ -194,9 +476,8 @@ function syncCamera() {
         if (call) call.camOn = false;
       }
     } else if (!want && track) {
-      local.removeTrack(track);
-      track.stop();
-      log("camera closed");
+      log(isTestTrack(track) ? `${SOURCE_LABEL[testPattern.kind].toLowerCase()} closed` : "camera closed");
+      closeVideoTrack(track);
     }
     // Always match the call's sender to the camera, even when the camera itself didn't change:
     // a new call (or the new connection after Add video) has a new sender, and a camera left
@@ -205,12 +486,8 @@ function syncCamera() {
       const send = videoToSend();
       if (call.videoSender.track !== send) await call.videoSender.replaceTrack(send);
     }
-    const shown = $("self").srcObject?.getVideoTracks()[0] ?? null;
-    if (shown !== localTrack("video")) {
-      $("self").srcObject = localTrack("video") ? new MediaStream([localTrack("video")]) : null;
-      render();
-    }
-  });
+    render();   // the self view follows what's sent
+  }).catch((err) => log(`camera sync failed: ${err.message}`));   // so one failure doesn't stall the queue
   return cameraBusy;
 }
 
@@ -222,12 +499,18 @@ function syncCamera() {
 async function onMediaOffer(sdp) {
   const midCall = !!call;
   closeMedia();
-  const wantCamera = addingVideo ? true : midCall ? false : (answerCamera ?? !testCameraOff);
+  if (!midCall) quality = newQuality();
+  else if (quality) quality.prev = quality.audioWindow = null;   // a new peer connection: its counters start again
+  await openMic();   // usually already opening, from Call or Answer
+  const wantCamera = addingVideo ? true : midCall ? false : (answerCamera ?? camPref);
   addingVideo = false;
+  if (wantCamera) cameraInUse = false;   // you placed, answered or added video: try the camera again
   call = {
-    hasVideo: false,             // the call has video at all (an m=video line from the host)
-    camOn: wantCamera && hasCamera,
-    muted: !localTrack("audio")?.enabled,
+    // The call has video at all (an m=video line from the host). Read from the offer now, not
+    // once the transceivers are set up, or a render in between briefly shows the audio bars.
+    hasVideo: /^m=video [1-9]/m.test(sdp),
+    camOn: wantCamera && videoAvailable(),
+    muted: micMuted,
     videoSender: null,
     framesDecoded: -1, lastFrameAt: 0,   // when the decoder last produced a frame
     rxPackets: -1, rxChangedAt: performance.now(), rxDead: false,
@@ -301,8 +584,9 @@ function closeMedia() {
 
 // Camera on or off during a video call. Off swaps in the placeholder, then closes the camera.
 async function setCamera(on) {
-  if (!call?.videoSender || !hasCamera) return;
+  if (!call?.videoSender || !(hasCamera || videoSource !== "camera")) return;
   call.camOn = on;
+  if (on) cameraInUse = false;   // try again, because you asked
   if (!on) await call.videoSender.replaceTrack(placeholderTrack());
   log(`camera ${on ? "on" : "off"}`);
   render();
@@ -420,6 +704,231 @@ setInterval(async () => {
   if (changed || mode !== $("stage").dataset.mode || mode === "nocam") render();
 }, 500);
 
+// ---- Call quality (diagnostics) ----
+// "Call quality", a panel over the stage in diagnostics mode: ↑ Sent is how the far end receives
+// what we send, from their RTCP receiver reports (every 5 s or so, from any SIP phone that sends
+// RTCP); ↓ Received is how we receive them, measured here. Received audio comes from the page's
+// WebRTC stats: they're for the hop from the relay, but audio is relayed packet by packet with
+// its sequence numbers, so its loss and jitter are the SIP leg's. Received video is packetised
+// again for the page, so its loss comes from our own RTCP report instead, and its frame rate
+// from the page. A graph below shows the picked column over the last two minutes.
+const Q_POINTS = 120;   // graph length: 2 min of 1 s samples
+const NO_RTCP_MS = 15000;
+// { sent: { audio, video } their latest reports, recvVideoRtcp: our latest report on their video,
+//   recv: { audio, video } latest 1 s measures, history: per-second points for the graph, prev, startedAt }
+let quality = null;
+let qColumn = "sent";   // the column the graph shows
+const lastOf = (a) => a[a.length - 1];
+const newQuality = () => ({
+  sent: { audio: null, video: null }, recvVideoRtcp: null, recv: { audio: null, video: null }, history: [], prev: null,
+  startedAt: performance.now(),
+});
+
+// An estimated MOS from the ITU-T G.107 E-model, simplified: the delay is half the round trip
+// (40 ms if there isn't one) plus a jitter buffer of twice the jitter plus 20 ms for the codec,
+// and loss is taken as random, with packet loss concealment (Bpl 25). Wideband codecs sound
+// better than this says; it's for spotting trouble, not for grading codecs.
+function mos({ lossPct = 0, jitterMs = 0, rttMs = null }) {
+  const delay = (rttMs ?? 40) / 2 + jitterMs * 2 + 20;
+  const id = delay < 160 ? delay / 40 : (delay - 120) / 10;
+  const ie = (95 * lossPct) / (lossPct + 25);
+  const r = Math.max(0, Math.min(100, 93.2 - id - ie));
+  return 1 + 0.035 * r + 7e-6 * r * (r - 60) * (100 - r);
+}
+const mosColour = (m) => (m == null ? "#677670" : m >= 4 ? "#4cc29b" : m >= 3.6 ? "#e6b86a" : "#e0718a");
+
+// A strip chart series, the newest at the right: a line, or bars from the bottom. Gaps (null) break the line.
+function drawSeries(g, x, y, w, h, { values, min = 0, max, colour, bars = false }) {
+  const slot = w / Q_POINTS, start = x + w - values.length * slot;
+  const at = (v) => y + h - (Math.max(min, Math.min(max, v)) - min) / (max - min) * h;
+  g.fillStyle = g.strokeStyle = colour;
+  g.lineWidth = Math.max(2, h / 40);
+  g.lineJoin = "round";
+  g.beginPath();
+  let drawing = false;
+  values.forEach((v, i) => {
+    const cx = start + i * slot + slot / 2;
+    if (v == null) { drawing = false; return; }
+    if (bars) { if (v > 0) g.fillRect(cx - slot * 0.35, at(v), slot * 0.7, y + h - at(v)); return; }
+    if (drawing) g.lineTo(cx, at(v)); else g.moveTo(cx, at(v));
+    drawing = true;
+  });
+  if (!bars) g.stroke();
+}
+
+function onQuality(msg) {
+  if (!call || state.call !== "connected" || (msg.kind !== "audio" && msg.kind !== "video")) return;
+  quality ??= newQuality();
+  if (msg.dir === "sent") {
+    quality.sent[msg.kind] = { ...msg, mos: msg.kind === "audio" ? mos(msg) : null };
+    log(`their RTCP on our ${msg.kind}: loss ${msg.lossPct}% (${msg.lost} total), jitter ${msg.jitterMs} ms, rtt ${msg.rttMs ?? "-"} ms`);
+  } else if (msg.kind === "video") quality.recvVideoRtcp = msg;
+  renderQuality();
+}
+
+// Once a second during a call: how we're receiving, from the page's WebRTC stats, and a point
+// for the graph (the sent side holds its latest report until the next).
+setInterval(async () => {
+  if (!pc || !call || state.call !== "connected") return;
+  quality ??= newQuality();
+  const q = quality;
+  let a = null, v = null, out = null;
+  (await pc.getStats()).forEach((r) => {
+    if (r.type === "outbound-rtp" && r.kind === "video") out = r;
+    if (r.type !== "inbound-rtp") return;
+    if (r.kind === "audio") a = r; else if (r.kind === "video") v = r;
+  });
+  const p = q.prev;
+  q.prev = { a, v, out };
+  if (!p) return;
+  if (a) {
+    // Loss over the last 5 s or so: the browser only updates packetsLost when it builds its own
+    // RTCP report, every few seconds, so a 1 s difference is mostly 0 with the odd spike.
+    const win = (q.audioWindow ??= []);
+    win.push({ t: a.timestamp, received: a.packetsReceived, lost: a.packetsLost });
+    while (win.length > 2 && a.timestamp - win[1].t >= 5000) win.shift();
+    const got = a.packetsReceived - win[0].received, lost = Math.max(0, a.packetsLost - win[0].lost);
+    const audio = { lossPct: got + lost > 0 ? (lost * 100) / (got + lost) : 0, jitterMs: (a.jitter ?? 0) * 1000, lost: Math.max(0, a.packetsLost) };
+    // Our round trip is theirs: the same path both ways.
+    audio.mos = mos({ ...audio, rttMs: q.sent.audio?.rttMs ?? null });
+    q.recv.audio = audio;
+  }
+  q.recv.video = !call.hasVideo ? null : {
+    lossPct: q.recvVideoRtcp?.lossPct ?? null,
+    lost: q.recvVideoRtcp?.lost ?? null,
+    // No inbound video stats at all means nothing has ever arrived: 0 fps.
+    fps: v && p.v ? (v.framesDecoded - p.v.framesDecoded) / ((v.timestamp - p.v.timestamp) / 1000) : v ? null : 0,
+  };
+  // Sent video's frame rate is what we send: RTCP doesn't say what they see, and the relay
+  // passes every frame the page encodes on to the call.
+  q.sentFps = call.hasVideo && out && p.out ? (out.framesEncoded - p.out.framesEncoded) / ((out.timestamp - p.out.timestamp) / 1000) : null;
+  // PLIs, for the graph's ticks, from the page's stats (the relay passes them straight through):
+  // received are the far end's, which reached the page's encoder; sent are the page's own. Both
+  // show on either column.
+  const pli = (cur, prev) => !!cur && !!prev && (cur.pliCount ?? 0) > (prev.pliCount ?? 0);
+  const point = (side) => ({ mos: side.audio?.mos ?? null, aLoss: side.audio?.lossPct ?? null, vLoss: side.video?.lossPct ?? null });
+  q.history.push({
+    sent: point(q.sent), recv: point(q.recv),
+    pliRx: call.hasVideo && pli(out, p.out), pliTx: call.hasVideo && pli(v, p.v),
+  });
+  if (q.history.length > Q_POINTS) q.history.shift();
+  // Freezes in what we receive: the browser's own measure of the picture stopping (a gap between
+  // frames of over 3 times the usual, or 150 ms more). It only adds a freeze once it has ended,
+  // so the seconds it covered are marked then, going back from now.
+  if (v && p.v && (v.totalFreezesDuration ?? 0) > (p.v.totalFreezesDuration ?? 0)) {
+    const secs = Math.max(1, Math.round(v.totalFreezesDuration - p.v.totalFreezesDuration));
+    q.history.slice(-secs).forEach((h) => { h.recv.frozen = true; });
+  }
+  renderQuality();
+}, 1000);
+
+const Q_COLOUR = { mos: "#4cc29b", aLoss: "#e0718a", vLoss: "#7fb2f0", frozen: "#ffffff", pliRx: "#e6b86a", pliTx: "#c39af5" };
+
+const PLI_POINTS = 30;   // the PLI strip shows the last half minute: it's an indicator, not a history
+
+// Marks, one per second, the newest at the right: PLI ticks, or (solid) frozen bars.
+function drawMarks(g, x, y, w, h, values, colour, solid = false, points = Q_POINTS) {
+  values = values.slice(-points);
+  const slot = w / points, start = x + w - values.length * slot, tick = solid ? slot : Math.max(2, slot * 0.6);
+  g.fillStyle = colour;
+  values.forEach((on, i) => { if (on) g.fillRect(start + i * slot + (slot - tick) / 2, y, tick, h); });
+}
+const Q_LABEL = { sent: "↑ Sent", recv: "↓ Received" };
+
+function renderQuality() {
+  const el = $("quality");
+  el.hidden = !(state.call === "connected" && call);
+  if (el.hidden || !document.body.classList.contains("diag")) return;
+  const q = quality ?? newQuality();
+  const video = call.hasVideo;
+  const fmt = (v, unit = "", digits = 1) => (v == null ? "–" : `${v.toFixed(digits)}${unit}`);
+  const esc = (t) => t.replace(/"/g, "&quot;");
+
+  // One value cell: in its column, marked when that column drives the graph.
+  const cell = (col, text, { cls = "", title = "", colour = "" } = {}) =>
+    `<span class="q-v ${cls}${col === qColumn ? " sel" : ""}" data-col="${col}"${title ? ` title="${esc(title)}"` : ""}${colour ? ` style="color:${colour}"` : ""}>${text}</span>`;
+  const from = { sent: "their RTCP reports", recv: "measured here" };
+  const mosCell = (col, r) => cell(col, fmt(r?.mos), { cls: "mos", colour: r ? mosColour(r.mos) : "", title: `Estimated MOS (1–5), ${from[col]}` });
+  const lossCell = (col, r, what) => cell(col, fmt(r?.lossPct, "%"), {
+    cls: r?.lossPct >= 1 ? "bad" : "",
+    title: `${what} packets lost${r?.lost != null ? `: ${r.lost} in total` : ""}, ${col === "recv" && what === "Video" ? "from our RTCP" : from[col]}`,
+  });
+  const jitterCell = (col, r) => cell(col, fmt(r?.jitterMs, " ms", 0), { title: `Audio jitter, ${from[col]}` });
+  const row = (stream, metric, sent, recv, next = false) =>
+    `<span class="q-stream${next ? " next" : ""}">${stream}</span><span class="q-metric">${metric}</span>${sent}${recv}`;
+
+  const S = q.sent, R = q.recv;
+  let html = `<span></span><span></span>` +
+    Object.entries(Q_LABEL).map(([col, label]) =>
+      `<button type="button" class="q-col${col === qColumn ? " sel" : ""}" data-col="${col}" title="Graph ${label.slice(2).toLowerCase()}: ${from[col]}">${label}</button>`).join("") +
+    row("Audio", "MOS", mosCell("sent", S.audio), mosCell("recv", R.audio)) +
+    row("", "loss", lossCell("sent", S.audio, "Audio"), lossCell("recv", R.audio, "Audio")) +
+    row("", "jitter", jitterCell("sent", S.audio), jitterCell("recv", R.audio));
+  if (video) {
+    html += row("Video", "loss", lossCell("sent", S.video, "Video"), lossCell("recv", R.video, "Video"), true) +
+      row("", "fps", cell("sent", fmt(q.sentFps, "", 0), { title: "Frames per second we send (RTCP doesn't report what they see)" }),
+        cell("recv", fmt(R.video?.fps, "", 0), { title: "Frames per second decoded here" }));
+  }
+  $("qTable").innerHTML = html;
+
+  // Folded: just the two MOS.
+  const sum = (col, r) => `<span style="color:${mosColour(r?.mos)}" title="${Q_LABEL[col]}: estimated MOS">${Q_LABEL[col][0]} ${fmt(r?.mos)}</span>`;
+  $("qSum").innerHTML = sum("sent", S.audio) + sum("recv", R.audio);
+
+  // Round trip: just the value in the folded line, labelled at the foot when open, where it's
+  // otherwise why ↑ Sent is empty. (What each value means belongs in a help or info section
+  // later; there's no room for it here.)
+  const rtt = S.audio?.rttMs ?? S.video?.rttMs;
+  const rttText = rtt == null ? "" : fmt(rtt, " ms", rtt < 10 ? 1 : 0);
+  $("qRtt").textContent = rttText;
+  $("qRtt").title = "Round trip, from their RTCP reports";
+  const waited = performance.now() - q.startedAt;
+  $("qFoot").textContent = S.audio || S.video ? (rttText && `RTT ${rttText}`)
+    : waited > NO_RTCP_MS ? "No RTCP reports from them: their phone may not send them"
+    : "Waiting for their RTCP reports";
+
+  // The graph: the picked column over the last two minutes. Either way it's the receiver's
+  // view: theirs of what we send, or ours of what they send.
+  $("qGraphCol").textContent = Q_LABEL[qColumn];
+  const series = [["mos", "Audio MOS"], ["aLoss", "Audio loss"],
+    ...(video ? [["vLoss", "Video loss"], ...(qColumn === "recv" ? [["frozen", "Frozen"]] : [])] : [])];
+  $("qLegend").innerHTML = series.map(([k, label]) => `<span style="--c:${Q_COLOUR[k]}">${label}</span>`).join("");
+  const c = $("qChart"), g = c.getContext("2d");
+  c.setAttribute("aria-label", `${Q_LABEL[qColumn]}, last 2 minutes: ${series.map(([, l]) => l).join(", ")}`);
+  g.clearRect(0, 0, c.width, c.height);
+  g.fillStyle = "rgba(255,255,255,.12)";
+  for (const level of [4, 3]) g.fillRect(0, c.height - ((level - 1) / 4) * c.height, c.width, 1);
+  const pts = q.history.map((h) => h[qColumn]);
+  // Loss on 0–20%, MOS on 1–5.
+  drawSeries(g, 0, 0, c.width, c.height, { values: pts.map((h) => h.aLoss), max: 20, colour: Q_COLOUR.aLoss, bars: true });
+  if (video) drawSeries(g, 0, 0, c.width, c.height, { values: pts.map((h) => h.vLoss), max: 20, colour: Q_COLOUR.vLoss });
+  drawSeries(g, 0, 0, c.width, c.height, { values: pts.map((h) => h.mos), min: 1, max: 5, colour: Q_COLOUR.mos });
+  // On Received, along the bottom: how long our picture was frozen. (RTCP doesn't say whether
+  // their picture froze, so Sent has none.)
+  if (video && qColumn === "recv") {
+    const tick = c.height / 14;
+    drawMarks(g, 0, c.height - tick, c.width, tick, pts.map((h) => h.frozen), Q_COLOUR.frozen, true);
+  }
+
+  // PLIs, both ways, whichever column is picked: a tick for each second with one, received on
+  // the top row and sent below, over the last half minute.
+  $("qPli").hidden = !video;
+  if (video) {
+    $("qPliRxKey").style.setProperty("--c", Q_COLOUR.pliRx);
+    $("qPliTxKey").style.setProperty("--c", Q_COLOUR.pliTx);
+    const pc2 = $("qPliChart"), pg = pc2.getContext("2d"), rowH = 12, pad = (pc2.height - rowH * 2) / 3;
+    pg.clearRect(0, 0, pc2.width, pc2.height);
+    drawMarks(pg, 0, pad, pc2.width, rowH, q.history.map((h) => h.pliRx), Q_COLOUR.pliRx, false, PLI_POINTS);
+    drawMarks(pg, 0, pad * 2 + rowH, pc2.width, rowH, q.history.map((h) => h.pliTx), Q_COLOUR.pliTx, false, PLI_POINTS);
+  }
+}
+
+// Picking a column (its heading or any of its values) puts it on the graph.
+$("qTable").addEventListener("click", (e) => {
+  const col = e.target.closest("[data-col]")?.dataset.col;
+  if (col && col !== qColumn) { qColumn = col; renderQuality(); }
+});
+
 // ---- Rendering the state ----
 
 function stageMode() {
@@ -435,14 +944,11 @@ function render() {
   const name = shortName(remote);
   $("callBtn").disabled = live;
   $("address").disabled = live;
-  $("controls").hidden = phase !== "connected" && phase !== "calling";
-  $("muteBtn").hidden = $("camBtn").hidden = phase !== "connected";
-  $("hangupBtn").textContent = phase === "calling" ? "Cancel" : "Hang up";
   $("info").hidden = phase !== "connected";
   $("infoName").textContent = remote || "";
 
   // The Audio | Video switch beside Call. Locked to Audio if video is off (--no-video).
-  const camAvailable = hasCamera;
+  const camAvailable = hasCamera || videoSource !== "camera";
   const videoAllowed = state.videoAllowed !== false;
   const type = videoAllowed ? callType : "audio";
   for (const el of document.querySelectorAll("#callType [data-type]")) {
@@ -462,10 +968,11 @@ function render() {
   const stage = $("stage");
   if (stage.dataset.mode !== mode) {
     stage.dataset.mode = mode;
+    log(`stage: ${mode}`);
     if (mode === "audio") requestAnimationFrame(drawViz);
   }
   $("nocamInitial").textContent = initial(name);
-  $("nocamNote").textContent = connected && Date.now() - connectedAt > NO_FRAMES_MS ? "Their camera is off" : "";
+  $("nocamNote").textContent = connected && Date.now() - connectedAt > NO_FRAMES_MS ? `No video arriving from ${name}` : "";
   $("vizThem").textContent = initial(name);
   $("vizThem").title = name;
   const note = (id, text, bad) => {
@@ -477,29 +984,74 @@ function render() {
   note("noteThem", connected && call.rxDead ? `No audio arriving from ${name}` : "", true);
   note("noteMe", !connected ? "" : call.txLost ? `${name} isn't getting your audio` : call.muted ? "You're muted" : "", connected && call.txLost);
 
-  // Self view: only for video. On a video call it's your camera, or a placeholder saying why
-  // not; before a call it's a preview while the switch is on Video. Audio shows none.
+  // Self view: only for video, and always what they see (or will see). On a video call that's
+  // your camera, or the placeholder while it's off; before a call it's a preview while the
+  // switch is on Video. A note on top says why the camera isn't showing. Audio shows none.
   const before = phase === "idle" || phase === "ended" || phase === "calling";
-  const showSelf = connected ? call.hasVideo : before && type === "video";
-  const camOn = connected ? call.camOn : !testCameraOff;
-  const selfText = !showSelf ? null : !camAvailable ? "No camera" : !camOn ? "Camera off"
-    : cameraInUse ? "Camera in use" : null;
-  $("self").hidden = !showSelf || !!selfText || !localTrack("video");
+  // Self view hides it, before a call (the preview with the switch on Video) or during a video
+  // call; on a call what's sent doesn't change. The button is there whenever there's a self view.
+  const selfViewApplies = connected ? call.hasVideo : before && type === "video";
+  const showSelf = !!local && selfViewApplies && selfViewOn;
+  const sv = $("selfViewBtn");
+  sv.hidden = !selfViewApplies;
+  sv.setAttribute("aria-pressed", String(selfViewOn));
+  sv.title = connected ? `${selfViewOn ? "Hide" : "Show"} your self view (V). They still see you.`
+    : `${selfViewOn ? "Hide" : "Show"} your camera preview (V)`;
+  if (!sv.innerHTML) sv.innerHTML = `${ICON.selfView}<span>Self view</span>`;
+  const camOn = connected ? call.camOn : camPref;
+  const selfText = !showSelf ? null : !camAvailable ? "No camera" : cameraInUse && videoSource === "camera" ? "Camera in use"
+    : !camOn ? "Camera off" : null;
+  showSelfVideo(showSelf);
   $("selfOff").hidden = !selfText;
   $("selfOffText").textContent = selfText ?? "";
   if (cameraWanted() !== !!localTrack("video")) syncCamera();
 
-  // In-call camera button. On an audio call it's Add video, unless video can't be had.
+  // The control bar, under the stage the whole time, so you can set up your microphone and
+  // camera before a call. Mute and Camera are split buttons: the ▾ picks the device.
+  const setBtn = (el, icon, text) => {
+    const html = `${icon}<span>${text}</span>`;
+    if (el.innerHTML !== html) el.innerHTML = html;
+  };
+  const muted = micMuted;
+  const mute = $("muteBtn");
+  mute.disabled = !hasMic;
+  mute.setAttribute("aria-pressed", String(hasMic && muted));
+  mute.title = !hasMic ? "No microphone" : muted ? "Unmute" : !live ? "Mute: calls start muted" : "Mute";
+  setBtn(mute, muted || !hasMic ? ICON.micOff : ICON.mic, !hasMic ? "No mic" : muted ? "Unmute" : "Mute");
+
+  // Camera: during a video call it turns your camera on and off; on an audio call it's Add video,
+  // unless video can't be had. Before a call it decides whether a video call starts with your
+  // camera on (and the preview shows it).
   const cam = $("camBtn");
   const canAdd = connected && !call.hasVideo && videoAllowed && !videoRefused;
-  cam.disabled = !connected || (call.hasVideo ? !camAvailable : !canAdd || addingVideo);
-  cam.setAttribute("aria-pressed", String(connected && call.hasVideo && camAvailable && !call.camOn));
-  cam.textContent = !connected ? "Camera off"
-    : !call.hasVideo ? (addingVideo ? "Adding video…" : canAdd ? "Add video" : "No video")
-    : !camAvailable ? "No camera" : call.camOn ? "Camera off" : "Camera on";
-  cam.title = !connected || call.hasVideo ? ""
-    : canAdd ? "Add video to this call. They'll be asked; some phones can't."
-    : videoRefused ? "Their phone doesn't do video" : "Video is turned off";
+  const ringing = phase === "ringing";
+  if (connected && !call.hasVideo) {
+    cam.disabled = !canAdd || addingVideo;
+    cam.setAttribute("aria-pressed", "false");
+    setBtn(cam, canAdd ? ICON.video : ICON.videoOff, addingVideo ? "Adding video…" : canAdd ? "Add video" : "No video");
+    cam.title = canAdd ? "Add video to this call. They'll be asked; some phones can't."
+      : videoRefused ? "Their phone doesn't do video" : "Video is turned off";
+  } else {
+    const on = connected ? call.camOn : camPref;
+    // Before a call it only matters for a video call, so it waits for the switch to be on Video.
+    const audioBefore = !connected && type === "audio";
+    cam.disabled = !camAvailable || !videoAllowed || (phase === "connected" && !connected) || ringing || audioBefore;
+    cam.setAttribute("aria-pressed", String(camAvailable && videoAllowed && !on));
+    setBtn(cam, camAvailable && on ? ICON.video : ICON.videoOff,
+      // What pressing it does, like Mute and Unmute.
+      !videoAllowed ? "No video" : !camAvailable ? "No camera" : on ? "Turn camera off" : "Turn camera on");
+    cam.title = !videoAllowed ? "Video is turned off" : !camAvailable ? "No camera found"
+      : ringing ? "Choose the camera with the Answer button"
+      : audioBefore ? "Switch to Video to use your camera"
+      : connected ? (on ? "Turn your camera off" : "Turn your camera on")
+      : on ? "Video calls start with your camera on" : "Video calls start with your camera off";
+  }
+  $("camMenuBtn").disabled = !videoAllowed || ringing || (!connected && type === "audio");
+
+  const hang = $("hangupBtn");
+  hang.disabled = phase !== "calling" && phase !== "connected";
+  setBtn(hang, ICON.hangup, phase === "calling" ? "Cancel" : "End");
+  for (const b of [$("micMenuBtn"), $("camMenuBtn")]) if (!b.innerHTML) b.innerHTML = ICON.chevronDown;
 
   // The card: everything but a connected call.
   const actions = $("cardActions");
@@ -518,13 +1070,9 @@ function render() {
     case "ringing": {
       title.textContent = remote;
       sub.textContent = state.incomingVideo ? "Incoming video call" : "Incoming call";
-      const answer = button("btn-primary", "Answer", () => post({ type: "answer" }));
-      actions.append(button("btn-danger", "Decline", () => post({ type: "decline" })));
-      // Only a video call can be answered with your camera off (you still see them, and can turn
-      // it on any time). An audio call has no camera to choose about.
-      if (state.incomingVideo) actions.append(button("", "Answer, camera off", () => { answerCamera = false; post({ type: "answer" }); }));
-      actions.append(answer);
-      answer.focus();
+      actions.append(button("btn-danger", "Decline", () => post({ type: "decline" })), answerSplit);
+      renderAnswer();
+      if (lastPhase !== "ringing") $("answerBtn").focus();
       break;
     }
     case "connected":
@@ -537,6 +1085,13 @@ function render() {
       break;
   }
 
+  if (phase !== "ringing" && openMenu === "answer") closeMenu();
+  // A choice from the Answer menu is for that call only (onMediaOffer uses it, then clears it);
+  // one that wasn't answered mustn't carry over to the next.
+  if (phase !== "ringing" && phase !== "connected") answerCamera = null;
+  lastPhase = phase;
+  renderQuality();
+
   if (phase === "connected" && !connectedAt) {
     connectedAt = Date.now();
     if (testAddVideo) setTimeout(() => call && !call.hasVideo && $("camBtn").click(), testAddVideo * 1000);
@@ -546,16 +1101,25 @@ function render() {
     clearInterval(timerId);
     connectedAt = 0;
     addingVideo = videoRefused = false;
+    quality = null;
     if (pc) closeMedia();
   }
 
+  // The header: who you are, and a click copies your SIP address for the other side to dial.
   const reg = $("reg");
-  reg.className = `reg ${state.registration}`;
-  reg.textContent = !state.account ? "No account · direct calls only"
+  const copied = performance.now() < copiedUntil;
+  reg.className = `reg diag-only ${state.registration}${copied ? " copied" : ""}`;
+  $("regText").textContent = copied ? "Copied"
+    : !state.account ? (state.address ? `No account · ${state.address}` : "No account · direct calls only")
     : state.registration === "registered" ? state.account
     : state.registration === "failed" ? `${state.account} · ${state.registrationDetail || "not registered"}`
     : `${state.account} · registering…`;
-  reg.title = state.registrationDetail || "";
+  const icon = copied ? ICON.check : ICON.copy;
+  if ($("regCopy").dataset.icon !== icon) { $("regCopy").innerHTML = icon; $("regCopy").dataset.icon = icon; }
+  reg.disabled = !state.address;
+  reg.title = !state.address ? "" : `Copy ${state.address}`
+    + (state.account ? "" : " (no account: direct calls only)")
+    + (state.registrationDetail ? `. ${state.registrationDetail}` : "");
 }
 
 // Every 5 s during a call: what's arriving and leaving, for the log (and for testing).
@@ -572,7 +1136,7 @@ async function statsLine() {
   };
   const vin = now["inbound-rtp-video"], ain = now["inbound-rtp-audio"];
   log(`stats: video in ${fps("inbound-rtp-video", "framesDecoded")} fps ${vin?.frameWidth ?? 0}x${vin?.frameHeight ?? 0} ${vin?.decoderImplementation ?? ""}, ` +
-      `video out ${fps("outbound-rtp-video", "framesEncoded")} fps, audio in ${fps("inbound-rtp-audio", "packetsReceived")} pkt/s level ${(ain?.audioLevel ?? 0).toFixed(3)}, ` +
+      `video out ${fps("outbound-rtp-video", "framesEncoded")} fps, audio in ${fps("inbound-rtp-audio", "packetsReceived")} pkt/s lost ${ain?.packetsLost ?? "-"} concealed ${ain?.concealedSamples ?? "-"} level ${(ain?.audioLevel ?? 0).toFixed(3)}, ` +
       `audio out ${fps("outbound-rtp-audio", "packetsSent")} pkt/s, stage ${$("stage").dataset.mode}`);
   lastStats = now;
 }
@@ -588,13 +1152,18 @@ function tick() {
 $("dialForm").addEventListener("submit", (e) => {
   e.preventDefault();
   const address = $("address").value.trim();
-  if (address) post({ type: "dial", address, video: state.videoAllowed !== false && callType === "video" });
+  if (address) {
+    openMic();   // alongside the INVITE, so it's ready when the call connects
+    post({ type: "dial", address, video: state.videoAllowed !== false && callType === "video" });
+    // If the call never starts (a bad address, say), don't leave the microphone open.
+    setTimeout(() => { if (state.call === "idle" || state.call === "ended") closeMic(); }, 5000);
+  }
 });
 $("callType").querySelector('[data-type="audio"]').innerHTML = `${ICON.phone}Audio`;
 $("callType").querySelector('[data-type="video"]').innerHTML = `${ICON.video}Video`;
 function setCallType(type) {
   callType = type;
-  try { localStorage.setItem("callType", type); } catch { /* no storage */ }
+  if (type === "video") cameraInUse = false;   // a fresh try for the preview, because you asked
   render();
 }
 $("callType").addEventListener("click", (e) => {
@@ -608,19 +1177,320 @@ $("callType").addEventListener("keydown", (e) => {
   setCallType(callType === "video" ? "audio" : "video");
   document.querySelector(`#callType [data-type="${callType}"]`)?.focus();
 });
+// ---- Device menus (the ▾ on Mute and Camera) ----
+// Mute's lists microphones and speakers; Camera's lists cameras, and in diagnostics mode the
+// test pattern. A pick takes effect straight away, mid-call too (a track swap, no renegotiation),
+// and is remembered for next time.
+
+let openMenu = null;   // "mic", "cam", "answer" or null
+const MENUS = { mic: ["micMenu", "micMenuBtn"], cam: ["camMenu", "camMenuBtn"], answer: ["answerMenu", "answerMenuBtn"] };
+let cameras = [];      // the video inputs, for the Answer button's label; refreshed when devices change
+let lastPhase = null;  // the call phase at the last render, to focus Answer once when ringing starts
+
+async function refreshCameras() {
+  try {
+    const list = await navigator.mediaDevices.enumerateDevices();
+    cameras = list.filter((d) => d.kind === "videoinput" && d.deviceId);
+    hasMic = list.some((d) => d.kind === "audioinput");
+  } catch { /* keep the old list */ }
+  render();
+}
+navigator.mediaDevices.addEventListener?.("devicechange", refreshCameras);
+
+// ---- Answering a video call: Answer ▾ ----
+// The ▾ picks what your video will be: a camera, the test pattern (diagnostics mode), or camera
+// off. Under "Answer" the button says which, so you know before you answer. It starts from the
+// Camera button's choice (camPref), so camera off there means camera off here.
+const answerSplit = document.createElement("div");
+answerSplit.className = "split answer-split";
+answerSplit.innerHTML = `<button type="button" class="btn btn-primary" id="answerBtn"><span class="answer-main"></span><span class="answer-src"></span></button>
+  <button type="button" class="btn btn-primary split-caret" id="answerMenuBtn" aria-haspopup="menu" aria-expanded="false"
+    aria-label="Choose your camera for this call" title="Choose your camera for this call">${ICON.chevronDown}</button>
+  <div class="device-menu down" id="answerMenu" role="menu" aria-label="Your camera" hidden></div>`;
+answerSplit.querySelector("#answerBtn").onclick = () => { closeMenu(); openMic(); post({ type: "answer" }); };
+answerSplit.querySelector("#answerMenuBtn").onclick = () => showMenu("answer");
+
+const answerCamOn = () => (answerCamera ?? camPref) && videoAvailable();
+function answerSourceLabel() {
+  if (!answerCamOn()) {
+    return videoSource === "camera" && !hasCamera ? "No camera"
+      : videoSource === "camera" && cameraInUse ? "Camera in use" : "Camera off";
+  }
+  if (videoSource !== "camera") return SOURCE_LABEL[videoSource];
+  return cameras.find((d) => d.deviceId === currentCameraId(cameras))?.label || "Camera";
+}
+
+function renderAnswer() {
+  const video = !!state.incomingVideo && state.videoAllowed !== false;
+  const on = video && answerCamOn();
+  const main = `${video ? (on ? ICON.video : ICON.videoOff) : ICON.phone}<span>Answer</span>`;
+  const el = answerSplit.querySelector(".answer-main");
+  if (el.innerHTML !== main) el.innerHTML = main;
+  const src = answerSplit.querySelector(".answer-src");
+  src.hidden = !video;
+  src.textContent = video ? answerSourceLabel() : "";
+  answerSplit.querySelector("#answerBtn").title = !video ? "Answer"
+    : on ? `Answer with ${src.textContent}` : "Answer with your camera off. You'll still see them.";
+  answerSplit.querySelector("#answerMenuBtn").hidden = !video;
+  answerSplit.classList.toggle("single", !video);
+}
+
+const currentMicId = () => localTrack("audio")?.getSettings().deviceId ?? (devices.mic || "default");
+function currentCameraId(cameras) {
+  const track = localTrack("video");
+  if (track && !isTestTrack(track)) return track.getSettings().deviceId;
+  return cameras.some((d) => d.deviceId === devices.camera) ? devices.camera : cameras[0]?.deviceId;
+}
+
+async function showMenu(kind) {
+  if (openMenu === kind) { closeMenu(); return; }
+  closeMenu();
+  openMenu = kind;
+  let list = [];
+  try { list = await navigator.mediaDevices.enumerateDevices(); } catch { /* none to show */ }
+  if (openMenu !== kind) return;
+  const of = (k) => list.filter((d) => d.kind === k && d.deviceId);
+  const groups = kind === "mic"
+    ? [["mic", "Microphone", of("audioinput"), currentMicId()],
+       ["speaker", "Speaker", of("audiooutput"), devices.speaker || "default"]]
+    : [["camera", "Camera", of("videoinput"), videoSource !== "camera" ? null : currentCameraId(of("videoinput"))]];
+  if (kind !== "mic" && document.body.classList.contains("diag")) {
+    groups.push(["test", "Diagnostics", Object.entries(SOURCE_LABEL).map(([deviceId, label]) => ({ deviceId, label })),
+      videoSource !== "camera" ? videoSource : null]);
+  }
+  if (kind === "answer") {
+    // While the camera's off nothing above is ticked; "Camera off" is instead.
+    const on = answerCamOn();
+    if (!on) for (const g of groups) g[3] = null;
+    groups.push(["off", "", [{ deviceId: "off", label: "Camera off (you'll still see them)" }], on ? null : "off"]);
+  }
+  const menu = $(MENUS[kind][0]);
+  menu.replaceChildren();
+  groups.forEach(([key, label, items, current], gi) => {
+    if (gi) menu.append(Object.assign(document.createElement("div"), { className: "device-menu-sep" }));
+    if (label) menu.append(Object.assign(document.createElement("div"), { className: "device-menu-label", textContent: label }));
+    if (!items.length) menu.append(Object.assign(document.createElement("div"), { className: "device-none", textContent: "None found" }));
+    items.forEach((d, i) => {
+      const on = d.deviceId === current;
+      const opt = Object.assign(document.createElement("button"), { type: "button", className: "device-option" });
+      opt.setAttribute("role", "menuitemradio");
+      opt.setAttribute("aria-checked", String(on));
+      opt.innerHTML = `<span class="device-check">${on ? ICON.check : ""}</span><span></span>`;
+      opt.lastChild.textContent = d.label || `${label} ${i + 1}`;
+      opt.onclick = () => pickDevice(key, d.deviceId, kind === "answer");
+      menu.append(opt);
+    });
+  });
+  menu.hidden = false;
+  if (kind === "answer") fitInStage(menu);
+  $(MENUS[kind][1]).setAttribute("aria-expanded", "true");
+  (menu.querySelector('[aria-checked="true"]') ?? menu.querySelector(".device-option"))?.focus();
+}
+
+// The Answer menu is inside the stage, which clips (overflow: hidden), so a z-index can't lift
+// it out. It's positioned against the window instead (position: fixed isn't clipped by the
+// stage), below the button if it fits, else above, else on the roomier side, scrolling.
+function fitInStage(menu) {
+  const btn = menu.parentElement.getBoundingClientRect();
+  const margin = 8, gap = 6;
+  Object.assign(menu.style, { position: "fixed", maxHeight: "", top: "", bottom: "", left: `${btn.left}px` });
+  const height = menu.scrollHeight + 2;
+  const below = innerHeight - btn.bottom - gap - margin;
+  const above = btn.top - gap - margin;
+  const down = height <= below || (height > above && below >= above);
+  menu.style.top = down ? `${btn.bottom + gap}px` : "auto";
+  menu.style.bottom = down ? "auto" : `${innerHeight - btn.top + gap}px`;
+  const room = down ? below : above;
+  if (height > room) menu.style.maxHeight = `${Math.max(room, 80)}px`;
+  menu.style.left = `${Math.max(margin, Math.min(btn.left, innerWidth - menu.offsetWidth - margin))}px`;
+}
+addEventListener("resize", () => { if (openMenu === "answer") closeMenu(); });
+
+function closeMenu() {
+  if (!openMenu) return;
+  const kind = openMenu;
+  openMenu = null;
+  $(MENUS[kind][0]).hidden = true;
+  $(MENUS[kind][1]).setAttribute("aria-expanded", "false");
+}
+
+// From the Answer menu (forAnswer), a camera or the test pattern also means camera on for the
+// call being answered, and "off" means camera off.
+async function pickDevice(key, id, forAnswer = false) {
+  closeMenu();
+  if (forAnswer) answerCamera = key !== "off";
+  if (key === "off") log("answering with camera off");
+  else if (key === "mic") await pickMic(id);
+  else if (key === "speaker") {
+    devices.speaker = id;
+    saveDevices();
+    try { await $("remote").setSinkId(id); log(`speaker: ${id}`); } catch (err) { log(`speaker unavailable: ${err.name} ${err.message}`); }
+  } else if (key === "camera") {
+    devices.camera = id;
+    saveDevices();
+    log(`camera: ${id}`);
+    setVideoSource("camera", true);
+    if (!forAnswer) await cameraOnForPick();
+  } else if (key === "test") {
+    setVideoSource(id);   // the test pattern or audio bars
+    if (!forAnswer) await cameraOnForPick();
+  }
+  render();
+}
+
+// Picking a source from the Camera menu means you want to send it: if the camera was off, it
+// comes on, on a video call or (before one) for the next video call. Not on an audio call,
+// where it's only the choice for Add video.
+async function cameraOnForPick() {
+  if (call?.hasVideo) { if (!call.camOn) await setCamera(true); }
+  else if (!call && !camPref) {
+    camPref = true;
+    cameraInUse = false;
+    log("calls start with camera on");
+  }
+}
+
+// A new microphone replaces the old one in place: same mute state, and on a call the audio
+// sender just swaps tracks.
+async function pickMic(id) {
+  devices.mic = id;
+  saveDevices();
+  if (!localTrack("audio")) { log(`microphone for calls: ${id}`); return; }   // opens with the next call
+  let fresh;
+  try {
+    fresh = (await navigator.mediaDevices.getUserMedia({ audio: { ...MIC_CONSTRAINTS, deviceId: { exact: id } } })).getAudioTracks()[0];
+  } catch (err) {
+    log(`microphone unavailable: ${err.name} ${err.message}`);
+    return;
+  }
+  const old = localTrack("audio");
+  const sender = old && pc?.getSenders().find((s) => s.track === old);
+  if (old) {
+    fresh.enabled = old.enabled;
+    local.removeTrack(old);
+    old.stop();
+  }
+  local.addTrack(fresh);
+  if (sender) await sender.replaceTrack(fresh);
+  if (call) {
+    call.localAnalyser?.source.disconnect();
+    call.localAnalyser = analyserFor(fresh);
+  }
+  log(`microphone: ${fresh.label}`);
+}
+
+$("micMenuBtn").onclick = () => showMenu("mic");
+$("camMenuBtn").onclick = () => showMenu("cam");
+document.addEventListener("pointerdown", (e) => {
+  if (openMenu && !e.target.closest(".device-menu, .split-caret")) closeMenu();
+});
+document.addEventListener("keydown", (e) => {
+  if (!openMenu) return;
+  const menu = $(MENUS[openMenu][0]);
+  if (e.key === "Escape") {
+    const btn = $(MENUS[openMenu][1]);
+    closeMenu();
+    btn.focus();
+  } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    const opts = [...menu.querySelectorAll(".device-option")];
+    const i = opts.indexOf(document.activeElement);
+    opts[(i + (e.key === "ArrowDown" ? 1 : opts.length - 1)) % opts.length]?.focus();
+  }
+});
+
+// Self view: shows or hides your own picture during a video call (what's sent doesn't change).
+// Remembered between runs. V does the same, unless you're typing.
+let selfViewOn = true;
+try { selfViewOn = localStorage.getItem("selfView") !== "off"; } catch { /* storage unavailable */ }
+function toggleSelfView() {
+  selfViewOn = !selfViewOn;
+  try { localStorage.setItem("selfView", selfViewOn ? "on" : "off"); } catch { /* storage unavailable */ }
+  log(`self view ${selfViewOn ? "on" : "off"}`);
+  render();
+}
+$("selfViewBtn").onclick = toggleSelfView;
+document.addEventListener("keydown", (e) => {
+  if (e.key.toLowerCase() !== "v" || e.ctrlKey || e.altKey || e.metaKey || openMenu) return;
+  if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
+  if ($("selfViewBtn").hidden) return;   // no self view to show or hide
+  e.preventDefault();
+  toggleSelfView();
+});
+
+// The Call quality panel starts as one line (both audio MOS); the chevron opens it. Remembered.
+function setQualityOpen(open) {
+  $("quality").classList.toggle("collapsed", !open);
+  $("qHead").setAttribute("aria-expanded", String(open));
+  $("qHead").title = open ? "Hide the details" : "Show the details";
+  try { localStorage.setItem("qualityOpen", open ? "1" : "0"); } catch { /* storage unavailable */ }
+}
+$("qChevron").innerHTML = ICON.chevronDown;
+$("qHead").onclick = () => setQualityOpen($("quality").classList.contains("collapsed"));
+try { if (localStorage.getItem("qualityOpen") === "1") setQualityOpen(true); } catch { /* storage unavailable */ }
+
+// Simulated loss (Diagnostics menu): the host drops that share of the audio or video packets
+// we send on the SIP leg. Labels follow the slider as it moves; the host hears once it's let go.
+function showLoss() {
+  for (const kind of ["Audio", "Video"]) {
+    const v = Number($(`loss${kind}`).value);
+    $(`loss${kind}Out`).textContent = `${v}%`;
+    $(`loss${kind}Out`).classList.toggle("on", v > 0);
+  }
+}
+for (const kind of ["Audio", "Video"]) {
+  $(`loss${kind}`).addEventListener("input", showLoss);
+  $(`loss${kind}`).addEventListener("change", () => post({ type: "loss", audio: Number($("lossAudio").value), video: Number($("lossVideo").value) }));
+}
+let lossLoaded = false;   // the host's starting values (--loss-audio, --loss-video), taken from the first state
+
+let copiedUntil = 0;   // the header says "Copied" until then
+// Diagnostics: the SIP log and the copyable SIP address. On at every start for now, while
+// testing; the switch hides them for the session.
+const DIAGNOSTICS_AT_START = true;
+$("diagToggle").checked = DIAGNOSTICS_AT_START;
+document.body.classList.toggle("diag", DIAGNOSTICS_AT_START);
+$("diagToggle").onchange = (e) => {
+  document.body.classList.toggle("diag", e.target.checked);
+  // The test pattern and audio bars are diagnostics things, so the camera takes over again.
+  // But it isn't sent until you turn it on: the camera never starts by itself. (With no camera
+  // the placeholder goes, as it would anyway.)
+  if (!e.target.checked && videoSource !== "camera") {
+    if (call?.hasVideo) { if (call.camOn) setCamera(false); }
+    else camPref = false;
+    setVideoSource("camera");
+  }
+  closeMenu();
+  renderQuality();
+};
+if (SOURCE_LABEL[params.get("video")]) setVideoSource(params.get("video"));   // --test-pattern, --audio-bars (testing)
+
+$("reg").onclick = () => {
+  if (!state.address) return;
+  post({ type: "copy", text: state.address });
+  copiedUntil = performance.now() + 1500;
+  render();
+  setTimeout(render, 1600);
+};
 $("hangupBtn").onclick = () => post({ type: "hangup" });
 $("muteBtn").onclick = () => {
+  micMuted = !micMuted;   // before a call too: the call then starts muted
   const track = localTrack("audio");
-  if (!track) return;
-  track.enabled = !track.enabled;
-  if (call) call.muted = !track.enabled;
-  $("muteBtn").setAttribute("aria-pressed", String(!track.enabled));
-  $("muteBtn").textContent = track.enabled ? "Mute" : "Unmute";
+  if (track) track.enabled = !micMuted;
+  if (call) call.muted = micMuted;
+  log(micMuted ? "muted" : "unmuted");
   render();
 };
 $("camBtn").onclick = () => {
-  if (!call) return;
-  if (call.hasVideo) { setCamera(!call.camOn); return; }
+  if (call?.hasVideo) { setCamera(!call.camOn); return; }
+  if (!call) {
+    // Before a call: whether a video call starts with your camera on.
+    camPref = !camPref;
+    if (camPref) cameraInUse = false;   // a fresh try, because you asked
+    log(`calls start with camera ${camPref ? "on" : "off"}`);
+    render();
+    return;
+  }
   addingVideo = true;
   post({ type: "add-video" });
   log("adding video");
@@ -630,9 +1500,23 @@ $("camBtn").onclick = () => {
 chrome.webview.addEventListener("message", async (e) => {
   const msg = e.data;
   try {
-    if (msg.type === "state") { state = msg; render(); }
+    if (msg.type === "state") {
+      // The microphone closes when a call ends. (Not on every render while idle: Call opens it
+      // a moment before the host says the call has started.)
+      const ended = (msg.call === "ended" || msg.call === "idle") && msg.call !== state.call;
+      state = msg;
+      if (!lossLoaded) {
+        lossLoaded = true;
+        $("lossAudio").value = msg.lossAudio ?? 0;
+        $("lossVideo").value = msg.lossVideo ?? 0;
+        showLoss();
+      }
+      if (ended) closeMic();
+      render();
+    }
     else if (msg.type === "media-offer") await onMediaOffer(msg.sdp);
     else if (msg.type === "media-health") { if (call) { call.txLost = !!msg.txLost; render(); } }
+    else if (msg.type === "quality") onQuality(msg);
     else if (msg.type === "video-refused") { addingVideo = false; videoRefused = true; log("they didn't take video"); render(); }
     else if (msg.type === "log") log(msg.text, true);
   } catch (err) {
@@ -640,7 +1524,9 @@ chrome.webview.addEventListener("message", async (e) => {
   }
 });
 
+render();            // the UI straight away, before the microphone is open
 await openDevices();
 render();
 syncCamera();
+refreshCameras();
 post({ type: "ready" });

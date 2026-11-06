@@ -22,6 +22,18 @@ public sealed class Phone : IDisposable
     private SIPServerUserAgent? _incoming;
     private RTPSession? _rtp;
     private MediaRelay? _relay;
+
+    /// <summary>Simulated loss on what we send, in percent (diagnostics); carries over to new calls and relays.</summary>
+    public int AudioLossPercent { get; private set; }
+    public int VideoLossPercent { get; private set; }
+
+    public void SetLoss(int audio, int video)
+    {
+        AudioLossPercent = Math.Clamp(audio, 0, 100);
+        VideoLossPercent = Math.Clamp(video, 0, 100);
+        if (_relay is { } relay) { relay.AudioLossPercent = AudioLossPercent; relay.VideoLossPercent = VideoLossPercent; }
+        Log?.Invoke($"simulated loss: audio {AudioLossPercent}%, video {VideoLossPercent}%");
+    }
     private readonly object _lock = new();
 
     public CallState State { get; private set; } = CallState.Idle;
@@ -44,12 +56,16 @@ public sealed class Phone : IDisposable
     public event Action<string>? Log;
     /// <summary>The far end's RTCP says our audio is (true) or is again not (false) failing to reach them.</summary>
     public event Action<bool>? TxLostChanged;
+    /// <summary>An RTCP reception report on the SIP leg: theirs about what we send, or ours about their video.</summary>
+    public event Action<MediaRelay.QualitySample>? Quality;
     /// <summary>Full SIP messages, for the log file only.</summary>
     public event Action<string>? Trace;
 
     public Phone(Settings settings)
     {
         _settings = settings;
+        AudioLossPercent = settings.AudioLossPercent;
+        VideoLossPercent = settings.VideoLossPercent;
         OpenChannels(settings.SipPort);
         _transport.SIPTransportRequestReceived += OnRequest;
         _transport.SIPRequestOutTraceEvent += (l, r, req) => { Log?.Invoke($"-> {r} {req.StatusLine}"); Trace?.Invoke($"-> {r}\n{req}"); };
@@ -60,6 +76,13 @@ public sealed class Phone : IDisposable
 
     /// <summary>Set when the configured SIP port was taken and another one was used instead.</summary>
     public string? PortNote { get; private set; }
+
+    /// <summary>
+    /// Where to call this softphone directly: the address this PC uses to reach the internet
+    /// (which also works from this PC) and the UDP SIP port, e.g. sip:192.168.1.20:5070. The
+    /// loopback address if there's no network.
+    /// </summary>
+    public string DirectAddress { get; private set; } = "";
 
     /// <summary>
     /// Listens for SIP on UDP and TCP: on the configured port if it's free (another softphone
@@ -80,6 +103,7 @@ public sealed class Phone : IDisposable
             ?? new SIPTCPChannel(new IPEndPoint(IPAddress.Any, 0));
         _transport.AddSIPChannel(udp);
         _transport.AddSIPChannel(tcp);
+        DirectAddress = $"sip:{SIPSorcery.Sys.NetServices.InternetDefaultAddress ?? IPAddress.Loopback}:{udp.Port}";
 
         if (udp.Port != port || tcp.Port != port)
         {
@@ -264,8 +288,9 @@ public sealed class Phone : IDisposable
 
     private async Task StartRelayAsync(RTPSession rtp)
     {
-        var relay = new MediaRelay(rtp, s => Log?.Invoke(s));
+        var relay = new MediaRelay(rtp, s => Log?.Invoke(s)) { AudioLossPercent = AudioLossPercent, VideoLossPercent = VideoLossPercent };
         relay.TxLostChanged += lost => TxLostChanged?.Invoke(lost);
+        relay.Quality += sample => Quality?.Invoke(sample);
         _relay = relay;
         Log?.Invoke($"call connected: {relay.Describe()}");
         MediaOffer?.Invoke(await relay.CreateOfferAsync());

@@ -8,8 +8,8 @@ namespace SIPSorcery.Softphone;
 /// <summary>
 /// The window: a WebView2 showing <c>wwwroot/index.html</c>, and the message bridge between that
 /// page and <see cref="Phone"/>. Page → host: ready, dial, answer, decline, hangup, add-video,
-/// media-answer. Host → page: state, media-offer (again when video is added), media-health,
-/// video-refused, log.
+/// loss, media-answer. Host → page: state, media-offer (again when video is added), media-health,
+/// quality (RTCP reception reports, for diagnostics), video-refused, log.
 /// </summary>
 internal sealed class MainForm : Form
 {
@@ -53,7 +53,8 @@ internal sealed class MainForm : Form
         _phone.Log += WriteLog;
         _phone.Trace += text => { lock (_logFile) _logFile.WriteLine(text); };
         _phone.TxLostChanged += lost => Post(new { type = "media-health", txLost = lost });
-        _phone.VideoRefused += () => Post(new { type = "video-refused" });
+        _phone.Quality += q => Post(new { type = "quality", q.Dir, q.Kind, q.LossPct, q.Lost, q.JitterMs, q.RttMs });
+        _phone.VideoRefused +=() => Post(new { type = "video-refused" });
         _phone.MediaOffer += sdp =>
         {
             if (_pageReady) Post(new { type = "media-offer", sdp });
@@ -87,6 +88,8 @@ internal sealed class MainForm : Form
         var query = new List<string>();
         if (_settings.CameraOff) query.Add("camera=off");
         if (_settings.VideoCall) query.Add("call=video");
+        if (_settings.TestPattern) query.Add("video=test");
+        if (_settings.AudioBars) query.Add("video=bars");
         if (_settings.AddVideoAfter is { } after) query.Add($"addvideo={after}");
         core.Navigate("https://softphone.app/index.html" + (query.Count > 0 ? "?" + string.Join("&", query) : ""));
 
@@ -133,6 +136,15 @@ internal sealed class MainForm : Form
                 case "hangup":
                     _phone.Hangup();
                     break;
+                case "copy":
+                    // The host's clipboard rather than the page's, which needs permissions the
+                    // page may not have.
+                    Clipboard.SetText((string)msg["text"]!);
+                    WriteLog($"copied {msg["text"]}");
+                    break;
+                case "loss":
+                    _phone.SetLoss((int?)msg["audio"] ?? 0, (int?)msg["video"] ?? 0);
+                    break;
                 case "media-answer":
                     _phone.SetPageAnswer((string)msg["sdp"]!);
                     break;
@@ -160,10 +172,15 @@ internal sealed class MainForm : Form
         registration = _phone.Registration,
         registrationDetail = _phone.RegistrationDetail,
         account = _settings.HasAccount ? $"{_settings.Account!.Username}@{_settings.Account.Server}" : null,
+        // What the header copies for others to call us on: the account's address, or with no
+        // account, this PC's address and SIP port.
+        address = _settings.HasAccount ? $"sip:{_settings.Account!.Username}@{_settings.Account.Server}" : _phone.DirectAddress,
         // Our name, for the placeholder the page sends while the camera is off.
         me = _settings.HasAccount ? (string.IsNullOrWhiteSpace(_settings.Account!.DisplayName) ? _settings.Account.Username : _settings.Account.DisplayName) : null,
         videoAllowed = _settings.OfferVideo,
         incomingVideo = _phone.IncomingVideo,
+        lossAudio = _phone.AudioLossPercent,
+        lossVideo = _phone.VideoLossPercent,
     };
 
     private void Post(object message)

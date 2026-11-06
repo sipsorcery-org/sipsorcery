@@ -2,7 +2,7 @@
 :root {
   --page: #e9edeb; --surface: #ffffff; --surface-2: #f4f6f5; --border: #dde4e1; --border-strong: #c9d3cf;
   --text: #1b2925; --muted: #677670; --accent: #1f6f5c; --accent-hover: #185a4a; --accent-ink: #ffffff;
-  --ok: #2f8a6c; --warn-ink: #8a5a12; --danger: #b3354e; --danger-soft: #fbe8ec; --tile: #dcebe3; --tile-ink: #5b7268;
+  --ok: #2f8a6c; --warn-ink: #8a5a12; --warn-bg: #fbf1df; --danger: #b3354e; --danger-soft: #fbe8ec; --tile: #dcebe3; --tile-ink: #5b7268;
   --radius: 12px; --radius-sm: 8px;
   color-scheme: light;
 }
@@ -10,7 +10,7 @@
   :root {
     --page: #0f1513; --surface: #171f1c; --surface-2: #1c2622; --border: #2a3632; --border-strong: #37453f;
     --text: #e4ece8; --muted: #9aa9a3; --accent: #3ea486; --accent-hover: #4bb594; --accent-ink: #06130f;
-    --ok: #4cc29b; --warn-ink: #e6b86a; --danger: #e0718a; --danger-soft: #3a1f26; --tile: #1f3a31; --tile-ink: #a9c2b8;
+    --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --tile: #1f3a31; --tile-ink: #a9c2b8;
     color-scheme: dark;
   }
 }
@@ -26,7 +26,30 @@ body { background: var(--page); color: var(--text); font: 14px/1.4 "Segoe UI Var
 .brand-name { font-size: 18px; font-weight: 600; }
 .brand-divider { width: 1px; height: 18px; background: var(--border-strong); }
 .brand-sub { color: var(--muted); }
-.reg { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.topbar-right { display: flex; align-items: center; gap: 14px; }
+body:not(.diag) .diag-only { display: none; }
+.diag-switch { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; cursor: pointer; user-select: none; }
+.diag-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.diag-track {
+  width: 30px; height: 18px; border-radius: 999px; background: var(--border-strong); position: relative; transition: background 0.15s;
+}
+.diag-track::after {
+  content: ""; position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 0.25); transition: transform 0.15s;
+}
+.diag-switch input:checked + .diag-track { background: var(--accent); }
+.diag-switch input:checked + .diag-track::after { transform: translateX(12px); }
+.diag-switch input:focus-visible + .diag-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+.diag-switch:hover { color: var(--text); }
+.reg {
+  color: var(--muted); font: inherit; font-size: 13px; display: flex; align-items: center; gap: 6px;
+  background: none; border: 0; border-radius: var(--radius-sm); padding: 4px 8px; cursor: pointer;
+}
+.reg:hover { background: var(--surface-2); color: var(--text); }
+.reg:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.reg-copy { display: inline-flex; }
+.reg-copy svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.reg.copied .reg-copy { color: var(--ok); }
 .reg::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
 .reg.registered::before { background: var(--ok); }
 .reg.registering::before { background: var(--warn-ink); }
@@ -66,7 +89,8 @@ body { background: var(--page); color: var(--text); font: 14px/1.4 "Segoe UI Var
 .btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
 .btn-danger:hover { background: var(--danger); filter: brightness(1.08); }
 
-.stage { position: relative; min-height: 0; border-radius: var(--radius); overflow: hidden; background: var(--tile); }
+/* The self view and the Call quality panel share the stage's right edge and this width, so they line up. */
+.stage { --side-w: 260px; position: relative; min-height: 0; border-radius: var(--radius); overflow: hidden; background: var(--tile); }
 /* The stage shows one of: card (no call, or calling/ringing/ended), video, nocam (video agreed
    but none arriving) or audio (no video on the call). */
 .remote { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: none; }
@@ -77,14 +101,33 @@ body { background: var(--page); color: var(--text); font: 14px/1.4 "Segoe UI Var
 .card-sub { overflow-wrap: anywhere; }
 .card-actions { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
 .card-actions:empty { display: none; }
+.card-actions .btn { height: auto; min-height: 46px; }
+/* Answer ▾ when ringing: "Answer" with your camera under it, and the ▾ to change it. */
+.answer-split { text-align: left; }
+.answer-split #answerBtn { display: grid; justify-items: start; align-content: center; gap: 1px; padding: 4px 14px 4px 16px; min-width: 150px; max-width: 280px; }
+.answer-split.single #answerBtn { border-radius: var(--radius-sm); justify-items: center; }
+.answer-main { display: inline-flex; align-items: center; gap: 7px; }
+.answer-main svg, .card-actions .split-caret svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.answer-src { font-size: 12px; font-weight: 400; opacity: .85; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.answer-src[hidden] { display: none; }
+.card-actions .split-caret { width: 34px; padding: 0; display: grid; place-items: center; border-left: 1px solid color-mix(in srgb, var(--accent-ink) 30%, transparent); border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.card-actions .split-caret[aria-expanded="true"] { background: var(--accent-hover); }
+.card-actions .split-caret[hidden] { display: none; }
+.device-menu.down { bottom: auto; top: calc(100% + 6px); }
 .self {
-  position: absolute; right: 12px; bottom: 12px; width: 22%; max-width: 260px; min-width: 120px; aspect-ratio: 16 / 9;
-  object-fit: cover; border-radius: var(--radius-sm); background: #000; transform: scaleX(-1);
+  position: absolute; right: 12px; bottom: 12px; width: var(--side-w); max-width: 45%; aspect-ratio: 16 / 9;
+  object-fit: cover; border-radius: var(--radius-sm); background: #000;
   box-shadow: 0 4px 16px rgba(0, 0, 0, .3);
 }
+.self.mirror { transform: scaleX(-1); }   /* your camera, like a mirror; not the placeholder */
 .self[hidden] { display: none; }
-.self-off { display: grid; place-content: center; justify-items: center; gap: 4px; transform: none; background: #3a3f3d; color: #b9c2be; font-size: 12px; }
-.self-off svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* Why the camera isn't showing, over the self view's placeholder: a label along the bottom. */
+.self-off {
+  display: flex; align-items: flex-end; justify-content: center; gap: 5px; padding-bottom: 7px;
+  background: linear-gradient(transparent 55%, rgba(0, 0, 0, .6)); box-shadow: none;
+  color: #fff; font-size: 12px; pointer-events: none;
+}
+.self-off svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .stage[data-mode="audio"] .self { display: none; }
 
 .nocam { position: absolute; inset: 0; display: none; place-content: center; justify-items: center; gap: 12px; color: var(--tile-ink); }
@@ -122,12 +165,116 @@ body { background: var(--page); color: var(--text); font: 14px/1.4 "Segoe UI Var
 }
 .timer { font-variant-numeric: tabular-nums; opacity: .85; }
 
-.controls { display: flex; justify-content: center; gap: 8px; }
 .info[hidden] { display: none; }
-.controls[hidden] { display: none; }
+
+/* Diagnostics: Call quality, top right over the stage (below the audio chip on an audio call). */
+.quality {
+  position: absolute; right: 12px; top: 12px; width: var(--side-w); max-width: calc(100% - 24px); padding: 10px 12px; border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, .62); color: #fff; font-size: 12px; display: grid; gap: 6px;
+}
+.quality[hidden] { display: none; }
+.stage[data-mode="audio"] .quality { top: 44px; }
+.q-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 0; border: 0; background: none;
+  color: inherit; font: inherit; font-weight: 600; font-size: 13px; text-align: left; cursor: pointer;
+}
+.q-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Collapsed: one line, the title and both audio MOS, and the chevron to open it. */
+.quality.collapsed { padding-top: 7px; padding-bottom: 7px; }
+.quality.collapsed > :not(.q-head) { display: none; }
+.q-head > :first-child { margin-right: auto; }
+.q-title { white-space: nowrap; }
+.quality:not(.collapsed) .q-rtt { display: none; }
+.q-rtt { font-weight: 400; opacity: .7; font-variant-numeric: tabular-nums; }
+.q-sum { display: none; gap: 6px; font: 600 13px Consolas, monospace; white-space: nowrap; }
+.quality.collapsed .q-sum { display: inline-flex; }
+.q-chevron { display: grid; place-items: center; align-self: center; opacity: .8; }
+.q-chevron svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+.quality:not(.collapsed) .q-chevron svg { transform: rotate(180deg); }
+.q-chart { width: 100%; height: 56px; background: rgba(255, 255, 255, .05); border-radius: 4px; }
+.q-graph-head { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
+.q-graph-head > :first-child { font-weight: 600; }
+.q-graph-head > :last-child { opacity: .65; white-space: nowrap; }
+.q-legend { display: flex; flex-wrap: wrap; gap: 2px 10px; opacity: .8; }
+.q-legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; background: var(--c); }
+/* PLIs: the legend in one half, the ticks in the other, a row each for received and sent. */
+.q-pli { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; margin-top: 4px; }
+.q-pli[hidden] { display: none; }
+.q-pli-legend { display: flex; align-items: center; gap: 10px; }
+.q-pli-head { font-weight: 600; }
+.q-pli-keys { display: grid; line-height: 12px; font-size: 11px; opacity: .8; }
+.q-pli-keys span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; background: var(--c); }
+.q-pli-chart { width: 100%; height: 24px; background: rgba(255, 255, 255, .05); border-radius: 4px; }
+/* The table: a row per measure, ↑ Sent and ↓ Received side by side; the picked column drives the graph. */
+.q-table { display: grid; grid-template-columns: auto auto minmax(max-content, 1fr) minmax(max-content, 1fr); gap: 1px 6px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.q-stream { font-weight: 600; }
+.q-stream.next { margin-top: 4px; }
+.q-metric { opacity: .65; }
+.q-col, .q-v { text-align: right; padding: 1px 4px; border-radius: 3px; cursor: pointer; white-space: nowrap; }
+.q-col { border: 0; background: none; color: inherit; font: inherit; opacity: .65; }
+.q-col.sel { opacity: 1; font-weight: 600; }
+.q-col:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.q-v.sel, .q-col.sel { background: rgba(255, 255, 255, .1); }
+.q-v.mos { font-weight: 600; }
+.q-v.bad { color: #e0718a; }
+.q-foot { opacity: .8; }
+.q-foot:empty { display: none; }
+
+/* The control bar, from the prototype: buttons with an icon and a label; Mute and Camera split,
+   the ▾ opening a device menu above. The three call buttons are centred; Self view sits at the
+   right end, under the self view it controls. */
+.controls {
+  display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, minmax(0, 168px)) minmax(max-content, 1fr);
+  align-items: center; gap: 8px;
+}
+.controls > :first-child { grid-column: 2; }
+.controls .self-toggle { grid-column: 5; justify-self: end; color: var(--muted); font-weight: 500; }
+.controls .self-toggle[hidden] { display: none; }
+.controls .btn.self-toggle[aria-pressed="true"] {
+  color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+.controls .btn {
+  height: 38px; padding: 0 10px; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-width: 0; white-space: nowrap;
+}
+.controls .btn > span { overflow: hidden; text-overflow: ellipsis; }
+.controls .btn svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.controls .btn[aria-pressed="true"] { background: var(--warn-bg); border-color: var(--warn-ink); color: var(--warn-ink); }
+.controls .btn-danger:disabled { background: var(--surface); border-color: var(--border-strong); color: var(--muted); opacity: .6; }
+.split { position: relative; display: flex; min-width: 0; }
+.split > .btn:first-child { flex: 1; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.controls .split-caret { flex: none; width: 28px; padding: 0; border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.controls .split-caret svg { width: 14px; height: 14px; }
+.split-caret[aria-expanded="true"] { background: var(--surface-2); }
+.device-menu {
+  position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 15; min-width: 280px; max-width: min(380px, calc(100vw - 32px));
+  padding: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.16);
+}
+.device-menu[hidden] { display: none; }
+.device-menu { overflow-y: auto; }
+.device-menu-label { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 8px 4px; }
+.device-option {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 8px; border: 0; border-radius: 6px;
+  background: none; color: var(--text); font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+}
+.device-option > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.device-option:hover, .device-option:focus-visible { background: var(--surface-2); outline: none; }
+.device-check { width: 16px; display: grid; place-items: center; color: var(--accent); flex: none; }
+.device-check svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.device-none { padding: 7px 8px 7px 32px; font-size: 13px; color: var(--muted); }
+.device-menu-sep { height: 1px; background: var(--border); margin: 6px 0; }
 
 .log summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+/* The Diagnostics menu: loss sliders, then the SIP log. */
+.loss-sliders { display: grid; gap: 4px; margin: 10px 0 0; max-width: 520px; }
+.loss-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) 44px; align-items: center; gap: 10px; font-size: 13px; }
+.loss-row input { width: 100%; accent-color: var(--accent); }
+.loss-row output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.loss-row output.on { color: var(--danger); font-weight: 600; }
+.loss-note { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+.log-head { margin-top: 12px; font-size: 13px; color: var(--muted); }
 .log pre {
-  margin: 8px 0 0; max-height: 160px; overflow: auto; padding: 8px 10px; border-radius: var(--radius-sm);
+  margin: 6px 0 0; max-height: 160px; overflow: auto; padding: 8px 10px; border-radius: var(--radius-sm);
   background: var(--surface); border: 1px solid var(--border); font: 12px/1.45 Consolas, monospace; white-space: pre-wrap;
 }

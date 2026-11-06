@@ -15,7 +15,17 @@
         <span class="brand-divider"></span>
         <span class="brand-sub">Softphone</span>
       </div>
-      <div class="reg" id="reg"></div>
+      <!-- Your SIP address; a click copies it, for the other side to dial. -->
+      <div class="topbar-right">
+        <!-- Diagnostics only: shown with the switch on. -->
+        <button type="button" class="reg diag-only" id="reg"><span class="reg-text" id="regText"></span><span class="reg-copy" id="regCopy"></span></button>
+        <!-- Diagnostics: the SIP log and the copyable SIP address. -->
+        <label class="diag-switch" title="Show the SIP log and your SIP address">
+          <input type="checkbox" id="diagToggle" role="switch">
+          <span class="diag-track" aria-hidden="true"></span>
+          <span>Diagnostics</span>
+        </label>
+      </div>
     </header>
 
     <form class="dialbar" id="dialForm" autocomplete="off">
@@ -55,22 +65,58 @@
         </div>
       </div>
 
-      <video id="self" class="self" autoplay muted playsinline></video>
+      <video id="self" class="self" autoplay muted playsinline hidden></video>
       <div class="self self-off" id="selfOff" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M2 2l20 20"/></svg>
         <span id="selfOffText">Camera off</span>
       </div>
       <div class="info" id="info" hidden><span id="infoName"></span><span class="timer" id="timer"></span></div>
+      <!-- Diagnostics: call quality, ↑ what we send (their RTCP) and ↓ what we receive (measured here). -->
+      <div class="quality diag-only collapsed" id="quality" hidden>
+        <button type="button" class="q-head" id="qHead" aria-expanded="false" title="Show the details"><span class="q-title">Call quality</span><span class="q-rtt" id="qRtt"></span><span class="q-sum" id="qSum"></span><span class="q-chevron" id="qChevron"></span></button>
+        <div class="q-table" id="qTable"></div>
+        <!-- Video calls: PLIs as they happen, received and sent, over the last half minute. -->
+        <div class="q-pli" id="qPli" hidden>
+          <div class="q-pli-legend"><span class="q-pli-head">PLIs</span><span class="q-pli-keys"><span id="qPliRxKey">Rcvd</span><span id="qPliTxKey">Sent</span></span></div>
+          <canvas class="q-pli-chart" id="qPliChart" width="240" height="40" role="img" aria-label="PLIs received and sent, last 30 seconds"></canvas>
+        </div>
+        <div class="q-graph-head"><span>Quality reported by receiver</span><span id="qGraphCol"></span></div>
+        <canvas class="q-chart" id="qChart" width="472" height="112" role="img"></canvas>
+        <div class="q-legend" id="qLegend"></div>
+        <div class="q-foot" id="qFoot"></div>
+      </div>
     </main>
 
-    <div class="controls" id="controls" hidden>
-      <button class="btn" id="muteBtn" aria-pressed="false">Mute</button>
-      <button class="btn" id="camBtn" aria-pressed="false">Camera off</button>
-      <button class="btn btn-danger" id="hangupBtn">Hang up</button>
+    <!-- The control bar, shown before calls too. Mute and Camera are split buttons: the ▾ opens
+         a menu to pick the microphone and speaker, or the camera (and, in diagnostics mode, the
+         test pattern). -->
+    <div class="controls" id="controls">
+      <div class="split">
+        <button type="button" class="btn" id="muteBtn" aria-pressed="false"></button>
+        <button type="button" class="btn split-caret" id="micMenuBtn" aria-haspopup="menu" aria-expanded="false"
+          aria-label="Choose microphone and speaker" title="Choose microphone and speaker"></button>
+        <div class="device-menu" id="micMenu" role="menu" aria-label="Audio devices" hidden></div>
+      </div>
+      <div class="split">
+        <button type="button" class="btn" id="camBtn" aria-pressed="false"></button>
+        <button type="button" class="btn split-caret" id="camMenuBtn" aria-haspopup="menu" aria-expanded="false"
+          aria-label="Choose camera" title="Choose camera"></button>
+        <div class="device-menu" id="camMenu" role="menu" aria-label="Camera" hidden></div>
+      </div>
+      <button type="button" class="btn btn-danger" id="hangupBtn" disabled></button>
+      <!-- On a video call: hides or shows your self view (V too). At the right, under it. -->
+      <button type="button" class="btn self-toggle" id="selfViewBtn" aria-pressed="true" hidden></button>
     </div>
 
-    <details class="log">
-      <summary>SIP log</summary>
+    <!-- Diagnostics mode: simulated loss on what we send, then the SIP log. -->
+    <details class="log diag-only">
+      <summary>Diagnostics menu</summary>
+      <div class="loss-sliders">
+        <label class="loss-row"><span>Audio loss</span><input type="range" id="lossAudio" min="0" max="50" step="1" value="0"><output id="lossAudioOut">0%</output></label>
+        <label class="loss-row"><span>Video loss</span><input type="range" id="lossVideo" min="0" max="50" step="1" value="0"><output id="lossVideoOut">0%</output></label>
+        <p class="loss-note">Drops that share of the audio or video packets you send on the call, at random. The far end's RTCP reports should show it in Call quality, under ↑ Sent.</p>
+      </div>
+      <div class="log-head">SIP log</div>
       <pre id="log"></pre>
     </details>
   </div>

@@ -42,6 +42,12 @@ public sealed class Settings
     /// <summary>Testing: calls and answers start with the camera off.</summary>
     public bool CameraOff { get; set; }
 
+    /// <summary>Testing: send the test pattern instead of the camera.</summary>
+    public bool TestPattern { get; set; }
+
+    /// <summary>Testing: send the microphone's frequency bars as video instead of the camera.</summary>
+    public bool AudioBars { get; set; }
+
     /// <summary>Testing: start with the Audio | Video switch on Video (so --dial places a video call).</summary>
     public bool VideoCall { get; set; }
 
@@ -50,6 +56,10 @@ public sealed class Settings
 
     /// <summary>Testing: hang up a connected call after this many seconds.</summary>
     public int? HangupAfter { get; set; }
+
+    /// <summary>Testing: start with simulated loss on the audio and video we send, in percent (the diagnostics sliders).</summary>
+    public int AudioLossPercent { get; set; }
+    public int VideoLossPercent { get; set; }
 
     /// <summary>Testing: how many calls --dial places, one after another (default 1).</summary>
     public int DialCount { get; set; } = 1;
@@ -80,8 +90,12 @@ public sealed class Settings
                 case "--no-video": settings.OfferVideo = false; break;
                 case "--camera-off": settings.CameraOff = true; break;
                 case "--video": settings.VideoCall = true; break;
+                case "--test-pattern": settings.TestPattern = true; break;
+                case "--audio-bars": settings.AudioBars = true; break;
                 case "--add-video" when i + 1 < args.Length: settings.AddVideoAfter = int.Parse(args[++i]); break;
                 case "--hangup-after" when i + 1 < args.Length: settings.HangupAfter = int.Parse(args[++i]); break;
+                case "--loss-audio" when i + 1 < args.Length: settings.AudioLossPercent = int.Parse(args[++i]); break;
+                case "--loss-video" when i + 1 < args.Length: settings.VideoLossPercent = int.Parse(args[++i]); break;
                 case "--dial-count" when i + 1 < args.Length: settings.DialCount = int.Parse(args[++i]); break;
             }
         }

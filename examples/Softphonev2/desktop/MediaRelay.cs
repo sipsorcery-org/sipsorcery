@@ -53,6 +53,29 @@ public sealed class MediaRelay : IDisposable
     private System.Threading.Timer? _statsTimer;
 
     /// <summary>
+    /// An RTCP reception report on the SIP leg, for the page's diagnostics. Dir "sent" is the far
+    /// end's report about a stream we send; "received" is our own report about their video (the
+    /// page measures received audio itself, but video is packetised again for it, so its loss
+    /// there isn't the SIP leg's). Loss is the fraction lost since the previous report; Lost is
+    /// the running total, worked out here from the fractions (some stacks, SIPSorcery among them,
+    /// put the interval's loss rather than the cumulative one in the report). Round trip, for
+    /// "sent", from the LSR/DLSR fields when they echo our sender reports.
+    /// </summary>
+    public sealed record QualitySample(string Dir, string Kind, double LossPct, long Lost, double JitterMs, double? RttMs);
+    public event Action<QualitySample>? Quality;
+    private Action<SDPMediaTypesEnum, RTCPCompoundPacket>? _sipSendReport;
+
+    /// <summary>
+    /// Simulated loss (the diagnostics sliders, or --loss-audio/--loss-video): the percentage of
+    /// the audio and video packets we send on the SIP leg that are dropped instead, at random.
+    /// Each dropped packet still uses up its sequence number, so the far end sees a real gap and
+    /// counts it in its RTCP reports.
+    /// </summary>
+    public volatile int AudioLossPercent, VideoLossPercent;
+    private readonly Dictionary<string, (uint Seq, double Lost)> _lossTotals = [];
+
+
+    /// <summary>
     /// The audio and video codecs we offer on the SIP side, in order of preference. All are ones
     /// the browser can do. Video is offered for a video call, and when answering (so a video
     /// offer can be accepted, or video added later), unless the account has video turned off.
@@ -159,21 +182,32 @@ public sealed class MediaRelay : IDisposable
         {
             if (kind == SDPMediaTypesEnum.video && WantsKeyframe(report)) { _pliIn++; RequestKeyframe(pc, _pageVideoSsrc); }
             if (kind == SDPMediaTypesEnum.audio) CheckAudioReachingThem(report);
+            var ours = kind == SDPMediaTypesEnum.audio ? _sip.AudioLocalTrack?.Ssrc : _sip.VideoLocalTrack?.Ssrc;
+            if (ours != null) RaiseQuality("sent", kind, Samples(report).FirstOrDefault(r => r.SSRC == ours));
+        };
+        _sipSendReport = (kind, report) =>
+        {
+            if (kind == SDPMediaTypesEnum.video) RaiseQuality("received", kind, Samples(report).FirstOrDefault());
         };
         _sip.OnRtpPacketReceived += _sipRtp;
         _sip.OnVideoFrameReceived += _sipFrame;
         _sip.OnReceiveReport += _sipReport;
+        _sip.OnSendReport += _sipSendReport;
 
         // Page -> SIP.
         pc.OnRtpPacketReceived += (_, kind, pkt) =>
         {
             if (kind == SDPMediaTypesEnum.video) _pageVideoSsrc = pkt.Header.SyncSource;
+            if (kind == SDPMediaTypesEnum.audio && Lose(AudioLossPercent)) return;
             if (kind == SDPMediaTypesEnum.audio && !_sip.IsClosed && ++_audioOut > 0)
                 _sip.SendRtpRaw(SDPMediaTypesEnum.audio, pkt.Payload, pkt.Header.Timestamp, pkt.Header.MarkerBit, pkt.Header.PayloadType, pkt.Header.SequenceNumber);
         };
         pc.OnVideoFrameReceived += (_, ts, frame, _) =>
         {
-            if (!_sip.IsClosed) { _videoOut++; _sip.SendVideoAt(ts, frame); }
+            if (_sip.IsClosed) return;
+            _videoOut++;
+            if (VideoLossPercent > 0) SendVideoLossy(ts, frame);
+            else _sip.SendVideoAt(ts, frame);
         };
         pc.OnReceiveReport += (_, kind, report) =>
         {
@@ -196,8 +230,7 @@ public sealed class MediaRelay : IDisposable
     {
         var ourSsrc = _sip.AudioLocalTrack?.Ssrc;
         if (ourSsrc == null || !_up) return;
-        var samples = (report.ReceiverReport?.ReceptionReports ?? []).Concat(report.SenderReport?.ReceptionReports ?? []);
-        var ours = samples.FirstOrDefault(r => r.SSRC == ourSsrc);
+        var ours = Samples(report).FirstOrDefault(r => r.SSRC == ourSsrc);
         bool lost;
         if (ours == null)
         {
@@ -214,6 +247,105 @@ public sealed class MediaRelay : IDisposable
         _txLost = lost;
         _log(lost ? "their RTCP says our audio isn't reaching them" : "their RTCP says our audio is reaching them again");
         TxLostChanged?.Invoke(lost);
+    }
+
+    private static IEnumerable<ReceptionReportSample> Samples(RTCPCompoundPacket report) =>
+        (report.ReceiverReport?.ReceptionReports ?? []).Concat(report.SenderReport?.ReceptionReports ?? []);
+
+    /// <summary>Turns a reception report into a <see cref="QualitySample"/>: percent, milliseconds and a running loss total.</summary>
+    private void RaiseQuality(string dir, SDPMediaTypesEnum kind, ReceptionReportSample? rr)
+    {
+        if (rr == null || !_up || Quality == null) return;
+        bool audio = kind == SDPMediaTypesEnum.audio;
+        if (!audio && kind != SDPMediaTypesEnum.video) return;
+
+        // Jitter is in RTP timestamp units: the clock of the codec (audio is only ever "sent").
+        int clock = 90000;
+        if (audio) clock = Audio is { } f && f.RtpClockRate() > 0 ? f.RtpClockRate() : 8000;
+        double fraction = rr.FractionLost / 256.0;
+
+        // Running total: the fraction lost times the packets expected since the last report
+        // (the change in the highest sequence number).
+        string key = dir + kind;
+        uint seq = rr.ExtendedHighestSequenceNumber;
+        double total = 0;
+        lock (_lossTotals)
+        {
+            if (_lossTotals.TryGetValue(key, out var last))
+            {
+                uint expected = seq - last.Seq;
+                total = last.Lost + (expected < 100_000 ? fraction * expected : 0);
+            }
+            _lossTotals[key] = (seq, total);
+        }
+
+        // Round trip (RFC 3550 6.4.1): now - LSR - DLSR, all in 1/65536 s.
+        double? rtt = null;
+        if (dir == "sent" && rr.LastSenderReportTimestamp != 0)
+        {
+            uint now = RTCPSession.DateTimeToNtpTimestamp32(DateTime.Now);
+            double ms = (int)(now - rr.LastSenderReportTimestamp - rr.DelaySinceLastSenderReport) * 1000.0 / 65536;
+            if (ms >= 0 && ms < 10_000) rtt = Math.Round(ms, 1);
+        }
+
+        Quality(new QualitySample(dir, audio ? "audio" : "video", Math.Round(fraction * 100, 1), (long)Math.Round(total),
+            Math.Round(rr.Jitter * 1000.0 / clock, 1), rtt));
+    }
+
+    /// <summary>SIPSorcery's own packet size for video (its RTP_MAX_PAYLOAD, which is internal).</summary>
+    private const int MaxVideoPayload = 1200;
+
+    private static bool Lose(int percent) => percent > 0 && Random.Shared.Next(100) < percent;
+
+    /// <summary>
+    /// Sends a video frame as SIPSorcery would (the same packetisation for VP8 and H264), but
+    /// drops packets at random. SIPSorcery packetises inside the library with no way to drop a
+    /// packet, so with loss on the relay packetises here and sends each packet with the next
+    /// sequence number from the track: lost ones leave a gap, and turning loss off goes back to
+    /// SIPSorcery's own sending with the numbering carrying on.
+    /// </summary>
+    private void SendVideoLossy(uint ts, byte[] frame)
+    {
+        var track = _sip.VideoLocalTrack;
+        if (track == null || Video is not { } format) return;
+        int pt = format.ID, max = MaxVideoPayload;
+        void Send(byte[] payload, int marker)
+        {
+            ushort seq = track.GetNextSeqNum();
+            if (!Lose(VideoLossPercent)) _sip.SendRtpRaw(SDPMediaTypesEnum.video, payload, ts, marker, pt, seq);
+        }
+
+        if (format.Name().Equals("VP8", StringComparison.OrdinalIgnoreCase))
+        {
+            // RFC 7741: a one-byte descriptor, with the start-of-partition bit on the first packet.
+            for (int offset = 0; offset < frame.Length; offset += max)
+            {
+                int len = Math.Min(max, frame.Length - offset);
+                var payload = new byte[len + 1];
+                payload[0] = offset == 0 ? (byte)0x10 : (byte)0x00;
+                Buffer.BlockCopy(frame, offset, payload, 1, len);
+                Send(payload, offset + len >= frame.Length ? 1 : 0);
+            }
+        }
+        else
+        {
+            // H264 (RFC 6184): each NAL whole if it fits, else in FU-A fragments.
+            foreach (var nal in H264Packetiser.ParseNals(frame))
+            {
+                var data = nal.NAL;
+                if (data.Length <= max) { Send(data, nal.IsLast ? 1 : 0); continue; }
+                for (int offset = 1; offset < data.Length; offset += max)
+                {
+                    int len = Math.Min(max, data.Length - offset);
+                    bool first = offset == 1, last = offset + len >= data.Length;
+                    var header = H264Packetiser.GetH264RtpHeader(data[0], first, last);
+                    var payload = new byte[header.Length + len];
+                    Buffer.BlockCopy(header, 0, payload, 0, header.Length);
+                    Buffer.BlockCopy(data, offset, payload, header.Length, len);
+                    Send(payload, nal.IsLast && last ? 1 : 0);
+                }
+            }
+        }
     }
 
     public bool SetAnswer(string sdp)
@@ -247,6 +379,7 @@ public sealed class MediaRelay : IDisposable
         if (_sipRtp != null) _sip.OnRtpPacketReceived -= _sipRtp;
         if (_sipFrame != null) _sip.OnVideoFrameReceived -= _sipFrame;
         if (_sipReport != null) _sip.OnReceiveReport -= _sipReport;
+        if (_sipSendReport != null) _sip.OnSendReport -= _sipSendReport;
         _statsTimer?.Dispose();
         try { _pc?.close(); } catch { }
     }

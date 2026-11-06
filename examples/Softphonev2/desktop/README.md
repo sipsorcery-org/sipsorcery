@@ -16,12 +16,32 @@ the desktop app, using the media design the video spike
   - keyframe requests (PLI/FIR) in both directions, plus one request each way when the relay
     comes up, so video starts at once.
 
+## The control bar
+
+Under the stage, from the UX prototype (`prototype/web`), and there the whole time, not just
+during a call, so the microphone and camera can be set up first:
+
+- **Mute ▾**: mutes the microphone. Before a call too, and the call then starts muted. The ▾
+  lists microphones and speakers; one picked between calls is used from the next call.
+- **Camera ▾**: on a video call, Turn camera on or Turn camera off (like Mute and Unmute, the
+  label says what pressing it does); on an audio call, Add video. Before a
+  call, whether a video call starts with your camera on, with the preview following; it's
+  disabled until the Audio | Video switch is on Video, and while a call is ringing (the Answer
+  button has its own choice). The ▾ lists cameras and, in diagnostics mode, the test pattern.
+- **End**: Cancel while calling, End once connected.
+
+A device you pick takes effect at once, mid-call too, by swapping the track on the page's
+connection (no renegotiation), and is remembered between runs (per profile). A remembered
+device that's gone falls back to the default. The prototype's Text, Hold, Keypad and Transfer
+aren't here yet; they come with those features.
+
 ## Video and no video
 
 - **The Audio | Video switch beside Call** picks the kind of call. *Audio* leaves video out of
-  the INVITE; *Video* offers it, and the button reads "Video call". It starts on Audio, since
-  most SIP calls go to phones and an audio offer never trips anything up, then remembers your
-  last choice. With `--no-video` it's locked to Audio.
+  the INVITE; *Video* offers it, and the button reads "Video call". It always starts on
+  Audio: most SIP calls go to phones, an audio offer never trips anything up, and the camera
+  stays off (and the self view hidden) until you ask for video. With `--no-video` it's locked to
+  Audio.
 - **Add video**, on an audio call, is where the Camera button would be. It adds our video codecs
   to the SIP session and sends a re-INVITE with `m=video`. If they accept, the relay is rebuilt
   on the same SIP session and the page gets a new offer with video. If they refuse (`m=video 0`,
@@ -31,14 +51,48 @@ the desktop app, using the media design the video spike
 - **The camera is only open when it's needed:** before a call while the switch is on Video (as
   a preview in the self view), and during a video call with your camera on. With the switch on
   Audio, on an audio call, or with your camera turned off, it's closed: no self view and no
-  camera light. The microphone is opened once, at start.
-- **A camera in use elsewhere is waited for, not given up on.** Windows lets one app have a
-  camera at a time, so a second softphone (or Teams, say) gets `NotReadableError`. The page
-  used to treat that as "no camera" for the rest of the run. Now it shows "Camera in use" in
-  the self view, sends the placeholder on a call, and retries every 2 s. It gets the camera a
-  few seconds after the other app lets go, for example when the other softphone's switch goes
-  to Audio. A missing camera or a refused permission is still "No camera".
-- **Answer, camera off** answers a ringing video call without sending your camera.
+  camera light.
+- **So is the microphone.** It opens when you press Call (alongside the INVITE, so it's ready
+  when the call connects) or Answer, or when the call's media arrives (auto-answer, `--dial`),
+  and closes when the call ends, so a webcam's mic light is off between calls. Not while a
+  call is only ringing. If a call you placed never starts (a bad address), it closes after 5 s.
+- **A camera in use elsewhere says so, and waits for you.** Windows lets one app have a camera
+  at a time, so a second softphone (or Teams, say) gets `NotReadableError`. That shows as
+  "Camera in use" (not "No camera"), and on a call your camera goes off and the placeholder is
+  sent. It's never retried by itself: the camera only opens because of something you did
+  (switching to Video, placing or answering a video call, Add video, Camera on). Otherwise the
+  softphone would start streaming your camera on its own the moment the other app let go.
+  A missing camera or a refused permission is "No camera".
+- **Test pattern** (diagnostics mode): picked from the Camera button's ▾, it sends a test
+  pattern instead of the camera. It stands in for the camera exactly:
+  opened and closed when the camera would be, Camera off still sends the placeholder, and it
+  can be switched mid-call. It has colour bars and a grey ramp (colour and banding), a dial
+  whose hand steps once per frame drawn (a dropped frame is a skipped tick), a clock to the
+  millisecond (compare the far end's picture with this screen for the delay), the sender's
+  name or address and a frame counter. Turning diagnostics off goes back to the camera, but
+  turned off: the camera is only sent once you press Turn camera on, since it never starts by
+  itself. With no camera the placeholder is sent, as it would be anyway.
+- **Audio bars** (diagnostics mode), the Camera ▾'s other diagnostic source, sends your
+  microphone's frequency bars as video, drawn like the audio-only view, with the microphone's
+  name (or "Muted"), a level meter and the same clock and frame counter. The far end sees what
+  you're sending as audio: sound or silence, a muted or dead microphone, and lip sync (a bar
+  should jump as they hear the sound). The microphone only opens with a call, so before one
+  the preview says "Microphone opens with the call".
+- **Picking a source turns the camera on.** With the camera off, choosing a
+  camera, the test pattern or audio bars from its ▾ sends it straight away (on a video call),
+  or makes video calls start with it on (before one). On an audio call the ▾ only sets what
+  Add video will send.
+- **Answer ▾** on a ringing video call: under "Answer" the button names what you'll send (the
+  camera's name, "Test pattern" or "Camera off"), starting from the Camera button's choice.
+  The ▾ picks a camera, the test pattern (diagnostics mode) or camera off, for this call. An
+  audio call gets a plain Answer. The menu is positioned against the window, not the stage
+  (which clips its contents), so in a short window it opens upward over the stage or past it.
+- **Self view**, at the right end of the control bar (under the self view it controls; the
+  prototype has it in the info bar), or `V`, hides or shows your own picture. It's there
+  whenever there's a self view: from the moment the switch goes to Video, and during a video
+  call. On a call what's sent doesn't change. Before a call, with it off, the camera stays
+  closed (the preview is only for you) and opens when the call connects. It's remembered
+  between runs.
 - **Camera on/off** during a video call turns it on or off with no renegotiation: the page keeps
   the video sendrecv and swaps the track in and out (`replaceTrack`).
 - **Video never stops while your camera is off.** A video call with your camera off, or with no
@@ -47,14 +101,18 @@ the desktop app, using the media design the video spike
   1280×720 and sent at 5 fps. A still picture costs a few kbps. So any SIP phone just shows a
   picture, not a frozen last frame or a stream that looks broken. NAT bindings and media timers
   on the video port stay alive, and turning the camera on is a track swap with the encoder
-  already running. Your own self view still says "Camera off".
+  already running.
+- **The self view shows what they see.** During a video call that's your camera (mirrored) or the
+  placeholder (not mirrored, so the initial reads right). A note along the bottom says why the
+  camera isn't showing: "Camera off", "Camera in use" or "No camera". Before a call, with the
+  switch on Video, it's the same preview.
 
 The stage then shows one of three things:
 
 | They send video | What you see |
 |---|---|
 | Yes | Their video. |
-| Agreed, but nothing arriving for 2 s | Their initial and "Their camera is off". Another softphone sends its placeholder instead, so this is for far ends that really stop sending. |
+| Agreed, but nothing arriving for 2 s | Their initial and "No video arriving from X". A softphone with its camera off sends its placeholder, so this means the video has stalled or the far end stopped sending, not that their camera is off. |
 | No video on the call (`m=video` refused or never offered) | An "Audio only" label and two rows of frequency bars: their audio above the centre line, yours below. With reduced motion on, each row is a single level bar. |
 
 The bars also show **one-way audio**, the classic SIP/NAT fault. If no audio packets arrive for
@@ -62,7 +120,72 @@ The bars also show **one-way audio**, the classic SIP/NAT fault. If no audio pac
 reports show our audio isn't reaching them (our source isn't listed, or its sequence number has
 stopped), your row turns red with "X isn't getting your audio".
 
+## Call quality (diagnostics mode)
+
+**Call quality**, at the top right of the stage during a call, starts as one line: the title,
+the round trip (just the value, "0.3 ms", from their RTCP), both audio MOS (↑ what we send, ↓
+what we receive) and a chevron to open it. Open or closed is remembered. Opened, it's a small
+table with a column for each direction, so there's no "they"
+or "you" to work out:
+
+| | | ↑ Sent | ↓ Received |
+|---|---|---|---|
+| Audio | MOS, loss, jitter | how the far end receives our audio | how we receive theirs |
+| Video | loss, fps | how the far end receives our video (fps: the rate we send, since RTCP doesn't carry what they see) | how we receive theirs |
+
+On video calls a **PLIs** row comes next: the legend (Rcvd in amber, from them; Sent in violet,
+ours) in one half and, in the other, a tick for each second with one over the last 30 s, a row
+for each. A PLI means a lost packet has broken the receiver's picture, which stays broken until
+a keyframe arrives. It's an indicator, not a history. PLIs come from the page's `pliCount`; the
+relay passes them straight through, so they're the SIP leg's.
+
+Below that, a graph titled "Quality reported by receiver" shows one column over the last two
+minutes: audio MOS (a line, 1–5), audio loss (bars) and video loss (a line), both 0–20%. On ↓
+Received, white bars along the bottom show how long our picture was actually frozen, from the
+browser's `totalFreezesDuration`; it only counts a freeze once it has ended, so a bar is drawn
+back over the seconds it covered when it does. ↑ Sent has none: RTCP doesn't say whether their
+picture froze. Either column is the receiving end's view: theirs of what we send, or ours of
+what they send. Clicking a column's heading or any of its values picks it. The last line gives
+the round trip ("RTT 0.3 ms"), or says it's waiting for their RTCP, or after 15 s that none has
+come. Hovering over a value says
+what it is, where it comes from, and for loss the total packets lost. Only video calls show the
+video rows.
+
+To see the reports react, the **Diagnostics menu** under the control bar has two sliders,
+Audio loss and Video loss (0–50%). They drop that share of the audio or video packets we send
+on the SIP leg, at random, from the moment a slider is let go, and carry over to the next call.
+Under them is the SIP log. Each dropped packet still uses up its sequence number, so the far
+end sees a real gap and counts it in its RTCP. Audio is relayed packet by packet, so dropping
+one is easy. Video is handed to SIPSorcery a frame at a time and packetised inside the library,
+with no way to drop a single packet, so while video loss is on, the relay packetises VP8 and
+H264 itself, the same way, and sends each packet with the next sequence number from the track.
+At 0% video goes back to SIPSorcery's own sending, and the numbering carries on.
+
+Where the numbers come from:
+
+- ↑ Sent: the host forwards each of their RTCP reception reports about our streams
+  (`OnReceiveReport`) to the page, every 5 s or so. The graph holds each report until the
+  next. Jitter is converted from RTP units with the clock of the codec we send; round trip is
+  now − LSR − DLSR. The running loss total is worked out from each report's loss fraction and
+  the change in its highest sequence number, since SIPSorcery (and some phones) report the
+  interval's loss rather than the cumulative one.
+- ↓ Received audio comes from the page's WebRTC stats, once a second. Those only cover the hop
+  from the relay, but audio is relayed packet by packet with its sequence numbers kept, so its
+  loss and jitter are the SIP leg's. Its loss is over the last 5 s: the browser only updates
+  `packetsLost` when it builds its own RTCP report, so a 1 s difference read 0 nearly every time.
+- ↓ Received video is packetised again for the page, so the page's loss count isn't the SIP
+  leg's. Its loss comes from the RTCP report we send about their video (`OnSendReport`), and its
+  frame rate from the page's decoder.
+- The MOS is a simplified ITU-T G.107 E-model: delay is half the round trip (40 ms if there
+  isn't one) plus twice the jitter plus 20 ms, and loss is random with concealment (Bpl 25).
+  Wideband codecs sound better than it says. It's for spotting trouble, not grading codecs.
+
 There is no settings screen, call history, contacts, DTMF, hold, transfer or device picker yet.
+
+**Later:** a help or info section, to explain the Call quality panel: that ↑ Sent comes from
+the far end's RTCP reports (every 5 s or so) and ↓ Received is measured here, what the MOS
+estimate is and isn't, and where each number comes from (as above). The panel had a footnote
+saying this, but there's no room for it there; for now the tooltips carry it.
 
 ## Running it
 
@@ -71,7 +194,12 @@ dotnet run -c Release
 ```
 
 On its own it listens on port 5060 (UDP and TCP), or if that's taken on a port the OS picks (the log says which), and makes direct calls: type
-`sip:user@host[:port]` or `user@host` and press Call. To register with a server, copy
+`sip:user@host[:port]` or `user@host` and press Call. The **Diagnostics** switch, top right,
+shows the Diagnostics menu (simulated loss and the SIP log) and this softphone's own address;
+off, both are hidden. For now it's on at
+every start, while it's being tested. The address in the header reads e.g. `No account · sip:192.168.1.20:5070`; click it to copy it for the other side to
+dial. It's the address this PC uses to reach the internet (which works from this PC too) and the
+UDP SIP port. With an account it copies the account's address. To register with a server, copy
 `softphone.sample.json` to `softphone.json` next to the exe and fill it in. The password is stored
 in plain text for now.
 
@@ -86,8 +214,11 @@ Switches, mostly for testing:
 | `--dial <uri>` | Call this address as soon as the window is up. |
 | `--auto-answer` | Answer incoming calls after a second. |
 | `--video` | Start with the switch on Video, so `--dial` places a video call. |
+| `--test-pattern` | Send the test pattern instead of the camera. |
+| `--audio-bars` | Send the microphone's frequency bars instead of the camera. |
+| `--loss-audio <percent>`, `--loss-video <percent>` | Start with the Diagnostics menu's loss sliders at these values. |
 | `--no-video` | No video at all: the switch is locked to Audio, and video offers or Add video from the other side are turned down. (Will be the per-account "Video calls" setting.) |
-| `--camera-off` | Calls and answers start with the camera off. |
+| `--camera-off` | Start with the Camera button off, so calls and answers start with the camera off. |
 | `--add-video <s>` | Press Add video this many seconds into an audio call. |
 | `--hangup-after <s>` | Hang up a call this many seconds after it connects. |
 | `--dial-count <n>` | With `--dial`, place `n` calls one after another, each 2 s after the last one ends. |
@@ -123,11 +254,43 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 
 | Test | Result |
 |---|---|
+| Video call, `--test-pattern` to `--fake-media` | Both ways at 30 fps; the callee shows the pattern with the caller's clock, and the caller's self view shows it unmirrored. |
+| Same, Camera off, Camera on, then diagnostics off | Off: placeholder at 5 fps; on: pattern back at 30 fps; diagnostics off: the pattern stops, the placeholder is sent, the self view says "Camera off" and the button "Turn camera on". The camera only opens when that's pressed. |
+| Control bar, idle | Mute ▾, Camera ▾ and a disabled End. Camera ▾ lists the fake camera and, with diagnostics on, Test pattern; Mute ▾ lists three fake microphones and three speakers. |
+| Before a call: Test pattern, Camera off | The preview goes from the pattern to the placeholder with "Camera off"; the button's tooltip says video calls start with your camera off. |
+| Switch on Audio, idle | Camera and its ▾ are disabled. |
+| Start, then a call, then hang up | The log shows no microphone until Call (caller) or Answer (callee; none while ringing), and "microphone closed" on both when the call ends. The Mute ▾ menu still lists the devices with the mic closed. |
+| Mute before dialling | The caller's microphone opens muted; the callee reads level 0. |
+| Incoming video call | Decline and Answer ▾, with "fake_device_0" under Answer; the ▾ lists the camera, Test pattern and Camera off. The control bar's Camera is disabled. |
+| Answer ▾: Test pattern, then Answer | The label changes to "Test pattern"; the answered call sends it at 30 fps. |
+| Answer ▾: Camera off, then Answer | The label says "Camera off" with a crossed-out camera; the call sends the placeholder at 5 fps. |
+| Incoming audio call | A plain Answer, no ▾. |
+| Answer ▾ in a 900×560 window | Not enough room below the button, so the menu opens upward, whole, over the top of the stage. |
+| Switch to Video, Self view off, then a video call | The button appears with the switch; off hides the preview and closes the camera; the camera opens when the call connects and sends 30 fps. |
+| Video call, `--audio-bars` to `--fake-media` | The callee sees the caller's microphone bars move with the fake beep, the microphone's name, and the caller's clock, at 30 fps. Before the call the preview shows flat bars and "Microphone opens with the call"; muting mid-call shows "Muted" and flat bars at the far end. |
+| Video call to `--auto-answer` | The caller's panel shows the callee's RTCP: no loss, jitter under 1 ms, round trip about 0.3 ms, MOS 4.4. |
+| Same, caller with `--loss-audio 5 --loss-video 10` | The sliders start at 5% and 10%; their RTCP shows 2–5.5% audio and about 7% video loss per report, the totals climbing. |
+| Mid-call: Audio loss to 20%, Video loss to 10%, then both back to 0 | Their reports go to 17–23% audio and 9.4–10.5% video loss, MOS about 2.7; at 10% video loss the far end decodes 4–10 fps between keyframes. Back at 0, loss returns to 0, the totals stop climbing and the far end is back to 30 fps (no sequence jump). |
+| `--camera-off` video call: Camera ▾, Test pattern, then Camera off, then Camera ▾, the camera | Each pick turns the camera on and sends the choice straight away; the button shows Turn camera off. |
+| Idle on Video with Camera off: Camera ▾, Test pattern | The preview shows the pattern and the button shows Turn camera off. |
+| Both ends with loss (caller audio 10%, video 5%; callee audio 6%, video 3%) | The caller's ↑ Sent shows about 10% audio and 4.7% video loss, MOS 3.4; ↓ Received shows 5.6% audio and 2.7% video loss, MOS 3.8, and the decoded frame rate. Clicking ↓ Received moves the graph to that column. |
+| Audio call to a callee with 6% audio loss | The panel has only the audio rows; ↓ Received shows 6.7% loss, MOS 3.7. |
+| Video call, panel never opened | One line, "Call quality ↑ 3.3 ↓ 3.7" and a chevron; clicking opens the table (sent fps 30) with "Quality reported by receiver" over the graph, and the chevron turns up. |
+| Video call, caller `--loss-video 2`, callee `--loss-video 5` | The folded line reads "Call quality 0.6 ms ↑ 4.4 ↓ 4.4"; opened, "RTT 0.6 ms" is the last line. The PLIs row under the table ticks Rcvd (amber) and Sent (violet) over the last 30 s, whichever column is picked; ↓ Received's graph has white "Frozen" bars along the bottom. |
+| Far end with `--loss-video 100` | "No video arriving from B" under their initial; ↓ Received video fps 0. |
+| Self view, then `V` | The self view hides and comes back; the far end still gets 30 fps throughout. |
+| Mute before dialling, then a video call | The call connects muted (Unmute shown). |
+| Mid-call: another microphone, then the fake camera | Both swap without renegotiation; video carries on at about 30 fps, and the far end gets the new microphone's beep. |
+| Pick a microphone, restart | The menu shows the picked microphone in use. |
+| Diagnostics switch off, then on | Off hides the header address and the Diagnostics menu; on brings both back. |
+| Video call answered (`--video`, `--auto-answer`) | Each stage goes card, then their initial, then video; never the audio-only bars (the page logs each `stage:` change). |
+| Click the header on B, then dial what was copied from A | The clipboard held `sip:192.168.1.123:5080`; the header showed "Copied"; A's call to it connected. |
 | Softphone to softphone, audio call | Both stages show the audio-only bars and Add video. |
 | Softphone to softphone, video call (`--video`) | Audio at 50 pkt/s each way; video at 30 fps each way, VP8. The first stats sample, at 5 s, already shows video. |
 | Video call with `--camera-off` on the caller | The caller sees the callee's video at 30 fps and its self view says "Camera off". The callee gets the caller's placeholder at 5 fps (640×360 at first, 1280×720 once the encoder ramps up): the initial with an account, the icon without. |
 | Same, then Camera on, then Camera off | The callee's video goes 5 fps placeholder, then 30 fps camera, then 5 fps placeholder, without a gap. The caller's camera opens and closes with it. |
-| Two softphones on Video with the real camera, then the first switched to Audio | The second logs "camera in use, will keep trying" and shows "Camera in use", then opens the camera about 4 s after the first closes it. The same the other way round. |
+| Two softphones on Video with the real camera, then the first switched to Audio | The second shows "Camera in use" and still hasn't opened the camera 8 s after the first closed it. Clicking Video opens it. |
+| A softphone answers a video call while another has the real camera | It answers with "Camera in use" and sends the placeholder. 8 s after the other lets go it still hasn't opened the camera; Camera on opens it. |
 | Audio call, caller presses Add video (`--add-video 4`) | re-INVITE accepted; both relays rebuilt with VP8. The callee shows the caller's video at 30 fps; the caller gets the callee's placeholder at 5 fps, since the callee accepted with its camera off. |
 | Three video calls in a row, the caller's camera already open from the preview (`--video --dial-count 3`, callee `--hangup-after 9`) | The callee shows the caller's video on every call. |
 | Same, but the callee has `--no-video` | The callee answers `m=video 0`; the caller logs "they didn't take video", shows *No video*, and both stay on the audio bars. |
@@ -157,6 +320,10 @@ camera).
     weren't affected. Fixed in #1884. The relay used to pad each PLI with an SDES packet.
   The PLI's media SSRC is the one learned from received RTP, since SIPSorcery routes feedback
   by it.
+- **A failed step stalled the camera queue for good.** `syncCamera` chains each open and close
+  on one promise, so they never overlap, and a throw rejected it, which skipped every later
+  step. With the test pattern chosen, video was wanted before the microphone (and so `local`)
+  existed. The chain now catches, and nothing opens until `local` is set.
 - **A canvas only produces a frame after it's drawn on.** The placeholder track is
   `captureStream(0)` with `requestFrame()` on a timer. Requesting frames of an unchanged canvas
   sent nothing, 0 fps, so the picture is redrawn before every request.
@@ -183,6 +350,11 @@ camera).
 - **`requestVideoFrameCallback` never fires on a hidden `<video>`**, so it can't tell whether
   frames are arriving while the stage shows something else. The page uses `framesDecoded` from
   `getStats` instead.
+- **SIPSorcery timed received audio with the wrong clock when the two ends send different
+  codecs.** Its RTCP session measures arrival times with the clock of the first codec offered
+  (Opus, 48 kHz). With G722 arriving (an 8 kHz RTP clock), each 20 ms packet looked 800 units
+  early or late, and the jitter we reported read a steady 17 or 100 ms on a loopback call.
+  Fixed in #1887: each packet is timed at its own payload type's clock.
 - **The page caps its camera at 1.5 Mbit/s.** Its connection to the host is local, so its own
   bandwidth estimate would grow without limit. The real fix is to pass the far end's RTCP
   feedback through to the page.
