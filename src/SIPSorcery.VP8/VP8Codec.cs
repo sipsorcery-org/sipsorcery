@@ -14,7 +14,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
@@ -47,13 +49,12 @@ namespace Vpx.Net
         public VP8Codec()
         { }
 
-        // Pooled per-instance plane-split buffers, reused across calls.
-        // Resized lazily when the input dimensions change. Allocating these
-        // afresh each frame was a major chunk of the encoder's GC pressure
-        // (~440 KB per 640x480 frame).
-        private byte[] _srcY;
-        private byte[] _srcU;
-        private byte[] _srcV;
+        // Re-used conversion buffer for input that is not already I420, so converting
+        // does not allocate a new frame sized array every frame (~460 KB per 640x480
+        // BGR frame). The encoder reads the Y, U and V planes straight out of the I420
+        // frame, from this buffer or from the caller's sample, so no plane copies are
+        // needed either.
+        private readonly ArrayBufferWriter<byte> _i420Buffer = new ArrayBufferWriter<byte>();
 
         public void ForceKeyFrame() => _forceKeyFrame = true;
         public bool IsSupported(VideoCodecsEnum codec) => codec == VideoCodecsEnum.VP8;
@@ -170,88 +171,169 @@ namespace Vpx.Net
         {
             lock (_encoderLock)
             {
-                if (width <= 0 || width % 16 != 0 || height <= 0 || height % 16 != 0)
-                {
-                    // The foundation encoder requires multiples of 16 — no
-                    // padding/cropping support yet.
-                    throw new NotSupportedException(
-                        $"Width and height must be positive multiples of 16. Got {width}x{height}.");
-                }
+                int length = EncodeFrame(width, height, sample, pixelFormat);
 
-                // Convert the input sample into planar I420. PixelConverter.ToI420
-                // needs the source row stride in BYTES, which for packed formats is
-                // width * bytesPerPixel -- NOT width. Passing width here corrupts the
-                // conversion (it reads the source with the wrong row pitch, smearing /
-                // horizontally repeating the image) for every non-I420 input.
-                byte[] i420;
-                if (pixelFormat == VideoPixelFormatsEnum.I420)
-                {
-                    i420 = sample;
-                }
-                else
-                {
-                    int bytesPerPixel;
-                    switch (pixelFormat)
-                    {
-                        case VideoPixelFormatsEnum.Bgra:
-                        case VideoPixelFormatsEnum.Rgba:
-                            bytesPerPixel = 4;
-                            break;
-                        case VideoPixelFormatsEnum.Bgr:
-                        case VideoPixelFormatsEnum.Rgb:
-                            bytesPerPixel = 3;
-                            break;
-                        case VideoPixelFormatsEnum.NV12:
-                            bytesPerPixel = 1;
-                            break;
-                        default:
-                            bytesPerPixel = 1;
-                            break;
-                    }
-                    i420 = PixelConverter.ToI420(width, height, width * bytesPerPixel, sample, pixelFormat);
-                }
-
-                int ySize = width * height;
-                int cSize = (width / 2) * (height / 2);
-                if (i420.Length != ySize + 2 * cSize)
-                {
-                    throw new ArgumentException(
-                        $"I420 buffer length {i420.Length} does not match expected {ySize + 2 * cSize} for {width}x{height}.");
-                }
-
-                if (_srcY == null || _srcY.Length < ySize) { _srcY = new byte[ySize]; }
-                if (_srcU == null || _srcU.Length < cSize) { _srcU = new byte[cSize]; _srcV = new byte[cSize]; }
-                Buffer.BlockCopy(i420, 0,             _srcY, 0, ySize);
-                Buffer.BlockCopy(i420, ySize,         _srcU, 0, cSize);
-                Buffer.BlockCopy(i420, ySize + cSize, _srcV, 0, cSize);
-
-                // Decide keyframe vs inter for this call.
-                // - Forced keyframe (via ForceKeyFrame()): always keyframe.
-                // - Frame counter reached interval: keyframe.
-                // - First frame of stream / no valid reference: keyframe.
-                // - Otherwise: inter (ZEROMV LAST_FRAME).
-                bool forceKey = _forceKeyFrame
-                              || _framesSinceLastKeyframe == 0
-                              || _framesSinceLastKeyframe >= _keyframeIntervalFrames;
-                _forceKeyFrame = false;
-
-                byte[] result;
-                if (forceKey)
-                {
-                    result = frame_encoder.EncodeKeyframeWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers);
-                    _framesSinceLastKeyframe = 1;
-                }
-                else
-                {
-                    // Inter (P) frame: ZEROMV referencing LAST_FRAME for
-                    // every macroblock. The reference frame is the
-                    // reconstruction of the previous keyframe / inter
-                    // frame, cached on the per-thread FrameEncoderBuffers.
-                    result = frame_encoder.EncodeInterFrameWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers, EnableIntraFallback);
-                    _framesSinceLastKeyframe++;
-                }
-                return result;
+                // The array returning contract hands the caller a frame it owns outright, so copy it out of the
+                // encoder's re-used output buffer.
+                return _frameBuffers.OutBuf.AsSpan(0, length).ToArray();
             }
+        }
+
+        /// <summary>
+        /// Encodes a raw frame and writes the encoded VP8 frame to a stream, without the new array per frame that
+        /// <see cref="EncodeVideo"/> returns.
+        /// </summary>
+        /// <param name="width">The frame width in pixels, a positive multiple of 16.</param>
+        /// <param name="height">The frame height in pixels, a positive multiple of 16.</param>
+        /// <param name="sample">The raw frame in <paramref name="pixelFormat"/>.</param>
+        /// <param name="pixelFormat">The pixel format of <paramref name="sample"/>.</param>
+        /// <param name="codec">Must be <see cref="VideoCodecsEnum.VP8"/>.</param>
+        /// <param name="output">The writable stream to write the frame to. It does not need to be seekable.</param>
+        /// <param name="bytesWritten">The length of the encoded frame written to <paramref name="output"/>.</param>
+        /// <returns>True, this encoder produces a frame for every input frame.</returns>
+        /// <remarks>
+        /// <para>
+        /// The VP8 bitstream cannot be produced as a forward-only sequence of bytes: the frame header carries the size
+        /// of the first partition, which is only known once that partition is complete, and the boolean entropy coder
+        /// propagates carries back into bytes it has already emitted. The frame is therefore assembled in an output
+        /// buffer owned by the codec, allocated once and re-used for every frame, and then written to
+        /// <paramref name="output"/> with a single write. That one copy replaces the frame sized allocation and copy of
+        /// <see cref="EncodeVideo"/>.
+        /// </para>
+        /// <para>
+        /// Input that is not I420 is converted in a re-used buffer, and the I420 planes are read in place, so encoding
+        /// does not allocate per frame once the buffers have been sized for the resolution.
+        /// </para>
+        /// </remarks>
+        public bool TryEncodeVideo(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec, Stream output, out int bytesWritten)
+        {
+            if (output == null)
+            {
+                throw new ArgumentNullException(nameof(output));
+            }
+
+            // Checked before encoding, otherwise the frame would advance the encoder state (key frame counter and
+            // reference frame) and then be lost on the write.
+            if (!output.CanWrite)
+            {
+                throw new ArgumentException("The output stream must be writable.", nameof(output));
+            }
+
+            ThrowIfCodecNotSupported(codec);
+
+            lock (_encoderLock)
+            {
+                int length = EncodeFrame(width, height, sample, pixelFormat);
+                output.Write(_frameBuffers.OutBuf, 0, length);
+                bytesWritten = length;
+                return length > 0;
+            }
+        }
+
+        private static void ThrowIfCodecNotSupported(VideoCodecsEnum codec)
+        {
+            if (codec != VideoCodecsEnum.VP8)
+            {
+                throw new NotSupportedException($"The VP8 codec cannot encode {codec}.");
+            }
+        }
+
+        /// <summary>
+        /// Encodes one frame into the output buffer of <see cref="_frameBuffers"/>. Every encode method goes through
+        /// here so they all produce the same frames. Must be called with <see cref="_encoderLock"/> held, and the frame
+        /// consumed before it is released.
+        /// </summary>
+        /// <returns>The length of the encoded frame at the start of the output buffer.</returns>
+        private int EncodeFrame(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat)
+        {
+            if (width <= 0 || width % 16 != 0 || height <= 0 || height % 16 != 0)
+            {
+                // The foundation encoder requires multiples of 16 — no
+                // padding/cropping support yet.
+                throw new NotSupportedException(
+                    $"Width and height must be positive multiples of 16. Got {width}x{height}.");
+            }
+
+            // Convert the input sample into planar I420. PixelConverter.ToI420
+            // needs the source row stride in BYTES, which for packed formats is
+            // width * bytesPerPixel -- NOT width. Passing width here corrupts the
+            // conversion (it reads the source with the wrong row pitch, smearing /
+            // horizontally repeating the image) for every non-I420 input.
+            ReadOnlySpan<byte> i420;
+            if (pixelFormat == VideoPixelFormatsEnum.I420)
+            {
+                i420 = sample;
+            }
+            else
+            {
+                int bytesPerPixel;
+                switch (pixelFormat)
+                {
+                    case VideoPixelFormatsEnum.Bgra:
+                    case VideoPixelFormatsEnum.Rgba:
+                        bytesPerPixel = 4;
+                        break;
+                    case VideoPixelFormatsEnum.Bgr:
+                    case VideoPixelFormatsEnum.Rgb:
+                        bytesPerPixel = 3;
+                        break;
+                    case VideoPixelFormatsEnum.NV12:
+                        bytesPerPixel = 1;
+                        break;
+                    default:
+                        bytesPerPixel = 1;
+                        break;
+                }
+
+                // PixelConverter's buffer writer overload runs the same conversion as its array returning one, into
+                // the re-used buffer instead of a new array.
+                _i420Buffer.ResetWrittenCount();
+                PixelConverter.ToI420(_i420Buffer, width, height, width * bytesPerPixel, sample, pixelFormat);
+                i420 = _i420Buffer.WrittenSpan;
+            }
+
+            int ySize = width * height;
+            int cSize = (width / 2) * (height / 2);
+            if (i420.Length != ySize + 2 * cSize)
+            {
+                throw new ArgumentException(
+                    $"I420 buffer length {i420.Length} does not match expected {ySize + 2 * cSize} for {width}x{height}.");
+            }
+
+            // The planes are read in place, no per-frame copies.
+            ReadOnlySpan<byte> srcY = i420.Slice(0, ySize);
+            ReadOnlySpan<byte> srcU = i420.Slice(ySize, cSize);
+            ReadOnlySpan<byte> srcV = i420.Slice(ySize + cSize, cSize);
+
+            // Decide keyframe vs inter for this call.
+            // - Forced keyframe (via ForceKeyFrame()): always keyframe.
+            // - Frame counter reached interval: keyframe.
+            // - First frame of stream / no valid reference: keyframe.
+            // - Frame size changed: keyframe, as the reference frame has the old size.
+            // - Otherwise: inter (ZEROMV LAST_FRAME).
+            bool sizeChanged = _frameBuffers.Width != width || _frameBuffers.Height != height;
+            bool forceKey = _forceKeyFrame
+                          || sizeChanged
+                          || _framesSinceLastKeyframe == 0
+                          || _framesSinceLastKeyframe >= _keyframeIntervalFrames;
+            _forceKeyFrame = false;
+
+            int length;
+            if (forceKey)
+            {
+                length = frame_encoder.EncodeKeyframeInto(srcY, srcU, srcV, width, height, _baseQIndex, _frameBuffers);
+                _framesSinceLastKeyframe = 1;
+            }
+            else
+            {
+                // Inter (P) frame: ZEROMV referencing LAST_FRAME for
+                // every macroblock. The reference frame is the
+                // reconstruction of the previous keyframe / inter
+                // frame, cached on the per-codec FrameEncoderBuffers.
+                length = frame_encoder.EncodeInterFrameInto(srcY, srcU, srcV, width, height, _baseQIndex, _frameBuffers, EnableIntraFallback);
+                _framesSinceLastKeyframe++;
+            }
+            return length;
         }
 
         public unsafe IEnumerable<VideoSample> DecodeVideo(byte[] frame, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
