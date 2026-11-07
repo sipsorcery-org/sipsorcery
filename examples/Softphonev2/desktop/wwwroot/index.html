@@ -17,14 +17,8 @@
       </div>
       <!-- Your SIP address; a click copies it, for the other side to dial. -->
       <div class="topbar-right">
-        <!-- Diagnostics only: shown with the switch on. -->
+        <!-- Diagnostics only: shown while the diagnostics panel (F12) is open. -->
         <button type="button" class="reg diag-only" id="reg"><span class="reg-text" id="regText"></span><span class="reg-copy" id="regCopy"></span></button>
-        <!-- Diagnostics: the SIP log and the copyable SIP address. -->
-        <label class="diag-switch" title="Show the SIP log and your SIP address">
-          <input type="checkbox" id="diagToggle" role="switch">
-          <span class="diag-track" aria-hidden="true"></span>
-          <span>Diagnostics</span>
-        </label>
       </div>
     </header>
 
@@ -38,6 +32,8 @@
       <button type="submit" class="btn btn-primary" id="callBtn">Call</button>
     </form>
 
+    <!-- The stage, with the real-time text popover and toast over its bottom edge. -->
+    <div class="stage-row">
     <main class="stage" id="stage" data-mode="card">
       <video id="remote" class="remote" autoplay playsinline></video>
 
@@ -55,7 +51,6 @@
 
       <!-- No video on the call: the conversation as two rows of frequency bars. -->
       <div class="audio-view" id="audioView">
-        <span class="audio-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg>Audio only</span>
         <div class="viz-wrap">
           <span class="viz-who them" id="vizThem"></span>
           <span class="viz-who me">You</span>
@@ -86,12 +81,46 @@
           <div class="q-pli-legend"><span class="q-pli-head">PLIs</span><span class="q-pli-keys"><span id="qPliRxKey">Rcvd</span><span id="qPliTxKey">Sent</span></span></div>
           <canvas class="q-pli-chart" id="qPliChart" width="240" height="40" role="img" aria-label="PLIs received and sent, last 30 seconds"></canvas>
         </div>
-        <div class="q-graph-head"><span>Quality reported by receiver</span><span id="qGraphCol"></span></div>
+        <!-- Which direction the graph shows, and who measured it. -->
+        <div class="q-graph-head">
+          <span class="q-graph-by" id="qGraphCol"></span>
+          <div class="q-switch" id="qSwitch" role="radiogroup" aria-label="Graph">
+            <button type="button" role="radio" data-col="sent">↑ Sent</button>
+            <button type="button" role="radio" data-col="recv">↓ Received</button>
+          </div>
+        </div>
         <canvas class="q-chart" id="qChart" width="472" height="112" role="img"></canvas>
         <div class="q-legend" id="qLegend"></div>
         <div class="q-foot" id="qFoot"></div>
       </div>
     </main>
+
+    <!-- Real-time text (RFC 4103): a popover over the stage, above the Text button. Clicking
+         away or Esc closes it. -->
+    <aside class="rtt" id="rtt" hidden aria-label="Real-time text">
+      <div class="rtt-head">
+        <span class="rtt-title">Text</span><span class="rtt-sub">Real-time · RFC 4103</span>
+        <button type="button" class="rtt-close" id="rttClose" aria-label="Close text" title="Close text (Esc)"></button>
+      </div>
+      <div class="rtt-log" id="rttLog" role="log" aria-label="Conversation"></div>
+      <div class="rtt-compose">
+        <div class="rtt-entry" id="rttEntry">
+          <input type="text" class="rtt-input" id="rttInput" autocomplete="off" spellcheck="true" placeholder="Type a message…" aria-label="Message">
+          <button type="button" class="rtt-send" id="rttSend" aria-label="Send" title="Send (Enter)" disabled></button>
+        </div>
+        <div class="rtt-hint" id="rttHint"></div>
+        <button type="button" class="btn rtt-add" id="rttAdd">Add text to this call</button>
+      </div>
+    </aside>
+
+    <!-- Text arriving with the popover closed: who and what, for a few seconds. -->
+    <div class="rtt-toast" id="rttToast" role="status" hidden>
+      <span class="rtt-toast-icon" id="rttToastIcon" aria-hidden="true"></span>
+      <span class="rtt-toast-who" id="rttToastWho"></span>
+      <span class="rtt-toast-text" id="rttToastText"></span>
+      <button type="button" class="rtt-toast-reply" id="rttReply">Reply</button>
+    </div>
+    </div>
 
     <!-- The control bar, shown before calls too. Mute and Camera are split buttons: the ▾ opens
          a menu to pick the microphone and speaker, or the camera (and, in diagnostics mode, the
@@ -110,24 +139,41 @@
         <div class="device-menu" id="camMenu" role="menu" aria-label="Camera" hidden></div>
       </div>
       <button type="button" class="btn btn-danger" id="hangupBtn" disabled></button>
-      <!-- On a video call: hides or shows your self view (V too). At the right, under it. -->
-      <button type="button" class="btn self-toggle" id="selfViewBtn" aria-pressed="true" hidden></button>
+      <div class="controls-right">
+        <!-- Real-time text, rarely used: an icon that opens the popover above it (T too). -->
+        <button type="button" class="btn icon-btn text-btn" id="textBtn" aria-pressed="false" aria-label="Text" disabled></button>
+        <!-- On a video call: hides or shows your self view (V too). At the right, under it. -->
+        <button type="button" class="btn self-toggle" id="selfViewBtn" aria-pressed="true" hidden></button>
+      </div>
     </div>
 
-    <!-- Diagnostics mode: simulated loss on what we send, then the SIP log (folded until opened). -->
-    <details class="log diag-only">
-      <summary>Diagnostics menu</summary>
+  </div>
+
+  <!-- Diagnostics (F12), docked at the bottom like a browser's developer tools. While it's open
+       the app is in diagnostics mode: Call quality, your SIP address, the test video sources. -->
+  <section class="devpanel" id="devPanel" hidden aria-label="Diagnostics">
+    <div class="dev-resize" id="devResize" title="Drag to resize" aria-hidden="true"></div>
+    <div class="dev-bar">
+      <span class="dev-title">Diagnostics</span>
+      <div class="dev-tabs" role="tablist" aria-label="Diagnostics">
+        <button type="button" class="dev-tab" role="tab" id="tabLog" data-tab="log" aria-controls="log" aria-selected="true">SIP log</button>
+        <button type="button" class="dev-tab" role="tab" id="tabNet" data-tab="net" aria-controls="paneNet" aria-selected="false">Network</button>
+      </div>
+      <span class="dev-spacer"></span>
+      <button type="button" class="dev-act" id="logCopy" title="Copy the whole SIP log">Copy log</button>
+      <button type="button" class="dev-act" id="logClear" title="Clear the SIP log">Clear</button>
+      <span class="dev-key" title="F12 opens and closes diagnostics">F12</span>
+      <button type="button" class="dev-close" id="devClose" aria-label="Close diagnostics" title="Close diagnostics (F12)"></button>
+    </div>
+    <pre class="dev-pane" id="log" role="tabpanel" aria-labelledby="tabLog" tabindex="0"></pre>
+    <div class="dev-pane dev-net" id="paneNet" role="tabpanel" aria-labelledby="tabNet" hidden>
       <div class="loss-sliders">
         <label class="loss-row"><span>Audio loss</span><input type="range" id="lossAudio" min="0" max="50" step="1" value="0"><output id="lossAudioOut">0%</output></label>
         <label class="loss-row"><span>Video loss</span><input type="range" id="lossVideo" min="0" max="50" step="1" value="0"><output id="lossVideoOut">0%</output></label>
         <p class="loss-note">Drops that share of the audio or video packets you send on the call, at random. The far end's RTCP reports should show it in Call quality, under ↑ Sent.</p>
       </div>
-      <details class="log-section" id="logSection">
-        <summary class="log-head">SIP log</summary>
-        <pre id="log"></pre>
-      </details>
-    </details>
-  </div>
+    </div>
+  </section>
   <script type="module" src="app.js"></script>
 </body>
 </html>

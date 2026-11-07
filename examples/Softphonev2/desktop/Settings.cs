@@ -39,6 +39,18 @@ public sealed class Settings
     /// </summary>
     public bool OfferVideo { get; set; } = true;
 
+    /// <summary>
+    /// Offer real-time text (RFC 4103) on calls. Off leaves it out of every offer and answer, and
+    /// turns down the other side adding it. (The real app will have this per account.)
+    /// </summary>
+    public bool OfferText { get; set; } = true;
+
+    /// <summary>Testing: open the diagnostics panel (F12) at start.</summary>
+    public bool Diagnostics { get; set; }
+
+    /// <summary>Testing: once text is up on a call, type this into it, then Enter.</summary>
+    public string? Say { get; set; }
+
     /// <summary>Testing: calls and answers start with the camera off.</summary>
     public bool CameraOff { get; set; }
 
@@ -88,6 +100,9 @@ public sealed class Settings
                 case "--dial" when i + 1 < args.Length: settings.Dial = args[++i]; break;
                 case "--auto-answer": settings.AutoAnswer = true; break;
                 case "--no-video": settings.OfferVideo = false; break;
+                case "--no-text": settings.OfferText = false; break;
+                case "--diagnostics": settings.Diagnostics = true; break;
+                case "--say" when i + 1 < args.Length: settings.Say = args[++i]; break;
                 case "--camera-off": settings.CameraOff = true; break;
                 case "--video": settings.VideoCall = true; break;
                 case "--test-pattern": settings.TestPattern = true; break;

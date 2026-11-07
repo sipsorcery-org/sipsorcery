@@ -21,24 +21,30 @@ the desktop app, using the media design the video spike
 Under the stage, from the UX prototype (`prototype/web`), and there the whole time, not just
 during a call, so the microphone and camera can be set up first:
 
-- **Mute ▾**: mutes the microphone. Before a call too, and the call then starts muted. The ▾
-  lists microphones and speakers; one picked between calls is used from the next call.
-- **Camera ▾**: on a video call, Turn camera on or Turn camera off (like Mute and Unmute, the
+- **Mic ▾**: Turn mic off or Turn mic on (the label says what pressing it does, as on the
+  camera button; amber while it's off). Before a call too: the call then starts with the mic
+  off, and the tooltip says so. The ▾ lists microphones and
+  speakers; one picked between calls is used from the next call.
+- **Camera ▾**: on a video call, Turn camera on or Turn camera off (like the mic button, the
   label says what pressing it does); on an audio call, Add video. Before a
   call, whether a video call starts with your camera on, with the preview following; it's
   disabled until the Audio | Video switch is on Video, and while a call is ringing (the Answer
   button has its own choice). The ▾ lists cameras and, in diagnostics mode, the test pattern.
+- **Text** (an icon, at the right beside Self view, since it's rarely used): opens the
+  real-time text popover (T does too). During a call only.
 - **End**: Cancel while calling, End once connected.
 
 A device you pick takes effect at once, mid-call too, by swapping the track on the page's
 connection (no renegotiation), and is remembered between runs (per profile). A remembered
-device that's gone falls back to the default. The prototype's Text, Hold, Keypad and Transfer
+device that's gone falls back to the default. The prototype's Hold, Keypad and Transfer
 aren't here yet; they come with those features.
 
 ## Call details
 
 The info bar at the top left of the stage (their address and the call's duration) has a
-chevron that drops down the call's details. Open or closed is remembered.
+chevron that drops down the call's details, in diagnostics mode only (F12): they're technical,
+so otherwise the info bar is just who and how long, with no chevron. It's closed at the start
+of every call, and when diagnostics closes.
 
 | Row | What it says | From |
 |---|---|---|
@@ -52,6 +58,33 @@ chevron that drops down the call's details. Open or closed is remembered.
 
 The host sends these as a `details` message when the call connects, and again if video is
 added.
+
+## Real-time text
+
+Every call offers real-time text (RFC 4103: T.140 inside RED, with plain T.140 as the
+fallback) unless `--no-text`. Unlike audio and video it isn't relayed to the page's
+connection: the host's `RttEndPoint` sends and receives it, and the page swaps `text`
+messages with the host.
+
+- **Yours goes when you send it**, with the Send button in the entry box or Enter: the
+  whole line, then a T.140 line separator (U+2028). Nothing is sent while you type. The first
+  send starts with a byte order mark, as T.140 asks.
+- **Theirs may arrive letter by letter**, from a phone that sends as it's typed: their
+  unfinished line shows live, dashed with a caret. U+FEFF is dropped, backspace (U+0008)
+  takes back their last letter, U+2028, U+2029, CR or LF end their line, and other control
+  characters are ignored.
+- **A popover, not a panel.** It opens over the bottom right of the stage, just above the Text
+  button, so the video doesn't shrink (it covers the self view while open). Esc, its ×, the
+  Text button, T, or a click anywhere else closes it, and Esc puts the focus back on the button.
+- **Text arriving while it's closed** shows as a toast at the bottom of the stage: their name,
+  what they've typed (live, if their phone sends letter by letter) and *Reply*, which opens the
+  popover. It fades 6 s after the last letter, and the Text button keeps a red dot until the
+  popover is opened. Nothing opens by itself.
+- **Not on the call** (their phone didn't answer `m=text`): "Text isn't set up on this call"
+  and *Add text to this call*, which sends a re-INVITE with `m=text`. If they turn it down
+  (`m=text` with port 0) it says their phone doesn't support real-time text; with no answer in
+  8 s, the same. Either side adding text starts it when their SDP agrees.
+- A new call starts an empty conversation.
 
 ## Video and no video
 
@@ -87,7 +120,7 @@ added.
   can be switched mid-call. It has colour bars and a grey ramp (colour and banding), a dial
   whose hand steps once per frame drawn (a dropped frame is a skipped tick), a clock to the
   millisecond (compare the far end's picture with this screen for the delay), the sender's
-  name or address and a frame counter. Turning diagnostics off goes back to the camera, but
+  name or address and a frame counter. Closing diagnostics (F12) goes back to the camera, but
   turned off: the camera is only sent once you press Turn camera on, since it never starts by
   itself. With no camera the placeholder is sent, as it would be anyway.
 - **Audio bars** (diagnostics mode), the Camera ▾'s other diagnostic source, sends your
@@ -131,7 +164,7 @@ The stage then shows one of three things:
 |---|---|
 | Yes | Their video. |
 | Agreed, but nothing arriving for 2 s | Their initial and "No video arriving from X". A softphone with its camera off sends its placeholder, so this means the video has stalled or the far end stopped sending, not that their camera is off. |
-| No video on the call (`m=video` refused or never offered) | An "Audio only" label and two rows of frequency bars: their audio above the centre line, yours below. With reduced motion on, each row is a single level bar. |
+| No video on the call (`m=video` refused or never offered) | Two rows of frequency bars: their audio above the centre line, yours below. With reduced motion on, each row is a single level bar. |
 
 The bars also show **one-way audio**, the classic SIP/NAT fault. If no audio packets arrive for
 2 s, their row drops to a thin line with "No audio arriving from X". If the far end's RTCP
@@ -142,7 +175,7 @@ stopped), your row turns red with "X isn't getting your audio".
 
 **Call quality**, at the top right of the stage during a call, starts as one line: the title,
 the round trip (an out-and-back arrow and the value, "⮐ 0.3ms", from their RTCP), both audio MOS (↑ what we send, ↓
-what we receive) and a chevron to open it. Open or closed is remembered. Opened, it's a small
+what we receive) and a chevron to open it. It's closed at the start of every call. Opened, it's a small
 table with a column for each direction, so there's no "they"
 or "you" to work out:
 
@@ -157,22 +190,24 @@ for each. A PLI means a lost packet has broken the receiver's picture, which sta
 a keyframe arrives. It's an indicator, not a history. PLIs come from the page's `pliCount`; the
 relay passes them straight through, so they're the SIP leg's.
 
-Below that, a graph titled "Quality reported by receiver" shows one column over the last two
-minutes: audio MOS (a line, 1–5), audio loss (bars) and video loss (a line), both 0–20%. On ↓
+Below that, a graph shows one column over the last two minutes. A switch above it on the
+right, **↑ Sent | ↓ Received** (like the Audio | Video switch), picks which, and the title on
+the left says who measured it: "Reported by them" (their RTCP on what we send) or "Measured by us" (what
+we receive). The column on the graph is tinted in the table to match; the headings themselves
+aren't clickable. The graph has audio MOS (a line, 1–5), audio loss (bars) and video loss (a line), both 0–20%. On ↓
 Received, white bars along the bottom show how long our picture was actually frozen, from the
 browser's `totalFreezesDuration`; it only counts a freeze once it has ended, so a bar is drawn
 back over the seconds it covered when it does. ↑ Sent has none: RTCP doesn't say whether their
-picture froze. Either column is the receiving end's view: theirs of what we send, or ours of
-what they send. Clicking a column's heading or any of its values picks it. The last line gives
+picture froze. The last line gives
 the round trip ("RTT 0.3 ms"), or says it's waiting for their RTCP, or after 15 s that none has
 come. Hovering over a value says
 what it is, where it comes from, and for loss the total packets lost. Only video calls show the
 video rows.
 
-To see the reports react, the **Diagnostics menu** under the control bar has two sliders,
-Audio loss and Video loss (0–50%). They drop that share of the audio or video packets we send
+To see the reports react, the diagnostics panel's **Network** tab has two sliders, Audio
+loss and Video loss (0–50%). They drop that share of the audio or video packets we send
 on the SIP leg, at random, from the moment a slider is let go, and carry over to the next call.
-Under them is the SIP log, folded under its own ▶ until opened. Each dropped packet still uses up its sequence number, so the far
+While either is above 0, the Network tab has a red dot, so it isn't forgotten. Each dropped packet still uses up its sequence number, so the far
 end sees a real gap and counts it in its RTCP. Audio is relayed packet by packet, so dropping
 one is easy. Video is handed to SIPSorcery a frame at a time and packetised inside the library,
 with no way to drop a single packet, so while video loss is on, the relay packetises VP8 and
@@ -212,10 +247,23 @@ dotnet run -c Release
 ```
 
 On its own it listens on port 5060 (UDP and TCP), or if that's taken on a port the OS picks (the log says which), and makes direct calls: type
-`sip:user@host[:port]` or `user@host` and press Call. The **Diagnostics** switch, top right,
-shows the Diagnostics menu (simulated loss and the SIP log) and this softphone's own address;
-off, both are hidden. For now it's on at
-every start, while it's being tested. The address in the header reads e.g. `No account · sip:192.168.1.20:5070`; click it to copy it for the other side to
+`sip:user@host[:port]` or `user@host` and press Call.
+
+**Diagnostics: F12.** As in a browser's developer tools, F12 opens a panel docked along the
+bottom of the window, and F12 again (or its ×) closes it. It's closed at every start
+(`--diagnostics` opens it). Drag its top edge to resize it, between 120 px and 70% of the
+window. It has two tabs:
+
+- **SIP log**: everything the host and page log, following the newest line unless you've
+  scrolled up. *Copy log* puts the whole log on the clipboard; *Clear* empties it.
+- **Network**: the simulated loss sliders (see Call quality).
+
+While it's open the app is in diagnostics mode: Call quality over the stage, this softphone's
+address in the header, and the Test pattern and Audio bars sources on the Camera ▾. Closing it
+hides them all. The page catches F12 before WebView2 does, so it doesn't open WebView2's own
+DevTools; Ctrl+Shift+I still does, for working on the page.
+
+The address in the header reads e.g. `No account · sip:192.168.1.20:5070`; click it to copy it for the other side to
 dial. It's the address this PC uses to reach the internet (which works from this PC too) and the
 UDP SIP port. With an account it copies the account's address. To register with a server, copy
 `softphone.sample.json` to `softphone.json` next to the exe and fill it in. The password is stored
@@ -234,7 +282,10 @@ Switches, mostly for testing:
 | `--video` | Start with the switch on Video, so `--dial` places a video call. |
 | `--test-pattern` | Send the test pattern instead of the camera. |
 | `--audio-bars` | Send the microphone's frequency bars instead of the camera. |
-| `--loss-audio <percent>`, `--loss-video <percent>` | Start with the Diagnostics menu's loss sliders at these values. |
+| `--diagnostics` | Open the diagnostics panel (F12) at start. |
+| `--loss-audio <percent>`, `--loss-video <percent>` | Start with the Network tab's loss sliders at these values. |
+| `--no-text` | No real-time text: it's left out of offers and answers, so the other side adding it is turned down. (Will be per account.) |
+| `--say <text>` | Once text is up on a call, send this message. |
 | `--no-video` | No video at all: the switch is locked to Audio, and video offers or Add video from the other side are turned down. (Will be the per-account "Video calls" setting.) |
 | `--camera-off` | Start with the Camera button off, so calls and answers start with the camera off. |
 | `--add-video <s>` | Press Add video this many seconds into an audio call. |
@@ -274,11 +325,11 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 |---|---|
 | Video call, `--test-pattern` to `--fake-media` | Both ways at 30 fps; the callee shows the pattern with the caller's clock, and the caller's self view shows it unmirrored. |
 | Same, Camera off, Camera on, then diagnostics off | Off: placeholder at 5 fps; on: pattern back at 30 fps; diagnostics off: the pattern stops, the placeholder is sent, the self view says "Camera off" and the button "Turn camera on". The camera only opens when that's pressed. |
-| Control bar, idle | Mute ▾, Camera ▾ and a disabled End. Camera ▾ lists the fake camera and, with diagnostics on, Test pattern; Mute ▾ lists three fake microphones and three speakers. |
+| Control bar, idle | Turn mic off ▾, Camera ▾ and a disabled End. Camera ▾ lists the fake camera and, with diagnostics on, Test pattern; the mic ▾ lists three fake microphones and three speakers. |
 | Before a call: Test pattern, Camera off | The preview goes from the pattern to the placeholder with "Camera off"; the button's tooltip says video calls start with your camera off. |
 | Switch on Audio, idle | Camera and its ▾ are disabled. |
-| Start, then a call, then hang up | The log shows no microphone until Call (caller) or Answer (callee; none while ringing), and "microphone closed" on both when the call ends. The Mute ▾ menu still lists the devices with the mic closed. |
-| Mute before dialling | The caller's microphone opens muted; the callee reads level 0. |
+| Start, then a call, then hang up | The log shows no microphone until Call (caller) or Answer (callee; none while ringing), and "microphone closed" on both when the call ends. The mic ▾ menu still lists the devices with the mic closed. |
+| Mic off before dialling | The caller's microphone opens muted; the callee reads level 0. |
 | Incoming video call | Decline and Answer ▾, with "fake_device_0" under Answer; the ▾ lists the camera, Test pattern and Camera off. The control bar's Camera is disabled. |
 | Answer ▾: Test pattern, then Answer | The label changes to "Test pattern"; the answered call sends it at 30 fps. |
 | Answer ▾: Camera off, then Answer | The label says "Camera off" with a crossed-out camera; the call sends the placeholder at 5 fps. |
@@ -286,6 +337,11 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Answer ▾ in a 900×560 window | Not enough room below the button, so the menu opens upward, whole, over the top of the stage. |
 | Switch to Video, Self view off, then a video call | The button appears with the switch; off hides the preview and closes the camera; the camera opens when the call connects and sends 30 fps. |
 | Video call, `--audio-bars` to `--fake-media` | The callee sees the caller's microphone bars move with the fake beep, the microphone's name, and the caller's clock, at 30 fps. Before the call the preview shows flat bars and "Microphone opens with the call"; muting mid-call shows "Muted" and flat bars at the far end. |
+| Video call, caller with `--say hello_there_from_A`, to `--auto-answer` | Both log "real-time text on (RFC 4103)". The callee gets a toast, "Thisis hello_there_from_A" with Reply, for 6 s, and a dot on the Text icon; nothing opens. |
+| Same, callee: Text icon, types "Hi A", Enter, then clicks the video | The popover opens over the stage (the video keeps its size) with both messages; the click closes it. The caller gets a "B Hi A" toast. |
+| Caller: Text icon, then Esc | The popover opens with the conversation; Esc closes it and focuses the Text icon. |
+| Audio call, caller types "Hi from A" | No "Audio only" label. Nothing reaches the callee while the caller types; on Enter the callee gets the toast and the dot. |
+| Caller with `--no-text`; callee: Text, then Add text to this call | "Text isn't set up on this call" with the button; after it, "Asking … to add text", then within 2 s "…'s phone doesn't support real-time text" (their answer has `m=text` with port 0). |
 | Video call to `--auto-answer` | The caller's panel shows the callee's RTCP: no loss, jitter under 1 ms, round trip about 0.3 ms, MOS 4.4. |
 | Same, caller with `--loss-audio 5 --loss-video 10` | The sliders start at 5% and 10%; their RTCP shows 2–5.5% audio and about 7% video loss per report, the totals climbing. |
 | Mid-call: Audio loss to 20%, Video loss to 10%, then both back to 0 | Their reports go to 17–23% audio and 9.4–10.5% video loss, MOS about 2.7; at 10% video loss the far end decodes 4–10 fps between keyframes. Back at 0, loss returns to 0, the totals stop climbing and the far end is back to 30 fps (no sequence jump). |
@@ -293,15 +349,17 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Idle on Video with Camera off: Camera ▾, Test pattern | The preview shows the pattern and the button shows Turn camera off. |
 | Both ends with loss (caller audio 10%, video 5%; callee audio 6%, video 3%) | The caller's ↑ Sent shows about 10% audio and 4.7% video loss, MOS 3.4; ↓ Received shows 5.6% audio and 2.7% video loss, MOS 3.8, and the decoded frame rate. Clicking ↓ Received moves the graph to that column. |
 | Audio call to a callee with 6% audio loss | The panel has only the audio rows; ↓ Received shows 6.7% loss, MOS 3.7. |
-| Video call, panel never opened | One line, "Call quality ↑ 3.3 ↓ 3.7" and a chevron; clicking opens the table (sent fps 30) with "Quality reported by receiver" over the graph, and the chevron turns up. |
+| Video call, panel never opened | One line, "Call quality ↑ 3.3 ↓ 3.7" and a chevron; clicking opens the table (sent fps 30) with the ↑ Sent \| ↓ Received switch on ↑ Sent and "Reported by them" over the graph, and the chevron turns up. |
+| Same, ↓ Received on the switch | The tint moves to the ↓ Received column, the title says "Measured by us", and Frozen joins the legend. Switch and title fit on one line in the 260 px panel. |
 | Video call, caller `--loss-video 2`, callee `--loss-video 5` | The folded line reads "Call quality ⮐ 0.6ms ↑ 4.4 ↓ 4.4"; opened, "RTT 0.6 ms" is the last line. The PLIs row under the table ticks Rcvd (amber) and Sent (violet) over the last 30 s, whichever column is picked; ↓ Received's graph has white "Frozen" bars along the bottom. |
 | Video call, open the info bar's chevron | Call details: "Outgoing · no account", their phone `sipsorcery_v10.0.18.0`, "Not encrypted: plain RTP, SIP over UDP", audio "↑ Opus 48 kHz ↓ G722 16 kHz", video VP8, SIP `UDP 127.0.0.1:5080`, their media address and the Call-ID. The callee's shows "Incoming" and the codecs the other way round. |
 | Far end with `--loss-video 100` | "No video arriving from B" under their initial; ↓ Received video fps 0. |
 | Self view, then `V` | The self view hides and comes back; the far end still gets 30 fps throughout. |
-| Mute before dialling, then a video call | The call connects muted (Unmute shown). |
+| Mic off before dialling, then a video call | The call connects with the mic off (Turn mic on shown). |
 | Mid-call: another microphone, then the fake camera | Both swap without renegotiation; video carries on at about 30 fps, and the far end gets the new microphone's beep. |
 | Pick a microphone, restart | The menu shows the picked microphone in use. |
-| Diagnostics switch off, then on | Off hides the header address and the Diagnostics menu; on brings both back. |
+| Idle, then F12, Network, drag the top edge up, F12 | Starts with no header address and no panel. F12 opens the panel on SIP log ("SIP listening on…") with the address in the header, and WebView2's DevTools stays shut. Network shows the sliders; the drag makes the panel taller and the stage shorter. F12 again closes it and hides the address. |
+| Video call, caller with `--diagnostics --loss-audio 5` | The caller has Call quality (↑ MOS 3.8), a red dot on Network and the log following the call; the callee, panel closed, has neither. |
 | Video call answered (`--video`, `--auto-answer`) | Each stage goes card, then their initial, then video; never the audio-only bars (the page logs each `stage:` change). |
 | Click the header on B, then dial what was copied from A | The clipboard held `sip:192.168.1.123:5080`; the header showed "Copied"; A's call to it connected. |
 | Softphone to softphone, audio call | Both stages show the audio-only bars and Add video. |

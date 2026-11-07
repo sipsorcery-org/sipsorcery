@@ -1,7 +1,9 @@
 using System.Net;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Softphone;
 
@@ -68,6 +70,17 @@ public sealed class Phone : IDisposable
         string Direction, string? Account, string? Signalling, string? TheirPhone, string? CallId,
         string? TheirMedia, bool MediaEncrypted, bool SignallingEncrypted, string? Audio, string? Video);
     public event Action<CallDetails>? Details;
+
+    // ---- Real-time text (RFC 4103): T.140 with RED redundancy, handled here in C# ----
+    // Text isn't relayed to the page's peer connection: the page sends what's typed as host
+    // messages and gets what arrives the same way.
+
+    /// <summary>Text on the call: off (not set up), adding (re-INVITE out), on, refused, or disabled (--no-text).</summary>
+    public string TextState { get; private set; } = "off";
+    /// <summary>Characters from them, as they arrive: may include backspace (U+0008) and line separators.</summary>
+    public event Action<string>? TextReceived;
+    private RttEndPoint? _rtt;
+    private System.Threading.Timer? _addTextTimer;
     private bool _outgoing;
     private string? _theirPhone;
     /// <summary>Full SIP messages, for the log file only.</summary>
@@ -171,6 +184,7 @@ public sealed class Phone : IDisposable
             Remote = ResolveAddress(typed);
             ua = NewUserAgent();
             rtp = MediaRelay.CreateSipSession(video && _settings.OfferVideo);
+            AttachText(rtp);
             (_ua, _rtp) = (ua, rtp);
             SetState(CallState.Calling);
         }
@@ -205,6 +219,7 @@ public sealed class Phone : IDisposable
             if (State != CallState.Ringing || _incoming == null) return;
             (ua, uas) = (_ua, _incoming);
             rtp = MediaRelay.CreateSipSession(_settings.OfferVideo);
+            AttachText(rtp);
             _rtp = rtp;
         }
         if (ua != null && uas != null && await ua.Answer(uas, rtp)) await ConnectedAsync(rtp);
@@ -258,6 +273,89 @@ public sealed class Phone : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gives a new SIP session a text track (RED with T.140 inside, and plain T.140) and an
+    /// <see cref="RttEndPoint"/> to send and receive on it, wired the way VoIPMediaSession does.
+    /// It's offered on every call (unless --no-text), and only started once it's agreed.
+    /// </summary>
+    private void AttachText(RTPSession rtp)
+    {
+        _rtt?.Dispose();
+        _rtt = null;
+        TextState = _settings.OfferText ? "off" : "disabled";
+        if (!_settings.OfferText) return;
+        var rtt = new RttEndPoint();
+        var red = rtt.GetTextSourceFormat();
+        var formats = new List<TextFormat> { red };
+        if (T140RedPayload.TryParseFmtp(red.Parameters, out int t140, out _) && t140 != red.FormatID)
+            formats.Add(new TextFormat(TextCodecsEnum.T140, t140));
+        rtp.addTrack(new MediaStreamTrack(formats));
+        rtt.OnTextSourceEncodedSample += rtp.SendText;
+        rtp.OnTextFormatsNegotiated += agreed =>
+        {
+            var send = agreed.First();
+            rtt.SetTextSourceFormat(send);
+            // They can send any agreed format; with RED the sink knows both payload types.
+            rtt.SetTextSinkFormat(agreed.Where(f => f.Codec == TextCodecsEnum.RED).DefaultIfEmpty(send).First());
+        };
+        rtp.OnRtpPacketReceived += (from, kind, pkt) =>
+        {
+            if (kind != SDPMediaTypesEnum.text) return;
+            var h = pkt.Header;
+            rtt.GotTextRtp(from, h.SyncSource, h.SequenceNumber, h.Timestamp, h.PayloadType, h.MarkerBit, pkt.GetPayloadBytes());
+        };
+        rtt.OnTextReceived += e => TextReceived?.Invoke(e.Text);
+        _rtt = rtt;
+    }
+
+    /// <summary>Text is agreed on the session: their SDP has a text line with a port, and it isn't inactive.</summary>
+    private static bool HasNegotiatedText(RTPSession rtp) =>
+        rtp.RemoteDescription?.Media.Any(m => m.Media == SDPMediaTypesEnum.text && m.Port != 0) == true &&
+        rtp.TextStream?.RemoteTrack != null && rtp.TextStream.RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
+
+    /// <summary>Starts sending and receiving text if it's agreed and not already on.</summary>
+    private async Task StartTextIfAgreed(RTPSession rtp)
+    {
+        if (_rtt == null || TextState == "on" || !HasNegotiatedText(rtp)) return;
+        await _rtt.Start();
+        if (Interlocked.Exchange(ref _addTextTimer, null) is { } t) t.Dispose();
+        TextState = "on";
+        Log?.Invoke("real-time text on (RFC 4103)");
+        Changed?.Invoke();
+    }
+
+    /// <summary>Sends what was typed (letters, backspaces, line separators) as real-time text.</summary>
+    public void SendText(string text)
+    {
+        if (TextState == "on" && _rtt?.CanSendText == true) _rtt.SendText(text);
+    }
+
+    /// <summary>
+    /// Adds text to a call that doesn't have it: a re-INVITE with m=text. If they accept, text
+    /// starts (see <see cref="OnRemoteDescriptionChanged"/>); if not within 8 s, it's refused.
+    /// </summary>
+    public void AddText()
+    {
+        lock (_lock)
+        {
+            if (State != CallState.Connected || _ua == null || _rtp == null || _rtt == null || TextState is "on" or "adding") return;
+            TextState = "adding";
+            _addTextTimer?.Dispose();
+            _addTextTimer = new System.Threading.Timer(_ =>
+            {
+                if (Interlocked.Exchange(ref _addTextTimer, null) is not { } t) return;
+                t.Dispose();
+                if (TextState != "adding") return;
+                TextState = "refused";
+                Log?.Invoke("they didn't take text");
+                Changed?.Invoke();
+            }, null, 8000, Timeout.Infinite);
+            Log?.Invoke("adding text: re-INVITE with m=text");
+            _ua.AddText();
+        }
+        Changed?.Invoke();
+    }
+
     private void AddVideoDone(bool ok)
     {
         if (Interlocked.Exchange(ref _addVideoTimer, null) is not { } timer) return;
@@ -277,6 +375,17 @@ public sealed class Phone : IDisposable
     {
         bool video = MediaRelay.HasNegotiatedVideo(rtp);
         if (_addVideoTimer != null) AddVideoDone(video);
+        // Text added by either side: start it once the user agent has finished with the SDP.
+        if (_rtp == rtp && TextState != "on" && HasNegotiatedText(rtp))
+            _ = Task.Run(async () => { await Task.Delay(200); if (_rtp == rtp) await StartTextIfAgreed(rtp); });
+        // Their answer to our adding text turned it down (m=text with port 0): say so now, not at the timeout.
+        else if (_rtp == rtp && TextState == "adding" && Interlocked.Exchange(ref _addTextTimer, null) is { } t)
+        {
+            t.Dispose();
+            TextState = "refused";
+            Log?.Invoke("they turned down text");
+            Changed?.Invoke();
+        }
         if (!video || _rtp != rtp || _relay == null || _relay.Video.HasValue) return;
         // Let the SIP user agent finish (send its answer, start the stream) before rebuilding.
         _ = Task.Run(async () =>
@@ -297,6 +406,7 @@ public sealed class Phone : IDisposable
     {
         rtp.OnRemoteDescriptionChanged += _ => OnRemoteDescriptionChanged(rtp);
         SetState(CallState.Connected);
+        await StartTextIfAgreed(rtp);
         await StartRelayAsync(rtp);
     }
 
@@ -381,6 +491,10 @@ public sealed class Phone : IDisposable
             if (State is CallState.Idle or CallState.Ended) return;
             EndReason = reason;
             Interlocked.Exchange(ref _addVideoTimer, null)?.Dispose();
+            Interlocked.Exchange(ref _addTextTimer, null)?.Dispose();
+            _rtt?.Dispose();
+            _rtt = null;
+            TextState = _settings.OfferText ? "off" : "disabled";
             _relay?.Dispose();
             _relay = null;
             try { _rtp?.Close(reason); } catch { }

@@ -17,8 +17,11 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
-body { background: var(--page); color: var(--text); font: 14px/1.4 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
-.shell { height: 100%; display: grid; grid-template-rows: auto auto 1fr auto auto; gap: 12px; padding: 12px 16px 12px; }
+/* The app above, and the diagnostics panel docked under it when open. */
+body { display: flex; flex-direction: column; background: var(--page); color: var(--text); font: 14px/1.4 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+.shell { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: auto auto 1fr auto; gap: 12px; padding: 12px 16px 12px; }
+/* The stage, with the text popover and toast placed over it. */
+.stage-row { position: relative; display: grid; min-height: 0; }
 
 .topbar { display: flex; align-items: center; justify-content: space-between; }
 .brand { display: flex; align-items: center; gap: 12px; }
@@ -28,19 +31,6 @@ body { background: var(--page); color: var(--text); font: 14px/1.4 "Segoe UI Var
 .brand-sub { color: var(--muted); }
 .topbar-right { display: flex; align-items: center; gap: 14px; }
 body:not(.diag) .diag-only { display: none; }
-.diag-switch { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; cursor: pointer; user-select: none; }
-.diag-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.diag-track {
-  width: 30px; height: 18px; border-radius: 999px; background: var(--border-strong); position: relative; transition: background 0.15s;
-}
-.diag-track::after {
-  content: ""; position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%;
-  background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 0.25); transition: transform 0.15s;
-}
-.diag-switch input:checked + .diag-track { background: var(--accent); }
-.diag-switch input:checked + .diag-track::after { transform: translateX(12px); }
-.diag-switch input:focus-visible + .diag-track { outline: 2px solid var(--accent); outline-offset: 2px; }
-.diag-switch:hover { color: var(--text); }
 .reg {
   color: var(--muted); font: inherit; font-size: 13px; display: flex; align-items: center; gap: 6px;
   background: none; border: 0; border-radius: var(--radius-sm); padding: 4px 8px; cursor: pointer;
@@ -135,16 +125,10 @@ body:not(.diag) .diag-only { display: none; }
 .avatar { width: 96px; height: 96px; border-radius: 50%; border: 1.5px solid currentColor; display: grid; place-items: center; font-size: 40px; font-weight: 300; opacity: .6; }
 .nocam-note { font-size: 14px; min-height: 1.4em; }
 
-/* An audio-only call: a small label, and the conversation as two rows of frequency bars, theirs
+/* An audio-only call: the conversation as two rows of frequency bars, theirs
    growing up from the centre line and yours growing down. */
 .audio-view { position: absolute; inset: 0; display: none; }
 .stage[data-mode="audio"] .audio-view { display: block; }
-.audio-chip {
-  position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 9px 3px 7px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 70%, transparent);
-  color: var(--tile-ink); font-size: 12px; font-weight: 500;
-}
-.audio-chip svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; }
 .viz-wrap { position: absolute; inset: 18% 6%; }
 .viz { position: absolute; left: 44px; top: 0; width: calc(100% - 44px); height: 100%; color: var(--tile-ink); --viz-me: var(--accent); --viz-warn: var(--danger); }
 .viz-who {
@@ -166,6 +150,9 @@ body:not(.diag) .diag-only { display: none; }
 .info-head { display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; min-width: 0; }
 .info-head > :first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .info-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Outside diagnostics mode: no chevron, nothing to click. */
+.info-head:disabled { cursor: default; }
+.info-head:disabled .info-chevron { display: none; }
 .info-chevron { display: grid; place-items: center; opacity: .8; }
 .info-chevron svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
 .info-head[aria-expanded="true"] .info-chevron svg { transform: rotate(180deg); }
@@ -189,14 +176,15 @@ body:not(.diag) .diag-only { display: none; }
   background: rgba(0, 0, 0, .62); color: #fff; font-size: 12px; display: grid; gap: 6px;
 }
 .quality[hidden] { display: none; }
-.stage[data-mode="audio"] .quality { top: 44px; }
 .q-head {
   display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 0; border: 0; background: none;
   color: inherit; font: inherit; font-weight: 600; font-size: 13px; text-align: left; cursor: pointer;
 }
 .q-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* Collapsed: one line, the title and both audio MOS, and the chevron to open it. */
-.quality.collapsed { padding-top: 7px; padding-bottom: 7px; }
+/* Folded, the same height as the info bar opposite: 6 px padding round an 18 px line. */
+.quality.collapsed { padding-top: 6px; padding-bottom: 6px; }
+.quality.collapsed .q-head, .info-head { height: 18px; }
 .quality.collapsed > :not(.q-head) { display: none; }
 .q-head > :first-child { margin-right: auto; }
 .q-title { white-space: nowrap; }
@@ -210,9 +198,16 @@ body:not(.diag) .diag-only { display: none; }
 .q-chevron svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
 .quality:not(.collapsed) .q-chevron svg { transform: rotate(180deg); }
 .q-chart { width: 100%; height: 56px; background: rgba(255, 255, 255, .05); border-radius: 4px; }
-.q-graph-head { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
-.q-graph-head > :first-child { font-weight: 600; }
-.q-graph-head > :last-child { opacity: .65; white-space: nowrap; }
+/* The title on the left, the switch on the right. */
+.q-graph-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.q-graph-by { font-weight: 600; white-space: nowrap; }
+.q-switch { margin-left: auto; }
+/* ↑ Sent | ↓ Received: picks the graph's direction, like the Audio | Video switch. */
+.q-switch { display: inline-flex; flex: none; padding: 2px; gap: 2px; border-radius: 7px; background: rgba(255, 255, 255, .08); }
+.q-switch button { padding: 2px 8px; border: 0; border-radius: 5px; background: none; color: rgba(255, 255, 255, .65); font: inherit; cursor: pointer; white-space: nowrap; }
+.q-switch button:hover:not(.on) { color: #fff; }
+.q-switch button.on { background: rgba(255, 255, 255, .2); color: #fff; font-weight: 600; }
+.q-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .q-legend { display: flex; flex-wrap: wrap; gap: 2px 10px; opacity: .8; }
 .q-legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; background: var(--c); }
 /* PLIs: the legend in one half, the ticks in the other, a row each for received and sent. */
@@ -228,10 +223,10 @@ body:not(.diag) .diag-only { display: none; }
 .q-stream { font-weight: 600; }
 .q-stream.next { margin-top: 4px; }
 .q-metric { opacity: .65; }
-.q-col, .q-v { text-align: right; padding: 1px 4px; border-radius: 3px; cursor: pointer; white-space: nowrap; }
-.q-col { border: 0; background: none; color: inherit; font: inherit; opacity: .65; }
+/* The column on the graph has a light tint, to match the switch. */
+.q-col, .q-v { text-align: right; padding: 1px 4px; border-radius: 3px; white-space: nowrap; }
+.q-col { opacity: .65; }
 .q-col.sel { opacity: 1; font-weight: 600; }
-.q-col:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .q-v.sel, .q-col.sel { background: rgba(255, 255, 255, .1); }
 .q-v.mos { font-weight: 600; }
 .q-v.bad { color: #e0718a; }
@@ -242,11 +237,21 @@ body:not(.diag) .diag-only { display: none; }
    the ▾ opening a device menu above. The three call buttons are centred; Self view sits at the
    right end, under the self view it controls. */
 .controls {
-  display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, minmax(0, 168px)) minmax(max-content, 1fr);
+  display: grid; grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 168px)) minmax(0, 120px) minmax(max-content, 1fr);
   align-items: center; gap: 8px;
 }
 .controls > :first-child { grid-column: 2; }
-.controls .self-toggle { grid-column: 5; justify-self: end; color: var(--muted); font-weight: 500; }
+/* At the right: Text (an icon) and Self view. */
+.controls-right { grid-column: 5; justify-self: end; display: flex; gap: 8px; }
+.controls .self-toggle { color: var(--muted); font-weight: 500; }
+.controls .btn.icon-btn { width: 38px; padding: 0; color: var(--muted); }
+.controls .btn.icon-btn:hover:not(:disabled) { color: var(--text); }
+/* Open is the accent, not the amber of "off". */
+.controls .btn.text-btn[aria-pressed="true"] {
+  color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+.text-btn { position: relative; }
+.text-btn .btn-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); border: 1.5px solid var(--surface); }
 .controls .self-toggle[hidden] { display: none; }
 .controls .btn.self-toggle[aria-pressed="true"] {
   color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface));
@@ -283,17 +288,91 @@ body:not(.diag) .diag-only { display: none; }
 .device-none { padding: 7px 8px 7px 32px; font-size: 13px; color: var(--muted); }
 .device-menu-sep { height: 1px; background: var(--border); margin: 6px 0; }
 
-.log summary { cursor: pointer; color: var(--muted); font-size: 13px; }
-/* The Diagnostics menu: loss sliders, then the SIP log. */
-.loss-sliders { display: grid; gap: 4px; margin: 10px 0 0; max-width: 520px; }
+/* Diagnostics, Network: the loss sliders. */
+.loss-sliders { display: grid; gap: 4px; max-width: 520px; }
 .loss-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) 44px; align-items: center; gap: 10px; font-size: 13px; }
 .loss-row input { width: 100%; accent-color: var(--accent); }
 .loss-row output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
 .loss-row output.on { color: var(--danger); font-weight: 600; }
 .loss-note { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
-.log-section { margin-top: 12px; }
-.log-head { cursor: pointer; font-size: 13px; color: var(--muted); }
-.log pre {
-  margin: 6px 0 0; max-height: 160px; overflow: auto; padding: 8px 10px; border-radius: var(--radius-sm);
-  background: var(--surface); border: 1px solid var(--border); font: 12px/1.45 Consolas, monospace; white-space: pre-wrap;
+
+/* ---- Real-time text panel, beside the stage ---- */
+/* A popover over the stage's bottom right, just above the Text button. */
+.rtt {
+  position: absolute; right: 12px; bottom: 12px; z-index: 6; width: min(320px, calc(100% - 24px)); height: min(400px, calc(100% - 24px));
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
 }
+.rtt[hidden] { display: none; }
+.rtt-head { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.rtt-title { font-weight: 600; }
+.rtt-sub { font-size: 12px; color: var(--muted); margin-right: auto; }
+.rtt-close { align-self: center; width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
+.rtt-close:hover { background: var(--surface-2); color: var(--text); }
+.rtt-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rtt-log { overflow: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.rtt-empty { margin: auto; color: var(--muted); font-size: 13px; }
+.rtt-who { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+.rtt-who.me { align-self: flex-end; }
+.rtt-msg { max-width: 85%; padding: 6px 10px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13.5px; border: 1px solid transparent; }
+.rtt-msg.them { align-self: flex-start; background: var(--surface-2); border-color: var(--border); }
+.rtt-msg.me { align-self: flex-end; background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+/* A line still being typed, by either side: dashed, with a blinking caret. */
+.rtt-msg.live { border-style: dashed; border-color: var(--border-strong); }
+.rtt-caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 1px; vertical-align: text-bottom; background: currentColor; animation: rtt-blink 1s steps(1) infinite; }
+@keyframes rtt-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .rtt-caret { animation: none; } }
+.rtt-compose { padding: 10px 12px; border-top: 1px solid var(--border); display: grid; gap: 6px; }
+/* The entry box with its Send button inside, on the right. */
+.rtt-entry { display: flex; align-items: center; height: 36px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); }
+.rtt-entry:focus-within { outline: 2px solid var(--accent); outline-offset: -1px; }
+.rtt-input { flex: 1; min-width: 0; height: 100%; padding: 0 10px; border: 0; background: none; color: var(--text); font: inherit; outline: none; }
+.rtt-send { flex: none; width: 30px; height: 30px; margin-right: 3px; display: grid; place-items: center; border: 0; border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer; }
+.rtt-send:disabled { background: none; color: var(--muted); cursor: default; }
+.rtt-send svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rtt-entry[hidden], .rtt-add[hidden] { display: none; }
+.rtt-hint { font-size: 12px; color: var(--muted); }
+.rtt-add { height: 34px; font-size: 13px; }
+/* Text arriving with the popover closed: a toast at the bottom of the stage. */
+.rtt-toast {
+  position: absolute; left: 50%; bottom: 16px; z-index: 6; transform: translateX(-50%); max-width: min(460px, calc(100% - 32px));
+  display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; border-radius: 999px;
+  background: rgba(20, 28, 25, .88); color: #fff; font-size: 13px; box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
+}
+.rtt-toast[hidden] { display: none; }
+.rtt-toast-icon svg { display: block; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+.rtt-toast-who { font-weight: 600; white-space: nowrap; }
+.rtt-toast-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .9; }
+.rtt-toast-reply { flex: none; height: 26px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--accent); color: #fff; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.rtt-toast-reply:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+
+/* ---- Diagnostics panel (F12), docked at the bottom ---- */
+.devpanel {
+  position: relative; flex: none; height: var(--dev-h, 240px); display: grid; grid-template-rows: auto minmax(0, 1fr);
+  background: var(--surface); border-top: 1px solid var(--border-strong);
+}
+.devpanel[hidden] { display: none; }
+.dev-resize { position: absolute; left: 0; right: 0; top: -4px; height: 8px; cursor: ns-resize; z-index: 1; }
+.dev-bar { display: flex; align-items: stretch; gap: 6px; height: 34px; padding: 0 8px 0 14px; background: var(--surface-2); border-bottom: 1px solid var(--border); user-select: none; }
+.dev-title { align-self: center; margin-right: 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.dev-tabs { display: flex; }
+.dev-tab { position: relative; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.dev-tab:hover { color: var(--text); }
+.dev-tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.dev-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* Loss is on: a dot on Network, so it isn't forgotten while the log is showing. */
+.dev-tab .dev-dot { position: absolute; top: 8px; right: 3px; width: 6px; height: 6px; border-radius: 50%; background: var(--danger); }
+.dev-spacer { flex: 1; }
+.dev-act { align-self: center; height: 24px; padding: 0 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); font: inherit; font-size: 12px; cursor: pointer; }
+.dev-act:hover { border-color: var(--border-strong); }
+.dev-act[hidden] { display: none; }
+.dev-key { align-self: center; padding: 1px 6px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font: 11px Consolas, monospace; }
+.dev-close { align-self: center; width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
+.dev-close:hover { background: var(--border); color: var(--text); }
+.dev-close svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.dev-pane { min-height: 0; overflow: auto; }
+.dev-pane[hidden] { display: none; }
+#log { margin: 0; padding: 8px 14px; font: 12px/1.45 Consolas, monospace; white-space: pre-wrap; outline: none; }
+.dev-net { padding: 12px 16px; }
+body.dev-resizing { cursor: ns-resize; user-select: none; }

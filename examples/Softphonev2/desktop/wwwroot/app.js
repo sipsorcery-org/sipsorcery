@@ -28,6 +28,10 @@ const ICON = {
   mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>',
   micOff: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/><path d="M3 3l18 18"/></svg>',
   chevronDown: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+  text: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 8h8M12 8v6"/></svg>',
+  close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  collapse: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18M8 9l3 3-3 3"/></svg>',
+  send: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>',
   lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
   unlock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.9-1"/></svg>',
   // Out and back: the round trip.
@@ -55,18 +59,19 @@ if (params.get("call") === "video") callType = "video";          // --video (tes
 // it off). The Answer button's ▾ can override it for one call.
 let camPref = params.get("camera") !== "off";
 const testAddVideo = Number(params.get("addvideo")) || 0;        // --add-video <s> (testing)
+const testSay = params.get("say") ?? "";                           // --say <text> (testing)
 
 const localTrack = (kind) => local?.getTracks().find((t) => t.kind === kind) ?? null;
 
 function log(text, fromHost = false) {
   if (!fromHost) post({ type: "log", text });
   const el = $("log");
+  // Follows the newest line, unless you've scrolled up to read something.
+  const atEnd = el.hidden || el.scrollHeight - el.scrollTop - el.clientHeight < 24;
   el.textContent += text + "\n";
   if (el.textContent.length > 60000) el.textContent = el.textContent.slice(-40000);
-  el.scrollTop = el.scrollHeight;
+  if (atEnd) el.scrollTop = el.scrollHeight;
 }
-// The SIP log starts folded; opened, it shows the latest lines.
-$("logSection").addEventListener("toggle", () => { if ($("logSection").open) $("log").scrollTop = $("log").scrollHeight; });
 
 // "Alice <sip:alice@example.com>" → "Alice"; "sip:bob@host" → "Bob".
 function shortName(remote) {
@@ -775,17 +780,168 @@ function renderDetails() {
   };
 }
 
-// Open or closed is remembered.
+// Closed at the start of every call.
 function setDetailsOpen(open) {
   $("details").hidden = !open;
   if (open) renderDetails();
   $("infoHead").setAttribute("aria-expanded", String(open));
   $("infoHead").title = open ? "Hide call details" : "Show call details";
-  try { localStorage.setItem("detailsOpen", open ? "1" : "0"); } catch { /* storage unavailable */ }
 }
 $("infoChevron").innerHTML = ICON.chevronDown;
+// Call details are technical, so only in diagnostics mode: otherwise the info bar is just
+// who and how long, with no chevron, and closing diagnostics closes them.
+function allowDetails(on) {
+  $("infoHead").disabled = !on;
+  if (!on && !$("details").hidden) setDetailsOpen(false);
+  $("infoHead").title = on ? ($("details").hidden ? "Show call details" : "Hide call details") : "";
+}
+
+// ---- Real-time text (RFC 4103) ----
+// The host sends and receives the T.140 text; the page shows the conversation. What you type is
+// sent when you press Send or Enter, as the line and a T.140 line separator (U+2028). Theirs
+// may arrive letter by letter (a real-time text phone): their unfinished line shows as it comes,
+// backspaces and all, dashed with a caret.
+const LINE_SEP = "\u2028";
+let textLines = [];          // { me, text, open }
+let textOpen = false;        // the popover
+let textUnread = false;      // they typed while it was closed: a dot on the Text button
+let toastTimer = 0;
+let textBomSent = false;     // T.140 starts with a byte order mark
+let textSaid = false;        // --say (testing) typed once per call
+
+const openLine = (me, create = true) => {
+  let l = textLines.findLast((x) => x.me === me && x.open);
+  if (!l && create) { l = { me, text: "", open: true }; textLines.push(l); }
+  return l;
+};
+function closeLine(me) {
+  const l = openLine(me, false);
+  if (!l) return;
+  l.open = false;
+  if (!l.text) textLines.splice(textLines.indexOf(l), 1);
+}
+
+function onTextReceived(chars) {
+  for (const ch of chars.replace(/\uFEFF/g, "").replace(/\r\n/g, "\n")) {
+    if (ch === "\b") { const l = openLine(false, false); if (l) l.text = [...l.text].slice(0, -1).join(""); }
+    else if (ch === LINE_SEP || ch === "\u2029" || ch === "\n" || ch === "\r") closeLine(false);
+    else if (ch >= " ") openLine(false).text += ch;
+  }
+  if (!textOpen) { textUnread = true; showToast(); }
+  renderText();
+  render();
+}
+
+// With the popover closed, what they type shows in a toast for 6 s after the last letter.
+function showToast() {
+  const l = openLine(false, false) ?? textLines.findLast((x) => !x.me);
+  if (!l?.text) return;
+  $("rttToastWho").textContent = shortName(state.remote) || "They";
+  $("rttToastText").textContent = l.text;
+  $("rttToast").hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, 6000);
+}
+function hideToast() {
+  clearTimeout(toastTimer);
+  $("rttToast").hidden = true;
+}
+$("rttToastIcon").innerHTML = ICON.text;
+$("rttReply").onclick = () => setTextOpen(true);
+
+// Sends what's in the box, with a line separator to finish it. Nothing goes until then.
+function sendLine() {
+  const line = $("rttInput").value;
+  if (!line.trim() || state.text !== "on") return;
+  post({ type: "text", text: (textBomSent ? "" : "\uFEFF") + line + LINE_SEP });
+  textBomSent = true;
+  textLines.push({ me: true, text: line, open: false });
+  $("rttInput").value = "";
+  $("rttSend").disabled = true;
+  renderText();
+}
+$("rttSend").innerHTML = ICON.send;
+$("rttSend").onclick = () => { sendLine(); $("rttInput").focus(); };
+$("rttInput").addEventListener("input", () => { $("rttSend").disabled = !$("rttInput").value.trim(); });
+$("rttInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); sendLine(); }
+});
+$("rttAdd").onclick = () => post({ type: "add-text" });
+$("rttClose").innerHTML = ICON.close;
+$("rttClose").onclick = () => setTextOpen(false);
+$("textBtn").onclick = () => setTextOpen(!textOpen);
+// Esc, or a click anywhere outside it (other than the Text button), closes the popover.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape" || !textOpen || openMenu) return;
+  e.preventDefault();
+  setTextOpen(false);
+});
+document.addEventListener("pointerdown", (e) => {
+  if (textOpen && !$("rtt").contains(e.target) && !$("textBtn").contains(e.target)) setTextOpen(false, false);
+}, true);
+document.addEventListener("keydown", (e) => {
+  if (e.key.toLowerCase() !== "t" || e.ctrlKey || e.altKey || e.metaKey || openMenu) return;
+  if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
+  if ($("textBtn").disabled) return;
+  e.preventDefault();
+  setTextOpen(!textOpen);
+});
+
+function setTextOpen(open, focus = true) {
+  textOpen = open;
+  if (open) { textUnread = false; hideToast(); renderText(); }
+  render();
+  if (open && focus && !$("rttEntry").hidden) $("rttInput").focus();
+  else if (!open && focus && document.activeElement && $("rtt").contains(document.activeElement)) $("textBtn").focus();
+}
+
+function renderText() {
+  const el = $("rttLog");
+  const atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+  const esc = (t) => t.replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
+  const name = shortName(state.remote) || "Them";
+  let who = null;
+  el.innerHTML = !textLines.length ? `<p class="rtt-empty">Nothing typed yet.</p>`
+    : textLines.map((l) => {
+      const head = l.me !== who ? `<div class="rtt-who ${l.me ? "me" : ""}">${l.me ? "You" : esc(name)}</div>` : "";
+      who = l.me;
+      return `${head}<div class="rtt-msg ${l.me ? "me" : "them"}${l.open ? " live" : ""}">${esc(l.text)}${l.open ? `<span class="rtt-caret" aria-hidden="true"></span>` : ""}</div>`;
+    }).join("");
+  if (atEnd) el.scrollTop = el.scrollHeight;
+}
+
+// The panel and the Text button, from the call state (render calls this).
+function renderTextControls(phase) {
+  const live = phase === "connected";
+  const btn = $("textBtn");
+  btn.disabled = !live;
+  btn.setAttribute("aria-pressed", String(live && textOpen));
+  const typing = !!openLine(false, false);
+  const dot = live && textUnread ? `<span class="btn-dot" aria-hidden="true"></span>` : "";
+  const html = `${ICON.text}${dot}`;
+  if (btn.innerHTML !== html) btn.innerHTML = html;
+  btn.title = !live ? "Real-time text, during a call"
+    : textUnread ? `Text: ${typing ? "they're typing" : "new message"} (T)` : textOpen ? "Close text (T)" : "Text (T)";
+  btn.setAttribute("aria-label", textUnread ? "Text, new message" : "Text");
+  $("rtt").hidden = !(live && textOpen);
+  if (!live) hideToast();
+  // The compose area follows the text state: on, adding, refused, off or disabled.
+  const t = state.text ?? "off";
+  const name = shortName(state.remote) || "They";
+  $("rttEntry").hidden = t !== "on";
+  $("rttAdd").hidden = t !== "off";
+  $("rttHint").textContent = t === "on" ? "Enter or Send sends the message."
+    : t === "adding" ? `Asking ${name}'s phone to add text…`
+    : t === "refused" ? `${name}'s phone doesn't support real-time text.`
+    : t === "disabled" ? "Real-time text is turned off (--no-text)."
+    : "Text isn't set up on this call.";
+  // --say (testing): once text is up, type it into the box, then send it.
+  if (testSay && t === "on" && !textSaid) {
+    textSaid = true;
+    setTimeout(() => { $("rttInput").value = testSay; sendLine(); }, 1500);
+  }
+}
 $("infoHead").onclick = () => setDetailsOpen($("details").hidden);
-try { if (localStorage.getItem("detailsOpen") === "1") setDetailsOpen(true); } catch { /* storage unavailable */ }
 let qColumn = "sent";   // the column the graph shows
 const lastOf = (a) => a[a.length - 1];
 const newQuality = () => ({
@@ -909,6 +1065,7 @@ function drawMarks(g, x, y, w, h, values, colour, solid = false, points = Q_POIN
   values.forEach((on, i) => { if (on) g.fillRect(start + i * slot + (slot - tick) / 2, y, tick, h); });
 }
 const Q_LABEL = { sent: "↑ Sent", recv: "↓ Received" };
+const Q_BY = { sent: "Reported by them", recv: "Measured by us" };   // the graph's title, by direction
 
 function renderQuality() {
   const el = $("quality");
@@ -935,7 +1092,7 @@ function renderQuality() {
   const S = q.sent, R = q.recv;
   let html = `<span></span><span></span>` +
     Object.entries(Q_LABEL).map(([col, label]) =>
-      `<button type="button" class="q-col${col === qColumn ? " sel" : ""}" data-col="${col}" title="Graph ${label.slice(2).toLowerCase()}: ${from[col]}">${label}</button>`).join("") +
+      `<span class="q-col${col === qColumn ? " sel" : ""}" title="${label.slice(2)}: ${from[col]}">${label}</span>`).join("") +
     row("Audio", "MOS", mosCell("sent", S.audio), mosCell("recv", R.audio)) +
     row("", "loss", lossCell("sent", S.audio, "Audio"), lossCell("recv", R.audio, "Audio")) +
     row("", "jitter", jitterCell("sent", S.audio), jitterCell("recv", R.audio));
@@ -964,12 +1121,16 @@ function renderQuality() {
 
   // The graph: the picked column over the last two minutes. Either way it's the receiver's
   // view: theirs of what we send, or ours of what they send.
-  $("qGraphCol").textContent = Q_LABEL[qColumn];
+  $("qGraphCol").textContent = Q_BY[qColumn];
+  for (const b of $("qSwitch").children) {
+    b.classList.toggle("on", b.dataset.col === qColumn);
+    b.setAttribute("aria-checked", String(b.dataset.col === qColumn));
+  }
   const series = [["mos", "Audio MOS"], ["aLoss", "Audio loss"],
     ...(video ? [["vLoss", "Video loss"], ...(qColumn === "recv" ? [["frozen", "Frozen"]] : [])] : [])];
   $("qLegend").innerHTML = series.map(([k, label]) => `<span style="--c:${Q_COLOUR[k]}">${label}</span>`).join("");
   const c = $("qChart"), g = c.getContext("2d");
-  c.setAttribute("aria-label", `${Q_LABEL[qColumn]}, last 2 minutes: ${series.map(([, l]) => l).join(", ")}`);
+  c.setAttribute("aria-label", `${Q_LABEL[qColumn]}, ${Q_BY[qColumn].toLowerCase()}, last 2 minutes: ${series.map(([, l]) => l).join(", ")}`);
   g.clearRect(0, 0, c.width, c.height);
   g.fillStyle = "rgba(255,255,255,.12)";
   for (const level of [4, 3]) g.fillRect(0, c.height - ((level - 1) / 4) * c.height, c.width, 1);
@@ -998,8 +1159,8 @@ function renderQuality() {
   }
 }
 
-// Picking a column (its heading or any of its values) puts it on the graph.
-$("qTable").addEventListener("click", (e) => {
+// The switch picks the direction the graph shows.
+$("qSwitch").addEventListener("click", (e) => {
   const col = e.target.closest("[data-col]")?.dataset.col;
   if (col && col !== qColumn) { qColumn = col; renderQuality(); }
 });
@@ -1091,8 +1252,11 @@ function render() {
   const mute = $("muteBtn");
   mute.disabled = !hasMic;
   mute.setAttribute("aria-pressed", String(hasMic && muted));
-  mute.title = !hasMic ? "No microphone" : muted ? "Unmute" : !live ? "Mute: calls start muted" : "Mute";
-  setBtn(mute, muted || !hasMic ? ICON.micOff : ICON.mic, !hasMic ? "No mic" : muted ? "Unmute" : "Mute");
+  // What pressing it does, as on the camera button.
+  mute.title = !hasMic ? "No mic found"
+    : live ? (muted ? "Turn your mic on" : "Turn your mic off")
+    : muted ? "Calls start with your mic off" : "Calls start with your mic on";
+  setBtn(mute, muted || !hasMic ? ICON.micOff : ICON.mic, !hasMic ? "No mic" : muted ? "Turn mic on" : "Turn mic off");
 
   // Camera: during a video call it turns your camera on and off; on an audio call it's Add video,
   // unless video can't be had. Before a call it decides whether a video call starts with your
@@ -1113,7 +1277,7 @@ function render() {
     cam.disabled = !camAvailable || !videoAllowed || (phase === "connected" && !connected) || ringing || audioBefore;
     cam.setAttribute("aria-pressed", String(camAvailable && videoAllowed && !on));
     setBtn(cam, camAvailable && on ? ICON.video : ICON.videoOff,
-      // What pressing it does, like Mute and Unmute.
+      // What pressing it does, as on the mic button.
       !videoAllowed ? "No video" : !camAvailable ? "No camera" : on ? "Turn camera off" : "Turn camera on");
     cam.title = !videoAllowed ? "Video is turned off" : !camAvailable ? "No camera found"
       : ringing ? "Choose the camera with the Answer button"
@@ -1123,6 +1287,7 @@ function render() {
   }
   $("camMenuBtn").disabled = !videoAllowed || ringing || (!connected && type === "audio");
 
+  renderTextControls(phase);
   const hang = $("hangupBtn");
   hang.disabled = phase !== "calling" && phase !== "connected";
   setBtn(hang, ICON.hangup, phase === "calling" ? "Cancel" : "End");
@@ -1169,6 +1334,13 @@ function render() {
 
   if (phase === "connected" && !connectedAt) {
     connectedAt = Date.now();
+    // A new call starts a new conversation.
+    textLines = [];
+    textUnread = textBomSent = textSaid = textOpen = false;
+    hideToast();
+    $("rttInput").value = "";
+    $("rttSend").disabled = true;
+    renderText();
     if (testAddVideo) setTimeout(() => call && !call.hasVideo && $("camBtn").click(), testAddVideo * 1000);
     timerId = setInterval(tick, 1000);
     tick();
@@ -1178,6 +1350,9 @@ function render() {
     addingVideo = videoRefused = false;
     quality = null;
     callDetails = callCodecs = null;
+    // The next call starts with Call details and Call quality closed.
+    if (!$("details").hidden) setDetailsOpen(false);
+    if (!$("quality").classList.contains("collapsed")) setQualityOpen(false);
     if (pc) closeMedia();
   }
 
@@ -1494,16 +1669,14 @@ document.addEventListener("keydown", (e) => {
   toggleSelfView();
 });
 
-// The Call quality panel starts as one line (both audio MOS); the chevron opens it. Remembered.
+// The Call quality panel starts as one line (both audio MOS); the chevron opens it. Closed at the start of every call.
 function setQualityOpen(open) {
   $("quality").classList.toggle("collapsed", !open);
   $("qHead").setAttribute("aria-expanded", String(open));
   $("qHead").title = open ? "Hide the details" : "Show the details";
-  try { localStorage.setItem("qualityOpen", open ? "1" : "0"); } catch { /* storage unavailable */ }
 }
 $("qChevron").innerHTML = ICON.chevronDown;
 $("qHead").onclick = () => setQualityOpen($("quality").classList.contains("collapsed"));
-try { if (localStorage.getItem("qualityOpen") === "1") setQualityOpen(true); } catch { /* storage unavailable */ }
 
 // Simulated loss (Diagnostics menu): the host drops that share of the audio or video packets
 // we send on the SIP leg. Labels follow the slider as it moves; the host hears once it's let go.
@@ -1513,6 +1686,8 @@ function showLoss() {
     $(`loss${kind}Out`).textContent = `${v}%`;
     $(`loss${kind}Out`).classList.toggle("on", v > 0);
   }
+  const on = Number($("lossAudio").value) > 0 || Number($("lossVideo").value) > 0;
+  $("tabNet").innerHTML = `Network${on ? `<span class="dev-dot" title="Loss is on"></span>` : ""}`;
 }
 for (const kind of ["Audio", "Video"]) {
   $(`loss${kind}`).addEventListener("input", showLoss);
@@ -1521,24 +1696,74 @@ for (const kind of ["Audio", "Video"]) {
 let lossLoaded = false;   // the host's starting values (--loss-audio, --loss-video), taken from the first state
 
 let copiedUntil = 0;   // the header says "Copied" until then
-// Diagnostics: the SIP log and the copyable SIP address. On at every start for now, while
-// testing; the switch hides them for the session.
-const DIAGNOSTICS_AT_START = true;
-$("diagToggle").checked = DIAGNOSTICS_AT_START;
-document.body.classList.toggle("diag", DIAGNOSTICS_AT_START);
-$("diagToggle").onchange = (e) => {
-  document.body.classList.toggle("diag", e.target.checked);
+// ---- Diagnostics (F12) ----
+// A panel docked at the bottom, like a browser's developer tools: the SIP log, and Network (the
+// loss sliders). While it's open the app is in diagnostics mode, which also shows Call quality,
+// your SIP address in the header, and the test video sources. Closed at every start
+// (--diagnostics opens it, for testing). Ctrl+Shift+I is left to WebView2's own DevTools.
+function setDiagnostics(on) {
+  document.body.classList.toggle("diag", on);
+  $("devPanel").hidden = !on;
+  allowDetails(on);
+  if (on) { const el = $("log"); el.scrollTop = el.scrollHeight; }
   // The test pattern and audio bars are diagnostics things, so the camera takes over again.
   // But it isn't sent until you turn it on: the camera never starts by itself. (With no camera
   // the placeholder goes, as it would anyway.)
-  if (!e.target.checked && videoSource !== "camera") {
+  if (!on && videoSource !== "camera") {
     if (call?.hasVideo) { if (call.camOn) setCamera(false); }
     else camPref = false;
     setVideoSource("camera");
   }
   closeMenu();
   renderQuality();
+  render();
+}
+document.body.classList.toggle("diag", params.get("diag") === "1");
+allowDetails(params.get("diag") === "1");
+$("devPanel").hidden = params.get("diag") !== "1";
+// F12, caught before WebView2 would open its DevTools with it.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "F12" || e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
+  e.preventDefault();
+  e.stopPropagation();
+  setDiagnostics($("devPanel").hidden);
+}, true);
+$("devClose").innerHTML = ICON.close;
+$("devClose").onclick = () => setDiagnostics(false);
+
+function setDevTab(tab) {
+  for (const b of document.querySelectorAll(".dev-tab")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
+  $("log").hidden = tab !== "log";
+  $("paneNet").hidden = tab !== "net";
+  $("logCopy").hidden = $("logClear").hidden = tab !== "log";
+  if (tab === "log") $("log").scrollTop = $("log").scrollHeight;
+}
+for (const b of document.querySelectorAll(".dev-tab")) b.onclick = () => setDevTab(b.dataset.tab);
+$("logCopy").onclick = () => {
+  post({ type: "copy", text: $("log").textContent });
+  $("logCopy").textContent = "Copied";
+  setTimeout(() => { $("logCopy").textContent = "Copy log"; }, 1500);
 };
+$("logClear").onclick = () => { $("log").textContent = ""; };
+
+// Dragging the panel's top edge resizes it, between 120 px and 70% of the window.
+$("devResize").addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  const handle = e.currentTarget;
+  handle.setPointerCapture(e.pointerId);
+  document.body.classList.add("dev-resizing");
+  const move = (ev) => {
+    const h = Math.round(Math.max(120, Math.min(window.innerHeight * 0.7, window.innerHeight - ev.clientY)));
+    $("devPanel").style.setProperty("--dev-h", `${h}px`);
+  };
+  const up = () => {
+    handle.removeEventListener("pointermove", move);
+    document.body.classList.remove("dev-resizing");
+  };
+  handle.addEventListener("pointermove", move);
+  handle.addEventListener("pointerup", up, { once: true });
+  handle.addEventListener("pointercancel", up, { once: true });
+});
 if (SOURCE_LABEL[params.get("video")]) setVideoSource(params.get("video"));   // --test-pattern, --audio-bars (testing)
 
 $("reg").onclick = () => {
@@ -1594,6 +1819,7 @@ chrome.webview.addEventListener("message", async (e) => {
     else if (msg.type === "media-health") { if (call) { call.txLost = !!msg.txLost; render(); } }
     else if (msg.type === "quality") onQuality(msg);
     else if (msg.type === "details") { callDetails = msg; renderDetails(); }
+    else if (msg.type === "text") onTextReceived(msg.text);
     else if (msg.type === "video-refused") { addingVideo = false; videoRefused = true; log("they didn't take video"); render(); }
     else if (msg.type === "log") log(msg.text, true);
   } catch (err) {

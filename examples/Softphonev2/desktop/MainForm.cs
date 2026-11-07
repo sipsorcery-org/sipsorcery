@@ -54,6 +54,7 @@ internal sealed class MainForm : Form
         _phone.Trace += text => { lock (_logFile) _logFile.WriteLine(text); };
         _phone.TxLostChanged += lost => Post(new { type = "media-health", txLost = lost });
         _phone.Quality += q => Post(new { type = "quality", q.Dir, q.Kind, q.LossPct, q.Lost, q.JitterMs, q.RttMs });
+        _phone.TextReceived += text => Post(new { type = "text", text });
         _phone.Details += d => Post(new
         {
             type = "details", d.Direction, d.Account, d.Signalling, d.TheirPhone, d.CallId, d.TheirMedia,
@@ -92,10 +93,12 @@ internal sealed class MainForm : Form
         core.Settings.AreDevToolsEnabled = true;
         var query = new List<string>();
         if (_settings.CameraOff) query.Add("camera=off");
+        if (_settings.Diagnostics) query.Add("diag=1");
         if (_settings.VideoCall) query.Add("call=video");
         if (_settings.TestPattern) query.Add("video=test");
         if (_settings.AudioBars) query.Add("video=bars");
         if (_settings.AddVideoAfter is { } after) query.Add($"addvideo={after}");
+        if (!string.IsNullOrEmpty(_settings.Say)) query.Add("say=" + Uri.EscapeDataString(_settings.Say));
         core.Navigate("https://softphone.app/index.html" + (query.Count > 0 ? "?" + string.Join("&", query) : ""));
 
         try
@@ -131,6 +134,12 @@ internal sealed class MainForm : Form
                     break;
                 case "add-video":
                     _phone.AddVideo();
+                    break;
+                case "text":
+                    _phone.SendText((string)msg["text"]!);
+                    break;
+                case "add-text":
+                    _phone.AddText();
                     break;
                 case "answer":
                     await _phone.AnswerAsync();
@@ -184,6 +193,8 @@ internal sealed class MainForm : Form
         me = _settings.HasAccount ? (string.IsNullOrWhiteSpace(_settings.Account!.DisplayName) ? _settings.Account.Username : _settings.Account.DisplayName) : null,
         videoAllowed = _settings.OfferVideo,
         incomingVideo = _phone.IncomingVideo,
+        // Real-time text on the call: off, adding, on, refused or disabled.
+        text = _phone.TextState,
         lossAudio = _phone.AudioLossPercent,
         lossVideo = _phone.VideoLossPercent,
     };
