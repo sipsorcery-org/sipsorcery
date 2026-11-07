@@ -1,9 +1,9 @@
 //-----------------------------------------------------------------------------
 // Filename: VP8CodecStreamUnitTest.cs
 //
-// Description: Unit tests for the VP8Codec TryEncodeVideo method, which
-// writes each encoded frame to a caller supplied stream instead of returning a
-// new array.
+// Description: Unit tests for the VP8Codec EncodeVideo overload that writes
+// each encoded frame to a caller supplied stream instead of returning a new
+// array.
 //
 // Author(s):
 // SIPSorcery contributors
@@ -34,7 +34,7 @@ namespace Vpx.Net.UnitTest
         /// </summary>
         [Theory]
         [MemberData(nameof(GoldenScenarios))]
-        public void TryEncodeVideo_Stream_MatchesGoldenOutput(string scenarioName, string expectedDigest)
+        public void EncodeVideoToStream_MatchesGoldenOutput(string scenarioName, string expectedDigest)
         {
             var scenario = Vp8GoldenScenario.Get(scenarioName);
             var stream = new MemoryStream();
@@ -43,7 +43,7 @@ namespace Vpx.Net.UnitTest
             {
                 stream.SetLength(0);
 
-                Assert.True(codec.TryEncodeVideo(width, height, sample, pixelFormat, VideoCodecsEnum.VP8, stream, out int bytesWritten));
+                int bytesWritten = codec.EncodeVideo(width, height, sample, pixelFormat, VideoCodecsEnum.VP8, stream);
                 Assert.Equal(stream.Length, bytesWritten);
 
                 return stream.ToArray();
@@ -57,7 +57,7 @@ namespace Vpx.Net.UnitTest
         /// call reporting the length it added, so the stream can be split back into the original frames.
         /// </summary>
         [Fact]
-        public void TryEncodeVideo_ReusedStream_AppendsWholeFrames()
+        public void EncodeVideoToStream_ReusedStream_AppendsWholeFrames()
         {
             var scenario = Vp8GoldenScenario.Get("I420_64x48_Default");
             var expected = scenario.Run((codec, w, h, sample, fmt) => codec.EncodeVideo(w, h, sample, fmt, VideoCodecsEnum.VP8));
@@ -68,7 +68,7 @@ namespace Vpx.Net.UnitTest
             scenario.Run((codec, w, h, sample, fmt) =>
             {
                 long before = stream.Position;
-                Assert.True(codec.TryEncodeVideo(w, h, sample, fmt, VideoCodecsEnum.VP8, stream, out int bytesWritten));
+                int bytesWritten = codec.EncodeVideo(w, h, sample, fmt, VideoCodecsEnum.VP8, stream);
                 Assert.Equal(stream.Position - before, bytesWritten);
                 lengths.Add(bytesWritten);
                 return null;
@@ -90,7 +90,7 @@ namespace Vpx.Net.UnitTest
         /// enough.
         /// </summary>
         [Fact]
-        public void TryEncodeVideo_WriteOnlyNonSeekableStream_ReceivesTheFrames()
+        public void EncodeVideoToStream_WriteOnlyNonSeekableStream_ReceivesTheFrames()
         {
             var scenario = Vp8GoldenScenario.Get("I420_176x144_Gop4_IntraFallback_Forced");
             var stream = new WriteOnlyStream();
@@ -98,7 +98,7 @@ namespace Vpx.Net.UnitTest
             var frames = scenario.Run((codec, w, h, sample, fmt) =>
             {
                 int before = stream.Written.Count;
-                Assert.True(codec.TryEncodeVideo(w, h, sample, fmt, VideoCodecsEnum.VP8, stream, out int bytesWritten));
+                int bytesWritten = codec.EncodeVideo(w, h, sample, fmt, VideoCodecsEnum.VP8, stream);
                 Assert.Equal(stream.Written.Count - before, bytesWritten);
                 return stream.Written.GetRange(before, bytesWritten).ToArray();
             });
@@ -112,7 +112,7 @@ namespace Vpx.Net.UnitTest
         /// carries the key frame flag exactly where the encoder decided to make one.
         /// </summary>
         [Fact]
-        public void TryEncodeVideo_KeyFramesAndInterFrames_AreFlaggedAsTheyWereEncoded()
+        public void EncodeVideoToStream_KeyFramesAndInterFrames_AreFlaggedAsTheyWereEncoded()
         {
             var codec = new VP8Codec { KeyframeIntervalFrames = 4 };
             var scenario = Vp8GoldenScenario.Get("I420_64x48_Default");
@@ -127,7 +127,7 @@ namespace Vpx.Net.UnitTest
                 }
 
                 stream.SetLength(0);
-                Assert.True(codec.TryEncodeVideo(64, 48, scenario.CreateFrame(i), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, stream, out _));
+                codec.EncodeVideo(64, 48, scenario.CreateFrame(i), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, stream);
 
                 // RFC 6386 section 9.1: bit 0 of the frame tag is 0 for a key frame.
                 isKeyFrame.Add((stream.GetBuffer()[0] & 0x01) == 0);
@@ -141,68 +141,92 @@ namespace Vpx.Net.UnitTest
         /// (advancing its key frame counter and reference frame) and then lost.
         /// </summary>
         [Fact]
-        public void TryEncodeVideo_ReadOnlyStream_ThrowsWithoutEncoding()
+        public void EncodeVideoToStream_ReadOnlyStream_ThrowsWithoutEncoding()
         {
             var codec = new VP8Codec();
             var frame = Vp8GoldenScenario.Get("I420_64x48_Default").CreateFrame(0);
 
             using (var readOnly = new MemoryStream(new byte[16], writable: false))
             {
-                Assert.Throws<ArgumentException>(() => codec.TryEncodeVideo(64, 48, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, readOnly, out _));
+                Assert.Throws<ArgumentException>(() => codec.EncodeVideo(64, 48, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, readOnly));
             }
 
             Assert.Equal(0, codec.FramesSinceLastKeyframe);
         }
 
         [Fact]
-        public void TryEncodeVideo_NullOutput_Throws()
+        public void EncodeVideoToStream_NullOutput_Throws()
         {
             var codec = new VP8Codec();
             var frame = Vp8GoldenScenario.Get("I420_64x48_Default").CreateFrame(0);
 
-            Assert.Throws<ArgumentNullException>(() => codec.TryEncodeVideo(64, 48, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, null, out _));
+            Assert.Throws<ArgumentNullException>(() => codec.EncodeVideo(64, 48, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, null));
         }
 
         [Fact]
-        public void TryEncodeVideo_CodecOtherThanVp8_Throws()
+        public void EncodeVideoToStream_CodecOtherThanVp8_Throws()
         {
             var codec = new VP8Codec();
             var frame = Vp8GoldenScenario.Get("I420_64x48_Default").CreateFrame(0);
 
-            Assert.Throws<NotSupportedException>(() => codec.TryEncodeVideo(64, 48, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, new MemoryStream(), out _));
+            Assert.Throws<NotSupportedException>(() => codec.EncodeVideo(64, 48, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, new MemoryStream()));
+        }
+
+        /// <summary>
+        /// The array returning method checks the codec the same way, rather than returning VP8 for another codec.
+        /// </summary>
+        [Fact]
+        public void EncodeVideo_CodecOtherThanVp8_Throws()
+        {
+            var codec = new VP8Codec();
+            var frame = Vp8GoldenScenario.Get("I420_64x48_Default").CreateFrame(0);
+
+            Assert.Throws<NotSupportedException>(() => codec.EncodeVideo(64, 48, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264));
+        }
+
+        /// <summary>
+        /// A null sample is reported as such, not as a sample of the wrong length.
+        /// </summary>
+        [Fact]
+        public void EncodeVideo_NullSample_Throws()
+        {
+            var codec = new VP8Codec();
+
+            Assert.Throws<ArgumentNullException>(() => codec.EncodeVideo(64, 48, null, VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8));
         }
 
         /// <summary>
         /// A sample of the wrong size is rejected with the same exception the array method throws.
         /// </summary>
         [Fact]
-        public void TryEncodeVideo_SampleWrongSize_Throws()
+        public void EncodeVideoToStream_SampleWrongSize_Throws()
         {
             var codec = new VP8Codec();
 
-            Assert.Throws<ArgumentException>(() => codec.TryEncodeVideo(64, 48, new byte[64 * 48], VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, new MemoryStream(), out _));
+            Assert.Throws<ArgumentException>(() => codec.EncodeVideo(64, 48, new byte[64 * 48], VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, new MemoryStream()));
         }
 
         /// <summary>
-        /// When the destination fails the exception reaches the caller, and the codec keeps working: a later frame can
-        /// be written, and a key frame can be forced to resynchronise a receiver that missed the lost frame.
+        /// When the destination fails the exception reaches the caller, and the next frame is a key frame without the
+        /// caller having to force one, so a receiver that missed the lost frame is not left predicting from it.
         /// </summary>
         [Fact]
-        public void TryEncodeVideo_StreamThrows_ExceptionPropagatesAndCodecRecovers()
+        public void EncodeVideoToStream_StreamThrows_ExceptionPropagatesAndNextFrameIsKeyFrame()
         {
             var codec = new VP8Codec();
             var scenario = Vp8GoldenScenario.Get("I420_64x48_Default");
 
-            Assert.True(codec.TryEncodeVideo(64, 48, scenario.CreateFrame(0), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, new MemoryStream(), out _));
+            codec.EncodeVideo(64, 48, scenario.CreateFrame(0), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, new MemoryStream());
 
             var failing = new FailingStream();
-            Assert.Throws<IOException>(() => codec.TryEncodeVideo(64, 48, scenario.CreateFrame(1), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, failing, out _));
+            Assert.Throws<IOException>(() => codec.EncodeVideo(64, 48, scenario.CreateFrame(1), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, failing));
             Assert.Equal(1, failing.WriteAttempts);
 
-            codec.ForceKeyFrame();
             var stream = new MemoryStream();
-            Assert.True(codec.TryEncodeVideo(64, 48, scenario.CreateFrame(2), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, stream, out int bytesWritten));
+            int bytesWritten = codec.EncodeVideo(64, 48, scenario.CreateFrame(2), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, stream);
             Assert.True(bytesWritten > 0);
+
+            // RFC 6386 section 9.1: bit 0 of the frame tag is 0 for a key frame.
             Assert.Equal(0, stream.GetBuffer()[0] & 0x01);
         }
 
@@ -210,7 +234,7 @@ namespace Vpx.Net.UnitTest
         /// The sample does not have to live in a managed array.
         /// </summary>
         [Fact]
-        public unsafe void TryEncodeVideo_SampleInUnmanagedMemory_MatchesArraySample()
+        public unsafe void EncodeVideoToStream_SampleInUnmanagedMemory_MatchesArraySample()
         {
             var scenario = Vp8GoldenScenario.Get("Bgr_160x96");
             var expected = scenario.Run((codec, w, h, sample, fmt) => codec.EncodeVideo(w, h, sample, fmt, VideoCodecsEnum.VP8));
@@ -225,7 +249,7 @@ namespace Vpx.Net.UnitTest
                     sample.CopyTo(nativeSample);
 
                     stream.SetLength(0);
-                    Assert.True(codec.TryEncodeVideo(w, h, nativeSample, fmt, VideoCodecsEnum.VP8, stream, out _));
+                    codec.EncodeVideo(w, h, nativeSample, fmt, VideoCodecsEnum.VP8, stream);
                     return stream.ToArray();
                 }
                 finally
@@ -245,7 +269,7 @@ namespace Vpx.Net.UnitTest
         [Theory]
         [InlineData(VideoPixelFormatsEnum.I420)]
         [InlineData(VideoPixelFormatsEnum.Bgr)]
-        public void TryEncodeVideo_ReusedDestination_DoesNotAllocatePerFrame(VideoPixelFormatsEnum pixelFormat)
+        public void EncodeVideoToStream_ReusedDestination_DoesNotAllocatePerFrame(VideoPixelFormatsEnum pixelFormat)
         {
             const int width = 320, height = 240, frames = 16;
 
@@ -258,7 +282,7 @@ namespace Vpx.Net.UnitTest
             for (int i = 0; i < 8; i++)
             {
                 stream.SetLength(0);
-                codec.TryEncodeVideo(width, height, inputs[i & 1], pixelFormat, VideoCodecsEnum.VP8, stream, out _);
+                codec.EncodeVideo(width, height, inputs[i & 1], pixelFormat, VideoCodecsEnum.VP8, stream);
             }
 
             long encodedBytes = 0;
@@ -266,7 +290,7 @@ namespace Vpx.Net.UnitTest
             for (int i = 0; i < frames; i++)
             {
                 stream.SetLength(0);
-                codec.TryEncodeVideo(width, height, inputs[i & 1], pixelFormat, VideoCodecsEnum.VP8, stream, out int streamBytes);
+                int streamBytes = codec.EncodeVideo(width, height, inputs[i & 1], pixelFormat, VideoCodecsEnum.VP8, stream);
                 encodedBytes += streamBytes;
             }
             long allocatedPerFrame = (GC.GetAllocatedBytesForCurrentThread() - before) / frames;
@@ -303,6 +327,9 @@ namespace Vpx.Net.UnitTest
                         }
                         keep.RemoveRange(0, keep.Count / 2);
                         GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
+
+                        // A pause between collections, so the tests xUnit runs alongside this one are not stalled.
+                        Thread.Sleep(1);
                     }
                 })
                 { IsBackground = true };

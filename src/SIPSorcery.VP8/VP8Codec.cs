@@ -169,9 +169,14 @@ namespace Vpx.Net
 
         public byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
+            if (sample == null)
+            {
+                throw new ArgumentNullException(nameof(sample));
+            }
+
             lock (_encoderLock)
             {
-                int length = EncodeFrame(width, height, sample, pixelFormat);
+                int length = EncodeFrame(width, height, sample, pixelFormat, codec);
 
                 // The array returning contract hands the caller a frame it owns outright, so copy it out of the
                 // encoder's re-used output buffer.
@@ -181,7 +186,7 @@ namespace Vpx.Net
 
         /// <summary>
         /// Encodes a raw frame and writes the encoded VP8 frame to a stream, without the new array per frame that
-        /// <see cref="EncodeVideo"/> returns.
+        /// <see cref="EncodeVideo(int, int, byte[], VideoPixelFormatsEnum, VideoCodecsEnum)"/> returns.
         /// </summary>
         /// <param name="width">The frame width in pixels, a positive multiple of 16.</param>
         /// <param name="height">The frame height in pixels, a positive multiple of 16.</param>
@@ -189,8 +194,13 @@ namespace Vpx.Net
         /// <param name="pixelFormat">The pixel format of <paramref name="sample"/>.</param>
         /// <param name="codec">Must be <see cref="VideoCodecsEnum.VP8"/>.</param>
         /// <param name="output">The writable stream to write the frame to. It does not need to be seekable.</param>
-        /// <param name="bytesWritten">The length of the encoded frame written to <paramref name="output"/>.</param>
-        /// <returns>True, this encoder produces a frame for every input frame.</returns>
+        /// <returns>The length of the encoded frame written to <paramref name="output"/>. This encoder produces a
+        /// frame for every input frame.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="output"/> is null.</exception>
+        /// <exception cref="ArgumentException"><paramref name="output"/> is not writable, or the length of
+        /// <paramref name="sample"/> does not match the dimensions and pixel format.</exception>
+        /// <exception cref="NotSupportedException"><paramref name="codec"/> is not VP8, or the dimensions are not
+        /// positive multiples of 16.</exception>
         /// <remarks>
         /// <para>
         /// The VP8 bitstream cannot be produced as a forward-only sequence of bytes: the frame header carries the size
@@ -198,14 +208,18 @@ namespace Vpx.Net
         /// propagates carries back into bytes it has already emitted. The frame is therefore assembled in an output
         /// buffer owned by the codec, allocated once and re-used for every frame, and then written to
         /// <paramref name="output"/> with a single write. That one copy replaces the frame sized allocation and copy of
-        /// <see cref="EncodeVideo"/>.
+        /// <see cref="EncodeVideo(int, int, byte[], VideoPixelFormatsEnum, VideoCodecsEnum)"/>.
         /// </para>
         /// <para>
         /// Input that is not I420 is converted in a re-used buffer, and the I420 planes are read in place, so encoding
         /// does not allocate per frame once the buffers have been sized for the resolution.
         /// </para>
+        /// <para>
+        /// If writing to <paramref name="output"/> throws, the exception is passed on and the next frame is encoded as a
+        /// key frame, as the receiver will not have the frame the encoder would otherwise predict from.
+        /// </para>
         /// </remarks>
-        public bool TryEncodeVideo(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec, Stream output, out int bytesWritten)
+        public int EncodeVideo(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec, Stream output)
         {
             if (output == null)
             {
@@ -219,14 +233,22 @@ namespace Vpx.Net
                 throw new ArgumentException("The output stream must be writable.", nameof(output));
             }
 
-            ThrowIfCodecNotSupported(codec);
-
             lock (_encoderLock)
             {
-                int length = EncodeFrame(width, height, sample, pixelFormat);
-                output.Write(_frameBuffers.OutBuf, 0, length);
-                bytesWritten = length;
-                return length > 0;
+                int length = EncodeFrame(width, height, sample, pixelFormat, codec);
+
+                try
+                {
+                    output.Write(_frameBuffers.OutBuf, 0, length);
+                }
+                catch
+                {
+                    // The receiver will not get this frame, so the next one must not reference it.
+                    _forceKeyFrame = true;
+                    throw;
+                }
+
+                return length;
             }
         }
 
@@ -240,12 +262,14 @@ namespace Vpx.Net
 
         /// <summary>
         /// Encodes one frame into the output buffer of <see cref="_frameBuffers"/>. Every encode method goes through
-        /// here so they all produce the same frames. Must be called with <see cref="_encoderLock"/> held, and the frame
-        /// consumed before it is released.
+        /// here so they all check their arguments the same way and produce the same frames. Must be called with
+        /// <see cref="_encoderLock"/> held, and the frame consumed before it is released.
         /// </summary>
         /// <returns>The length of the encoded frame at the start of the output buffer.</returns>
-        private int EncodeFrame(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat)
+        private int EncodeFrame(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
+            ThrowIfCodecNotSupported(codec);
+
             if (width <= 0 || width % 16 != 0 || height <= 0 || height % 16 != 0)
             {
                 // The foundation encoder requires multiples of 16 — no
@@ -306,14 +330,16 @@ namespace Vpx.Net
             ReadOnlySpan<byte> srcV = i420.Slice(ySize + cSize, cSize);
 
             // Decide keyframe vs inter for this call.
-            // - Forced keyframe (via ForceKeyFrame()): always keyframe.
+            // - Forced keyframe (via ForceKeyFrame(), or after a frame could not be written): always keyframe.
             // - Frame counter reached interval: keyframe.
-            // - First frame of stream / no valid reference: keyframe.
-            // - Frame size changed: keyframe, as the reference frame has the old size.
+            // - First frame of stream / no valid reference, for example after an encode that failed part way: keyframe.
+            // - Frame size changed: keyframe, as the reference frame has the old size. The buffers are only resized
+            //   inside the encode below, so until then LastFrameValid still describes the previous size.
             // - Otherwise: inter (ZEROMV LAST_FRAME).
             bool sizeChanged = _frameBuffers.Width != width || _frameBuffers.Height != height;
             bool forceKey = _forceKeyFrame
                           || sizeChanged
+                          || !_frameBuffers.LastFrameValid
                           || _framesSinceLastKeyframe == 0
                           || _framesSinceLastKeyframe >= _keyframeIntervalFrames;
             _forceKeyFrame = false;
