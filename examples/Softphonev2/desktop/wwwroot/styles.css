@@ -160,9 +160,25 @@ body:not(.diag) .diag-only { display: none; }
 .viz-note > span { display: inline-block; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 85%, transparent); font-size: 13px; font-weight: 500; color: var(--muted); }
 .viz-note.bad > span { color: var(--danger); }
 .info {
-  position: absolute; left: 12px; top: 12px; display: flex; gap: 10px; padding: 6px 10px; border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, .55); color: #fff; font-size: 13px;
+  position: absolute; left: 12px; top: 12px; display: grid; gap: 8px; padding: 6px 10px; border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, .55); color: #fff; font-size: 13px; max-width: min(420px, calc(100% - 24px - var(--side-w) - 12px));
 }
+.info-head { display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; min-width: 0; }
+.info-head > :first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.info-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.info-chevron { display: grid; place-items: center; opacity: .8; }
+.info-chevron svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+.info-head[aria-expanded="true"] .info-chevron svg { transform: rotate(180deg); }
+/* Call details: a label and a value per row; values that are addresses or ids in monospace. */
+.details { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 12px; font-size: 12px; padding-bottom: 2px; }
+.details[hidden] { display: none; }
+.details dt { opacity: .65; white-space: nowrap; }
+.details dd { margin: 0; overflow-wrap: anywhere; }
+.details .mono { font: 12px Consolas, monospace; }
+.details .enc { display: inline-flex; align-items: center; gap: 5px; }
+.details .enc svg { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.details .enc.off { color: #f0c27a; }
+.details .copy-id { margin-left: 6px; padding: 0 4px; border: 0; border-radius: 3px; background: rgba(255, 255, 255, .12); color: inherit; font: 11px system-ui, sans-serif; cursor: pointer; }
 .timer { font-variant-numeric: tabular-nums; opacity: .85; }
 
 .info[hidden] { display: none; }

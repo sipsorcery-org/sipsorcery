@@ -58,6 +58,18 @@ public sealed class Phone : IDisposable
     public event Action<bool>? TxLostChanged;
     /// <summary>An RTCP reception report on the SIP leg: theirs about what we send, or ours about their video.</summary>
     public event Action<MediaRelay.QualitySample>? Quality;
+
+    /// <summary>
+    /// The facts about a connected call for the page's Call details panel: how it was set up,
+    /// who answered it with what, and the codecs agreed on the SIP side. Raised when the call
+    /// connects, and again if its media changes (video added).
+    /// </summary>
+    public sealed record CallDetails(
+        string Direction, string? Account, string? Signalling, string? TheirPhone, string? CallId,
+        string? TheirMedia, bool MediaEncrypted, bool SignallingEncrypted, string? Audio, string? Video);
+    public event Action<CallDetails>? Details;
+    private bool _outgoing;
+    private string? _theirPhone;
     /// <summary>Full SIP messages, for the log file only.</summary>
     public event Action<string>? Trace;
 
@@ -165,6 +177,8 @@ public sealed class Phone : IDisposable
 
         string? failure = null;
         ua.ClientCallFailed += (_, err, resp) => failure = resp != null ? $"{resp.StatusCode} {resp.ReasonPhrase}" : err;
+        _outgoing = true;
+        ua.ClientCallAnswered += (_, resp) => _theirPhone = resp?.Header.Server ?? resp?.Header.UserAgent;
         var a = _settings.Account;
         bool ok;
         try
@@ -293,7 +307,30 @@ public sealed class Phone : IDisposable
         relay.Quality += sample => Quality?.Invoke(sample);
         _relay = relay;
         Log?.Invoke($"call connected: {relay.Describe()}");
+        Details?.Invoke(DescribeCall(rtp, relay));
         MediaOffer?.Invoke(await relay.CreateOfferAsync());
+    }
+
+    private CallDetails DescribeCall(RTPSession rtp, MediaRelay relay)
+    {
+        var dialogue = _ua?.Dialogue;
+        var ep = dialogue?.RemoteSIPEndPoint;
+        var a = _settings.Account;
+        var media = rtp.RemoteDescription?.Media.Where(m => m.Port != 0).ToList() ?? new();
+        static string? Codec(SDPAudioVideoMediaFormat? f) =>
+            f is { } x ? $"{x.Name()} {(x.ClockRate() % 1000 == 0 ? $"{x.ClockRate() / 1000} kHz" : $"{x.ClockRate()} Hz")}" : null;
+        return new CallDetails(
+            Direction: _outgoing ? "outgoing" : "incoming",
+            Account: _settings.HasAccount ? $"{a!.Username}@{a.Server}" : null,
+            Signalling: ep == null ? null : $"{ep.Protocol.ToString().ToUpperInvariant()} {ep.Address}:{ep.Port}",
+            TheirPhone: string.IsNullOrWhiteSpace(_theirPhone) ? null : _theirPhone,
+            CallId: dialogue?.CallId,
+            TheirMedia: rtp.HasAudio ? rtp.AudioStream.DestinationEndPoint?.ToString() : null,
+            // SRTP shows as RTP/SAVP (or UDP/TLS/RTP/SAVP) on their media lines; SIP over TLS as tls.
+            MediaEncrypted: media.Count > 0 && media.All(m => m.Transport.Contains("SAVP", StringComparison.OrdinalIgnoreCase)),
+            SignallingEncrypted: ep?.Protocol is SIPProtocolsEnum.tls or SIPProtocolsEnum.wss,
+            Audio: Codec(relay.Audio),
+            Video: relay.Video is { } v ? v.Name() : null);
     }
 
     private async Task OnRequest(SIPEndPoint local, SIPEndPoint remote, SIPRequest req)
@@ -312,6 +349,8 @@ public sealed class Phone : IDisposable
             _incoming = ua.AcceptCall(req);
             ua.ServerCallCancelled += (_, _) => End("Missed call");
             Remote = req.Header.From.FromURI.ToString();
+            _outgoing = false;
+            _theirPhone = req.Header.UserAgent;
             var name = req.Header.From.FromName;
             if (!string.IsNullOrWhiteSpace(name)) Remote = $"{name} <{Remote}>";
             IncomingVideo = _settings.OfferVideo && OffersVideo(req.Body);

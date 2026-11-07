@@ -35,6 +35,24 @@ connection (no renegotiation), and is remembered between runs (per profile). A r
 device that's gone falls back to the default. The prototype's Text, Hold, Keypad and Transfer
 aren't here yet; they come with those features.
 
+## Call details
+
+The info bar at the top left of the stage (their address and the call's duration) has a
+chevron that drops down the call's details. Open or closed is remembered.
+
+| Row | What it says | From |
+|---|---|---|
+| Call | Outgoing or incoming, and the account (or "no account") | the host |
+| Their phone | their `User-Agent` (or `Server` on the 200 OK we got), or "Didn't say" | the host |
+| Security | Encrypted or not: SRTP shows as `RTP/SAVP` on all their media lines, SIP over TLS (or WSS) as the transport. Today it's always "Not encrypted: plain RTP, SIP over UDP", in amber | the host |
+| Audio, Video | The codec each way, "↑ Opus 48 kHz ↓ G722 16 kHz", or one name when both match. Each end can send a different codec, and this is the only place that shows it. G.722 is labelled 16 kHz, its sample rate, not its 8 kHz RTP clock | the page's WebRTC stats, which are the SIP leg's, since the relay doesn't re-encode |
+| SIP | transport and their SIP address and port, `UDP 127.0.0.1:5080` | the dialog |
+| Media | where their audio goes, the RTP address from their SDP | the SIP session |
+| Call-ID | the dialog's Call-ID, with **Copy**, to find the call in logs or a capture | the dialog |
+
+The host sends these as a `details` message when the call connects, and again if video is
+added.
+
 ## Video and no video
 
 - **The Audio | Video switch beside Call** picks the kind of call. *Audio* leaves video out of
@@ -277,6 +295,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Audio call to a callee with 6% audio loss | The panel has only the audio rows; ↓ Received shows 6.7% loss, MOS 3.7. |
 | Video call, panel never opened | One line, "Call quality ↑ 3.3 ↓ 3.7" and a chevron; clicking opens the table (sent fps 30) with "Quality reported by receiver" over the graph, and the chevron turns up. |
 | Video call, caller `--loss-video 2`, callee `--loss-video 5` | The folded line reads "Call quality ⮐ 0.6ms ↑ 4.4 ↓ 4.4"; opened, "RTT 0.6 ms" is the last line. The PLIs row under the table ticks Rcvd (amber) and Sent (violet) over the last 30 s, whichever column is picked; ↓ Received's graph has white "Frozen" bars along the bottom. |
+| Video call, open the info bar's chevron | Call details: "Outgoing · no account", their phone `sipsorcery_v10.0.18.0`, "Not encrypted: plain RTP, SIP over UDP", audio "↑ Opus 48 kHz ↓ G722 16 kHz", video VP8, SIP `UDP 127.0.0.1:5080`, their media address and the Call-ID. The callee's shows "Incoming" and the codecs the other way round. |
 | Far end with `--loss-video 100` | "No video arriving from B" under their initial; ↓ Received video fps 0. |
 | Self view, then `V` | The self view hides and comes back; the far end still gets 30 fps throughout. |
 | Mute before dialling, then a video call | The call connects muted (Unmute shown). |

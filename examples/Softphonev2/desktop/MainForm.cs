@@ -54,6 +54,11 @@ internal sealed class MainForm : Form
         _phone.Trace += text => { lock (_logFile) _logFile.WriteLine(text); };
         _phone.TxLostChanged += lost => Post(new { type = "media-health", txLost = lost });
         _phone.Quality += q => Post(new { type = "quality", q.Dir, q.Kind, q.LossPct, q.Lost, q.JitterMs, q.RttMs });
+        _phone.Details += d => Post(new
+        {
+            type = "details", d.Direction, d.Account, d.Signalling, d.TheirPhone, d.CallId, d.TheirMedia,
+            d.MediaEncrypted, d.SignallingEncrypted, d.Audio, d.Video,
+        });
         _phone.VideoRefused +=() => Post(new { type = "video-refused" });
         _phone.MediaOffer += sdp =>
         {

@@ -28,6 +28,8 @@ const ICON = {
   mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>',
   micOff: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/><path d="M3 3l18 18"/></svg>',
   chevronDown: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  unlock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.9-1"/></svg>',
   // Out and back: the round trip.
   roundTrip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h13a4 4 0 0 1 0 8H7"/><path d="m10 12-4 4 4 4"/></svg>',
   selfView: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect x="12" y="13" width="10" height="7" rx="2"/></svg>',
@@ -721,6 +723,69 @@ const NO_RTCP_MS = 15000;
 // { sent: { audio, video } their latest reports, recvVideoRtcp: our latest report on their video,
 //   recv: { audio, video } latest 1 s measures, history: per-second points for the graph, prev, startedAt }
 let quality = null;
+
+// ---- Call details: the chevron on the info bar drops down the facts about the call ----
+// The host sends how the call was set up (details); the codecs each way come from the page's
+// stats, which are the SIP leg's, since the relay passes the media on without re-encoding.
+let callDetails = null;
+let callCodecs = null;   // { audio: { tx, rx }, video: { tx, rx } }
+
+// "audio/opus" at 48000 → "Opus 48 kHz"; "video/VP8" → "VP8".
+function codecLabel(c) {
+  if (!c?.mimeType) return null;
+  const [kind, name] = c.mimeType.split("/");
+  const pretty = /^opus$/i.test(name) ? "Opus" : name.toUpperCase();
+  if (kind !== "audio" || !c.clockRate) return pretty;
+  // G.722's RTP clock is 8 kHz (RFC 3551 kept it for history), but it's 16 kHz audio.
+  const rate = pretty === "G722" ? 16000 : c.clockRate;
+  return `${pretty} ${rate % 1000 === 0 ? `${rate / 1000} kHz` : `${rate} Hz`}`;
+}
+
+function renderDetails() {
+  const el = $("details");
+  const d = callDetails;
+  if (!d || !call) { el.innerHTML = ""; return; }
+  const esc = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+  // Each way, as the page sees it; one value when both ways match.
+  const codecs = (kind, agreed) => {
+    const c = callCodecs?.[kind];
+    if (!c?.tx && !c?.rx) return agreed ? esc(agreed) : "–";
+    if (c.tx === c.rx) return esc(c.tx);
+    return `↑ ${esc(c.tx ?? "–")} &nbsp;↓ ${esc(c.rx ?? "–")}`;
+  };
+  const enc = d.mediaEncrypted && d.signallingEncrypted
+    ? `<span class="enc">${ICON.lock}Encrypted: SRTP media, SIP over TLS</span>`
+    : d.mediaEncrypted ? `<span class="enc">${ICON.lock}Media encrypted (SRTP); SIP not (${esc(d.signalling?.split(" ")[0] ?? "UDP")})</span>`
+    : `<span class="enc off">${ICON.unlock}Not encrypted: plain RTP${d.signallingEncrypted ? "" : `, SIP over ${esc(d.signalling?.split(" ")[0] ?? "UDP")}`}</span>`;
+  const rows = [
+    ["Call", `${d.direction === "outgoing" ? "Outgoing" : "Incoming"} · ${d.account ? esc(d.account) : "no account"}`],
+    ["Their phone", d.theirPhone ? esc(d.theirPhone) : "Didn't say"],
+    ["Security", enc],
+    ["Audio", codecs("audio", d.audio)],
+    ["Video", call.hasVideo ? codecs("video", d.video) : "None"],
+    ["SIP", d.signalling ? `<span class="mono">${esc(d.signalling)}</span>` : "–"],
+    ["Media", d.theirMedia ? `<span class="mono">${esc(d.theirMedia)}</span>` : "–"],
+    ["Call-ID", d.callId ? `<span class="mono">${esc(d.callId)}</span><button type="button" class="copy-id" id="copyCallId" title="Copy the Call-ID">Copy</button>` : "–"],
+  ];
+  el.innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+  const copy = $("copyCallId");
+  if (copy) copy.onclick = (e) => {
+    e.stopPropagation();
+    navigator.clipboard?.writeText(d.callId).then(() => { copy.textContent = "Copied"; setTimeout(() => { copy.textContent = "Copy"; }, 1500); }, () => {});
+  };
+}
+
+// Open or closed is remembered.
+function setDetailsOpen(open) {
+  $("details").hidden = !open;
+  if (open) renderDetails();
+  $("infoHead").setAttribute("aria-expanded", String(open));
+  $("infoHead").title = open ? "Hide call details" : "Show call details";
+  try { localStorage.setItem("detailsOpen", open ? "1" : "0"); } catch { /* storage unavailable */ }
+}
+$("infoChevron").innerHTML = ICON.chevronDown;
+$("infoHead").onclick = () => setDetailsOpen($("details").hidden);
+try { if (localStorage.getItem("detailsOpen") === "1") setDetailsOpen(true); } catch { /* storage unavailable */ }
 let qColumn = "sent";   // the column the graph shows
 const lastOf = (a) => a[a.length - 1];
 const newQuality = () => ({
@@ -776,12 +841,18 @@ setInterval(async () => {
   if (!pc || !call || state.call !== "connected") return;
   quality ??= newQuality();
   const q = quality;
-  let a = null, v = null, out = null;
+  let a = null, v = null, out = null, outA = null;
+  const codecs = new Map();
   (await pc.getStats()).forEach((r) => {
-    if (r.type === "outbound-rtp" && r.kind === "video") out = r;
+    if (r.type === "codec") codecs.set(r.id, r);
+    if (r.type === "outbound-rtp") { if (r.kind === "video") out = r; else if (r.kind === "audio") outA = r; }
     if (r.type !== "inbound-rtp") return;
     if (r.kind === "audio") a = r; else if (r.kind === "video") v = r;
   });
+  // The codecs each way, for Call details.
+  const codecOf = (r) => codecLabel(r && codecs.get(r.codecId));
+  callCodecs = { audio: { tx: codecOf(outA), rx: codecOf(a) }, video: { tx: codecOf(out), rx: codecOf(v) } };
+  if (!$("details").hidden) renderDetails();
   const p = q.prev;
   q.prev = { a, v, out };
   if (!p) return;
@@ -1106,6 +1177,7 @@ function render() {
     connectedAt = 0;
     addingVideo = videoRefused = false;
     quality = null;
+    callDetails = callCodecs = null;
     if (pc) closeMedia();
   }
 
@@ -1521,6 +1593,7 @@ chrome.webview.addEventListener("message", async (e) => {
     else if (msg.type === "media-offer") await onMediaOffer(msg.sdp);
     else if (msg.type === "media-health") { if (call) { call.txLost = !!msg.txLost; render(); } }
     else if (msg.type === "quality") onQuality(msg);
+    else if (msg.type === "details") { callDetails = msg; renderDetails(); }
     else if (msg.type === "video-refused") { addingVideo = false; videoRefused = true; log("they didn't take video"); render(); }
     else if (msg.type === "log") log(msg.text, true);
   } catch (err) {
