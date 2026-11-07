@@ -105,7 +105,16 @@ Then open http://localhost:5179.
   - **Add video.** An audio call has an *Add video* button where Camera would be. It sends a
     re-INVITE with `m=video`. If their phone refuses (`m=video 0`, try *Lobby desk phone*),
     a notice says so and the call carries on as audio, with a disabled *No video* button.
-  - On a video call, *Camera* turns your camera off and on with no re-INVITE.
+  - On a video call, *Turn camera off* / *Turn camera on* (the label says what pressing it
+    does, as in the desktop app) turns your camera off and on with no re-INVITE. Picking a
+    camera from its ▾ while it's off turns it on.
+  - **With your camera off, video never stops**: they're sent a placeholder, your initial in a
+    circle, and the self view shows it with "Camera off". So *their* camera being off looks like
+    a picture of their initial (*Their camera off / on* in Diagnostics), not a missing video.
+  - **Camera in use** (*Camera in use elsewhere* in Diagnostics): another app has it, so a call
+    sending it goes to the placeholder and the self view says "Camera in use". Turning it on
+    again says the camera's busy. When the other app lets go, nothing happens by itself: the
+    camera only ever opens because you asked.
   - **Servers that can't take video:** each account has *Offer video on calls* (Accounts →
     Network & media). Off leaves video out of every offer from that account. That's where the
     "no `m=video`" choice belongs, because it's about the server, not the call.
@@ -132,13 +141,16 @@ Then open http://localhost:5179.
       saying why, when video isn't possible.
   - If their phone turns video down, the label reads "Audio only · their phone has no video". This happens with `phone` in the address, as with *Lobby desk phone*, and with
     `tel:` numbers, which never offer video.
-  - Video agreed but not arriving shows their initials with "Their camera is off". This
-    happens with `nocam` in the address (*Sam*), or with the *Their camera off / on* diagnostic.
-    The mock waits 2 seconds before showing this, so a short gap doesn't flicker.
+  - Video agreed but not arriving shows their initials with "No video arriving from Sam". A
+    softphone with its camera off sends its placeholder, so this means the video has stalled or
+    the far end stopped sending. It happens with `nocam` in the address (*Sam*), or with the
+    *Their video stalls / resumes* diagnostic. The mock waits 2 seconds before showing this, so a
+    short gap doesn't flicker.
   - If they take video but don't receive yours (`noview`, *Kiosk*), your self view goes dashed
     with "They can't see you".
   - *I have no camera* in Diagnostics: calls still offer video, receive only, so you can see
-    them. The self view says "No camera", and the Camera button is disabled.
+    them. The self view shows your placeholder with "No camera", and the Camera button is
+    disabled.
   - The camera icon in the Active calls list says which of these applies when you hover over it.
 - **New call.** This adds a call to the top of the list and holds the current call. Focusing
   the address field (or `/`) lists recent calls and contacts; typing filters them. Typing part
@@ -175,13 +187,27 @@ Then open http://localhost:5179.
   *Camera* switches camera, without leaving the call. Both share their choice with Settings.
 - **Transfer.** Attended to another active call, or blind to an address.
 - **Keypad.** Sends DTMF, which is logged. While the keypad is open, number keys work too.
-- **Diagnostics.** The footer toggle opens a mock SIP log, plus buttons to simulate an
+- **Call quality (diagnostics).** While Diagnostics is open, the selected call has the desktop
+  app's Call quality panel over its video, top right. Folded, it's one line: the round trip (an
+  out-and-back arrow and the value) and both audio MOS, ↑ what you send and ↓ what you receive.
+  Opened, it's a table with an ↑ Sent column (the far end's RTCP reports, every 5 s) and a ↓
+  Received column (measured here): audio MOS, loss and jitter, and video loss and fps. Under it,
+  a PLIs row ticks the PLIs received and sent over the last 30 s, then a "Quality reported by
+  receiver" graph of the picked column over two minutes (MOS, audio and video loss), with white
+  bars on ↓ Received for the seconds your picture was frozen. The last line gives the RTT.
+  Clicking a column picks it for the graph; open or folded is remembered. With Diagnostics open,
+  the self view is as wide as the panel. The numbers are simulated from the same stats as the
+  signal bars, so *My network is poor* shows up here too.
+- **Diagnostics.** The footer toggle opens buttons to simulate an
   incoming call, a remote hang-up of the selected call or another call, a missed call, three
   calls ringing at once, held calls skipping a minute ahead, your own network going bad, the other
   person's camera stopping or starting, having no camera yourself, one-way audio in either
   direction, the other
-  person typing a message, the other side dropping text, or a broken registration. Bob also
-  types a message in the background a few seconds after the page loads.
+  person typing a message, the other side dropping text, or a broken registration. Under
+  them, *Audio loss* and *Video loss* sliders (0–50%) drop that share of what you send on
+  every call, which the far end's reports show under ↑ Sent. Then the mock SIP log, folded
+  under its own ▶ until opened. Bob also types a message in the background a few seconds after
+  the page loads.
 
 Keyboard: `/` focuses the address field, `1`–`8` select a call by its position in the list (`1` is the newest), `A` answers, `M` mutes, `Shift+M` mutes all, `Shift+C` turns all cameras off, `H`
 holds or resumes, `T` opens or closes the text panel, `G` toggles grid view, `V` toggles self view, and `Esc` closes dialogs.

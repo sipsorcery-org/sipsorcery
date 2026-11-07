@@ -103,7 +103,9 @@
         <button class="btn btn-small" data-sim="hold-skip">Held calls +1 min</button>
         <button class="btn btn-small" data-sim="net-bad">My network is poor</button>
         <button class="btn btn-small" data-sim="their-camera">Their camera off / on</button>
+        <button class="btn btn-small" data-sim="their-stall">Their video stalls / resumes</button>
         <button class="btn btn-small" data-sim="no-camera">I have no camera</button>
+        <button class="btn btn-small" data-sim="camera-in-use">Camera in use elsewhere</button>
         <button class="btn btn-small" data-sim="rx-dead">No audio from them</button>
         <button class="btn btn-small" data-sim="tx-dead">They can't hear me</button>
         <button class="btn btn-small" data-sim="text-remote">Remote types a message</button>
@@ -111,7 +113,17 @@
         <button class="btn btn-small" data-sim="reg-fail">Break a registration</button>
         <button class="btn btn-small" data-sim="clear">Clear log</button>
       </div>
-      <pre class="diag-log" id="diagLog"></pre>
+      <!-- Simulated loss on what you send, as in the desktop app: it shows in Call quality, under ↑ Sent. -->
+      <div class="loss-sliders">
+        <label class="loss-row"><span>Audio loss</span><input type="range" id="lossAudio" min="0" max="50" step="1" value="0"><output id="lossAudioOut">0%</output></label>
+        <label class="loss-row"><span>Video loss</span><input type="range" id="lossVideo" min="0" max="50" step="1" value="0"><output id="lossVideoOut">0%</output></label>
+        <p class="loss-note">Drops that share of the audio or video packets you send, on every call. The far end's RTCP reports show it in Call quality, under ↑ Sent.</p>
+      </div>
+      <!-- The SIP log, folded until opened. -->
+      <details class="log-section" id="logSection">
+        <summary class="log-head">SIP log</summary>
+        <pre class="diag-log" id="diagLog"></pre>
+      </details>
     </section>
   </div>
 

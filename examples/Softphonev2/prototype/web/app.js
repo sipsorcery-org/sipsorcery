@@ -26,6 +26,8 @@ const ICONS = {
   headphones: '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
   plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
   chevronDown: '<path d="m6 9 6 6 6-6"/>',
+  // Out and back: the round trip.
+  roundTrip: '<path d="M3 8h13a4 4 0 0 1 0 8H7"/><path d="m10 12-4 4 4 4"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   outgoing: '<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
   inbound: '<path d="M17 7 7 17"/><path d="M17 17H7V7"/>',
@@ -106,7 +108,7 @@ const CONTACTS = [
   { name: "Music on hold", uri: "sip:music@iptel.org" },
   { name: "Support line", uri: "tel:+35315550100" },
   { name: "Lobby desk phone", uri: "sip:lobby-phone@example.com" },
-  { name: "Sam (camera off)", uri: "sip:sam-nocam@example.org" },
+  { name: "Sam (no video arriving)", uri: "sip:sam-nocam@example.org" },
   { name: "Kiosk (can't see you)", uri: "sip:kiosk-noview@example.org" },
 ];
 const H = 3_600_000, D = 24 * H;
@@ -202,6 +204,12 @@ const state = {
   modal: null,
   dtmf: "",
   diagOpen: false,
+  // Diagnostics, as in the desktop app: the Call quality panel (open or folded, and the column
+  // its graph shows), simulated loss on what you send, and a camera another app has.
+  qualityOpen: loadPref("qualityOpen", "no") === "yes",
+  qColumn: "sent",
+  loss: { audio: 0, video: 0 },
+  cameraInUse: false,
   log: [],
 };
 
@@ -425,9 +433,21 @@ function addVideo(l) {
   }, 900);
 }
 
-// Diagnostics: their camera stops (or starts). Video is still agreed; frames just stop arriving,
-// so the tile waits a couple of seconds before saying so, rather than flickering on a short gap.
+// Diagnostics: they turn their camera off (or on). As in the desktop app, a softphone with its
+// camera off keeps sending video: a placeholder, their initial in a circle at 5 fps, so we
+// can't tell it from a picture of them, and nothing here says "camera off".
 function toggleTheirCamera() {
+  const l = callById(state.selected);
+  if (!l || l.status !== "connected" || !l.video) { log("Select a connected video call first"); return; }
+  l.theirCamOff = !l.theirCamOff;
+  log(l.theirCamOff ? `Call ${l.id}: ${l.name} turned their camera off: their placeholder arrives instead`
+    : `Call ${l.id}: ${l.name}'s camera is back on`);
+  render();
+}
+
+// Diagnostics: their video stalls (or resumes). Video is still agreed; frames just stop arriving,
+// so the tile waits a couple of seconds before saying so, rather than flickering on a short gap.
+function toggleTheirStall() {
   const l = callById(state.selected);
   if (!l || l.status !== "connected" || !l.video) { log("Select a connected video call first"); return; }
   if (l.theirCam === false) {
@@ -436,11 +456,11 @@ function toggleTheirCamera() {
     render();
     return;
   }
-  log(`Call ${l.id}: ${l.name} turned their camera off (frames stop)`);
+  log(`Call ${l.id}: video from ${l.name} stops arriving`);
   setTimeout(() => {
     if (l.status !== "connected" && l.status !== "held") return;
     l.theirCam = false;
-    log(`Call ${l.id}: no video from ${l.name} for 2 s: showing "Their camera is off"`);
+    log(`Call ${l.id}: no video from ${l.name} for 2 s: showing "No video arriving from ${l.name}"`);
     render();
   }, 2000);
 }
@@ -1079,6 +1099,162 @@ function speechTick() {
   if (!muted && state.toasts.some((x) => x.key === "muted")) dismissToast("muted");
 }
 
+// ---------- Call quality panel (diagnostics) ----------
+// As in the desktop app. A table with ↑ Sent (the far end's RTCP reports on what we send, every
+// 5 s or so) and ↓ Received (measured here); a PLIs row; and a graph of one column over two
+// minutes, with frozen-picture bars on ↓ Received. Folded, it's one line: the round trip and
+// both audio MOS. The numbers are simulated from the same per-call stats as the signal bars,
+// plus the Diagnostics loss sliders on what you send.
+
+const Q_POINTS = 120, PLI_POINTS = 30;
+const Q_LABEL = { sent: "↑ Sent", recv: "↓ Received" };
+const Q_COLOUR = { mos: "#4cc29b", aLoss: "#e0718a", vLoss: "#7fb2f0", frozen: "#ffffff", pliRx: "#e6b86a", pliTx: "#c39af5" };
+
+// An estimated MOS from a simplified ITU-T G.107 E-model, as the desktop app works it out.
+function mos({ lossPct = 0, jitterMs = 0, rttMs = null }) {
+  const delay = (rttMs ?? 40) / 2 + jitterMs * 2 + 20;
+  const id = delay < 160 ? delay / 40 : (delay - 120) / 10;
+  const ie = (95 * lossPct) / (lossPct + 25);
+  const r = Math.max(0, Math.min(100, 93.2 - id - ie));
+  return 1 + 0.035 * r + 7e-6 * r * (r - 60) * (100 - r);
+}
+const mosColour = (m) => (m == null ? "#677670" : m >= 4 ? "#4cc29b" : m >= 3.6 ? "#e6b86a" : "#e0718a");
+
+function qualityTick() {
+  const pct = (v) => Math.max(0, Math.min(100, v));
+  for (const l of state.calls) {
+    if (l.status !== "connected") continue;
+    const n = netOf(l), q = (l.q ??= { history: [], sent: null, at: now() + 2000 });
+    // ↑ Sent: their RTCP reports, the first after a couple of seconds, then every 5 s.
+    if (now() >= q.at) {
+      q.at = now() + 5000;
+      const audio = { lossPct: pct(n.tx.loss + state.loss.audio), jitterMs: n.tx.jitter, rttMs: n.rtt };
+      audio.mos = mos(audio);
+      q.sent = { audio, video: l.video ? { lossPct: pct(n.tx.loss * 1.3 + state.loss.video) } : null };
+    }
+    // Sent fps is what we send: 30, or the placeholder's 5 with the camera off.
+    if (q.sent?.video) q.sent.video.fps = camOn(l) && !state.noCamera ? 30 : 5;
+    const stalled = l.video && l.theirCam === false;
+    const rvLoss = l.video && !stalled ? pct(n.rx.loss * 1.3) : null;
+    const audio = { lossPct: n.rx.loss, jitterMs: n.rx.jitter };
+    audio.mos = mos({ ...audio, rttMs: n.rtt });
+    q.recv = { audio, video: !l.video ? null
+      : { lossPct: rvLoss, fps: stalled ? 0 : l.theirCamOff ? 5 : Math.max(0, Math.round(30 * (1 - Math.min(0.85, rvLoss / 10)) - rand(0, 1.5))) } };
+    // A PLI asks for a keyframe after loss broke the picture; the bigger the loss, the more often.
+    const pli = (loss) => loss != null && Math.random() < Math.min(0.9, loss / 6);
+    const pliTx = pli(rvLoss);
+    const point = (side, extra = {}) => ({ mos: side?.audio?.mos ?? null, aLoss: side?.audio?.lossPct ?? null, vLoss: side?.video?.lossPct ?? null, ...extra });
+    q.history.push({
+      sent: point(q.sent), recv: point(q.recv, { frozen: stalled || (pliTx && Math.random() < 0.7) }),
+      pliRx: pli(q.sent?.video?.lossPct), pliTx,
+    });
+    if (q.history.length > Q_POINTS) q.history.shift();
+  }
+  updateQualityPanel();
+}
+
+function qualityPanelHtml(l) {
+  const open = state.qualityOpen;
+  return `<div class="quality ${open ? "" : "collapsed"}" id="qPanel" data-for="${l.id}">
+      <button type="button" class="q-head" data-act="q-toggle" aria-expanded="${open}" title="${open ? "Hide" : "Show"} the details">
+        <span class="q-title">Call quality</span><span class="q-rtt" id="qRtt" title="Round trip, from their RTCP reports"></span><span class="q-sum" id="qSum"></span><span class="q-chevron">${icon("chevronDown")}</span></button>
+      <div class="q-table" id="qTable"></div>
+      <div class="q-pli" ${l.video ? "" : "hidden"}>
+        <div class="q-pli-legend"><span class="q-pli-head">PLIs</span><span class="q-pli-keys"><span style="--c:${Q_COLOUR.pliRx}">Rcvd</span><span style="--c:${Q_COLOUR.pliTx}">Sent</span></span></div>
+        <canvas class="q-pli-chart" id="qPliChart" width="240" height="40" role="img" aria-label="PLIs received and sent, last 30 seconds"></canvas>
+      </div>
+      <div class="q-graph-head"><span>Quality reported by receiver</span><span id="qGraphCol"></span></div>
+      <canvas class="q-chart" id="qChart" width="472" height="112" role="img"></canvas>
+      <div class="q-legend" id="qLegend"></div>
+      <div class="q-foot" id="qFoot"></div>
+    </div>`;
+}
+
+// A strip chart series, the newest at the right: a line, or bars from the bottom.
+function drawSeries(g, w, h, { values, min = 0, max, colour, bars = false }) {
+  const slot = w / Q_POINTS, start = w - values.length * slot;
+  const at = (v) => h - (Math.max(min, Math.min(max, v)) - min) / (max - min) * h;
+  g.fillStyle = g.strokeStyle = colour;
+  g.lineWidth = Math.max(2, h / 40);
+  g.lineJoin = "round";
+  g.beginPath();
+  let drawing = false;
+  values.forEach((v, i) => {
+    const cx = start + i * slot + slot / 2;
+    if (v == null) { drawing = false; return; }
+    if (bars) { if (v > 0) g.fillRect(cx - slot * 0.35, at(v), slot * 0.7, h - at(v)); return; }
+    if (drawing) g.lineTo(cx, at(v)); else g.moveTo(cx, at(v));
+    drawing = true;
+  });
+  if (!bars) g.stroke();
+}
+
+// Marks, one per second, the newest at the right: PLI ticks, or (solid) frozen bars.
+function drawMarks(g, y, w, h, values, colour, solid = false, points = Q_POINTS) {
+  values = values.slice(-points);
+  const slot = w / points, start = w - values.length * slot, tick = solid ? slot : Math.max(2, slot * 0.6);
+  g.fillStyle = colour;
+  values.forEach((on, i) => { if (on) g.fillRect(start + i * slot + (slot - tick) / 2, y, tick, h); });
+}
+
+function updateQualityPanel() {
+  const el = document.getElementById("qPanel");
+  const l = el && callById(Number(el.dataset.for));
+  if (!l) return;
+  const q = l.q ?? { history: [] };
+  const S = q.sent ?? {}, R = q.recv ?? {};
+  const video = l.video, col = state.qColumn;
+  const fmt = (v, unit = "", digits = 1) => (v == null ? "–" : `${v.toFixed(digits)}${unit}`);
+  const from = { sent: "their RTCP reports", recv: "measured here" };
+  const cell = (c, text, { cls = "", title = "", colour = "" } = {}) =>
+    `<span class="q-v ${cls}${c === col ? " sel" : ""}" data-act="q-col" data-col="${c}"${title ? ` title="${esc(title)}"` : ""}${colour ? ` style="color:${colour}"` : ""}>${text}</span>`;
+  const mosCell = (c, r) => cell(c, fmt(r?.mos), { cls: "mos", colour: r ? mosColour(r.mos) : "", title: `Estimated MOS (1–5), ${from[c]}` });
+  const lossCell = (c, r, what) => cell(c, fmt(r?.lossPct, "%"), { cls: r?.lossPct >= 1 ? "bad" : "", title: `${what} packets lost, ${from[c]}` });
+  const row = (stream, metric, a, b, next = false) => `<span class="q-stream${next ? " next" : ""}">${stream}</span><span class="q-metric">${metric}</span>${a}${b}`;
+  let html = `<span></span><span></span>` + Object.entries(Q_LABEL).map(([c, label]) =>
+      `<button type="button" class="q-col${c === col ? " sel" : ""}" data-act="q-col" data-col="${c}" title="Graph ${label.slice(2).toLowerCase()}: ${from[c]}">${label}</button>`).join("") +
+    row("Audio", "MOS", mosCell("sent", S.audio), mosCell("recv", R.audio)) +
+    row("", "loss", lossCell("sent", S.audio, "Audio"), lossCell("recv", R.audio, "Audio")) +
+    row("", "jitter", cell("sent", fmt(S.audio?.jitterMs, " ms", 0), { title: `Audio jitter, ${from.sent}` }), cell("recv", fmt(R.audio?.jitterMs, " ms", 0), { title: `Audio jitter, ${from.recv}` }));
+  if (video) html += row("Video", "loss", lossCell("sent", S.video, "Video"), lossCell("recv", R.video, "Video"), true) +
+    row("", "fps", cell("sent", fmt(S.video?.fps, "", 0), { title: "Frames per second we send (RTCP doesn't report what they see)" }),
+      cell("recv", fmt(R.video?.fps, "", 0), { title: "Frames per second decoded here" }));
+  document.getElementById("qTable").innerHTML = html;
+
+  // Folded: the round trip (just the value, with the out-and-back arrow) and the two audio MOS.
+  const rtt = S.audio?.rttMs;
+  const rttText = rtt == null ? "" : fmt(rtt, "ms", rtt < 10 ? 1 : 0);
+  document.getElementById("qRtt").innerHTML = rttText && `${icon("roundTrip")}${rttText}`;
+  const sum = (c, r) => `<span style="color:${mosColour(r?.mos)}" title="${Q_LABEL[c]}: estimated MOS">${Q_LABEL[c][0]} ${fmt(r?.mos)}</span>`;
+  document.getElementById("qSum").innerHTML = sum("sent", S.audio) + sum("recv", R.audio);
+  // Open: the round trip on the last line, or why ↑ Sent is empty.
+  document.getElementById("qFoot").textContent = S.audio ? `RTT ${fmt(rtt, " ms", rtt < 10 ? 1 : 0)}` : "Waiting for their RTCP reports";
+
+  document.getElementById("qGraphCol").textContent = Q_LABEL[col];
+  const series = [["mos", "Audio MOS"], ["aLoss", "Audio loss"], ...(video ? [["vLoss", "Video loss"], ...(col === "recv" ? [["frozen", "Frozen"]] : [])] : [])];
+  document.getElementById("qLegend").innerHTML = series.map(([k, label]) => `<span style="--c:${Q_COLOUR[k]}">${label}</span>`).join("");
+  const c = document.getElementById("qChart"), g = c.getContext("2d");
+  c.setAttribute("aria-label", `${Q_LABEL[col]}, last 2 minutes: ${series.map(([, x]) => x).join(", ")}`);
+  g.clearRect(0, 0, c.width, c.height);
+  g.fillStyle = "rgba(255,255,255,.12)";
+  for (const level of [4, 3]) g.fillRect(0, c.height - ((level - 1) / 4) * c.height, c.width, 1);
+  const pts = q.history.map((h) => h[col]);
+  drawSeries(g, c.width, c.height, { values: pts.map((h) => h.aLoss), max: 20, colour: Q_COLOUR.aLoss, bars: true });
+  if (video) drawSeries(g, c.width, c.height, { values: pts.map((h) => h.vLoss), max: 20, colour: Q_COLOUR.vLoss });
+  drawSeries(g, c.width, c.height, { values: pts.map((h) => h.mos), min: 1, max: 5, colour: Q_COLOUR.mos });
+  // On Received, along the bottom: how long our picture was frozen. RTCP can't say whether theirs froze.
+  if (video && col === "recv") { const tick = c.height / 14; drawMarks(g, c.height - tick, c.width, tick, pts.map((h) => h.frozen), Q_COLOUR.frozen, true); }
+
+  // PLIs both ways, whichever column is picked, over the last half minute.
+  const pc = document.getElementById("qPliChart");
+  if (video && pc) {
+    const pg = pc.getContext("2d"), rowH = 12, pad = (pc.height - rowH * 2) / 3;
+    pg.clearRect(0, 0, pc.width, pc.height);
+    drawMarks(pg, pad, pc.width, rowH, q.history.map((h) => h.pliRx), Q_COLOUR.pliRx, false, PLI_POINTS);
+    drawMarks(pg, pad * 2 + rowH, pc.width, rowH, q.history.map((h) => h.pliTx), Q_COLOUR.pliTx, false, PLI_POINTS);
+  }
+}
+
 // ---------- Call quality and encryption ----------
 // There's no real media, so RTCP-style stats are simulated per call. "From them" is what we
 // measure on the stream we receive; "To them" is what their receiver reports say about ours.
@@ -1508,6 +1684,9 @@ function pickDevice(key, dev) {
   const label = { mic: "Microphone", speaker: "Speaker", camera: "Camera" }[key];
   log(`Devices: ${label.toLowerCase()} → ${esc(dev)}`);
   toast({ key: "device", icon: key === "camera" ? "video" : key === "speaker" ? "headphones" : "mic", ms: 3000, text: `${label}: <b>${esc(dev)}</b>` });
+  // Picking a camera with yours off turns it on: choosing one is asking to send it.
+  const l = callById(state.selected);
+  if (key === "camera" && l?.status === "connected" && l.video && !camOn(l) && !state.noCamera) { toggleCallCamera(l); return; }
   render();
 }
 
@@ -1903,8 +2082,10 @@ function tileHtml(l, kind, footer = "", side = "") {
   // stay up with a plain note saying why, and never a "waiting for video" spinner.
   const theirVideo = l.video && l.theirCam !== false;
   const showVideo = theirVideo && l.status !== "held";
+  // Their placeholder (camera off) is video like any other: just their initial, no note.
+  const placeholder = showVideo && l.theirCamOff;
   const note = l.status !== "connected" && l.status !== "held" ? ""
-    : l.video && !theirVideo ? "Their camera is off" : "";
+    : l.video && !theirVideo ? `No video arriving from ${l.name}` : "";
   // An audio call keeps the same tile; a small label says so and the waveform of what you hear
   // takes the picture's place.
   const audioViz = !l.video && isLive(l);
@@ -1913,12 +2094,15 @@ function tileHtml(l, kind, footer = "", side = "") {
     : l.status === "ended" ? `<div class="tile-overlay">${esc(l.endReason)}</div>` : "";
   const label = !l.video
     ? `<span class="audio-chip" title="${esc(noVideoText(l))}">${icon("phone")}Audio only${l.noVideo === "rejected" ? " · their phone has no video" : l.noVideo === "tel" ? " · phone number" : l.noVideo === "account" ? " · video off for this account" : ""}</span>`
-    : theirVideo ? "Test feed" : "Video";
+    : placeholder ? "Placeholder" : theirVideo ? "Test feed" : "Video";
   const isSel = l.id === state.selected;
   const canSelfView = isSel && l.status === "connected" && l.video;
+  // With your camera off, in use elsewhere or missing, the self view shows what they're sent: the
+  // placeholder, your initial, with a note saying why.
+  const mine = `<span class="self-initial">${esc(initial(accountById(l.account)?.displayName ?? "You"))}</span>`;
   const selfView = !canSelfView || !state.selfView ? ""
-    : state.noCamera ? `<div class="self-view none">${icon("videoOff")}<span>No camera</span></div>`
-    : !camOn(l) ? `<div class="self-view none" title="They can't see you. You can still see them.">${icon("videoOff")}<span>Camera off</span></div>`
+    : state.noCamera ? `<div class="self-view none" title="They see your placeholder. You can still see them.">${mine}<span>No camera</span></div>`
+    : !camOn(l) ? `<div class="self-view none" title="They see your placeholder. You can still see them.">${mine}<span>${l.camInUse ? "Camera in use" : "Camera off"}</span></div>`
     : l.theySee === false ? `<div class="self-view unseen" title="They accepted video but aren't receiving yours">You<span>They can't see you</span></div>`
     : `<div class="self-view">You</div>`;
   const time = isLive(l) ? `<span class="tile-time" data-since="${l.startedAt}">${fmtDuration(now() - l.startedAt)}</span>` : "";
@@ -1927,11 +2111,12 @@ function tileHtml(l, kind, footer = "", side = "") {
         title="${state.selfView ? "Hide" : "Show"} your camera preview (V)">${icon("selfView")}Self view</button>` : "")
     : kind !== "grid" ? ""
     : isSel ? `<span class="tile-badge">Selected</span>` : "";
-  const feed = `<div class="tile-feed ${showVideo ? "live" : "off"} ${!l.video ? "audio" : ""}" style="--tile-bg:${bg}">
+  const quality = kind === "main" && state.diagOpen && l.status === "connected" ? qualityPanelHtml(l) : "";
+  const feed = `<div class="tile-feed ${showVideo ? "live" : "off"} ${placeholder ? "placeholder" : ""} ${!l.video ? "audio" : ""}" style="--tile-bg:${bg}">
       <span class="tile-label">${label}</span>
       ${audioViz ? audioVizHtml(l)
         : `<div class="tile-who"><span class="avatar" data-speak="${l.id}">${esc(initial(l.name))}</span>${note ? `<span class="tile-note">${esc(note)}</span>` : ""}</div>`}
-      ${time}${overlay}${selfView}${kind === "main" && !l.textOpen && l.rtt ? textPeekHtml(l) : ""}
+      ${time}${overlay}${quality}${selfView}${kind === "main" && !l.textOpen && l.rtt ? textPeekHtml(l) : ""}
     </div>`;
   // In the grid a click anywhere on a tile opens that call in Focus view.
   return `<div class="tile ${kind} ${kind === "grid" && isSel ? "is-selected" : ""}" ${kind === "grid" ? `data-act="tile" data-call="${l.id}"` : ""}>
@@ -2026,6 +2211,7 @@ function renderStage() {
             sel.textOpen ? textPanelHtml(sel) : sel.rtt ? textRailHtml(sel) : "")}</div>`}`;
   }
   stage.innerHTML = html;
+  updateQualityPanel();
   const rttLog = document.getElementById("rttLog");
   if (rttLog) rttLog.scrollTop = rttLog.scrollHeight;
   if (typing) {
@@ -2219,7 +2405,7 @@ function controlButtons(l) {
           : state.noCamera
           ? `<button class="btn" disabled title="No camera found. You can still see them.">${icon("videoOff")}No camera</button>`
           : `<button class="btn ${camOff ? "on warn" : ""}" data-act="camera" ${dis(connected)} aria-pressed="${camOff}"
-          ${state.cameraAllOff ? 'title="Camera is off for all calls. Click to turn it on for just this call."' : ""}>${icon(camOff ? "videoOff" : "video")}${camOff ? "Camera off" : "Camera"}</button>`}
+          ${state.cameraAllOff ? 'title="Camera is off for all calls. Click to turn it on for just this call."' : ""}>${icon(camOff ? "videoOff" : "video")}${camOff ? "Turn camera on" : "Turn camera off"}</button>`}
         ${caret("camera", "Choose camera", camOff)}
         ${state.menu === "camera" ? deviceMenuHtml("camera") : ""}
       </div>
@@ -2260,6 +2446,15 @@ function toggleCallMute(l) {
 }
 
 function toggleCallCamera(l) {
+  // A camera another app has: turning it on fails, and it's never retried by itself.
+  if (state.cameraInUse && !camOn(l)) {
+    log(`Call ${l.id}: camera didn't open: NotReadableError, in use by another app`);
+    l.camInUse = true;
+    toast({ key: "cam-in-use", tone: "warn", icon: "videoOff", text: "Your camera is in use by another app. Close it there, then turn your camera on again." });
+    render();
+    return;
+  }
+  l.camInUse = false;
   if (state.cameraAllOff) {
     state.cameraAllOff = false;
     state.calls.forEach((x) => { if (isLive(x) || x.status === "dialing") x.camera = x.id === l.id; });
@@ -2497,6 +2692,8 @@ document.addEventListener("click", (e) => {
     case "decline-all": for (const r of ringingQueue().filter((x) => x.id !== state.selected)) decline(r.id); state.bannerOpen = false; break;
     case "banner-toggle": state.bannerOpen = !state.bannerOpen; renderStage(); break;
     case "net-pop": showNetPop(btn); break; // Tap shows it; tapping anywhere else hides it.
+    case "q-toggle": state.qualityOpen = !state.qualityOpen; savePref("qualityOpen", state.qualityOpen ? "yes" : "no"); renderStage(); break;
+    case "q-col": state.qColumn = btn.dataset.col; updateQualityPanel(); break;
     case "answer-only": answer(no, false); break;
     case "answer-nocam": answer(no, true, false); break;
     case "decline": decline(no); break;
@@ -2637,8 +2834,21 @@ document.getElementById("diagToggle").addEventListener("click", (e) => {
   state.diagOpen = !state.diagOpen;
   e.currentTarget.setAttribute("aria-expanded", state.diagOpen);
   document.getElementById("diagnostics").hidden = !state.diagOpen;
+  document.body.classList.toggle("diag-on", state.diagOpen);
   renderLog();
+  renderStage();   // the Call quality panel shows on the selected call while diagnostics are open
 });
+
+// Simulated loss on what you send: the far end's reports (↑ Sent) pick it up at their next one.
+for (const kind of ["audio", "video"]) {
+  const input = document.getElementById(kind === "audio" ? "lossAudio" : "lossVideo");
+  const out = document.getElementById(kind === "audio" ? "lossAudioOut" : "lossVideoOut");
+  input.addEventListener("input", () => { out.value = `${input.value}%`; out.classList.toggle("on", input.value > 0); });
+  input.addEventListener("change", () => {
+    state.loss[kind] = Number(input.value);
+    log(`Simulated loss: audio ${state.loss.audio}%, video ${state.loss.video}%`);
+  });
+}
 
 document.querySelector(".diag-actions").addEventListener("click", (e) => {
   const sim = e.target.closest("[data-sim]")?.dataset.sim;
@@ -2658,6 +2868,18 @@ document.querySelector(".diag-actions").addEventListener("click", (e) => {
   }
   if (sim === "clear") { state.log = []; renderLog(); }
   if (sim === "their-camera") toggleTheirCamera();
+  if (sim === "their-stall") toggleTheirStall();
+  if (sim === "camera-in-use") {
+    // Another app takes the camera (or lets it go). Calls sending it lose it and send the
+    // placeholder; letting go never turns it back on by itself, you press Turn camera on.
+    state.cameraInUse = !state.cameraInUse;
+    e.target.closest("[data-sim]").classList.toggle("on", state.cameraInUse);
+    if (state.cameraInUse) {
+      for (const l of state.calls) if (isLive(l) && l.video && camOn(l)) { l.camera = false; l.camInUse = true; }
+      log("Camera: taken by another app (NotReadableError); calls send the placeholder");
+    } else log("Camera: free again; it stays off until you turn it on");
+    render();
+  }
   if (sim === "rx-dead") toggleAudioFault("rx");
   if (sim === "tx-dead") toggleAudioFault("tx");
   if (sim === "no-camera") {
@@ -2731,6 +2953,7 @@ setInterval(speechTick, 100);
 requestAnimationFrame(vizFrame);
 setInterval(netTick, 2000);
 setInterval(holdTick, 1000);
+setInterval(qualityTick, 1000);
 
 // Quality popover: hover or focus shows it; the call-head button also toggles it on click/tap.
 document.addEventListener("mouseover", (e) => {

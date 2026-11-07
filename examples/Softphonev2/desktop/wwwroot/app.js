@@ -28,6 +28,8 @@ const ICON = {
   mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>',
   micOff: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/><path d="M3 3l18 18"/></svg>',
   chevronDown: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+  // Out and back: the round trip.
+  roundTrip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h13a4 4 0 0 1 0 8H7"/><path d="m10 12-4 4 4 4"/></svg>',
   selfView: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect x="12" y="13" width="10" height="7" rx="2"/></svg>',
   hangup: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7a2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91"/><path d="M22 2 2 22"/></svg>',
 };
@@ -61,6 +63,8 @@ function log(text, fromHost = false) {
   if (el.textContent.length > 60000) el.textContent = el.textContent.slice(-40000);
   el.scrollTop = el.scrollHeight;
 }
+// The SIP log starts folded; opened, it shows the latest lines.
+$("logSection").addEventListener("toggle", () => { if ($("logSection").open) $("log").scrollTop = $("log").scrollHeight; });
 
 // "Alice <sip:alice@example.com>" → "Alice"; "sip:bob@host" → "Bob".
 function shortName(remote) {
@@ -880,7 +884,7 @@ function renderQuality() {
   // later; there's no room for it here.)
   const rtt = S.audio?.rttMs ?? S.video?.rttMs;
   const rttText = rtt == null ? "" : fmt(rtt, " ms", rtt < 10 ? 1 : 0);
-  $("qRtt").textContent = rttText;
+  $("qRtt").innerHTML = rttText && `${ICON.roundTrip}${rttText.replace(" ", "")}`;
   $("qRtt").title = "Round trip, from their RTCP reports";
   const waited = performance.now() - q.startedAt;
   $("qFoot").textContent = S.audio || S.video ? (rttText && `RTT ${rttText}`)

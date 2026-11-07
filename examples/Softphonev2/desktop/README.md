@@ -123,7 +123,7 @@ stopped), your row turns red with "X isn't getting your audio".
 ## Call quality (diagnostics mode)
 
 **Call quality**, at the top right of the stage during a call, starts as one line: the title,
-the round trip (just the value, "0.3 ms", from their RTCP), both audio MOS (↑ what we send, ↓
+the round trip (an out-and-back arrow and the value, "⮐ 0.3ms", from their RTCP), both audio MOS (↑ what we send, ↓
 what we receive) and a chevron to open it. Open or closed is remembered. Opened, it's a small
 table with a column for each direction, so there's no "they"
 or "you" to work out:
@@ -154,7 +154,7 @@ video rows.
 To see the reports react, the **Diagnostics menu** under the control bar has two sliders,
 Audio loss and Video loss (0–50%). They drop that share of the audio or video packets we send
 on the SIP leg, at random, from the moment a slider is let go, and carry over to the next call.
-Under them is the SIP log. Each dropped packet still uses up its sequence number, so the far
+Under them is the SIP log, folded under its own ▶ until opened. Each dropped packet still uses up its sequence number, so the far
 end sees a real gap and counts it in its RTCP. Audio is relayed packet by packet, so dropping
 one is easy. Video is handed to SIPSorcery a frame at a time and packetised inside the library,
 with no way to drop a single packet, so while video loss is on, the relay packetises VP8 and
@@ -276,7 +276,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Both ends with loss (caller audio 10%, video 5%; callee audio 6%, video 3%) | The caller's ↑ Sent shows about 10% audio and 4.7% video loss, MOS 3.4; ↓ Received shows 5.6% audio and 2.7% video loss, MOS 3.8, and the decoded frame rate. Clicking ↓ Received moves the graph to that column. |
 | Audio call to a callee with 6% audio loss | The panel has only the audio rows; ↓ Received shows 6.7% loss, MOS 3.7. |
 | Video call, panel never opened | One line, "Call quality ↑ 3.3 ↓ 3.7" and a chevron; clicking opens the table (sent fps 30) with "Quality reported by receiver" over the graph, and the chevron turns up. |
-| Video call, caller `--loss-video 2`, callee `--loss-video 5` | The folded line reads "Call quality 0.6 ms ↑ 4.4 ↓ 4.4"; opened, "RTT 0.6 ms" is the last line. The PLIs row under the table ticks Rcvd (amber) and Sent (violet) over the last 30 s, whichever column is picked; ↓ Received's graph has white "Frozen" bars along the bottom. |
+| Video call, caller `--loss-video 2`, callee `--loss-video 5` | The folded line reads "Call quality ⮐ 0.6ms ↑ 4.4 ↓ 4.4"; opened, "RTT 0.6 ms" is the last line. The PLIs row under the table ticks Rcvd (amber) and Sent (violet) over the last 30 s, whichever column is picked; ↓ Received's graph has white "Frozen" bars along the bottom. |
 | Far end with `--loss-video 100` | "No video arriving from B" under their initial; ↓ Received video fps 0. |
 | Self view, then `V` | The self view hides and comes back; the far end still gets 30 fps throughout. |
 | Mute before dialling, then a video call | The call connects muted (Unmute shown). |

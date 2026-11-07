@@ -108,7 +108,7 @@
       <button type="button" class="btn self-toggle" id="selfViewBtn" aria-pressed="true" hidden></button>
     </div>
 
-    <!-- Diagnostics mode: simulated loss on what we send, then the SIP log. -->
+    <!-- Diagnostics mode: simulated loss on what we send, then the SIP log (folded until opened). -->
     <details class="log diag-only">
       <summary>Diagnostics menu</summary>
       <div class="loss-sliders">
@@ -116,8 +116,10 @@
         <label class="loss-row"><span>Video loss</span><input type="range" id="lossVideo" min="0" max="50" step="1" value="0"><output id="lossVideoOut">0%</output></label>
         <p class="loss-note">Drops that share of the audio or video packets you send on the call, at random. The far end's RTCP reports should show it in Call quality, under ↑ Sent.</p>
       </div>
-      <div class="log-head">SIP log</div>
-      <pre id="log"></pre>
+      <details class="log-section" id="logSection">
+        <summary class="log-head">SIP log</summary>
+        <pre id="log"></pre>
+      </details>
     </details>
   </div>
   <script type="module" src="app.js"></script>

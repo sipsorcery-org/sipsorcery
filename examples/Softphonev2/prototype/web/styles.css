@@ -618,6 +618,14 @@ svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-widt
 .tile.grid .viz-note > span { font-size: 11px; padding: 2px 8px; }
 .self-view.none, .self-view.unseen { display: grid; place-content: center; gap: 4px; text-align: center; }
 .self-view.none svg { width: 18px; height: 18px; margin: 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; }
+/* Camera off, in use or missing: the placeholder they're sent, your initial in a circle. */
+.self-initial {
+  width: 34px; height: 34px; margin: 0 auto; border-radius: 50%; border: 1.5px solid currentColor;
+  display: grid; place-items: center; font-size: 16px; font-weight: 400;
+}
+/* Their placeholder: a still picture of their initial, so no moving sheen. */
+.tile-feed.placeholder::after { display: none; }
+.tile-feed.placeholder .avatar { opacity: .7; background: color-mix(in srgb, var(--surface) 30%, transparent); }
 .self-view.none { background: #3a3f3d; color: #b9c2be; }
 .self-view.unseen { opacity: .75; border-style: dashed; }
 .self-view.unseen span { font-size: 10px; }
@@ -743,6 +751,69 @@ svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-widt
   color: var(--muted);
 }
 .diag-log b { color: var(--text); font-weight: 500; }
+/* Simulated loss, then the SIP log folded under its own ▶. */
+.loss-sliders { display: grid; gap: 4px; margin: 4px 0 0; max-width: 520px; }
+.loss-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) 44px; align-items: center; gap: 10px; font-size: 13px; }
+.loss-row input { width: 100%; accent-color: var(--accent); }
+.loss-row output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.loss-row output.on { color: var(--danger); font-weight: 600; }
+.loss-note { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+.log-section { margin-top: 10px; }
+.log-head { cursor: pointer; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+
+/* ---------- Call quality (diagnostics) ----------
+   As in the desktop app: over the selected call's video, top right, under the timer. ↑ Sent is
+   the far end's RTCP reports on what we send; ↓ Received is measured here. */
+.quality {
+  position: absolute; right: 12px; top: 34px; z-index: 2; width: 260px; max-width: calc(100% - 24px);
+  max-height: calc(100% - 46px); overflow: hidden auto; padding: 10px 12px; border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, .62); color: #fff; font-size: 12px; display: grid; gap: 6px; text-align: left;
+}
+.q-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 0; border: 0; background: none;
+  color: inherit; font: inherit; font-weight: 600; font-size: 13px; text-align: left; cursor: pointer;
+}
+.q-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Collapsed: one line, the title, the round trip and both audio MOS, and the chevron to open it. */
+.quality.collapsed { padding-top: 7px; padding-bottom: 7px; }
+.quality.collapsed > :not(.q-head) { display: none; }
+.q-head > :first-child { margin-right: auto; }
+.q-title { white-space: nowrap; }
+.quality:not(.collapsed) .q-rtt { display: none; }
+.q-rtt { display: inline-flex; align-items: baseline; gap: 3px; font: 600 13px Consolas, monospace; white-space: nowrap; opacity: .85; }
+.q-rtt svg { align-self: center; width: 14px; height: 14px; stroke-width: 2.4; }
+.q-sum { display: none; gap: 6px; font: 600 13px Consolas, monospace; white-space: nowrap; }
+.quality.collapsed .q-sum { display: inline-flex; }
+.q-chevron { display: grid; place-items: center; align-self: center; opacity: .8; }
+.q-chevron svg { width: 16px; height: 16px; stroke-width: 2; transition: transform .15s; }
+.quality:not(.collapsed) .q-chevron svg { transform: rotate(180deg); }
+.q-chart { width: 100%; height: 56px; background: rgba(255, 255, 255, .05); border-radius: 4px; }
+.q-graph-head { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
+.q-graph-head > :first-child { font-weight: 600; }
+.q-graph-head > :last-child { opacity: .65; white-space: nowrap; }
+.q-legend { display: flex; flex-wrap: wrap; gap: 2px 10px; opacity: .8; }
+.q-legend span::before, .q-pli-keys span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; background: var(--c); }
+/* PLIs: the legend in one half, the last half minute's ticks in the other, a row each way. */
+.q-pli { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; margin-top: 4px; }
+.q-pli[hidden] { display: none; }
+.q-pli-legend { display: flex; align-items: center; gap: 10px; }
+.q-pli-head { font-weight: 600; }
+.q-pli-keys { display: grid; line-height: 12px; font-size: 11px; opacity: .8; }
+.q-pli-chart { width: 100%; height: 24px; background: rgba(255, 255, 255, .05); border-radius: 4px; }
+.q-table { display: grid; grid-template-columns: auto auto minmax(max-content, 1fr) minmax(max-content, 1fr); gap: 1px 6px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.q-stream { font-weight: 600; }
+.q-stream.next { margin-top: 4px; }
+.q-metric { opacity: .65; }
+.q-col, .q-v { text-align: right; padding: 1px 4px; border-radius: 3px; cursor: pointer; white-space: nowrap; }
+.q-col { border: 0; background: none; color: inherit; font: inherit; opacity: .65; }
+.q-col.sel { opacity: 1; font-weight: 600; }
+.q-v.sel, .q-col.sel { background: rgba(255, 255, 255, .1); }
+.q-v.mos { font-weight: 600; }
+.q-v.bad { color: #e0718a; }
+.q-foot { opacity: .8; }
+.q-foot:empty { display: none; }
+/* With diagnostics open, the self view is as wide as the Call quality panel, so they line up. */
+body.diag-on .tile.main .self-view { width: 260px; max-width: 45%; }
 
 /* ---------- Accounts view ---------- */
 
