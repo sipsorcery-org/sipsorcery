@@ -18,12 +18,18 @@
 //-----------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using SIPSorcery.Net;
 
 namespace SIPSorcery.net.RTP.Packetisation
 {
     public class H265Packetiser
     {
         public const int H265_RTP_HEADER_LENGTH = 2;
+
+        /// <summary>
+        /// The length of the fragmentation unit header written by <see cref="GetH265RtpHeader"/>.
+        /// </summary>
+        internal const int H265_FU_HEADER_LENGTH = 3;
 
         public struct H265Nal
         {
@@ -37,45 +43,46 @@ namespace SIPSorcery.net.RTP.Packetisation
             }
         }
 
+        /// <summary>
+        /// Splits an Annex B access unit into its NAL units, without their start codes.
+        /// </summary>
+        /// <remarks>
+        /// Zero bytes in front of a start code (trailing_zero_8bits) and at the end of the access unit are padding and
+        /// are not included in any NAL. NALs of any length are returned, and the last NAL is always flagged as last,
+        /// even when the access unit ends with a start code.
+        /// </remarks>
         public static IEnumerable<H265Nal> ParseNals(byte[] accessUnit)
         {
-            int zeroes = 0;
+            if (accessUnit == null)
+            {
+                throw new ArgumentNullException(nameof(accessUnit));
+            }
 
             // Parse NALs from H265 access unit, encoded as an Annex B bitstream.
             // NALs are delimited by 0x000001 or 0x00000001.
-            int currPosn = 0;
-            for (int i = 0; i < accessUnit.Length; i++)
+            var scanner = new AnnexBNalScanner();
+
+            while (scanner.TryGetNext(accessUnit, out int offset, out int length, out bool isLast))
             {
-                if (accessUnit[i] == 0x00)
-                {
-                    zeroes++;
-                }
-                else if (accessUnit[i] == 0x01 && zeroes >= 2)
-                {
-                    // This is a NAL start sequence.
-                    int nalStart = i + 1;
-                    if (nalStart - currPosn > 4)
-                    {
-                        int endPosn = nalStart - ((zeroes == 2) ? 3 : 4);
-                        int nalSize = endPosn - currPosn;
-                        bool isLast = currPosn + nalSize == accessUnit.Length;
+                yield return new H265Nal(accessUnit.AsSpan(offset, length).ToArray(), isLast);
+            }
+        }
 
-                        yield return new H265Nal(accessUnit.AsSpan(currPosn, nalSize).ToArray(), isLast);
-                    }
+        /// <summary>
+        /// Parses the NALs of an access unit into a list, the same NALs <see cref="ParseNals"/> returns, straight from
+        /// a span and in a single pass.
+        /// </summary>
+        internal static List<H265Nal> ParseNalList(ReadOnlySpan<byte> accessUnit)
+        {
+            var nals = new List<H265Nal>();
+            var scanner = new AnnexBNalScanner();
 
-                    currPosn = nalStart;
-                    zeroes = 0;
-                }
-                else
-                {
-                    zeroes = 0;
-                }
+            while (scanner.TryGetNext(accessUnit, out int offset, out int length, out bool isLast))
+            {
+                nals.Add(new H265Nal(accessUnit.Slice(offset, length).ToArray(), isLast));
             }
 
-            if (currPosn < accessUnit.Length)
-            {
-                yield return new H265Nal(accessUnit.AsSpan(currPosn).ToArray(), true);
-            }
+            return nals;
         }
 
         /// <summary>
@@ -250,12 +257,23 @@ namespace SIPSorcery.net.RTP.Packetisation
         /// </remarks>
         public static byte[] GetH265RtpHeader(byte[] nals, bool isFirstPacket, bool isFinalPacket)
         {
-            // get the type
-            byte nalType = (byte)((nals[0] >> 1) & 0x3F);
-            // turn into FU (type=49)
-            nals[0] = (byte)((nals[0] & 0x81) | (49 << 1));
-            // make FU header with previous naltype
-            byte fuHeader = (byte)(nalType & 0x3f);
+            var header = new byte[H265_FU_HEADER_LENGTH];
+            WriteH265RtpHeader(nals[0], nals[1], isFirstPacket, isFinalPacket, header);
+            return header;
+        }
+
+        /// <summary>
+        /// Writes the fragmentation unit payload header and FU header (RFC 7798 section 4.4.3) for one fragment of the
+        /// NAL whose two byte header is <paramref name="nal0"/>, <paramref name="nal1"/>, into
+        /// <paramref name="destination"/> instead of a new array.
+        /// </summary>
+        /// <returns>The number of bytes written, <see cref="H265_FU_HEADER_LENGTH"/>.</returns>
+        internal static int WriteH265RtpHeader(byte nal0, byte nal1, bool isFirstPacket, bool isFinalPacket, Span<byte> destination)
+        {
+            // The NAL type, carried in every fragment's FU header.
+            byte nalType = (byte)((nal0 >> 1) & 0x3F);
+
+            byte fuHeader = nalType;
             if (isFirstPacket)
             {
                 fuHeader |= 0x80;
@@ -264,7 +282,12 @@ namespace SIPSorcery.net.RTP.Packetisation
             {
                 fuHeader |= 0x40;
             }
-            return new byte[] { nals[0], nals[1], fuHeader };
+
+            // The payload header is the NAL header with its type changed to FU (49), keeping the F bit, layer id and TID.
+            destination[0] = (byte)((nal0 & 0x81) | (49 << 1));
+            destination[1] = nal1;
+            destination[2] = fuHeader;
+            return H265_FU_HEADER_LENGTH;
         }
 
         public static IEnumerable<H265Nal> CreateAggregated(IEnumerable<H265Nal> nals, int RTP_MAX_PAYLOAD)

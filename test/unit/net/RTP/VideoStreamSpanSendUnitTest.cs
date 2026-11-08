@@ -137,12 +137,16 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// The VP8 array methods reject a null frame with an ArgumentNullException, before anything is sent.
+        /// The array methods of the codecs whose frames are parsed (VP8, H264 and H265) reject a null frame with an
+        /// ArgumentNullException, before anything is sent.
         /// </summary>
-        [Fact]
-        public void SendVideo_Vp8NullFrame_Rejected()
+        [Theory]
+        [InlineData("VP8")]
+        [InlineData("H264")]
+        [InlineData("H265")]
+        public void SendVideo_NullFrame_Rejected(string codec)
         {
-            var stream = CreateStream("VP8", 96);
+            var stream = CreateStream(codec, 96);
             var channel = new RetainingRtpChannel();
             stream.AddRtpChannel(channel);
             try
@@ -159,19 +163,31 @@ namespace SIPSorcery.Net.UnitTests
 
 #if NETCOREAPP
         /// <summary>
-        /// With the transport, statistics and extensions out of the picture, sending a VP8 frame allocates little more
-        /// than the wire buffer of each packet: no payload or header arrays and no random number buffers.
+        /// With the transport, statistics and extensions out of the picture, sending a frame allocates little more
+        /// than the wire buffer of each packet: no payload or header arrays, random number buffers, enumerators or
+        /// copies of the NALs.
         /// </summary>
         [Theory]
-        [InlineData(60_000, false)]
-        [InlineData(60_000, true)]
-        [InlineData(8_000, true)]
-        public void SendVideo_Vp8_AllocatesLittleMoreThanTheWireBuffers(int frameLength, bool fromSpan)
+        [InlineData("VP8", 60_000, false)]
+        [InlineData("VP8", 60_000, true)]
+        [InlineData("VP8", 8_000, true)]
+        [InlineData("H264", 60_000, false)]
+        [InlineData("H264", 60_000, true)]
+        public void SendVideo_AllocatesLittleMoreThanTheWireBuffers(string codec, int frameLength, bool fromSpan)
         {
             var frame = new byte[frameLength];
             new Random(1).NextBytes(frame);
+            if (codec == "H264")
+            {
+                // One large IDR NAL, with no accidental start codes.
+                for (int i = 0; i < frame.Length; i++)
+                {
+                    frame[i] = (byte)Math.Max(2, (int)frame[i]);
+                }
+                frame[0] = 0; frame[1] = 0; frame[2] = 0; frame[3] = 1; frame[4] = 0x65;
+            }
 
-            var stream = CreateStream("VP8", 96);
+            var stream = CreateStream(codec, 96);
             var counter = new CountingRtpChannel();
             stream.AddRtpChannel(counter);
             try
@@ -214,7 +230,7 @@ namespace SIPSorcery.Net.UnitTests
                 // RTP header object.
                 long budget = wireBytes + packets * 160;
                 Assert.True(allocated <= budget,
-                    $"Allocated {allocated} bytes for {packets} packets of {wireBytes} wire bytes ({allocated / (double)wireBytes:F2}x); budget {budget}.");
+                    $"{codec}: allocated {allocated} bytes for {packets} packets of {wireBytes} wire bytes ({allocated / (double)wireBytes:F2}x); budget {budget}.");
             }
             finally
             {
