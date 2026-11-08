@@ -137,12 +137,16 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// The VP8 array methods reject a null frame with an ArgumentNullException, before anything is sent.
+        /// The array methods of the codecs whose frames are parsed (VP8, H264 and H265) reject a null frame with an
+        /// ArgumentNullException, before anything is sent.
         /// </summary>
-        [Fact]
-        public void SendVideo_Vp8NullFrame_Rejected()
+        [Theory]
+        [InlineData("VP8")]
+        [InlineData("H264")]
+        [InlineData("H265")]
+        public void SendVideo_NullFrame_Rejected(string codec)
         {
-            var stream = CreateStream("VP8", 96);
+            var stream = CreateStream(codec, 96);
             var channel = new RetainingRtpChannel();
             stream.AddRtpChannel(channel);
             try
@@ -157,21 +161,86 @@ namespace SIPSorcery.Net.UnitTests
             }
         }
 
-#if NETCOREAPP
         /// <summary>
-        /// With the transport, statistics and extensions out of the picture, sending a VP8 frame allocates little more
-        /// than the wire buffer of each packet: no payload or header arrays and no random number buffers.
+        /// A SocketException from the transport is logged rather than thrown, the same for each codec whose frames are
+        /// packetised here.
         /// </summary>
         [Theory]
-        [InlineData(60_000, false)]
-        [InlineData(60_000, true)]
-        [InlineData(8_000, true)]
-        public void SendVideo_Vp8_AllocatesLittleMoreThanTheWireBuffers(int frameLength, bool fromSpan)
+        [InlineData("VP8")]
+        [InlineData("H264")]
+        [InlineData("H265")]
+        public void SendVideo_TransportSocketException_NotThrown(string codec)
+        {
+            var stream = CreateStream(codec, 96);
+            var channel = new ThrowingRtpChannel();
+            stream.AddRtpChannel(channel);
+            try
+            {
+                byte[] frame = (codec == "VP8") ?
+                    new byte[3000] :
+                    new byte[] { 0x00, 0x00, 0x00, 0x01, (codec == "H264") ? (byte)0x65 : (byte)0x26, 0x01, 0xAA };
+
+                Assert.Null(Record.Exception(() => stream.SendVideo(3000, frame)));
+                Assert.Null(Record.Exception(() => stream.SendVideo(3000, new ReadOnlySpan<byte>(frame))));
+                Assert.True(channel.Attempts >= 2);
+            }
+            finally
+            {
+                channel.Close("test complete");
+            }
+        }
+
+#if NETCOREAPP
+        /// <summary>
+        /// With the transport, statistics and extensions out of the picture, sending a frame allocates little more
+        /// than the wire buffer of each packet: no payload or header arrays, random number buffers, enumerators or
+        /// copies of the NALs.
+        /// </summary>
+        [Theory]
+        [InlineData("VP8", 60_000, false)]
+        [InlineData("VP8", 60_000, true)]
+        [InlineData("VP8", 8_000, true)]
+        [InlineData("H264", 60_000, false)]
+        [InlineData("H264", 60_000, true)]
+        [InlineData("H265", 60_000, false)]
+        [InlineData("H265", 60_000, true)]
+        public void SendVideo_AllocatesLittleMoreThanTheWireBuffers(string codec, int frameLength, bool fromSpan)
         {
             var frame = new byte[frameLength];
             new Random(1).NextBytes(frame);
+            if (codec == "H264" || codec == "H265")
+            {
+                // No accidental start codes.
+                for (int i = 0; i < frame.Length; i++)
+                {
+                    frame[i] = (byte)Math.Max(2, (int)frame[i]);
+                }
+            }
 
-            var stream = CreateStream("VP8", 96);
+            if (codec == "H264")
+            {
+                // One large IDR NAL.
+                frame[0] = 0; frame[1] = 0; frame[2] = 0; frame[3] = 1; frame[4] = 0x65;
+            }
+            else if (codec == "H265")
+            {
+                // A start code and a two byte NAL header of the given type, returning where the NAL starts.
+                int PutStartCodeAndHeader(int position, int type)
+                {
+                    frame[position] = 0; frame[position + 1] = 0; frame[position + 2] = 0; frame[position + 3] = 1;
+                    frame[position + 4] = (byte)(type << 1);
+                    frame[position + 5] = 0x01;
+                    return position + 4;
+                }
+
+                // Parameter sets small enough to share an aggregation packet, then one large IDR NAL.
+                int next = PutStartCodeAndHeader(0, 32) + 24;
+                next = PutStartCodeAndHeader(next, 33) + 40;
+                next = PutStartCodeAndHeader(next, 34) + 8;
+                PutStartCodeAndHeader(next, 19);
+            }
+
+            var stream = CreateStream(codec, 96);
             var counter = new CountingRtpChannel();
             stream.AddRtpChannel(counter);
             try
@@ -214,7 +283,7 @@ namespace SIPSorcery.Net.UnitTests
                 // RTP header object.
                 long budget = wireBytes + packets * 160;
                 Assert.True(allocated <= budget,
-                    $"Allocated {allocated} bytes for {packets} packets of {wireBytes} wire bytes ({allocated / (double)wireBytes:F2}x); budget {budget}.");
+                    $"{codec}: allocated {allocated} bytes for {packets} packets of {wireBytes} wire bytes ({allocated / (double)wireBytes:F2}x); budget {budget}.");
             }
             finally
             {
@@ -300,6 +369,22 @@ namespace SIPSorcery.Net.UnitTests
             {
                 Packets.Add(buffer);
                 return SocketError.Success;
+            }
+        }
+
+        /// <summary>
+        /// Fails every send with a SocketException.
+        /// </summary>
+        private sealed class ThrowingRtpChannel : RTPChannel
+        {
+            public int Attempts;
+
+            public ThrowingRtpChannel() : base(false, IPAddress.Loopback) { }
+
+            public override SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+            {
+                Attempts++;
+                throw new SocketException((int)SocketError.NoBufferSpaceAvailable);
             }
         }
 

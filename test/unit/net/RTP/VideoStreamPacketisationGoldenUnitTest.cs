@@ -8,7 +8,10 @@
 //
 // The expected digests were produced by running this file against the send path
 // as it was at commit c331140ed, before the VP8 send path changed. It only uses
-// API that existed then, so it can be re-run there.
+// API that existed then, so it can be re-run there. The exceptions are the
+// scenarios marked "packetisation fix": their output changed on purpose with the
+// H264/H265 fragmentation, H265 aggregation and Annex B parsing fixes, which
+// H26XPacketiserUnitTest checks in detail.
 //
 // Author(s):
 // SIPSorcery contributors
@@ -114,7 +117,7 @@ namespace SIPSorcery.Net.UnitTests
                 CreateFrames = () => Frames(Random(6000, 16), Random(700, 17), Random(2500, 18)),
                 ExpectedDigest = "2AC14D8E11DFF7809EDEEE6C89546A00B7E869C3A8B3C80736350AFCB0BEED54" },
 
-            // Parameter sets, then NALs just under, at and over the RTP payload limit.
+            // Packetisation fix: the 1201 byte NAL is sent as two fragmentation units rather than one.
             new VideoRtpGoldenScenario { Name = "H264_SpsPpsIdr", Codec = "H264", Fmtp = "packetization-mode=1",
                 CreateFrames = () => Frames(
                     Au(Sc4, H264Nal(0x67, 12, 20), Sc4, H264Nal(0x68, 4, 21), Sc4, H264Nal(0x65, 5000, 22)),
@@ -122,13 +125,13 @@ namespace SIPSorcery.Net.UnitTests
                     Au(Sc4, H264Nal(0x41, 1200, 24)),
                     Au(Sc4, H264Nal(0x41, 1201, 25)),
                     Au(Sc4, H264Nal(0x41, 2401, 26))),
-                ExpectedDigest = "78206DCEADB895CB17C0804278850DC3DEDF44779440E777EA557EF2110B55AE" },
+                ExpectedDigest = "A8B7E41DD3346286A4BE9EA690CE37188F53A615E60CDD482FA7A385344CE5DF" },
             new VideoRtpGoldenScenario { Name = "H264_ThreeByteStartCodes", Codec = "H264", Fmtp = "packetization-mode=1",
                 CreateFrames = () => Frames(
                     Au(Sc3, H264Nal(0x09, 2, 30), Sc3, H264Nal(0x41, 1500, 31), Sc3, H264Nal(0x41, 40, 32)),
                     Au(Sc3, H264Nal(0x65, 3601, 33))),
                 ExpectedDigest = "AF37A5863ADD6D09FCD92A4FDFEB42989F9661A9C299C75DC4E463BD578E09FD" },
-            // The Annex B parser's handling of the awkward cases: data before the first start code,
+            // Packetisation fix. The Annex B parser's handling of the awkward cases: data before the first start code,
             // a one byte NAL before a three byte start code, extra zero bytes before a start code, a NAL whose header
             // byte is 0x01, back to back start codes and trailing zeros.
             new VideoRtpGoldenScenario { Name = "H264_ParserEdgeCases", Codec = "H264", Fmtp = "packetization-mode=1",
@@ -139,11 +142,12 @@ namespace SIPSorcery.Net.UnitTests
                     Au(Sc3, new byte[] { 0x01 }, H264Nal(0x41, 90, 45)),
                     Au(Sc4, Sc4, H264Nal(0x41, 100, 46), new byte[] { 0x00, 0x00 }),
                     new byte[0]),
-                ExpectedDigest = "C94EF7DE9CE0BBD75728103F6AE42743458E380E10690E773211FAEA0DBA608B" },
-            // Random bytes, zeros included, so the parser finds start codes wherever they happen to occur.
+                ExpectedDigest = "56526BD40814479672D892062FB822A49DF841AEBA496EFF8C05940049698B99" },
+            // Packetisation fix. Random bytes, zeros included, so the parser finds start codes wherever they happen
+            // to occur.
             new VideoRtpGoldenScenario { Name = "H264_RandomBytes", Codec = "H264", Fmtp = "packetization-mode=1",
                 CreateFrames = () => Frames(RandomWithStartCodes(20_000, 50), RandomWithStartCodes(3_000, 51)),
-                ExpectedDigest = "F15CE7073C664A5FB4706D232D30735FBA86BE629327A3C280886834E2A7B13E" },
+                ExpectedDigest = "A135A2AF963845D7720FF1448BDEE96AA873B0E4B1C65657BFB26A449153D98D" },
             new VideoRtpGoldenScenario { Name = "H264_LargeIdr_HeaderExtensions_Srtp", Codec = "H264", Fmtp = "packetization-mode=1", HeaderExtensions = true, Srtp = true,
                 CreateFrames = () => Frames(Au(Sc4, H264Nal(0x67, 12, 60), Sc4, H264Nal(0x68, 4, 61), Sc4, H264Nal(0x65, 60_000, 62)), Au(Sc4, H264Nal(0x41, 4000, 63))),
                 ExpectedDigest = "EED6112E1A464AF585E6063DFF055DE0C5FB086D99B034DA0D809BDC79AFCB14" },
@@ -155,17 +159,20 @@ namespace SIPSorcery.Net.UnitTests
                 ExplicitTimestamps = new uint[] { 90_000, 96_000 },
                 ExpectedDigest = "626CF647ECC20DFF6D76829B10E510100575B4664542DC3B0E763FF0BB4405BB" },
 
-            // Small NALs are aggregated and large ones fragmented.
+            // Packetisation fix. Small NALs are aggregated and large ones fragmented, every fragmentation unit
+            // carrying the NAL's type. An aggregation packet holds two or more NALs, so in the third frame the 700
+            // and 200 byte NALs share one, where the 700 byte NAL was sent alone and the 200 byte one in an
+            // aggregation packet of its own.
             new VideoRtpGoldenScenario { Name = "H265_ParameterSetsAndIdr", Codec = "H265",
                 CreateFrames = () => Frames(
                     Au(Sc4, H265Nal(32, 24, 90), Sc4, H265Nal(33, 40, 91), Sc4, H265Nal(34, 8, 92), Sc4, H265Nal(19, 4000, 93)),
                     Au(Sc4, H265Nal(1, 500, 94)),
                     Au(Sc4, H265Nal(1, 300, 95), Sc3, H265Nal(1, 400, 96), Sc4, H265Nal(1, 700, 97), Sc4, H265Nal(1, 200, 98))),
-                ExpectedDigest = "9F1C537EABB47FB4D579C7FFDAF1C2C80AABC3B5BA91E6ABE7D7021AF5EF68DE" },
-            // A large NAL with header extensions, then a NAL just over the RTP payload limit.
+                ExpectedDigest = "B34894A5154357EE3E6A0781D968B6FACCED0EA94B53BDE6F8C0F001B6486BD5" },
+            // Packetisation fix: the FU types, and the 1201 byte NAL is sent as two fragmentation units.
             new VideoRtpGoldenScenario { Name = "H265_Large_HeaderExtensions", Codec = "H265", HeaderExtensions = true,
                 CreateFrames = () => Frames(Au(Sc4, H265Nal(19, 30_000, 100)), Au(Sc4, H265Nal(1, 1201, 101))),
-                ExpectedDigest = "C8DA25CA1D777CCF06A76E42E3CA78157EDD48C720034A44A96144BB6480AB43" },
+                ExpectedDigest = "F51F32A4E863FA3203E6299A37A88CC8EAD62A5438F0470A575F4CA4D8B62678" },
 
             new VideoRtpGoldenScenario { Name = "VP9_KeyAndInterFrames", Codec = "VP9", PayloadType = 98,
                 CreateFrames = () => Frames(Vp9Frame(true, 5000, 110), Vp9Frame(false, 800, 111), Vp9Frame(false, 1200, 112), Vp9Frame(false, 2500, 113)),
