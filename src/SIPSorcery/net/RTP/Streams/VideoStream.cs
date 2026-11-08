@@ -258,6 +258,21 @@ namespace SIPSorcery.Net
 
         private void SendVp8FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, byte[] buffer)
         {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            SendVp8FrameCore(rtpTimestamp, duration, payloadTypeID, new ReadOnlySpan<byte>(buffer));
+        }
+
+        // The one byte VP8 payload descriptor (RFC 7741) on the first packet of a frame, with the S (start of
+        // partition) bit set, and on the rest of the packets.
+        private static ReadOnlySpan<byte> Vp8FirstPacketDescriptor => new byte[] { 0x10 };
+        private static ReadOnlySpan<byte> Vp8ContinuationPacketDescriptor => new byte[] { 0x00 };
+
+        private void SendVp8FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, ReadOnlySpan<byte> buffer)
+        {
             if (CheckIfCanSendRtpRaw())
             {
                 try
@@ -267,15 +282,14 @@ namespace SIPSorcery.Net
                         int offset = index * RTPSession.RTP_MAX_PAYLOAD;
                         int payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
 
-                        byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
-                        byte[] payload = new byte[payloadLength + vp8HeaderBytes.Length];
-                        Buffer.BlockCopy(vp8HeaderBytes, 0, payload, 0, vp8HeaderBytes.Length);
-                        Buffer.BlockCopy(buffer, offset, payload, vp8HeaderBytes.Length, payloadLength);
+                        ReadOnlySpan<byte> vp8Header = (index == 0) ? Vp8FirstPacketDescriptor : Vp8ContinuationPacketDescriptor;
 
                         int markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
 
+                        // Each packet is built straight from its slice of the frame, so the frame is only copied into
+                        // the packets themselves.
                         SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
-                        SendRtpRaw(payload, rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        SendRtpRaw(vp8Header, buffer.Slice(offset, payloadLength), rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID);
                     }
                     AdvanceTimestamp(rtpTimestamp, duration);
                 }
@@ -500,6 +514,60 @@ namespace SIPSorcery.Net
                     break;
                 default:
                     throw new ApplicationException($"Unsupported video format selected {sendingFormat.FormatName}.");
+            }
+        }
+
+        /// <summary>
+        /// Sends a video sample to the remote peer, reading it from a span rather than an array.
+        /// </summary>
+        /// <param name="durationRtpUnits">The duration in RTP timestamp units of the video sample. This
+        /// value is added to the previous RTP timestamp when building the RTP header.</param>
+        /// <param name="sample">The encoded video frame to packetise, for example one an encoder has written into a
+        /// re-used buffer.</param>
+        /// <remarks>
+        /// <para>
+        /// The packets are identical to those <see cref="SendVideo(uint, byte[])"/> sends for the same frame. The sample
+        /// is only read during the call: every RTP packet is built in a buffer of its own, which the transport owns once
+        /// it is sent, so the memory behind <paramref name="sample"/> can be re-used as soon as this returns.
+        /// </para>
+        /// <para>
+        /// For VP8 each packet is built directly from its slice of the sample, which is copied once, into the packet.
+        /// For the other codecs the sample is copied into an array and sent as the array overload sends it.
+        /// </para>
+        /// </remarks>
+        public void SendVideo(uint durationRtpUnits, ReadOnlySpan<byte> sample)
+        {
+            SendVideoCore(null, durationRtpUnits, sample);
+        }
+
+        /// <summary>
+        /// Sends a video sample to the remote peer with an explicit RTP timestamp, reading it from a span rather than
+        /// an array. Every RTP packet of the sample carries <paramref name="rtpTimestamp"/>.
+        /// </summary>
+        /// <param name="rtpTimestamp">The RTP timestamp for the sample, in the sending format's clock rate.</param>
+        /// <param name="sample">The encoded video frame to packetise. Only read during the call.</param>
+        /// <remarks>See <see cref="SendVideoAt(uint, byte[])"/> and <see cref="SendVideo(uint, ReadOnlySpan{byte})"/>.</remarks>
+        public void SendVideoAt(uint rtpTimestamp, ReadOnlySpan<byte> sample)
+        {
+            SendVideoCore(rtpTimestamp, 0, sample);
+        }
+
+        private void SendVideoCore(uint? rtpTimestamp, uint durationRtpUnits, ReadOnlySpan<byte> sample)
+        {
+            EnsureSendingFormat();
+
+            if (sendingFormat.Codec == VideoCodecsEnum.VP8)
+            {
+                SendVp8FrameCore(rtpTimestamp, durationRtpUnits, sendingFormat.FormatID, sample);
+            }
+            else if (rtpTimestamp.HasValue)
+            {
+                // The other codecs' packetisers work on arrays.
+                SendVideoAt(rtpTimestamp.Value, sample.ToArray());
+            }
+            else
+            {
+                SendVideo(durationRtpUnits, sample.ToArray());
             }
         }
 
