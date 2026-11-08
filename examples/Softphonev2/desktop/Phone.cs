@@ -207,8 +207,10 @@ public sealed class Phone : IDisposable
         {
             if (State is CallState.Calling or CallState.Ringing or CallState.Connected) return;
             Remote = ResolveAddress(typed);
-            // An address that says transport=ws is a browser phone: WebRTC media.
-            WebRtc = IsWebSocketUri(Remote);
+            // WebRTC media for an address that says transport=ws (a browser phone), or for every
+            // call with --webrtc: a browser registered with a server is reached over UDP, TCP or
+            // TLS like anyone else, so there's no telling from the address.
+            WebRtc = IsWebSocketUri(Remote) || _settings.WebRtcCalls;
             ua = NewUserAgent();
             rtp = NewSession(video && _settings.OfferVideo);
             (_ua, _rtp) = (ua, rtp);
@@ -216,7 +218,10 @@ public sealed class Phone : IDisposable
         }
 
         string? failure = null;
-        ua.ClientCallFailed += (_, err, resp) => failure = resp != null ? $"{resp.StatusCode} {resp.ReasonPhrase}" : err;
+        // A failure with a 2xx is their answer turned down here: media we can't use (e.g. plain RTP
+        // to our WebRTC offer, from a SIP phone with --webrtc).
+        ua.ClientCallFailed += (_, err, resp) => failure = resp is { StatusCode: >= 200 and < 300 } ? "Their answer's media doesn't match ours"
+            : resp != null ? $"{resp.StatusCode} {resp.ReasonPhrase}" : err;
         _outgoing = true;
         ua.ClientCallAnswered += (_, resp) => _theirPhone = resp?.Header.Server ?? resp?.Header.UserAgent;
         var a = _settings.Account;
@@ -526,8 +531,9 @@ public sealed class Phone : IDisposable
             Remote = req.Header.From.FromURI.ToString();
             _outgoing = false;
             _theirPhone = req.Header.UserAgent;
-            // A call over WebSocket is from a browser phone: answered with WebRTC media.
-            WebRtc = remote.Protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss;
+            // A call from a browser phone is answered with WebRTC media: one over WebSocket, or
+            // one whose offer is WebRTC's (it came through a server, so over UDP, TCP or TLS).
+            WebRtc = remote.Protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss || IsWebRtcOffer(req.Body);
             var name = req.Header.From.FromName;
             if (!string.IsNullOrWhiteSpace(name)) Remote = $"{name} <{Remote}>";
             IncomingVideo = _settings.OfferVideo && OffersVideo(req.Body);
@@ -537,6 +543,18 @@ public sealed class Phone : IDisposable
         await Task.CompletedTask;
     }
 
+    /// <summary>
+    /// The offer is a WebRTC one: its media is DTLS-SRTP (UDP/TLS/RTP/SAVPF from browsers,
+    /// UDP/TLS/RTP/SAVP from SIPSorcery's RTCPeerConnection). A plain SIP phone offers RTP/AVP, or
+    /// RTP/SAVP with SDES keys.
+    /// </summary>
+    private static bool IsWebRtcOffer(string? sdp)
+    {
+        if (string.IsNullOrWhiteSpace(sdp)) return false;
+        try { return SDP.ParseSDPDescription(sdp).Media.Any(m => m.Port != 0 && m.Transport.Contains("TLS/RTP/SAVP", StringComparison.OrdinalIgnoreCase)); }
+        catch { return false; }
+    }
+
     private static bool OffersVideo(string? sdp)
     {
         if (string.IsNullOrWhiteSpace(sdp)) return true;
@@ -544,7 +562,7 @@ public sealed class Phone : IDisposable
         catch { return true; }
     }
 
-    /// <summary>A user agent for a call; via, for a browser phone, is the WebSocket its requests go down.</summary>
+    /// <summary>A user agent for a call.</summary>
     private SIPUserAgent NewUserAgent()
     {
         var ua = new SIPUserAgent(_transport, null);

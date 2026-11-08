@@ -64,7 +64,7 @@ in the chip's menu). Pass `api=https://…` to use the real endpoint.
    stub, it connects to the desktop app as e.g. `sip:brave-falcon-5128@localhost`; the header
    chip turns green ("Calls out only").
 4. From the web page, call `desktop` (any user name reaches the desktop app). The desktop can
-   only call the web page once both are registered with a SIP server.
+   only call the web page once both are registered with a SIP server, and with `--webrtc`.
 
 Or skip accounts: `?server=ws://localhost:8081` connects straight away as `sip:web@localhost`
 (`user=` to change it), calls out only.

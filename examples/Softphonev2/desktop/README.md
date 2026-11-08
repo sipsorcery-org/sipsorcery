@@ -94,16 +94,23 @@ So a browser can call the desktop app without Asterisk or FreeSWITCH, the app al
 SIP over WebSocket (port 8081, `--ws-port`; 0 turns it off). The SIP
 log's first lines give the address, e.g. `browser phones: connect to ws://192.168.1.123:8081`.
 
-- **The media depends on the transport.** A call over `ws` or `wss` uses an `RTCPeerConnection`
-  as its SIP media session (ICE, DTLS-SRTP, bundle, which is what a browser expects); UDP, TCP
-  and TLS calls keep the plain `RTPSession`. `RTCPeerConnection` is an `RTPSession`, so
+- **WebRTC media or plain RTP.** A call with a browser uses an `RTCPeerConnection` as its SIP
+  media session (ICE, DTLS-SRTP, bundle, which is what a browser expects); other calls keep the
+  plain `RTPSession`. Which one:
+  - **Incoming:** WebRTC if it came over `ws`/`wss`, or if the offer is WebRTC's
+    (`UDP/TLS/RTP/SAVPF` from a browser, `UDP/TLS/RTP/SAVP` from SIPSorcery): a browser
+    registered with a server reaches us over UDP, TCP or TLS like anyone else.
+  - **Outgoing:** WebRTC to a `transport=ws` address, or on every call with `--webrtc`
+    (`"WebRtcCalls": true`), since an address on a server doesn't say whether a browser is
+    behind it. A plain SIP phone answers that offer with RTP/AVP, and the call ends with "Their
+    answer's media doesn't match ours". (The real app will have this per account.)
+ `RTCPeerConnection` is an `RTPSession`, so
   `SIPUserAgent` and `MediaRelay` take either; the relay just waits for ICE and DTLS to connect
   before sending to it. If they fail, the call ends with "Media connection failed".
 - **It isn't a registrar.** REGISTER gets 405. A browser has no address of its own to call, so
   calling one from here means both registering with a SIP server (sipsorcery.com takes `wss`)
-  and calling its address there. **Not yet working:** a call that reaches us, or goes out, over
-  UDP, TCP or TLS uses plain RTP, so a browser on the far side of a server would turn it down.
-  WebRTC media for those needs deciding from the SDP (incoming) or the account (outgoing).
+  and calling its address there with `--webrtc`. We only offer host ICE candidates (no STUN or
+  TURN yet), so a browser on another network may not get media through.
 - **To call the desktop from a browser**, use the web softphone in [../web](../web/README.md)
   (this app's own page with SIP.js), or point any SIP.js or JsSIP page at `ws://<this PC>:8081`
   and dial any user at it, e.g. `sip:desktop@localhost`. The page has
@@ -311,6 +318,7 @@ Switches, mostly for testing:
 | `--diagnostics` | Open the diagnostics panel (F12) at start. |
 | `--loss-audio <percent>`, `--loss-video <percent>` | Start with the Network tab's loss sliders at these values. |
 | `--ws-port <n>` | SIP over WebSocket port for browser phones (default 8081, 0 for none). |
+| `--webrtc` | Calls we place use WebRTC media whatever the transport, for browsers registered with a server. A plain SIP phone won't take them. (Will be per account.) |
 | `--no-text` | No real-time text: it's left out of offers and answers, so the other side adding it is turned down. (Will be per account.) |
 | `--say <text>` | Once text is up on a call, send this message. |
 | `--no-video` | No video at all: the switch is locked to Audio, and video offers or Add video from the other side are turned down. (Will be the per-account "Video calls" setting.) |
@@ -402,6 +410,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Desktop dials `web` (with the old test registrar, since removed) | INVITE to the browser's `.invalid;transport=ws` Contact down its WebSocket; 200, ACK, media both ways. |
 | Browser call, info bar's chevron (diagnostics) | "Media encrypted (SRTP); SIP not (WS)", their phone `SIP.js/0.16.0`. |
 | Browser call, Text icon | The popover says text isn't available on calls with browser phones. |
+| Two copies over UDP, caller `--webrtc --video`, callee `--auto-answer` | The offer is `UDP/TLS/RTP/SAVP`; the callee answers with an `RTCPeerConnection` too. ICE and DTLS connected in 0.3 s, video both ways (640×360), BYE: "You hung up" / "They hung up". The same without `--webrtc`: RTP/AVP and real-time text as before. |
 | Browser call, Text popover open, then one click on End | The call ends ("You hung up", BYE, 200). |
 | The web softphone (../web), audio only, `dial=desktop&hangup=12` | Answered with audio only; the browser's BYE ends it here with "They hung up". |
 | Softphone to spike far end, H264 720p30 | 30 fps at 1280x720 in, decoded by `D3D11VideoDecoder` (hardware); camera out at 30 fps. |

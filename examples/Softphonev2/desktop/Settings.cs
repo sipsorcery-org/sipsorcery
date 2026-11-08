@@ -51,6 +51,13 @@ public sealed class Settings
     /// </summary>
     public bool OfferText { get; set; } = true;
 
+    /// <summary>
+    /// Calls we place use WebRTC media (ICE, DTLS-SRTP) whatever the transport, for calling browser
+    /// phones registered with a server. A plain SIP phone won't take them. Incoming calls don't
+    /// need it: a WebRTC offer is answered in kind. (The real app will have this per account.)
+    /// </summary>
+    public bool WebRtcCalls { get; set; }
+
     /// <summary>Testing: open the diagnostics panel (F12) at start.</summary>
     public bool Diagnostics { get; set; }
 
@@ -108,6 +115,7 @@ public sealed class Settings
                 case "--auto-answer": settings.AutoAnswer = true; break;
                 case "--no-video": settings.OfferVideo = false; break;
                 case "--no-text": settings.OfferText = false; break;
+                case "--webrtc": settings.WebRtcCalls = true; break;
                 case "--diagnostics": settings.Diagnostics = true; break;
                 case "--say" when i + 1 < args.Length: settings.Say = args[++i]; break;
                 case "--camera-off": settings.CameraOff = true; break;
