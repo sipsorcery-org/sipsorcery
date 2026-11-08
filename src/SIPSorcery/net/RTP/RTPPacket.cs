@@ -59,6 +59,17 @@ namespace SIPSorcery.Net
             _srtpProtectionLength = srtpProtectionLength;
         }
 
+        /// <summary>
+        /// Creates a packet to send from a header the caller has already built, so no random placeholder header is
+        /// created just to be replaced.
+        /// </summary>
+        internal RTPPacket(RTPHeader header, ArraySegment<byte> payload, int srtpProtectionLength)
+        {
+            Header = header;
+            _payloadSegment = payload;
+            _srtpProtectionLength = srtpProtectionLength;
+        }
+
         public uint GetPayloadLength()
         {
             return (uint)(_payload?.Length ?? _payloadSegment.Count);
@@ -96,10 +107,11 @@ namespace SIPSorcery.Net
 
         public byte[] GetBytes()
         {
-            byte[] header = Header.GetBytes();
-            byte[] packet = new byte[header.Length + (_payload?.Length ?? _payloadSegment.Count) + _srtpProtectionLength];
+            int headerLength = Header.Length;
+            byte[] packet = new byte[headerLength + (_payload?.Length ?? _payloadSegment.Count) + _srtpProtectionLength];
 
-            Array.Copy(header, packet, header.Length);
+            // Serialised straight into the packet rather than into an array of its own that is then copied.
+            Header.WriteTo(packet);
 
             // Test _payload first to match how the packet length was sized above, and test the
             // segment on its backing array rather than against null. "_payloadSegment != null"
@@ -110,14 +122,14 @@ namespace SIPSorcery.Net
             // the segment branch for a payload backed packet on .NET Framework and throw.
             if (_payload != null)
             {
-                Array.Copy(_payload, 0, packet, header.Length, _payload.Length);
+                Array.Copy(_payload, 0, packet, headerLength, _payload.Length);
             }
             else if (_payloadSegment.Array != null)
             {
 #if NETCOREAPP2_1_OR_GREATER && !NETFRAMEWORK
-                _payloadSegment.CopyTo(packet, header.Length);
+                _payloadSegment.CopyTo(packet, headerLength);
 #else
-                Array.Copy(_payloadSegment.Array, _payloadSegment.Offset, packet, header.Length, _payloadSegment.Count);
+                Array.Copy(_payloadSegment.Array, _payloadSegment.Offset, packet, headerLength, _payloadSegment.Count);
 #endif
             }
             else
