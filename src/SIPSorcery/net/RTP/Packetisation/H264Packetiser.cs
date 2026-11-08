@@ -199,12 +199,17 @@ namespace SIPSorcery.Net
     /// is always flagged as last, even when the access unit ends with a start code or with padding.
     /// </para>
     /// <para>
-    /// A struct holding only the scan position, so it can be used from iterators and costs no allocation. The same
-    /// access unit must be passed to every call.
+    /// NALs shorter than the minimum length given to the constructor are skipped as if they were not there, so the NAL
+    /// flagged as last is the last one long enough to be sent. A default scanner skips only empty NALs.
+    /// </para>
+    /// <para>
+    /// A struct holding only the scan position and the minimum length, so it can be used from iterators and costs no
+    /// allocation. The same access unit must be passed to every call.
     /// </para>
     /// </remarks>
     internal struct AnnexBNalScanner
     {
+        private readonly int _minLength;
         private int _index;
         private int _zeroes;
         private int _nalStart;
@@ -212,6 +217,16 @@ namespace SIPSorcery.Net
         private bool _hasPending;
         private int _pendingOffset;
         private int _pendingLength;
+
+        /// <summary>
+        /// Creates a scanner that skips NALs shorter than <paramref name="minNalLength"/> bytes, for a codec whose NAL
+        /// header is longer than one byte.
+        /// </summary>
+        public AnnexBNalScanner(int minNalLength)
+        {
+            this = default;
+            _minLength = minNalLength;
+        }
 
         /// <summary>
         /// Finds the next NAL in <paramref name="accessUnit"/>.
@@ -258,7 +273,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Scans on to the next non-empty NAL.
+        /// Scans on to the next NAL that is not empty and not shorter than the minimum length.
         /// </summary>
         private bool FindNal(ReadOnlySpan<byte> accessUnit, out int offset, out int length)
         {
@@ -281,7 +296,7 @@ namespace SIPSorcery.Net
                     _nalStart = _index;
                     _zeroes = 0;
 
-                    if (length > 0)
+                    if (IsLongEnough(length))
                     {
                         return true;
                     }
@@ -300,7 +315,7 @@ namespace SIPSorcery.Net
                 offset = _nalStart;
                 length = accessUnit.Length - _zeroes - _nalStart;
 
-                if (length > 0)
+                if (IsLongEnough(length))
                 {
                     return true;
                 }
@@ -310,5 +325,7 @@ namespace SIPSorcery.Net
             length = 0;
             return false;
         }
+
+        private bool IsLongEnough(int length) => length > 0 && length >= _minLength;
     }
 }

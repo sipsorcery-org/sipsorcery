@@ -10,8 +10,8 @@
 // as it was at commit c331140ed, before the VP8 send path changed. It only uses
 // API that existed then, so it can be re-run there. The exceptions are the
 // scenarios marked "packetisation fix": their output changed on purpose with the
-// H264/H265 fragmentation and Annex B parsing fixes, which H26XPacketiserUnitTest
-// checks in detail.
+// H264/H265 fragmentation, H265 aggregation and Annex B parsing fixes, which
+// H26XPacketiserUnitTest checks in detail.
 //
 // Author(s):
 // SIPSorcery contributors
@@ -160,13 +160,15 @@ namespace SIPSorcery.Net.UnitTests
                 ExpectedDigest = "626CF647ECC20DFF6D76829B10E510100575B4664542DC3B0E763FF0BB4405BB" },
 
             // Packetisation fix. Small NALs are aggregated and large ones fragmented, every fragmentation unit
-            // carrying the NAL's type.
+            // carrying the NAL's type. An aggregation packet holds two or more NALs, so in the third frame the 700
+            // and 200 byte NALs share one, where the 700 byte NAL was sent alone and the 200 byte one in an
+            // aggregation packet of its own.
             new VideoRtpGoldenScenario { Name = "H265_ParameterSetsAndIdr", Codec = "H265",
                 CreateFrames = () => Frames(
                     Au(Sc4, H265Nal(32, 24, 90), Sc4, H265Nal(33, 40, 91), Sc4, H265Nal(34, 8, 92), Sc4, H265Nal(19, 4000, 93)),
                     Au(Sc4, H265Nal(1, 500, 94)),
                     Au(Sc4, H265Nal(1, 300, 95), Sc3, H265Nal(1, 400, 96), Sc4, H265Nal(1, 700, 97), Sc4, H265Nal(1, 200, 98))),
-                ExpectedDigest = "BBD0446404CDE47ADEC4FCA18E9F807DCFAB831564B31B7F10DB980267A99369" },
+                ExpectedDigest = "B34894A5154357EE3E6A0781D968B6FACCED0EA94B53BDE6F8C0F001B6486BD5" },
             // Packetisation fix: the FU types, and the 1201 byte NAL is sent as two fragmentation units.
             new VideoRtpGoldenScenario { Name = "H265_Large_HeaderExtensions", Codec = "H265", HeaderExtensions = true,
                 CreateFrames = () => Frames(Au(Sc4, H265Nal(19, 30_000, 100)), Au(Sc4, H265Nal(1, 1201, 101))),

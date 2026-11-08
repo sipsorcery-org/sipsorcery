@@ -31,6 +31,21 @@ namespace SIPSorcery.net.RTP.Packetisation
         /// </summary>
         internal const int H265_FU_HEADER_LENGTH = 3;
 
+        /// <summary>
+        /// The length of the H265 NAL unit header. A shorter NAL cannot be sent, so the parser drops it.
+        /// </summary>
+        internal const int H265_NAL_HEADER_LENGTH = 2;
+
+        /// <summary>
+        /// The length of the size field in front of each NAL in an aggregation packet (RFC 7798 section 4.4.2).
+        /// </summary>
+        private const int H265_AP_NAL_SIZE_LENGTH = 2;
+
+        /// <summary>
+        /// The payload header type of an aggregation packet.
+        /// </summary>
+        private const int H265_AP_TYPE = 48;
+
         public struct H265Nal
         {
             public byte[] NAL { get; }
@@ -48,8 +63,9 @@ namespace SIPSorcery.net.RTP.Packetisation
         /// </summary>
         /// <remarks>
         /// Zero bytes in front of a start code (trailing_zero_8bits) and at the end of the access unit are padding and
-        /// are not included in any NAL. NALs of any length are returned, and the last NAL is always flagged as last,
-        /// even when the access unit ends with a start code.
+        /// are not included in any NAL. A NAL shorter than the two byte NAL header cannot be sent and is dropped, and the
+        /// last NAL returned is always flagged as last, even when the access unit ends with a start code or with such a
+        /// NAL.
         /// </remarks>
         public static IEnumerable<H265Nal> ParseNals(byte[] accessUnit)
         {
@@ -60,29 +76,12 @@ namespace SIPSorcery.net.RTP.Packetisation
 
             // Parse NALs from H265 access unit, encoded as an Annex B bitstream.
             // NALs are delimited by 0x000001 or 0x00000001.
-            var scanner = new AnnexBNalScanner();
+            var scanner = new AnnexBNalScanner(H265_NAL_HEADER_LENGTH);
 
             while (scanner.TryGetNext(accessUnit, out int offset, out int length, out bool isLast))
             {
                 yield return new H265Nal(accessUnit.AsSpan(offset, length).ToArray(), isLast);
             }
-        }
-
-        /// <summary>
-        /// Parses the NALs of an access unit into a list, the same NALs <see cref="ParseNals"/> returns, straight from
-        /// a span and in a single pass.
-        /// </summary>
-        internal static List<H265Nal> ParseNalList(ReadOnlySpan<byte> accessUnit)
-        {
-            var nals = new List<H265Nal>();
-            var scanner = new AnnexBNalScanner();
-
-            while (scanner.TryGetNext(accessUnit, out int offset, out int length, out bool isLast))
-            {
-                nals.Add(new H265Nal(accessUnit.Slice(offset, length).ToArray(), isLast));
-            }
-
-            return nals;
         }
 
         /// <summary>
@@ -290,54 +289,138 @@ namespace SIPSorcery.net.RTP.Packetisation
             return H265_FU_HEADER_LENGTH;
         }
 
+        /// <summary>
+        /// Puts consecutive NALs that are small enough to share a packet into aggregation packets (RFC 7798 section
+        /// 4.4.2), and returns the other NALs unchanged, to be sent on their own or fragmented.
+        /// </summary>
+        /// <remarks>
+        /// An aggregation packet holds at least two NALs, and with its payload header and the size field in front of
+        /// each NAL it is no longer than <paramref name="RTP_MAX_PAYLOAD"/>. Its payload header is built from the
+        /// headers of all the NALs it holds, as section 4.4.2 requires, and it is flagged as last when its last NAL is.
+        /// </remarks>
         public static IEnumerable<H265Nal> CreateAggregated(IEnumerable<H265Nal> nals, int RTP_MAX_PAYLOAD)
         {
             var newNalList = new List<H265Nal>();
-            var aggregated = new List<byte>();
-            var aggregatedLast = false;
-            var nalCount = 0;
+            var group = new List<H265Nal>();
+            int groupLength = 0;
+
             foreach (var nal in nals)
             {
-                if (nal.NAL.Length + aggregated.Count <= RTP_MAX_PAYLOAD)
+                if (group.Count > 0 && FitsInAggregation(groupLength, nal.NAL.Length, RTP_MAX_PAYLOAD))
                 {
-                    if (nalCount == 0)
-                    {
-                        aggregated.Add((byte)((nal.NAL[0] & 0x81) | (48 << 1)));
-                        aggregated.Add(nal.NAL[1]);
-                    }
-                    var length = nal.NAL.Length;
-                    byte[] nalSize = new byte[2];
-                    nalSize[0] = (byte)(length >> 8);
-                    nalSize[1] = (byte)(length & 0xFF);
-                    aggregated.AddRange(nalSize);
-                    aggregated.AddRange(nal.NAL);
-                    aggregatedLast = nal.IsLast;
-                    nalCount++;
+                    group.Add(nal);
+                    groupLength = AggregatedLength(groupLength, nal.NAL.Length);
+                    continue;
                 }
-                // this NAL is beyond aggregation 
+
+                // This NAL does not fit with the ones before it, so they are complete.
+                AddGroup(newNalList, group, groupLength);
+                group.Clear();
+                groupLength = 0;
+
+                if (FitsInAggregation(0, nal.NAL.Length, RTP_MAX_PAYLOAD))
+                {
+                    group.Add(nal);
+                    groupLength = AggregatedLength(0, nal.NAL.Length);
+                }
                 else
                 {
-                    // add the previously aggregated NAL
-                    if (nalCount > 0)
-                    {
-                        newNalList.Add(new H265Nal(aggregated.ToArray(), aggregatedLast));
-                        aggregated.Clear();
-                        aggregatedLast = false;
-                        nalCount = 0;
-                    }
-
-                    // add this NAL
                     newNalList.Add(nal);
                 }
             }
 
-            // add the previously aggregated NAL even if it is the last NAL
-            if (nalCount > 0)
-            {
-                newNalList.Add(new H265Nal(aggregated.ToArray(), aggregatedLast));
-            }
+            AddGroup(newNalList, group, groupLength);
 
             return newNalList;
+        }
+
+        /// <summary>
+        /// Adds a group of consecutive small NALs to <paramref name="output"/>: a single NAL unchanged, and two or more
+        /// as one aggregation packet.
+        /// </summary>
+        private static void AddGroup(List<H265Nal> output, List<H265Nal> group, int groupLength)
+        {
+            if (group.Count == 1)
+            {
+                output.Add(group[0]);
+            }
+            else if (group.Count > 1)
+            {
+                var aggregation = new byte[groupLength];
+                int length = 0;
+
+                foreach (var nal in group)
+                {
+                    length = AppendToAggregation(aggregation, length, nal.NAL);
+                }
+
+                WriteAggregationHeader(aggregation);
+                output.Add(new H265Nal(aggregation, group[group.Count - 1].IsLast));
+            }
+        }
+
+        /// <summary>
+        /// The length of an aggregation packet of <paramref name="aggregationLength"/> bytes, or 0 for an empty one,
+        /// once a NAL of <paramref name="nalLength"/> bytes is added: the payload header, then each NAL with its size
+        /// field.
+        /// </summary>
+        internal static int AggregatedLength(int aggregationLength, int nalLength)
+        {
+            return (aggregationLength == 0 ? H265_RTP_HEADER_LENGTH : aggregationLength) + H265_AP_NAL_SIZE_LENGTH + nalLength;
+        }
+
+        /// <summary>
+        /// Whether a NAL of <paramref name="nalLength"/> bytes can be added to an aggregation packet of
+        /// <paramref name="aggregationLength"/> bytes, or 0 for an empty one, without it growing past
+        /// <paramref name="maxPayload"/>. A NAL without a full NAL header is never aggregated, since the payload header
+        /// is built from the NAL headers.
+        /// </summary>
+        internal static bool FitsInAggregation(int aggregationLength, int nalLength, int maxPayload)
+        {
+            return nalLength >= H265_NAL_HEADER_LENGTH && AggregatedLength(aggregationLength, nalLength) <= maxPayload;
+        }
+
+        /// <summary>
+        /// Writes <paramref name="nal"/>, preceded by its size field, at the end of the aggregation packet being built
+        /// in <paramref name="destination"/>, leaving room for the payload header in front of the first NAL.
+        /// </summary>
+        /// <returns>The new length of the aggregation packet.</returns>
+        internal static int AppendToAggregation(Span<byte> destination, int aggregationLength, ReadOnlySpan<byte> nal)
+        {
+            int position = (aggregationLength == 0) ? H265_RTP_HEADER_LENGTH : aggregationLength;
+            destination[position] = (byte)(nal.Length >> 8);
+            destination[position + 1] = (byte)nal.Length;
+            nal.CopyTo(destination.Slice(position + H265_AP_NAL_SIZE_LENGTH));
+            return position + H265_AP_NAL_SIZE_LENGTH + nal.Length;
+        }
+
+        /// <summary>
+        /// Writes the payload header of a complete aggregation packet from the headers of the NALs it holds (RFC 7798
+        /// section 4.4.2): the F bit is set if any NAL has it set, the type is 48, and LayerId and TID are the lowest
+        /// of any NAL.
+        /// </summary>
+        /// <param name="aggregation">The aggregation packet, exactly as long as the NALs written into it.</param>
+        internal static void WriteAggregationHeader(Span<byte> aggregation)
+        {
+            int forbiddenBit = 0;
+            int layerId = int.MaxValue;
+            int tid = int.MaxValue;
+
+            for (int position = H265_RTP_HEADER_LENGTH; position < aggregation.Length;)
+            {
+                int nalLength = (aggregation[position] << 8) | aggregation[position + 1];
+                byte nal0 = aggregation[position + H265_AP_NAL_SIZE_LENGTH];
+                byte nal1 = aggregation[position + H265_AP_NAL_SIZE_LENGTH + 1];
+
+                forbiddenBit |= nal0 & 0x80;
+                layerId = Math.Min(layerId, ((nal0 & 0x01) << 5) | (nal1 >> 3));
+                tid = Math.Min(tid, nal1 & 0x07);
+
+                position += H265_AP_NAL_SIZE_LENGTH + nalLength;
+            }
+
+            aggregation[0] = (byte)(forbiddenBit | (H265_AP_TYPE << 1) | (layerId >> 5));
+            aggregation[1] = (byte)(((layerId & 0x1F) << 3) | tid);
         }
     }
 }
