@@ -191,7 +191,8 @@ namespace SIPSorcery.Net
 #if NETCOREAPP2_1_OR_GREATER && !NETFRAMEWORK
                         var memorySegment = bufferSegment.Slice(offset, payloadLength);
 #else
-                        var memorySegment = new ArraySegment<byte>(bufferSegment.Array!, offset, payloadLength);
+                        // The offset is relative to the start of the segment, as it is for Slice above.
+                        var memorySegment = new ArraySegment<byte>(bufferSegment.Array!, bufferSegment.Offset + offset, payloadLength);
 #endif
                         // Send this packet at the current LocalTrack.Timestamp, or for an explicit timestamp at the
                         // frame's timestamp plus the portion already sent.
