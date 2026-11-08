@@ -122,6 +122,7 @@ internal sealed class MainForm : Form
                     _pageReady = true;
                     if (_phone.PortNote != null) WriteLog(_phone.PortNote);
                     WriteLog($"SIP listening on {_phone.ListeningOn}");
+                    if (_phone.WebSocketAddress != null) WriteLog($"browser phones: connect to {_phone.WebSocketAddress} (from this PC, ws://localhost:{_settings.WsPort})");
                     Post(StateMessage());
                     if (_pendingOffer != null) { Post(new { type = "media-offer", sdp = _pendingOffer }); _pendingOffer = null; }
                     if (!string.IsNullOrWhiteSpace(_settings.Dial)) await _phone.DialAsync(_settings.Dial, _settings.VideoCall);

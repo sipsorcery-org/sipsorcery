@@ -19,6 +19,12 @@ public sealed class AccountSettings
 public sealed class Settings
 {
     public int SipPort { get; set; } = 5060;
+
+    /// <summary>
+    /// SIP over WebSocket, for browser phones (sip.js, JsSIP): they connect here to call us,
+    /// and calls with them use WebRTC media. 0 turns it off.
+    /// </summary>
+    public int WsPort { get; set; } = 8081;
     public AccountSettings? Account { get; set; }
 
     /// <summary>A separate WebView2 profile, so two copies can run side by side for testing.</summary>
@@ -95,6 +101,7 @@ public sealed class Settings
             switch (args[i])
             {
                 case "--port" when i + 1 < args.Length: settings.SipPort = int.Parse(args[++i]); break;
+                case "--ws-port" when i + 1 < args.Length: settings.WsPort = int.Parse(args[++i]); break;
                 case "--profile" when i + 1 < args.Length: settings.Profile = args[++i]; break;
                 case "--fake-media": settings.FakeMedia = true; break;
                 case "--dial" when i + 1 < args.Length: settings.Dial = args[++i]; break;

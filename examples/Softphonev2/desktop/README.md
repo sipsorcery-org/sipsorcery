@@ -85,6 +85,32 @@ messages with the host.
   (`m=text` with port 0) it says their phone doesn't support real-time text; with no answer in
   8 s, the same. Either side adding text starts it when their SDP agrees.
 - A new call starts an empty conversation.
+- **Calls with browser phones** have no text yet: the popover says "Text isn't available on calls
+  with browser phones yet." Text there will go over a data channel (RFC 8865) later.
+
+## Browser phones (WebSocket)
+
+So a browser can call the desktop app without Asterisk or FreeSWITCH, the app also listens for
+SIP over WebSocket (port 8081, `--ws-port`; 0 turns it off). The SIP
+log's first lines give the address, e.g. `browser phones: connect to ws://192.168.1.123:8081`.
+
+- **The media depends on the transport.** A call over `ws` or `wss` uses an `RTCPeerConnection`
+  as its SIP media session (ICE, DTLS-SRTP, bundle, which is what a browser expects); UDP, TCP
+  and TLS calls keep the plain `RTPSession`. `RTCPeerConnection` is an `RTPSession`, so
+  `SIPUserAgent` and `MediaRelay` take either; the relay just waits for ICE and DTLS to connect
+  before sending to it. If they fail, the call ends with "Media connection failed".
+- **It isn't a registrar.** REGISTER gets 405. A browser has no address of its own to call, so
+  calling one from here means both registering with a SIP server (sipsorcery.com takes `wss`)
+  and calling its address there. **Not yet working:** a call that reaches us, or goes out, over
+  UDP, TCP or TLS uses plain RTP, so a browser on the far side of a server would turn it down.
+  WebRTC media for those needs deciding from the SDP (incoming) or the account (outgoing).
+- **To call the desktop from a browser**, use the web softphone in [../web](../web/README.md)
+  (this app's own page with SIP.js), or point any SIP.js or JsSIP page at `ws://<this PC>:8081`
+  and dial any user at it, e.g. `sip:desktop@localhost`. The page has
+  to be on `localhost` or `https` for the browser to give it the camera and microphone, and an
+  `https` page can only open `wss://`, which the app doesn't listen on yet. So for now the
+  browser runs on the same PC.
+
 
 ## Video and no video
 
@@ -284,6 +310,7 @@ Switches, mostly for testing:
 | `--audio-bars` | Send the microphone's frequency bars instead of the camera. |
 | `--diagnostics` | Open the diagnostics panel (F12) at start. |
 | `--loss-audio <percent>`, `--loss-video <percent>` | Start with the Network tab's loss sliders at these values. |
+| `--ws-port <n>` | SIP over WebSocket port for browser phones (default 8081, 0 for none). |
 | `--no-text` | No real-time text: it's left out of offers and answers, so the other side adding it is turned down. (Will be per account.) |
 | `--say <text>` | Once text is up on a call, send this message. |
 | `--no-video` | No video at all: the switch is locked to Audio, and video offers or Add video from the other side are turned down. (Will be the per-account "Video calls" setting.) |
@@ -371,10 +398,16 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Audio call, caller presses Add video (`--add-video 4`) | re-INVITE accepted; both relays rebuilt with VP8. The callee shows the caller's video at 30 fps; the caller gets the callee's placeholder at 5 fps, since the callee accepted with its camera off. |
 | Three video calls in a row, the caller's camera already open from the preview (`--video --dial-count 3`, callee `--hangup-after 9`) | The callee shows the caller's video on every call. |
 | Same, but the callee has `--no-video` | The callee answers `m=video 0`; the caller logs "they didn't take video", shows *No video*, and both stay on the audio bars. |
+| Browser (SIP.js 0.16 in Edge, fake media) registers as `web`, dials `sip:desktop@localhost`; desktop `--auto-answer` | INVITE over `ws`, answered with an `RTCPeerConnection`; "WebRTC media (ICE, DTLS) connected" 0.2 s later. Each side shows the other's video; the browser receives 30 fps (640×360, then 1280×720) and audio with no loss. ↑ MOS 4.4. |
+| Desktop dials `web` (with the old test registrar, since removed) | INVITE to the browser's `.invalid;transport=ws` Contact down its WebSocket; 200, ACK, media both ways. |
+| Browser call, info bar's chevron (diagnostics) | "Media encrypted (SRTP); SIP not (WS)", their phone `SIP.js/0.16.0`. |
+| Browser call, Text icon | The popover says text isn't available on calls with browser phones. |
+| Browser call, Text popover open, then one click on End | The call ends ("You hung up", BYE, 200). |
+| The web softphone (../web), audio only, `dial=desktop&hangup=12` | Answered with audio only; the browser's BYE ends it here with "They hung up". |
 | Softphone to spike far end, H264 720p30 | 30 fps at 1280x720 in, decoded by `D3D11VideoDecoder` (hardware); camera out at 30 fps. |
 
 Not tested yet: the one-way audio warnings (there's no easy way to break one direction yet),
-the placeholder on a non-SIPSorcery far end, the far end adding video to our audio call
+the placeholder on a non-SIPSorcery far end, a browser on another machine (`wss`), adding video to a browser call, the far end adding video to our audio call
 (only SIPSorcery to SIPSorcery so far, where we're both), a real SIP server with registration, a hardware desk phone or another softphone
 brand, calls across NAT, or the real camera and microphone in this app (the spike covered the
 camera).
@@ -432,6 +465,20 @@ camera).
   (Opus, 48 kHz). With G722 arriving (an 8 kHz RTP clock), each 20 ms packet looked 800 units
   early or late, and the jitter we reported read a steady 17 or 100 ms on a loopback call.
   Fixed in #1887: each packet is timed at its own payload type's clock.
+- **A bundled WebRTC leg reports on both streams under either kind.** With audio and video on
+  one transport, SIPSorcery may raise an RTCP report for video under `audio` and the other way
+  round, so "is our audio reaching them?" said no on browser calls. The relay now picks report
+  blocks and PLIs by our SSRCs, not by the kind they arrived under.
+- **`SIPUserAgent.Hangup()` raises `OnCallHungup` itself**, before it returns. Our handler for
+  that records "They hung up", so every call we ended was logged as theirs. Hang up now marks the
+  call as ours before calling it, and the handler ignores that call. (Ending the call here first
+  doesn't work: it closes the media session, and the user agent only sends BYE while the call
+  is still up.)
+- **A WebRTC answer can't add a stream the offer didn't have.** Answering a browser's audio-only
+  offer, `RTCPeerConnection` put our video in as an extra m-line and the browser rejected the
+  answer. Browser calls are answered with video only if it was offered.
+- **The text popover closed on pointerdown, which ate the click.** Closing it re-renders the
+  controls, so a click on End with the popover open only closed it. It closes on click now.
 - **The page caps its camera at 1.5 Mbit/s.** Its connection to the host is local, so its own
   bandwidth estimate would grow without limit. The real fix is to pass the far end's RTCP
   feedback through to the page.

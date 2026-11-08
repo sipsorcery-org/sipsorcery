@@ -48,6 +48,7 @@ public sealed class Phone : IDisposable
     /// </summary>
     public bool IncomingVideo { get; private set; }
     public string? EndReason { get; private set; }
+    private SIPUserAgent? _hangingUp;   // the call we're hanging up ourselves
     public string Registration { get; private set; } = "none";
     public string? RegistrationDetail { get; private set; }
 
@@ -83,6 +84,14 @@ public sealed class Phone : IDisposable
     private System.Threading.Timer? _addTextTimer;
     private bool _outgoing;
     private string? _theirPhone;
+
+    // ---- Browser phones: SIP over WebSocket, with WebRTC media ----
+
+    /// <summary>The call is with a browser phone (SIP over WebSocket), so its media is WebRTC.</summary>
+    public bool WebRtc { get; private set; }
+
+    /// <summary>Where browser phones connect, e.g. ws://192.168.1.20:8081, or null if WebSocket is off.</summary>
+    public string? WebSocketAddress { get; private set; }
     /// <summary>Full SIP messages, for the log file only.</summary>
     public event Action<string>? Trace;
 
@@ -129,6 +138,22 @@ public sealed class Phone : IDisposable
         _transport.AddSIPChannel(udp);
         _transport.AddSIPChannel(tcp);
         DirectAddress = $"sip:{SIPSorcery.Sys.NetServices.InternetDefaultAddress ?? IPAddress.Loopback}:{udp.Port}";
+
+        // SIP over WebSocket for browser phones, on its own port. Plain ws: browsers allow it from
+        // a page on localhost; another machine needs wss (not yet).
+        if (_settings.WsPort > 0)
+        {
+            try
+            {
+                var ws = new SIPWebSocketChannel(IPAddress.Any, _settings.WsPort);
+                _transport.AddSIPChannel(ws);
+                WebSocketAddress = $"ws://{SIPSorcery.Sys.NetServices.InternetDefaultAddress ?? IPAddress.Loopback}:{_settings.WsPort}";
+            }
+            catch (Exception ex)
+            {
+                PortNote = (PortNote == null ? "" : PortNote + "; ") + $"SIP WebSocket port {_settings.WsPort} isn't available ({ex.Message})";
+            }
+        }
 
         if (udp.Port != port || tcp.Port != port)
         {
@@ -182,9 +207,10 @@ public sealed class Phone : IDisposable
         {
             if (State is CallState.Calling or CallState.Ringing or CallState.Connected) return;
             Remote = ResolveAddress(typed);
+            // An address that says transport=ws is a browser phone: WebRTC media.
+            WebRtc = IsWebSocketUri(Remote);
             ua = NewUserAgent();
-            rtp = MediaRelay.CreateSipSession(video && _settings.OfferVideo);
-            AttachText(rtp);
+            rtp = NewSession(video && _settings.OfferVideo);
             (_ua, _rtp) = (ua, rtp);
             SetState(CallState.Calling);
         }
@@ -218,8 +244,10 @@ public sealed class Phone : IDisposable
         {
             if (State != CallState.Ringing || _incoming == null) return;
             (ua, uas) = (_ua, _incoming);
-            rtp = MediaRelay.CreateSipSession(_settings.OfferVideo);
-            AttachText(rtp);
+            // A WebRTC answer can't add a stream the offer didn't have (RTCPeerConnection would
+            // put our video in as an extra m-line, and the browser rejects the answer), so video
+            // only if they offered it.
+            rtp = NewSession(WebRtc ? IncomingVideo : _settings.OfferVideo);
             _rtp = rtp;
         }
         if (ua != null && uas != null && await ua.Answer(uas, rtp)) await ConnectedAsync(rtp);
@@ -240,10 +268,14 @@ public sealed class Phone : IDisposable
     {
         lock (_lock)
         {
+            if (State == CallState.Ringing) { Decline(); return; }
+            if (State is not (CallState.Calling or CallState.Connected)) return;
+            // SIPUserAgent raises OnCallHungup from inside its own Hangup, which would record
+            // this as "They hung up". (Ending the call here first instead stops the BYE: the
+            // user agent only sends one while the call is still up.)
+            _hangingUp = _ua;
             if (State == CallState.Calling) _ua?.Cancel();
-            else if (State == CallState.Connected) _ua?.Hangup();
-            else if (State == CallState.Ringing) { Decline(); return; }
-            else return;
+            else _ua?.Hangup();
         }
         End("You hung up");
     }
@@ -272,6 +304,32 @@ public sealed class Phone : IDisposable
             _ua.AddVideo();
         }
     }
+
+    /// <summary>
+    /// The SIP side's media session for a new call: WebRTC for a browser phone, plain RTP with
+    /// real-time text otherwise. Text isn't offered to browsers yet (it would go over a data
+    /// channel, RFC 8865), so on those calls it's "unavailable".
+    /// </summary>
+    private RTPSession NewSession(bool video)
+    {
+        var rtp = MediaRelay.CreateSipSession(video, WebRtc);
+        if (rtp is RTCPeerConnection pc)
+        {
+            _rtt?.Dispose();
+            _rtt = null;
+            TextState = "unavailable";
+            pc.onconnectionstatechange += state =>
+            {
+                Log?.Invoke($"WebRTC media (ICE, DTLS) {state}");
+                if (state == RTCPeerConnectionState.failed && _rtp == pc) { _ua?.Hangup(); End("Media connection failed"); }
+            };
+        }
+        else AttachText(rtp);
+        return rtp;
+    }
+
+    private static bool IsWebSocketUri(string uri) =>
+        SIPURI.TryParse(uri, out var u) && u!.Protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss;
 
     /// <summary>
     /// Gives a new SIP session a text track (RED with T.140 inside, and plain T.140) and an
@@ -445,6 +503,13 @@ public sealed class Phone : IDisposable
 
     private async Task OnRequest(SIPEndPoint local, SIPEndPoint remote, SIPRequest req)
     {
+        // Not a registrar: browser phones register with a SIP server (sipsorcery.com) and can
+        // call this app directly over its WebSocket without registering.
+        if (req.Method == SIPMethodsEnum.REGISTER)
+        {
+            await _transport.SendResponseAsync(SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.MethodNotAllowed, "Not a registrar"));
+            return;
+        }
         if (req.Method != SIPMethodsEnum.INVITE || !string.IsNullOrEmpty(req.Header.To.ToTag)) return;
 
         lock (_lock)
@@ -461,6 +526,8 @@ public sealed class Phone : IDisposable
             Remote = req.Header.From.FromURI.ToString();
             _outgoing = false;
             _theirPhone = req.Header.UserAgent;
+            // A call over WebSocket is from a browser phone: answered with WebRTC media.
+            WebRtc = remote.Protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss;
             var name = req.Header.From.FromName;
             if (!string.IsNullOrWhiteSpace(name)) Remote = $"{name} <{Remote}>";
             IncomingVideo = _settings.OfferVideo && OffersVideo(req.Body);
@@ -477,10 +544,11 @@ public sealed class Phone : IDisposable
         catch { return true; }
     }
 
+    /// <summary>A user agent for a call; via, for a browser phone, is the WebSocket its requests go down.</summary>
     private SIPUserAgent NewUserAgent()
     {
         var ua = new SIPUserAgent(_transport, null);
-        ua.OnCallHungup += _ => End("They hung up");
+        ua.OnCallHungup += _ => { if (_hangingUp != ua) End("They hung up"); };
         return ua;
     }
 
@@ -495,6 +563,7 @@ public sealed class Phone : IDisposable
             _rtt?.Dispose();
             _rtt = null;
             TextState = _settings.OfferText ? "off" : "disabled";
+            WebRtc = false;
             _relay?.Dispose();
             _relay = null;
             try { _rtp?.Close(reason); } catch { }

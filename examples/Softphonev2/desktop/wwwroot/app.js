@@ -507,7 +507,11 @@ function syncCamera() {
 // A new offer arrives when a call connects, and again when video is added to it. Video you
 // asked for starts with your camera on; video they added starts with it off, so being sent a
 // video request never turns your camera on by itself.
-async function onMediaOffer(sdp) {
+// The host's offer for the call's media: answer it (media-answer). With no offer (the web
+// softphone placing a call, where this page's connection goes straight to the far end), make
+// one instead (media-offer-made) for a call with or without video, and take the answer from
+// media-remote-answer.
+async function onMediaOffer(sdp, video = false) {
   const midCall = !!call;
   closeMedia();
   if (!midCall) quality = newQuality();
@@ -519,7 +523,7 @@ async function onMediaOffer(sdp) {
   call = {
     // The call has video at all (an m=video line from the host). Read from the offer now, not
     // once the transceivers are set up, or a render in between briefly shows the audio bars.
-    hasVideo: /^m=video [1-9]/m.test(sdp),
+    hasVideo: sdp ? /^m=video [1-9]/m.test(sdp) : video,
     camOn: wantCamera && videoAvailable(),
     muted: micMuted,
     videoSender: null,
@@ -539,7 +543,11 @@ async function onMediaOffer(sdp) {
   };
   pc.onconnectionstatechange = () => log(`media ${pc?.connectionState}`);
 
-  await pc.setRemoteDescription({ type: "offer", sdp });
+  if (sdp) await pc.setRemoteDescription({ type: "offer", sdp });
+  else {
+    pc.addTransceiver("audio");
+    if (video) pc.addTransceiver("video");
+  }
   for (const tr of pc.getTransceivers()) {
     const kind = tr.receiver.track.kind;
     if (kind === "video") {
@@ -559,13 +567,13 @@ async function onMediaOffer(sdp) {
   // if this is an audio call. Not awaited: the answer doesn't depend on it.
   syncCamera();
   if (localTrack("audio")) call.localAnalyser = analyserFor(localTrack("audio"));
-  await pc.setLocalDescription(await pc.createAnswer());
+  await pc.setLocalDescription(sdp ? await pc.createAnswer() : await pc.createOffer());
   await new Promise((resolve) => {
     if (pc.iceGatheringState === "complete") return resolve();
     pc.addEventListener("icegatheringstatechange", () => pc.iceGatheringState === "complete" && resolve());
     setTimeout(resolve, 2000);
   });
-  post({ type: "media-answer", sdp: pc.localDescription.sdp });
+  post({ type: sdp ? "media-answer" : "media-offer-made", sdp: pc.localDescription.sdp });
   log(`call media: ${call.hasVideo ? `video${call.camOn ? "" : ", your camera off"}` : "audio only"}${midCall ? " (renegotiated)" : ""}`);
 
   // The browser only sees the local link to the host, so its own bandwidth estimate would grow
@@ -579,6 +587,19 @@ async function onMediaOffer(sdp) {
       p.encodings[0].maxBitrate = CAMERA_KBPS * 1000;
       await sender.setParameters(p).catch((e) => log(`bitrate cap failed: ${e.message}`));
     });
+  }
+  render();
+}
+
+// Their answer to the offer this page made. Video they turned down (port 0) means no video.
+async function onMediaAnswer(sdp) {
+  if (!pc) return;
+  await pc.setRemoteDescription({ type: "answer", sdp });
+  if (call?.hasVideo && !/^m=video [1-9]/m.test(sdp)) {
+    call.hasVideo = false;
+    videoRefused = true;
+    syncCamera();
+    log("they didn't take video");
   }
   render();
 }
@@ -876,7 +897,9 @@ document.addEventListener("keydown", (e) => {
   e.preventDefault();
   setTextOpen(false);
 });
-document.addEventListener("pointerdown", (e) => {
+// On click rather than pointerdown: closing re-renders the controls, and doing that between
+// pointerdown and pointerup lost the click itself (End took two clicks with the popover open).
+document.addEventListener("click", (e) => {
   if (textOpen && !$("rtt").contains(e.target) && !$("textBtn").contains(e.target)) setTextOpen(false, false);
 }, true);
 document.addEventListener("keydown", (e) => {
@@ -934,6 +957,7 @@ function renderTextControls(phase) {
     : t === "adding" ? `Asking ${name}'s phone to add text…`
     : t === "refused" ? `${name}'s phone doesn't support real-time text.`
     : t === "disabled" ? "Real-time text is turned off (--no-text)."
+    : t === "unavailable" ? "Text isn't available on calls with browser phones yet."
     : "Text isn't set up on this call.";
   // --say (testing): once text is up, type it into the box, then send it.
   if (testSay && t === "on" && !textSaid) {
@@ -1344,7 +1368,9 @@ function render() {
     if (testAddVideo) setTimeout(() => call && !call.hasVideo && $("camBtn").click(), testAddVideo * 1000);
     timerId = setInterval(tick, 1000);
     tick();
-  } else if (phase !== "connected") {
+  } else if (phase === "idle" || phase === "ended") {
+    // Not while calling or ringing: in the web softphone the page's connection is the call's
+    // own, and it's set up (offer or answer) before the call connects.
     clearInterval(timerId);
     connectedAt = 0;
     addingVideo = videoRefused = false;
@@ -1816,6 +1842,8 @@ chrome.webview.addEventListener("message", async (e) => {
       render();
     }
     else if (msg.type === "media-offer") await onMediaOffer(msg.sdp);
+    else if (msg.type === "media-request") await onMediaOffer(null, !!msg.video);
+    else if (msg.type === "media-remote-answer") await onMediaAnswer(msg.sdp);
     else if (msg.type === "media-health") { if (call) { call.txLost = !!msg.txLost; render(); } }
     else if (msg.type === "quality") onQuality(msg);
     else if (msg.type === "details") { callDetails = msg; renderDetails(); }

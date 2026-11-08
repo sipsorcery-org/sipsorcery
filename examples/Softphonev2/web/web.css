@@ -1,0 +1,73 @@
+/* The web softphone's own pieces: the account chip in the header, its menu, and the sign-in
+   dialog. The tokens (--surface, --accent…) are the desktop page's. */
+
+.acct-wrap { position: relative; }
+.acct {
+  display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px;
+  font: inherit; font-size: 13px; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 999px; cursor: pointer;
+}
+.acct:hover { border-color: var(--border-strong); }
+.acct:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.acct svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.acct.none { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.acct.none:hover { background: var(--accent-hover); }
+.acct-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn-ink); }
+.acct.registered .acct-dot, .acct.connected .acct-dot { background: var(--ok); }
+.acct.failed .acct-dot { background: var(--danger); }
+.acct.failed { color: var(--danger); }
+
+.acct-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 240px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.14); padding: 4px; display: grid;
+}
+.acct-menu[hidden] { display: none; }
+.acct-menu-head { padding: 8px 10px 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.acct-menu-addr { font-weight: 600; overflow-wrap: anywhere; }
+.acct-menu-state { font-size: 12px; color: var(--muted); }
+.acct-menu-state.registered, .acct-menu-state.connected { color: var(--ok); }
+.acct-menu-state.failed { color: var(--danger); }
+.acct-menu button {
+  font: inherit; text-align: left; color: var(--text); background: none; border: 0;
+  border-radius: 6px; padding: 8px 10px; cursor: pointer;
+}
+.acct-menu button:hover, .acct-menu button:focus-visible { background: var(--surface-2); outline: none; }
+
+.acct-dialog {
+  width: min(400px, calc(100vw - 32px)); padding: 22px 22px 20px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--surface); color: var(--text);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.22);
+}
+.acct-dialog::backdrop { background: rgb(15 21 19 / 0.45); }
+.acct-dialog h2 { margin: 0 0 6px; font-size: 18px; }
+.acct-form { display: grid; gap: 12px; }
+.acct-lead, .acct-note { margin: 0; color: var(--muted); font-size: 13px; }
+.acct-wide { width: 100%; justify-content: center; }
+.acct-error { margin: 0; color: var(--danger); font-size: 13px; }
+.acct-error[hidden], .acct-captcha[hidden] { display: none; }
+.acct-captcha { display: flex; justify-content: center; min-height: 65px; }
+.acct-or { display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; color: var(--muted); font-size: 12px; }
+.acct-or::before, .acct-or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.acct-form label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.acct-form input {
+  height: 36px; padding: 0 10px; font: inherit; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+}
+.acct-form input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.acct-adv summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+.acct-adv[open] { display: grid; gap: 10px; }
+
+.acct-cred {
+  display: grid; grid-template-columns: 76px 1fr auto; align-items: center; gap: 8px;
+  padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+.acct-cred-label { font-size: 12px; color: var(--muted); }
+.acct-cred-value { font: 13px/1.3 Consolas, "Cascadia Mono", monospace; overflow-wrap: anywhere; user-select: all; }
+.acct-copy {
+  width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 6px;
+  background: none; color: var(--muted); cursor: pointer;
+}
+.acct-copy:hover { background: var(--surface); color: var(--text); }
+.acct-copy.copied { color: var(--ok); }
+.acct-copy svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

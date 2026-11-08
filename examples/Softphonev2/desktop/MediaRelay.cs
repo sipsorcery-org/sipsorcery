@@ -24,6 +24,13 @@ public sealed class MediaRelay : IDisposable
     private RTCPeerConnection? _pc;
     private volatile bool _up;
 
+    /// <summary>
+    /// The SIP side can carry media: always for plain RTP, and once ICE and DTLS are done for a
+    /// WebRTC leg (a browser phone). Until then what the page sends is dropped.
+    /// </summary>
+    private bool SipReady => !_sip.IsClosed && (_sip is not RTCPeerConnection p || p.connectionState == RTCPeerConnectionState.connected);
+    private Action<RTCPeerConnectionState>? _sipPcState;
+
     public SDPAudioVideoMediaFormat? Audio { get; }
     public SDPAudioVideoMediaFormat? Video { get; }
 
@@ -79,10 +86,15 @@ public sealed class MediaRelay : IDisposable
     /// The audio and video codecs we offer on the SIP side, in order of preference. All are ones
     /// the browser can do. Video is offered for a video call, and when answering (so a video
     /// offer can be accepted, or video added later), unless the account has video turned off.
+    ///
+    /// Calls over SIP WebSocket are with browser phones, which only do WebRTC media (ICE,
+    /// DTLS-SRTP, rtcp-mux, bundle), so for those the SIP side is a peer connection of its own;
+    /// it's an RTPSession too, so the relay works the same either way. Everything else is plain
+    /// RTP.
     /// </summary>
-    public static RTPSession CreateSipSession(bool offerVideo = true)
+    public static RTPSession CreateSipSession(bool offerVideo = true, bool webRtc = false)
     {
-        var rtp = new RTPSession(false, false, false);
+        RTPSession rtp = webRtc ? new RTCPeerConnection() : new RTPSession(false, false, false);
         rtp.addTrack(new MediaStreamTrack(new List<AudioFormat>
         {
             new(111, "OPUS", 48000, 2, "minptime=10;useinbandfec=1"),
@@ -180,10 +192,16 @@ public sealed class MediaRelay : IDisposable
         };
         _sipReport = (_, kind, report) =>
         {
-            if (kind == SDPMediaTypesEnum.video && WantsKeyframe(report)) { _pliIn++; RequestKeyframe(pc, _pageVideoSsrc); }
-            if (kind == SDPMediaTypesEnum.audio) CheckAudioReachingThem(report);
-            var ours = kind == SDPMediaTypesEnum.audio ? _sip.AudioLocalTrack?.Ssrc : _sip.VideoLocalTrack?.Ssrc;
-            if (ours != null) RaiseQuality("sent", kind, Samples(report).FirstOrDefault(r => r.SSRC == ours));
+            // A WebRTC leg bundles audio and video on one transport, so a report can arrive under
+            // either kind: what it's about is found by our SSRCs, not by the kind it came with.
+            bool bundled = _sip is RTCPeerConnection;
+            if ((kind == SDPMediaTypesEnum.video || bundled) && WantsKeyframe(report, _sip.VideoLocalTrack?.Ssrc)) { _pliIn++; RequestKeyframe(pc, _pageVideoSsrc); }
+            var samples = Samples(report).ToList();
+            var audio = samples.FirstOrDefault(r => r.SSRC == _sip.AudioLocalTrack?.Ssrc);
+            var video = samples.FirstOrDefault(r => r.SSRC == _sip.VideoLocalTrack?.Ssrc);
+            if (audio != null || (kind == SDPMediaTypesEnum.audio && !bundled)) CheckAudioReachingThem(audio);
+            if (audio != null) RaiseQuality("sent", SDPMediaTypesEnum.audio, audio);
+            if (video != null) RaiseQuality("sent", SDPMediaTypesEnum.video, video);
         };
         _sipSendReport = (kind, report) =>
         {
@@ -194,17 +212,30 @@ public sealed class MediaRelay : IDisposable
         _sip.OnReceiveReport += _sipReport;
         _sip.OnSendReport += _sipSendReport;
 
+        // A WebRTC SIP leg connects in its own time: once it does, each side is asked for a
+        // keyframe, so the video starts without waiting for the next periodic one.
+        if (_sip is RTCPeerConnection sipPc)
+        {
+            _sipPcState = state =>
+            {
+                if (state != RTCPeerConnectionState.connected || !_up) return;
+                RequestKeyframe(_sip, _sipVideoSsrc);
+                RequestKeyframe(pc, _pageVideoSsrc);
+            };
+            sipPc.onconnectionstatechange += _sipPcState;
+        }
+
         // Page -> SIP.
         pc.OnRtpPacketReceived += (_, kind, pkt) =>
         {
             if (kind == SDPMediaTypesEnum.video) _pageVideoSsrc = pkt.Header.SyncSource;
             if (kind == SDPMediaTypesEnum.audio && Lose(AudioLossPercent)) return;
-            if (kind == SDPMediaTypesEnum.audio && !_sip.IsClosed && ++_audioOut > 0)
+            if (kind == SDPMediaTypesEnum.audio && SipReady && ++_audioOut > 0)
                 _sip.SendRtpRaw(SDPMediaTypesEnum.audio, pkt.Payload, pkt.Header.Timestamp, pkt.Header.MarkerBit, pkt.Header.PayloadType, pkt.Header.SequenceNumber);
         };
         pc.OnVideoFrameReceived += (_, ts, frame, _) =>
         {
-            if (_sip.IsClosed) return;
+            if (!SipReady) return;
             _videoOut++;
             if (VideoLossPercent > 0) SendVideoLossy(ts, frame);
             else _sip.SendVideoAt(ts, frame);
@@ -226,11 +257,9 @@ public sealed class MediaRelay : IDisposable
     /// number it has received. If we've sent a good number of packets since the last report and
     /// that number hasn't moved, or our source isn't listed at all, our audio isn't arriving.
     /// </summary>
-    private void CheckAudioReachingThem(RTCPCompoundPacket report)
+    private void CheckAudioReachingThem(ReceptionReportSample? ours)
     {
-        var ourSsrc = _sip.AudioLocalTrack?.Ssrc;
-        if (ourSsrc == null || !_up) return;
-        var ours = Samples(report).FirstOrDefault(r => r.SSRC == ourSsrc);
+        if (_sip.AudioLocalTrack == null || !_up) return;
         bool lost;
         if (ours == null)
         {
@@ -355,9 +384,11 @@ public sealed class MediaRelay : IDisposable
         return result == SetDescriptionResultEnum.OK;
     }
 
-    private static bool WantsKeyframe(RTCPCompoundPacket report) =>
+    /// <summary>A PLI or FIR in the report; with mediaSsrc, only one about that stream (a bundled leg's feedback can arrive under audio).</summary>
+    private static bool WantsKeyframe(RTCPCompoundPacket report, uint? mediaSsrc = null) =>
         report.FeedbackMessages.Any(f => f.Header.PacketType == RTCPReportTypesEnum.PSFB &&
-            f.Header.PayloadFeedbackMessageType is PSFBFeedbackTypesEnum.PLI or PSFBFeedbackTypesEnum.FIR);
+            f.Header.PayloadFeedbackMessageType is PSFBFeedbackTypesEnum.PLI or PSFBFeedbackTypesEnum.FIR &&
+            (mediaSsrc == null || f.MediaSSRC == mediaSsrc || f.MediaSSRC == 0));
 
     /// <summary>
     /// Asks the sender of the video this session receives for a keyframe. The far end routes
@@ -380,6 +411,7 @@ public sealed class MediaRelay : IDisposable
         if (_sipFrame != null) _sip.OnVideoFrameReceived -= _sipFrame;
         if (_sipReport != null) _sip.OnReceiveReport -= _sipReport;
         if (_sipSendReport != null) _sip.OnSendReport -= _sipSendReport;
+        if (_sipPcState != null && _sip is RTCPeerConnection sipPc) sipPc.onconnectionstatechange -= _sipPcState;
         _statsTimer?.Dispose();
         try { _pc?.close(); } catch { }
     }
