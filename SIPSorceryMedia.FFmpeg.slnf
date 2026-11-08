@@ -9,7 +9,8 @@
       "test\\FFmpegManagedTranscodeTest\\FFmpegManagedTranscodeTest.csproj",
       "test\\FFmpegMp4Test\\FFmpegMp4Test.csproj",
       "test\\FFmpegTranscodeTest\\FFmpegTranscodeTest.csproj",
-      "test\\FFmpegWebRtcReceiver\\FFmpegWebRTCReceiver.csproj"
+      "test\\FFmpegWebRtcReceiver\\FFmpegWebRTCReceiver.csproj",
+      "test\\SIPSorceryMedia.FFmpeg.UnitTest\\SIPSorceryMedia.FFmpeg.UnitTest.csproj"
     ]
   }
 }
