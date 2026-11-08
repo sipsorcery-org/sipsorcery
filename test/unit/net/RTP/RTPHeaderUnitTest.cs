@@ -298,5 +298,46 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(packet.Header.Length + 4, buffer.Length);
             Assert.Equal(new byte[] { 0xAA, 0x00, 0x00, 0xBB }, new RTPPacket(buffer).Payload);
         }
+
+        /// <summary>
+        /// WriteTo produces exactly the bytes GetBytes does, CSRC slots and header extension included, whatever the
+        /// destination held before, so a packet can be serialised straight into its send buffer.
+        /// </summary>
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(0, true)]
+        [InlineData(2, false)]
+        [InlineData(3, true)]
+        public void WriteToMatchesGetBytesUnitTest(int csrcCount, bool withExtension)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var header = new RTPHeader
+            {
+                SequenceNumber = 0xFEDC,
+                Timestamp = 0x89ABCDEF,
+                SyncSource = 0x01234567,
+                MarkerBit = 1,
+                PayloadType = 111,
+                CSRCCount = csrcCount,
+            };
+
+            if (withExtension)
+            {
+                header.HeaderExtensionFlag = 1;
+                header.ExtensionProfile = RTPHeader.ONE_BYTE_EXTENSION_PROFILE;
+                header.ExtensionLength = 2;
+                header.ExtensionPayload = new byte[] { 0x31, 0x00, 0x05, 0x52, 0x01, 0x02, 0x03, 0x00 };
+            }
+
+            byte[] expected = header.GetBytes();
+
+            var destination = Enumerable.Repeat((byte)0xEE, expected.Length + 7).ToArray();
+            int written = header.WriteTo(destination);
+
+            Assert.Equal(expected.Length, written);
+            Assert.Equal(expected, destination.Take(written).ToArray());
+            Assert.All(destination.Skip(written), b => Assert.Equal(0xEE, b));
+        }
     }
 }

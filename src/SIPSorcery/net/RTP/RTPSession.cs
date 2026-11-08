@@ -2541,6 +2541,20 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Sends a video sample to the remote peer (on the primary stream), reading it from a span rather than an
+        /// array, for example a frame an encoder has written into a re-used buffer.
+        /// </summary>
+        /// <param name="durationRtpUnits">The duration in RTP timestamp units of the video sample. This
+        /// value is added to the previous RTP timestamp when building the RTP header.</param>
+        /// <param name="sample">The encoded video frame. It is only read during the call, so its memory can be
+        /// re-used as soon as this returns.</param>
+        /// <remarks>Sends exactly the packets <see cref="SendVideo(uint, byte[])"/> sends for the same frame.</remarks>
+        public void SendVideo(uint durationRtpUnits, ReadOnlySpan<byte> sample)
+        {
+            VideoStream?.SendVideo(durationRtpUnits, sample);
+        }
+
+        /// <summary>
         /// Sends an audio sample to the remote peer (on the primary stream) with an explicit RTP timestamp.
         /// Use this instead of <see cref="SendAudio(uint, byte[])"/> when the presentation time of each sample
         /// is known (e.g. live or relayed sources).
@@ -2564,6 +2578,18 @@ namespace SIPSorcery.Net
         /// <param name="rtpTimestamp">The RTP timestamp for the sample, in the sending format's clock rate.</param>
         /// <param name="sample">The video sample to set as the RTP packet payload.</param>
         public void SendVideoAt(uint rtpTimestamp, byte[] sample)
+        {
+            VideoStream?.SendVideoAt(rtpTimestamp, sample);
+        }
+
+        /// <summary>
+        /// Sends a video sample to the remote peer (on the primary stream) with an explicit RTP timestamp, reading it
+        /// from a span rather than an array. Every RTP packet of the sample carries <paramref name="rtpTimestamp"/>.
+        /// </summary>
+        /// <param name="rtpTimestamp">The RTP timestamp for the sample, in the sending format's clock rate.</param>
+        /// <param name="sample">The encoded video frame. It is only read during the call.</param>
+        /// <remarks>Sends exactly the packets <see cref="SendVideoAt(uint, byte[])"/> sends for the same frame.</remarks>
+        public void SendVideoAt(uint rtpTimestamp, ReadOnlySpan<byte> sample)
         {
             VideoStream?.SendVideoAt(rtpTimestamp, sample);
         }

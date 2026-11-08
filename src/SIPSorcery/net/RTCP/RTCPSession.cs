@@ -354,15 +354,24 @@ namespace SIPSorcery.Net
         /// </summary>
         public void RecordRtpPacketSend(RTPPacket rtpPacket)
         {
+            RecordRtpPacketSend(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, rtpPacket.GetPayloadLength());
+        }
+
+        /// <summary>
+        /// Records an RTP packet having been sent, from the header fields and payload length the statistics need, for
+        /// senders that build the packet straight into its wire buffer without an <see cref="RTPPacket"/>.
+        /// </summary>
+        internal void RecordRtpPacketSend(ushort sequenceNumber, uint timestamp, uint payloadLength)
+        {
             if(StartedAt == DateTime.MinValue)
             {
                 Start();
             }
 
             PacketsSentCount++;
-            OctetsSentCount += rtpPacket.GetPayloadLength();
-            LastSeqNum = rtpPacket.Header.SequenceNumber;
-            LastRtpTimestampSent = rtpPacket.Header.Timestamp;
+            OctetsSentCount += payloadLength;
+            LastSeqNum = sequenceNumber;
+            LastRtpTimestampSent = timestamp;
             LastNtpTimestampSent = DateTimeToNtpTimestamp(DateTime.Now);
         }
 
