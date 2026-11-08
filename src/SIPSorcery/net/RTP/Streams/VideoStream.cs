@@ -139,17 +139,47 @@ namespace SIPSorcery.Net
 
         private void SendH264FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, byte[] accessUnit)
         {
+            ThrowIfNullFrame(accessUnit, nameof(accessUnit));
+            SendH264FrameCore(rtpTimestamp, duration, payloadTypeID, new ReadOnlySpan<byte>(accessUnit));
+        }
+
+        private void SendH264FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, ReadOnlySpan<byte> accessUnit)
+        {
             if (CheckIfCanSendRtpRaw())
             {
-                foreach (var nal in H264Packetiser.ParseNals(accessUnit))
+                try
                 {
-                    SendH26XNal(rtpTimestamp, duration, payloadTypeID, nal.NAL, nal.IsLast);
+                    // The NALs are found in place and each packet is built from its slice of the access unit, so the
+                    // frame is only copied into the packets themselves.
+                    var nals = new AnnexBNalScanner();
+
+                    while (nals.TryGetNext(accessUnit, out int offset, out int length, out bool isLast))
+                    {
+                        SendH26XNal(rtpTimestamp, duration, payloadTypeID, accessUnit.Slice(offset, length), isLast);
+                    }
+                }
+                catch (SocketException sockExcp)
+                {
+                    logger.LogError(sockExcp, "SocketException SendH264Frame.");
                 }
             }
         }
 
         /// <summary>
-        /// Sends a single H264 NAL to the remote party.
+        /// The codecs whose frames are parsed (VP8, H264, H265) cannot send a null frame, so their array based send
+        /// methods reject it rather than treat it as an empty frame.
+        /// </summary>
+        private static void ThrowIfNullFrame(byte[] frame, string paramName)
+        {
+            if (frame == null)
+            {
+                throw new ArgumentNullException(paramName);
+            }
+        }
+
+        /// <summary>
+        /// Sends a single H264 or H265 NAL, or an H265 aggregation packet, to the remote party: in one packet when it
+        /// fits, otherwise as fragmentation units.
         /// </summary>
         /// <param name="rtpTimestamp">An explicit RTP timestamp for the NAL, or null to use the track timestamp.</param>
         /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps). Only used
@@ -158,55 +188,61 @@ namespace SIPSorcery.Net
         /// <param name="nal">The buffer containing the NAL to send.</param>
         /// <param name="isLastNal">Should be set for the last NAL in the H264 access unit. Determines when the markbit gets set 
         /// and the timestamp incremented.</param>
-        private void SendH26XNal(uint? rtpTimestamp, uint duration, int payloadTypeID, byte[] nal, bool isLastNal, bool is265 = false)
+        private void SendH26XNal(uint? rtpTimestamp, uint duration, int payloadTypeID, ReadOnlySpan<byte> nal, bool isLastNal, bool is265 = false)
         {
             //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
             //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
             var naluHeaderSize = is265 ? 2 : 1;
-            byte[] naluHeader = is265 ? nal.AsSpan(0, 2).ToArray() : nal.Take(1).ToArray();
 
             if (nal.Length <= RTPSession.RTP_MAX_PAYLOAD)
             {
                 //var naltype = naluHeader[0] >> 1 & 0x3F;
                 //logger.LogTrace("Sending NALtype {type}", naltype);
 
-                // Send as Single-Time Aggregation Packet (STAP-A).
-                byte[] payload = new byte[nal.Length];
-                int markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
-                Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
+                // Sent as it is, in a single packet.
+                int markerBit = isLastNal ? 1 : 0;
 
                 //For TWCC
                 SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
 
-                SendRtpRaw(payload, rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                SendRtpRaw(ReadOnlySpan<byte>.Empty, nal, rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID);
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
             }
             else
             {
-                nal = nal.AsSpan(naluHeaderSize).ToArray();
+                // The NAL header the fragmentation unit headers are made from.
+                byte nal0 = nal[0];
+                byte nal1 = is265 ? nal[1] : (byte)0;
+
+                ReadOnlySpan<byte> fragmented = nal.Slice(naluHeaderSize);
+                Span<byte> fuHeader = stackalloc byte[H265Packetiser.H265_FU_HEADER_LENGTH];
                 //logger.LogTrace("Fragmenting");
 
+                // A NAL must not be sent as a single fragmentation unit, with the start and end bits in the same FU
+                // header (RFC 6184 section 5.8, RFC 7798 section 4.4.3). A NAL only just over the RTP payload limit
+                // (1201 bytes for H264, 1201 or 1202 for H265) fits in one FU once its NAL header is removed, so it is
+                // split into two halves instead. Larger NALs are fragmented at the payload limit.
+                int fragmentSize = (fragmented.Length > RTPSession.RTP_MAX_PAYLOAD) ? RTPSession.RTP_MAX_PAYLOAD : (fragmented.Length + 1) / 2;
+
                 // Send as Fragmentation Unit A (FU-A):
-                for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < nal.Length; index++)
+                for (int index = 0; index * fragmentSize < fragmented.Length; index++)
                 {
-                    int offset = index * RTPSession.RTP_MAX_PAYLOAD;
-                    int payloadLength = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < nal.Length) ? RTPSession.RTP_MAX_PAYLOAD : nal.Length - index * RTPSession.RTP_MAX_PAYLOAD;
+                    int offset = index * fragmentSize;
+                    int payloadLength = Math.Min(fragmentSize, fragmented.Length - offset);
 
                     bool isFirstPacket = index == 0;
-                    bool isFinalPacket = (index + 1) * RTPSession.RTP_MAX_PAYLOAD >= nal.Length;
+                    bool isFinalPacket = offset + payloadLength >= fragmented.Length;
                     int markerBit = (isLastNal && isFinalPacket) ? 1 : 0;
 
-                    byte[] rtpHdr = is265 ? H265Packetiser.GetH265RtpHeader(naluHeader, isFirstPacket, isFinalPacket) : H264Packetiser.GetH264RtpHeader(naluHeader[0], isFirstPacket, isFinalPacket);
-                    
-                    byte[] payload = new byte[payloadLength + rtpHdr.Length];
-                    Buffer.BlockCopy(rtpHdr, 0, payload, 0, rtpHdr.Length);
-                    Buffer.BlockCopy(nal, offset, payload, rtpHdr.Length, payloadLength);
+                    int fuHeaderLength = is265 ?
+                        H265Packetiser.WriteH265RtpHeader(nal0, nal1, isFirstPacket, isFinalPacket, fuHeader) :
+                        H264Packetiser.WriteH264RtpHeader(nal0, isFirstPacket, isFinalPacket, fuHeader);
 
                     //For TWCC
                     SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
 
-                    SendRtpRaw(payload, rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                    SendRtpRaw(fuHeader.Slice(0, fuHeaderLength), fragmented.Slice(offset, payloadLength), rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID);
                     //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 }
             }
@@ -224,23 +260,94 @@ namespace SIPSorcery.Net
 
         private void SendH265FrameCore(uint? rtpTimestamp, uint durationRtpUnits, int payloadID, byte[] sample)
         {
+            ThrowIfNullFrame(sample, nameof(sample));
+            SendH265FrameCore(rtpTimestamp, durationRtpUnits, payloadID, new ReadOnlySpan<byte>(sample));
+        }
+
+        private void SendH265FrameCore(uint? rtpTimestamp, uint durationRtpUnits, int payloadID, ReadOnlySpan<byte> sample)
+        {
             if(CheckIfCanSendRtpRaw())
             {
-                var nals = H265Packetiser.ParseNals(sample);
-
-                // aggregation is only on 2 or more small nals
-                if (nals.Where(x => x.NAL.Length < RTPSession.RTP_MAX_PAYLOAD).Count() > 1)
+                try
                 {
-                    //logger.LogTrace("(ou) Trying aggregating {nals} nals", nals.Count());
-                    nals = H265Packetiser.CreateAggregated(nals, RTPSession.RTP_MAX_PAYLOAD);
-                }
+                    // The NALs are found in place, skipping any too short to have a NAL header. Consecutive NALs small
+                    // enough to share a packet are gathered into an aggregation packet in a buffer on the stack, the same
+                    // way H265Packetiser.CreateAggregated groups them. Every other NAL is sent, or fragmented, straight
+                    // from its slice of the access unit.
+                    Span<byte> aggregation = stackalloc byte[RTPSession.RTP_MAX_PAYLOAD];
+                    int aggregationLength = 0;
+                    int groupCount = 0;
+                    int groupLength = 0;
+                    int firstOffset = 0;
+                    int firstLength = 0;
 
-                //var i = 1;
-                foreach (var nal in nals)
-                {
-                    //logger.LogTrace("(out) SEND {bits}({of}/{all})", nal.NAL.Length, i++, nals.Count());
-                    SendH26XNal(rtpTimestamp, durationRtpUnits, payloadID, nal.NAL, nal.IsLast, true);
+                    var nals = new AnnexBNalScanner(H265Packetiser.H265_NAL_HEADER_LENGTH);
+
+                    while (nals.TryGetNext(sample, out int offset, out int length, out bool isLast))
+                    {
+                        if (groupCount > 0 && H265Packetiser.FitsInAggregation(groupLength, length, RTPSession.RTP_MAX_PAYLOAD))
+                        {
+                            if (groupCount == 1)
+                            {
+                                // The first waiting NAL now has company, so it goes into the aggregation packet too.
+                                aggregationLength = H265Packetiser.AppendToAggregation(aggregation, 0, sample.Slice(firstOffset, firstLength));
+                            }
+
+                            aggregationLength = H265Packetiser.AppendToAggregation(aggregation, aggregationLength, sample.Slice(offset, length));
+                            groupLength = aggregationLength;
+                            groupCount++;
+                        }
+                        else
+                        {
+                            if (groupCount > 0)
+                            {
+                                // This NAL does not fit with the waiting ones, so they are complete.
+                                SendH265Group(rtpTimestamp, durationRtpUnits, payloadID, sample.Slice(firstOffset, firstLength), aggregation.Slice(0, aggregationLength), groupCount, false);
+                                groupCount = 0;
+                            }
+
+                            if (H265Packetiser.FitsInAggregation(0, length, RTPSession.RTP_MAX_PAYLOAD))
+                            {
+                                // Small enough to share a packet with the NALs after it, so it waits for them.
+                                groupCount = 1;
+                                groupLength = H265Packetiser.AggregatedLength(0, length);
+                                aggregationLength = 0;
+                                firstOffset = offset;
+                                firstLength = length;
+                            }
+                            else
+                            {
+                                SendH26XNal(rtpTimestamp, durationRtpUnits, payloadID, sample.Slice(offset, length), isLast, true);
+                            }
+                        }
+
+                        if (isLast && groupCount > 0)
+                        {
+                            SendH265Group(rtpTimestamp, durationRtpUnits, payloadID, sample.Slice(firstOffset, firstLength), aggregation.Slice(0, aggregationLength), groupCount, true);
+                        }
+                    }
                 }
+                catch (SocketException sockExcp)
+                {
+                    logger.LogError(sockExcp, "SocketException SendH265Frame.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends H265 NALs that were waiting to share a packet: a single one on its own, from its slice of the access
+        /// unit, and two or more as the aggregation packet they were written into.
+        /// </summary>
+        private void SendH265Group(uint? rtpTimestamp, uint durationRtpUnits, int payloadID, ReadOnlySpan<byte> firstNal, Span<byte> aggregation, int count, bool isLast)
+        {
+            if (count == 1)
+            {
+                SendH26XNal(rtpTimestamp, durationRtpUnits, payloadID, firstNal, isLast, true);
+            }
+            else
+            {
+                H265Packetiser.WriteAggregationHeader(aggregation);
+                SendH26XNal(rtpTimestamp, durationRtpUnits, payloadID, aggregation, isLast, true);
             }
         }
 
@@ -258,11 +365,7 @@ namespace SIPSorcery.Net
 
         private void SendVp8FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, byte[] buffer)
         {
-            if (buffer == null)
-            {
-                throw new ArgumentNullException(nameof(buffer));
-            }
-
+            ThrowIfNullFrame(buffer, nameof(buffer));
             SendVp8FrameCore(rtpTimestamp, duration, payloadTypeID, new ReadOnlySpan<byte>(buffer));
         }
 
@@ -531,8 +634,10 @@ namespace SIPSorcery.Net
         /// it is sent, so the memory behind <paramref name="sample"/> can be re-used as soon as this returns.
         /// </para>
         /// <para>
-        /// For VP8 each packet is built directly from its slice of the sample, which is copied once, into the packet.
-        /// For the other codecs the sample is copied into an array and sent as the array overload sends it.
+        /// For VP8, H264 and H265 each packet is built directly from its slice of the sample, which is copied once, into
+        /// the packet. The exception is H265 NALs small enough to share an aggregation packet, which are gathered in a
+        /// buffer on the stack first. For the other codecs the sample is copied into an array and sent as the array
+        /// overload sends it.
         /// </para>
         /// </remarks>
         public void SendVideo(uint durationRtpUnits, ReadOnlySpan<byte> sample)
@@ -559,6 +664,14 @@ namespace SIPSorcery.Net
             if (sendingFormat.Codec == VideoCodecsEnum.VP8)
             {
                 SendVp8FrameCore(rtpTimestamp, durationRtpUnits, sendingFormat.FormatID, sample);
+            }
+            else if (sendingFormat.Codec == VideoCodecsEnum.H264)
+            {
+                SendH264FrameCore(rtpTimestamp, durationRtpUnits, sendingFormat.FormatID, sample);
+            }
+            else if (sendingFormat.Codec == VideoCodecsEnum.H265)
+            {
+                SendH265FrameCore(rtpTimestamp, durationRtpUnits, sendingFormat.FormatID, sample);
             }
             else if (rtpTimestamp.HasValue)
             {
