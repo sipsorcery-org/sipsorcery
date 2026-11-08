@@ -10,13 +10,10 @@
 //
 // The expected digests were produced by running this file against the send path
 // as it was at commit c331140ed, before the shared send code changed. It only
-// uses API that existed then, so it can be re-run there.
-//
-// Two scenarios have different digests on .NET Framework: there AudioStream takes
-// the packets of a sample from the start of its array rather than from the
-// segment's offset (the #else branch in AudioStream.SendAudioFrameCore), so
-// samples given as segments of a larger array carry different bytes. The digests
-// pin the current behaviour on each runtime.
+// uses API that existed then, so it can be re-run there. On .NET Framework that
+// commit sent the wrong bytes for samples given as segments of a larger array,
+// which SendAudio_SegmentOfLargerArray_SendsTheSegmentBytes covers, so there the
+// digests hold from that fix on.
 //
 // Author(s):
 // SIPSorcery contributors
@@ -110,11 +107,7 @@ namespace SIPSorcery.Net.UnitTests
                 stream.SendAudioAt(200_000, 2400, Sample(2400, 34));
             });
 
-#if NETFRAMEWORK
-            AssertDigest("SegmentsLargeSamplesAndTimestamps", "4202352AAEC4A9F0FD798822821EDCCD962D935D9E40BA4A42F7039621F98C9F", packets);
-#else
             AssertDigest("SegmentsLargeSamplesAndTimestamps", "544C3F15141F6F51846B630B0ACCEECCBC6887D593F093947DEA114AA667D2E4", packets);
-#endif
         }
 
         /// <summary>
@@ -133,11 +126,33 @@ namespace SIPSorcery.Net.UnitTests
                 stream.SendRtpRaw(Sample(160, 44), 5320, 0, 9, (ushort)65535);
             });
 
-#if NETFRAMEWORK
-            AssertDigest("SendAudioFrameAndRawWithSequenceNumber", "C260B0DBD1D5BBFEF3BDEE6AE8BB35B74C37347B4995FB97FF3E60D90C4D83E0", packets);
-#else
             AssertDigest("SendAudioFrameAndRawWithSequenceNumber", "A6F120C831B794C856203DF55CCCD20F2A93F9F43E2571AA2CBBACA65885B202", packets);
-#endif
+        }
+
+        /// <summary>
+        /// A sample given as a segment of a larger array is sent from the segment's offset, also when it is split
+        /// across several packets. The builds that don't target .NET Core used to take the packets from the start of
+        /// the array instead.
+        /// </summary>
+        [Fact]
+        public void SendAudio_SegmentOfLargerArray_SendsTheSegmentBytes()
+        {
+            byte[] buffer = Sample(4000, 50);
+            var small = new ArraySegment<byte>(buffer, 7, 160);
+            var large = new ArraySegment<byte>(buffer, 500, 3000);
+
+            var packets = Run(new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA), false, false, stream =>
+            {
+                stream.SendAudio(160, small);
+                stream.SendAudio(3000, large);
+            });
+
+            // No CSRCs or header extensions, so every header is the fixed 12 bytes.
+            byte[] payloads = packets.SelectMany(p => p.Skip(12)).ToArray();
+            byte[] expected = small.Concat(large).ToArray();
+
+            Assert.True(packets.Count > 2, $"Expected the large sample to be split, got {packets.Count} packets.");
+            Assert.Equal(expected, payloads);
         }
 
         private void AssertDigest(string name, string expectedDigest, List<byte[]> packets)
