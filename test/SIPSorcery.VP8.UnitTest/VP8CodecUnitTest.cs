@@ -156,5 +156,28 @@ namespace Vpx.Net.UnitTest
                 bmp.Dispose();
             }
         }
+
+        /// <summary>
+        /// Tests that a change of frame size part way through a GOP is encoded as a key frame at the new size, the same
+        /// frame a new codec produces, as there is no reference frame of that size to predict from.
+        /// </summary>
+        [Fact]
+        public void EncodeVideoSizeChangeMidGop()
+        {
+            var small = Vp8GoldenScenario.Create("Small", 64, 48, VideoPixelFormatsEnum.I420, frameCount: 2);
+            var large = Vp8GoldenScenario.Create("Large", 96, 64, VideoPixelFormatsEnum.I420, frameCount: 1);
+
+            var codec = new VP8Codec();
+            codec.EncodeVideo(64, 48, small.CreateFrame(0), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8);
+            byte[] inter = codec.EncodeVideo(64, 48, small.CreateFrame(1), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8);
+
+            byte[] resized = codec.EncodeVideo(96, 64, large.CreateFrame(0), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8);
+            byte[] fromNewCodec = new VP8Codec().EncodeVideo(96, 64, large.CreateFrame(0), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8);
+
+            // Bit 0 of the frame tag is 0 for a key frame and 1 for an inter frame (RFC 6386 section 9.1).
+            Assert.Equal(1, inter[0] & 0x01);
+            Assert.Equal(0, resized[0] & 0x01);
+            Assert.Equal(fromNewCodec, resized);
+        }
     }
 }
