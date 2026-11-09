@@ -1324,6 +1324,7 @@ namespace SIPSorcery.Net
                         // The reporting session needs the RTP clock rate to pair the NTP and RTP
                         // timestamps in its sender reports and to measure jitter in RTP units.
                         currentMediaStream.SetRtcpRtpClockRate(capabilities);
+                        currentMediaStream.ConfigureResendBuffer(capabilities);
 
                         if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                         {
@@ -2915,6 +2916,22 @@ namespace SIPSorcery.Net
                 }
                 else if (!IsClosed)
                 {
+                    foreach (var receptionReport in (rtcpPkt.SenderReport?.ReceptionReports ?? []).Concat(rtcpPkt.ReceiverReport?.ReceptionReports ?? []))
+                    {
+                        GetMediaStream(receptionReport.SSRC)?.RtcpSession?.UpdateRoundTripTime(receptionReport);
+                    }
+
+                    foreach (var feedback in rtcpPkt.FeedbackMessages)
+                    {
+                        if (feedback.Header.PacketType == RTCPReportTypesEnum.RTPFB &&
+                            feedback.Header.FeedbackMessageType == RTCPFeedbackTypesEnum.NACK &&
+                            GetMediaStream(feedback.MediaSSRC) is { LocalTrack: { } localTrack } nackedStream &&
+                            localTrack.Ssrc == feedback.MediaSSRC)
+                        {
+                            nackedStream.ResendLostPackets(feedback);
+                        }
+                    }
+
                     if (mediaStream?.RtcpSession != null)
                     {
                         if (mediaStream.RtcpSession.LastActivityAt == DateTime.MinValue)
