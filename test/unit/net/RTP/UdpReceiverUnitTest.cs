@@ -128,6 +128,86 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
+        /// RTPChannel.Send calls BeginReceiveFrom from the sending thread whenever the receive looks stopped. A receive
+        /// that completed used to clear its running flag before re-arming, and a sender that called in between posted a
+        /// second receive. The two then shared the receive buffer for the rest of the session, overwriting each other's
+        /// datagrams: corrupted and duplicated packets, which on an SRTP session fail authentication or replay checks.
+        /// Here a thread calls BeginReceiveFrom without pause while datagrams arrive; packets are handled one at a
+        /// time and each one arrives once, intact.
+        /// </summary>
+        [Fact]
+        public void BeginReceiveFromOtherThreadsKeepsOneReceive()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            const int count = 4000;
+            const int size = 200;
+
+            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket.ReceiveBufferSize = 1024 * 1024;
+            socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+            var receiver = new UdpReceiver(socket);
+
+            int inCallback = 0, overlapped = 0, corrupt = 0, received = 0;
+            var seen = new bool[count];
+            int duplicates = 0;
+            var done = new ManualResetEventSlim();
+            receiver.OnPacketReceived += (_, _, _, packet) =>
+            {
+                if (Interlocked.Increment(ref inCallback) > 1) { Interlocked.Increment(ref overlapped); }
+                try
+                {
+                    int n = BitConverter.ToInt32(packet, 0);
+                    bool intact = packet.Length == size && n >= 0 && n < count;
+                    for (int i = 4; intact && i < size; i++) { intact = packet[i] == (byte)(n + i); }
+                    if (!intact) { Interlocked.Increment(ref corrupt); }
+                    else
+                    {
+                        lock (seen)
+                        {
+                            if (seen[n]) { duplicates++; }
+                            seen[n] = true;
+                        }
+                    }
+                    if (Interlocked.Increment(ref received) >= count) { done.Set(); }
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref inCallback);
+                }
+            };
+            receiver.BeginReceiveFrom();
+
+            using var stop = new CancellationTokenSource();
+            var hammer = new Thread(() => { while (!stop.IsCancellationRequested) { receiver.BeginReceiveFrom(); } }) { IsBackground = true };
+            hammer.Start();
+
+            using var sender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            var dst = (IPEndPoint)socket.LocalEndPoint;
+            var buffer = new byte[size];
+            for (int n = 0; n < count; n++)
+            {
+                BitConverter.GetBytes(n).CopyTo(buffer, 0);
+                for (int i = 4; i < size; i++) { buffer[i] = (byte)(n + i); }
+                sender.SendTo(buffer, dst);
+                // Spaced out, so most arrive on a fresh asynchronous receive rather than the drain loop.
+                if (n % 4 == 0) { Thread.Sleep(0); }
+            }
+
+            done.Wait(TimeSpan.FromSeconds(10));
+            stop.Cancel();
+            hammer.Join();
+            receiver.Close(null);
+
+            Assert.Equal(0, overlapped);
+            Assert.Equal(0, corrupt);
+            Assert.Equal(0, duplicates);
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
         /// Verifies that calling Close multiple times only fires OnClosed once
         /// and does not throw.
         /// </summary>
