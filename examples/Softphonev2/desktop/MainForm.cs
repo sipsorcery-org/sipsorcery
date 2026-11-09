@@ -41,7 +41,8 @@ internal sealed class MainForm : Form
         {
             Post(StateMessage());
             var state = _phone.State;
-            if (_settings.AutoAnswer && state == Phone.CallState.Ringing)
+            // Once, on starting to ring: Changed comes again while ringing (the page's media, details).
+            if (_settings.AutoAnswer && state == Phone.CallState.Ringing && _lastState != state)
                 _ = Task.Delay(1000).ContinueWith(_ => _phone.AnswerAsync());
             // Testing switches: hang up after a while, and dial again once a call has ended.
             if (state == Phone.CallState.Connected && _lastState != state && _settings.HangupAfter is { } secs)
@@ -51,6 +52,7 @@ internal sealed class MainForm : Form
             _lastState = state;
         };
         _phone.Log += WriteLog;
+        LibraryLog.Line += WriteLog;
         _phone.Trace += text => { lock (_logFile) _logFile.WriteLine(text); };
         _phone.TxLostChanged += lost => Post(new { type = "media-health", txLost = lost });
         _phone.Quality += q => Post(new { type = "quality", q.Dir, q.Kind, q.LossPct, q.Lost, q.JitterMs, q.RttMs });

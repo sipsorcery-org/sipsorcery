@@ -21,6 +21,7 @@ internal static class Program
         try
         {
             ApplicationConfiguration.Initialize();
+            LibraryLog.Install();
             var settings = Settings.Load(args);
             settings.Profile = ClaimProfile(settings.Profile);
             Application.Run(new MainForm(settings));

@@ -1031,7 +1031,10 @@ setInterval(async () => {
   });
   // The codecs each way, for Call details.
   const codecOf = (r) => codecLabel(r && codecs.get(r.codecId));
-  callCodecs = { audio: { tx: codecOf(outA), rx: codecOf(a) }, video: { tx: codecOf(out), rx: codecOf(v) } };
+  // Video with its frame size, e.g. "VP8 1280×720": what we're sending and what's arriving (on
+  // the desktop the relay passes frames on as they are, so these are the SIP leg's too).
+  const videoOf = (r) => codecOf(r) && (r.frameWidth && r.frameHeight ? `${codecOf(r)} ${r.frameWidth}×${r.frameHeight}` : codecOf(r));
+  callCodecs = { audio: { tx: codecOf(outA), rx: codecOf(a) }, video: { tx: videoOf(out), rx: videoOf(v) } };
   if (!$("details").hidden) renderDetails();
   const p = q.prev;
   q.prev = { a, v, out };
@@ -1739,6 +1742,14 @@ function setDiagnostics(on) {
     if (call?.hasVideo) { if (call.camOn) setCamera(false); }
     else camPref = false;
     setVideoSource("camera");
+  }
+  // Simulated loss is a diagnostics thing too: leaving diagnostics turns it off, so it can't
+  // quietly carry on spoiling calls with the sliders out of sight.
+  if (!on && (Number($("lossAudio").value) > 0 || Number($("lossVideo").value) > 0)) {
+    $("lossAudio").value = 0;
+    $("lossVideo").value = 0;
+    showLoss();
+    post({ type: "loss", audio: 0, video: 0 });
   }
   closeMenu();
   renderQuality();

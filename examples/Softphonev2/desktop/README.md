@@ -51,7 +51,7 @@ of every call, and when diagnostics closes.
 | Call | Outgoing or incoming, and the account (or "no account") | the host |
 | Their phone | their `User-Agent` (or `Server` on the 200 OK we got), or "Didn't say" | the host |
 | Security | Encrypted or not: SRTP shows as `RTP/SAVP` on all their media lines, SIP over TLS (or WSS) as the transport. Today it's always "Not encrypted: plain RTP, SIP over UDP", in amber | the host |
-| Audio, Video | The codec each way, "↑ Opus 48 kHz ↓ G722 16 kHz", or one name when both match. Each end can send a different codec, and this is the only place that shows it. G.722 is labelled 16 kHz, its sample rate, not its 8 kHz RTP clock | the page's WebRTC stats, which are the SIP leg's, since the relay doesn't re-encode |
+| Audio, Video | The codec each way, "↑ Opus 48 kHz ↓ G722 16 kHz", or one name when both match. Each end can send a different codec, and this is the only place that shows it. G.722 is labelled 16 kHz, its sample rate, not its 8 kHz RTP clock. Video has its frame size, "VP8 1280×720", refreshed every second while the panel is open | the page's WebRTC stats, which are the SIP leg's, since the relay doesn't re-encode |
 | SIP | transport and their SIP address and port, `UDP 127.0.0.1:5080` | the dialog |
 | Media | where their audio goes, the RTP address from their SDP | the SIP session |
 | Call-ID | the dialog's Call-ID, with **Copy**, to find the call in logs or a capture | the dialog |
@@ -100,10 +100,19 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   - **Incoming:** WebRTC if it came over `ws`/`wss`, or if the offer is WebRTC's
     (`UDP/TLS/RTP/SAVPF` from a browser, `UDP/TLS/RTP/SAVP` from SIPSorcery): a browser
     registered with a server reaches us over UDP, TCP or TLS like anyone else.
-  - **Outgoing:** WebRTC to a `transport=ws` address, or on every call with `--webrtc`
-    (`"WebRtcCalls": true`), since an address on a server doesn't say whether a browser is
-    behind it. A plain SIP phone answers that offer with RTP/AVP, and the call ends with "Their
-    answer's media doesn't match ours". (The real app will have this per account.)
+  - **Outgoing:** plain RTP, or WebRTC to a `transport=ws` address or with `--webrtc`
+    (`"WebRtcCalls": true`). An address on a server doesn't say whether a browser is behind
+    it, so if they turn the offer down for its media profile the call is placed once more,
+    straight away, with the other kind. That's a `488 Not Acceptable Here` with
+    `Warning: 302 … "Incompatible transport protocol"` (RFC 3261 20.43: the m-line's profile,
+    where 305 would be the codecs), or with an SDP body of what they can take (21.4.26) on the
+    other kind of profile. The web softphone sends both. Any other 488 isn't retried: "They
+    can't take this call's media (488)". The SIP log says when it retries.
+  - Through sipsorcery.com the 488's Warning and SDP have to reach us: the app server is a
+    B2BUA, and passes them on only when the call had a single destination (not when it forked
+    to several registrations). Until it does, a browser behind it needs `--webrtc`.
+  - A plain SIP phone that answers a WebRTC offer with RTP/AVP instead of a 488 ends the call
+    with "Their answer's media doesn't match ours".
  `RTCPeerConnection` is an `RTPSession`, so
   `SIPUserAgent` and `MediaRelay` take either; the relay just waits for ICE and DTLS to connect
   before sending to it. If they fail, the call ends with "Media connection failed".
@@ -240,7 +249,8 @@ video rows.
 To see the reports react, the diagnostics panel's **Network** tab has two sliders, Audio
 loss and Video loss (0–50%). They drop that share of the audio or video packets we send
 on the SIP leg, at random, from the moment a slider is let go, and carry over to the next call.
-While either is above 0, the Network tab has a red dot, so it isn't forgotten. Each dropped packet still uses up its sequence number, so the far
+While either is above 0, the Network tab has a red dot, so it isn't forgotten, and closing
+diagnostics (F12) puts both back to 0. Each dropped packet still uses up its sequence number, so the far
 end sees a real gap and counts it in its RTCP. Audio is relayed packet by packet, so dropping
 one is easy. Video is handed to SIPSorcery a frame at a time and packetised inside the library,
 with no way to drop a single packet, so while video loss is on, the relay packetises VP8 and
@@ -378,6 +388,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Audio call, caller types "Hi from A" | No "Audio only" label. Nothing reaches the callee while the caller types; on Enter the callee gets the toast and the dot. |
 | Caller with `--no-text`; callee: Text, then Add text to this call | "Text isn't set up on this call" with the button; after it, "Asking … to add text", then within 2 s "…'s phone doesn't support real-time text" (their answer has `m=text` with port 0). |
 | Video call to `--auto-answer` | The caller's panel shows the callee's RTCP: no loss, jitter under 1 ms, round trip about 0.3 ms, MOS 4.4. |
+| Network tab: Audio loss 12%, Video loss 20%, then F12 to close diagnostics | Both sliders back to 0% and the tab's red dot gone; the host is told loss 0/0. (Checked in the web page, which runs the same script.) |
 | Same, caller with `--loss-audio 5 --loss-video 10` | The sliders start at 5% and 10%; their RTCP shows 2–5.5% audio and about 7% video loss per report, the totals climbing. |
 | Mid-call: Audio loss to 20%, Video loss to 10%, then both back to 0 | Their reports go to 17–23% audio and 9.4–10.5% video loss, MOS about 2.7; at 10% video loss the far end decodes 4–10 fps between keyframes. Back at 0, loss returns to 0, the totals stop climbing and the far end is back to 30 fps (no sequence jump). |
 | `--camera-off` video call: Camera ▾, Test pattern, then Camera off, then Camera ▾, the camera | Each pick turns the camera on and sends the choice straight away; the button shows Turn camera off. |
@@ -387,6 +398,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Video call, panel never opened | One line, "Call quality ↑ 3.3 ↓ 3.7" and a chevron; clicking opens the table (sent fps 30) with the ↑ Sent \| ↓ Received switch on ↑ Sent and "Reported by them" over the graph, and the chevron turns up. |
 | Same, ↓ Received on the switch | The tint moves to the ↓ Received column, the title says "Measured by us", and Frozen joins the legend. Switch and title fit on one line in the 260 px panel. |
 | Video call, caller `--loss-video 2`, callee `--loss-video 5` | The folded line reads "Call quality ⮐ 0.6ms ↑ 4.4 ↓ 4.4"; opened, "RTT 0.6 ms" is the last line. The PLIs row under the table ticks Rcvd (amber) and Sent (violet) over the last 30 s, whichever column is picked; ↓ Received's graph has white "Frozen" bars along the bottom. |
+| Browser video call (../web), Call details | "Video: VP8 640×360" (the same both ways, so once). |
 | Video call, open the info bar's chevron | Call details: "Outgoing · no account", their phone `sipsorcery_v10.0.18.0`, "Not encrypted: plain RTP, SIP over UDP", audio "↑ Opus 48 kHz ↓ G722 16 kHz", video VP8, SIP `UDP 127.0.0.1:5080`, their media address and the Call-ID. The callee's shows "Incoming" and the codecs the other way round. |
 | Far end with `--loss-video 100` | "No video arriving from B" under their initial; ↓ Received video fps 0. |
 | Self view, then `V` | The self view hides and comes back; the far end still gets 30 fps throughout. |
@@ -411,6 +423,10 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Browser call, info bar's chevron (diagnostics) | "Media encrypted (SRTP); SIP not (WS)", their phone `SIP.js/0.16.0`. |
 | Browser call, Text icon | The popover says text isn't available on calls with browser phones. |
 | Two copies over UDP, caller `--webrtc --video`, callee `--auto-answer` | The offer is `UDP/TLS/RTP/SAVP`; the callee answers with an `RTCPeerConnection` too. ICE and DTLS connected in 0.3 s, video both ways (640×360), BYE: "You hung up" / "They hung up". The same without `--webrtc`: RTP/AVP and real-time text as before. |
+| Local sipsorcery-servers2: desktop on a guest account (`Server: localhost`, UDP) and a browser on another, both ways | Browser → desktop: the INVITE arrives over UDP with a WebRTC offer and is answered with WebRTC media. Desktop `--webrtc` → browser: through the proxy to its WebSocket. Both connect in about 0.2 s with video both ways (see ../web for details). |
+| Calling a stand-in callee that answers `488` + `Warning: 302 … "Incompatible transport protocol"`, then 486 | The first INVITE offers RTP/AVP; 0.2 s after the 488, a second offers `UDP/TLS/RTP/SAVP`. Ends with "486 Busy Here". |
+| The same with `Warning: 305 … "Incompatible media format"` | One INVITE, no retry: "They can't take this call's media (488)". |
+| Calling the web softphone's guest account through the local sipsorcery-servers2, no `--webrtc` | The browser turns the RTP/AVP offer down with 488 in 60 ms, without ringing. The app server doesn't pass the Warning on yet, so no retry: "They can't take this call's media (488)". With `--webrtc`: connected, and the browser's BYE ends it "They hung up". |
 | Browser call, Text popover open, then one click on End | The call ends ("You hung up", BYE, 200). |
 | The web softphone (../web), audio only, `dial=desktop&hangup=12` | Answered with audio only; the browser's BYE ends it here with "They hung up". |
 | Softphone to spike far end, H264 720p30 | 30 fps at 1280x720 in, decoded by `D3D11VideoDecoder` (hardware); camera out at 30 fps. |
@@ -483,6 +499,14 @@ camera).
   call as ours before calling it, and the handler ignores that call. (Ending the call here first
   doesn't work: it closes the media session, and the user agent only sends BYE while the call
   is still up.)
+- **`--auto-answer` could answer twice.** It answered on every state change while ringing, and
+  a second answer made its own media session, failed and ended the call ("Couldn't answer")
+  just as the first connected. It answers once on starting to ring now, and `AnswerAsync`
+  ignores a second answer while one is under way (a double click would have done the same).
+- **A WebRTC call we place that fails raises `OnCallHungup`.** Closing the `RTCPeerConnection`
+  makes `SIPUserAgent` hang up, so a 486 showed as "They hung up" (and so did the retry after a
+  488, when the first attempt's media closed). "They hung up" now only counts for the current
+  call once it's connected; before that, the call's failure says why.
 - **A WebRTC answer can't add a stream the offer didn't have.** Answering a browser's audio-only
   offer, `RTCPeerConnection` put our video in as an extra m-line and the browser rejected the
   answer. Browser calls are answered with video only if it was offered.

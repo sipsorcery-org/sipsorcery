@@ -41,7 +41,7 @@ public sealed class MediaRelay : IDisposable
     /// </summary>
     private readonly List<SDPAudioVideoMediaFormat> _audioFormats = [];
 
-    private long _audioIn, _audioOut, _videoIn, _videoOut, _pliIn, _pliOut;
+    private long _audioIn, _audioOut, _videoIn, _videoOut, _pliIn, _pliOut, _rtcpFromSip, _rtcpFromPage, _pliPageUnderAudio;
     private volatile uint _sipVideoSsrc, _pageVideoSsrc;
     private Action<System.Net.IPEndPoint, SDPMediaTypesEnum, RTPPacket>? _sipRtp;
     private Action<System.Net.IPEndPoint, uint, byte[], VideoFormat>? _sipFrame;
@@ -170,7 +170,7 @@ public sealed class MediaRelay : IDisposable
             {
                 _up = true;
                 RequestKeyframe(_sip, _sipVideoSsrc);
-                _statsTimer ??= new System.Threading.Timer(_ => _log($"relay: audio sip->page {_audioIn} page->sip {_audioOut}, video frames sip->page {_videoIn} page->sip {_videoOut}, keyframe requests from sip {_pliIn} from page {_pliOut}"), null, 5000, 5000);
+                _statsTimer ??= new System.Threading.Timer(_ => _log($"relay: audio sip->page {_audioIn} page->sip {_audioOut}, video frames sip->page {_videoIn} page->sip {_videoOut}, keyframe requests from sip {_pliIn} from page {_pliOut} (under audio {_pliPageUnderAudio}), rtcp reports from sip {_rtcpFromSip} from page {_rtcpFromPage}, sip video ssrc ours {_sip.VideoLocalTrack?.Ssrc} theirs {_sipVideoSsrc}"), null, 5000, 5000);
             }
             else if (state is RTCPeerConnectionState.failed or RTCPeerConnectionState.closed)
             {
@@ -195,6 +195,7 @@ public sealed class MediaRelay : IDisposable
             // A WebRTC leg bundles audio and video on one transport, so a report can arrive under
             // either kind: what it's about is found by our SSRCs, not by the kind it came with.
             bool bundled = _sip is RTCPeerConnection;
+            _rtcpFromSip++;
             if ((kind == SDPMediaTypesEnum.video || bundled) && WantsKeyframe(report, _sip.VideoLocalTrack?.Ssrc)) { _pliIn++; RequestKeyframe(pc, _pageVideoSsrc); }
             var samples = Samples(report).ToList();
             var audio = samples.FirstOrDefault(r => r.SSRC == _sip.AudioLocalTrack?.Ssrc);
@@ -242,7 +243,15 @@ public sealed class MediaRelay : IDisposable
         };
         pc.OnReceiveReport += (_, kind, report) =>
         {
-            if (kind == SDPMediaTypesEnum.video && WantsKeyframe(report)) { _pliOut++; RequestKeyframe(_sip, _sipVideoSsrc); }
+            // The page's leg is bundled too: a keyframe request can come under either kind, so
+            // it's found by our video SSRC. (Counted apart when it came under audio.)
+            _rtcpFromPage++;
+            if (WantsKeyframe(report, pc.VideoLocalTrack?.Ssrc))
+            {
+                _pliOut++;
+                if (kind != SDPMediaTypesEnum.video) _pliPageUnderAudio++;
+                RequestKeyframe(_sip, _sipVideoSsrc);
+            }
         };
 
         var offer = pc.createOffer();

@@ -15,6 +15,9 @@ const CAPTCHA_SITE_KEY = q.get("captcha") || "1x00000000000000000000AA";
 // server.
 const STUB_WS = q.get("stubws") || `ws://${location.hostname || "localhost"}:8081`;
 const DEFAULT_WS = q.get("wsdefault") || "wss://sipsorcery.com";
+// Testing against a local server: register guest accounts through this WebSocket instead of the
+// one the server returns (its GuestAccounts:WebSocketUri, normally wss://sipsorcery.com).
+const WS_OVERRIDE = q.get("ws") || "";
 
 const KEY = "softphonev2.account";
 
@@ -55,7 +58,7 @@ async function createGuest(captchaToken) {
   const body = await resp.json().catch(() => ({}));
   if (resp.status === 429) throw new Error("Too many test accounts from here just now. Try again later.");
   if (!resp.ok) throw new Error(body.error || `The server said ${resp.status}.`);
-  return body;
+  return WS_OVERRIDE ? { ...body, wsUri: WS_OVERRIDE } : body;
 }
 
 // ---- Turnstile ----

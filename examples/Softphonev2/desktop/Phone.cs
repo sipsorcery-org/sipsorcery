@@ -48,7 +48,8 @@ public sealed class Phone : IDisposable
     /// </summary>
     public bool IncomingVideo { get; private set; }
     public string? EndReason { get; private set; }
-    private SIPUserAgent? _hangingUp;   // the call we're hanging up ourselves
+    private SIPUserAgent? _hangingUp;
+    private SIPServerUserAgent? _answering;   // the call we're hanging up ourselves
     public string Registration { get; private set; } = "none";
     public string? RegistrationDetail { get; private set; }
 
@@ -198,7 +199,12 @@ public sealed class Phone : IDisposable
         return "sip:" + typed;   // e.g. an IP address or host name
     }
 
-    /// <summary>Places a call: a video call offers audio and video, an audio call leaves video out (it can be added later).</summary>
+    /// <summary>
+    /// Places a call: a video call offers audio and video, an audio call leaves video out (it can
+    /// be added later). If they turn the offer down because of its media profile (see
+    /// <see cref="WantsOtherMedia"/>), it's placed once more straight away with the other kind:
+    /// WebRTC instead of plain RTP, or the other way round.
+    /// </summary>
     public async Task DialAsync(string typed, bool video)
     {
         SIPUserAgent ua;
@@ -208,36 +214,78 @@ public sealed class Phone : IDisposable
             if (State is CallState.Calling or CallState.Ringing or CallState.Connected) return;
             Remote = ResolveAddress(typed);
             // WebRTC media for an address that says transport=ws (a browser phone), or for every
-            // call with --webrtc: a browser registered with a server is reached over UDP, TCP or
-            // TLS like anyone else, so there's no telling from the address.
+            // call with --webrtc. Otherwise plain RTP, and a browser behind a server says so with
+            // a 488 (see WantsOtherMedia).
             WebRtc = IsWebSocketUri(Remote) || _settings.WebRtcCalls;
             ua = NewUserAgent();
             rtp = NewSession(video && _settings.OfferVideo);
             (_ua, _rtp) = (ua, rtp);
             SetState(CallState.Calling);
         }
+        _outgoing = true;
 
+        for (int attempt = 1; ; attempt++)
+        {
+            var (ok, failure, response) = await CallOnceAsync(ua, rtp);
+            if (ok) { await ConnectedAsync(rtp); return; }
+
+            lock (_lock)
+            {
+                // Still ours to retry: nobody hung up or started another call meanwhile.
+                if (attempt == 1 && _ua == ua && State == CallState.Calling && WantsOtherMedia(response, WebRtc))
+                {
+                    WebRtc = !WebRtc;
+                    Log?.Invoke($"they can't take {(WebRtc ? "plain RTP" : "WebRTC")} media (488, {response!.Header.Warning ?? "their SDP"}); calling again with {(WebRtc ? "WebRTC" : "plain RTP")}");
+                    rtp.Close("retrying with other media");
+                    ua = NewUserAgent();
+                    rtp = NewSession(video && _settings.OfferVideo);
+                    (_ua, _rtp) = (ua, rtp);
+                    continue;
+                }
+            }
+            if (_ua == ua) End(failure ?? "Call failed");
+            return;
+        }
+    }
+
+    /// <summary>One INVITE: whether it was answered, and if not, why and the response that said so.</summary>
+    private async Task<(bool Ok, string? Failure, SIPResponse? Response)> CallOnceAsync(SIPUserAgent ua, RTPSession rtp)
+    {
         string? failure = null;
+        SIPResponse? response = null;
         // A failure with a 2xx is their answer turned down here: media we can't use (e.g. plain RTP
         // to our WebRTC offer, from a SIP phone with --webrtc).
-        ua.ClientCallFailed += (_, err, resp) => failure = resp is { StatusCode: >= 200 and < 300 } ? "Their answer's media doesn't match ours"
-            : resp != null ? $"{resp.StatusCode} {resp.ReasonPhrase}" : err;
-        _outgoing = true;
+        ua.ClientCallFailed += (_, err, resp) =>
+        {
+            response = resp;
+            failure = resp is { StatusCode: >= 200 and < 300 } ? "Their answer's media doesn't match ours"
+                : resp is { Status: SIPResponseStatusCodesEnum.NotAcceptableHere } ? "They can't take this call's media (488)"
+                : resp != null ? $"{resp.StatusCode} {resp.ReasonPhrase}" : err;
+        };
         ua.ClientCallAnswered += (_, resp) => _theirPhone = resp?.Header.Server ?? resp?.Header.UserAgent;
         var a = _settings.Account;
-        bool ok;
         try
         {
-            ok = await ua.Call(Remote, a?.Username, a?.Password, rtp);
+            return (await ua.Call(Remote, a?.Username, a?.Password, rtp), failure, response);
         }
         catch (Exception ex)
         {
-            ok = false;
-            failure = ex.Message;
+            return (false, ex.Message, response);
         }
+    }
 
-        if (ok) await ConnectedAsync(rtp);
-        else if (_ua == ua) End(failure ?? "Call failed");
+    /// <summary>
+    /// A 488 that says our media profile was the problem, not the codecs, so the other kind of
+    /// media might work: Warning 302 "Incompatible transport protocol" (RFC 3261 20.43; codecs
+    /// would be 305), or an SDP of what they can take (21.4.26) on the other kind of profile. The
+    /// web softphone sends both when it gets a plain RTP offer. Any other 488 isn't retried.
+    /// </summary>
+    private static bool WantsOtherMedia(SIPResponse? resp, bool offeredWebRtc)
+    {
+        if (resp is not { Status: SIPResponseStatusCodesEnum.NotAcceptableHere }) return false;
+        if (resp.Header.Warning is { } w && System.Text.RegularExpressions.Regex.IsMatch(w, @"(^|,)\s*302\s")) return true;
+        if (string.IsNullOrWhiteSpace(resp.Body) || resp.Header.ContentType?.Contains("sdp", StringComparison.OrdinalIgnoreCase) != true) return false;
+        return IsWebRtcOffer(resp.Body) != offeredWebRtc;
     }
 
     public async Task AnswerAsync()
@@ -247,7 +295,10 @@ public sealed class Phone : IDisposable
         RTPSession rtp;
         lock (_lock)
         {
-            if (State != CallState.Ringing || _incoming == null) return;
+            // Once: a second answer while the first is under way (a double click) would make its
+            // own media session, fail, and end the call.
+            if (State != CallState.Ringing || _incoming == null || _answering == _incoming) return;
+            _answering = _incoming;
             (ua, uas) = (_ua, _incoming);
             // A WebRTC answer can't add a stream the offer didn't have (RTCPeerConnection would
             // put our video in as an extra m-line, and the browser rejects the answer), so video
@@ -566,7 +617,10 @@ public sealed class Phone : IDisposable
     private SIPUserAgent NewUserAgent()
     {
         var ua = new SIPUserAgent(_transport, null);
-        ua.OnCallHungup += _ => { if (_hangingUp != ua) End("They hung up"); };
+        // Only the current, connected call's. The user agent raises this too when a call we place
+        // fails with WebRTC media (closing the RTCPeerConnection), and for a turned-down attempt
+        // DialAsync retries; there, DialAsync gives the real reason.
+        ua.OnCallHungup += _ => { if (_hangingUp != ua && _ua == ua && State == CallState.Connected) End("They hung up"); };
         return ua;
     }
 

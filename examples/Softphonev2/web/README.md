@@ -69,6 +69,16 @@ in the chip's menu). Pass `api=https://…` to use the real endpoint.
 Or skip accounts: `?server=ws://localhost:8081` connects straight away as `sip:web@localhost`
 (`user=` to change it), calls out only.
 
+**Against a local sipsorcery-servers2** (the web app on `https://localhost:7443`, the proxy's
+WebSocket on `ws://localhost:8090`):
+<http://localhost:5181/web/index.html?api=https://localhost:7443&ws=ws://localhost:8090>.
+`ws=` is needed because the server hands out its `GuestAccounts:WebSocketUri`, normally
+`wss://sipsorcery.com`. The server's `AllowedOrigins` has to let `http://localhost:5181` in
+(Development allows the local origins by default). To call the desktop app this way, give it an
+account on the same server, `"Account": { "Server": "localhost", … }` (the local registrar takes
+`localhost` as an alias for `sipsorcery.com`), with `--port` off 5060 since the proxy has it, and
+`--webrtc` for its own calls to browsers.
+
 The page has to be on `localhost` (or `https`) for the browser to give it the camera and
 microphone, and the desktop app only listens on `ws://` for now, so the browser runs on the
 same PC as the desktop app.
@@ -82,6 +92,7 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
 | `api=https://…` | The guest-account API. Left out, the stub. |
 | `captcha=<site key>` | Turnstile's site key (default: Turnstile's test key, which always passes). |
 | `stubws=ws://…` | Where the stub's accounts connect (default `ws://<this page's host>:8081`). |
+| `ws=ws://…` | Register guest accounts through this WebSocket instead of the one the server returns (testing against a local server). |
 | `wsdefault=wss://…` | The sign-in form's default WebSocket address (default `wss://sipsorcery.com`). |
 | `name=…` | Our display name. |
 | `dial=desktop` | Call this once registered or connected (with `call=video`, a video call). |
@@ -92,10 +103,22 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
 
 - Audio and video calls both ways, with the desktop's controls: mic and camera on and off, the
   device menus, self view, ringing, answer, decline, cancel, hang up, the SIP log (F12).
+- **A call it can't take doesn't ring.** A browser can only answer a WebRTC offer, so an
+  incoming offer with no DTLS-SRTP m-line (an ordinary SIP phone's RTP/AVP) is turned down
+  before ringing: `488 Not Acceptable Here` with `Warning: 302 <host> "Incompatible transport
+  protocol: WebRTC media only"` and an SDP of what we can take (a receive-only offer from a
+  throwaway `RTCPeerConnection`, made once at start). The desktop app takes that as its cue to
+  call again with WebRTC. SIP.js would normally send 180 before the page sees the INVITE, so
+  `sendInitialProvisionalResponse` is off and the page sends the 180 itself once the offer is
+  fine. An INVITE with no SDP rings as usual: our offer goes in the 200.
 - **Not yet:** reconnecting when the WebSocket drops (the chip goes red and stays red until a reload), real-time text (the popover says it isn't available; it'll be a data channel),
-  adding video to an audio call (refused either way), the Network tab's loss sliders, and
-  Call quality's ↑ Sent column (the desktop host fills it from RTCP; here it would come from the
-  page's own `remote-inbound-rtp` stats).
+  adding video to an audio call (refused either way), and the Network tab's loss sliders.
+- **Call quality** works as on the desktop. There the host reads the far end's RTCP on the SIP
+  leg; here the page's own `RTCPeerConnection` is the media leg and the browser reads their
+  reports, so `host.js` finds that connection (it wraps the `RTCPeerConnection` constructor
+  before `app.js` loads) and posts the same `quality` messages from `getStats()`: each new
+  `remote-inbound-rtp` report for ↑ Sent (loss, jitter, round trip), and our received video's
+  loss every 5 s for ↓ Received.
 - The desktop shows up as `sip:thisis@anonymous.invalid` when it calls without an account: that's
   the From SIPSorcery sends by default.
 
@@ -113,10 +136,16 @@ microphone, both on one PC.
 | Chip menu, Sign out | The menu shows the address and "Ready for calls"; Sign out unregisters, empties `localStorage` and shows the dialog. |
 | Sign in with the WebSocket address `ws://localhost:8099` (nothing there), then `:8081` | "Couldn't reach ws://localhost:8099." and nothing kept; then registered and kept. |
 | Web `dial=desktop&hangup=12` (audio only) | Audio only both ways; after 12 s the web sends BYE: web "You hung up", desktop "They hung up". |
+| Local sipsorcery-servers2, `api=https://localhost:7443&ws=ws://localhost:8090`: Create a test account | Turnstile's test key passes; the server returns a guest account (`brisk-gibbon-8621@sipsorcery.com`), shown with Copy buttons; it registers through the proxy's `ws://localhost:8090` and the chip goes green. |
+| Headless Edge on a guest account dials the desktop app's guest account (registered over UDP, `--webrtc`), video | Through the proxy: the INVITE reaches the desktop over UDP with a `UDP/TLS/RTP/SAVPF` offer, so it answers with WebRTC media. ICE and DTLS connected in 0.15 s; the desktop receives 20 fps 640×360 video, audio 50 pkt/s with no loss. Web BYE after 10 s: "They hung up". |
+| The desktop (`--webrtc --video`) dials the browser's guest account, browser `auto=1` | Through the proxy to the browser's WebSocket; answered, WebRTC media connected in 0.2 s, video both ways. Web BYE after 10 s. |
+| Web `dial=desktop&call=video`, desktop `--auto-answer --loss-audio 10`, Call quality after 30 s | ↑ Sent: MOS 4.4, loss 0%, 20 fps, from the desktop's RTCP ("their RTCP on our audio: loss 0%… rtt 1 ms" in the log); ↓ Received: MOS 3.6, 8% audio loss; RTT 1.0 ms. Before, ↑ Sent stayed empty and said "No RTCP reports from them". |
+| Web `dial=desktop&call=video`, Call details | "Outgoing · web@localhost", "Media encrypted (SRTP); SIP not (WS)", video "VP8 640×360", SIP "WS localhost:8091". (It said "Incoming" and showed the WebSocket URL before.) |
+| A second browser dials the desktop while it's on a call | "486 BusyHere". (It said "They hung up" before: SIP.js ends the session before handing over the rejection.) |
+| The desktop without `--webrtc` dials it (RTP/AVP offer) | Turned down with 488 + Warning 302 + SDP, no 180 from the browser ("turned down a call from … its offer isn't WebRTC"). The local app server sends its own 180 when it starts dialling, and passes on only the 488's status, so the desktop doesn't retry yet. |
 
-Not tested yet: the real guest-account endpoint and captcha, a wrong password, registering with
-sipsorcery.com over `wss`, and calls made with a test account (the call path itself is the one
-tested above).
+Not tested yet: a real Turnstile site key and secret, a wrong password, the live sipsorcery.com
+over `wss`, and a browser on another network (we offer host ICE candidates only).
 
 ## Things learned building it
 

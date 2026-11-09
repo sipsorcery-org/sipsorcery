@@ -152,6 +152,64 @@ class PageMedia {
   close() {}
 }
 
+// ---- Call quality: their RTCP reports, from the browser's stats ----
+//
+// On the desktop the host reads the far end's RTCP on the SIP leg and posts it as `quality`
+// messages (how they receive what we send). Here the page's own RTCPeerConnection is the media
+// leg, and the browser already reads their reports: remote-inbound-rtp in getStats(). So the host
+// finds the page's connection (the page makes it with `new RTCPeerConnection`, wrapped below
+// before app.js loads) and posts the same messages from those stats.
+
+const NativeRTCPeerConnection = window.RTCPeerConnection;
+let pagePc = null;
+window.RTCPeerConnection = class extends NativeRTCPeerConnection {
+  constructor(...args) {
+    super(...args);
+    pagePc = this;
+  }
+};
+
+const round1 = (n) => Math.round(n * 10) / 10;
+let qualityPc = null;   // the connection the state below is for
+let reportSeen = {};    // remote-inbound-rtp id -> timestamp of the report last posted
+let videoIn = null;     // { t, received, lost } at the last "received" video post
+
+setInterval(async () => {
+  const pc = pagePc;
+  if (st.call !== "connected" || !pc || pc.connectionState === "closed") return;
+  if (pc !== qualityPc) { qualityPc = pc; reportSeen = {}; videoIn = null; }
+  let stats;
+  try { stats = await pc.getStats(); } catch { return; }
+  stats.forEach((r) => {
+    // Their latest reception report on each stream we send: one message per new report.
+    if (r.type === "remote-inbound-rtp" && (r.kind === "audio" || r.kind === "video")) {
+      if (reportSeen[r.id] === r.timestamp) return;
+      reportSeen[r.id] = r.timestamp;
+      toPage({
+        type: "quality", dir: "sent", kind: r.kind,
+        lossPct: round1((r.fractionLost ?? 0) * 100),
+        lost: Math.max(0, r.packetsLost ?? 0),
+        jitterMs: round1((r.jitter ?? 0) * 1000),
+        rttMs: r.roundTripTime != null ? round1(r.roundTripTime * 1000) : null,
+      });
+    }
+    // Their video as we receive it, every 5 s (the desktop host sends its own RTCP report on it).
+    if (r.type === "inbound-rtp" && r.kind === "video") {
+      const now = { t: r.timestamp, received: r.packetsReceived ?? 0, lost: Math.max(0, r.packetsLost ?? 0) };
+      if (videoIn && now.t - videoIn.t < 5000) return;
+      if (videoIn) {
+        const got = now.received - videoIn.received, lost = Math.max(0, now.lost - videoIn.lost);
+        toPage({
+          type: "quality", dir: "received", kind: "video",
+          lossPct: got + lost > 0 ? round1((lost * 100) / (got + lost)) : 0,
+          lost: now.lost, jitterMs: round1((r.jitter ?? 0) * 1000), rttMs: null,
+        });
+      }
+      videoIn = now;
+    }
+  });
+}, 1000);
+
 // ---- SIP ----
 
 let ua = null;
@@ -176,6 +234,9 @@ async function startSip(a) {
     authorizationPassword: a.password ?? undefined,
     transportOptions: { server: a.wsUri },
     sessionDescriptionHandlerFactory: () => new PageMedia(),
+    // No automatic 180: onIncoming checks the offer first, so a call we can't take is turned
+    // down (488) before it rings at either end.
+    sendInitialProvisionalResponse: false,
     userAgentString: "SIPSorcery web softphone (SIP.js 0.21.2)",
     logLevel: "warn",
     delegate: {
@@ -282,6 +343,12 @@ function watch(s) {
       const after = Number(q.get("hangup"));
       if (after > 0) setTimeout(() => session === s && hangup(), after * 1000);
     } else if (state === SIP.SessionState.Terminated && session === s) {
+      // A call we're placing that's turned down: SIP.js ends the session before it hands dial()'s
+      // onReject the response, so wait a tick for that to give the reason ("486 Busy Here").
+      if (outgoing && st.call === "calling") {
+        setTimeout(() => { if (session === s) end("Call failed"); }, 0);
+        return;
+      }
       // Whoever ended it set the reason first (end() is a no-op the second time); this is them.
       end(st.call === "ringing" ? "Missed call" : "They hung up");
     }
@@ -320,11 +387,53 @@ async function dial(address, video) {
   }
 }
 
+// The offer is a WebRTC one: some active m-line is DTLS-SRTP (UDP/TLS/RTP/SAVPF from browsers,
+// UDP/TLS/RTP/SAVP from SIPSorcery). No offer (the INVITE had no SDP) is fine: ours goes in the 200.
+function isWebRtcOffer(sdp) {
+  return !sdp || /^m=\w+ [1-9]\d*(\/\d+)? [A-Z/]*TLS\/RTP\/SAVPF?/m.test(sdp);
+}
+
+// What we can take, for a 488: a receive-only offer from a throwaway RTCPeerConnection, which
+// lists the browser's real codecs on UDP/TLS/RTP/SAVPF lines without touching the camera or mic.
+// Made once (the first takes about half a second) and kept.
+let capabilitiesSdp = null;
+function capabilities() {
+  capabilitiesSdp ??= (async () => {
+    const pc = new NativeRTCPeerConnection();   // not the page's, so not watched for quality
+    try {
+      pc.addTransceiver("audio", { direction: "recvonly" });
+      pc.addTransceiver("video", { direction: "recvonly" });
+      return (await pc.createOffer()).sdp;
+    } finally {
+      pc.close();
+    }
+  })();
+  capabilitiesSdp.catch(() => { capabilitiesSdp = null; });
+  return capabilitiesSdp;
+}
+
+// A plain RTP offer (an ordinary SIP phone's) can't be answered from a browser. Turned down with
+// 488 before ringing, with Warning 302 "Incompatible transport protocol" (RFC 3261 20.43: the
+// m-line's profile, not the codecs) and an SDP of what we can take (21.4.26), so the caller can
+// place the call again with a WebRTC offer.
+async function rejectPlainRtp(invitation) {
+  let body;
+  try { body = { body: await capabilities(), contentType: "application/sdp" }; } catch { }
+  const warning = `Warning: 302 ${location.hostname || "web-softphone"} "Incompatible transport protocol: WebRTC media only"`;
+  log(`turned down a call from ${nameOf(invitation.remoteIdentity)}: its offer isn't WebRTC (488, Warning 302)`);
+  await invitation.reject({ statusCode: 488, extraHeaders: [warning], body }).catch(() => {});
+}
+
 function onIncoming(invitation) {
   if (session) {
     invitation.reject({ statusCode: 486 });
     return;
   }
+  if (!isWebRtcOffer(invitation.body)) {
+    rejectPlainRtp(invitation);
+    return;
+  }
+  invitation.progress().catch(() => {});   // 180 Ringing, now we know we can take it
   outgoing = false;
   session = invitation;
   theirPhone = invitation.request.getHeader("User-Agent");
@@ -364,14 +473,23 @@ function hangup() {
 }
 
 // What the info bar's Call details shows (diagnostics mode).
+// As the desktop host gives it: "WSS sipsorcery.com:443", "WS localhost:8091".
+function signallingOf(wsUri) {
+  try {
+    const u = new URL(wsUri);
+    const proto = u.protocol.replace(":", "");
+    return `${proto.toUpperCase()} ${u.hostname}:${u.port || (proto === "wss" ? 443 : 80)}`;
+  } catch { return null; }
+}
+
 function sendDetails() {
   const s = session;
   if (!s) return;
   toPage({
     type: "details",
-    direction: outgoing ? "Outgoing" : "Incoming",
+    direction: outgoing ? "outgoing" : "incoming",
     account: acct ? `${acct.username}@${acct.domain}` : null,
-    signalling: acct?.wsUri,
+    signalling: signallingOf(acct?.wsUri),
     theirPhone,
     callId: s.dialog?.callId ?? s.request?.callId ?? null,
     theirMedia: null,
@@ -432,3 +550,4 @@ await import(new URL("app.js", base).href);
 // A kept account registers straight away; with none, the sign-in dialog.
 if (acct) startSip(acct).catch((err) => log(`registration failed: ${err.message}`));
 else ui.showSignIn();
+capabilities().catch(() => {});   // made now, ready for the first 488
