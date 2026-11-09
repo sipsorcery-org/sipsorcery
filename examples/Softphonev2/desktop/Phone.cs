@@ -8,7 +8,8 @@ using SIPSorceryMedia.Abstractions;
 namespace SIPSorcery.Softphone;
 
 /// <summary>
-/// The SIP side of the prototype: one transport, an optional registration, and at most one call.
+/// The SIP side of the prototype: one transport, a registration for each account that registers
+/// (see <see cref="SetAccounts"/>), and at most one call.
 /// Everything the page needs to show is reported through <see cref="Changed"/> as a small state
 /// object; the page's WebRTC side is handed over to <see cref="MediaRelay"/> once a call connects.
 /// A second incoming call while one is in progress is answered 486 Busy Here.
@@ -19,7 +20,11 @@ public sealed class Phone : IDisposable
 
     private readonly Settings _settings;
     private readonly SIPTransport _transport = new();
-    private SIPRegistrationUserAgent? _registration;
+    /// <summary>The accounts, by id, each with its registration (if it registers).</summary>
+    private readonly Dictionary<string, AccountRegistration> _accounts = new();
+    /// <summary>The account the current call is on: the one it was placed from, or the one it was made to.</summary>
+    private SipAccount? _callAccount;
+    public SipAccount? CallAccount => _callAccount;
     private SIPUserAgent? _ua;
     private SIPServerUserAgent? _incoming;
     private RTPSession? _rtp;
@@ -50,8 +55,31 @@ public sealed class Phone : IDisposable
     public string? EndReason { get; private set; }
     private SIPUserAgent? _hangingUp;
     private SIPServerUserAgent? _answering;   // the call we're hanging up ourselves
-    public string Registration { get; private set; } = "none";
-    public string? RegistrationDetail { get; private set; }
+
+    /// <summary>
+    /// An account and its registration. State: off (disabled, or doesn't register), registering,
+    /// registered or failed, with <see cref="Detail"/> saying why it failed in plain words.
+    /// </summary>
+    public sealed class AccountRegistration
+    {
+        public required SipAccount Account { get; set; }
+        public SIPRegistrationUserAgent? Agent { get; set; }
+        /// <summary>The user and server the agent registers, to tell whether a new one replaces its binding.</summary>
+        public string? RegisteredAs { get; set; }
+        public string State { get; set; } = "off";
+        public string? Detail { get; set; }
+    }
+
+    /// <summary>A snapshot of every account's registration, for the page.</summary>
+    public IReadOnlyList<(SipAccount Account, string State, string? Detail)> Registrations
+    {
+        get { lock (_accounts) return _accounts.Values.Select(r => (r.Account, r.State, r.Detail)).ToList(); }
+    }
+
+    public (string State, string? Detail) RegistrationOf(string? id)
+    {
+        lock (_accounts) return id != null && _accounts.TryGetValue(id, out var r) ? (r.State, r.Detail) : ("none", null);
+    }
 
     /// <summary>Raised on a SIP thread whenever anything the page shows changes.</summary>
     public event Action? Changed;
@@ -173,29 +201,157 @@ public sealed class Phone : IDisposable
 
     public string ListeningOn =>string.Join(", ", _transport.GetSIPChannels().Select(c => c.ListeningSIPEndPoint.ToString()));
 
-    public void Start()
+    /// <summary>
+    /// Brings the registrations in line with the accounts: registers new and enabled ones, removes
+    /// (REGISTER Expires: 0) removed and disabled ones, and registers again any whose server,
+    /// credentials or expiry changed. Accounts that only changed their name are left registered.
+    /// </summary>
+    public void SetAccounts(IReadOnlyList<SipAccount> accounts)
     {
-        if (!_settings.HasAccount) return;
-        var a = _settings.Account!;
-        _registration = new SIPRegistrationUserAgent(_transport, a.Username, a.Password, a.Server, 120);
-        _registration.RegistrationSuccessful += (_, _) => SetRegistration("registered", null);
-        _registration.RegistrationTemporaryFailure += (_, _, err) => SetRegistration("failed", err);
-        _registration.RegistrationFailed += (_, _, err) => SetRegistration("failed", err);
-        _registration.RegistrationRemoved += (_, _) => SetRegistration("none", null);
-        SetRegistration("registering", null);
-        _registration.Start();
+        lock (_accounts)
+        {
+            foreach (var id in _accounts.Keys.Where(id => accounts.All(a => a.Id != id)).ToList())
+            {
+                Log?.Invoke($"{_accounts[id].Account.Label}: removed");
+                StopRegistration(_accounts[id]);
+                _accounts.Remove(id);
+            }
+            foreach (var account in accounts)
+            {
+                if (_accounts.TryGetValue(account.Id, out var reg))
+                {
+                    bool changed = reg.Account.RegistrationKey != account.RegistrationKey;
+                    reg.Account = account.Clone();
+                    if (changed) StartRegistration(reg, "settings changed");
+                }
+                else
+                {
+                    reg = new AccountRegistration { Account = account.Clone() };
+                    _accounts[account.Id] = reg;
+                    StartRegistration(reg, null);
+                }
+            }
+        }
+        Changed?.Invoke();
+    }
+
+    /// <summary>Registers the account again now (Re-register), for one that failed or to check it.</summary>
+    public void Reregister(string id)
+    {
+        lock (_accounts)
+        {
+            if (_accounts.TryGetValue(id, out var reg)) StartRegistration(reg, "re-register");
+        }
+        Changed?.Invoke();
+    }
+
+    /// <summary>(Re)starts an account's registration, or stops it if the account shouldn't register.</summary>
+    private void StartRegistration(AccountRegistration reg, string? why)
+    {
+        var a = reg.Account;
+        // Registering the same address again (Re-register, a new password) replaces the binding,
+        // so the old agent leaves it be: its Expires: 0 could arrive after the new REGISTER and
+        // remove it. A different address, or none, is unregistered.
+        bool same = a.Enabled && a.Register && reg.RegisteredAs == $"{a.Username}\n{a.Server}";
+        StopRegistration(reg, unregister: !same);
+        if (!a.Enabled || !a.Register)
+        {
+            SetRegistration(reg, "off", !a.Enabled ? "Disabled" : "Doesn't register: calls out only");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(a.Username) || string.IsNullOrWhiteSpace(a.Server))
+        {
+            SetRegistration(reg, "failed", "Needs a username and a server");
+            return;
+        }
+
+        var server = a.Server.Trim();
+        if (!server.StartsWith("sip:", StringComparison.OrdinalIgnoreCase) && !server.StartsWith("sips:", StringComparison.OrdinalIgnoreCase)) server = "sip:" + server;
+        if (!SIPURI.TryParse(server, out var serverUri) || serverUri == null)
+        {
+            SetRegistration(reg, "failed", $"\"{a.Server}\" isn't a server address");
+            return;
+        }
+        var aor = serverUri.CopyOf();
+        aor.User = a.Username;
+        var agent = new SIPRegistrationUserAgent(_transport, null, aor, a.AuthUser, a.Password, null, a.Server,
+            new SIPURI(aor.Scheme, IPAddress.Any, 0), a.Expiry, null);
+        reg.Agent = agent;
+        reg.RegisteredAs = $"{a.Username}\n{a.Server}";
+        // Events from an agent that's since been replaced or stopped are ignored: its final
+        // unregister would otherwise show over the new one's state.
+        agent.RegistrationSuccessful += (_, _) => { if (reg.Agent == agent) SetRegistration(reg, "registered", null); };
+        agent.RegistrationTemporaryFailure += (_, resp, err) => { if (reg.Agent == agent) SetRegistration(reg, "failed", Explain(a, resp, err) + ". Retrying…"); };
+        agent.RegistrationFailed += (_, resp, err) => { if (reg.Agent == agent) SetRegistration(reg, "failed", Explain(a, resp, err)); };
+        agent.RegistrationRemoved += (_, _) => { if (reg.Agent == agent) SetRegistration(reg, "off", null); };
+        if (why != null) Log?.Invoke($"{a.Label}: registering {a.Aor} ({why})");
+        SetRegistration(reg, "registering", null);
+        agent.Start();
+    }
+
+    private static void StopRegistration(AccountRegistration reg, bool unregister = true)
+    {
+        var agent = reg.Agent;
+        reg.Agent = null;
+        reg.RegisteredAs = null;
+        // Unregisters (Expires: 0) if it was registered.
+        agent?.Stop(unregister);
+    }
+
+    /// <summary>A registration failure in plain words, with the server's own response after it.</summary>
+    private static string Explain(SipAccount a, SIPResponse? resp, string err)
+    {
+        if (resp != null)
+        {
+            var said = $"({resp.StatusCode} {resp.ReasonPhrase})";
+            return resp.StatusCode switch
+            {
+                401 or 403 or 407 => $"Wrong username or password {said}",
+                404 => $"{a.Host} doesn't know the user {a.Username} {said}",
+                423 => $"The server wants a longer expiry {said}",
+                >= 500 => $"The server had a problem {said}",
+                _ => $"The server said {resp.StatusCode} {resp.ReasonPhrase}",
+            };
+        }
+        if (err.Contains("Could not resolve", StringComparison.OrdinalIgnoreCase)) return $"Can't find the server {a.Host} (DNS lookup failed)";
+        if (err.Contains("Timeout", StringComparison.OrdinalIgnoreCase) || err.Contains("maximum number", StringComparison.OrdinalIgnoreCase))
+            return $"No answer from {a.Host}";
+        return err.TrimEnd('.');
+    }
+
+    private SipAccount? AccountById(string? id)
+    {
+        lock (_accounts) return id != null && _accounts.TryGetValue(id, out var r) ? r.Account.Clone() : null;
+    }
+
+    /// <summary>
+    /// The account an incoming call was made to: the one whose user and domain are in its To
+    /// header (what a registrar forwards to us), or null for a direct call.
+    /// </summary>
+    private SipAccount? AccountForIncoming(SIPRequest req)
+    {
+        var to = req.Header.To?.ToURI;
+        if (to == null) return null;
+        lock (_accounts)
+        {
+            var enabled = _accounts.Values.Select(r => r.Account).Where(a => a.Enabled).ToList();
+            return (enabled.FirstOrDefault(a => string.Equals(a.Username, to.User, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(a.Domain, to.HostAddress, StringComparison.OrdinalIgnoreCase))
+                ?? enabled.FirstOrDefault(a => string.Equals(a.Username, to.User, StringComparison.OrdinalIgnoreCase)))
+                ?.Clone();
+        }
     }
 
     /// <summary>
     /// Turns what was typed into a SIP URI: a full sip: URI as is, user@host as a sip: URI, and a
     /// bare number or name as a user at the account's server.
     /// </summary>
-    public string ResolveAddress(string typed)
+    public static string ResolveAddress(string typed, SipAccount? account)
     {
         typed = typed.Trim();
         if (typed.StartsWith("sip:", StringComparison.OrdinalIgnoreCase) || typed.StartsWith("sips:", StringComparison.OrdinalIgnoreCase)) return typed;
         if (typed.Contains('@')) return "sip:" + typed;
-        if (_settings.HasAccount) return $"sip:{typed}@{_settings.Account!.Server}";
+        if (account != null) return $"sip:{typed}@{account.Host}";
         return "sip:" + typed;   // e.g. an IP address or host name
     }
 
@@ -205,14 +361,16 @@ public sealed class Phone : IDisposable
     /// <see cref="WantsOtherMedia"/>), it's placed once more straight away with the other kind:
     /// WebRTC instead of plain RTP, or the other way round.
     /// </summary>
-    public async Task DialAsync(string typed, bool video)
+    public async Task DialAsync(string typed, bool video, string? accountId)
     {
         SIPUserAgent ua;
         RTPSession rtp;
         lock (_lock)
         {
             if (State is CallState.Calling or CallState.Ringing or CallState.Connected) return;
-            Remote = ResolveAddress(typed);
+            // The chosen account, if it's enabled; with none, a direct call with no credentials.
+            _callAccount = AccountById(accountId) is { Enabled: true } acct ? acct : null;
+            Remote = ResolveAddress(typed, _callAccount);
             // WebRTC media for an address that says transport=ws (a browser phone), or for every
             // call with --webrtc. Otherwise plain RTP, and a browser behind a server says so with
             // a 488 (see WantsOtherMedia).
@@ -270,10 +428,16 @@ public sealed class Phone : IDisposable
                 : resp != null ? $"The far end said {said}" : err;
         };
         ua.ClientCallAnswered += (_, resp) => _theirPhone = resp?.Header.Server ?? resp?.Header.UserAgent;
-        var a = _settings.Account;
+        var a = _callAccount;
         try
         {
-            return (await ua.Call(Remote, a?.Username, a?.Password, rtp), failure, response);
+            if (a == null) return (await ua.Call(Remote, null, null, rtp), failure, response);
+            // From the account's address and display name, with its credentials if challenged.
+            var dst = SIPURI.ParseSIPURIRelaxed(Remote);
+            var from = new SIPFromHeader(a.DisplayName, SIPURI.ParseSIPURIRelaxed($"sip:{a.Username}@{a.Host}"), null).ToString();
+            var descriptor = new SIPCallDescriptor(a.AuthUser, a.Password, dst.ToString(), from, dst.CanonicalAddress,
+                null, null, null, SIPCallDirection.Out, SDP.SDP_MIME_CONTENTTYPE, null, null);
+            return (await ua.Call(descriptor, rtp), failure, response);
         }
         catch (Exception ex)
         {
@@ -567,13 +731,13 @@ public sealed class Phone : IDisposable
     {
         var dialogue = _ua?.Dialogue;
         var ep = dialogue?.RemoteSIPEndPoint;
-        var a = _settings.Account;
+        var a = _callAccount;
         var media = rtp.RemoteDescription?.Media.Where(m => m.Port != 0).ToList() ?? new();
         static string? Codec(SDPAudioVideoMediaFormat? f) =>
             f is { } x ? $"{x.Name()} {(x.ClockRate() % 1000 == 0 ? $"{x.ClockRate() / 1000} kHz" : $"{x.ClockRate()} Hz")}" : null;
         return new CallDetails(
             Direction: _outgoing ? "outgoing" : "incoming",
-            Account: _settings.HasAccount ? $"{a!.Username}@{a.Server}" : null,
+            Account: a?.Aor,
             Signalling: ep == null ? null : $"{ep.Protocol.ToString().ToUpperInvariant()} {ep.Address}:{ep.Port}",
             TheirPhone: string.IsNullOrWhiteSpace(_theirPhone) ? null : _theirPhone,
             CallId: dialogue?.CallId,
@@ -612,6 +776,7 @@ public sealed class Phone : IDisposable
             ua.ServerCallCancelled += (_, _) => End("Missed call");
             Remote = req.Header.From.FromURI.ToString();
             _outgoing = false;
+            _callAccount = AccountForIncoming(req);
             _theirPhone = req.Header.UserAgent;
             // A call from a browser phone is answered with WebRTC media: one over WebSocket, or
             // one whose offer is WebRTC's (it came through a server, so over UDP, TCP or TLS).
@@ -685,18 +850,19 @@ public sealed class Phone : IDisposable
         Changed?.Invoke();
     }
 
-    private void SetRegistration(string state, string? detail)
+    private void SetRegistration(AccountRegistration reg, string state, string? detail)
     {
-        Registration = state;
-        RegistrationDetail = detail;
-        Log?.Invoke($"registration {state} {detail}".TrimEnd());
+        if (reg.State == state && reg.Detail == detail) return;
+        reg.State = state;
+        reg.Detail = detail;
+        Log?.Invoke($"{reg.Account.Label}: registration {state} {detail}".TrimEnd());
         Changed?.Invoke();
     }
 
     public void Dispose()
     {
         if (State == CallState.Connected) _ua?.Hangup();
-        _registration?.Stop();
+        lock (_accounts) foreach (var reg in _accounts.Values) StopRegistration(reg);
         Thread.Sleep(300);
         _transport.Shutdown();
     }
