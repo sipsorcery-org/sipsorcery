@@ -88,7 +88,81 @@ namespace SIPSorcery.Net.UnitTests
                 $"A failed-authentication packet poisoned the SRTP ROC/replay state: the next legitimate packet returned {afterResult} instead of 0. Per RFC 3711 section 3.3 state must only advance after authentication.");
         }
 
+        /// <summary>
+        /// An AEAD profile authenticates SRTCP only in the decrypt, which a packet with its E flag clear skipped, so
+        /// such a packet was accepted unchecked and its index taken into the replay window. One corrupted packet with
+        /// a high index then had every genuine packet refused as a replay, for good: no more PLIs or reports. A
+        /// packet with the E flag clear must be refused, and the stream carry on.
+        /// </summary>
+        [Fact]
+        public void UnencryptedAeadSrtcp_IsRefusedAndDoesNotPoisonReplayWindow()
+        {
+            var profile = new SrtpProtectionProfileConfiguration(
+                SrtpCiphers.AEAD_AES_128_GCM,
+                cipherKeyLength:  128,
+                cipherSaltLength: 96,
+                maximumLifetime:  int.MaxValue,
+                auth:             SrtpAuth.NONE,
+                authKeyLength:    0,
+                authTagLength:    128);
+
+            var key  = new byte[16];
+            var salt = new byte[12];
+            for (int i = 0; i < key.Length;  i++) { key[i]  = (byte)(0x20 + i); }
+            for (int i = 0; i < salt.Length; i++) { salt[i] = (byte)(0x90 + i); }
+
+            var sender   = new SrtpContext(SrtpContextType.RTCP, profile, key, salt);
+            var receiver = new SrtpContext(SrtpContextType.RTCP, profile, key, salt);
+            const uint ssrc = 0x5566aabbu;
+
+            for (int i = 0; i < 3; i++)
+            {
+                Assert.Equal(0, UnprotectRtcp(receiver, ProtectRtcp(sender, ssrc)));
+            }
+
+            // A packet with the E flag clear and a far higher index, as a corrupted datagram may read.
+            var forged = ProtectRtcp(sender, ssrc);
+            BinaryWriteUInt32(forged, forged.Length - 4, 0x1DAB4A00u);
+            Assert.Equal(SrtpContext.ERROR_HMAC_CHECK_FAILED, UnprotectRtcp(receiver, forged));
+
+            Assert.Equal(0, UnprotectRtcp(receiver, ProtectRtcp(sender, ssrc)));
+        }
+
         // ---- helpers ----
+
+        private static byte[] ProtectRtcp(SrtpContext sender, uint ssrc)
+        {
+            // A receiver report with no report blocks: V=2, PT=201, length 1 (8 bytes).
+            var rtcp = new byte[] { 0x80, 201, 0, 1, (byte)(ssrc >> 24), (byte)(ssrc >> 16), (byte)(ssrc >> 8), (byte)ssrc };
+            var output = new byte[sender.CalculateRequiredSrtcpPayloadLength(rtcp.Length)];
+#if NET8_0_OR_GREATER
+            int rc = sender.ProtectRtcp(rtcp.AsSpan(), output.AsSpan(), out int len);
+#else
+            int rc = sender.ProtectRtcp(new ArraySegment<byte>(rtcp), output, out int len);
+#endif
+            Assert.True(rc == 0, $"ProtectRtcp failed (rc={rc}).");
+            var trimmed = new byte[len];
+            Buffer.BlockCopy(output, 0, trimmed, 0, len);
+            return trimmed;
+        }
+
+        private static int UnprotectRtcp(SrtpContext receiver, byte[] packet)
+        {
+            var output = new byte[packet.Length];
+#if NET8_0_OR_GREATER
+            return receiver.UnprotectRtcp(packet.AsSpan(), output.AsSpan(), out _);
+#else
+            return receiver.UnprotectRtcp(new ArraySegment<byte>(packet), output, out _);
+#endif
+        }
+
+        private static void BinaryWriteUInt32(byte[] buffer, int offset, uint value)
+        {
+            buffer[offset]     = (byte)(value >> 24);
+            buffer[offset + 1] = (byte)(value >> 16);
+            buffer[offset + 2] = (byte)(value >> 8);
+            buffer[offset + 3] = (byte)value;
+        }
 
         private static byte[] EncryptThenCorrupt(SrtpContext sender, uint ssrc, ushort seq)
         {
