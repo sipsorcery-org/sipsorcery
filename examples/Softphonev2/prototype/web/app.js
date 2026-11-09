@@ -197,6 +197,12 @@ const state = {
   sideTab: "calls", // Phones only: which sidebar tab is showing.
   bannerOpen: false, // Several calls ringing: is the stacked banner expanded?
   netBad: false,     // Diagnostics: pretend your own network is struggling.
+  // Mic and camera button labels, two styles to compare (Diagnostics, or ?labels=state):
+  // "action" says what pressing does (Mute / Unmute, Stop video / Start video);
+  // "state" says how it is now (Mic on / Mic off, Camera on / Camera off).
+  labels: new URLSearchParams(location.search).get("labels") === "state" ? "state" : "action",
+  // Before a call: whether a video call starts with your camera on (the button under "No active calls").
+  camPref: loadPref("camPref", "yes") !== "no",
   // Real-time text preferences (Settings). textFirst opens the text panel on every call.
   textFirst: loadPref("textFirst", "no") === "yes",
   saveText: loadPref("saveText", "no") === "yes",
@@ -355,7 +361,7 @@ function placeCall(dest, name) {
   const tel = /^tel:/.test(uri);
   const videoOk = accountById(state.accountId)?.video !== false;
   const wantVideo = state.callType === "video";
-  const line = addCall({ name: name || displayName(uri), uri, status: "dialing", dir: "out", video: !tel && videoOk && wantVideo,
+  const line = addCall({ name: name || displayName(uri), uri, status: "dialing", dir: "out", video: !tel && videoOk && wantVideo, camera: state.camPref,
     noVideo: tel ? "tel" : !videoOk ? "account" : !wantVideo ? "chosen" : undefined, rtt: offerText && textOk, rttSupported: textOk });
   state.selected = line.id;
   state.audioFocus = line.id;
@@ -2167,6 +2173,7 @@ function renderStage() {
     html += `<div class="empty"><div>
       <h2>No active calls</h2>
       <p>Enter a number or SIP address above and press <b>Call</b>. The switch beside it picks an audio or a video call.</p>
+      ${preCallCameraHtml()}
     </div></div>`;
   } else if (sel.status === "incoming") {
     const hasCurrent = callById(state.audioFocus)?.status === "connected";
@@ -2199,7 +2206,8 @@ function renderStage() {
         </div>
         <div class="call-head-side">
           ${toggle}
-          ${live ? `<div class="call-head-stats">${sel.status === "connected" ? netButtonHtml(sel) : ""}
+          ${live ? `<div class="call-head-stats">${sel.status === "connected" && micMuted(sel)
+              ? `<span class="muted-pill" title="They can't hear you. Unmute with M.">${icon("micOff")}You're muted</span>` : ""}${sel.status === "connected" ? netButtonHtml(sel) : ""}
             <div class="call-timer ${sel.status === "held" ? "paused" : ""}" data-since="${sel.startedAt}">${fmtDuration(now() - sel.startedAt)}</div></div>` : ""}
         </div>
       </div>
@@ -2382,15 +2390,17 @@ function controlButtons(l) {
   const muted = micMuted(l);
   const camOff = l.video && !camOn(l);
   const dis = (on) => (on ? "" : "disabled");
+  const stateLabels = state.labels === "state";
   // Mute and Camera are split buttons: the ▾ opens a quick device switcher.
-  const caret = (menu, label, warn) => `<button class="btn split-caret ${warn ? "on warn" : ""}" data-act="device-menu" data-menu="${menu}"
+  const caret = (menu, label, off) => `<button class="btn split-caret ${off ? "on off" : ""}" data-act="device-menu" data-menu="${menu}"
       aria-haspopup="menu" aria-expanded="${state.menu === menu}" aria-label="${label}" title="${label}">${icon("chevronDown")}</button>`;
   // Live mic level, only while you can actually be heard on this call.
   const meter = connected && !muted && l.id === state.audioFocus ? `<span class="mic-meter" data-meter="${l.id}" aria-hidden="true"><span></span></span>` : "";
   return `<div class="control-row">
       <div class="split">
-        <button class="btn ${muted ? "on warn" : ""}" data-act="mute" ${dis(connected)} aria-pressed="${muted}"
-          ${state.muteAll ? 'title="All calls are muted. Click to unmute just this call."' : 'title="Mute (M)"'}>${icon(muted ? "micOff" : "mic")}${muted ? "Unmute" : "Mute"}${meter}</button>
+        <button class="btn ${muted ? "on off" : ""}" data-act="mute" ${dis(connected)} aria-pressed="${muted}"
+          title="${state.muteAll ? "All calls are muted. Click to unmute just this call." : `${muted ? "Unmute" : "Mute"} (M)`}">${icon(muted ? "micOff" : "mic")}${stateLabels
+            ? (muted ? "Mic off" : "Mic on") : (muted ? "Unmute" : "Mute")}${meter}</button>
         ${caret("mic", "Choose microphone and speaker", muted)}
         ${state.menu === "mic" ? deviceMenuHtml("mic") : ""}
       </div>
@@ -2404,8 +2414,9 @@ function controlButtons(l) {
           ? `<button class="btn" disabled title="${esc(noVideoText(l))}">${icon("videoOff")}No video</button>`
           : state.noCamera
           ? `<button class="btn" disabled title="No camera found. You can still see them.">${icon("videoOff")}No camera</button>`
-          : `<button class="btn ${camOff ? "on warn" : ""}" data-act="camera" ${dis(connected)} aria-pressed="${camOff}"
-          ${state.cameraAllOff ? 'title="Camera is off for all calls. Click to turn it on for just this call."' : ""}>${icon(camOff ? "videoOff" : "video")}${camOff ? "Turn camera on" : "Turn camera off"}</button>`}
+          : `<button class="btn ${camOff ? "on off" : ""}" data-act="camera" ${dis(connected)} aria-pressed="${camOff}"
+          title="${state.cameraAllOff ? "Camera is off for all calls. Click to turn it on for just this call." : camOff ? "Start video: turn your camera on" : "Stop video: turn your camera off"}">${icon(camOff ? "videoOff" : "video")}${stateLabels
+            ? (camOff ? "Camera off" : "Camera on") : (camOff ? "Start video" : "Stop video")}</button>`}
         ${caret("camera", "Choose camera", camOff)}
         ${state.menu === "camera" ? deviceMenuHtml("camera") : ""}
       </div>
@@ -2580,6 +2591,38 @@ function renderModal() {
   }
 }
 
+// Before a call, the camera button says how a video call will start. It's never disabled just
+// because the switch is on Audio: pressing the camera means you want video, so it switches to
+// Video (with the camera on). Disabled only when video can't be had, and then the button itself
+// says why, not only its tooltip.
+function preCallCameraHtml() {
+  const videoOff = accountById(state.accountId)?.video === false;
+  const audio = videoOff || state.callType === "audio";
+  const on = !audio && state.camPref && !state.noCamera;
+  const stateLabels = state.labels === "state";
+  const [label, title, disabled] = videoOff ? ["No video", "Video is turned off for this account", true]
+    : state.noCamera ? ["No camera", "No camera found. You can still make video calls and see them.", true]
+    : audio ? [stateLabels ? "Camera off" : "Start video", "Make it a video call, with your camera on", false]
+    : on ? [stateLabels ? "Camera on" : "Stop video", "Video calls start with your camera on. Click to start them with it off.", false]
+    : [stateLabels ? "Camera off" : "Start video", "Video calls start with your camera off. Click to start them with it on.", false];
+  return `<div class="control-row precall">
+      <button class="btn ${!on && !audio && !disabled ? "on off" : ""}" data-act="precall-camera" ${disabled ? "disabled" : ""}
+        aria-pressed="${!on}" title="${title}">${icon(on ? "video" : "videoOff")}${label}</button>
+      <span class="precall-note">${videoOff ? "Video is turned off for this account."
+        : state.noCamera ? "No camera found: they won't see you, but you'll see them."
+        : audio ? "Audio call. The camera button makes it a video call."
+        : on ? "Video calls start with your camera on." : "Video calls start with your camera off: they'll see your initial."}</span>
+    </div>`;
+}
+
+function preCallCamera() {
+  if (accountById(state.accountId)?.video === false || state.noCamera) return;
+  if (state.callType === "audio") { setCallType("video"); state.camPref = true; log("Camera button: switched to a video call, camera on"); }
+  else { state.camPref = !state.camPref; log(`Video calls start with your camera ${state.camPref ? "on" : "off"}`); }
+  savePref("camPref", state.camPref ? "yes" : "no");
+  render();
+}
+
 // The Audio | Video switch beside Call. Locked to Audio when the account has video turned off.
 function renderCallType() {
   const locked = accountById(state.accountId)?.video === false;
@@ -2703,6 +2746,7 @@ document.addEventListener("click", (e) => {
     case "selfview": toggleSelfView(); break;
     case "mute": toggleCallMute(l); break;
     case "camera": toggleCallCamera(l); break;
+    case "precall-camera": preCallCamera(); break;
     case "add-video": addVideo(l); break;
     case "mute-all": toggleMuteAll(); break;
     case "camera-all": toggleCameraAll(); break;
@@ -2855,6 +2899,11 @@ document.querySelector(".diag-actions").addEventListener("click", (e) => {
   if (sim === "incoming") simulateIncoming();
   if (sim === "missed") simulateMissed();
   if (sim === "burst") { for (let i = 0; i < 3; i++) simulateIncoming(); }
+  if (sim === "labels") {
+    state.labels = state.labels === "state" ? "action" : "state";
+    e.target.closest("[data-sim]").textContent = `Mic/camera labels: ${state.labels === "state" ? "state (Mic on)" : "action (Mute)"}`;
+    render();
+  }
   if (sim === "net-bad") {
     state.netBad = !state.netBad;
     e.target.closest("[data-sim]").classList.toggle("on", state.netBad);

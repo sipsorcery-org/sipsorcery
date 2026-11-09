@@ -1,16 +1,18 @@
 /* Tokens from the UX prototype (prototype/web/styles.css). */
 :root {
-  --page: #e9edeb; --surface: #ffffff; --surface-2: #f4f6f5; --border: #dde4e1; --border-strong: #c9d3cf;
+  --page: #e9edeb; --surface: #ffffff; --surface-2: #f4f6f5; --surface-3: #eef2f0; --border: #dde4e1; --border-strong: #c9d3cf;
   --text: #1b2925; --muted: #677670; --accent: #1f6f5c; --accent-hover: #185a4a; --accent-ink: #ffffff;
-  --ok: #2f8a6c; --warn-ink: #8a5a12; --warn-bg: #fbf1df; --danger: #b3354e; --danger-soft: #fbe8ec; --tile: #dcebe3; --tile-ink: #5b7268;
+  --ok: #2f8a6c; --warn-ink: #8a5a12; --warn-bg: #fbf1df; --danger: #b3354e; --danger-soft: #fbe8ec; --danger-border: #f3cbd4; --tile: #dcebe3; --tile-ink: #5b7268;
+  --seg-on: #ffffff;   /* a segmented control's chosen option: raised, not coloured */
   --radius: 12px; --radius-sm: 8px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --page: #0f1513; --surface: #171f1c; --surface-2: #1c2622; --border: #2a3632; --border-strong: #37453f;
+    --page: #0f1513; --surface: #171f1c; --surface-2: #1c2622; --surface-3: #212c28; --border: #2a3632; --border-strong: #37453f;
     --text: #e4ece8; --muted: #9aa9a3; --accent: #3ea486; --accent-hover: #4bb594; --accent-ink: #06130f;
-    --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --tile: #1f3a31; --tile-ink: #a9c2b8;
+    --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --danger-border: #5a2c37; --tile: #1f3a31; --tile-ink: #a9c2b8;
+    --seg-on: #33423c;
     color-scheme: dark;
   }
 }
@@ -64,12 +66,13 @@ body:not(.diag) .diag-only { display: none; }
 .icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 /* The start-camera toggle is amber while off, like the prototype's. */
 /* Audio | Video: two halves of one control, the chosen one filled. */
-.call-type { display: inline-flex; flex: none; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
+/* The chosen half is a raised neutral pill, so the accent green stays on the Call button. */
+.call-type { display: inline-flex; flex: none; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-3); }
 .call-type button { display: inline-flex; align-items: center; gap: 6px; padding: 0 11px; border: 0; border-radius: 7px; background: transparent;
   color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
 .call-type svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .call-type button:hover:not(:disabled):not(.on) { color: var(--text); }
-.call-type button.on { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); }
+.call-type button.on { background: var(--seg-on); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .12), 0 0 0 1px var(--border); }
 .call-type button:disabled { opacity: 0.45; cursor: not-allowed; }
 .call-type button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 #callBtn { min-width: 118px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
@@ -167,6 +170,11 @@ body:not(.diag) .diag-only { display: none; }
 .details .enc.off { color: #f0c27a; }
 .details .copy-id { margin-left: 6px; padding: 0 4px; border: 0; border-radius: 3px; background: rgba(255, 255, 255, .12); color: inherit; font: 11px system-ui, sans-serif; cursor: pointer; }
 .timer { font-variant-numeric: tabular-nums; opacity: .85; }
+/* Muted on a call: a red pill by the timer, so you see it without looking down at the buttons. */
+.muted-pill { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px;
+  background: var(--danger); color: #fff; font-size: 12px; font-weight: 600; white-space: nowrap; flex: none; }
+.muted-pill[hidden] { display: none; }
+.muted-pill svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .info[hidden] { display: none; }
 
@@ -262,7 +270,10 @@ body:not(.diag) .diag-only { display: none; }
 }
 .controls .btn > span { overflow: hidden; text-overflow: ellipsis; }
 .controls .btn svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.controls .btn[aria-pressed="true"] { background: var(--warn-bg); border-color: var(--warn-ink); color: var(--warn-ink); }
+/* Mic or camera off: soft red (End is the solid red), its ▾ with it. */
+.controls .btn[aria-pressed="true"], .controls .btn[aria-pressed="true"] + .split-caret {
+  background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger);
+}
 .controls .btn-danger:disabled { background: var(--surface); border-color: var(--border-strong); color: var(--muted); opacity: .6; }
 .split { position: relative; display: flex; min-width: 0; }
 .split > .btn:first-child { flex: 1; border-top-right-radius: 0; border-bottom-right-radius: 0; }
@@ -355,7 +366,12 @@ body:not(.diag) .diag-only { display: none; }
 .devpanel[hidden] { display: none; }
 .dev-resize { position: absolute; left: 0; right: 0; top: -4px; height: 8px; cursor: ns-resize; z-index: 1; }
 .dev-bar { display: flex; align-items: stretch; gap: 6px; height: 34px; padding: 0 8px 0 14px; background: var(--surface-2); border-bottom: 1px solid var(--border); user-select: none; }
-.dev-title { align-self: center; margin-right: 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+/* The panel's title: bigger and bolder than the tabs, with an icon and a divider before them. */
+.dev-title {
+  align-self: center; display: flex; align-items: center; gap: 7px; margin: 0 6px 0 0; padding-right: 14px;
+  border-right: 1px solid var(--border-strong); font-size: 14px; font-weight: 700; letter-spacing: .01em; color: var(--text);
+}
+.dev-title svg { width: 16px; height: 16px; flex: none; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .dev-tabs { display: flex; }
 .dev-tab { position: relative; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
 .dev-tab:hover { color: var(--text); }

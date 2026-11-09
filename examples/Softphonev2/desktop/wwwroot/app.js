@@ -1284,11 +1284,15 @@ function render() {
   const mute = $("muteBtn");
   mute.disabled = !hasMic;
   mute.setAttribute("aria-pressed", String(hasMic && muted));
-  // What pressing it does, as on the camera button.
+  // What pressing it does, as on the camera button; red while you're muted.
   mute.title = !hasMic ? "No mic found"
-    : live ? (muted ? "Turn your mic on" : "Turn your mic off")
-    : muted ? "Calls start with your mic off" : "Calls start with your mic on";
-  setBtn(mute, muted || !hasMic ? ICON.micOff : ICON.mic, !hasMic ? "No mic" : muted ? "Turn mic on" : "Turn mic off");
+    : live ? (muted ? "Unmute: they'll hear you" : "Mute: they won't hear you")
+    : muted ? "Calls start muted" : "Calls start unmuted";
+  setBtn(mute, muted || !hasMic ? ICON.micOff : ICON.mic, !hasMic ? "No mic" : muted ? "Unmute" : "Mute");
+  // While muted on a call, a pill by the timer says so.
+  const pill = $("mutedPill");
+  pill.hidden = !(live && hasMic && muted);
+  if (!pill.hidden && !pill.innerHTML) pill.innerHTML = `${ICON.micOff}<span>You're muted</span>`;
 
   // Camera: during a video call it turns your camera on and off; on an audio call it's Add video,
   // unless video can't be had. Before a call it decides whether a video call starts with your
@@ -1303,18 +1307,19 @@ function render() {
     cam.title = canAdd ? "Add video to this call. They'll be asked; some phones can't."
       : videoRefused ? "Their phone doesn't do video" : "Video is turned off";
   } else {
-    const on = connected ? call.camOn : camPref;
-    // Before a call it only matters for a video call, so it waits for the switch to be on Video.
+    // Before a call on Audio it isn't disabled: pressing the camera means you want video, so it
+    // switches the call to Video with the camera on (see its onclick).
     const audioBefore = !connected && type === "audio";
-    cam.disabled = !camAvailable || !videoAllowed || (phase === "connected" && !connected) || ringing || audioBefore;
-    cam.setAttribute("aria-pressed", String(camAvailable && videoAllowed && !on));
+    const on = connected ? call.camOn : camPref && !audioBefore;
+    cam.disabled = !camAvailable || !videoAllowed || (phase === "connected" && !connected) || ringing;
+    cam.setAttribute("aria-pressed", String(camAvailable && videoAllowed && !on && !audioBefore));
     setBtn(cam, camAvailable && on ? ICON.video : ICON.videoOff,
-      // What pressing it does, as on the mic button.
-      !videoAllowed ? "No video" : !camAvailable ? "No camera" : on ? "Turn camera off" : "Turn camera on");
+      // What pressing it does, as on the mic button: the video, whatever its source.
+      !videoAllowed ? "No video" : !camAvailable ? "No camera" : on ? "Stop video" : "Start video");
     cam.title = !videoAllowed ? "Video is turned off" : !camAvailable ? "No camera found"
       : ringing ? "Choose the camera with the Answer button"
-      : audioBefore ? "Switch to Video to use your camera"
-      : connected ? (on ? "Turn your camera off" : "Turn your camera on")
+      : audioBefore ? "Make it a video call, with your camera on"
+      : connected ? (on ? "Stop video: they'll see your initial" : "Start video: turn your camera on")
       : on ? "Video calls start with your camera on" : "Video calls start with your camera off";
   }
   $("camMenuBtn").disabled = !videoAllowed || ringing || (!connected && type === "audio");
@@ -1826,6 +1831,13 @@ $("muteBtn").onclick = () => {
 };
 $("camBtn").onclick = () => {
   if (call?.hasVideo) { setCamera(!call.camOn); return; }
+  if (!call && callType === "audio") {
+    // On Audio, the camera means you want a video call: switch to one, camera on.
+    camPref = true;
+    log("camera: switched to a video call, camera on");
+    setCallType("video");
+    return;
+  }
   if (!call) {
     // Before a call: whether a video call starts with your camera on.
     camPref = !camPref;

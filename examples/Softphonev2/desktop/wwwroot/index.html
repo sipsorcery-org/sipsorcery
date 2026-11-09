@@ -68,7 +68,7 @@
       <!-- Who the call is with and for how long; the chevron drops down the call's details. -->
       <div class="info" id="info" hidden>
         <button type="button" class="info-head" id="infoHead" aria-expanded="false" aria-controls="details" title="Show call details">
-          <span id="infoName"></span><span class="timer" id="timer"></span><span class="info-chevron" id="infoChevron"></span>
+          <span id="infoName"></span><span class="timer" id="timer"></span><span class="muted-pill" id="mutedPill" hidden></span><span class="info-chevron" id="infoChevron"></span>
         </button>
         <div class="details" id="details" hidden></div>
       </div>
@@ -154,7 +154,7 @@
   <section class="devpanel" id="devPanel" hidden aria-label="Diagnostics">
     <div class="dev-resize" id="devResize" title="Drag to resize" aria-hidden="true"></div>
     <div class="dev-bar">
-      <span class="dev-title">Diagnostics</span>
+      <h2 class="dev-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Diagnostics</h2>
       <div class="dev-tabs" role="tablist" aria-label="Diagnostics">
         <button type="button" class="dev-tab" role="tab" id="tabLog" data-tab="log" aria-controls="log" aria-selected="true">SIP log</button>
         <button type="button" class="dev-tab" role="tab" id="tabNet" data-tab="net" aria-controls="paneNet" aria-selected="false">Network</button>

@@ -105,9 +105,18 @@ Then open http://localhost:5179.
   - **Add video.** An audio call has an *Add video* button where Camera would be. It sends a
     re-INVITE with `m=video`. If their phone refuses (`m=video 0`, try *Lobby desk phone*),
     a notice says so and the call carries on as audio, with a disabled *No video* button.
-  - On a video call, *Turn camera off* / *Turn camera on* (the label says what pressing it
-    does, as in the desktop app) turns your camera off and on with no re-INVITE. Picking a
-    camera from its ▾ while it's off turns it on.
+  - On a video call, *Stop video* / *Start video* turns your camera off and on with no
+    re-INVITE. Picking a camera from its ▾ while it's off turns it on.
+  - Before a call (*No active calls*), a camera button says how video calls start. It's never
+    disabled just because the switch is on Audio: pressing it switches to Video with the camera
+    on, since that's what you meant. On Video it toggles whether calls start with the camera on
+    or off (kept between visits). Disabled only for *No camera* or *No video* (the account), and
+    then the button and the line beside it say so, not only the tooltip.
+  - **Mic and camera labels, two styles to compare** (Diagnostics' *Mic/camera labels* button,
+    or `?labels=state`): *action* says what pressing does (*Mute* / *Unmute*, *Stop video* /
+    *Start video*); *state* says how it is now (*Mic on* / *Mic off*, *Camera on* / *Camera
+    off*). Either way, off is soft red (End is the solid red), and while you're muted on the
+    selected call a red *You're muted* pill sits by its timer.
   - **With your camera off, video never stops**: they're sent a placeholder, your initial in a
     circle, and the self view shows it with "Camera off". So *their* camera being off looks like
     a picture of their initial (*Their camera off / on* in Diagnostics), not a missing video.

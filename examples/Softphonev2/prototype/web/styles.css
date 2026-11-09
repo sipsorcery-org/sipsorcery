@@ -12,6 +12,7 @@
   --accent-hover: #185a4a;
   --accent-ink: #ffffff;
   --accent-soft: #e2efe9;
+  --seg-on: #ffffff;   /* a segmented control's chosen option: raised, not coloured */
   --ok: #2f8a6c;
   --warn-bg: #fcf2e1;
   --warn-ink: #8a5a12;
@@ -44,6 +45,7 @@
     --accent-hover: #4bb594;
     --accent-ink: #06130f;
     --accent-soft: #1d3a31;
+    --seg-on: #33423c;
     --ok: #4cc29b;
     --warn-bg: #33291a;
     --warn-ink: #e6b86a;
@@ -171,13 +173,14 @@ svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-widt
 .dest-wrap { grid-area: 2 / 2; position: relative; min-width: 0; display: grid; }
 .dest-wrap input { width: 100%; }
 .call-buttons { grid-area: 2 / 3; display: flex; gap: 8px; }
-/* Audio | Video: what kind of call Call places. Two halves of one control; the chosen half is filled. */
-.call-type { display: inline-flex; flex: none; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
+/* Audio | Video: what kind of call Call places. Two halves of one control; the chosen half is a
+   raised neutral pill, so the accent green stays on the Call button, the one thing that acts. */
+.call-type { display: inline-flex; flex: none; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-3); }
 .call-type button { display: inline-flex; align-items: center; gap: 6px; padding: 0 11px; border: 0; border-radius: 7px; background: transparent;
   color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
 .call-type button svg { width: 15px; height: 15px; }
 .call-type button:hover:not(:disabled):not(.on) { color: var(--text); }
-.call-type button.on { background: var(--accent-soft); color: var(--accent); }
+.call-type button.on { background: var(--seg-on); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .12), 0 0 0 1px var(--border); }
 .call-type button:disabled { opacity: 0.45; cursor: not-allowed; }
 .call-type button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .btn-call { min-width: 118px; justify-content: center; }
@@ -528,6 +531,16 @@ svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-widt
 .tile-controls .control-row .btn.on { background: var(--accent-soft); }
 .tile-controls .control-row .btn.btn-danger { background: var(--danger-soft); }
 .control-row .btn.on.warn, .tile-controls .control-row .btn.on.warn { background: var(--warn-bg); border-color: var(--warn-ink); color: var(--warn-ink); }
+/* Your mic or camera off: red, soft (End is the solid red), so "they can't hear / see me" shows at a glance. */
+.control-row .btn.on.off, .tile-controls .control-row .btn.on.off { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger); }
+.control-row.precall { justify-content: center; flex-wrap: wrap; gap: 10px; }
+.control-row.precall .btn.on.off { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger); }
+.precall-note { font-size: 13px; color: var(--muted); }
+.muted-pill {
+  display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 999px;
+  background: var(--danger-soft); border: 1px solid var(--danger-border); color: var(--danger); font-size: 12px; font-weight: 600;
+}
+.muted-pill svg { width: 13px; height: 13px; }
 .tile-meta-sub.warn { color: var(--warn-ink); }
 
 .meta-toggle { color: var(--muted); gap: 6px; }

@@ -108,8 +108,10 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
 
 ## What works, and what doesn't yet
 
-- Audio and video calls both ways, with the desktop's controls: mic and camera on and off, the
-  device menus, self view, ringing, answer, decline, cancel, hang up, the SIP log (F12).
+- Audio and video calls both ways, with the desktop's controls (the same page, so they change
+  together): Mute / Unmute with the *You're muted* pill, Stop video / Start video, the camera
+  button switching an Audio call to Video before dialling, the device menus, self view,
+  ringing, answer, decline, cancel, hang up, the SIP log (F12).
 - **A call it can't take doesn't ring.** A browser can only answer a WebRTC offer, so an
   incoming offer with no DTLS-SRTP m-line (an ordinary SIP phone's RTP/AVP) is turned down
   before ringing: `488 Not Acceptable Here` with `Warning: 302 <host> "Incompatible transport

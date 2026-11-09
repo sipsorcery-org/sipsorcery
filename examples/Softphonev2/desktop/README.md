@@ -21,15 +21,19 @@ the desktop app, using the media design the video spike
 Under the stage, from the UX prototype (`prototype/web`), and there the whole time, not just
 during a call, so the microphone and camera can be set up first:
 
-- **Mic ▾**: Turn mic off or Turn mic on (the label says what pressing it does, as on the
-  camera button; amber while it's off). Before a call too: the call then starts with the mic
-  off, and the tooltip says so. The ▾ lists microphones and
+- **Mic ▾**: Mute or Unmute (the label says what pressing it does, as on the camera button;
+  soft red while muted, with a red *You're muted* pill by the call timer). Before a call too:
+  the call then starts muted, and the tooltip says so. The ▾ lists microphones and
   speakers; one picked between calls is used from the next call.
-- **Camera ▾**: on a video call, Turn camera on or Turn camera off (like the mic button, the
-  label says what pressing it does); on an audio call, Add video. Before a
-  call, whether a video call starts with your camera on, with the preview following; it's
-  disabled until the Audio | Video switch is on Video, and while a call is ringing (the Answer
-  button has its own choice). The ▾ lists cameras and, in diagnostics mode, the test pattern.
+- **Camera ▾**: on a video call, Stop video or Start video (what pressing it does, whatever
+  the source: the camera, or in diagnostics the test pattern; soft red while stopped, when
+  the placeholder is sent); on an audio call, Add video. Before a call, whether a video call
+  starts with your camera on, with the preview following. On Audio it isn't disabled:
+  pressing it switches to Video with the camera on, since that's what pressing a camera
+  means. Disabled only when video can't be had (No camera, No video, said on the button)
+  and while a call is ringing (the Answer button has its own choice). The ▾ lists cameras
+  and, in diagnostics mode, the test pattern.
+- **Audio | Video**: the chosen half is a raised neutral pill, so the green is only on Call.
 - **Text** (an icon, at the right beside Self view, since it's rarely used): opens the
   real-time text popover (T does too). During a call only.
 - **End**: Cancel while calling, End once connected.
@@ -163,7 +167,7 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   whose hand steps once per frame drawn (a dropped frame is a skipped tick), a clock to the
   millisecond (compare the far end's picture with this screen for the delay), the sender's
   name or address and a frame counter. Closing diagnostics (F12) goes back to the camera, but
-  turned off: the camera is only sent once you press Turn camera on, since it never starts by
+  turned off: the camera is only sent once you press Start video, since it never starts by
   itself. With no camera the placeholder is sent, as it would be anyway.
 - **Audio bars** (diagnostics mode), the Camera ▾'s other diagnostic source, sends your
   microphone's frequency bars as video, drawn like the audio-only view, with the microphone's
