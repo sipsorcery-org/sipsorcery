@@ -56,7 +56,12 @@ internal sealed class MainForm : Form
         _phone.Trace += text => { lock (_logFile) _logFile.WriteLine(text); };
         _phone.TxLostChanged += lost => Post(new { type = "media-health", txLost = lost });
         _phone.Quality += q => Post(new { type = "quality", q.Dir, q.Kind, q.LossPct, q.Lost, q.JitterMs, q.RttMs });
-        _phone.TextReceived += text => Post(new { type = "text", text });
+        _phone.TextReceived += text =>
+        {
+            // The log file only, and only how much: what they type stays out of the log.
+            lock (_logFile) _logFile.WriteLine($"{DateTime.Now:HH:mm:ss.fff} real-time text in: {text.Length} characters");
+            Post(new { type = "text", text });
+        };
         _phone.Details += d => Post(new
         {
             type = "details", d.Direction, d.Account, d.Signalling, d.TheirPhone, d.CallId, d.TheirMedia,

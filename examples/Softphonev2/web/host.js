@@ -85,16 +85,18 @@ function stateMessage() {
     registrationDetail: st.registrationDetail,
     account: acct ? `${acct.username}@${acct.domain}` : null, address: acct ? addressOf(acct) : null, me: displayName(),
     videoAllowed: true, incomingVideo: st.incomingVideo,
-    // Real-time text needs a data channel on WebRTC calls: not done yet.
-    text: st.call === "connected" ? "unavailable" : "off",
+    // Real-time text on a T.140 data channel (see below): off, adding (opening), on or refused.
+    text: st.call === "connected" ? text.state : "off",
     lossAudio: loss.audio, lossVideo: loss.video,
   };
 }
 
 function setCall(call, reason = null) {
   st.call = call;
+  if (call === "calling" || call === "ringing" || call === "ended") resetText();
   st.reason = call === "ended" ? reason : null;
   log(`call ${call} ${st.remote ?? ""} ${st.reason ?? ""}`.trimEnd());
+  if (call === "connected") updateText();
   if (pageReady) toPage(stateMessage());
 }
 
@@ -137,11 +139,11 @@ class PageMedia {
       this.theirOffer = null;
       const reply = fromPage("media-answer");
       toPage({ type: "media-offer", sdp: offer });
-      sdp = await reply;
+      sdp = withDcmap(await reply);
     } else {
       const reply = fromPage("media-offer-made");
       toPage({ type: "media-request", video: wantVideo });
-      sdp = await reply;
+      sdp = withDcmap(await reply);
       this.ourOffer = true;
     }
     return { body: sdp, contentType: "application/sdp" };
@@ -150,6 +152,93 @@ class PageMedia {
   async rollbackDescription() { this.ourOffer = false; this.theirOffer = null; }
   sendDtmf() { return false; }
   close() {}
+}
+
+// ---- Real-time text: a T.140 data channel (RFC 8865) on the page's connection ----
+//
+// On the desktop the host does text itself (an m=text stream on plain RTP calls, a data channel
+// on WebRTC ones), and the page sends and gets it as `text` messages. Here the page's connection
+// goes to the far end, so the channel is on it: the wrapper above adds one to every offer the
+// page makes, or to the answer to an offer that has one. It's a negotiated channel (no in-band
+// open) on the stream the SDP's dcmap gives (RFC 8864), which browsers don't write: withDcmap
+// adds it to what the page hands SIP.js. Messages are the T.140 text as strings: letters,
+// backspaces and line separators, as they're typed.
+
+const T140 = "t140";
+const T140_OFFER_STREAM = 1;   // any will do: both ends open it from the SDP
+const text = { state: "off", timer: 0 };
+
+// The stream of the T.140 channel on an SDP's active m=application line, or null.
+function findT140(sdp) {
+  if (!sdp) return null;
+  for (const section of sdp.split(/\r?\n(?=m=)/)) {
+    if (!/^m=application [1-9]/.test(section)) continue;
+    for (const m of section.matchAll(/^a=dcmap:(\d+) (.*?)\r?$/gm)) {
+      if (/(^|;)\s*subprotocol="t140"/i.test(m[2])) return Number(m[1]);
+    }
+  }
+  return null;
+}
+
+// The page's SDP with our T.140 channel's dcmap on its m=application line (if it has one).
+function withDcmap(sdp) {
+  const dc = pagePc?.t140;
+  if (!sdp || !dc?.negotiated || findT140(sdp) != null) return sdp;
+  const eol = sdp.includes("\r\n") ? "\r\n" : "\n";
+  const lines = sdp.split(/\r?\n/);
+  const start = lines.findIndex((l) => /^m=application [1-9]/.test(l));
+  if (start < 0) return sdp;
+  let end = lines.findIndex((l, i) => i > start && l.startsWith("m="));
+  if (end < 0) end = lines.length;
+  while (end > start + 1 && lines[end - 1] === "") end--;
+  lines.splice(end, 0, `a=dcmap:${dc.id} label="${T140}";subprotocol="${T140}"`);
+  return lines.join(eol);
+}
+
+function useT140(pc, dc) {
+  pc.t140 = dc;
+  dc.onopen = () => updateText();
+  dc.onclose = () => { if (pc === pagePc && text.state === "on") log("the T.140 data channel closed"); };
+  dc.onmessage = (e) => {
+    if (pc !== pagePc || st.call !== "connected") return;
+    const chars = typeof e.data === "string" ? e.data : new TextDecoder().decode(e.data);
+    log(`real-time text in: ${chars.length} characters`);
+    toPage({ type: "text", text: chars });
+  };
+}
+
+function setText(state, why) {
+  if (text.state === state) return;
+  text.state = state;
+  if (state !== "adding") { clearTimeout(text.timer); text.timer = 0; }
+  if (why) log(why);
+  sendState();
+}
+
+// Moves text on as the call does: their SDP agrees or not, the channel opens, or it doesn't.
+function updateText() {
+  if (st.call !== "connected" || text.state === "on" || text.state === "refused") return;
+  const pc = pagePc, dc = pc?.t140;
+  if (!dc) return setText("refused", "they didn't offer text (no T.140 data channel in their SDP)");
+  if (pc.remoteDescription && !pc.t140Agreed) return setText("refused", "they didn't take text (no T.140 data channel in their SDP)");
+  if (pc.t140Agreed && dc.readyState === "open") return setText("on", `real-time text on (RFC 8865, T.140 data channel on stream ${dc.id})`);
+  if (text.state !== "adding") {
+    setText("adding");
+    text.timer = setTimeout(() => {
+      if (text.state === "adding") setText("refused", "the T.140 data channel didn't open: no text on this call");
+    }, 10000);
+  }
+}
+
+function resetText() {
+  clearTimeout(text.timer);
+  text.timer = 0;
+  text.state = "off";
+}
+
+function sendText(chars) {
+  const dc = pagePc?.t140;
+  if (text.state === "on" && dc?.readyState === "open") dc.send(chars);
 }
 
 // ---- Call quality: their RTCP reports, from the browser's stats ----
@@ -166,6 +255,21 @@ window.RTCPeerConnection = class extends NativeRTCPeerConnection {
   constructor(...args) {
     super(...args);
     pagePc = this;
+    this.t140 = null;          // the T.140 data channel, once there is one
+    this.t140Agreed = false;   // their SDP has it too (or they opened it in band)
+    // A far end that opens its T.140 channel in band (DCEP) rather than in the SDP.
+    this.addEventListener("datachannel", (e) => {
+      if (this.t140 || e.channel.protocol.toLowerCase() !== T140) return;
+      useT140(this, e.channel);
+      this.t140Agreed = true;
+      updateText();
+    });
+  }
+
+  // Our offer: a T.140 channel goes in it, so the browser writes an m=application line.
+  async createOffer(...args) {
+    if (!this.t140) useT140(this, this.createDataChannel(T140, { negotiated: true, id: T140_OFFER_STREAM, protocol: T140 }));
+    return super.createOffer(...args);
   }
 
   // Each sender gets the simulated loss transform as it's made (see below): calling out, by
@@ -177,8 +281,16 @@ window.RTCPeerConnection = class extends NativeRTCPeerConnection {
   }
 
   async setRemoteDescription(...args) {
+    // Their offer's T.140 channel, on the stream it says, before the answer is made.
+    const desc = args[0];
+    const theirs = findT140(desc?.sdp);
+    if (desc?.type === "offer" && !this.t140 && theirs != null) {
+      useT140(this, this.createDataChannel(T140, { negotiated: true, id: theirs, protocol: T140 }));
+    }
     await super.setRemoteDescription(...args);
     this.getTransceivers().forEach(addLossTransform);
+    if (this.t140?.negotiated) this.t140Agreed = theirs != null && theirs === this.t140.id;
+    updateText();
   }
 };
 
@@ -614,7 +726,10 @@ async function onPageMessage(msg) {
       setLoss(msg.audio, msg.video);
       break;
     case "text":
+      sendText(msg.text);
+      break;
     case "add-text":
+      // Text goes in every call's SDP; there's no adding it to one that doesn't have it.
       break;
   }
 }

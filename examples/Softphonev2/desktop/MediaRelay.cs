@@ -94,7 +94,7 @@ public sealed class MediaRelay : IDisposable
     /// </summary>
     public static RTPSession CreateSipSession(bool offerVideo = true, bool webRtc = false)
     {
-        RTPSession rtp = webRtc ? new RTCPeerConnection() : new RTPSession(false, false, false);
+        RTPSession rtp = webRtc ? new TextPeerConnection() : new RTPSession(false, false, false);
         rtp.addTrack(new MediaStreamTrack(new List<AudioFormat>
         {
             new(111, "OPUS", 48000, 2, "minptime=10;useinbandfec=1"),

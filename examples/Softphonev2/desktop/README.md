@@ -65,10 +65,12 @@ added.
 
 ## Real-time text
 
-Every call offers real-time text (RFC 4103: T.140 inside RED, with plain T.140 as the
-fallback) unless `--no-text`. Unlike audio and video it isn't relayed to the page's
-connection: the host's `RttEndPoint` sends and receives it, and the page swaps `text`
-messages with the host.
+Every call offers real-time text unless `--no-text`: on plain RTP calls an `m=text` stream
+(RFC 4103: T.140 inside RED, with plain T.140 as the fallback), on WebRTC calls a T.140 data
+channel (RFC 8865, below). Unlike audio and video it isn't relayed to the page's connection:
+the host sends and receives it (`RttEndPoint` for RTP, `TextPeerConnection` for the data
+channel), and the page swaps `text` messages with the host either way, so the popover is the
+same on both.
 
 - **Yours goes when you send it**, with the Send button in the entry box or Enter: the
   whole line, then a T.140 line separator (U+2028). Nothing is sent while you type. The first
@@ -89,8 +91,18 @@ messages with the host.
   (`m=text` with port 0) it says their phone doesn't support real-time text; with no answer in
   8 s, the same. Either side adding text starts it when their SDP agrees.
 - A new call starts an empty conversation.
-- **Calls with browser phones** have no text yet: the popover says "Text isn't available on calls
-  with browser phones yet." Text there will go over a data channel (RFC 8865) later.
+- **WebRTC calls** (browser phones, and every call with `--webrtc`) carry text on a data
+  channel, as RFC 8865 has it: `m=application … UDP/DTLS/SCTP webrtc-datachannel` with
+  `a=dcmap:1 label="t140";subprotocol="t140"`. The channel is agreed in the SDP (RFC 8864), so
+  both ends open it on that stream with no in-band DCEP open; an offer of ours uses stream 1,
+  an answer the stream their offer gives. Each message is T.140 text as a UTF-8 string, sent
+  as it would be on RTP but with no RED (the channel is reliable and ordered). The SIP leg's
+  `RTCPeerConnection` is a `TextPeerConnection`, which adds the dcmap to the SDP
+  `RTCPeerConnection` writes (it keeps one it's given, but doesn't write its own). While the
+  channel opens the popover says "Asking …'s phone to add text…" (a fraction of a second); an
+  answer or offer with no T.140 channel, or one that doesn't open in 10 s, shows "…'s phone
+  doesn't support real-time text". A far end that opens a `t140` channel in band instead is
+  taken too. There's no *Add text* here: a WebRTC call has text from the start or not at all.
 
 ## Browser phones (WebSocket)
 
@@ -333,7 +345,7 @@ Switches, mostly for testing:
 | `--loss-audio <percent>`, `--loss-video <percent>` | Start with the Network tab's loss sliders at these values. |
 | `--ws-port <n>` | SIP over WebSocket port for browser phones (default 8081, 0 for none). |
 | `--webrtc` | Calls we place use WebRTC media whatever the transport, for browsers registered with a server. A plain SIP phone won't take them. (Will be per account.) |
-| `--no-text` | No real-time text: it's left out of offers and answers, so the other side adding it is turned down. (Will be per account.) |
+| `--no-text` | No real-time text: it's left out of offers and answers (no `m=text`, and on WebRTC calls no T.140 data channel), so the other side adding it is turned down. (Will be per account.) |
 | `--say <text>` | Once text is up on a call, send this message. |
 | `--no-video` | No video at all: the switch is locked to Audio, and video offers or Add video from the other side are turned down. (Will be the per-account "Video calls" setting.) |
 | `--camera-off` | Start with the Camera button off, so calls and answers start with the camera off. |
@@ -390,6 +402,11 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Same, callee: Text icon, types "Hi A", Enter, then clicks the video | The popover opens over the stage (the video keeps its size) with both messages; the click closes it. The caller gets a "B Hi A" toast. |
 | Caller: Text icon, then Esc | The popover opens with the conversation; Esc closes it and focuses the Text icon. |
 | Audio call, caller types "Hi from A" | No "Audio only" label. Nothing reaches the callee while the caller types; on Enter the callee gets the toast and the dot. |
+| `--webrtc` call, caller `--say hello`, to `--auto-answer --say hello` | Both offer and answer have `a=dcmap:1 label="t140";subprotocol="t140"` on `m=application`. Both log "real-time text agreed", then 0.3 s later "real-time text on (RFC 8865, T.140 data channel on stream 1)", and each gets the other's message ("real-time text in: 7 characters": BOM, "hello", U+2028). |
+| Same, callee `--no-text` | The callee's answer has `m=application` but no dcmap; the caller logs "they didn't take text (no T.140 data channel in their SDP)" and stays at refused, though its own negotiated channel opens when SCTP comes up. |
+| Same, caller `--add-video 4` | Text on, then the re-INVITE (with the dcmap again) adds video; text stays on. |
+| Plain RTP call, both `--say` (after the data channel work) | "real-time text on (RFC 4103)" both ends, and each message arrives. |
+| Web softphone dials it (`server=`), both saying something | Both log "real-time text on (RFC 8865 …)"; each popover has both messages. See the web README. |
 | Caller with `--no-text`; callee: Text, then Add text to this call | "Text isn't set up on this call" with the button; after it, "Asking … to add text", then within 2 s "…'s phone doesn't support real-time text" (their answer has `m=text` with port 0). |
 | Video call to `--auto-answer` | The caller's panel shows the callee's RTCP: no loss, jitter under 1 ms, round trip about 0.3 ms, MOS 4.4. |
 | Network tab: Audio loss 12%, Video loss 20%, then F12 to close diagnostics | Both sliders back to 0% and the tab's red dot gone; the host is told loss 0/0. (Checked in the web page, which runs the same script.) |
@@ -425,7 +442,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Browser (SIP.js 0.16 in Edge, fake media) registers as `web`, dials `sip:desktop@localhost`; desktop `--auto-answer` | INVITE over `ws`, answered with an `RTCPeerConnection`; "WebRTC media (ICE, DTLS) connected" 0.2 s later. Each side shows the other's video; the browser receives 30 fps (640×360, then 1280×720) and audio with no loss. ↑ MOS 4.4. |
 | Desktop dials `web` (with the old test registrar, since removed) | INVITE to the browser's `.invalid;transport=ws` Contact down its WebSocket; 200, ACK, media both ways. |
 | Browser call, info bar's chevron (diagnostics) | "Media encrypted (SRTP); SIP not (WS)", their phone `SIP.js/0.16.0`. |
-| Browser call, Text icon | The popover says text isn't available on calls with browser phones. |
+| Browser call, Text icon | Before the T.140 data channel: the popover said text isn't available on calls with browser phones. Now text is on there (rows above). |
 | Two copies over UDP, caller `--webrtc --video`, callee `--auto-answer` | The offer is `UDP/TLS/RTP/SAVP`; the callee answers with an `RTCPeerConnection` too. ICE and DTLS connected in 0.3 s, video both ways (640×360), BYE: "You hung up" / "They hung up". The same without `--webrtc`: RTP/AVP and real-time text as before. |
 | Local sipsorcery-servers2: desktop on a guest account (`Server: localhost`, UDP) and a browser on another, both ways | Browser → desktop: the INVITE arrives over UDP with a WebRTC offer and is answered with WebRTC media. Desktop `--webrtc` → browser: through the proxy to its WebSocket. Both connect in about 0.2 s with video both ways (see ../web for details). |
 | Calling a stand-in callee that answers `488` + `Warning: 302 … "Incompatible transport protocol"`, then 486 | The first INVITE offers RTP/AVP; 0.2 s after the 488, a second offers `UDP/TLS/RTP/SAVP`. Ends with "486 Busy Here". |
@@ -443,6 +460,12 @@ brand, calls across NAT, or the real camera and microphone in this app (the spik
 camera).
 
 ## Things learned building it
+
+- **A negotiated data channel opens whether or not the far end has one.** With `negotiated`
+  and an `id` there's no DCEP open and no ack: SIPSorcery (and browsers) call the channel open
+  as soon as SCTP is up. So real-time text on a WebRTC call counts as on only when their SDP has
+  the matching `a=dcmap`; the channel opening isn't enough. (A `--no-text` callee showed it:
+  its answer had `m=application` without a dcmap, and the caller's channel opened anyway.)
 
 - **Each end of a SIP call may send a different codec.** In the softphone test, A sent Opus and
   B sent G722, both from the list the two sides had agreed. So the page's connection offers every

@@ -120,8 +120,17 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   call again with WebRTC. SIP.js would normally send 180 before the page sees the INVITE, so
   `sendInitialProvisionalResponse` is off and the page sends the 180 itself once the offer is
   fine. An INVITE with no SDP rings as usual: our offer goes in the 200.
-- **Not yet:** reconnecting when the WebSocket drops (the chip goes red and stays red until a reload), real-time text (the popover says it isn't available; it'll be a data channel),
-  and adding video to an audio call (refused either way).
+- **Real-time text** goes on a T.140 data channel on the page's own connection (RFC 8865; the
+  desktop does the same on its WebRTC calls, see its README). The `RTCPeerConnection` wrapper
+  adds a negotiated `t140` channel on stream 1 before the page makes an offer, or, for an offer
+  with `a=dcmap:<n> …subprotocol="t140"`, on stream *n* before the page answers. Browsers don't
+  write a dcmap, so `PageMedia` adds `a=dcmap:<n> label="t140";subprotocol="t140"` to the
+  page's `m=application` line on its way to SIP.js. The page's `text` messages go out on the
+  channel as strings and what arrives comes back as `text` messages, so the popover is the
+  desktop's. The state the page sees: adding while the channel opens, on once it's open and
+  their SDP has the dcmap, refused if it doesn't (or the channel doesn't open in 10 s).
+- **Not yet:** reconnecting when the WebSocket drops (the chip goes red and stays red until a reload),
+  adding text to a call that started without it, and adding video to an audio call (refused either way).
 - **Simulated loss** (F12, Network) drops frames rather than packets. The desktop host drops RTP
   packets on the SIP leg, but a page can't reach RTP packets, so `host.js` puts an encoded
   transform (`RTCRtpScriptTransform`, in a worker) on each sender that drops that share of the
@@ -164,6 +173,10 @@ microphone, both on one PC.
 | Web `server=ws://localhost:8095&diag=1&call=video&video=test&dial=desktop`, desktop `--fake-media --auto-answer --test-pattern`; Network sliders to 10% mid-call, then 0% | Web log: "dropped 27 of 250 audio frames, 15 of 151 video frames in 5 s" and so on. The desktop receives 44–45 audio pkt/s instead of 50, with concealment climbing, and 14–17 fps video instead of 30; its page asks for keyframes (55, then 75 PLIs). Their RTCP still says 0% loss. Back to 0%: 30 fps and 50 pkt/s again. |
 | Web dials the desktop (`server=`), then reloads mid-call | The page hangs up as it unloads: the desktop gets a BYE ("They hung up") and answers the reloaded page's new call at once. Before, the page sent no BYE: the desktop stayed in a call with closed media and turned every new call down with 486. |
 | Web dials the desktop (`server=`), then its `RTCPeerConnection` is closed with no BYE | The desktop logs "WebRTC media (ICE, DTLS) closed", hangs up a second later ("Media connection closed") and its BYE reaches the page over its WebSocket connection (200 OK; web "They hung up"). Before, it stayed in the call, and its BYEs, End button's included, went to the page's `.invalid` Contact and never arrived. |
+| Headless Edge (fake devices), `server=ws://localhost:8291&diag=1&dial=desktop&say=hi_from_web`, desktop `--auto-answer --say hi_from_desktop` | The offer's `m=application` has `a=dcmap:1 label="t140";subprotocol="t140"`, and so does the desktop's answer. Web log: "real-time text on (RFC 8865, T.140 data channel on stream 1)" 40 ms after connecting, then "real-time text in: 17 characters"; the popover shows "You: hi_from_web" and "Desktop: hi_from_desktop". The desktop logs text on and "real-time text in: 13 characters". |
+| Same, desktop `--no-text` | Its answer has `m=application` but no dcmap: web "they didn't take text (no T.140 data channel in their SDP)", and the popover says their phone doesn't support it. |
+| Answering: in the page, a plain `RTCPeerConnection` offers a negotiated `t140` channel on stream 3 (dcmap added) to the wrapped one | The wrapper opens stream 3 before answering, the answer keeps `m=application`, it counts as agreed, and "abc" + U+2028 arrives on it. (A real incoming call with text isn't checked: `server=` takes no calls, and it'd need the desktop to call a registered browser.) |
+| In the browser pane (microphone blocked) | The call connects but the page's answer fails, "Incompatible send direction" (its offer is receive-only audio; nothing to do with text), so no media and no text: the T.140 channel times out after 10 s and shows refused. Use a browser with a microphone, or fake devices. |
 | The desktop without `--webrtc` dials it (RTP/AVP offer) | Turned down with 488 + Warning 302 + SDP, no 180 from the browser ("turned down a call from … its offer isn't WebRTC"). The local app server sends its own 180 when it starts dialling, and passes on only the 488's status, so the desktop doesn't retry yet. |
 
 Not tested yet: a real Turnstile site key and secret, a wrong password, the live sipsorcery.com
