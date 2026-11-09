@@ -13,6 +13,7 @@
 // "Add video" asks the far end for one (a SIP re-INVITE), and the host then sends a new offer.
 
 import { initAccounts, onAccountsState, onAccountMessage } from "./accounts.js";
+import { prefs, savePref, initSettings } from "./settings.js";
 
 const $ = (id) => document.getElementById(id);
 const post = (msg) => chrome.webview.postMessage(msg);
@@ -57,9 +58,17 @@ let videoRefused = false;  // the far end turned video down on this call
 let callType = "audio";
 const params = new URLSearchParams(location.search);
 if (params.get("call") === "video") callType = "video";          // --video (testing)
-// Whether calls start with your camera on: the Camera button before a call (--camera-off starts
-// it off). The Answer button's ▾ can override it for one call.
-let camPref = params.get("camera") !== "off";
+// Whether calls start with your camera on: the Camera button before a call, and Settings.
+// Remembered (see setCamPref); --camera-off starts it off. The Answer button's ▾ can override it
+// for one call.
+let camPref = params.get("camera") === "off" ? false : prefs.camOn !== false;
+// A choice you made (the Camera button, a camera picked, Settings) is kept for next time.
+function setCamPref(on) {
+  camPref = on;
+  if (on) cameraInUse = false;   // a fresh try, because you asked
+  savePref("camOn", on);
+  log(`calls start with camera ${on ? "on" : "off"}`);
+}
 const testAddVideo = Number(params.get("addvideo")) || 0;        // --add-video <s> (testing)
 const testSay = params.get("say") ?? "";                           // --say <text> (testing)
 
@@ -1638,11 +1647,7 @@ async function pickDevice(key, id, forAnswer = false) {
 // where it's only the choice for Add video.
 async function cameraOnForPick() {
   if (call?.hasVideo) { if (!call.camOn) await setCamera(true); }
-  else if (!call && !camPref) {
-    camPref = true;
-    cameraInUse = false;
-    log("calls start with camera on");
-  }
+  else if (!call && !camPref) setCamPref(true);
 }
 
 // A new microphone replaces the old one in place: same mute state, and on a call the audio
@@ -1653,7 +1658,7 @@ async function pickMic(id) {
   if (!localTrack("audio")) { log(`microphone for calls: ${id}`); return; }   // opens with the next call
   let fresh;
   try {
-    fresh = (await navigator.mediaDevices.getUserMedia({ audio: { ...MIC_CONSTRAINTS, deviceId: { exact: id } } })).getAudioTracks()[0];
+    fresh = (await navigator.mediaDevices.getUserMedia({ audio: { ...MIC_CONSTRAINTS, ...(id ? { deviceId: { exact: id } } : {}) } })).getAudioTracks()[0];
   } catch (err) {
     log(`microphone unavailable: ${err.name} ${err.message}`);
     return;
@@ -1700,6 +1705,7 @@ let selfViewOn = true;
 try { selfViewOn = localStorage.getItem("selfView") !== "off"; } catch { /* storage unavailable */ }
 function toggleSelfView() {
   selfViewOn = !selfViewOn;
+  settings?.refresh();
   try { localStorage.setItem("selfView", selfViewOn ? "on" : "off"); } catch { /* storage unavailable */ }
   log(`self view ${selfViewOn ? "on" : "off"}`);
   render();
@@ -1838,16 +1844,14 @@ $("camBtn").onclick = () => {
   if (call?.hasVideo) { setCamera(!call.camOn); return; }
   if (!call && callType === "audio") {
     // On Audio, the camera means you want a video call: switch to one, camera on.
-    camPref = true;
+    if (!camPref) setCamPref(true);
     log("camera: switched to a video call, camera on");
     setCallType("video");
     return;
   }
   if (!call) {
     // Before a call: whether a video call starts with your camera on.
-    camPref = !camPref;
-    if (camPref) cameraInUse = false;   // a fresh try, because you asked
-    log(`calls start with camera ${camPref ? "on" : "off"}`);
+    setCamPref(!camPref);
     render();
     return;
   }
@@ -1864,7 +1868,9 @@ chrome.webview.addEventListener("message", async (e) => {
       // The microphone closes when a call ends. (Not on every render while idle: Call opens it
       // a moment before the host says the call has started.)
       const ended = (msg.call === "ended" || msg.call === "idle") && msg.call !== state.call;
+      const ringing = msg.call === "ringing" && state.call !== "ringing";
       state = msg;
+      if (ringing && prefs.autoAnswer) autoAnswer();
       if (!lossLoaded) {
         lossLoaded = true;
         $("lossAudio").value = msg.lossAudio ?? 0;
@@ -1891,6 +1897,46 @@ chrome.webview.addEventListener("message", async (e) => {
 });
 
 initAccounts({ post, log });
+// Settings' "Answer calls automatically": after a second, with the camera off (it's never opened
+// without you asking), as if you'd picked Camera off from Answer ▾ and pressed Answer.
+function autoAnswer() {
+  setTimeout(() => {
+    if (state.call !== "ringing" || !prefs.autoAnswer) return;
+    log("answering automatically, camera off");
+    closeMenu();
+    answerCamera = false;
+    openMic();
+    post({ type: "answer" });
+  }, 1000);
+}
+
+// ---- Settings (settings.js), from the gear in the top bar ----
+const settings = initSettings({
+  log,
+  devices,
+  // The same as picking from the ▾ menus, except a camera picked here doesn't turn the camera
+  // on: if it's open it switches, otherwise it's the one the next video call opens.
+  async pickDevice(key, id) {
+    if (key === "mic") await pickMic(id);
+    else if (key === "speaker") await pickDevice("speaker", id);
+    else if (key === "camera") {
+      devices.camera = id;
+      saveDevices();
+      log(`camera for calls: ${id || "system default"}`);
+      if (videoSource === "camera" && localTrack("video")) setVideoSource("camera", true);
+    }
+    render();
+  },
+  camPref: () => camPref,
+  setCamPref(on) { setCamPref(on); syncCamera(); render(); },
+  selfView: () => selfViewOn,
+  setSelfView(on) { if (on !== selfViewOn) toggleSelfView(); },
+  diagnostics: () => !$("devPanel").hidden,
+  setDiagnostics,
+  // Who you are: the account, or with none, the address others can call you on.
+  account: () => state.account || (state.address ? `No account · ${state.address}` : null),
+});
+
 render();            // the UI straight away, before the microphone is open
 await openDevices();
 render();

@@ -741,6 +741,8 @@ const doc = new DOMParser().parseFromString(await (await fetch(new URL("index.ht
 for (const link of doc.head.querySelectorAll("link[rel=stylesheet]")) document.head.append(link);
 for (const node of [...doc.body.childNodes]) if (node.nodeName !== "SCRIPT") document.body.append(document.adoptNode(node));
 document.title = "SIPSorcery Softphone (web)";
+// For the page's Settings: what's the desktop's (its account management) and what's ours.
+document.documentElement.dataset.host = "web";
 
 // The Network tab's note is the desktop's, about packets on the SIP leg: say what loss does here.
 const lossNote = document.querySelector(".loss-note");
