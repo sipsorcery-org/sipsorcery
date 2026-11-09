@@ -896,10 +896,7 @@ namespace SIPSorceryMedia.FFmpeg
 
                         if (error == 0)
                         {
-                            //TracePacket(pPacket, "hevc_mp4toannexb");
-
-                            // TODO: Work out how to use the FFmpeg H264 bit stream parser to extract the NALs.
-                            // Currently it's being done in the RTPSession class.
+                            //TracePacket(packet, "hevc_mp4toannexb");
 
                             // The packet data belongs to FFmpeg and is only valid until the unref below, so it is
                             // written to the sink here, synchronously, and the span is never stored.
