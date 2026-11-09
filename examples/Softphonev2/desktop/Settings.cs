@@ -11,10 +11,10 @@ public sealed class AccountSettings
 }
 
 /// <summary>
-/// The prototype's whole configuration: the SIP port and an optional account to register with.
+/// The prototype's configuration: the SIP port, testing switches, and optionally an account.
 /// Read from <c>softphone.json</c> (path given with <c>--config</c>, otherwise next to the exe).
-/// There's no settings UI yet, and the password is stored in plain text; the real app will
-/// keep accounts in its store with the password protected by DPAPI.
+/// Accounts are managed in the app and kept in <see cref="AccountStore"/> with their passwords
+/// protected by DPAPI; the account here only seeds that store, once per profile.
 /// </summary>
 public sealed class Settings
 {

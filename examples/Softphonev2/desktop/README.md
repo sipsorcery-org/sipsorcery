@@ -4,8 +4,8 @@ A minimal Windows softphone that makes or takes **one SIP video call**. It is th
 the desktop app, using the media design the video spike
 ([../spikes/VideoPipeline](../spikes/VideoPipeline/RESULTS.md)) picked: the **relay**.
 
-- **C# (this project)** does SIP with SIPSorcery: the transport, an optional registration, and
-  one call (dial, answer, decline, cancel, hang up).
+- **C# (this project)** does SIP with SIPSorcery: the transport, a registration for each SIP
+  account (see [SIP accounts](#sip-accounts)), and one call (dial, answer, decline, cancel, hang up).
 - **The page** (`wwwroot`, shown in WebView2) does all the media: it captures the camera and
   microphone, does echo cancellation, encodes, decodes (in hardware where it can) and renders.
 - **`MediaRelay`** joins the two. Once a call connects, it creates a local `RTCPeerConnection` to
@@ -299,6 +299,52 @@ the far end's RTCP reports (every 5 s or so) and ↓ Received is measured here, 
 estimate is and isn't, and where each number comes from (as above). The panel had a footnote
 saying this, but there's no room for it there; for now the tooltips carry it.
 
+## SIP accounts
+
+The accounts this phone registers with and calls from are managed in the app, as in the UX
+prototype's *Call from* and *Manage accounts* (`prototype/web`). Every enabled account registers
+at once; *Call from* picks the one calls go out from.
+
+- **Call from**, at the left of the dial bar: the enabled accounts, plus *No account (direct)*
+  for calls straight to an IP address or host. The dot is the chosen account's registration:
+  green registered, amber registering, red failed, grey not registering. Its tooltip says why
+  it failed, and so does the Ready card ("alice@… isn't registered: Wrong username or
+  password (401 Unauthorised)"). The choice is remembered, *No account* included.
+- **Manage accounts** (the people icon beside it) opens the Accounts view over the stage; a call
+  carries on underneath, and a ringing call hides the view (the icon brings it back, with
+  what you'd typed). The icon turns red with an alert while any enabled account has failed,
+  and its tooltip names them. The view starts on a table of every account and its status;
+  clicking one opens its form. `Esc` steps back: form, then table, then closed.
+- **The form**: account name (blank: user@server), display name (shown to people you call, and
+  used for the camera-off placeholder), username, server (`host`, `host:port`, or a SIP URI
+  such as `sip:host;transport=tcp`), auth username (if not the username), password, *Register*,
+  and expiry (60–7200 s, default 300). Transport, outbound proxy, STUN, SRTP and DTMF from the
+  prototype aren't there yet: the host doesn't do them per account. *Re-register* registers
+  again now; the *Enabled* switch turns the account off (unregistered, not offered in Call
+  from) without losing it; *Remove account* asks for a second click.
+- **What changes registration**: a new or enabled account registers; a removed or disabled one
+  unregisters (REGISTER with Expires: 0); a change to the username, server, auth username,
+  password, expiry or *Register* registers again (unregistering the old address only if the
+  address changed). A new name or display name leaves the registration alone.
+- **Failures in plain words**: 401/403/407 "Wrong username or password", 404 "*server* doesn't
+  know the user *x*", DNS failure "Can't find the server *x*", no response "No answer from
+  *x*", each followed by the server's own status line. A temporary failure says "Retrying…".
+- **Calls** go out from the chosen account: From is its display name and `user@server`, and its
+  credentials answer the server's challenge. A bare number or name is dialled at its server.
+  An incoming call is matched to the account in its To header (user and domain), which Call
+  details shows ("Incoming · alice@…").
+
+**Where they're kept**: `%LOCALAPPDATA%\SIPSorcery\Softphonev2\accounts-<profile>.json`, one file
+per `--profile`, so test copies each have their own. Passwords are encrypted with DPAPI for
+the current Windows user (`protectedPassword`); the page never sees them, only whether one is
+saved, so the password box is blank with "Saved: leave blank to keep it". A file from another
+user or PC loads with blank passwords, and the log says to enter them again.
+
+**The config file's account is a seed.** `softphone.json` (or `--config`) can still have an
+`account`. The first time a profile sees it, it's added to that profile's accounts (named by
+`user@server`); after that it's an account like any other, and removing it in the app keeps it
+removed. The file remembers which config accounts it has already added (`seeded`).
+
 ## Running it
 
 ```bash
@@ -324,15 +370,15 @@ DevTools; Ctrl+Shift+I still does, for working on the page.
 
 The address in the header reads e.g. `No account · sip:192.168.1.20:5070`; click it to copy it for the other side to
 dial. It's the address this PC uses to reach the internet (which works from this PC too) and the
-UDP SIP port. With an account it copies the account's address. To register with a server, copy
-`softphone.sample.json` to `softphone.json` next to the exe and fill it in. The password is stored
-in plain text for now.
+UDP SIP port. With an account chosen in Call from it copies that account's address. To register
+with a server, add an account with Manage accounts (see [SIP accounts](#sip-accounts)), or seed one
+from `softphone.json` (copy `softphone.sample.json` next to the exe and fill it in).
 
 Switches, mostly for testing:
 
 | Switch | What it does |
 |---|---|
-| `--config <file>` | Use another settings file. |
+| `--config <file>` | Use another settings file. Its `account` seeds the profile's accounts once. |
 | `--port <n>` | SIP port (default 5060). |
 | `--profile <name>` | Names the WebView2 profile and log file (default `default`). If another running copy already has that profile, the next free `name-2`, `name-3`… is used. |
 | `--fake-media` | Chromium's fake camera and microphone (a test pattern and a beep). |
@@ -384,6 +430,10 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 
 | Test | Result |
 |---|---|
+| Accounts, against a stand-in SIPSorcery registrar with digest auth on 127.0.0.1:5070 (`--profile accttest --fake-media --diagnostics --auto-answer`, a config with alice) | First start: alice seeded from the config, stored with a DPAPI password, registered. Bob added in the form with a wrong password: "Not registered: Wrong username or password (401 Unauthorised)", Manage accounts red. Password fixed: registered. An account with auth username carol registered as dave. `nosuch.invalid`: "Can't find the server nosuch.invalid (DNS lookup failed)". |
+| Calls from accounts, same set-up | Call from Bob to `echo`: the server saw From `"Bob B" <sip:bob@127.0.0.1:5070>`, authenticated as bob. Call from alice to `callback`: the server called alice's contact back (To alice), auto-answered, Call details "Incoming · alice@127.0.0.1:5070". |
+| Account changes and restarts | Restart: all three accounts back, registered, the seed not added twice. Rename: no REGISTER. Disable Bob, remove Dave: each unregistered (Expires: 0). Re-register: one new REGISTER, no unregister racing it. *No account (direct)* still chosen after a restart. Closing the app unregisters every account. |
+| Web softphone (`web/index.html?api=stub`) with the same page | No Call from or Accounts view; its own sign-in as before; no console errors. |
 | Video call, `--test-pattern` to `--fake-media` | Both ways at 30 fps; the callee shows the pattern with the caller's clock, and the caller's self view shows it unmirrored. |
 | Same, Camera off, Camera on, then diagnostics off | Off: placeholder at 5 fps; on: pattern back at 30 fps; diagnostics off: the pattern stops, the placeholder is sent, the self view says "Camera off" and the button "Turn camera on". The camera only opens when that's pressed. |
 | Control bar, idle | Turn mic off ▾, Camera ▾ and a disabled End. Camera ▾ lists the fake camera and, with diagnostics on, Test pattern; the mic ▾ lists three fake microphones and three speakers. |

@@ -12,6 +12,8 @@
 // The Audio | Video switch beside Call picks the kind of call. An audio call has no video line;
 // "Add video" asks the far end for one (a SIP re-INVITE), and the host then sends a new offer.
 
+import { initAccounts, onAccountsState, onAccountMessage } from "./accounts.js";
+
 const $ = (id) => document.getElementById(id);
 const post = (msg) => chrome.webview.postMessage(msg);
 
@@ -1339,6 +1341,9 @@ function render() {
     case "idle":
       title.textContent = "Ready";
       sub.textContent = "Type an address above to start a call.";
+      // Desktop: say why the account calls go out from isn't registered (Manage accounts has more).
+      if (state.accounts && state.registration === "failed")
+        sub.textContent = `${state.account} isn't registered: ${state.registrationDetail || "no reason given"}.`;
       break;
     case "calling":
       title.textContent = remote;
@@ -1868,7 +1873,9 @@ chrome.webview.addEventListener("message", async (e) => {
       }
       if (ended) closeMic();
       render();
+      onAccountsState(msg);
     }
+    else if (msg.type === "account-saved" || msg.type === "account-error") onAccountMessage(msg);
     else if (msg.type === "media-offer") await onMediaOffer(msg.sdp);
     else if (msg.type === "media-request") await onMediaOffer(null, !!msg.video);
     else if (msg.type === "media-remote-answer") await onMediaAnswer(msg.sdp);
@@ -1883,6 +1890,7 @@ chrome.webview.addEventListener("message", async (e) => {
   }
 });
 
+initAccounts({ post, log });
 render();            // the UI straight away, before the microphone is open
 await openDevices();
 render();
