@@ -146,15 +146,68 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         }
 
         /// <summary>
-        /// Sender only -- current rollover counter (ROC) for this SSRC.
-        /// Per RFC 3711 section 3.2.1 each SRTP stream maintains its own ROC;
-        /// SSRCs that share the same SrtpContext (e.g. audio + video
-        /// bundled on the same DTLS-SRTP transport) MUST track ROC
-        /// independently. Incremented from 0 each time the 16-bit
-        /// RTP sequence number wraps from 0xFFFF to 0x0000 on this
-        /// SSRC.
+        /// Sender only -- the highest 32-bit packet index (ROC * 65536 + SEQ) protected so far on
+        /// this SSRC. Per RFC 3711 section 3.2.1 each SRTP stream keeps its own ROC; SSRCs sharing an
+        /// SrtpContext (e.g. audio + video bundled on one DTLS-SRTP transport) are tracked apart.
         /// </summary>
-        public uint OutboundRoc { get; set; } = 0;
+        public uint OutboundHighestIndex { get; private set; }
+
+        /// <summary>
+        /// Sender only -- whether <see cref="OutboundHighestIndex"/> holds a packet index yet.
+        /// </summary>
+        public bool OutboundHighestIndexSet { get; private set; }
+
+        /// <summary>
+        /// Sender only -- the rollover counter (ROC) of the highest packet index protected so far on
+        /// this SSRC. Setting it keeps the low 16 bits (the sequence number) of that index.
+        /// </summary>
+        public uint OutboundRoc
+        {
+            get => OutboundHighestIndex >> 16;
+            set => OutboundHighestIndex = (value << 16) | (OutboundHighestIndex & 0xFFFF);
+        }
+
+        /// <summary>
+        /// Sender only -- the 32-bit packet index to protect an RTP packet with sequence number
+        /// <paramref name="sequenceNumber"/>. The ROC is estimated from the highest index sent so far,
+        /// the same way the receiver estimates it (RFC 3711 section 3.3.1 and Appendix A), rather than
+        /// incremented when 0xFFFF is sent. Packets sent with explicit sequence numbers can skip 0xFFFF
+        /// or send it again (a NACK retransmission after the wrap); counting 0xFFFF put the ROC one
+        /// behind or one ahead of the receiver's, and nothing authenticated after the wrap.
+        /// Does not change any state; call <see cref="UpdateOutboundIndex"/> once the packet is protected.
+        /// </summary>
+        public uint GetOutboundIndex(ushort sequenceNumber)
+        {
+            if (!OutboundHighestIndexSet)
+            {
+                // The first packet starts the stream at ROC 0, whatever its sequence number.
+                return (uint)SrtpContext.GenerateRtpIndex(OutboundRoc, sequenceNumber);
+            }
+
+            var highestSeq = (ushort)(OutboundHighestIndex & 0xFFFF);
+            var highestRoc = OutboundHighestIndex >> 16;
+
+            if (highestRoc == 0 && (long)sequenceNumber - highestSeq > 32768)
+            {
+                // A packet from "before" the start of the stream: there is no ROC -1, so keep ROC 0.
+                return sequenceNumber;
+            }
+
+            return SrtpContext.DetermineRtpIndex(highestSeq, sequenceNumber, highestRoc);
+        }
+
+        /// <summary>
+        /// Sender only -- records that <paramref name="index"/> has been protected. The highest index
+        /// only moves forward, so a retransmission of an older packet keeps the ROC it was sent with.
+        /// </summary>
+        public void UpdateOutboundIndex(uint index)
+        {
+            if (!OutboundHighestIndexSet || index > OutboundHighestIndex)
+            {
+                OutboundHighestIndex = index;
+                OutboundHighestIndexSet = true;
+            }
+        }
     }
 
     /// <summary>
@@ -549,8 +602,11 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 outboundCtx = new SsrcSrtpContext();
                 context.ReplayProtection.Add(ssrc, outboundCtx);
             }
-            var roc = outboundCtx.OutboundRoc;
-            var index = SrtpContext.GenerateRtpIndex(roc, sequenceNumber);
+            // Estimate the ROC from the highest index sent, as the receiver does, so packets sent with
+            // explicit sequence numbers (gaps, NACK retransmissions) keep the receiver's ROC.
+            var packetIndex = outboundCtx.GetOutboundIndex(sequenceNumber);
+            var roc = packetIndex >> 16;
+            var index = (ulong)packetIndex;
 
             // copy header from input to output
             input.Slice(0, offset).CopyTo(output.Slice(0, offset));
@@ -690,13 +746,8 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 length += context.N_tag;
             }
 
-            // Increment the per-SSRC ROC when the RTP sequence wraps
-            // from 0xFFFF to 0x0000. Per RFC 3711 section 3.3.1 the next packet
-            // (with sequence 0) belongs to the next epoch.
-            if (sequenceNumber == 0xFFFF)
-            {
-                outboundCtx.OutboundRoc++;
-            }
+            // The packet is protected: advance the highest sent index (RFC 3711 section 3.3.1).
+            outboundCtx.UpdateOutboundIndex(packetIndex);
 
             outputBufferLength = length;
 
