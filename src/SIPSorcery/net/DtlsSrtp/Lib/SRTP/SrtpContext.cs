@@ -1235,6 +1235,15 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 index = index & ~E_FLAG;
                 isEncrypted = true;
             }
+            else if (context.PayloadAEAD != null)
+            {
+                // An AEAD profile authenticates only in the decrypt below, which an unencrypted packet (E flag
+                // clear) skips. Such a packet would be taken with no check at all, and its index would move the
+                // replay window: one corrupted or forged packet with a high index then has every genuine one
+                // refused as a replay. Unencrypted SRTCP isn't used with AEAD profiles, so refuse it.
+                outputBufferLength = 0;
+                return ERROR_HMAC_CHECK_FAILED;
+            }
 
             if (context.Auth != SrtpAuth.NONE)
             {
