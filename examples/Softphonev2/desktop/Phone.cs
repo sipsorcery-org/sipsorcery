@@ -73,11 +73,16 @@ public sealed class Phone : IDisposable
         string? TheirMedia, bool MediaEncrypted, bool SignallingEncrypted, string? Audio, string? Video);
     public event Action<CallDetails>? Details;
 
-    // ---- Real-time text (RFC 4103): T.140 with RED redundancy, handled here in C# ----
-    // Text isn't relayed to the page's peer connection: the page sends what's typed as host
-    // messages and gets what arrives the same way.
+    // ---- Real-time text, handled here in C# ----
+    // On plain RTP calls: an m=text stream, T.140 with RED redundancy (RFC 4103). On WebRTC calls:
+    // a T.140 data channel (RFC 8865, see TextPeerConnection). Either way, text isn't relayed to
+    // the page's peer connection: the page sends what's typed as host messages and gets what
+    // arrives the same way.
 
-    /// <summary>Text on the call: off (not set up), adding (re-INVITE out), on, refused, or disabled (--no-text).</summary>
+    /// <summary>
+    /// Text on the call: off (not set up), adding (re-INVITE out, or a WebRTC call's T.140 data
+    /// channel opening), on, refused, or disabled (--no-text).
+    /// </summary>
     public string TextState { get; private set; } = "off";
     /// <summary>Characters from them, as they arrive: may include backspace (U+0008) and line separators.</summary>
     public event Action<string>? TextReceived;
@@ -85,6 +90,7 @@ public sealed class Phone : IDisposable
     private System.Threading.Timer? _addTextTimer;
     private bool _outgoing;
     private string? _theirPhone;
+    private string? _incomingOffer;   // the ringing call's SDP, if its INVITE had one
 
     // ---- Browser phones: SIP over WebSocket, with WebRTC media ----
 
@@ -314,7 +320,7 @@ public sealed class Phone : IDisposable
             // A WebRTC answer can't add a stream the offer didn't have (RTCPeerConnection would
             // put our video in as an extra m-line, and the browser rejects the answer), so video
             // only if they offered it.
-            rtp = NewSession(WebRtc ? IncomingVideo : _settings.OfferVideo);
+            rtp = NewSession(WebRtc ? IncomingVideo : _settings.OfferVideo, _incomingOffer);
             _rtp = rtp;
         }
         if (ua != null && uas != null && await ua.Answer(uas, rtp)) await ConnectedAsync(rtp);
@@ -373,18 +379,18 @@ public sealed class Phone : IDisposable
     }
 
     /// <summary>
-    /// The SIP side's media session for a new call: WebRTC for a browser phone, plain RTP with
-    /// real-time text otherwise. Text isn't offered to browsers yet (it would go over a data
-    /// channel, RFC 8865), so on those calls it's "unavailable".
+    /// The SIP side's media session for a new call: WebRTC for a browser phone, with real-time
+    /// text on a data channel, or plain RTP with an m=text stream. <paramref name="theirOffer"/>
+    /// is the SDP of a call we're answering, or null if we make the offer.
     /// </summary>
-    private RTPSession NewSession(bool video)
+    private RTPSession NewSession(bool video, string? theirOffer = null)
     {
         var rtp = MediaRelay.CreateSipSession(video, WebRtc);
-        if (rtp is RTCPeerConnection pc)
+        if (rtp is TextPeerConnection pc)
         {
             _rtt?.Dispose();
             _rtt = null;
-            TextState = "unavailable";
+            AttachDataChannelText(pc, theirOffer);
             pc.onconnectionstatechange += state =>
             {
                 Log?.Invoke($"WebRTC media (ICE, DTLS) {state}");
@@ -450,6 +456,59 @@ public sealed class Phone : IDisposable
         _rtt = rtt;
     }
 
+    /// <summary>
+    /// Real-time text on a WebRTC call: a T.140 data channel (RFC 8865), in our offer on the
+    /// stream we pick, or in our answer on the stream their offer has. An offer without one
+    /// (a browser phone that doesn't do it) means no text, unless they open one in band.
+    /// </summary>
+    private void AttachDataChannelText(TextPeerConnection pc, string? theirOffer)
+    {
+        TextState = _settings.OfferText ? "off" : "disabled";
+        if (!_settings.OfferText) return;
+        pc.TextReceived += text => { if (_rtp == pc) TextReceived?.Invoke(text); };
+        pc.TextOpened += () =>
+        {
+            if (Interlocked.Exchange(ref _addTextTimer, null) is { } t) t.Dispose();
+            if (_rtp != pc || TextState == "on") return;
+            // A negotiated channel opens here once SCTP is up, whether or not they have one on
+            // that stream: it only counts if their SDP agreed to it. One they opened in band does.
+            if (pc.T140?.negotiated == true && TextPeerConnection.FindT140(pc.RemoteDescription) == null) return;
+            TextState = "on";
+            Log?.Invoke($"real-time text on (RFC 8865, T.140 data channel on stream {pc.T140?.id})");
+            Changed?.Invoke();
+        };
+        ushort? stream = string.IsNullOrWhiteSpace(theirOffer) ? TextPeerConnection.OfferStreamId : TextPeerConnection.FindT140(theirOffer);
+        if (stream is ushort id) { pc.AddT140(id); TextState = "adding"; }
+        else TextState = "refused";
+    }
+
+    /// <summary>
+    /// A connected WebRTC call's text: on if the channel's open already; refused if their SDP has
+    /// no T.140 channel; otherwise it's opening, and refused if it isn't open within 10 s.
+    /// </summary>
+    private void StartDataChannelText(TextPeerConnection pc)
+    {
+        if (TextState != "adding" || pc.TextOpen) return;
+        if (TextPeerConnection.FindT140(pc.RemoteDescription) == null)
+        {
+            TextState = "refused";
+            Log?.Invoke("they didn't take text (no T.140 data channel in their SDP)");
+            Changed?.Invoke();
+            return;
+        }
+        Log?.Invoke("real-time text agreed: opening the T.140 data channel");
+        _addTextTimer?.Dispose();
+        _addTextTimer = new System.Threading.Timer(_ =>
+        {
+            if (Interlocked.Exchange(ref _addTextTimer, null) is not { } t) return;
+            t.Dispose();
+            if (_rtp != pc || TextState != "adding") return;
+            TextState = "refused";
+            Log?.Invoke("the T.140 data channel didn't open: no text on this call");
+            Changed?.Invoke();
+        }, null, 10000, Timeout.Infinite);
+    }
+
     /// <summary>Text is agreed on the session: their SDP has a text line with a port, and it isn't inactive.</summary>
     private static bool HasNegotiatedText(RTPSession rtp) =>
         rtp.RemoteDescription?.Media.Any(m => m.Media == SDPMediaTypesEnum.text && m.Port != 0) == true &&
@@ -458,6 +517,7 @@ public sealed class Phone : IDisposable
     /// <summary>Starts sending and receiving text if it's agreed and not already on.</summary>
     private async Task StartTextIfAgreed(RTPSession rtp)
     {
+        if (rtp is TextPeerConnection pc) { StartDataChannelText(pc); return; }
         if (_rtt == null || TextState == "on" || !HasNegotiatedText(rtp)) return;
         await _rtt.Start();
         if (Interlocked.Exchange(ref _addTextTimer, null) is { } t) t.Dispose();
@@ -469,7 +529,9 @@ public sealed class Phone : IDisposable
     /// <summary>Sends what was typed (letters, backspaces, line separators) as real-time text.</summary>
     public void SendText(string text)
     {
-        if (TextState == "on" && _rtt?.CanSendText == true) _rtt.SendText(text);
+        if (TextState != "on") return;
+        if (_rtp is TextPeerConnection pc) pc.SendText(text);
+        else if (_rtt?.CanSendText == true) _rtt.SendText(text);
     }
 
     /// <summary>
@@ -521,7 +583,7 @@ public sealed class Phone : IDisposable
         if (_rtp == rtp && TextState != "on" && HasNegotiatedText(rtp))
             _ = Task.Run(async () => { await Task.Delay(200); if (_rtp == rtp) await StartTextIfAgreed(rtp); });
         // Their answer to our adding text turned it down (m=text with port 0): say so now, not at the timeout.
-        else if (_rtp == rtp && TextState == "adding" && Interlocked.Exchange(ref _addTextTimer, null) is { } t)
+        else if (_rtp == rtp && rtp is not TextPeerConnection && TextState == "adding" && Interlocked.Exchange(ref _addTextTimer, null) is { } t)
         {
             t.Dispose();
             TextState = "refused";
@@ -613,6 +675,7 @@ public sealed class Phone : IDisposable
             Remote = req.Header.From.FromURI.ToString();
             _outgoing = false;
             _theirPhone = req.Header.UserAgent;
+            _incomingOffer = req.Body;
             // A call from a browser phone is answered with WebRTC media: one over WebSocket, or
             // one whose offer is WebRTC's (it came through a server, so over UDP, TCP or TLS).
             WebRtc = remote.Protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss || IsWebRtcOffer(req.Body);
