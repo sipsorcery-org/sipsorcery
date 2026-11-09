@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -120,18 +121,14 @@ namespace SIPSorcery.Net
                                     break;
                                 default:
                                     AddFeedback(new RTCPFeedback(buffer));
-                                    int rtpfbFeedbackLength = Feedback.GetBytes().Length;
-                                    offset += rtpfbFeedbackLength;
+                                    offset += FeedbackLength(buffer);
                                     break;
                             }
                             break;
                         case (byte)RTCPReportTypesEnum.PSFB:
                             // TODO: Interpret Payload specific feedback reports.
                             AddFeedback(new RTCPFeedback(buffer));
-                            int psfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
-                            offset += psfbFeedbackLength;
-                            //var psfbHeader = new RTCPHeader(buffer);
-                            //offset += psfbHeader.Length * 4 + 4;
+                            offset += FeedbackLength(buffer);
                             break;
                         default:
                             offset = Int32.MaxValue;
@@ -228,6 +225,19 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// The length of a feedback packet (RTPFB or PSFB) from its header: (length + 1) 32-bit words.
+        /// The parsed <see cref="RTCPFeedback"/> can't be used for this. It keeps only the first FCI
+        /// entry (one PID/BLP of a generic NACK, for instance), so its serialised length is shorter
+        /// than a packet with several entries, and the next packet in the compound would be looked
+        /// for in the middle of this one's FCI. A length past the end of the buffer ends the parse.
+        /// </summary>
+        private static int FeedbackLength(byte[] buffer)
+        {
+            int length = (BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(2)) + 1) * 4;
+            return length <= buffer.Length ? length : Int32.MaxValue;
+        }
+
+        /// <summary>
         /// Creates a new RTCP compound packet from a serialised buffer.
         /// </summary>
         /// <param name="packet"></param>
@@ -292,8 +302,7 @@ namespace SIPSorcery.Net
                                 default:
                                     {
                                         rtcpCompoundPacket.AddFeedback(new RTCPFeedback(buffer));
-                                        int rtpfbFeedbackLength = (rtcpCompoundPacket.Feedback != null) ? rtcpCompoundPacket.Feedback.GetBytes().Length : Int32.MaxValue;
-                                        offset += rtpfbFeedbackLength;
+                                        offset += FeedbackLength(buffer);
                                     }
                                     break;
                                 case RTCPFeedbackTypesEnum.TWCC:
@@ -308,10 +317,7 @@ namespace SIPSorcery.Net
                         case (byte)RTCPReportTypesEnum.PSFB:
                             // TODO: Interpret Payload specific feedback reports.
                             rtcpCompoundPacket.AddFeedback(new RTCPFeedback(buffer));
-                            int psfbFeedbackLength = (rtcpCompoundPacket.Feedback != null) ? rtcpCompoundPacket.Feedback.GetBytes().Length : Int32.MaxValue;
-                            offset += psfbFeedbackLength;
-                            //var psfbHeader = new RTCPHeader(buffer);
-                            //offset += psfbHeader.Length * 4 + 4;
+                            offset += FeedbackLength(buffer);
                             break;
                         default:
                             offset = Int32.MaxValue;
