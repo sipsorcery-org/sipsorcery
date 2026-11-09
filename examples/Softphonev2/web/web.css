@@ -63,6 +63,10 @@
   padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
 }
 .acct-cred-label { font-size: 12px; color: var(--muted); }
+.acct-cred-actions { display: flex; gap: 2px; }
+.acct-cred-value.secret { user-select: none; }
+/* Diagnostics' address pill is the desktop's: here the account chip already shows who we are. */
+#reg { display: none !important; }
 .acct-cred-value { font: 13px/1.3 Consolas, "Cascadia Mono", monospace; overflow-wrap: anywhere; user-select: all; }
 .acct-copy {
   width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 6px;

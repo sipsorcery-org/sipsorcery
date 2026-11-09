@@ -772,11 +772,13 @@ function renderDetails() {
   const d = callDetails;
   if (!d || !call) { el.innerHTML = ""; return; }
   const esc = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
-  // Each way, as the page sees it; one value when both ways match.
+  // Each way, as the page sees it. Audio shows one value when both ways match; video always shows
+  // both, as its frame sizes change on their own (each side ramps up) and would otherwise flip
+  // between one value and two.
   const codecs = (kind, agreed) => {
     const c = callCodecs?.[kind];
     if (!c?.tx && !c?.rx) return agreed ? esc(agreed) : "–";
-    if (c.tx === c.rx) return esc(c.tx);
+    if (kind !== "video" && c.tx === c.rx) return esc(c.tx);
     return `↑ ${esc(c.tx ?? "–")} &nbsp;↓ ${esc(c.rx ?? "–")}`;
   };
   const enc = d.mediaEncrypted && d.signallingEncrypted
@@ -1011,7 +1013,10 @@ function onQuality(msg) {
   if (msg.dir === "sent") {
     quality.sent[msg.kind] = { ...msg, mos: msg.kind === "audio" ? mos(msg) : null };
     log(`their RTCP on our ${msg.kind}: loss ${msg.lossPct}% (${msg.lost} total), jitter ${msg.jitterMs} ms, rtt ${msg.rttMs ?? "-"} ms`);
-  } else if (msg.kind === "video") quality.recvVideoRtcp = msg;
+  } else if (msg.kind === "video") {
+    quality.recvVideoRtcp = msg;
+    log(`our RTCP on their video: loss ${msg.lossPct}% (${msg.lost} total), jitter ${msg.jitterMs} ms`);
+  }
   renderQuality();
 }
 

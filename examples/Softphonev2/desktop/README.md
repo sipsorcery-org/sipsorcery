@@ -106,11 +106,11 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
     straight away, with the other kind. That's a `488 Not Acceptable Here` with
     `Warning: 302 … "Incompatible transport protocol"` (RFC 3261 20.43: the m-line's profile,
     where 305 would be the codecs), or with an SDP body of what they can take (21.4.26) on the
-    other kind of profile. The web softphone sends both. Any other 488 isn't retried: "They
-    can't take this call's media (488)". The SIP log says when it retries.
-  - Through sipsorcery.com the 488's Warning and SDP have to reach us: the app server is a
-    B2BUA, and passes them on only when the call had a single destination (not when it forked
-    to several registrations). Until it does, a browser behind it needs `--webrtc`.
+    other kind of profile. The web softphone sends both. A bare 488, with neither, is retried
+    too: sipsorcery.com's app server is a B2BUA and doesn't always pass them on (only when the
+    call had a single destination), and if it was the codecs the retry costs one more INVITE.
+    A 488 with any other Warning (305: the codecs) or an SDP on our own profile isn't retried:
+    "They can't take this call's media (488)". The SIP log says when it retries.
   - A plain SIP phone that answers a WebRTC offer with RTP/AVP instead of a 488 ends the call
     with "Their answer's media doesn't match ours".
  `RTCPeerConnection` is an `RTPSession`, so
@@ -426,6 +426,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Local sipsorcery-servers2: desktop on a guest account (`Server: localhost`, UDP) and a browser on another, both ways | Browser → desktop: the INVITE arrives over UDP with a WebRTC offer and is answered with WebRTC media. Desktop `--webrtc` → browser: through the proxy to its WebSocket. Both connect in about 0.2 s with video both ways (see ../web for details). |
 | Calling a stand-in callee that answers `488` + `Warning: 302 … "Incompatible transport protocol"`, then 486 | The first INVITE offers RTP/AVP; 0.2 s after the 488, a second offers `UDP/TLS/RTP/SAVP`. Ends with "486 Busy Here". |
 | The same with `Warning: 305 … "Incompatible media format"` | One INVITE, no retry: "They can't take this call's media (488)". |
+| A stand-in callee that answers a bare `488` (no Warning, no SDP) | The first INVITE offers RTP/AVP, the second `UDP/TLS/RTP/SAVP`: "they can't take plain RTP media (488, no reason given); calling again with WebRTC". |
 | Calling the web softphone's guest account through the local sipsorcery-servers2, no `--webrtc` | The browser turns the RTP/AVP offer down with 488 in 60 ms, without ringing. The app server doesn't pass the Warning on yet, so no retry: "They can't take this call's media (488)". With `--webrtc`: connected, and the browser's BYE ends it "They hung up". |
 | Browser call, Text popover open, then one click on End | The call ends ("You hung up", BYE, 200). |
 | The web softphone (../web), audio only, `dial=desktop&hangup=12` | Answered with audio only; the browser's BYE ends it here with "They hung up". |

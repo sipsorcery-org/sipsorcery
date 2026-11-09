@@ -235,7 +235,7 @@ public sealed class Phone : IDisposable
                 if (attempt == 1 && _ua == ua && State == CallState.Calling && WantsOtherMedia(response, WebRtc))
                 {
                     WebRtc = !WebRtc;
-                    Log?.Invoke($"they can't take {(WebRtc ? "plain RTP" : "WebRTC")} media (488, {response!.Header.Warning ?? "their SDP"}); calling again with {(WebRtc ? "WebRTC" : "plain RTP")}");
+                    Log?.Invoke($"they can't take {(WebRtc ? "plain RTP" : "WebRTC")} media (488, {response!.Header.Warning ?? (string.IsNullOrWhiteSpace(response.Body) ? "no reason given" : "their SDP")}); calling again with {(WebRtc ? "WebRTC" : "plain RTP")}");
                     rtp.Close("retrying with other media");
                     ua = NewUserAgent();
                     rtp = NewSession(video && _settings.OfferVideo);
@@ -255,12 +255,19 @@ public sealed class Phone : IDisposable
         SIPResponse? response = null;
         // A failure with a 2xx is their answer turned down here: media we can't use (e.g. plain RTP
         // to our WebRTC offer, from a SIP phone with --webrtc).
+        // When it started ringing: a failure after that, other than a refusal, is the far end (or a
+        // server on the way) giving up on an unanswered call, whatever its reason phrase says.
+        DateTime? ringing = null;
+        ua.ClientCallRinging += (_, _) => ringing ??= DateTime.Now;
         ua.ClientCallFailed += (_, err, resp) =>
         {
             response = resp;
+            string said = resp != null ? $"{resp.StatusCode} {resp.ReasonPhrase}" : "";
             failure = resp is { StatusCode: >= 200 and < 300 } ? "Their answer's media doesn't match ours"
                 : resp is { Status: SIPResponseStatusCodesEnum.NotAcceptableHere } ? "They can't take this call's media (488)"
-                : resp != null ? $"{resp.StatusCode} {resp.ReasonPhrase}" : err;
+                : resp != null && ringing is { } r && resp.StatusCode is 408 or 480 or 487
+                    ? $"Not answered: rang for {(DateTime.Now - r).TotalSeconds:0} s, then the far end said {said}"
+                : resp != null ? $"The far end said {said}" : err;
         };
         ua.ClientCallAnswered += (_, resp) => _theirPhone = resp?.Header.Server ?? resp?.Header.UserAgent;
         var a = _settings.Account;
@@ -278,13 +285,17 @@ public sealed class Phone : IDisposable
     /// A 488 that says our media profile was the problem, not the codecs, so the other kind of
     /// media might work: Warning 302 "Incompatible transport protocol" (RFC 3261 20.43; codecs
     /// would be 305), or an SDP of what they can take (21.4.26) on the other kind of profile. The
-    /// web softphone sends both when it gets a plain RTP offer. Any other 488 isn't retried.
+    /// web softphone sends both when it gets a plain RTP offer. A bare 488, with neither (a server
+    /// on the way may drop them), is retried too: one more INVITE is all it costs if it was the
+    /// codecs. Any other 488 isn't retried.
     /// </summary>
     private static bool WantsOtherMedia(SIPResponse? resp, bool offeredWebRtc)
     {
         if (resp is not { Status: SIPResponseStatusCodesEnum.NotAcceptableHere }) return false;
-        if (resp.Header.Warning is { } w && System.Text.RegularExpressions.Regex.IsMatch(w, @"(^|,)\s*302\s")) return true;
-        if (string.IsNullOrWhiteSpace(resp.Body) || resp.Header.ContentType?.Contains("sdp", StringComparison.OrdinalIgnoreCase) != true) return false;
+        var warning = resp.Header.Warning;
+        if (warning is { } w && System.Text.RegularExpressions.Regex.IsMatch(w, @"(^|,)\s*302\s")) return true;
+        bool sdp = !string.IsNullOrWhiteSpace(resp.Body) && resp.Header.ContentType?.Contains("sdp", StringComparison.OrdinalIgnoreCase) == true;
+        if (!sdp) return string.IsNullOrWhiteSpace(warning);
         return IsWebRtcOffer(resp.Body) != offeredWebRtc;
     }
 
@@ -378,6 +389,23 @@ public sealed class Phone : IDisposable
             {
                 Log?.Invoke($"WebRTC media (ICE, DTLS) {state}");
                 if (state == RTCPeerConnectionState.failed && _rtp == pc) { _ua?.Hangup(); End("Media connection failed"); }
+                // The far end closed its media without a BYE: a browser phone's page reloaded or
+                // closed, say (DTLS close_notify, with no BYE sent). The call would otherwise stay
+                // up with no media, and every call to us meanwhile would be turned down as busy.
+                // But the media closes on every hang up too, ours and theirs (the user agent closes
+                // it before it reports a BYE), so give those a moment to end the call first.
+                if (state == RTCPeerConnectionState.closed && _rtp == pc && State == CallState.Connected)
+                {
+                    var ua = _ua;
+                    _ = Task.Delay(1000).ContinueWith(_ =>
+                    {
+                        if (_rtp != pc || _ua != ua || State != CallState.Connected) return;
+                        Log?.Invoke("WebRTC media closed without a BYE: hanging up");
+                        _hangingUp = ua;
+                        ua?.Hangup();
+                        End("Media connection closed");
+                    });
+                }
             };
         }
         else AttachText(rtp);
@@ -575,7 +603,10 @@ public sealed class Phone : IDisposable
                 _ = _transport.SendResponseAsync(SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.BusyHere, null));
                 return;
             }
-            var ua = NewUserAgent();
+            // A browser phone's Contact is an address nothing can reach (sip:x@y.invalid;transport=ws,
+            // RFC 7118): our requests in the call (BYE, re-INVITEs) only get to it over the
+            // WebSocket connection its INVITE came on. As the outbound proxy, they go there.
+            var ua = NewUserAgent(remote.Protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss ? remote : null);
             _ua = ua;
             _incoming = ua.AcceptCall(req);
             ua.ServerCallCancelled += (_, _) => End("Missed call");
@@ -613,10 +644,10 @@ public sealed class Phone : IDisposable
         catch { return true; }
     }
 
-    /// <summary>A user agent for a call.</summary>
-    private SIPUserAgent NewUserAgent()
+    /// <summary>A user agent for a call, sending its requests via <paramref name="outboundProxy"/> if given.</summary>
+    private SIPUserAgent NewUserAgent(SIPEndPoint? outboundProxy = null)
     {
-        var ua = new SIPUserAgent(_transport, null);
+        var ua = new SIPUserAgent(_transport, outboundProxy);
         // Only the current, connected call's. The user agent raises this too when a call we place
         // fails with WebRTC media (closing the RTCPeerConnection), and for a turned-down attempt
         // DialAsync retries; there, DialAsync gives the real reason.

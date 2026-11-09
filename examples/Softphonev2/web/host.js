@@ -21,7 +21,7 @@
 // and account.js's api=, captcha=, stubws= and wsdefault=.
 
 import * as SIP from "https://cdn.jsdelivr.net/npm/sip.js@0.21.2/+esm";
-import { loadAccount, saveAccount, forgetAccount, accountUi } from "./account.js";
+import { loadAccount, saveAccount, forgetAccount, accountUi, addressOf } from "./account.js";
 
 const q = new URLSearchParams(location.search);
 const localServer = q.get("server");
@@ -83,11 +83,11 @@ function stateMessage() {
     // The page knows registered, registering and failed; connected without registering shows as registered.
     registration: !acct ? "none" : st.registration === "connected" ? "registered" : st.registration,
     registrationDetail: st.registrationDetail,
-    account: acct ? `${acct.username}@${acct.domain}` : null, address: aor(), me: displayName(),
+    account: acct ? `${acct.username}@${acct.domain}` : null, address: acct ? addressOf(acct) : null, me: displayName(),
     videoAllowed: true, incomingVideo: st.incomingVideo,
     // Real-time text needs a data channel on WebRTC calls: not done yet.
     text: st.call === "connected" ? "unavailable" : "off",
-    lossAudio: 0, lossVideo: 0,
+    lossAudio: loss.audio, lossVideo: loss.video,
   };
 }
 
@@ -167,6 +167,19 @@ window.RTCPeerConnection = class extends NativeRTCPeerConnection {
     super(...args);
     pagePc = this;
   }
+
+  // Each sender gets the simulated loss transform as it's made (see below): calling out, by
+  // addTransceiver; answering, by the far end's offer.
+  addTransceiver(...args) {
+    const t = super.addTransceiver(...args);
+    addLossTransform(t);
+    return t;
+  }
+
+  async setRemoteDescription(...args) {
+    await super.setRemoteDescription(...args);
+    this.getTransceivers().forEach(addLossTransform);
+  }
 };
 
 const round1 = (n) => Math.round(n * 10) / 10;
@@ -209,6 +222,76 @@ setInterval(async () => {
     }
   });
 }, 1000);
+
+// ---- Simulated loss (the Diagnostics menu's Network tab) ----
+//
+// The desktop host drops RTP packets on the SIP leg. A page can't reach RTP packets, so here an
+// encoded transform on each of the page connection's senders drops that share of the encoded
+// frames, at random, before the browser packetises them. Audio frames are a packet each, so the
+// far end hears the same gaps; a dropped video frame leaves the far end's decoder without a
+// reference, so it freezes and asks for a keyframe, as after a lost packet. What differs is that
+// no sequence numbers go missing, so their RTCP reports show no loss.
+//
+// Chrome only passes frames through a transform that's on the sender before the call's media is
+// negotiated: one set later gets none, and the media goes round it. So every sender gets one as
+// it's made (the RTCPeerConnection wrapper above), passing every frame until loss is turned on.
+
+const loss = { audio: 0, video: 0 };
+const lossSupported = typeof window.RTCRtpScriptTransform === "function";
+let lossWorker = null;
+const lossSenders = new WeakSet();   // senders with the transform on
+
+// The worker does the dropping: a transform per sender, rates set by message, counts posted back.
+// (Its rtctransform event comes to addEventListener; Chrome doesn't fire it at an onrtctransform.)
+const LOSS_WORKER = `
+const rate = { audio: 0, video: 0 };
+const count = { audio: { sent: 0, dropped: 0 }, video: { sent: 0, dropped: 0 } };
+self.addEventListener("message", (e) => Object.assign(rate, e.data));
+self.addEventListener("rtctransform", (e) => {
+  const { readable, writable, options } = e.transformer;
+  const kind = options.kind;
+  readable.pipeThrough(new TransformStream({
+    transform(frame, out) {
+      if (Math.random() * 100 < rate[kind]) count[kind].dropped++;
+      else { count[kind].sent++; out.enqueue(frame); }
+    },
+  })).pipeTo(writable).catch(() => {});
+});
+setInterval(() => {
+  if (count.audio.dropped + count.video.dropped === 0) return;
+  postMessage(count);
+  for (const c of Object.values(count)) { c.sent = 0; c.dropped = 0; }
+}, 5000);
+`;
+
+function addLossTransform(t) {
+  if (!lossSupported || lossSenders.has(t.sender)) return;
+  const kind = t.receiver.track?.kind;
+  if (kind !== "audio" && kind !== "video") return;
+  lossSenders.add(t.sender);
+  if (!lossWorker) {
+    lossWorker = new Worker(URL.createObjectURL(new Blob([LOSS_WORKER], { type: "text/javascript" })));
+    lossWorker.onmessage = ({ data: c }) =>
+      log(`simulated loss: dropped ${c.audio.dropped} of ${c.audio.dropped + c.audio.sent} audio frames, ${c.video.dropped} of ${c.video.dropped + c.video.sent} video frames in 5 s`);
+    lossWorker.postMessage(loss);
+  }
+  try {
+    t.sender.transform = new RTCRtpScriptTransform(lossWorker, { kind });
+  } catch (err) {
+    log(`simulated loss: can't drop ${kind} on this call: ${err.message}`);
+  }
+}
+
+function setLoss(audio, video) {
+  loss.audio = Math.max(0, Math.min(100, Number(audio) || 0));
+  loss.video = Math.max(0, Math.min(100, Number(video) || 0));
+  if (!lossSupported) {
+    if (loss.audio || loss.video) log("simulated loss needs encoded transforms (RTCRtpScriptTransform), which this browser doesn't have");
+    return;
+  }
+  lossWorker?.postMessage(loss);
+  log(`simulated loss: audio ${loss.audio}%, video ${loss.video}% of the frames we send`);
+}
 
 // ---- SIP ----
 
@@ -528,6 +611,8 @@ async function onPageMessage(msg) {
       navigator.clipboard?.writeText(msg.text).catch(() => {});
       break;
     case "loss":
+      setLoss(msg.audio, msg.video);
+      break;
     case "text":
     case "add-text":
       break;
@@ -542,8 +627,28 @@ for (const link of doc.head.querySelectorAll("link[rel=stylesheet]")) document.h
 for (const node of [...doc.body.childNodes]) if (node.nodeName !== "SCRIPT") document.body.append(document.adoptNode(node));
 document.title = "SIPSorcery Softphone (web)";
 
+// The Network tab's note is the desktop's, about packets on the SIP leg: say what loss does here.
+const lossNote = document.querySelector(".loss-note");
+if (lossNote) {
+  if (lossSupported) {
+    const bold = document.createElement("strong");
+    bold.textContent = "But no packets go missing, so audio and video loss in Call quality stay at 0% on both ends.";
+    lossNote.replaceChildren("Drops that share of the audio or video frames you send, at random, before the browser packetises them. The far end hears the gaps, and its video freezes and asks for keyframes (PLIs). ", bold);
+  } else {
+    lossNote.textContent = "Simulated loss needs encoded transforms (RTCRtpScriptTransform), which this browser doesn't have.";
+  }
+}
+if (!lossSupported) {
+  for (const id of ["lossAudio", "lossVideo"]) { const el = document.getElementById(id); if (el) el.disabled = true; }
+}
+
 ui = accountUi({ signIn, signOut });
-window.addEventListener("beforeunload", () => { registerer?.unregister().catch(() => {}); });
+// Leaving or reloading the page ends a call properly (BYE, CANCEL or decline) rather than just
+// dropping its media, then unregisters.
+window.addEventListener("beforeunload", () => {
+  hangup();
+  registerer?.unregister().catch(() => {});
+});
 
 await import(new URL("app.js", base).href);
 
