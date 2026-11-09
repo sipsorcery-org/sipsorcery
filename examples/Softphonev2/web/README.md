@@ -112,6 +112,13 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   together): Mute / Unmute with the *You're muted* pill, Stop video / Start video, the camera
   button switching an Audio call to Video before dialling, the device menus, self view,
   ringing, answer, decline, cancel, hang up, the SIP log (F12).
+- **Settings** (the gear, top right): the desktop page's own (see the desktop README), kept in
+  this browser's `localStorage` (`softphonev2.settings`, and `devices` and `selfView` as before).
+  Devices, camera on at the start of video calls, self view, auto-answer (camera off), theme and
+  a button for diagnostics, handy since a browser may keep F12 for its own tools. `host.js` sets
+  `data-host="web"` on the page, so the Account section points at the account button instead of
+  the desktop's `softphone.json`. The speaker list is hidden where the browser can't pick one
+  (no `setSinkId`). Device names show once the page has had the microphone or camera.
 - **A call it can't take doesn't ring.** A browser can only answer a WebRTC offer, so an
   incoming offer with no DTLS-SRTP m-line (an ordinary SIP phone's RTP/AVP) is turned down
   before ringing: `488 Not Acceptable Here` with `Warning: 302 <host> "Incompatible transport
@@ -160,6 +167,8 @@ microphone, both on one PC.
 | The desktop (`--webrtc --video`) dials the browser's guest account, browser `auto=1` | Through the proxy to the browser's WebSocket; answered, WebRTC media connected in 0.2 s, video both ways. Web BYE after 10 s. |
 | Web `dial=desktop&call=video`, desktop `--auto-answer --loss-audio 10`, Call quality after 30 s | ↑ Sent: MOS 4.4, loss 0%, 20 fps, from the desktop's RTCP ("their RTCP on our audio: loss 0%… rtt 1 ms" in the log); ↓ Received: MOS 3.6, 8% audio loss; RTT 1.0 ms. Before, ↑ Sent stayed empty and said "No RTCP reports from them". |
 | Web `dial=desktop&call=video`, Call details | "Outgoing · web@localhost", "Media encrypted (SRTP); SIP not (WS)", video "VP8 640×360", SIP "WS localhost:8091". (It said "Incoming" and showed the WebSocket URL before.) |
+| Settings (`server=ws://127.0.0.1:8099`, nothing there): the gear, Dark, auto-answer on, camera on at start off, Open diagnostics, then a hard reload | Settings opens over the page; the page goes dark at once; Open diagnostics closes Settings and opens the panel, whose log shows each change. After the reload the theme and both choices are kept. The device lists say *System default* with the note about names (the browser pane allows no microphone). |
+| Web `server=ws://127.0.0.1:8382&dial=setb`, the desktop copy with *Answer calls automatically* ticked in its Settings | The desktop answers after a second: "answering automatically, camera off", audio only. Settings on the web page shows `web@127.0.0.1` under Account. |
 | A second browser dials the desktop while it's on a call | "486 BusyHere". (It said "They hung up" before: SIP.js ends the session before handing over the rejection.) |
 | Web `server=ws://localhost:8095&diag=1&call=video&video=test&dial=desktop`, desktop `--fake-media --auto-answer --test-pattern`; Network sliders to 10% mid-call, then 0% | Web log: "dropped 27 of 250 audio frames, 15 of 151 video frames in 5 s" and so on. The desktop receives 44–45 audio pkt/s instead of 50, with concealment climbing, and 14–17 fps video instead of 30; its page asks for keyframes (55, then 75 PLIs). Their RTCP still says 0% loss. Back to 0%: 30 fps and 50 pkt/s again. |
 | Web dials the desktop (`server=`), then reloads mid-call | The page hangs up as it unloads: the desktop gets a BYE ("They hung up") and answers the reloaded page's new call at once. Before, the page sent no BYE: the desktop stayed in a call with closed media and turned every new call down with 486. |

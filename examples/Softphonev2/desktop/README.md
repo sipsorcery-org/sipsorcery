@@ -43,6 +43,34 @@ connection (no renegotiation), and is remembered between runs (per profile). A r
 device that's gone falls back to the default. The prototype's Hold, Keypad and Transfer
 aren't here yet; they come with those features.
 
+## Settings
+
+The gear at the right of the top bar opens Settings (`wwwroot/settings.js`), a dialog as in the
+UX prototype. Esc, its ×, or a click outside closes it. Only options with something behind them
+in this app are there; each applies straight away:
+
+- **Audio & video.** Microphone, speaker and camera: the same choice as the ▾ menus on Mute and
+  Camera, so either changes the other. *System default* follows Windows. A microphone or
+  speaker picked mid-call swaps in at once. A camera picked here never turns the camera on: if
+  it's open it switches, otherwise the next video call uses it. Device names show once the
+  microphone or camera has been used.
+  *Start video calls with my camera on* is the Camera button's choice before a call, now
+  remembered between runs (the button changes it too). `--camera-off` still starts with it off,
+  without changing what's kept. *Show my self view* is the Self view button (V).
+- **Calls.** *Answer calls automatically*: after a second, always with the camera off, since
+  the camera is never opened without you asking. The microphone is on as soon as it answers.
+  (`--auto-answer` is the testing switch, answered by the host with the Camera button's choice.)
+- **Appearance.** Theme: System, Light or Dark. System follows Windows' light or dark mode.
+- **Account.** Who you are: the account, or with none, the address others can call. Managing
+  SIP accounts will go in this section (the empty `#settingsAccounts` is for it); for now the
+  account comes from `softphone.json`.
+- **Diagnostics.** Opens or closes the panel F12 does.
+
+The page keeps them in its `localStorage`, which is in the WebView2 profile's folder, so each
+`--profile` has its own. The prototype's ringtone (there's no ringtone yet), grid (one call),
+and real-time text options (saved transcripts; there's no call history) are left out until
+there's something behind them.
+
 ## Call details
 
 The info bar at the top left of the stage (their address and the call's duration) has a
@@ -372,6 +400,12 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 
 | Test | Result |
 |---|---|
+| Settings, two copies (`--profile setA` / `setB`, `--fake-media --diagnostics`) | The gear opens Settings with the fake devices named, and *System default (Fake Default Audio Input)*. Focus starts on Microphone. |
+| B ticks *Answer calls automatically* in Settings (no `--auto-answer`); A places a video call to B | B answers after a second with its camera off ("answering automatically, camera off", "call media: video, your camera off"), although B's *Start video calls with my camera on* is ticked. |
+| Mid-call on A, Settings: Microphone and Speaker to the second fake devices | "microphone: Fake Audio Input 2" (a track swap), the remote element's `sinkId` changes; both remembered. |
+| A idle on Audio, Settings: Camera to `fake_device_0`, theme Dark | The camera stays closed ("camera for calls: …"); the page goes dark at once. |
+| Both copies restarted | A comes back dark with its devices; B has auto-answer and the system theme: each profile keeps its own. |
+| A on Video, Camera button off, then Settings | *Start video calls with my camera on* is unticked, and kept. |
 | Video call, `--test-pattern` to `--fake-media` | Both ways at 30 fps; the callee shows the pattern with the caller's clock, and the caller's self view shows it unmirrored. |
 | Same, Camera off, Camera on, then diagnostics off | Off: placeholder at 5 fps; on: pattern back at 30 fps; diagnostics off: the pattern stops, the placeholder is sent, the self view says "Camera off" and the button "Turn camera on". The camera only opens when that's pressed. |
 | Control bar, idle | Turn mic off ▾, Camera ▾ and a disabled End. Camera ▾ lists the fake camera and, with diagnostics on, Test pattern; the mic ▾ lists three fake microphones and three speakers. |

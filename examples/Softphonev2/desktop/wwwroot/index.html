@@ -19,6 +19,8 @@
       <div class="topbar-right">
         <!-- Diagnostics only: shown while the diagnostics panel (F12) is open. -->
         <button type="button" class="reg diag-only" id="reg"><span class="reg-text" id="regText"></span><span class="reg-copy" id="regCopy"></span></button>
+        <!-- Settings (settings.js): devices, camera, answering, theme, diagnostics. -->
+        <button type="button" class="icon-btn settings-btn" id="settingsBtn" aria-label="Settings" title="Settings" aria-haspopup="dialog"></button>
       </div>
     </header>
 
@@ -174,6 +176,9 @@
       </div>
     </div>
   </section>
+  <!-- Settings, from the gear in the top bar. Filled in by settings.js; each change applies
+       straight away and is kept in this profile's (or this browser's) storage. -->
+  <dialog class="settings" id="settings" aria-labelledby="settingsTitle"></dialog>
   <script type="module" src="app.js"></script>
 </body>
 </html>

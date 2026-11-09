@@ -7,14 +7,22 @@
   --radius: 12px; --radius-sm: 8px;
   color-scheme: light;
 }
+/* Dark: the system's choice, unless Settings picks a theme (data-theme on <html>). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --page: #0f1513; --surface: #171f1c; --surface-2: #1c2622; --surface-3: #212c28; --border: #2a3632; --border-strong: #37453f;
     --text: #e4ece8; --muted: #9aa9a3; --accent: #3ea486; --accent-hover: #4bb594; --accent-ink: #06130f;
     --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --danger-border: #5a2c37; --tile: #1f3a31; --tile-ink: #a9c2b8;
     --seg-on: #33423c;
     color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --page: #0f1513; --surface: #171f1c; --surface-2: #1c2622; --surface-3: #212c28; --border: #2a3632; --border-strong: #37453f;
+  --text: #e4ece8; --muted: #9aa9a3; --accent: #3ea486; --accent-hover: #4bb594; --accent-ink: #06130f;
+  --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --danger-border: #5a2c37; --tile: #1f3a31; --tile-ink: #a9c2b8;
+  --seg-on: #33423c;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -392,3 +400,48 @@ body:not(.diag) .diag-only { display: none; }
 #log { margin: 0; padding: 8px 14px; font: 12px/1.45 Consolas, monospace; white-space: pre-wrap; outline: none; }
 .dev-net { padding: 12px 16px; }
 body.dev-resizing { cursor: ns-resize; user-select: none; }
+
+/* Settings (settings.js): the gear in the top bar, and the dialog it opens, as in the prototype. */
+.settings-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); cursor: pointer; }
+.settings-btn:hover { background: var(--surface-2); }
+.settings-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.settings-btn svg { width: 17px; height: 17px; }
+.settings {
+  width: min(460px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; overflow: hidden;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.22);
+}
+.settings[open] { display: flex; flex-direction: column; }
+.settings::backdrop { background: rgb(15 21 19 / 0.45); }
+.settings-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 10px 20px; border-bottom: 1px solid var(--border); }
+.settings-head h2 { margin: 0; font-size: 17px; font-weight: 600; }
+.settings-close { height: 34px; width: 34px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--muted); cursor: pointer; }
+.settings-close:hover { background: var(--surface-2); color: var(--text); }
+.settings-close:focus { outline: none; }
+.settings-close:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.settings-body { overflow-y: auto; padding: 4px 20px 16px; }
+.settings-section { border-top: 1px solid var(--border); padding: 14px 0 6px; }
+.settings-section:first-child { border-top: 0; }
+.settings-section h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; }
+.settings-field { display: grid; gap: 4px; margin-bottom: 10px; font-size: 12.5px; color: var(--muted); }
+.settings-field[hidden] { display: none; }
+.settings-field select {
+  height: 36px; padding: 0 8px; font: inherit; font-size: 14px; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+}
+.settings-field select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.settings .check-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; cursor: pointer; }
+.settings .check-row input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+.settings-note { margin: -2px 0 8px 26px; font-size: 12.5px; color: var(--muted); }
+.settings-field + .settings-note, .settings-seg + .settings-note, .settings-account + .settings-note, .settings .btn + .settings-note { margin-left: 0; }
+.settings-note[hidden] { display: none; }
+.settings .btn + .settings-note { margin-top: 8px; }
+.settings .btn { height: 34px; padding: 0 14px; }
+.settings-account { margin: 0 0 6px; font-weight: 600; overflow-wrap: anywhere; }
+.settings-account.none { font-weight: 400; color: var(--muted); }
+/* System | Light | Dark: like Audio | Video, the chosen one raised. */
+.settings-seg { display: inline-flex; padding: 3px; gap: 2px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-3); }
+.settings-seg label { position: relative; padding: 5px 14px; border-radius: 7px; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; }
+.settings-seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.settings-seg label:has(input:checked) { background: var(--seg-on); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
+.settings-seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
