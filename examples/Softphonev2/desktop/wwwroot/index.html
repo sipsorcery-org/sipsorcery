@@ -40,6 +40,18 @@
       <button type="submit" class="btn btn-primary" id="callBtn">Call</button>
     </form>
 
+    <!-- Active calls, down the left beside the stage and controls. The chevron collapses it to a
+         narrow rail that still shows a live call; the choice is remembered. On narrow windows
+         it's always the rail, and expanding it lays the panel over the stage for a moment. -->
+    <aside class="calls" id="calls" aria-label="Calls">
+      <div class="calls-head">
+        <span class="calls-title" id="callsTitle">Active calls</span>
+        <span class="call-count" id="callCount"></span>
+        <button type="button" class="calls-toggle" id="callsToggle" aria-controls="callList"></button>
+      </div>
+      <ol class="call-list" id="callList"></ol>
+    </aside>
+
     <!-- The stage, with the real-time text popover and toast over its bottom edge. -->
     <div class="stage-row">
     <main class="stage" id="stage" data-mode="card">

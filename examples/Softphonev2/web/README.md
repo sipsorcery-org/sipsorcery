@@ -119,6 +119,8 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   `data-host="web"` on the page, so the Account section points at the account button instead of
   the desktop's `softphone.json`. The speaker list is hidden where the browser can't pick one
   (no `setSinkId`). Device names show once the page has had the microphone or camera.
+- The **Active calls** panel down the left (see the [desktop README](../desktop/README.md#active-calls)):
+  the call while it's live, collapsible to a rail, the choice kept in `localStorage`.
 - **A call it can't take doesn't ring.** A browser can only answer a WebRTC offer, so an
   incoming offer with no DTLS-SRTP m-line (an ordinary SIP phone's RTP/AVP) is turned down
   before ringing: `488 Not Acceptable Here` with `Warning: 302 <host> "Incompatible transport
@@ -164,6 +166,7 @@ microphone, both on one PC.
 
 | Test | Result |
 |---|---|
+| Active calls, `?server=ws://127.0.0.1:8092` to a desktop copy with `--auto-answer` (Claude's browser pane, mic blocked) | "B · Audio call" with the timer; collapsed to the rail it keeps ticking, and after hanging up and a hard reload it's still the rail. At 375 px it's the rail, with no sideways scroll; expanding lays it over the stage and Esc folds it back. |
 | Web `dial=desktop&call=video`, desktop `--auto-answer` | Registered, INVITE with the page's offer, ICE and DTLS connected in 0.2 s. Video both ways (the desktop receives 20 fps, then 1280×720; the web 30 fps), audio 50 pkt/s each way with no loss. Web's Call quality ↓ 4.4. |
 | Desktop dials `web` (video), web `auto=1`, with the desktop's old test registrar (since removed) | The desktop's offer goes to the page; answered, media both ways. Desktop End: BYE, 200; desktop "You hung up", web "They hung up". |
 | No account: Create a test account | Turnstile's test key passes; the stub's account (`brave-falcon-5128`) is shown with Copy buttons, and registered with the desktop's old test registrar (now it connects without registering). The chip goes green. |

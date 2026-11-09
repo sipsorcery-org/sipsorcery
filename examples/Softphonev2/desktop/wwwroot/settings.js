@@ -69,11 +69,10 @@ export function initSettings(app) {
       <section class="settings-section" aria-labelledby="setAcctHead">
         <h3 id="setAcctHead">Account</h3>
         <p class="settings-account" id="setAccount"></p>
-        <p class="settings-note">${web
-          ? "The account button at the top shows its details, signs out, or signs in as someone else."
-          : "Managing SIP accounts will be here. For now the account comes from softphone.json."}</p>
-        <!-- For SIP account management, when it comes. -->
-        <div id="settingsAccounts"></div>
+        ${web
+          ? `<p class="settings-note">The account button at the top shows its details, signs out, or signs in as someone else.</p>`
+          : `<button type="button" class="btn" id="setManageAccounts">Manage accounts</button>
+        <p class="settings-note">Add, edit or remove your SIP accounts, and see whether each is registered.</p>`}
       </section>
       <section class="settings-section" aria-labelledby="setDiagHead">
         <h3 id="setDiagHead">Diagnostics</h3>
@@ -159,6 +158,13 @@ export function initSettings(app) {
     }
   });
 
+  // Desktop: Manage accounts (accounts.js) is the view the dial bar's people button opens.
+  const manage = q("#setManageAccounts");
+  if (manage) manage.onclick = () => {
+    dlg.close();
+    // After the dialog's close event has put focus back on the gear.
+    setTimeout(() => document.getElementById("manageAccounts")?.click(), 0);
+  };
   q("#setDiag").onclick = () => {
     const on = !app.diagnostics();
     dlg.close();

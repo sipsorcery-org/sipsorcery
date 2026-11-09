@@ -61,15 +61,35 @@ in this app are there; each applies straight away:
   the camera is never opened without you asking. The microphone is on as soon as it answers.
   (`--auto-answer` is the testing switch, answered by the host with the Camera button's choice.)
 - **Appearance.** Theme: System, Light or Dark. System follows Windows' light or dark mode.
-- **Account.** Who you are: the account, or with none, the address others can call. Managing
-  SIP accounts will go in this section (the empty `#settingsAccounts` is for it); for now the
-  account comes from `softphone.json`.
+- **Account.** Who you are: the account, or with none, the address others can call, and a
+  *Manage accounts* button that opens the same view as the dial bar's people button (see
+  [SIP accounts](#sip-accounts)).
 - **Diagnostics.** Opens or closes the panel F12 does.
 
 The page keeps them in its `localStorage`, which is in the WebView2 profile's folder, so each
 `--profile` has its own. The prototype's ringtone (there's no ringtone yet), grid (one call),
 and real-time text options (saved transcripts; there's no call history) are left out until
 there's something behind them.
+
+## Active calls
+
+A panel down the left, beside the stage and the control bar, from the prototype's sidebar. The
+app carries one call at a time, so it lists that call while it's live (calling, ringing or
+connected) and otherwise says *No active calls*. Nothing is made up: there's no call history
+yet, so the prototype's History section isn't here. Each row has an id and the list is built
+from `panelCalls()` in `app.js`, so more calls can be listed once the host carries them.
+
+- **A row**: their initial, their name (the full address in the tooltip), the status and, once
+  connected, the timer. Calling… (grey ring, pulsing), Incoming call / Incoming video call
+  (amber, pulsing), then Audio call or Video call (green), or Muted in red. A connected call
+  also shows what you're sending: the mic (red when muted) and camera (green when sending,
+  red when stopped, faint on an audio call).
+- **Collapse**: the chevron folds it to a 48 px rail of initials and timers, so a live call
+  still shows; the chevron, or a click anywhere on the rail, opens it again. The choice is
+  remembered (`localStorage`, `callsPanel`, per profile on the desktop).
+- **Narrow windows** (under 700 px): it's always the rail, to leave the stage its room.
+  Expanding it lays the panel over the stage until you collapse it, click away or press Esc,
+  without changing the remembered choice.
 
 ## Call details
 
@@ -468,6 +488,9 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | A idle on Audio, Settings: Camera to `fake_device_0`, theme Dark | The camera stays closed ("camera for calls: …"); the page goes dark at once. |
 | Both copies restarted | A comes back dark with its devices; B has auto-answer and the system theme: each profile keeps its own. |
 | A on Video, Camera button off, then Settings | *Start video calls with my camera on* is unticked, and kept. |
+| Active calls: copy A (`--port 5091 --ws-port 8091`) calls B (`--auto-answer`, `--port 5092 --ws-port 8092`) | A's panel: "B · Calling…", then "B · Audio call" with the timer counting; B's "Thisis · Audio call". Mute: "Muted" in red, red mic; Add video: "Video call", camera green on A, red ("Video stopped") on B, which answered with its camera off. Hang up: "No active calls" on both. |
+| Active calls: collapse, restart, narrow | Collapsed: a 48 px rail with "B" and the timer ticking. Restarting A with the same profile keeps the rail; a click on it opens the panel and saves "open". At 560 px it's the rail whatever was saved; expanding lays the 240 px panel over the stage and the saved choice stays put. |
+| Active calls: B calls A (no auto-answer) | A's row: "Thisis · Incoming call" in amber; Decline empties the list. |
 | Video call, `--test-pattern` to `--fake-media` | Both ways at 30 fps; the callee shows the pattern with the caller's clock, and the caller's self view shows it unmirrored. |
 | Same, Camera off, Camera on, then diagnostics off | Off: placeholder at 5 fps; on: pattern back at 30 fps; diagnostics off: the pattern stops, the placeholder is sent, the self view says "Camera off" and the button "Turn camera on". The camera only opens when that's pressed. |
 | Control bar, idle | Turn mic off ▾, Camera ▾ and a disabled End. Camera ▾ lists the fake camera and, with diagnostics on, Test pattern; the mic ▾ lists three fake microphones and three speakers. |
