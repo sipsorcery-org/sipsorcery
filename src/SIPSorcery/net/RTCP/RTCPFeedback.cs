@@ -28,6 +28,7 @@
 
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -127,7 +128,16 @@ namespace SIPSorcery.Net
         public byte[] FirSequenceNumbers = Array.Empty<byte>();
 
         private const int FIR_FCI_ENTRY_LENGTH = 8;
-        
+
+        /// <summary>
+        /// For a parsed generic NACK (RFC 4585 section 6.2.1) the sequence numbers of the RTP packets reported lost
+        /// by all of its FCI entries, in the order reported. <see cref="PID"/> and <see cref="BLP"/> hold only the first entry.
+        /// </summary>
+        public IReadOnlyList<ushort> LostSequenceNumbers { get; private set; } = Array.Empty<ushort>();
+
+        private const int NACK_FCI_ENTRY_LENGTH = 4;
+        private const int NACK_BITMASK_BIT_COUNT = 16;
+
 
         public RTCPFeedback(uint senderSsrc, uint mediaSsrc, RTCPFeedbackTypesEnum feedbackMessageType, ushort sequenceNo, ushort bitMask)
         {
@@ -205,6 +215,31 @@ namespace SIPSorcery.Net
                     SENDER_PAYLOAD_SIZE = 12;
                     PID = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(payloadIndex + 8));
                     BLP = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(payloadIndex + 10));
+                    if (h.FeedbackMessageType == RTCPFeedbackTypesEnum.NACK)
+                    {
+                        // RFC 4585 section 6.2.1: one or more FCI entries of a packet ID (16 bits) and a
+                        // bitmask of the 16 packets after it.
+                        int fciEnd = Math.Min((h.Length + 1) * 4, packet.Length);
+                        if (h.PaddingFlag == 1)
+                        {
+                            fciEnd -= packet[fciEnd - 1];
+                        }
+                        var lost = new List<ushort>();
+                        for (int entryIndex = payloadIndex + 8; entryIndex + NACK_FCI_ENTRY_LENGTH <= fciEnd; entryIndex += NACK_FCI_ENTRY_LENGTH)
+                        {
+                            ushort pid = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(entryIndex));
+                            ushort blp = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(entryIndex + 2));
+                            lost.Add(pid);
+                            for (int bit = 0; bit < NACK_BITMASK_BIT_COUNT; bit++)
+                            {
+                                if ((blp & (1 << bit)) != 0)
+                                {
+                                    lost.Add((ushort)(pid + bit + 1));
+                                }
+                            }
+                        }
+                        LostSequenceNumbers = lost.ToArray();
+                    }
                     break;
 
                 case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:

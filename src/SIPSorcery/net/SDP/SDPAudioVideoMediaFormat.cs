@@ -119,16 +119,16 @@ namespace SIPSorcery.Net
         /// The RTCP feedback types (RFC 4585 "a=rtcp-fb" values) a locally created video format offers
         /// when no explicit list has been set on it.
         /// <list type="bullet">
+        /// <item>"nack": generic NACK, lets the receiver ask for lost packets to be sent again.</item>
         /// <item>"nack pli": Picture Loss Indication, lets the receiver ask for a key frame.</item>
         /// <item>"ccm fir": Full Intra Request (RFC 5104), the same request used by many SIP phones.</item>
         /// <item>"transport-cc": transport wide congestion control feedback.</item>
         /// </list>
-        /// Plain "nack" (generic NACK) is intentionally not included because the RTP session does not keep a
-        /// send history and so cannot retransmit lost packets. Set this to change the default for the
-        /// whole process, for example to an empty list to stop advertising RTCP feedback.
+        /// Set this to change the default for the whole process, for example to an empty list to stop
+        /// advertising RTCP feedback.
         /// </summary>
         public static IReadOnlyList<string> DefaultVideoRtcpFeedbackMessages { get; set; } =
-            new[] { RTCP_FEEDBACK_NACK_PLI, RTCP_FEEDBACK_CCM_FIR, RTCP_FEEDBACK_TRANSPORT_CC };
+            new[] { RTCP_FEEDBACK_NACK, RTCP_FEEDBACK_NACK_PLI, RTCP_FEEDBACK_CCM_FIR, RTCP_FEEDBACK_TRANSPORT_CC };
 
         public const string RTCP_FEEDBACK_NACK = "nack";
         public const string RTCP_FEEDBACK_NACK_PLI = "nack pli";
