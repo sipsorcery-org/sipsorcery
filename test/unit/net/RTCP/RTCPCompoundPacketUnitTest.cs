@@ -234,6 +234,79 @@ namespace SIPSorcery.Net.UnitTests
             return packet;
         }
 
+        /// <summary>
+        /// A generic NACK with several FCI entries followed by a PLI, as Chrome sends when it has
+        /// lost a few packets of a frame. Every NACK entry is read past, so the PLI isn't lost, and
+        /// an entry whose PID happens to look like a BYE packet type isn't taken for one.
+        /// </summary>
+        [Fact]
+        public void ParseMultiEntryNackThenPliUnitTest()
+        {
+            byte[] packet = RrNackPli();
+
+            var compound = new RTCPCompoundPacket(packet);
+
+            AssertRrNackPli(compound);
+        }
+
+        /// <summary>
+        /// As <see cref="ParseMultiEntryNackThenPliUnitTest"/>, through TryParse, which must also
+        /// consume the whole compound packet.
+        /// </summary>
+        [Fact]
+        public void TryParseMultiEntryNackThenPliUnitTest()
+        {
+            byte[] packet = RrNackPli();
+
+            Assert.True(RTCPCompoundPacket.TryParse(packet.AsSpan(), out var compound, out int consumed));
+
+            AssertRrNackPli(compound);
+            Assert.Equal(packet.Length, consumed);
+        }
+
+        private const uint NACK_TEST_SENDER_SSRC = 0x11111111;
+        private const uint NACK_TEST_MEDIA_SSRC = 0x22222222;
+
+        /// <summary>RR (no report blocks), generic NACK with 3 entries, PLI.</summary>
+        private static byte[] RrNackPli()
+        {
+            var packet = new List<byte>();
+            void U16(ushort v) { var b = new byte[2]; BinaryPrimitives.WriteUInt16BigEndian(b, v); packet.AddRange(b); }
+            void U32(uint v) { var b = new byte[4]; BinaryPrimitives.WriteUInt32BigEndian(b, v); packet.AddRange(b); }
+
+            // RR, no report blocks: 2 words.
+            packet.Add(0x80); packet.Add((byte)RTCPReportTypesEnum.RR); U16(1); U32(NACK_TEST_SENDER_SSRC);
+
+            // Generic NACK (FMT 1), 3 FCI entries: the header, 2 SSRCs and 3 entries are 6 words, so a length of 5. The second
+            // entry's PID 0x12CB has 203 (BYE) where a packet type would be.
+            packet.Add(0x81); packet.Add((byte)RTCPReportTypesEnum.RTPFB); U16(5); U32(NACK_TEST_SENDER_SSRC); U32(NACK_TEST_MEDIA_SSRC);
+            U16(0x1200); U16(0x0003);
+            U16(0x12CB); U16(0x0001);
+            U16(0x12F0); U16(0x0000);
+
+            // PLI (PSFB, FMT 1): 3 words.
+            packet.Add(0x81); packet.Add((byte)RTCPReportTypesEnum.PSFB); U16(2); U32(NACK_TEST_SENDER_SSRC); U32(NACK_TEST_MEDIA_SSRC);
+
+            return packet.ToArray();
+        }
+
+        private static void AssertRrNackPli(RTCPCompoundPacket compound)
+        {
+            Assert.NotNull(compound.ReceiverReport);
+            Assert.Equal(NACK_TEST_SENDER_SSRC, compound.ReceiverReport.SSRC);
+            Assert.Null(compound.Bye);
+            Assert.Null(compound.SenderReport);
+
+            var feedback = compound.FeedbackMessages;
+            Assert.Equal(2, feedback.Count);
+            Assert.Equal(RTCPReportTypesEnum.RTPFB, feedback[0].Header.PacketType);
+            Assert.Equal(RTCPFeedbackTypesEnum.NACK, feedback[0].Header.FeedbackMessageType);
+            Assert.Equal((ushort)0x1200, feedback[0].PID);
+            Assert.Equal(RTCPReportTypesEnum.PSFB, feedback[1].Header.PacketType);
+            Assert.Equal(PSFBFeedbackTypesEnum.PLI, feedback[1].Header.PayloadFeedbackMessageType);
+            Assert.Equal(NACK_TEST_MEDIA_SSRC, feedback[1].MediaSSRC);
+        }
+
         private static void AddSdesItem(List<byte> payload, byte type, byte[] value)
         {
             payload.Add(type);
