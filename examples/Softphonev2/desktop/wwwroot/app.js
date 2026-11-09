@@ -1410,6 +1410,7 @@ function render() {
   reg.title = !state.address ? "" : `Copy ${state.address}`
     + (state.account ? "" : " (no account: direct calls only)")
     + (state.registrationDetail ? `. ${state.registrationDetail}` : "");
+  renderCalls();
 }
 
 // Every 5 s during a call: what's arriving and leaving, for the log (and for testing).
@@ -1435,7 +1436,121 @@ function tick() {
   const s = Math.floor((Date.now() - connectedAt) / 1000);
   if (s > 0 && s % 5 === 0) statsLine();
   $("timer").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  renderCallTimes();
 }
+
+// ---- Active calls panel, down the left ----
+// The hosts carry one call at a time, so today the list is that call while it's live, built
+// from the host's state. Each entry has its own id, so more calls can be listed later. Collapsed,
+// it's a rail of avatars and timers; the choice is remembered. Under 700 px it's always the
+// rail, and expanding it lays the panel over the stage until it's collapsed or you click away.
+
+const CALLS_ICON = {
+  collapse: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
+  expand: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
+};
+const narrowCalls = matchMedia("(max-width: 699px)");
+let callsCollapsed = false;   // your choice on wider windows
+let callsPeek = false;        // narrow windows: the panel open over the stage, for now
+try { callsCollapsed = localStorage.getItem("callsPanel") === "collapsed"; } catch { /* storage unavailable */ }
+
+const fmtElapsed = (ms) => {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, ss = String(s % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${String(m).padStart(2, "0")}:${ss}`;
+};
+
+// The calls to list: { id, name, remote, status, statusText, since, muted, media: [[icon, class, label]] }.
+function panelCalls() {
+  const { call: phase, remote } = state;
+  if (phase !== "calling" && phase !== "ringing" && phase !== "connected") return [];
+  const entry = { id: "current", name: shortName(remote), remote: remote || "", status: phase, since: 0, muted: false, media: [] };
+  if (phase === "calling") entry.statusText = "Calling…";
+  else if (phase === "ringing") entry.statusText = state.incomingVideo ? "Incoming video call" : "Incoming call";
+  else if (!call) entry.statusText = "Connecting media…";
+  else {
+    entry.since = connectedAt;
+    entry.muted = hasMic && micMuted;
+    entry.statusText = entry.muted ? "Muted" : call.hasVideo ? "Video call" : "Audio call";
+    entry.media.push(!hasMic ? ["micOff", "idle", "No mic"] : micMuted ? ["micOff", "off", "Muted"] : ["mic", "live", "Your mic is live"]);
+    entry.media.push(!call.hasVideo ? ["videoOff", "idle", "Audio only"]
+      : call.camOn ? ["video", "live", "Sending your video"] : ["videoOff", "off", "Video stopped"]);
+  }
+  return [entry];
+}
+
+function renderCalls() {
+  const calls = panelCalls();
+  const narrow = narrowCalls.matches;
+  if (!narrow) callsPeek = false;
+  const collapsed = narrow ? !callsPeek : callsCollapsed;
+  const panel = $("calls");
+  panel.classList.toggle("collapsed", collapsed);
+  panel.classList.toggle("peek", narrow && callsPeek);
+  panel.title = collapsed ? "Show active calls" : "";
+  const toggle = $("callsToggle");
+  toggle.setAttribute("aria-expanded", String(!collapsed));
+  toggle.setAttribute("aria-label", collapsed ? "Show active calls" : "Collapse active calls");
+  toggle.title = collapsed ? "Show active calls" : "Collapse active calls";
+  const icon = collapsed ? CALLS_ICON.expand : CALLS_ICON.collapse;
+  if (toggle.innerHTML !== icon) toggle.innerHTML = icon;
+  $("callCount").textContent = calls.length || "";
+
+  const list = $("callList");
+  list.replaceChildren(...(calls.length ? calls.map(callRow) : [Object.assign(document.createElement("li"), { className: "call-empty", textContent: "No active calls" })]));
+}
+
+function callRow(c) {
+  const li = document.createElement("li");
+  li.className = `call-row ${c.status}${c.muted ? " muted" : ""}`;
+  li.dataset.call = c.id;
+  li.setAttribute("aria-current", "true");   // the call on the stage; with one call, always
+  li.title = [c.remote || c.name, c.statusText].join(" · ");
+  const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls, textContent: text ?? "" });
+  const avatar = el("span", "call-avatar", initial(c.name));
+  avatar.setAttribute("aria-hidden", "true");
+  const top = el("span", "call-top");
+  top.append(el("span", "call-name", c.name));
+  if (c.media.length) {
+    const media = el("span", "call-media");
+    for (const [ico, cls, label] of c.media) {
+      const m = el("span", `media-ico ${cls}`);
+      m.title = label;
+      m.setAttribute("role", "img");
+      m.setAttribute("aria-label", label);
+      m.innerHTML = ICON[ico];
+      media.append(m);
+    }
+    top.append(media);
+  }
+  const main = el("span", "call-main");
+  main.append(top, el("span", "call-status", c.statusText));
+  const time = el("span", "call-time", c.since ? fmtElapsed(Date.now() - c.since) : "");
+  if (c.since) time.dataset.since = c.since;
+  li.append(avatar, main, time);
+  return li;
+}
+
+// Every second while connected: just the timers.
+function renderCallTimes() {
+  for (const t of document.querySelectorAll("#callList .call-time[data-since]")) t.textContent = fmtElapsed(Date.now() - Number(t.dataset.since));
+}
+
+function setCallsCollapsed(collapsed) {
+  if (narrowCalls.matches) callsPeek = !collapsed;
+  else {
+    callsCollapsed = collapsed;
+    try { localStorage.setItem("callsPanel", collapsed ? "collapsed" : "open"); } catch { /* storage unavailable */ }
+  }
+  renderCalls();
+}
+$("callsToggle").onclick = (e) => { e.stopPropagation(); setCallsCollapsed(!$("calls").classList.contains("collapsed")); };
+// The whole rail expands it.
+$("calls").addEventListener("click", () => { if ($("calls").classList.contains("collapsed")) setCallsCollapsed(false); });
+// Narrow windows: clicking away or Esc puts the panel back to the rail.
+document.addEventListener("pointerdown", (e) => { if (callsPeek && !e.target.closest("#calls")) { callsPeek = false; renderCalls(); } });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && callsPeek) { callsPeek = false; renderCalls(); } });
+narrowCalls.addEventListener("change", renderCalls);
 
 // ---- Controls ----
 
