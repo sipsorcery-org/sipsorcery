@@ -1199,6 +1199,7 @@ namespace SIPSorcery.Net
                 int currentVideoStreamCount = 0;
                 int currentTextStreamCount = 0;
                 MediaStream currentMediaStream;
+                var declinedStreams = new HashSet<MediaStream>();
 
                 foreach (var announcement in sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio || x.Media == SDPMediaTypesEnum.video || x.Media == SDPMediaTypesEnum.text))
                 {
@@ -1231,6 +1232,33 @@ namespace SIPSorcery.Net
                     var remoteTrack = new MediaStreamTrack(announcement.Media, true, announcement.MediaFormats.Values.ToList(), mediaStreamStatus, announcement.SsrcAttributes, announcement.HeaderExtensions);
 
                     currentMediaStream.RemoteTrack = remoteTrack;
+
+                    // RFC 3264 section 6: a port of zero declines this one stream and the rest of
+                    // the session goes ahead, e.g. a phone without real-time text answering
+                    // "m=text 0 RTP/AVP 100". The formats on a declined line mean nothing (often
+                    // there's no rtpmap for them), so don't match codecs or fail the session over
+                    // them. Our local formats are kept, so a later offer (a re-INVITE) can offer
+                    // the stream again (RFC 3264 section 8). Not for multiplexed (BUNDLE)
+                    // sessions, where port zero can mean bundle-only.
+                    if (announcement.Port == 0 && !rtpSessionConfig.IsMediaMultiplexed && currentMediaStream.LocalTrack != null)
+                    {
+                        logger.LogDebug("Remote party declined the {MediaType} stream (port 0).", currentMediaStream.MediaType);
+                        remoteTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                        currentMediaStream.LocalTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                        declinedStreams.Add(currentMediaStream);
+
+                        if (currentMediaStream.RtcpSession != null && !currentMediaStream.RtcpSession.IsClosed)
+                        {
+                            currentMediaStream.RtcpSession.Close(null);
+                        }
+
+                        if (currentMediaStream is VideoStream declinedVideo)
+                        {
+                            declinedVideo.DisableUlpfec("Remote party declined the video stream.");
+                        }
+
+                        continue;
+                    }
 
                     if (rtpSessionConfig.UseSdpCryptoNegotiation)
                     {
@@ -1470,17 +1498,18 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                foreach (var audioStream in AudioStreamList)
+                // A declined stream agreed no formats, so it doesn't report any.
+                foreach (var audioStream in AudioStreamList.Where(s => !declinedStreams.Contains(s)))
                 {
                     audioStream.CheckAudioFormatsNegotiation();
                 }
 
-                foreach (var videoStream in VideoStreamList)
+                foreach (var videoStream in VideoStreamList.Where(s => !declinedStreams.Contains(s)))
                 {
                     videoStream.CheckVideoFormatsNegotiation();
                 }
 
-                foreach (var textStream in TextStreamList)
+                foreach (var textStream in TextStreamList.Where(s => !declinedStreams.Contains(s)))
                 {
                     textStream.CheckTextFormatsNegotiation();
                 }
