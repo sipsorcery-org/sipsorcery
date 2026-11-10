@@ -1,10 +1,10 @@
 //-----------------------------------------------------------------------------
-// Filename: FFmpegVideoEncoderStreamUnitTest.cs
+// Filename: FFmpegVideoEncoderBufferWriterUnitTest.cs
 //
 // Description: Unit tests for the FFmpegVideoEncoder method that writes each
-// encoded frame straight from FFmpeg's packet to a stream, rather than copying
-// it into a new array, and for the encoder's argument checks, statistics,
-// disposal and per frame allocations.
+// encoded frame straight from FFmpeg's packet to an IBufferWriter<byte>,
+// rather than copying it into a new array, and for the encoder's argument
+// checks, statistics, disposal and per frame allocations.
 //
 // The tests encode with the native FFmpeg libraries and are skipped when those
 // cannot be loaded, see FFmpegAvailability.
@@ -20,8 +20,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using FFmpeg.AutoGen;
@@ -30,7 +30,7 @@ using Xunit;
 
 namespace SIPSorceryMedia.FFmpeg.UnitTest
 {
-    public class FFmpegVideoEncoderStreamUnitTest
+    public class FFmpegVideoEncoderBufferWriterUnitTest
     {
         private const int WIDTH = 320;
         private const int HEIGHT = 240;
@@ -93,18 +93,19 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
         }
 
         /// <summary>
-        /// Every frame written to a re-used stream is exactly the frame the array method returns, key frames, forced
-        /// key frame and inter frames alike, from I420 input and from input that goes through the pixel converter.
+        /// Every frame written to a re-used buffer writer is exactly the frame the array method returns, key frames,
+        /// forced key frame and inter frames alike, from I420 input and from input that goes through the pixel
+        /// converter.
         /// </summary>
         [FFmpegTheory("libx264", "libvpx")]
         [MemberData(nameof(CodecsAndFormats))]
-        public void EncodeVideo_Stream_MatchesArrayMethod(VideoCodecsEnum codec, VideoPixelFormatsEnum format)
+        public void EncodeVideo_BufferWriter_MatchesArrayMethod(VideoCodecsEnum codec, VideoPixelFormatsEnum format)
         {
             var expected = EncodeWithArrays(codec, format);
 
             using (var encoder = CreateEncoder(codec))
             {
-                var stream = new MemoryStream();
+                var output = new ArrayBufferWriter<byte>();
                 for (int i = 0; i < FRAMES; i++)
                 {
                     if (i == 7)
@@ -112,11 +113,11 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
                         encoder.ForceKeyFrame();
                     }
 
-                    stream.SetLength(0);
-                    int written = encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, format, i), format, codec, stream);
+                    output.ResetWrittenCount();
+                    int written = encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, format, i), format, codec, output);
 
                     Assert.Equal(expected[i]?.Length ?? 0, written);
-                    Assert.Equal(expected[i] ?? Array.Empty<byte>(), stream.ToArray());
+                    Assert.Equal(expected[i] ?? Array.Empty<byte>(), output.WrittenSpan.ToArray());
                 }
             }
 
@@ -124,17 +125,17 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
         }
 
         /// <summary>
-        /// Frames written one after another without resetting the stream are laid out back to back, each call
+        /// Frames written one after another without resetting the writer are laid out back to back, each call
         /// returning what it added, so frame boundaries are kept.
         /// </summary>
         [FFmpegFact("libx264")]
-        public void EncodeVideo_Stream_NotReset_AppendsWholeFrames()
+        public void EncodeVideo_BufferWriter_NotReset_AppendsWholeFrames()
         {
             var expected = EncodeWithArrays(VideoCodecsEnum.H264, VideoPixelFormatsEnum.I420);
 
             using (var encoder = CreateEncoder(VideoCodecsEnum.H264))
             {
-                var stream = new MemoryStream();
+                var output = new ArrayBufferWriter<byte>();
                 var lengths = new List<int>();
 
                 for (int i = 0; i < FRAMES; i++)
@@ -143,13 +144,13 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
                     {
                         encoder.ForceKeyFrame();
                     }
-                    long before = stream.Position;
-                    int written = encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, i), VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, stream);
-                    Assert.Equal(stream.Position - before, written);
+                    int before = output.WrittenCount;
+                    int written = encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, i), VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, output);
+                    Assert.Equal(output.WrittenCount - before, written);
                     lengths.Add(written);
                 }
 
-                byte[] all = stream.ToArray();
+                byte[] all = output.WrittenSpan.ToArray();
                 int offset = 0;
                 for (int i = 0; i < FRAMES; i++)
                 {
@@ -161,18 +162,17 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
         }
 
         /// <summary>
-        /// A stream that can only be written to, with no position, length, seeking or reading, is enough, and each
-        /// frame arrives in a single write.
+        /// The writer is asked for one span of the frame's length, which is committed with one Advance, so each frame
+        /// is contiguous in the writer and a writer that grows can size its buffer for the frame in one step.
         /// </summary>
         [FFmpegFact("libvpx")]
-        public void EncodeVideo_Stream_WriteOnlyNonSeekable_ReceivesEachFrameInOneWrite()
+        public void EncodeVideo_BufferWriter_EachFrameIsOneSpanOfItsLength()
         {
             var expected = EncodeWithArrays(VideoCodecsEnum.VP8, VideoPixelFormatsEnum.I420);
 
             using (var encoder = CreateEncoder(VideoCodecsEnum.VP8))
             {
-                var stream = new WriteOnlyStream();
-                int framesWritten = 0;
+                var output = new RecordingBufferWriter();
 
                 for (int i = 0; i < FRAMES; i++)
                 {
@@ -180,23 +180,16 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
                     {
                         encoder.ForceKeyFrame();
                     }
-                    if (encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, i), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, stream) > 0)
-                    {
-                        framesWritten++;
-                    }
-                }
 
-                var concatenated = new MemoryStream();
-                foreach (var frame in expected)
-                {
-                    if (frame != null)
-                    {
-                        concatenated.Write(frame, 0, frame.Length);
-                    }
-                }
+                    output.Calls.Clear();
+                    int before = output.WrittenCount;
+                    int written = encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, i), VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, output);
 
-                Assert.Equal(concatenated.ToArray(), stream.ToArray());
-                Assert.Equal(framesWritten, stream.WriteCalls);
+                    int length = expected[i]?.Length ?? 0;
+                    Assert.Equal(length, written);
+                    Assert.Equal(length == 0 ? string.Empty : $"GetSpan({length}), Advance({length})", string.Join(", ", output.Calls));
+                    Assert.Equal(expected[i] ?? Array.Empty<byte>(), output.WrittenSpan.Slice(before).ToArray());
+                }
             }
         }
 
@@ -207,7 +200,7 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
         /// mode, so it cannot be used for this.)
         /// </summary>
         [FFmpegFact("libx264")]
-        public void EncodeVideo_Stream_EncoderHoldsFramesBack_ReturnsZeroAndWritesNothingUntilOutput()
+        public void EncodeVideo_BufferWriter_EncoderHoldsFramesBack_ReturnsZeroAndWritesNothingUntilOutput()
         {
             const int frames = 24;
             var lookAhead = new Dictionary<string, string> { ["tune"] = "film", ["x264-params"] = "rc-lookahead=4" };
@@ -228,46 +221,44 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
 
             using (var encoder = CreateEncoder(VideoCodecsEnum.H264, lookAhead))
             {
-                var stream = new MemoryStream();
+                var output = new ArrayBufferWriter<byte>();
 
                 for (int i = 0; i < frames; i++)
                 {
-                    long lengthBefore = stream.Length;
-                    int written = encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, i), VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, stream);
+                    int before = output.WrittenCount;
+                    int written = encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, i), VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, output);
 
                     if (expected[i] == null)
                     {
                         Assert.Equal(0, written);
-                        Assert.Equal(lengthBefore, stream.Length);
+                        Assert.Equal(before, output.WrittenCount);
                     }
                     else
                     {
                         Assert.Equal(expected[i].Length, written);
-                        Assert.Equal(expected[i], stream.ToArray().AsSpan((int)lengthBefore).ToArray());
+                        Assert.Equal(expected[i], output.WrittenSpan.Slice(before).ToArray());
                     }
                 }
             }
         }
 
         /// <summary>
-        /// A stream that cannot be written to, or none, is rejected before encoding, so no frame is consumed by the
-        /// encoder and lost: the next frame encoded is the first frame the encoder has seen, a key frame identical to
-        /// the reference encoder's first.
+        /// A null writer is rejected before encoding, so no frame is consumed by the encoder and lost: the next frame
+        /// encoded is the first frame the encoder has seen, a key frame identical to the reference encoder's first.
         /// </summary>
         [FFmpegFact("libx264")]
-        public void EncodeVideo_Stream_ReadOnlyOrNull_ThrowsWithoutConsumingAFrame()
+        public void EncodeVideo_BufferWriter_Null_ThrowsWithoutConsumingAFrame()
         {
             var expected = EncodeWithArrays(VideoCodecsEnum.H264, VideoPixelFormatsEnum.I420, frames: 2);
 
             using (var encoder = CreateEncoder(VideoCodecsEnum.H264))
             {
                 var frame0 = TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, 0);
-                Assert.Throws<ArgumentException>(() => encoder.EncodeVideo(WIDTH, HEIGHT, frame0, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, new MemoryStream(new byte[4], writable: false)));
                 Assert.Throws<ArgumentNullException>(() => encoder.EncodeVideo(WIDTH, HEIGHT, frame0, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, null));
 
-                var stream = new MemoryStream();
-                Assert.Equal(expected[0].Length, encoder.EncodeVideo(WIDTH, HEIGHT, frame0, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, stream));
-                Assert.Equal(expected[0], stream.ToArray());
+                var output = new ArrayBufferWriter<byte>();
+                Assert.Equal(expected[0].Length, encoder.EncodeVideo(WIDTH, HEIGHT, frame0, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, output));
+                Assert.Equal(expected[0], output.WrittenSpan.ToArray());
             }
         }
 
@@ -281,8 +272,8 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
             using (var encoder = CreateEncoder(VideoCodecsEnum.H264))
             {
                 var tooSmall = new byte[WIDTH * HEIGHT];
-                Assert.Throws<ArgumentException>(() => encoder.EncodeVideo(WIDTH, HEIGHT, tooSmall, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, new MemoryStream()));
-                Assert.Throws<ArgumentException>(() => encoder.EncodeVideo(WIDTH, HEIGHT, new byte[WIDTH * HEIGHT * 3 - 1], VideoPixelFormatsEnum.Bgr, VideoCodecsEnum.H264, new MemoryStream()));
+                Assert.Throws<ArgumentException>(() => encoder.EncodeVideo(WIDTH, HEIGHT, tooSmall, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, new ArrayBufferWriter<byte>()));
+                Assert.Throws<ArgumentException>(() => encoder.EncodeVideo(WIDTH, HEIGHT, new byte[WIDTH * HEIGHT * 3 - 1], VideoPixelFormatsEnum.Bgr, VideoCodecsEnum.H264, new ArrayBufferWriter<byte>()));
                 Assert.Throws<ArgumentException>(() => encoder.EncodeVideo(WIDTH, HEIGHT, tooSmall, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264));
                 Assert.Throws<ArgumentNullException>(() => encoder.EncodeVideo(WIDTH, HEIGHT, null, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264));
             }
@@ -317,9 +308,9 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
                 {
                     encoder.EncodeVideo(WIDTH, HEIGHT, bgra, VideoPixelFormatsEnum.Bgra, VideoCodecsEnum.H264);
 
-                    var stream = new MemoryStream();
-                    encoder.EncodeVideo(WIDTH, HEIGHT, second, secondFormat, VideoCodecsEnum.H264, stream);
-                    return stream.ToArray();
+                    var output = new ArrayBufferWriter<byte>();
+                    encoder.EncodeVideo(WIDTH, HEIGHT, second, secondFormat, VideoCodecsEnum.H264, output);
+                    return output.WrittenSpan.ToArray();
                 }
             }
 
@@ -330,30 +321,32 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
         }
 
         /// <summary>
-        /// When writing to the stream fails the exception reaches the caller, the encoder keeps working, and the next
-        /// frame is a key frame, so a receiver that missed the lost frame can decode again.
+        /// When the buffer writer cannot hand out memory the exception reaches the caller, nothing is committed to the
+        /// writer, the encoder keeps working, and the next frame is a key frame, so a receiver that missed the lost
+        /// frame can decode again.
         /// </summary>
         [FFmpegTheory("libx264", "libvpx")]
         [InlineData(VideoCodecsEnum.H264)]
         [InlineData(VideoCodecsEnum.VP8)]
-        public void EncodeVideo_Stream_WriteFails_ExceptionPassedOnAndNextFrameIsKeyFrame(VideoCodecsEnum codec)
+        public void EncodeVideo_BufferWriter_WriteFails_ExceptionPassedOnAndNextFrameIsKeyFrame(VideoCodecsEnum codec)
         {
             using (var encoder = CreateEncoder(codec))
             {
-                var stream = new MemoryStream();
-                Assert.True(encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, 0), VideoPixelFormatsEnum.I420, codec, stream) > 0);
+                var output = new ArrayBufferWriter<byte>();
+                Assert.True(encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, 0), VideoPixelFormatsEnum.I420, codec, output) > 0);
 
-                stream.SetLength(0);
-                Assert.True(encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, 1), VideoPixelFormatsEnum.I420, codec, stream) > 0);
-                Assert.False(IsKeyFrame(codec, stream.ToArray()));
+                output.ResetWrittenCount();
+                Assert.True(encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, 1), VideoPixelFormatsEnum.I420, codec, output) > 0);
+                Assert.False(IsKeyFrame(codec, output.WrittenSpan.ToArray()));
 
-                var failing = new FailingStream();
-                Assert.Throws<IOException>(() => encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, 2), VideoPixelFormatsEnum.I420, codec, failing));
-                Assert.Equal(1, failing.WriteAttempts);
+                var failing = new FailingBufferWriter();
+                Assert.Throws<InvalidOperationException>(() => encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, 2), VideoPixelFormatsEnum.I420, codec, failing));
+                Assert.Equal(1, failing.Requests);
+                Assert.Equal(0, failing.AdvanceCalls);
 
-                stream.SetLength(0);
-                Assert.True(encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, 3), VideoPixelFormatsEnum.I420, codec, stream) > 0);
-                Assert.True(IsKeyFrame(codec, stream.ToArray()));
+                output.ResetWrittenCount();
+                Assert.True(encoder.EncodeVideo(WIDTH, HEIGHT, TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, 3), VideoPixelFormatsEnum.I420, codec, output) > 0);
+                Assert.True(IsKeyFrame(codec, output.WrittenSpan.ToArray()));
             }
         }
 
@@ -394,18 +387,18 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
         /// A disposed encoder writes nothing and returns 0, as the array method returns null.
         /// </summary>
         [FFmpegFact("libx264")]
-        public void EncodeVideo_Stream_AfterDispose_ReturnsZero()
+        public void EncodeVideo_BufferWriter_AfterDispose_ReturnsZero()
         {
             var encoder = CreateEncoder(VideoCodecsEnum.H264);
             var frame = TestFrames.Create(WIDTH, HEIGHT, VideoPixelFormatsEnum.I420, 0);
-            var stream = new MemoryStream();
-            Assert.True(encoder.EncodeVideo(WIDTH, HEIGHT, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, stream) > 0);
+            var output = new ArrayBufferWriter<byte>();
+            Assert.True(encoder.EncodeVideo(WIDTH, HEIGHT, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, output) > 0);
 
             encoder.Dispose();
 
-            stream.SetLength(0);
-            Assert.Equal(0, encoder.EncodeVideo(WIDTH, HEIGHT, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, stream));
-            Assert.Equal(0, stream.Length);
+            output.ResetWrittenCount();
+            Assert.Equal(0, encoder.EncodeVideo(WIDTH, HEIGHT, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, output));
+            Assert.Equal(0, output.WrittenCount);
             Assert.Null(encoder.EncodeVideo(WIDTH, HEIGHT, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264));
         }
 
@@ -425,11 +418,11 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
                 {
                     var encodeTask = Task.Run(() =>
                     {
-                        var stream = new MemoryStream();
+                        var output = new ArrayBufferWriter<byte>();
                         for (int i = 0; i < 200; i++)
                         {
-                            stream.SetLength(0);
-                            encoder.EncodeVideo(WIDTH, HEIGHT, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, stream);
+                            output.ResetWrittenCount();
+                            encoder.EncodeVideo(WIDTH, HEIGHT, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264, output);
                             started.Set();
                         }
                     });
@@ -446,23 +439,23 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
         }
 
         /// <summary>
-        /// Once the destination has grown to the frame size, encoding to it allocates nothing per frame, whether the
-        /// frame is passed to FFmpeg directly (I420) or through the pixel converter (BGR); the array method allocates
-        /// at least the encoded frame.
+        /// Once the writer has grown to the frame size, encoding to it allocates nothing per frame, whether the frame
+        /// is passed to FFmpeg directly (I420) or through the pixel converter (BGR); the array method allocates at
+        /// least the encoded frame.
         /// </summary>
         [FFmpegTheory("libx264", "libvpx")]
         [MemberData(nameof(CodecsAndFormats))]
-        public void EncodeVideo_Stream_ReusedDestination_DoesNotAllocatePerFrame(VideoCodecsEnum codec, VideoPixelFormatsEnum format)
+        public void EncodeVideo_BufferWriter_ReusedDestination_DoesNotAllocatePerFrame(VideoCodecsEnum codec, VideoPixelFormatsEnum format)
         {
             using (var encoder = CreateEncoder(codec))
             {
                 var frames = new[] { TestFrames.Create(WIDTH, HEIGHT, format, 0), TestFrames.Create(WIDTH, HEIGHT, format, 1) };
-                var stream = new MemoryStream(256 * 1024);
+                var output = new ArrayBufferWriter<byte>(256 * 1024);
 
                 for (int i = 0; i < 12; i++)
                 {
-                    stream.SetLength(0);
-                    encoder.EncodeVideo(WIDTH, HEIGHT, frames[i & 1], format, codec, stream);
+                    output.ResetWrittenCount();
+                    encoder.EncodeVideo(WIDTH, HEIGHT, frames[i & 1], format, codec, output);
                 }
 
                 const int count = 40;
@@ -470,8 +463,8 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
                 long before = GC.GetAllocatedBytesForCurrentThread();
                 for (int i = 0; i < count; i++)
                 {
-                    stream.SetLength(0);
-                    encodedBytes += encoder.EncodeVideo(WIDTH, HEIGHT, frames[i & 1], format, codec, stream);
+                    output.ResetWrittenCount();
+                    encodedBytes += encoder.EncodeVideo(WIDTH, HEIGHT, frames[i & 1], format, codec, output);
                 }
                 long allocatedPerFrame = (GC.GetAllocatedBytesForCurrentThread() - before) / count;
 

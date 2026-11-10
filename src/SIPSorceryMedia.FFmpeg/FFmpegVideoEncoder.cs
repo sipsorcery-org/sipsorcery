@@ -5,7 +5,6 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -107,8 +106,8 @@ namespace SIPSorceryMedia.FFmpeg
         }
 
         /// <summary>
-        /// Encodes a raw frame and writes the encoded frame to a stream, straight from FFmpeg's packet, without the new
-        /// array per frame that <see cref="EncodeVideo(int, int, byte[], VideoPixelFormatsEnum, VideoCodecsEnum)"/>
+        /// Encodes a raw frame and writes the encoded frame to a buffer writer, straight from FFmpeg's packet, without
+        /// the new array per frame that <see cref="EncodeVideo(int, int, byte[], VideoPixelFormatsEnum, VideoCodecsEnum)"/>
         /// returns.
         /// </summary>
         /// <param name="width">The frame width in pixels.</param>
@@ -116,23 +115,23 @@ namespace SIPSorceryMedia.FFmpeg
         /// <param name="sample">The raw frame in <paramref name="pixelFormat"/>, with no padding at the end of the rows.</param>
         /// <param name="pixelFormat">The pixel format of <paramref name="sample"/>.</param>
         /// <param name="codec">The codec to encode with.</param>
-        /// <param name="output">The writable stream to write the frame to. It does not need to be seekable.</param>
-        /// <returns>The length of the encoded frame written to <paramref name="output"/>, or 0 when the encoder produced
-        /// no frame for this input, in the same cases the array method returns null: the encoder is holding frames back,
-        /// for example for look-ahead; the frame was dropped to keep to the encoder's frame rate, which only happens while
-        /// <see cref="OnVideoEncoderStatistics"/> has subscribers; or the encoder has been disposed.</returns>
+        /// <param name="output">The buffer writer to write the encoded frame to.</param>
+        /// <returns>The number of bytes written to <paramref name="output"/>, the length of the encoded frame, or 0 when
+        /// the encoder produced no frame for this input, in the same cases the array method returns null: the encoder is
+        /// holding frames back, for example for look-ahead; the frame was dropped to keep to the encoder's frame rate,
+        /// which only happens while <see cref="OnVideoEncoderStatistics"/> has subscribers; or the encoder has been
+        /// disposed.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="output"/> is null.</exception>
-        /// <exception cref="ArgumentException"><paramref name="output"/> is not writable, or <paramref name="sample"/> is
-        /// shorter than a frame of the given dimensions and pixel format.</exception>
+        /// <exception cref="ArgumentException"><paramref name="sample"/> is shorter than a frame of the given dimensions
+        /// and pixel format.</exception>
         /// <exception cref="NotImplementedException">FFmpeg has no codec for <paramref name="codec"/> or no pixel format
         /// for <paramref name="pixelFormat"/>, as for the array method.</exception>
         /// <remarks>
         /// <para>
         /// Each call writes at most one encoded frame, the same bytes the array method would return, so frame boundaries
-        /// are kept. An encoder holding frames back delivers them on later calls, in order. The frame is written straight
-        /// from FFmpeg's packet while the packet is still referenced, and the packet's memory is not handed out beyond
-        /// that. It takes a single write, except in the netstandard2.0 build, where Stream has no span overload and the
-        /// frame goes through a pooled array in pieces of up to 80 KB.
+        /// are kept. An encoder holding frames back delivers them on later calls, in order. The frame is copied from
+        /// FFmpeg's packet, while the packet is still referenced, into one span of <paramref name="output"/> requested
+        /// with the frame's length, and committed with one <see cref="IBufferWriter{T}.Advance(int)"/> call.
         /// </para>
         /// <para>
         /// The packet FFmpeg encodes into is allocated once and re-used, and the raw frame is passed to FFmpeg, directly
@@ -140,20 +139,24 @@ namespace SIPSorceryMedia.FFmpeg
         /// the capacity for the frame, encoding does not allocate per frame.
         /// </para>
         /// <para>
-        /// If writing to <paramref name="output"/> throws, the exception is passed on and the next frame given to the
+        /// If writing to <paramref name="output"/> fails, the exception is passed on and the next frame given to the
         /// encoder is encoded as a key frame, as the receiver will not have the frame the encoder would otherwise predict
         /// from. An encoder holding frames back still delivers the frames it had already encoded before that key frame.
-        /// What <paramref name="output"/> holds after a failed write is up to the stream.
         /// </para>
         /// </remarks>
-        public int EncodeVideo(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec, Stream output)
+        public int EncodeVideo(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec, IBufferWriter<byte> output)
         {
-            ValidateOutput(output);
+            // Checked before encoding so a frame is not consumed by the encoder and then lost on the write.
+            if (output == null)
+            {
+                throw new ArgumentNullException(nameof(output));
+            }
+
             ValidateSample(width, height, sample, pixelFormat);
 
             fixed (byte* pSample = sample)
             {
-                var sink = new StreamPacketSink(output);
+                var sink = new BufferWriterPacketSink(output);
                 return EncodeVideoCore(width, height, pSample, pixelFormat, codec, ref sink, out int bytesWritten) ? bytesWritten : 0;
             }
         }
@@ -174,20 +177,6 @@ namespace SIPSorceryMedia.FFmpeg
             }
 
             return EncodeSampleCore(codecID.Value, sample, width, height, Helper.DEFAULT_VIDEO_FRAME_RATE, false, avPixelFormat, ref sink, out bytesWritten);
-        }
-
-        private static void ValidateOutput(Stream output)
-        {
-            if (output == null)
-            {
-                throw new ArgumentNullException(nameof(output));
-            }
-
-            // Checked before encoding so a frame is not consumed by the encoder and then lost on the write.
-            if (!output.CanWrite)
-            {
-                throw new ArgumentException("The output stream must be writable.", nameof(output));
-            }
         }
 
         /// <summary>
@@ -961,48 +950,25 @@ namespace SIPSorceryMedia.FFmpeg
         }
 
         /// <summary>
-        /// Writes the packet to a stream: with a single write where Stream has a span overload, otherwise through a
-        /// pooled array.
+        /// Copies the packet into a buffer writer. The whole packet is requested at once, so the frame lands in one
+        /// contiguous span and the writer can size its buffer for it in one step.
         /// </summary>
-        private readonly struct StreamPacketSink : IEncodedPacketSink
+        private readonly struct BufferWriterPacketSink : IEncodedPacketSink
         {
-#if !(NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER)
-            // Without Stream.Write(ReadOnlySpan<byte>) the packet has to be passed to the stream from an array. A
-            // pooled one is used, in chunks of at most this size, so there is still no per-frame allocation. 81920
-            // bytes, the buffer size Stream.CopyTo uses, keeps the rented array off the large object heap.
-            private const int MAX_POOLED_CHUNK_SIZE = 81920;
-#endif
+            private readonly IBufferWriter<byte> _output;
 
-            private readonly Stream _output;
-
-            public StreamPacketSink(Stream output) => _output = output;
+            public BufferWriterPacketSink(IBufferWriter<byte> output) => _output = output;
 
             public void Write(ReadOnlySpan<byte> packet)
             {
                 if (packet.IsEmpty)
                 {
+                    // Nothing to copy, and GetSpan would still have to hand out a buffer.
                     return;
                 }
 
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
-                _output.Write(packet);
-#else
-                byte[] chunk = ArrayPool<byte>.Shared.Rent(Math.Min(packet.Length, MAX_POOLED_CHUNK_SIZE));
-                try
-                {
-                    while (!packet.IsEmpty)
-                    {
-                        int count = Math.Min(packet.Length, chunk.Length);
-                        packet.Slice(0, count).CopyTo(chunk);
-                        _output.Write(chunk, 0, count);
-                        packet = packet.Slice(count);
-                    }
-                }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(chunk);
-                }
-#endif
+                packet.CopyTo(_output.GetSpan(packet.Length));
+                _output.Advance(packet.Length);
             }
         }
 

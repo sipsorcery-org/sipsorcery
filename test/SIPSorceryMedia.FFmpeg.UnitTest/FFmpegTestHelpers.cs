@@ -16,8 +16,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
-using System.IO;
 using FFmpeg.AutoGen;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
@@ -224,66 +224,59 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
     }
 
     /// <summary>
-    /// A stream that supports nothing but writing.
+    /// A buffer writer that records the calls made to it, over an <see cref="ArrayBufferWriter{T}"/> that keeps what is
+    /// written.
     /// </summary>
-    internal sealed class WriteOnlyStream : Stream
+    internal sealed class RecordingBufferWriter : IBufferWriter<byte>
     {
-        private readonly MemoryStream _written = new MemoryStream();
+        private readonly ArrayBufferWriter<byte> _written = new ArrayBufferWriter<byte>();
 
-        public int WriteCalls { get; private set; }
+        public List<string> Calls { get; } = new List<string>();
 
-        public byte[] ToArray() => _written.ToArray();
+        public int WrittenCount => _written.WrittenCount;
 
-        public override bool CanRead => false;
-        public override bool CanSeek => false;
-        public override bool CanWrite => true;
-        public override long Length => throw new NotSupportedException();
-        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
-        public override void Flush() { }
-        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-        public override void SetLength(long value) => throw new NotSupportedException();
+        public ReadOnlySpan<byte> WrittenSpan => _written.WrittenSpan;
 
-        public override void Write(byte[] buffer, int offset, int count)
+        public void Advance(int count)
         {
-            WriteCalls++;
-            _written.Write(buffer, offset, count);
+            Calls.Add($"Advance({count})");
+            _written.Advance(count);
         }
 
-        public override void Write(ReadOnlySpan<byte> buffer)
+        public Memory<byte> GetMemory(int sizeHint = 0)
         {
-            WriteCalls++;
-            _written.Write(buffer);
+            Calls.Add($"GetMemory({sizeHint})");
+            return _written.GetMemory(sizeHint);
+        }
+
+        public Span<byte> GetSpan(int sizeHint = 0)
+        {
+            Calls.Add($"GetSpan({sizeHint})");
+            return _written.GetSpan(sizeHint);
         }
     }
 
     /// <summary>
-    /// A writable stream whose writes always fail.
+    /// A buffer writer that cannot hand out any memory, as a bounded writer that is full would.
     /// </summary>
-    internal sealed class FailingStream : Stream
+    internal sealed class FailingBufferWriter : IBufferWriter<byte>
     {
-        public int WriteAttempts { get; private set; }
+        public int Requests { get; private set; }
 
-        public override bool CanRead => false;
-        public override bool CanSeek => false;
-        public override bool CanWrite => true;
-        public override long Length => throw new NotSupportedException();
-        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
-        public override void Flush() { }
-        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-        public override void SetLength(long value) => throw new NotSupportedException();
+        public int AdvanceCalls { get; private set; }
 
-        public override void Write(byte[] buffer, int offset, int count)
+        public void Advance(int count) => AdvanceCalls++;
+
+        public Memory<byte> GetMemory(int sizeHint = 0)
         {
-            WriteAttempts++;
-            throw new IOException("Simulated write failure.");
+            Requests++;
+            throw new InvalidOperationException("Simulated buffer writer failure.");
         }
 
-        public override void Write(ReadOnlySpan<byte> buffer)
+        public Span<byte> GetSpan(int sizeHint = 0)
         {
-            WriteAttempts++;
-            throw new IOException("Simulated write failure.");
+            Requests++;
+            throw new InvalidOperationException("Simulated buffer writer failure.");
         }
     }
 }
