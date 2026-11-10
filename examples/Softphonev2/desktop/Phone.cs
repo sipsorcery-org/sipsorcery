@@ -63,6 +63,12 @@ public sealed class Phone : IDisposable
         internal RttEndPoint? Rtt;
         internal System.Threading.Timer? AddTextTimer;
         internal System.Threading.Timer? AddVideoTimer;
+        /// <summary>A hold or resume re-INVITE is out, waiting for its answer (or this timing out).</summary>
+        internal System.Threading.Timer? HoldTimer;
+        /// <summary>A hold or resume re-INVITE is out.</summary>
+        public bool HoldBusy => HoldTimer != null;
+        /// <summary>What the user last asked for: held or not. Sent once the re-INVITE that's out is done.</summary>
+        internal bool HoldWanted;
         internal string? TheirPhone;
         internal string? IncomingOffer;   // the ringing call's SDP, if its INVITE had one
         internal bool HangingUp;          // we're hanging it up ourselves
@@ -583,6 +589,9 @@ public sealed class Phone : IDisposable
     /// <summary>
     /// Puts a connected call on hold, or takes it off: a re-INVITE with our media sendonly (the
     /// far end's phone shows it's held), or sendrecv again. The page stops sending on a held call.
+    /// One re-INVITE at a time per call: switching calls quickly (hold, resume, hold) would
+    /// otherwise send a second while the first is still out, and the far end answers that 491.
+    /// A change asked for meanwhile waits, and only the last one counts.
     /// </summary>
     public void Hold(string id, bool hold)
     {
@@ -590,12 +599,42 @@ public sealed class Phone : IDisposable
         if (c == null) return;
         lock (_lock)
         {
-            if (c.State != CallState.Connected || c.Ua == null || c.Held == hold) return;
-            c.Held = hold;
-            Log?.Invoke($"{(hold ? "holding" : "resuming")} {c.Remote}: re-INVITE");
-            if (hold) c.Ua.PutOnHold(); else c.Ua.TakeOffHold();
+            if (c.State != CallState.Connected || c.Ua == null) return;
+            c.HoldWanted = hold;
+            if (c.HoldTimer != null)
+            {
+                Log?.Invoke($"{(hold ? "hold" : "resume")} {c.Remote}: after the re-INVITE that's out");
+                return;
+            }
+            if (!SendHold(c)) return;
         }
         Changed?.Invoke();
+    }
+
+    /// <summary>Sends the re-INVITE for <see cref="Call.HoldWanted"/>, if it isn't what we have. Under the lock.</summary>
+    private bool SendHold(Call c)
+    {
+        if (c.Held == c.HoldWanted || c.Ua == null) return false;
+        c.Held = c.HoldWanted;
+        Log?.Invoke($"{(c.Held ? "holding" : "resuming")} {c.Remote}: re-INVITE");
+        // Done when their answer sets the remote description (OnRemoteDescriptionChanged), or
+        // after a few seconds if it doesn't come (turned down, or lost).
+        c.HoldTimer = new System.Threading.Timer(_ => HoldDone(c), null, HoldAnswerMs, Timeout.Infinite);
+        if (c.Held) c.Ua.PutOnHold(); else c.Ua.TakeOffHold();
+        return true;
+    }
+
+    private const int HoldAnswerMs = 4000;
+    private const int HoldSettleMs = 250;
+
+    /// <summary>The hold or resume re-INVITE is answered (or gave up): send the next one, if asked for.</summary>
+    private void HoldDone(Call c)
+    {
+        if (Interlocked.Exchange(ref c.HoldTimer, null) is not { } t) return;
+        t.Dispose();
+        bool sent;
+        lock (_lock) sent = c.State == CallState.Connected && SendHold(c);
+        if (sent) Changed?.Invoke();
     }
 
     public void SetPageAnswer(string id, string sdp) => Find(id)?.Relay?.SetAnswer(sdp);
@@ -827,6 +866,9 @@ public sealed class Phone : IDisposable
     private void OnRemoteDescriptionChanged(Call c, RTPSession rtp)
     {
         bool video = MediaRelay.HasNegotiatedVideo(rtp);
+        // Our hold or resume is answered: the next one (if asked for) goes shortly, once this
+        // re-INVITE is ACKed, not while it's still open.
+        if (c.Rtp == rtp) try { c.HoldTimer?.Change(HoldSettleMs, Timeout.Infinite); } catch (ObjectDisposedException) { }
         if (c.AddVideoTimer != null) AddVideoDone(c, video);
         // Text added by either side: start it once the user agent has finished with the SDP.
         if (c.Rtp == rtp && c.TextState != "on" && HasNegotiatedText(rtp))
@@ -979,6 +1021,7 @@ public sealed class Phone : IDisposable
             c.EndReason = reason;
             Interlocked.Exchange(ref c.AddVideoTimer, null)?.Dispose();
             Interlocked.Exchange(ref c.AddTextTimer, null)?.Dispose();
+            Interlocked.Exchange(ref c.HoldTimer, null)?.Dispose();
             c.Rtt?.Dispose();
             c.Rtt = null;
             c.Relay?.Dispose();
@@ -987,7 +1030,7 @@ public sealed class Phone : IDisposable
             c.Rtp = null;
             c.Ua = null;
             c.Incoming = null;
-            c.Held = c.HeldByThem = false;
+            c.Held = c.HeldByThem = c.HoldWanted = false;
             SetState(c, CallState.Ended);
         }
         // Kept for a moment, so the page can say how it ended, then dropped from the list.

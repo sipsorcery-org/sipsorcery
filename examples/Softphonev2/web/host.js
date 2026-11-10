@@ -97,7 +97,7 @@ function stateMessage() {
     type: "state",
     calls: [...calls.values()].map((c) => ({
       id: c.id, call: c.call, remote: c.remote, reason: c.reason, outgoing: c.outgoing,
-      incomingVideo: c.incomingVideo, held: c.held, heldByThem: c.heldByThem,
+      incomingVideo: c.incomingVideo, held: c.held, heldByThem: c.heldByThem, holdBusy: !!c.holdBusy,
       // Real-time text on a T.140 data channel (see below): off, adding (opening), on or refused.
       text: c.call === "connected" ? c.text.state : "off",
     })),
@@ -710,21 +710,38 @@ function hangup(c) {
 }
 
 // Hold or resume: a re-INVITE whose offer the page makes on the call's connection (sendonly to
-// hold, sendrecv to resume; see PageMedia and the page's renegotiateMedia).
+// hold, sendrecv to resume; see PageMedia and the page's renegotiateMedia). One at a time per
+// call, as the desktop host does: switching calls quickly (hold, resume, hold) would otherwise
+// start a second while the first is out, which SIP.js refuses and the far end would answer 491.
+// A change asked for meanwhile waits, and only the last one counts.
+const HOLD_ANSWER_MS = 5000;   // give up waiting for an answer after this
+const HOLD_SETTLE_MS = 250;    // after one, so it's ACKed before the next goes
 async function hold(c, on) {
-  if (c?.call !== "connected" || c.held === on || !(c.session?.state === SIP.SessionState.Established)) return;
-  log(`call ${c.id}: ${on ? "holding" : "resuming"}: re-INVITE`);
-  try {
-    await c.session.invite({
-      requestDelegate: {
-        onAccept: () => { c.held = on; sendState(); },
-        onReject: (resp) => { log(`call ${c.id}: ${on ? "hold" : "resume"} turned down: ${resp.message.statusCode} ${resp.message.reasonPhrase}`); sendState(); },
-      },
-    });
-  } catch (err) {
-    log(`call ${c.id}: ${on ? "hold" : "resume"} failed: ${err.message}`);
+  if (c?.call !== "connected") return;
+  c.holdWanted = on;
+  if (c.holdBusy) { log(`call ${c.id}: ${on ? "hold" : "resume"}: after the re-INVITE that's out`); return; }
+  while (c.call === "connected" && c.held !== c.holdWanted && c.session?.state === SIP.SessionState.Established) {
+    const want = c.holdWanted;
+    c.holdBusy = true;
     sendState();
+    log(`call ${c.id}: ${want ? "holding" : "resuming"}: re-INVITE`);
+    // Turned down or failed: what the far end has is what counts, so stop there.
+    const giveUp = (why) => { log(`call ${c.id}: ${want ? "hold" : "resume"} ${why}`); c.holdWanted = c.held; };
+    await new Promise((resolve) => {
+      const timer = setTimeout(() => { giveUp("got no answer"); resolve(); }, HOLD_ANSWER_MS);
+      const done = (fn) => (arg) => { clearTimeout(timer); fn(arg); resolve(); };
+      c.session.invite({
+        requestDelegate: {
+          onAccept: done(() => { c.held = want; }),
+          onReject: done((resp) => giveUp(`turned down: ${resp.message.statusCode} ${resp.message.reasonPhrase}`)),
+        },
+      }).catch(done((err) => giveUp(`failed: ${err.message}`)));
+    });
+    await new Promise((r) => setTimeout(r, HOLD_SETTLE_MS));
+    c.holdBusy = false;
   }
+  c.holdBusy = false;
+  sendState();
 }
 
 // What the info bar's Call details shows (diagnostics mode).

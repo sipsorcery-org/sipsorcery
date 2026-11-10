@@ -14,17 +14,20 @@
 //
 // Several calls at once, as in the prototype: each call the host reports has an entry here (see
 // entries), with its own peer connection, <video> element, quality, details and text. The stage
-// shows the selected call. Audio focus: only one connected call has the microphone and speaker
-// (audioId), and selecting another connected call moves them to it; the previous call stays up,
-// with its video, and shows "Audio off". Hold is separate: a SIP re-INVITE, and a held call
-// sends nothing. Placing a call holds the call you're on; an incoming call while you're on one
-// shows as a banner, with Answer & hold current or Decline.
+// shows the selected call. One live call at a time, like a desk phone: the call you're talking
+// to has the microphone and speaker (audioId), and every other call you're on is held (a SIP
+// re-INVITE; a held call sends nothing). Picking a held call (its row, its tile, its number key,
+// or Resume) resumes it and holds the live one. Call and Answer hold the live call when you press
+// them, not before: typing an address, or looking at a ringing call, History or Accounts, holds
+// nothing. When a call ends, nothing resumes on its own: a held call stays held, with Resume.
+// An incoming call while you're on one shows as a banner, with Answer & hold current or Decline.
 
 import { initAccounts, onAccountsState, onAccountMessage } from "./accounts.js";
 import { prefs, savePref, initSettings } from "./settings.js";
 import { initSelfView } from "./selfview.js";
 
 const $ = (id) => document.getElementById(id);
+const escHtml = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
 const post = (msg) => chrome.webview.postMessage(msg);
 
 const CAMERA_KBPS = 1500;
@@ -76,7 +79,9 @@ const sel = () => entries.get(selectedId) ?? null;
 const isLive = (e) => ["calling", "ringing", "connected"].includes(e?.h.call);
 const liveEntries = () => [...entries.values()].filter(isLive);
 // Newest first, as the Active calls list shows them (and 1–8 pick them).
-const listed = () => [...entries.values()].filter((e) => !e.gone).sort((a, b) => Number(b.id) - Number(a.id));
+// Oldest first: a call keeps its place in the list while others come and go, and new ones go at
+// the bottom, so where a call is stays where you remember it.
+const listed = () => [...entries.values()].filter((e) => !e.gone).sort((a, b) => Number(a.id) - Number(b.id));
 const nameOf = (e) => shortName(e?.h.remote);
 
 function newEntry(id) {
@@ -126,20 +131,38 @@ function selectCall(id) {
   render();
 }
 
+// The call you're talking to: connected and not on hold, nor being put on hold. (Normally the
+// audio call; while a switch is under way, possibly two.)
+const holdState = (e) => e.holdWanted ?? !!e.h.held;
+const talking = () => [...entries.values()].filter((e) => e.h.call === "connected" && !holdState(e));
+const liveCall = () => talking().find((e) => e.id === audioId) ?? talking()[0] ?? null;
+
+// Holds every call you're talking to but `keep`: before Call or Answer, and when switching calls.
+function holdOthers(keep) {
+  for (const e of talking()) if (e.id !== keep?.id) holdCall(e, true);
+}
+// Makes a connected call the one you're talking to: the live one goes on hold, and this one comes
+// off hold if it's on it. Anything else (ringing, calling, ended) is only looked at.
+function goLive(e) {
+  if (e?.h.call !== "connected") return;
+  holdOthers(e);
+  holdCall(e, false);
+}
+
 // The most recent live call other than the selected one, for "Back to …".
-const otherLive = () => listed().find((e) => e.id !== selectedId && isLive(e)) ?? null;
+const otherLive = () => listed().findLast((e) => e.id !== selectedId && isLive(e)) ?? null;
 
 // ---- Focus and grid views ----
 // Focus (the default) shows the selected call, with its controls. Grid shows every active call as
-// an equal tile with no buttons, so it's never in doubt which call a button acts on: picking a
+// an equal tile with no buttons (but Resume on a held call's), so it's never in doubt which call a button acts on: picking a
 // call there (its tile, its row in Active calls, or its number key) opens it in Focus. The choice
 // is remembered (Settings has it too) and only applies with two or more calls. A ringing call
 // shows its answer view either way, and leaves the choice alone: answered, it's back to the grid.
 let view = prefs.view === "grid" ? "grid" : "focus";
-// The calls in the grid, newest first like the list: the live ones, and the selected one even
+// The calls in the grid, oldest first like the list: the live ones, and the selected one even
 // while it's ending, so it doesn't vanish.
 const gridCalls = () => [...entries.values()].filter((e) => (!e.gone && isLive(e)) || e.id === selectedId)
-  .sort((a, b) => Number(b.id) - Number(a.id));
+  .sort((a, b) => Number(a.id) - Number(b.id));
 function inGrid() {
   const e = sel();
   return view === "grid" && !!e && e.h.call !== "ringing" && gridCalls().length > 1;
@@ -152,10 +175,12 @@ function setView(v) {
   settings?.refresh();
   render();
 }
-// A call picked from the grid opens in Focus; elsewhere it's just selected.
+// A call you pick (its row, its tile, its number key) becomes the one you're talking to (goLive):
+// a held call resumes, and the live one goes on hold. Picked from the grid, it opens in Focus.
 function focusCall(id) {
   const fromGrid = inGrid();
   selectCall(id);
+  goLive(entries.get(id));
   if (fromGrid && entries.get(id)?.h.call !== "ringing") setView("focus");
 }
 
@@ -817,13 +842,13 @@ async function renegotiateMedia(e, sdp) {
     await setUpTransceivers(e);
   } else {
     for (const tr of pc.getTransceivers()) {
-      if (tr.receiver.track.kind === "audio" || tr.receiver.track.kind === "video") tr.direction = e.holdWanted ? "sendonly" : "sendrecv";
+      if (tr.receiver.track.kind === "audio" || tr.receiver.track.kind === "video") tr.direction = holdState(e) ? "sendonly" : "sendrecv";
     }
   }
   await pc.setLocalDescription(sdp ? await pc.createAnswer() : await pc.createOffer());
   await iceGathered(pc);
   post({ type: sdp ? "media-answer" : "media-offer-made", id: e.id, sdp: pc.localDescription.sdp });
-  log(`call ${e.id} media renegotiated${sdp ? " (their re-INVITE)" : e.holdWanted ? " (hold)" : " (resume)"}`);
+  log(`call ${e.id} media renegotiated${sdp ? " (their re-INVITE)" : holdState(e) ? " (hold)" : " (resume)"}`);
   syncCamera();
   render();
 }
@@ -1507,8 +1532,14 @@ function render() {
   $("callType").title = !videoAllowed ? "Video is turned off"
     : type === "video" ? "Video call: you'll see each other. You can turn your camera off once it connects."
     : "Audio call. You can add video once it connects.";
-  const callHtml = `${type === "video" ? ICON.video : ICON.phone}<span class="label-stack"><span class="${type === "video" ? "off" : ""}">Call</span><span class="${type === "video" ? "" : "off"}">Video call</span></span>`;
+  // On a call, Call says what happens to it: "Call & hold Alice". Both labels are always there
+  // (one hidden), so the Audio/Video switch never resizes it.
+  const kept = liveCall();
+  const keptName = kept ? escHtml(nameOf(kept)) : "";
+  const tail = kept ? ` &amp; hold <span class="hold-name">${keptName}</span>` : "";
+  const callHtml = `${type === "video" ? ICON.video : ICON.phone}<span class="label-stack"><span class="${type === "video" ? "off" : ""}">Call${tail}</span><span class="${type === "video" ? "" : "off"}">Video call${tail}</span></span>`;
   if ($("callBtn").innerHTML !== callHtml) $("callBtn").innerHTML = callHtml;
+  if (!full) $("callBtn").title = kept ? `${type === "video" ? "Video call" : "Call"}, and put ${nameOf(kept)} on hold` : "";
 
   // The stage.
   const mode = stageMode();
@@ -1643,11 +1674,9 @@ function render() {
       title.textContent = remote;
       sub.textContent = state.incomingVideo ? "Incoming video call" : "Incoming call";
       actions.append(button("btn-danger", "Decline", () => post({ type: "decline", id: selectedId })));
-      // With another call going, Answer holds it; Answer, keep current leaves it up, without audio.
-      const current = entries.get(audioId);
-      if (current) actions.append(button("", "Answer, keep current", () => answerCall(selectedId, false)));
+      // With another call going, Answer holds it.
       actions.append(answerSplit);
-      renderAnswer(current);
+      renderAnswer(liveCall());
       if (lastPhase !== "ringing" || lastSelected !== selectedId) $("answerBtn").focus();
       break;
     }
@@ -1738,6 +1767,9 @@ function onState(msg) {
     if (isNew) { e = newEntry(h.id); entries.set(h.id, e); }
     const was = e.h.call, wasHeld = !!e.h.held;
     e.h = h;
+    // Hold settled: the host has done what was asked, or has nothing out and has had time to
+    // start it (so it was turned down). Then the host's word is what counts.
+    if (e.holdWanted !== undefined && !h.holdBusy && (!!h.held === e.holdWanted || Date.now() - e.holdAskedAt > 1000)) delete e.holdWanted;
     if (h.held && !e.heldAt) e.heldAt = Date.now();
     else if (!h.held) e.heldAt = 0;
     // On hold the call sends no video; resumed, the camera (or placeholder) goes back on it.
@@ -1785,13 +1817,12 @@ function onPhase(e) {
   }
 }
 
-// Answers a ringing call, holding the call you're on (holdCurrent) or leaving it up without audio.
-function answerCall(id, holdCurrent = true) {
+// Answers a ringing call, holding the call you're on.
+function answerCall(id) {
   const e = entries.get(id);
   if (e?.h.call !== "ringing") return;
   closeMenu();
-  const current = entries.get(audioId);
-  if (holdCurrent && current && current.id !== id) holdCall(current, true);
+  holdOthers(e);
   openMic();
   post({ type: "answer", id });
   if (selectedId !== id) selectCall(id);
@@ -1799,11 +1830,16 @@ function answerCall(id, holdCurrent = true) {
 
 function declineCall(id) { post({ type: "decline", id }); }
 
+// Holds or resumes a call. Compared with what was last asked for, not what the host has done
+// yet, so a quick switch back and forth still ends where you left it (the host sends the
+// re-INVITEs for a call one at a time).
 function holdCall(e, hold) {
-  if (e?.h.call !== "connected" || !!e.h.held === hold) return;
+  if (e?.h.call !== "connected" || holdState(e) === hold) return;
   e.holdWanted = hold;
+  e.holdAskedAt = Date.now();
   log(`${hold ? "holding" : "resuming"} call ${e.id} (${nameOf(e)})`);
   post({ type: "hold", id: e.id, hold });
+  render();   // "Holding…" or "Resuming…" now, even if the host only queues it
 }
 
 // Calls ringing while you're on another: a banner over the stage, the caller who has waited
@@ -1820,29 +1856,36 @@ function renderIncoming() {
   $("incomingWhat").textContent = `${e.h.incomingVideo ? "Video call" : "Calling"}${ringing.length > 1 ? ` · +${ringing.length - 1} more waiting` : ""}`;
   $("incomingWho").onclick = () => selectCall(e.id);
   $("incomingDecline").onclick = () => declineCall(e.id);
-  const current = entries.get(audioId);
-  $("incomingAnswer").textContent = current ? "Answer & hold current" : "Answer";
-  $("incomingAnswer").onclick = () => answerCall(e.id, true);
+  $("incomingAnswer").textContent = liveCall() ? "Answer & hold current" : "Answer";
+  $("incomingAnswer").onclick = () => answerCall(e.id);
 }
 
 // The grid's tiles, kept from one render to the next (each holds its call's <video>, which
 // mustn't be pulled out and put back every second), and the Focus | Grid switch.
-const tiles = new Map();   // call id -> { root, feed, avatar, time, name, status, media }
+const tiles = new Map();   // call id -> { root, feed, avatar, time, name, status, media, held, heldText, resume }
 function makeTile(e) {
   const el = (tag, cls) => Object.assign(document.createElement(tag), { className: cls });
   const t = { root: el("div", "tile"), feed: el("div", "tile-feed"), avatar: el("span", "avatar tile-avatar"), time: el("span", "tile-time"),
-    name: el("span", "tile-name"), status: el("span", "tile-status"), media: el("span", "call-media") };
+    name: el("span", "tile-name"), status: el("span", "tile-status"), media: el("span", "call-media"),
+    held: el("div", "held-note"), heldText: el("span", ""), resume: el("button", "btn") };
   t.root.dataset.call = e.id;
   t.root.tabIndex = 0;
   t.root.setAttribute("role", "button");
   t.root.onclick = () => focusCall(e.id);
-  t.root.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); focusCall(e.id); } };
+  t.root.onkeydown = (ev) => { if (ev.target === t.root && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); focusCall(e.id); } };
   t.avatar.setAttribute("aria-hidden", "true");
   const text = el("span", "tile-text");
   text.append(t.name, t.status);
   const meta = el("div", "tile-meta");
   meta.append(text, t.media);
-  t.feed.append(t.avatar, t.time);
+  // On hold: the same note as on the stage in Focus, over the middle of the tile. Resume takes
+  // it off hold and selects it, so it has the audio, without leaving the grid.
+  t.held.hidden = true;
+  t.resume.type = "button";
+  t.resume.innerHTML = `${ICON.play}<span>Resume</span>`;
+  t.resume.onclick = (ev) => { ev.stopPropagation(); selectCall(e.id); goLive(e); };
+  t.held.append(t.heldText, t.resume);
+  t.feed.append(t.avatar, t.time, t.held);
   t.root.append(t.feed, meta);
   return t;
 }
@@ -1900,14 +1943,20 @@ function renderGrid(grid) {
     t.time.textContent = c.since ? fmtElapsed(Date.now() - c.since) : "";
     const media = c.media.map(([ico, cls, label]) => `<span class="media-ico ${cls}" role="img" title="${label}" aria-label="${label}">${ICON[ico]}</span>`).join("");
     if (t.media.innerHTML !== media) t.media.innerHTML = media;
+    t.held.hidden = !(m && c.status === "connected" && (c.held || e.h.heldByThem));
+    if (!t.held.hidden) {
+      t.heldText.textContent = c.held ? c.statusText : `${name} put you on hold`;
+      t.held.classList.toggle("long", c.long);
+      t.resume.hidden = !c.held;
+    }
   });
 }
 for (const b of [$("viewFocus"), $("viewGrid")]) b.onclick = () => setView(b.dataset.view);
 
 // ---- Active calls panel, down the left ----
-// Every call, newest at the top. Each row shows who, what you're sending (mic and camera), and
-// the call's state: calling, ringing, connected, "Audio off" (connected, but the audio is on
-// another call), on hold with how long, or how it ended. Clicking a row puts that call on the
+// Every call, oldest at the top and new ones at the bottom, so a call never moves. Each row shows who, what you're sending (mic and camera), and
+// the call's state: calling, ringing, connected, on hold with how long (or "Holding…" and
+// "Resuming…" while the re-INVITE is out), or how it ended. Clicking a row puts that call on the
 // stage, as do the number keys. Collapsed, it's a rail of avatars and timers; the choice is
 // remembered. Under 700 px it's always the rail, and expanding it lays the panel over the stage
 // until it's collapsed or you click away.
@@ -1944,7 +1993,9 @@ function callStatus(e) {
     c.audioOff = !c.held && e.id !== audioId;
     c.typing = !!openLine(e.text, false, false);
     c.unread = e.text.unread;
-    if (c.held) {
+    const pending = e.holdWanted !== undefined && e.holdWanted !== c.held;
+    if (pending) c.statusText = e.holdWanted ? "Holding…" : "Resuming…";
+    else if (c.held) {
       c.long = Date.now() - e.heldAt > 60000;
       c.statusText = `On hold · ${fmtElapsed(Date.now() - e.heldAt)}`;
     } else if (h.heldByThem) c.statusText = `${nameOf(e)} put you on hold`;
@@ -2041,8 +2092,12 @@ function setCallsCollapsed(collapsed) {
   renderCalls();
 }
 $("callsToggle").onclick = (e) => { e.stopPropagation(); setCallsCollapsed(!$("calls").classList.contains("collapsed")); };
-// The whole rail expands it.
-$("calls").addEventListener("click", () => { if ($("calls").classList.contains("collapsed")) setCallsCollapsed(false); });
+// A click anywhere in the panel but on a call (or the chevron, which does it itself) expands or
+// collapses it, so the whole panel is the toggle, not just the small chevron.
+$("calls").addEventListener("click", (e) => {
+  if (e.target.closest(".call-row, #callsToggle")) return;
+  setCallsCollapsed(!$("calls").classList.contains("collapsed"));
+});
 // Narrow windows: clicking away or Esc puts the panel back to the rail.
 document.addEventListener("pointerdown", (e) => { if (callsPeek && !e.target.closest("#calls")) { callsPeek = false; renderCalls(); } });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && callsPeek) { callsPeek = false; renderCalls(); } });
@@ -2055,9 +2110,9 @@ $("dialForm").addEventListener("submit", (e) => {
   const address = $("address").value.trim();
   if (address && !$("callBtn").disabled) {
     openMic();   // alongside the INVITE, so it's ready when the call connects
-    // A new call holds the one you're on (the new one goes on the stage when the host reports it).
-    const current = entries.get(audioId);
-    if (current) holdCall(current, true);
+    // A new call holds the one you're on, now that you've pressed Call (the new one goes on the
+    // stage when the host reports it).
+    holdOthers(null);
     post({ type: "dial", address, video: state.videoAllowed !== false && callType === "video" });
     // If the call never starts (a bad address, say), don't leave the microphone open.
     setTimeout(() => { if (!liveEntries().length) closeMic(); }, 5000);
@@ -2113,7 +2168,7 @@ answerSplit.innerHTML = `<button type="button" class="btn btn-primary" id="answe
   <button type="button" class="btn btn-primary split-caret" id="answerMenuBtn" aria-haspopup="menu" aria-expanded="false"
     aria-label="Choose your camera for this call" title="Choose your camera for this call">${ICON.chevronDown}</button>
   <div class="device-menu down" id="answerMenu" role="menu" aria-label="Your camera" hidden></div>`;
-answerSplit.querySelector("#answerBtn").onclick = () => answerCall(selectedId, true);
+answerSplit.querySelector("#answerBtn").onclick = () => answerCall(selectedId);
 answerSplit.querySelector("#answerMenuBtn").onclick = () => showMenu("answer");
 
 const answerCamOn = () => (answerCamera ?? camPref) && videoAvailable();
@@ -2419,19 +2474,27 @@ $("logCopy").onclick = () => {
 };
 $("logClear").onclick = () => { $("log").textContent = ""; };
 
-// Dragging the panel's top edge resizes it, between 120 px and 70% of the window.
+// Dragging the panel's top edge resizes it, between 120 px and 70% of the window. The height you
+// leave it at is remembered (localStorage, per profile on the desktop) and used next time, kept
+// within the same limits in case the window is smaller now.
+const devHeight = (h) => Math.round(Math.max(120, Math.min(window.innerHeight * 0.7, h)));
+try {
+  const saved = Number(localStorage.getItem("devPanelHeight"));
+  if (saved > 0) $("devPanel").style.setProperty("--dev-h", `${devHeight(saved)}px`);
+} catch { /* storage unavailable */ }
 $("devResize").addEventListener("pointerdown", (e) => {
   e.preventDefault();
   const handle = e.currentTarget;
   handle.setPointerCapture(e.pointerId);
   document.body.classList.add("dev-resizing");
   const move = (ev) => {
-    const h = Math.round(Math.max(120, Math.min(window.innerHeight * 0.7, window.innerHeight - ev.clientY)));
-    $("devPanel").style.setProperty("--dev-h", `${h}px`);
+    $("devPanel").style.setProperty("--dev-h", `${devHeight(window.innerHeight - ev.clientY)}px`);
   };
   const up = () => {
     handle.removeEventListener("pointermove", move);
     document.body.classList.remove("dev-resizing");
+    const h = parseInt($("devPanel").style.getPropertyValue("--dev-h"), 10);
+    if (h > 0) try { localStorage.setItem("devPanelHeight", String(h)); } catch { /* storage unavailable */ }
   };
   handle.addEventListener("pointermove", move);
   handle.addEventListener("pointerup", up, { once: true });
@@ -2447,8 +2510,8 @@ $("reg").onclick = () => {
   setTimeout(render, 1600);
 };
 $("hangupBtn").onclick = () => post({ type: "hangup", id: selectedId });
-$("holdBtn").onclick = () => { const e = sel(); holdCall(e, !e?.h.held); };
-$("heldResume").onclick = () => holdCall(sel(), false);
+$("holdBtn").onclick = () => { const e = sel(); if (e && holdState(e)) goLive(e); else holdCall(e, true); };
+$("heldResume").onclick = () => goLive(sel());
 $("heldResume").innerHTML = `${ICON.play}<span>Resume</span>`;
 // Mute: the selected call's microphone. Before a call, whether calls start muted (the same as
 // Mute all, which mutes every call and the ones to come).
@@ -2482,7 +2545,7 @@ function camerasOff() {
 }
 
 // Keys for calls (not while typing, or with a menu or dialog open): 1–8 put that call in the
-// list on the stage (1 is the newest; from the grid, in Focus), A answers the caller who has
+// list on the stage (1 is the top, the oldest; from the grid, in Focus), A answers the caller who has
 // waited longest, M mutes the selected call, Shift+M mutes all, Shift+C turns every camera off,
 // H holds or resumes (M and H not in the grid), G switches Focus and Grid, and Esc leaves an
 // ended call for another.
@@ -2500,7 +2563,7 @@ document.addEventListener("keydown", (ev) => {
     const e = [...entries.values()].filter((x) => x.h.call === "ringing").sort((x, y) => Number(x.id) - Number(y.id))[0];
     if (!e) return;
     ev.preventDefault();
-    answerCall(e.id, true);
+    answerCall(e.id);
   } else if (key === "m") {
     // Like the buttons, M and H act in Focus view only, where it's clear which call they're for.
     if (ev.shiftKey) { ev.preventDefault(); muteAll(); }

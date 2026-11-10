@@ -28,6 +28,7 @@ internal sealed class MainForm : Form
     private int _dialsLeft;
     private string? _dialCallId;   // the call --dial placed, to place it again when it ends (--dial-count)
     private readonly StreamWriter _logFile;
+    private bool _logClosed;   // under lock (_logFile): set as the window closes, as the file is disposed
 
     public MainForm(Settings settings)
     {
@@ -41,6 +42,7 @@ internal sealed class MainForm : Form
         Text = "SIPSorcery Softphone";
         ClientSize = new Size(1100, 720);
         MinimumSize = new Size(560, 480);
+        WindowPlacement.Restore(this, settings.Profile);   // where and how big it was when last closed
         Controls.Add(_web);
 
         _phone.Changed += () =>
@@ -71,13 +73,13 @@ internal sealed class MainForm : Form
         };
         _phone.Log += WriteLog;
         LibraryLog.Line += WriteLog;
-        _phone.Trace += text => { lock (_logFile) _logFile.WriteLine(text); };
+        _phone.Trace += LogLine;
         _phone.TxLostChanged += (c, lost) => Post(new { type = "media-health", id = c.Id, txLost = lost });
         _phone.Quality += (c, q) => Post(new { type = "quality", id = c.Id, q.Dir, q.Kind, q.LossPct, q.Lost, q.JitterMs, q.RttMs });
         _phone.TextReceived += (c, text) =>
         {
             // The log file only, and only how much: what they type stays out of the log.
-            lock (_logFile) _logFile.WriteLine($"{DateTime.Now:HH:mm:ss.fff} real-time text in on call {c.Id}: {text.Length} characters");
+            LogLine($"{DateTime.Now:HH:mm:ss.fff} real-time text in on call {c.Id}: {text.Length} characters");
             Post(new { type = "text", id = c.Id, text });
         };
         _phone.Details += (c, d) => Post(new
@@ -94,7 +96,17 @@ internal sealed class MainForm : Form
         };
 
         Load += async (_, _) => await StartAsync();
-        FormClosing += (_, _) => { _phone.Dispose(); _logFile.Dispose(); };
+        FormClosing += (_, _) =>
+        {
+            WindowPlacement.Save(this, _settings.Profile);
+            _phone.Dispose();
+            // The library goes on logging from its own threads after this (TCP and TLS connections
+            // dropping as the process ends), so stop listening and close the file under its lock;
+            // a write after that is dropped rather than throwing on one of those threads, which
+            // took the process down with the error box's sound and no box to see.
+            LibraryLog.Line -= WriteLog;
+            lock (_logFile) { _logClosed = true; _logFile.Dispose(); }
+        };
     }
 
     private async Task StartAsync()
@@ -155,7 +167,7 @@ internal sealed class MainForm : Form
                     if (!string.IsNullOrWhiteSpace(_settings.Dial)) DialAtStart();
                     break;
                 case "log":
-                    lock (_logFile) _logFile.WriteLine($"{DateTime.Now:HH:mm:ss.fff} page: {msg["text"]}");
+                    LogLine($"{DateTime.Now:HH:mm:ss.fff} page: {msg["text"]}");
                     break;
                 case "dial":
                     _phone.Dial((string)msg["address"]!, (bool?)msg["video"] ?? false, _accounts.SelectedId);
@@ -282,8 +294,14 @@ internal sealed class MainForm : Form
     private void WriteLog(string line)
     {
         var text = $"{DateTime.Now:HH:mm:ss.fff} {line}";
-        lock (_logFile) _logFile.WriteLine(text);
+        LogLine(text);
         Post(new { type = "log", text });
+    }
+
+    /// <summary>A line to the log file, from any thread; dropped once the window has closed it.</summary>
+    private void LogLine(string text)
+    {
+        lock (_logFile) if (!_logClosed) _logFile.WriteLine(text);
     }
 
     private object StateMessage()
@@ -309,6 +327,8 @@ internal sealed class MainForm : Form
                 incomingVideo = c.IncomingVideo,
                 held = c.Held,
                 heldByThem = c.HeldByThem,
+                // A hold or resume re-INVITE is out (the page shows "Holding…" or "Resuming…").
+                holdBusy = c.HoldBusy,
                 // Real-time text on the call: off, adding, on, refused or disabled.
                 text = c.TextState,
             }).ToList(),
@@ -339,8 +359,13 @@ internal sealed class MainForm : Form
 
     private void Post(object message)
     {
-        if (IsDisposed) return;
-        if (InvokeRequired) { BeginInvoke(() => Post(message)); return; }
+        if (IsDisposed || Disposing || !IsHandleCreated) return;
+        if (InvokeRequired)
+        {
+            // The window can go between the check and here, as it closes: then there's no one to tell.
+            try { BeginInvoke(() => Post(message)); } catch (InvalidOperationException) { }
+            return;
+        }
         _web.CoreWebView2?.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOpts));
     }
 }

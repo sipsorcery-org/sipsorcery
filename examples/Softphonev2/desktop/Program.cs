@@ -52,6 +52,17 @@ internal static class Program
         }
     }
 
-    private static void ShowError(Exception? ex) =>
+    private static void ShowError(Exception? ex)
+    {
+        // Kept in a file too: an error while the app is closing can take the process down before
+        // anyone sees the box (all that's left of it is the error sound).
+        try
+        {
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SIPSorcery", "Softphonev2");
+            Directory.CreateDirectory(dir);
+            File.AppendAllText(Path.Combine(dir, "errors.log"), $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {ex}{Environment.NewLine}{Environment.NewLine}");
+        }
+        catch { /* the box still shows */ }
         MessageBox.Show(ex?.ToString() ?? "Unknown error", "Softphone failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
 }

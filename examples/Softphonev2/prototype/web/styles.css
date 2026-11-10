@@ -204,6 +204,10 @@ svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-widt
 .slide-opt:disabled:not(.on) { opacity: .45; }
 @media (prefers-reduced-motion: reduce) { .slide-thumb { transition: none; } }
 .btn-call { min-width: 118px; justify-content: center; }
+/* On a call: "Call & hold Alice". */
+.call-buttons { position: relative; }
+.hold-name { display: inline-block; max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+
 /* No sideways shift when Audio ◯━ Video flips. Call holds both its labels in one grid cell and
    shows one, so it's always as wide as "Video call"; each word in the switch keeps room for its
    bold self, so going bold doesn't widen it. */
@@ -1086,7 +1090,9 @@ body.diag-on .tile.main .self-view { width: 260px; max-width: 45%; }
   .shell { margin: 0; height: auto; min-height: 100vh; border-radius: 0; border: 0; }
   .topbar, .dialbar, .statusbar, .diagnostics { padding-left: 16px; padding-right: 16px; }
   .dialbar { grid-template-columns: 1fr; }
-  .call-buttons .btn-call { flex: 1; }
+  .call-buttons .btn-call { flex: 1; min-width: 0; }
+  .call-buttons { min-width: 0; }
+  .btn-call .label, .btn-call .label-stack, .btn-call .label-stack > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dialbar > *, .dialbar .field-label-row, .dialbar .field-label, #accountSelect, .dest-wrap { grid-area: auto; }
   .account-manage { margin: 0 0 8px; }
   .acct-grid { grid-template-columns: minmax(0, 1fr); }

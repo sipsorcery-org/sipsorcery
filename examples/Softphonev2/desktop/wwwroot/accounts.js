@@ -118,7 +118,8 @@ function renderFrom() {
   const html = opts.join("");
   if (sel.dataset.html !== html) { sel.innerHTML = html; sel.dataset.html = html; }
   sel.value = byId(selectedId)?.enabled ? selectedId : "";
-  sel.disabled = callLive;
+  // Always open: it picks the account for the next call. Each call keeps the account it was
+  // placed or answered on (shown in its info), so changing it mid-call touches nothing.
 
   const cur = byId(selectedId);
   const st = status(cur?.enabled ? cur : null);

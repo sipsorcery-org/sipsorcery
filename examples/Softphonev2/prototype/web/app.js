@@ -153,9 +153,12 @@ function mockOutcome(uri) {
 
 // Call states: dialing | incoming | connected | held | ended
 // A call exists only while it's active; ended calls drop out of the list after a short beat.
-// Connected calls that aren't the audio focus are still up, just locally silenced
-// ("Audio off"). Hold is an explicit SIP re-INVITE and is shown separately.
-// createdAt orders the Active calls list (newest first); startedAt drives the call timer.
+// One live call at a time, like a desk phone: the one you're talking to is connected, and every
+// other call you're on is held (a SIP re-INVITE). Switching to another call holds this one and
+// resumes that one; placing or answering a call holds this one, at the moment you press the
+// button, and not before: typing an address holds nothing. Looking elsewhere (History,
+// Accounts) holds nothing either.
+// createdAt orders the Active calls list (oldest first, so a call keeps its place); startedAt drives the call timer.
 const state = {
   accountId: "sipsorcery",
   selected: 1,
@@ -166,7 +169,7 @@ const state = {
       rtt: true, rttSupported: true, chat: [
         { me: false, text: "Hi! My audio is a bit patchy, so I'll type as well.", at: now() - 200_000 },
         { me: true, text: "No problem, I can see your text.", at: now() - 180_000 }] },
-    { id: 2, name: "Bob", uri: "sip:bob@example.com", status: "connected", dir: "in", account: "sipsorcery", createdAt: now() - 100_000, startedAt: now() - 95_000, video: true, muted: false, camera: true, netProfile: "theirs", srtp: false,
+    { id: 2, name: "Bob", uri: "sip:bob@example.com", status: "held", heldAt: now() - 40_000, dir: "in", account: "sipsorcery", createdAt: now() - 100_000, startedAt: now() - 95_000, video: true, muted: false, camera: true, netProfile: "theirs", srtp: false,
       rtt: true, rttSupported: true },
     { id: 3, name: "Charlie", uri: "sip:charlie@example.com", status: "incoming", dir: "in", account: "sipsorcery", createdAt: now() - 6_000, startedAt: now() - 6_000, video: true,
       rtt: true, rttSupported: true },
@@ -255,6 +258,9 @@ function toggleSelfView() {
 const callById = (no) => state.calls.find((l) => l.id === no);
 const isLive = (l) => l.status === "connected" || l.status === "held";
 const callsNewestFirst = () => [...state.calls].sort((a, b) => b.createdAt - a.createdAt);
+// The Active calls list's order: oldest at the top, new calls at the bottom, so a call never
+// moves while others come and go, and where it is stays where you remember it.
+const callsInListOrder = () => [...state.calls].sort((a, b) => a.createdAt - b.createdAt);
 // Effective mic/camera state: the global "all calls" toggles override each call's own setting.
 const micMuted = (l) => state.muteAll || !!l.muted;
 const camOn = (l) => !state.cameraAllOff && l.camera !== false;
@@ -297,7 +303,6 @@ function callStatusText(l) {
     case "held": return "On hold";
     case "ended": return l.endReason ?? "Call ended";
     case "connected": {
-      if (l.id !== state.audioFocus) return (l.video ? "Live video · " : "") + "Audio off";
       if (micMuted(l)) return state.muteAll ? "Muted (all calls)" : "Muted";
       return "Mic + speaker on";
     }
@@ -472,10 +477,10 @@ function toggleTheirStall() {
 }
 
 // withCamera false answers with your camera off: video is still agreed, so you see them.
-function answer(no, holdOthers = true, withCamera = true) {
+function answer(no, withCamera = true) {
   const l = callById(no);
   if (!l || l.status !== "incoming") return;
-  if (holdOthers) holdCurrent("answering " + l.name);
+  holdCurrent("answering " + l.name);
   l.status = "connected";
   l.startedAt = now();
   l.muted = false;
@@ -559,6 +564,8 @@ function endCall(l, { kind = "local", sip = "BYE", target = "", quiet = false } 
 function nextSelection(prefer) {
   if (prefer === ACCOUNTS_TAB && accountsOpen()) return ACCOUNTS_TAB;
   if (prefer === HISTORY_VIEW && state.hist.open) return HISTORY_VIEW;
+  // A held call comes back on screen still held, with Resume: nothing resumes on its own, so
+  // no one suddenly hears you without you choosing it.
   const recent = callsNewestFirst().filter((x) => x.status !== "ended");
   const next = recent.find((x) => x.status === "connected") ?? recent[0];
   return next?.id ?? (accountsOpen() ? ACCOUNTS_TAB : null);
@@ -592,11 +599,9 @@ function select(no) {
   if (!l) return;
   state.selected = no;
   if (textShowing(l)) l.unread = 0;
-  // Selecting a live, un-held call moves audio to it; the previous one keeps its video.
-  if (l.status === "connected" && state.audioFocus !== no) {
-    state.audioFocus = no;
-    log(`Audio focus → call ${no} (${l.name})`);
-  }
+  // Switching to a held call is switching who you talk to: it comes off hold, and the call you
+  // were on goes on hold. A ringing or dialing call is only looked at; answering decides.
+  if (l.status === "held") { toggleHold(l); return; }
   render();
 }
 
@@ -1796,6 +1801,9 @@ function returnCall() {
   return callById(state.audioFocus) ?? calls.find((x) => isLive(x)) ?? calls[0];
 }
 
+// The call Call would put on hold: the one you're talking to, if it's connected.
+const holdTarget = () => { const c = callById(state.audioFocus); return c?.status === "connected" ? c : null; };
+
 function register(a, why = "") {
   clearTimeout(a.reg.timer);
   if (!a.enabled || !a.register) { a.reg = { state: "off" }; render(); return; }
@@ -1951,7 +1959,7 @@ function renderCallList() {
     list.innerHTML = `<li class="call-list-empty">No active calls</li>`;
     return;
   }
-  list.innerHTML = callsNewestFirst().map((l) => {
+  list.innerHTML = callsInListOrder().map((l) => {
     const classes = ["line", l.status];
     if (l.id === state.selected) classes.push("selected");
     if (l.id === state.audioFocus && l.status === "connected") classes.push("talking");
@@ -2168,6 +2176,7 @@ function renderStage() {
     return;
   }
 
+
   if (!sel) {
     // Calls are started from the bar at the top; the stage only ever shows existing calls.
     html += `<div class="empty"><div>
@@ -2184,7 +2193,6 @@ function renderStage() {
       <p>${esc(sel.uri)} · ${sel.video ? "video call" : "audio call"}</p>
       <div class="actions">
         <button class="btn btn-danger" data-act="decline" data-call="${sel.id}">${icon("hangup")}Decline</button>
-        ${hasCurrent ? `<button class="btn" data-act="answer-only" data-call="${sel.id}">Answer, keep current</button>` : ""}
         ${sel.video ? `<button class="btn" data-act="answer-nocam" data-call="${sel.id}" title="Answer with your camera off. You'll still see them, and can turn it on any time.">${icon("videoOff")}Answer, camera off</button>` : ""}
         <button class="btn btn-primary" data-act="answer" data-call="${sel.id}">${icon(sel.video ? "video" : "phone")}${hasCurrent ? "Answer &amp; hold current" : "Answer"}</button>
       </div>
@@ -2644,9 +2652,15 @@ function renderCallType() {
   document.getElementById("callType").title = locked ? "Video is turned off for this account"
     : type === "video" ? "Video call: you'll see each other. You can turn your camera off once it connects."
     : "Audio call. You can add video once it connects.";
+  // On a call, Call says what happens to it: "Call & hold Alice". Both labels are always there
+  // (one hidden), so the Audio/Video switch never resizes it.
+  const kept = holdTarget();
+  const tail = kept ? ` &amp; hold <span class="hold-name">${esc(kept.name)}</span>` : "";
   const call = document.getElementById("callBtn");
   call.querySelector("[data-icon]").innerHTML = icon(type === "video" ? "video" : "phone");
-  call.querySelector(".label").innerHTML = `<span class="label-stack"><span class="${type === "video" ? "off" : ""}">Call</span><span class="${type === "video" ? "" : "off"}">Video call</span></span>`;
+  call.querySelector(".label").innerHTML = `<span class="label-stack"><span class="${type === "video" ? "off" : ""}">Call${tail}</span><span class="${type === "video" ? "" : "off"}">Video call${tail}</span></span>`;
+  call.title = kept ? `${type === "video" ? "Video call" : "Call"}, and put ${kept.name} on hold (Enter)` : "Call (Enter)";
+
 }
 
 function setCallType(type) {
@@ -2738,15 +2752,14 @@ document.addEventListener("click", (e) => {
   const l = callById(state.selected);
   const no = Number(btn.dataset.call);
   switch (btn.dataset.act) {
-    case "answer": answer(no, true); break;
+    case "answer": answer(no); break;
     case "resume": { const h = callById(no); if (h?.status === "held") { state.selected = no; toggleHold(h); } break; }
     case "decline-all": for (const r of ringingQueue().filter((x) => x.id !== state.selected)) decline(r.id); state.bannerOpen = false; break;
     case "banner-toggle": state.bannerOpen = !state.bannerOpen; renderStage(); break;
     case "net-pop": showNetPop(btn); break; // Tap shows it; tapping anywhere else hides it.
     case "q-toggle": state.qualityOpen = !state.qualityOpen; savePref("qualityOpen", state.qualityOpen ? "yes" : "no"); renderStage(); break;
     case "q-col": state.qColumn = btn.dataset.col; updateQualityPanel(); break;
-    case "answer-only": answer(no, false); break;
-    case "answer-nocam": answer(no, true, false); break;
+    case "answer-nocam": answer(no, false); break;
     case "decline": decline(no); break;
     case "select": select(no); break;
     case "tile": focusCall(no); break;
@@ -3002,8 +3015,8 @@ document.addEventListener("keydown", (e) => {
   else if (k === "t" && l && (isLive(l) || l.status === "ended")) { e.preventDefault(); toggleTextPanel(l); }
   else if (k === "a") { const inc = callById(state.selected)?.status === "incoming" ? callById(state.selected) : ringingQueue()[0]; if (inc) answer(inc.id); }
   else if (k === "/" ) { e.preventDefault(); document.getElementById("destInput").focus(); }
-  // 1–8 pick by position in the Active calls list (1 = newest).
-  else if (/^[1-8]$/.test(k)) { const c = callsNewestFirst()[Number(k) - 1]; if (c) focusCall(c.id); }
+  // 1–8 pick by position in the Active calls list (1 = the top, the oldest).
+  else if (/^[1-8]$/.test(k)) { const c = callsInListOrder()[Number(k) - 1]; if (c) focusCall(c.id); }
 });
 
 setInterval(speechTick, 100);

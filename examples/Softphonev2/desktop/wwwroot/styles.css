@@ -111,6 +111,8 @@ body:not(.diag) .diag-only { display: none; }
 .label-stack { display: inline-grid; justify-items: center; }
 .label-stack > * { grid-area: 1 / 1; }
 .label-stack > .off { visibility: hidden; }
+/* "Call & hold Alice": a long name is cut short, so Call doesn't push the address field away. */
+.hold-name { display: inline-block; max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
 .slide-word { display: inline-flex; flex-direction: column; align-items: center; }
 .slide-word::after { content: attr(data-text); height: 0; overflow: hidden; visibility: hidden; font-weight: 600; }
 #callBtn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -646,7 +648,8 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .media-ico.off { color: var(--danger); }
 
 /* Collapsed: a rail with the expand chevron, and each call as its avatar and timer. */
-.calls.collapsed { width: var(--rail-w); padding: 10px 0; align-items: center; cursor: pointer; }
+.calls { cursor: pointer; }   /* clicking anywhere but on a call expands or collapses it */
+.calls.collapsed { width: var(--rail-w); padding: 10px 0; align-items: center; }
 .calls.collapsed .calls-head { flex-direction: column; padding: 0; gap: 6px; }
 .calls.collapsed .calls-title { display: none; }
 .calls.collapsed .calls-toggle { margin-left: 0; }
@@ -753,6 +756,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .tile-status { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tile.muted .tile-status { color: var(--danger); }
 .tile.held .tile-status, .tile.ringing .tile-status { color: var(--warn-ink); }
-.tile.held .tile-feed { opacity: .6; }
+.tile.held .tile-feed > :not(.held-note) { opacity: .6; }   /* dimmed, but not the note over it */
+.tile .held-note { max-width: calc(100% - 16px); white-space: nowrap; cursor: default; }
 .tile.ended { opacity: .7; }
 .tile .call-media { display: inline-flex; gap: 4px; flex: none; }

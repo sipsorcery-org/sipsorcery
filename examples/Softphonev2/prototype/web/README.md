@@ -16,7 +16,7 @@ Then open http://localhost:5179.
 
 ## What's modelled
 
-- **Active calls.** The left-hand list shows only calls that exist, newest at the top, up to 8.
+- **Active calls.** The left-hand list shows only calls that exist, oldest at the top and new calls at the bottom, up to 8, so a call never moves.
   A call is dialing, incoming, connected, held or ended. Ended calls drop off the list after a
   moment. Calls are only started from the bar at the top; the main view never dials.
   Next to each connected or held call's name, a mic and a camera icon show what you're sending
@@ -25,9 +25,12 @@ Then open http://localhost:5179.
   hold, or it's an audio-only call. Hovering over an icon says which. A third icon appears when
   real-time text is on: it pulses while the other person types, and gets a red dot for text you
   haven't read. Meanwhile the status line shows "Typing…" and then their last line.
-- **Audio focus.** Only one connected call has mic and speaker at a time. Selecting another
-  connected call moves audio to it. The previous call stays up with its video and shows
-  "Audio off". **Hold** is separate: it's an explicit SIP re-INVITE and shows "On hold".
+- **One live call at a time.** Like a desk phone: the call you're talking to is live, and every
+  other call you're on is on hold (a SIP re-INVITE). Switching to a held call (its row, its
+  tile, or its number key) resumes it and holds the one you were on. Placing or answering a call
+  holds the live one when you press the button, not before: typing an address holds nothing.
+  Looking elsewhere (History, Accounts) holds nothing either. When a call ends, the held call comes back on
+  screen still on hold, with Resume: nothing resumes without you choosing it.
 - **Focus and grid views.** By default the main view shows only the selected call. The
   *Grid* toggle, or `G`, shows every active call as an equal tile. The tiles have no buttons:
   clicking anywhere on one opens that call in Focus view, and so does clicking it in the Active
@@ -60,7 +63,7 @@ Then open http://localhost:5179.
   (microphone, speaker, ringtone, camera) and the self-view and grid defaults.
 - **Incoming calls.** These appear as a banner on top of the selected call, with
   *Answer & hold current* or *Decline*. Selecting the ringing call gives a full-screen answer
-  view, which also offers *Answer, keep current*. When several calls ring at once they share
+  view. When several calls ring at once they share
   one card, "3 calls waiting", instead of a pile of banners. The caller who has waited longest
   is on top, and each row shows how long that caller has been waiting. *+N more* expands the
   queue, and *Decline all* clears it. `A` answers the caller who has waited longest.
@@ -161,7 +164,9 @@ Then open http://localhost:5179.
     them. The self view shows your placeholder with "No camera", and the Camera button is
     disabled.
   - The camera icon in the Active calls list says which of these applies when you hover over it.
-- **New call.** This adds a call to the top of the list and holds the current call. Focusing
+- **Call & hold.** On a call, the Call button says what it will do: *Call & hold Alice* (or
+  *Video call & hold Alice*).
+- **New call.** This adds a call to the bottom of the list and holds the current call. Focusing
   the address field (or `/`) lists recent calls and contacts; typing filters them. Typing part
   of a name highlights the first match. Enter or a click calls the highlighted entry, ↑/↓ move
   through the list, and `Esc` closes it. Calls that didn't connect show their outcome, and
@@ -218,5 +223,5 @@ Then open http://localhost:5179.
   under its own ▶ until opened. Bob also types a message in the background a few seconds after
   the page loads.
 
-Keyboard: `/` focuses the address field, `1`–`8` select a call by its position in the list (`1` is the newest), `A` answers, `M` mutes, `Shift+M` mutes all, `Shift+C` turns all cameras off, `H`
+Keyboard: `/` focuses the address field, `1`–`8` select a call by its position in the list (`1` is the top, the oldest), `A` answers, `M` mutes, `Shift+M` mutes all, `Shift+C` turns all cameras off, `H`
 holds or resumes, `T` opens or closes the text panel, `G` toggles grid view, `V` toggles self view, and `Esc` closes dialogs.
