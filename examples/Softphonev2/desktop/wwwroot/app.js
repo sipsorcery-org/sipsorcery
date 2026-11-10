@@ -222,7 +222,7 @@ function shortName(remote) {
 const initial = (name) => (name ?? "?").replace(/^\+/, "").charAt(0).toUpperCase() || "#";
 
 // The microphone is only open during a call (see openMic). The camera is only opened while it's wanted (see
-// cameraWanted), so on an audio call, or with the switch on Audio, it's off: no self view, and
+// wantedSources), so on an audio call, or with the switch on Audio, it's off: no self view, and
 // the camera's light stays off.
 // A camera another app (or another copy of this one) is using can't be opened on Windows. That
 // isn't "no camera", so it says "Camera in use", and the call sends the placeholder. It is NOT
@@ -293,21 +293,38 @@ function closeMic() {
   log("microphone closed");
 }
 
-// Whether the camera should be open: during a video call with your camera on, or, before a
-// call, while the switch is on Video (a preview of what they'll see).
-function cameraWanted() {
-  if (!local || !videoAvailable()) return false;   // not before the microphone's open (local is set)
+// Which video sources should be open ("camera", "test", "bars"): each call's own, while it's
+// sending video with your camera on, and before a call, while the switch is on Video, the
+// source new calls start with (a preview of what they'll see).
+function wantedSources() {
+  const want = new Set();
+  if (!local) return want;   // not before the microphone's open (local is set)
   const all = [...entries.values()];
-  // Any call sending it (not on hold).
-  if (all.some((e) => e.m?.hasVideo && e.m.camOn && !e.h.held && e.h.call === "connected")) return true;
-  if (call) return false;
-  // Connected, but the media isn't set up yet: leave the camera as it is, so a video call's
-  // preview carries straight on into the call.
-  if (all.some((e) => e.h.call === "connected" && !e.m)) return !!localTrack("video");
-  const before = state.call === "idle" || state.call === "ended" || state.call === "calling";
-  // The preview is only for you, so with Self view off the camera stays closed until the call.
-  return before && state.videoAllowed !== false && callType === "video" && camPref && selfViewOn;
+  // Any call sending (not on hold).
+  for (const e of all) if (e.m?.hasVideo && e.m.camOn && !e.h.held && e.h.call === "connected") want.add(sourceOf(e));
+  if (!call) {
+    if (all.some((e) => e.h.call === "connected" && !e.m)) {
+      // Connected, but the media isn't set up yet: leave what's open as it is, so a video
+      // call's preview carries straight on into the call.
+      for (const kind of openSources()) want.add(kind);
+    } else {
+      const before = state.call === "idle" || state.call === "ended" || state.call === "calling";
+      // The preview is only for you, so with Self view off nothing opens until the call.
+      if (before && state.videoAllowed !== false && callType === "video" && camPref && selfViewOn) want.add(videoSource);
+    }
+  }
+  if (!sourceAvailable("camera")) want.delete("camera");
+  return want;
 }
+
+// The sources open now.
+function openSources() {
+  const open = new Set(sources.keys());
+  if (localTrack("video")) open.add("camera");
+  return open;
+}
+
+const sameSources = (a, b) => a.size === b.size && [...a].every((k) => b.has(k));
 
 // While your camera is off (or there's none) on a video call, the call sends a placeholder
 // instead of nothing: your initial on a plain background, a few frames a second. Video never
@@ -367,9 +384,13 @@ function stopPlaceholder() {
 }
 
 // ---- Test pattern (diagnostics) ----
-// In diagnostics mode, the video source can be a test pattern instead of the camera. It stands
-// in for the camera exactly: it's opened and closed when the camera would be, becomes the
-// video track in `local`, and Camera off swaps in the placeholder as usual. The picture has
+// In diagnostics mode, a call's video source can be a test pattern instead of the camera. It
+// stands in for the camera exactly: it's opened and closed when the camera would be, and
+// Camera off swaps in the placeholder as usual. Each call has its own source, picked from the
+// Camera ▾ while it's the selected call, so two calls can send different pictures (the test
+// pattern on one, the camera on the other). The camera itself is one device, shared by every
+// call sending it; the test pattern and audio bars are one canvas each, likewise shared. The
+// source last picked is the one the preview and new calls start with. The picture has
 // colour bars and a grey ramp (colour and banding), a dial whose hand steps once per frame
 // drawn (a dropped frame shows as a skipped tick), a clock to the millisecond (compare the
 // receiver's picture with the sender's screen for the delay) and a frame counter. It's picked
@@ -380,27 +401,45 @@ function stopPlaceholder() {
 // judge lip sync: a bar should jump as they hear the sound. The microphone only opens with a
 // call, so before one the picture says so.
 const TEST_FPS = 30;
-let videoSource = "camera";   // "camera", "test" or "bars"; back to camera when diagnostics goes off
-let testPattern = null;       // { kind, canvas, track, timer, frame, and for bars the analyser and levels }
+// "camera", "test" or "bars": what the preview and new calls start with (a call keeps its own
+// in e.source). Everything goes back to the camera when diagnostics goes off.
+let videoSource = "camera";
+// The open test sources by kind: { kind, canvas, track, timer, frame, and for bars the analyser
+// and levels }. The camera, when open, is the video track in `local`.
+const sources = new Map();
 const SOURCE_LABEL = { test: "Test pattern", bars: "Audio bars" };
 
-// Whether there's a video source to open: the test pattern always; a camera if there is one
-// and it isn't in use elsewhere.
-const videoAvailable = () => videoSource !== "camera" || (hasCamera && !cameraInUse);
-const isTestTrack = (track) => !!track && track === testPattern?.track;
+// A call's source; before its media is set up (or with no call), the one new calls start with.
+const sourceOf = (e) => e?.source ?? videoSource;
+// Whether a source can be opened: the test sources always; a camera if there is one and it
+// isn't in use elsewhere.
+const sourceAvailable = (kind) => kind !== "camera" || (hasCamera && !cameraInUse);
+const videoAvailable = () => sourceAvailable(videoSource);
+const isTestTrack = (track) => !!track && [...sources.values()].some((tp) => tp.track === track);
+const sourceTrack = (kind) => (kind === "camera" ? localTrack("video") : sources.get(kind)?.track ?? null);
 
-function openTestPattern() {
+function openTestPattern(kind) {
   const canvas = Object.assign(document.createElement("canvas"), { width: 1280, height: 720 });
   const track = canvas.captureStream(0).getVideoTracks()[0];
-  testPattern = {
-    kind: videoSource, canvas, track, frame: 0, timer: setInterval(testPatternFrame, 1000 / TEST_FPS),
+  const tp = {
+    kind, canvas, track, frame: 0, timer: 0,
     analyser: null, micTrack: null, levels: new Float32Array(BANDS), target: new Float32Array(BANDS), last: performance.now(),
   };
-  testPatternFrame();
+  const draw = () => (kind === "bars" ? audioBarsFrame(tp) : patternFrame(tp));
+  tp.timer = setInterval(draw, 1000 / TEST_FPS);
+  sources.set(kind, tp);
+  draw();
   return track;
 }
 
-const testPatternFrame = () => (testPattern.kind === "bars" ? audioBarsFrame() : patternFrame());
+function closeTestPattern(kind) {
+  const tp = sources.get(kind);
+  if (!tp) return;
+  clearInterval(tp.timer);
+  tp.analyser?.source.disconnect();
+  tp.track.stop();
+  sources.delete(kind);
+}
 
 // The band along the bottom of every diagnostic source: a clock to the millisecond, who's
 // sending, size and rate, and a frame counter.
@@ -424,19 +463,14 @@ function sourceFooter(g, W, H, frame) {
   g.fillText(`frame ${pad(frame, 6)}`, W - 40, 680);
 }
 
-function closeVideoTrack(track) {
+function closeCamera(track) {
   local.removeTrack(track);
   track.stop();
-  if (isTestTrack(track)) {
-    clearInterval(testPattern.timer);
-    testPattern.analyser?.source.disconnect();
-    testPattern = null;
-  }
 }
 
-function patternFrame() {
-  const { canvas, track } = testPattern;
-  const frame = testPattern.frame++;
+function patternFrame(tp) {
+  const { canvas, track } = tp;
+  const frame = tp.frame++;
   const g = canvas.getContext("2d");
   const W = canvas.width, H = canvas.height, pad = (n, w = 2) => String(n).padStart(w, "0");
   g.textBaseline = "middle";
@@ -494,8 +528,7 @@ function patternFrame() {
   track.requestFrame();
 }
 
-function audioBarsFrame() {
-  const tp = testPattern;
+function audioBarsFrame(tp) {
   const { canvas, track } = tp;
   const frame = tp.frame++;
   const g = canvas.getContext("2d");
@@ -559,22 +592,25 @@ function audioBarsFrame() {
   track.requestFrame();
 }
 
-// Switches the video source (or, with reopen, the camera). Whatever's open closes, and
-// syncCamera opens the new one if video is wanted (so a camera that's off stays off).
-function setVideoSource(source, reopen = false) {
-  if (source === videoSource && !reopen) return;
+// Switches the video source for a call (e), and for the preview and new calls; with no call,
+// only the latter. With reopen, the camera closes first, so a newly picked camera opens.
+// syncCamera opens what's now wanted and closes what isn't (so a camera that's off stays off).
+function setVideoSource(source, e = null, reopen = false) {
+  const changed = source !== videoSource || (e?.m && e.source !== source);
+  if (!changed && !reopen) return;
   videoSource = source;
+  if (e?.m) e.source = source;
   if (source === "camera") cameraInUse = false;   // a fresh try, because you asked
-  log(`video source: ${source}`);
+  if (changed) log(`video source${e?.m ? ` for call ${e.id}` : ""}: ${source}`);
   if (!local) return;   // at start, before the devices are open; the first syncCamera picks it up
-  const track = localTrack("video");
-  if (track) closeVideoTrack(track);
+  const cam = localTrack("video");
+  if (reopen && cam) closeCamera(cam);
   syncCamera();
 }
 
-// What a call's video sender should carry: the camera when it's on and open, else the placeholder.
-// Nothing while it's on hold.
-const videoToSend = (e) => (e.h.held ? null : (e.m.camOn && localTrack("video")) || placeholderTrack());
+// What a call's video sender should carry: its source when the camera's on and the source is
+// open, else the placeholder. Nothing while it's on hold.
+const videoToSend = (e) => (e.h.held ? null : (e.m.camOn && sourceTrack(sourceOf(e))) || placeholderTrack());
 const anyVideoSender = () => [...entries.values()].some((e) => e.m?.videoSender);
 
 // Puts what's sent (or, before a call, what would be) in the self view. Only the camera is
@@ -582,57 +618,29 @@ const anyVideoSender = () => [...entries.values()].some((e) => e.m?.videoSender)
 // once neither the self view nor a call needs it.
 function showSelfVideo(show) {
   const el = $("self");
-  const track = !show ? null : call?.videoSender ? videoToSend(sel()) : localTrack("video") ?? placeholderTrack();
+  const track = !show ? null : call?.videoSender ? videoToSend(sel()) : sourceTrack(videoSource) ?? placeholderTrack();
   if ((el.srcObject?.getVideoTracks()[0] ?? null) !== track) el.srcObject = track ? new MediaStream([track]) : null;
   el.hidden = !track;
   el.classList.toggle("mirror", !!track && track === localTrack("video") && !isTestTrack(track));
   if (placeholder && track !== placeholder.track && !anyVideoSender()) stopPlaceholder();
 }
 
-// Opens or closes the camera to match cameraWanted(), and puts it on the call when it should be sent.
+// Opens or closes the camera and the test sources to match wantedSources(), and puts on each call
+// what it should send.
 function syncCamera() {
   cameraBusy = (cameraBusy ?? Promise.resolve()).then(async () => {
-    const want = cameraWanted();
-    let track = localTrack("video");
-    if (want && !track && videoSource !== "camera") {
-      local.addTrack(openTestPattern());
-      log(`${SOURCE_LABEL[videoSource].toLowerCase()} opened`);
-    } else if (want && !track) {
-      try {
-        // The chosen camera exactly, or if it's gone, the default.
-        const open = (id) => navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, ...(id ? { deviceId: { exact: id } } : {}) },
-        });
-        const cam = await open(devices.camera).catch((err) => {
-          if (!devices.camera || err.name !== "OverconstrainedError" && err.name !== "NotFoundError") throw err;
-          log("chosen camera not found, using the default");
-          return open("");
-        });
-        track = cam.getVideoTracks()[0];
-        // Changed while it was opening (including a switch to the test pattern).
-        if (!cameraWanted() || videoSource !== "camera") { track.stop(); return; }
-        local.addTrack(track);
-        log("camera opened");
-      } catch (err) {
-        if (err.name === "NotReadableError" || err.name === "AbortError") {
-          // In use elsewhere. Your camera goes off; trying again is up to you.
-          log(`camera in use: ${err.name} ${err.message}`);
-          cameraInUse = true;
-          for (const e of entries.values()) if (e.m) e.m.camOn = false;
-          render();
-          return;
-        }
-        // Missing, or permission refused: no camera for this run.
-        log(`camera unavailable: ${err.name} ${err.message}`);
-        hasCamera = false;
-        cameraInUse = false;
-        for (const e of entries.values()) if (e.m) e.m.camOn = false;
+    const want = wantedSources();
+    for (const kind of Object.keys(SOURCE_LABEL)) {
+      if (want.has(kind) && !sources.has(kind)) {
+        openTestPattern(kind);
+        log(`${SOURCE_LABEL[kind].toLowerCase()} opened`);
+      } else if (!want.has(kind) && sources.has(kind)) {
+        closeTestPattern(kind);
+        log(`${SOURCE_LABEL[kind].toLowerCase()} closed`);
       }
-    } else if (!want && track) {
-      log(isTestTrack(track) ? `${SOURCE_LABEL[testPattern.kind].toLowerCase()} closed` : "camera closed");
-      closeVideoTrack(track);
     }
-    // Always match the call's sender to the camera, even when the camera itself didn't change:
+    await syncCameraTrack(want.has("camera"));
+    // Always match each call's sender to its source, even when no source changed:
     // a new call (or the new connection after Add video) has a new sender, and a camera left
     // open from the preview or the last call must still be put on it.
     for (const e of entries.values()) {
@@ -644,6 +652,46 @@ function syncCamera() {
     render();   // the self view follows what's sent
   }).catch((err) => log(`camera sync failed: ${err.message}`));   // so one failure doesn't stall the queue
   return cameraBusy;
+}
+
+// Opens or closes the camera itself. If it can't open, every call sending it goes to camera off.
+async function syncCameraTrack(want) {
+  let track = localTrack("video");
+  if (!want && track) {
+    log("camera closed");
+    closeCamera(track);
+    return;
+  }
+  if (!want || track) return;
+  const cameraCallsOff = () => { for (const e of entries.values()) if (e.m && sourceOf(e) === "camera") e.m.camOn = false; };
+  try {
+    // The chosen camera exactly, or if it's gone, the default.
+    const open = (id) => navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, ...(id ? { deviceId: { exact: id } } : {}) },
+    });
+    const cam = await open(devices.camera).catch((err) => {
+      if (!devices.camera || err.name !== "OverconstrainedError" && err.name !== "NotFoundError") throw err;
+      log("chosen camera not found, using the default");
+      return open("");
+    });
+    track = cam.getVideoTracks()[0];
+    // Changed while it was opening (including a switch to the test pattern).
+    if (!wantedSources().has("camera")) { track.stop(); return; }
+    local.addTrack(track);
+    log("camera opened");
+  } catch (err) {
+    if (err.name === "NotReadableError" || err.name === "AbortError") {
+      // In use elsewhere. Your camera goes off; trying again is up to you.
+      log(`camera in use: ${err.name} ${err.message}`);
+      cameraInUse = true;
+    } else {
+      // Missing, or permission refused: no camera for this run.
+      log(`camera unavailable: ${err.name} ${err.message}`);
+      hasCamera = false;
+      cameraInUse = false;
+    }
+    cameraCallsOff();
+  }
 }
 
 // ---- Media from the host ----
@@ -669,11 +717,13 @@ async function onMediaOffer(id, sdp, video = false, renegotiate = false) {
   const wantCamera = e.addingVideo ? true : midCall ? false : (answerCamera ?? camPref);
   e.addingVideo = false;
   if (wantCamera) cameraInUse = false;   // you placed, answered or added video: try the camera again
+  // A new call starts with the source last picked; a call that's renegotiating keeps its own.
+  e.source ??= videoSource;
   const m = {
     // The call has video at all (an m=video line from the host). Read from the offer now, not
     // once the transceivers are set up, or a render in between briefly shows the audio bars.
     hasVideo: sdp ? /^m=video [1-9]/m.test(sdp) : video,
-    camOn: wantCamera && videoAvailable(),
+    camOn: wantCamera && sourceAvailable(e.source),
     muted: micMuted,
     audioSender: null,
     videoSender: null,
@@ -804,7 +854,7 @@ function closeMedia(e) {
 // Camera on or off during a video call. Off swaps in the placeholder, then closes the camera
 // (unless another call is still sending it).
 async function setCamera(on, e = sel()) {
-  if (!e?.m?.videoSender || !(hasCamera || videoSource !== "camera")) return;
+  if (!e?.m?.videoSender || !(hasCamera || sourceOf(e) !== "camera")) return;
   e.m.camOn = on;
   if (on) cameraInUse = false;   // try again, because you asked
   if (!on && !e.h.held) await e.m.videoSender.replaceTrack(placeholderTrack());
@@ -1440,7 +1490,8 @@ function render() {
   for (const x of entries.values()) x.el.classList.toggle("sel", x.id === selectedId);
 
   // The Audio | Video switch beside Call. Locked to Audio if video is off (--no-video).
-  const camAvailable = hasCamera || videoSource !== "camera";
+  // The selected call's source, or before a call the one it'll start with.
+  const camAvailable = hasCamera || sourceOf(e) !== "camera";
   const videoAllowed = state.videoAllowed !== false;
   const type = videoAllowed ? callType : "audio";
   for (const el of document.querySelectorAll("#callType [data-type]")) {
@@ -1491,12 +1542,12 @@ function render() {
     : `${selfViewOn ? "Hide" : "Show"} your camera preview (V)`;
   if (!sv.innerHTML) sv.innerHTML = `${ICON.selfView}<span>Self view</span>`;
   const camOn = connected ? call.camOn : camPref;
-  const selfText = !showSelf ? null : !camAvailable ? "No camera" : cameraInUse && videoSource === "camera" ? "Camera in use"
+  const selfText = !showSelf ? null : !camAvailable ? "No camera" : cameraInUse && sourceOf(e) === "camera" ? "Camera in use"
     : !camOn ? "Camera off" : null;
   showSelfVideo(showSelf);
   $("selfOff").hidden = !selfText;
   $("selfOffText").textContent = selfText ?? "";
-  if (cameraWanted() !== !!localTrack("video")) syncCamera();
+  if (!sameSources(wantedSources(), openSources())) syncCamera();
 
   // The control bar, under the stage the whole time, so you can set up your microphone and
   // camera before a call. Mute and Camera are split buttons: the ▾ picks the device.
@@ -2091,7 +2142,7 @@ function renderAnswer(current) {
 const currentMicId = () => localTrack("audio")?.getSettings().deviceId ?? (devices.mic || "default");
 function currentCameraId(cameras) {
   const track = localTrack("video");
-  if (track && !isTestTrack(track)) return track.getSettings().deviceId;
+  if (track) return track.getSettings().deviceId;
   return cameras.some((d) => d.deviceId === devices.camera) ? devices.camera : cameras[0]?.deviceId;
 }
 
@@ -2103,13 +2154,15 @@ async function showMenu(kind) {
   try { list = await navigator.mediaDevices.enumerateDevices(); } catch { /* none to show */ }
   if (openMenu !== kind) return;
   const of = (k) => list.filter((d) => d.kind === k && d.deviceId);
+  // The Camera ▾ ticks the selected call's source; Answer's, the one the new call will start with.
+  const source = kind === "answer" ? videoSource : sourceOf(sel());
   const groups = kind === "mic"
     ? [["mic", "Microphone", of("audioinput"), currentMicId()],
        ["speaker", "Speaker", of("audiooutput"), devices.speaker || "default"]]
-    : [["camera", "Camera", of("videoinput"), videoSource !== "camera" ? null : currentCameraId(of("videoinput"))]];
+    : [["camera", "Camera", of("videoinput"), source !== "camera" ? null : currentCameraId(of("videoinput"))]];
   if (kind !== "mic" && document.body.classList.contains("diag")) {
     groups.push(["test", "Diagnostics", Object.entries(SOURCE_LABEL).map(([deviceId, label]) => ({ deviceId, label })),
-      videoSource !== "camera" ? videoSource : null]);
+      source !== "camera" ? source : null]);
   }
   if (kind === "answer") {
     // While the camera's off nothing above is ticked; "Camera off" is instead.
@@ -2168,8 +2221,10 @@ function closeMenu() {
 }
 
 // From the Answer menu (forAnswer), a camera or the test pattern also means camera on for the
-// call being answered, and "off" means camera off.
+// call being answered, and "off" means camera off. A source picked from the Camera ▾ is for the
+// selected call (and the next ones); from Answer's, for the call being answered (and the next).
 async function pickDevice(key, id, forAnswer = false) {
+  const target = forAnswer ? null : sel();
   closeMenu();
   if (forAnswer) answerCamera = key !== "off";
   if (key === "off") log("answering with camera off");
@@ -2185,10 +2240,10 @@ async function pickDevice(key, id, forAnswer = false) {
     devices.camera = id;
     saveDevices();
     log(`camera: ${id}`);
-    setVideoSource("camera", true);
+    setVideoSource("camera", target, true);
     if (!forAnswer) await cameraOnForPick();
   } else if (key === "test") {
-    setVideoSource(id);   // the test pattern or audio bars
+    setVideoSource(id, target);   // the test pattern or audio bars
     if (!forAnswer) await cameraOnForPick();
   }
   render();
@@ -2312,11 +2367,13 @@ function setDiagnostics(on) {
   // The test pattern and audio bars are diagnostics things, so the camera takes over again.
   // But it isn't sent until you turn it on: the camera never starts by itself. (With no camera
   // the placeholder goes, as it would anyway.)
-  if (!on && videoSource !== "camera") {
-    const sending = [...entries.values()].filter((e) => e.m?.hasVideo && e.m.camOn);
+  if (!on) {
+    const onTest = [...entries.values()].filter((e) => e.m && sourceOf(e) !== "camera");
+    const sending = onTest.filter((e) => e.m.hasVideo && e.m.camOn);
     for (const e of sending) setCamera(false, e);
-    if (!sending.length) camPref = false;
-    setVideoSource("camera");
+    for (const e of onTest) e.source = "camera";
+    if (videoSource !== "camera" && !sending.length) camPref = false;
+    if (onTest.length || videoSource !== "camera") setVideoSource("camera");
   }
   // Simulated loss is a diagnostics thing too: leaving diagnostics turns it off, so it can't
   // quietly carry on spoiling calls with the sliders out of sight.
@@ -2538,7 +2595,7 @@ const settings = initSettings({
       devices.camera = id;
       saveDevices();
       log(`camera for calls: ${id || "system default"}`);
-      if (videoSource === "camera" && localTrack("video")) setVideoSource("camera", true);
+      if (localTrack("video")) { closeCamera(localTrack("video")); syncCamera(); }
     }
     render();
   },

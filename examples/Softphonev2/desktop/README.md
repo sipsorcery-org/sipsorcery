@@ -286,7 +286,10 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
 - **Test pattern** (diagnostics mode): picked from the Camera button's ▾, it sends a test
   pattern instead of the camera. It stands in for the camera exactly:
   opened and closed when the camera would be, Camera off still sends the placeholder, and it
-  can be switched mid-call. It has colour bars and a grey ramp (colour and banding), a dial
+  can be switched mid-call. The source is per call: with several calls, the Camera ▾ picks
+  for the selected call only, so one call can send the test pattern while another sends the
+  camera. The source picked last is what the preview and new calls start with.
+  It has colour bars and a grey ramp (colour and banding), a dial
   whose hand steps once per frame drawn (a dropped frame is a skipped tick), a clock to the
   millisecond (compare the far end's picture with this screen for the delay), the sender's
   name or address and a frame counter. Closing diagnostics (F12) goes back to the camera, but
