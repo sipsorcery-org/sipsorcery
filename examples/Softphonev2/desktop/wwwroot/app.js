@@ -22,6 +22,7 @@
 
 import { initAccounts, onAccountsState, onAccountMessage } from "./accounts.js";
 import { prefs, savePref, initSettings } from "./settings.js";
+import { initSelfView } from "./selfview.js";
 
 const $ = (id) => document.getElementById(id);
 const post = (msg) => chrome.webview.postMessage(msg);
@@ -2319,6 +2320,7 @@ function toggleSelfView() {
   render();
 }
 $("selfViewBtn").onclick = toggleSelfView;
+initSelfView($("stage"), $("selfBox"), $("selfGrip"));   // drag, resize and reset it
 document.addEventListener("keydown", (e) => {
   if (e.key.toLowerCase() !== "v" || e.ctrlKey || e.altKey || e.metaKey || openMenu) return;
   if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;

@@ -316,6 +316,18 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   call. On a call what's sent doesn't change. Before a call, with it off, the camera stays
   closed (the preview is only for you) and opens when the call connects. It's remembered
   between runs.
+- **Moving and resizing the self view.** Drag it anywhere on the stage (mouse, pen or touch);
+  it stays inside the stage, also when the window resizes. Its corner handle, on the corner
+  facing the middle of the stage (top-left at first), resizes it, keeping 16:9, from the
+  default size up to three times it, as far as the stage allows. Double-click it to put it
+  back in the bottom-right at the default size. It can take keyboard focus (Tab): the arrow
+  keys move it, Shift with the arrows resizes it (Up or Right larger, Down or Left smaller)
+  and Home puts it back. The call's name and timer, Call quality, the on-hold note and the
+  answer buttons stay above it, so it never blocks them and a drag can't start from them.
+  Where it sits is kept in the page's `localStorage` (`selfViewBox`) as a fraction of the way
+  across and down the stage, with its size as a multiple of the default, so it keeps its
+  corner at any window size and is the same on the next call and the next run. Grid view
+  has no self view. (`wwwroot/selfview.js`.)
 - **Camera on/off** during a video call turns it on or off with no renegotiation: the page keeps
   the video sendrecv and swaps the track in and out (`replaceTrack`).
 - **Video never stops while your camera is off.** A video call with your camera off, or with no
@@ -606,6 +618,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Video call, open the info bar's chevron | Call details: "Outgoing · no account", their phone `sipsorcery_v10.0.18.0`, "Not encrypted: plain RTP, SIP over UDP", audio "↑ Opus 48 kHz ↓ G722 16 kHz", video VP8, SIP `UDP 127.0.0.1:5080`, their media address and the Call-ID. The callee's shows "Incoming" and the codecs the other way round. |
 | Far end with `--loss-video 100` | "No video arriving from B" under their initial; ↓ Received video fps 0. |
 | Self view, then `V` | The self view hides and comes back; the far end still gets 30 fps throughout. |
+| Video call between two copies (`--profile sdA`/`sdB`, `--fake-media --test-pattern`, B `--auto-answer`); A's self view dragged past the stage's top-left, its handle dragged far out, then moved and the page reloaded | It stops 12 px from the stage's edges; the call's name and timer stay on top and clickable. It grows to 780 px (3 × 260) and no further, inside the stage. After the reload it's in the same place at the same size. `V` hides and shows it, `G` (two calls) hides it in the grid and Focus brings it back. No console errors. |
 | Mic off before dialling, then a video call | The call connects with the mic off (Turn mic on shown). |
 | Mid-call: another microphone, then the fake camera | Both swap without renegotiation; video carries on at about 30 fps, and the far end gets the new microphone's beep. |
 | Pick a microphone, restart | The menu shows the picked microphone in use. |
