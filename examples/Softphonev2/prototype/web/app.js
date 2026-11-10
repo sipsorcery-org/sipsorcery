@@ -2193,10 +2193,14 @@ function renderStage() {
     const gridCalls = gridCallsFor(sel);
     const grid = inGrid();
     const live = isLive(sel);
-    const toggle = `<div class="view-toggle" role="group" aria-label="Call view">
-        <button class="${grid ? "" : "on"}" data-act="view" data-view="focus" aria-pressed="${!grid}" title="Show only the selected call (G)">${icon("focus")}Focus</button>
-        <button class="${grid ? "on" : ""}" data-act="view" data-view="grid" aria-pressed="${grid}" ${gridCalls.length > 1 ? "" : "disabled"}
-          title="${gridCalls.length > 1 ? "Show all active calls (G)" : "Only one active call"}">${icon("grid")}Grid${gridCalls.length > 1 ? ` <span class="count">${gridCalls.length}</span>` : ""}</button>
+    // Focus and Grid: two plain buttons that each go to their view, so the one for the view
+    // you're already in is disabled. Grid also needs two active calls.
+    const canGrid = gridCalls.length > 1;
+    const toggle = `<div class="view-btns" role="group" aria-label="Call view">
+        <button class="btn btn-small" data-act="view" data-view="focus" ${grid ? "" : "disabled"}
+          title="${grid ? "Show only the selected call (G)" : "Showing the selected call"}">${icon("focus")}Focus</button>
+        <button class="btn btn-small" data-act="view" data-view="grid" ${grid || !canGrid ? "disabled" : ""}
+          title="${grid ? "Showing all active calls" : canGrid ? "Show all active calls (G)" : "Grid needs two active calls"}">${icon("grid")}Grid${canGrid ? ` <span class="count">${gridCalls.length}</span>` : ""}</button>
       </div>`;
     html += `<div class="call-head">
         <div>
@@ -2627,19 +2631,22 @@ function preCallCamera() {
 function renderCallType() {
   const locked = accountById(state.accountId)?.video === false;
   const type = locked ? "audio" : state.callType;
-  document.querySelectorAll("#callType [data-type]").forEach((el) => {
-    const on = el.dataset.type === type;
-    el.classList.toggle("on", on);
-    el.setAttribute("aria-checked", String(on));
-    el.tabIndex = on ? 0 : -1;
+  const box = document.getElementById("callType");
+  box.dataset.side = type === "video" ? "right" : "left";
+  box.classList.toggle("disabled", locked);
+  box.querySelectorAll("[data-type]").forEach((el) => {
+    el.classList.toggle("on", el.dataset.type === type);
     el.disabled = locked && el.dataset.type === "video";
   });
+  const track = box.querySelector(".slide-track");
+  track.setAttribute("aria-checked", String(type === "video"));
+  track.disabled = locked;
   document.getElementById("callType").title = locked ? "Video is turned off for this account"
     : type === "video" ? "Video call: you'll see each other. You can turn your camera off once it connects."
     : "Audio call. You can add video once it connects.";
   const call = document.getElementById("callBtn");
   call.querySelector("[data-icon]").innerHTML = icon(type === "video" ? "video" : "phone");
-  call.querySelector(".label").textContent = type === "video" ? "Video call" : "Call";
+  call.querySelector(".label").innerHTML = `<span class="label-stack"><span class="${type === "video" ? "off" : ""}">Call</span><span class="${type === "video" ? "" : "off"}">Video call</span></span>`;
 }
 
 function setCallType(type) {
@@ -2670,16 +2677,17 @@ document.getElementById("dialForm").addEventListener("submit", (e) => {
   e.preventDefault();
   placeCall(document.getElementById("destInput").value);
 });
+// The track flips the switch; a word either side picks that side.
 document.getElementById("callType").addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-type]");
-  if (btn && !btn.disabled) setCallType(btn.dataset.type);
+  const btn = e.target.closest("button");
+  if (!btn || btn.disabled) return;
+  setCallType(btn.dataset.type ?? (state.callType === "video" ? "audio" : "video"));
 });
-// A radio group: the arrow keys move between Audio and Video.
+// The track takes focus: Space flips it, Left and Right push it to that side.
 document.getElementById("callType").addEventListener("keydown", (e) => {
-  if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
   e.preventDefault();
-  setCallType(state.callType === "video" ? "audio" : "video");
-  document.querySelector(`#callType [data-type="${state.callType}"]`)?.focus();
+  setCallType(e.key === "ArrowRight" ? "video" : "audio");
 });
 
 document.getElementById("accountSelect").addEventListener("change", (e) => {

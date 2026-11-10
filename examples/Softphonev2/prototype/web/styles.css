@@ -13,6 +13,7 @@
   --accent-ink: #ffffff;
   --accent-soft: #e2efe9;
   --seg-on: #ffffff;   /* a segmented control's chosen option: raised, not coloured */
+  --thumb: #ffffff;    /* a slide switch's thumb */
   --ok: #2f8a6c;
   --warn-bg: #fcf2e1;
   --warn-ink: #8a5a12;
@@ -46,6 +47,7 @@
     --accent-ink: #06130f;
     --accent-soft: #1d3a31;
     --seg-on: #33423c;
+    --thumb: #c9d6d0;
     --ok: #4cc29b;
     --warn-bg: #33291a;
     --warn-ink: #e6b86a;
@@ -175,15 +177,41 @@ svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-widt
 .call-buttons { grid-area: 2 / 3; display: flex; gap: 8px; }
 /* Audio | Video: what kind of call Call places. Two halves of one control; the chosen half is a
    raised neutral pill, so the accent green stays on the Call button, the one thing that acts. */
-.call-type { display: inline-flex; flex: none; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-3); }
-.call-type button { display: inline-flex; align-items: center; gap: 6px; padding: 0 11px; border: 0; border-radius: 7px; background: transparent;
-  color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
-.call-type button svg { width: 15px; height: 15px; }
-.call-type button:hover:not(:disabled):not(.on) { color: var(--text); }
-.call-type button.on { background: var(--seg-on); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .12), 0 0 0 1px var(--border); }
-.call-type button:disabled { opacity: 0.45; cursor: not-allowed; }
-.call-type button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* A slide switch between two words: Audio ◯━ Video. The thumb sits beside the
+   chosen word, which is bold; the other is faint. No fill or raised pill, so neither side reads as
+   a button, and the track stays neutral, since neither side is "on". */
+.slide { display: inline-flex; flex: none; align-items: center; gap: 2px; }
+.slide-opt {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px; border: 0; border-radius: 6px;
+  background: none; color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+}
+.slide-opt svg { width: 15px; height: 15px; }
+.slide-opt.on { color: var(--text); font-weight: 600; }
+.slide-opt:hover:not(:disabled):not(.on) { color: var(--text); }
+.slide-track {
+  position: relative; flex: none; width: 36px; height: 20px; margin: 0 2px; padding: 0; border: 0; border-radius: 10px;
+  background: var(--border-strong); cursor: pointer;
+}
+.slide-thumb {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--thumb); box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: transform .16s ease;
+}
+.slide[data-side="right"] .slide-thumb { transform: translateX(16px); }
+.slide-track:hover:not(:disabled) { background: color-mix(in srgb, var(--border-strong) 75%, var(--text)); }
+.slide-track:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.slide.disabled .slide-track, .slide button:disabled { cursor: not-allowed; }
+.slide.disabled .slide-track { opacity: .5; }
+.slide-opt:disabled:not(.on) { opacity: .45; }
+@media (prefers-reduced-motion: reduce) { .slide-thumb { transition: none; } }
 .btn-call { min-width: 118px; justify-content: center; }
+/* No sideways shift when Audio ◯━ Video flips. Call holds both its labels in one grid cell and
+   shows one, so it's always as wide as "Video call"; each word in the switch keeps room for its
+   bold self, so going bold doesn't widen it. */
+.label-stack { display: inline-grid; justify-items: center; }
+.label-stack > * { grid-area: 1 / 1; }
+.label-stack > .off { visibility: hidden; }
+.slide-word { display: inline-flex; flex-direction: column; align-items: center; }
+.slide-word::after { content: attr(data-text); height: 0; overflow: hidden; visibility: hidden; font-weight: 600; }
 .account-manage { grid-area: 3 / 1; justify-self: start; position: relative; gap: 6px; margin-top: 2px; }
 .account-manage svg { width: 15px; height: 15px; }
 .account-manage.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
@@ -430,6 +458,10 @@ svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-widt
 .view-toggle button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 .view-toggle button[disabled] { opacity: .45; cursor: not-allowed; }
 .view-toggle .count { font-size: 11px; padding: 0 6px; border-radius: 9px; background: var(--accent-soft); color: var(--accent); }
+/* Focus and Grid: ordinary buttons; the one for the view on screen is disabled. */
+.view-btns { display: inline-flex; gap: 6px; }
+.view-btns .btn svg { width: 15px; height: 15px; }
+.view-btns .count { font-size: 11px; padding: 0 6px; border-radius: 9px; background: var(--accent-soft); color: var(--accent); }
 
 /* ---------- Real-time text ---------- */
 /* Only in Focus view: the panel sits inside the call card, beside the video. It takes the card's

@@ -43,9 +43,11 @@
         </div>
       </div>
       <div class="call-buttons">
-        <div class="call-type" id="callType" role="radiogroup" aria-label="Call type">
-          <button type="button" role="radio" data-type="audio"><span data-icon="phone"></span>Audio</button>
-          <button type="button" role="radio" data-type="video"><span data-icon="video"></span>Video</button>
+        <!-- A slide switch, not two buttons: the words either side say what it chooses between. -->
+        <div class="slide call-type" id="callType">
+          <button type="button" class="slide-opt" data-type="audio" tabindex="-1"><span data-icon="phone"></span><span class="slide-word" data-text="Audio">Audio</span></button>
+          <button type="button" class="slide-track" role="switch" aria-label="Video call"><span class="slide-thumb"></span></button>
+          <button type="button" class="slide-opt" data-type="video" tabindex="-1"><span data-icon="video"></span><span class="slide-word" data-text="Video">Video</span></button>
         </div>
         <button type="submit" class="btn btn-primary btn-call" id="callBtn" title="Call (Enter)">
           <span data-icon="phone"></span><span class="label">Call</span>

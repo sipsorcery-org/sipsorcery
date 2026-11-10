@@ -1495,17 +1495,20 @@ function render() {
   const camAvailable = hasCamera || sourceOf(e) !== "camera";
   const videoAllowed = state.videoAllowed !== false;
   const type = videoAllowed ? callType : "audio";
+  $("callType").dataset.side = type === "video" ? "right" : "left";
+  $("callType").classList.toggle("disabled", full || !videoAllowed);
   for (const el of document.querySelectorAll("#callType [data-type]")) {
-    const on = el.dataset.type === type;
-    el.classList.toggle("on", on);
-    el.setAttribute("aria-checked", String(on));
-    el.tabIndex = on ? 0 : -1;
+    el.classList.toggle("on", el.dataset.type === type);
     el.disabled = full || (!videoAllowed && el.dataset.type === "video");
   }
+  const track = $("callType").querySelector(".slide-track");
+  track.setAttribute("aria-checked", String(type === "video"));
+  track.disabled = full || !videoAllowed;
   $("callType").title = !videoAllowed ? "Video is turned off"
     : type === "video" ? "Video call: you'll see each other. You can turn your camera off once it connects."
     : "Audio call. You can add video once it connects.";
-  $("callBtn").innerHTML = `${type === "video" ? ICON.video : ICON.phone}<span>${type === "video" ? "Video call" : "Call"}</span>`;
+  const callHtml = `${type === "video" ? ICON.video : ICON.phone}<span class="label-stack"><span class="${type === "video" ? "off" : ""}">Call</span><span class="${type === "video" ? "" : "off"}">Video call</span></span>`;
+  if ($("callBtn").innerHTML !== callHtml) $("callBtn").innerHTML = callHtml;
 
   // The stage.
   const mode = stageMode();
@@ -1849,20 +1852,18 @@ function renderGrid(grid) {
   stage.classList.toggle("grid", grid);
   box.hidden = !grid;
   $("controls").classList.toggle("grid", grid);
-  // The switch: shown once there's a call; Grid needs two.
+  // Focus and Grid: shown once there's a call. Each goes to its view, so the button for the view
+  // on screen is disabled; Grid also needs two calls.
   const n = gridCalls().length;
   $("viewToggle").hidden = !n;
   const f = $("viewFocus"), g = $("viewGrid");
   const fHtml = `${ICON.focus}<span>Focus</span>`, gHtml = `${ICON.grid}<span>Grid</span>${n > 1 ? `<span class="count">${n}</span>` : ""}`;
   if (f.innerHTML !== fHtml) f.innerHTML = fHtml;
   if (g.innerHTML !== gHtml) g.innerHTML = gHtml;
-  f.classList.toggle("on", !grid);
-  g.classList.toggle("on", grid);
-  f.setAttribute("aria-pressed", String(!grid));
-  g.setAttribute("aria-pressed", String(grid));
-  g.disabled = n < 2;
-  f.title = "Show only the selected call, with its controls (G)";
-  g.title = n < 2 ? "Grid shows every call, once there are two" : "Show all active calls (G)";
+  f.disabled = !grid;
+  g.disabled = grid || n < 2;
+  f.title = grid ? "Show only the selected call, with its controls (G)" : "Showing the selected call";
+  g.title = grid ? "Showing all active calls" : n < 2 ? "Grid shows every call, once there are two" : "Show all active calls (G)";
 
   const shown = grid ? gridCalls() : [];
   const ids = new Set(shown.map((e) => e.id));
@@ -2062,23 +2063,24 @@ $("dialForm").addEventListener("submit", (e) => {
     setTimeout(() => { if (!liveEntries().length) closeMic(); }, 5000);
   }
 });
-$("callType").querySelector('[data-type="audio"]').innerHTML = `${ICON.phone}Audio`;
-$("callType").querySelector('[data-type="video"]').innerHTML = `${ICON.video}Video`;
+$("callType").querySelector('[data-type="audio"]').innerHTML = `${ICON.phone}<span class="slide-word" data-text="Audio">Audio</span>`;
+$("callType").querySelector('[data-type="video"]').innerHTML = `${ICON.video}<span class="slide-word" data-text="Video">Video</span>`;
 function setCallType(type) {
   callType = type;
   if (type === "video") cameraInUse = false;   // a fresh try for the preview, because you asked
   render();
 }
+// The track flips the switch; a word either side picks that side.
 $("callType").addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-type]");
-  if (btn && !btn.disabled) setCallType(btn.dataset.type);
+  const btn = e.target.closest("button");
+  if (!btn || btn.disabled) return;
+  setCallType(btn.dataset.type ?? (callType === "video" ? "audio" : "video"));
 });
-// A radio group: the arrow keys move between Audio and Video.
+// The track takes focus: Space flips it, Left and Right push it to that side.
 $("callType").addEventListener("keydown", (e) => {
-  if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key) || state.videoAllowed === false) return;
+  if ((e.key !== "ArrowLeft" && e.key !== "ArrowRight") || e.target.disabled) return;
   e.preventDefault();
-  setCallType(callType === "video" ? "audio" : "video");
-  document.querySelector(`#callType [data-type="${callType}"]`)?.focus();
+  setCallType(e.key === "ArrowRight" ? "video" : "audio");
 });
 // ---- Device menus (the ▾ on Mute and Camera) ----
 // Mute's lists microphones and speakers; Camera's lists cameras, and in diagnostics mode the

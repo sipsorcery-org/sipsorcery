@@ -34,11 +34,13 @@ during a call, so the microphone and camera can be set up first:
   means. Disabled only when video can't be had (No camera, No video, said on the button)
   and while a call is ringing (the Answer button has its own choice). The ▾ lists cameras
   and, in diagnostics mode, the test pattern.
-- **Audio | Video**: the chosen half is a raised neutral pill, so the green is only on Call.
+- **Audio ◯━ Video**: a slide switch, with the chosen word bold beside the thumb. The track is
+  neutral, so the green is only on Call.
 - **Text** (an icon, at the right beside Self view, since it's rarely used): opens the
   real-time text popover (T does too). During a call only.
-- **Focus | Grid** (at the right, G too): see [Focus and grid views](#focus-and-grid-views).
-  There once there's a call; Grid needs two, and shows how many.
+- **Focus** and **Grid** (at the right, G too): see [Focus and grid views](#focus-and-grid-views).
+  There once there's a call. Each goes to its view, so the one on screen is disabled; Grid needs
+  two calls, and shows how many.
 - **Hold** (H): puts the selected call on hold, or Resume takes it off (see
   [Several calls](#several-calls)). During a call only.
 - **End**: Cancel while calling, End once connected.
@@ -66,7 +68,7 @@ in this app are there; each applies straight away:
   the camera is never opened without you asking. The microphone is on as soon as it answers.
   (`--auto-answer` is the testing switch, answered by the host with the Camera button's choice.)
   *Show all calls in a grid*: the view with two or more calls (see
-  [Focus and grid views](#focus-and-grid-views)); Focus | Grid and G change it too.
+  [Focus and grid views](#focus-and-grid-views)); the Focus and Grid buttons and G change it too.
 - **Appearance.** Theme: System, Light or Dark. System follows Windows' light or dark mode.
 - **Account.** Who you are: the account, or with none, the address others can call, and a
   *Manage accounts* button that opens the same view as the dial bar's people button (see
@@ -111,12 +113,12 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
 ## Focus and grid views
 
 As in the prototype. **Focus** (the default) shows only the selected call, with its controls
-under its info bar. **Grid** (Focus | Grid in the control bar, or `G`) shows every active call
+under its info bar. **Grid** (the Focus and Grid buttons in the control bar, or `G`) shows every active call
 as an equal tile, newest first like the list, with no buttons: each tile is their video (or
 their initial when there's none, or it's on hold), the call's time, their name and its status
 line, the same as the list's: "On hold · 02:10" (amber), "Typing…", their last unread line,
 "Audio off", and the mic, camera and text icons. The selected call's tile, which has the audio,
-is outlined. The control bar keeps only the switch, so it's never in doubt which call a button
+is outlined. The control bar keeps only Focus and Grid, so it's never in doubt which call a button
 acts on.
 
 - **Picking a call** from the grid, by its tile (or Enter on it), its row in Active calls, or

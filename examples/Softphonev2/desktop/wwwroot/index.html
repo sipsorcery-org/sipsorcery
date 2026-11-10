@@ -33,9 +33,11 @@
       </div>
       <input id="address" type="text" placeholder="Number or SIP address, e.g. sip:alice@example.com" spellcheck="false" aria-label="Number or SIP address">
       <!-- What kind of call Call places. Audio leaves video out of the offer; it can be added later. -->
-      <div class="call-type" id="callType" role="radiogroup" aria-label="Call type">
-        <button type="button" role="radio" data-type="audio"></button>
-        <button type="button" role="radio" data-type="video"></button>
+      <!-- A slide switch, not two buttons: the words either side say what it chooses between. -->
+      <div class="slide call-type" id="callType">
+        <button type="button" class="slide-opt" data-type="audio" tabindex="-1"></button>
+        <button type="button" class="slide-track" role="switch" aria-label="Video call"><span class="slide-thumb"></span></button>
+        <button type="button" class="slide-opt" data-type="video" tabindex="-1"></button>
       </div>
       <button type="submit" class="btn btn-primary" id="callBtn">Call</button>
     </form>
@@ -193,9 +195,9 @@
       <button type="button" class="btn btn-danger" id="hangupBtn" disabled></button>
       <div class="controls-right">
         <!-- Focus (the selected call) or Grid (every active call), G too. Grid needs two calls. -->
-        <div class="view-toggle" id="viewToggle" role="group" aria-label="Call view" hidden>
-          <button type="button" data-view="focus" id="viewFocus"></button>
-          <button type="button" data-view="grid" id="viewGrid"></button>
+        <div class="view-btns" id="viewToggle" role="group" aria-label="Call view" hidden>
+          <button type="button" class="btn" data-view="focus" id="viewFocus"></button>
+          <button type="button" class="btn" data-view="grid" id="viewGrid"></button>
         </div>
         <!-- Real-time text, rarely used: an icon that opens the popover above it (T too). -->
         <button type="button" class="btn icon-btn text-btn" id="textBtn" aria-pressed="false" aria-label="Text" disabled></button>
