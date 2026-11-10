@@ -22,11 +22,14 @@ const ICON = {
   chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
 };
 
-// The form's fields, grouped as in the prototype, less what the host doesn't do yet (transport,
-// outbound proxy, STUN, SRTP, DTMF). [key, label, type, placeholder, hint]
+// The form's fields, grouped as in the prototype, less what the host doesn't do yet (outbound
+// proxy, STUN, SRTP, DTMF). [key, label, type, placeholder, hint]; a select's type is its
+// options as [value, text] pairs, the first being the default.
+const TRANSPORTS = [["udp", "UDP"], ["tcp", "TCP"], ["tls", "TLS"]];
 const FIELDS = [
   ["Account", [["name", "Account name", "text", "Username@server"], ["displayName", "Display name", "text", "Shown to people you call"]]],
-  ["Server", [["username", "Username", "text", "alice"], ["server", "Server", "text", "sip.example.com", "A host, host:port, or sip:host;transport=tcp"]]],
+  ["Server", [["username", "Username", "text", "alice"], ["server", "Server", "text", "sip.example.com", "A host, or host:port"],
+    ["transport", "Transport", TRANSPORTS, null, "How to reach the server. TLS encrypts the signalling"]]],
   ["Authentication", [["authUsername", "Auth username", "text", "Same as the username"], ["password", "Password", "password"]]],
   ["Registration", [["register", "Register with the server so this account can receive calls", "check"], ["expiry", "Expiry (seconds)", "number"]]],
 ];
@@ -199,12 +202,18 @@ function renderList(root) {
 
 function renderForm(root) {
   const isNew = view.page === "new";
-  const a = isNew ? { name: "", displayName: "", username: "", server: "", authUsername: "", register: true, expiry: 300, hasPassword: false } : byId(view.page);
+  const a = isNew ? { name: "", displayName: "", username: "", server: "", transport: "udp", authUsername: "", register: true, expiry: 300, hasPassword: false } : byId(view.page);
   root.dataset.page = view.page;
   const field = ([key, label, type, placeholder, hint]) => {
     const id = `am-${key}`;
     if (type === "check") {
       return `<label class="am-check span-2"><input type="checkbox" id="${id}" data-field="${key}" ${a[key] ? "checked" : ""}>${esc(label)}</label>`;
+    }
+    if (Array.isArray(type)) {
+      const current = type.some(([v]) => v === a[key]) ? a[key] : type[0][0];
+      return `<label class="am-field" for="${id}"><span class="am-label">${esc(label)}</span>
+        <select id="${id}" data-field="${key}">${type.map(([v, text]) => `<option value="${esc(v)}" ${v === current ? "selected" : ""}>${esc(text)}</option>`).join("")}</select>
+        ${hint ? `<span class="am-hint">${esc(hint)}</span>` : ""}</label>`;
     }
     const value = key === "password" ? "" : a[key] ?? "";
     const ph = key === "password" ? (a.hasPassword ? "Saved: leave blank to keep it" : "None") : placeholder ?? "";
@@ -287,7 +296,7 @@ function save() {
   for (const [, fields] of FIELDS) {
     for (const [k, , type] of fields) {
       const el = value(k);
-      account[k] = type === "check" ? el.checked : type === "number" ? Number(el.value) || 300 : el.value.trim();
+      account[k] = type === "check" ? el.checked : type === "number" ? Number(el.value) || 300 : el.value.trim();   // a select's value too
     }
   }
   account.password = value("password").value;   // as typed, spaces and all

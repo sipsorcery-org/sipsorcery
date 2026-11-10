@@ -521,8 +521,8 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .am-field { display: grid; gap: 4px; align-content: start; }
 .am-label { font-size: 12.5px; color: var(--muted); }
 .am-hint { font-size: 11.5px; color: var(--muted); }
-.am-field input { height: 36px; padding: 0 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; }
-.am-field input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.am-field input, .am-field select { height: 36px; padding: 0 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; }
+.am-field input:focus, .am-field select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .am-check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .am-check input { width: 16px; height: 16px; accent-color: var(--accent); }
 .am-error { margin: 0; color: var(--danger); font-size: 13px; }

@@ -2,6 +2,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using SIPSorcery.SIP;
 
 namespace SIPSorcery.Softphone;
 
@@ -14,8 +16,10 @@ public sealed class SipAccount
     /// <summary>Shown to the people you call.</summary>
     public string? DisplayName { get; set; }
     public string Username { get; set; } = "";
-    /// <summary>The domain, and the registrar: a host, host:port, or a SIP URI such as sip:host;transport=tcp.</summary>
+    /// <summary>The domain, and the registrar: a host, host:port, or a SIP URI such as sip:host.</summary>
     public string Server { get; set; } = "";
+    /// <summary>How to reach the server: udp, tcp or tls (see <see cref="Transports"/>).</summary>
+    public string Transport { get; set; } = DefaultTransport;
     /// <summary>The username for authentication, if not the same as <see cref="Username"/>.</summary>
     public string? AuthUsername { get; set; }
     /// <summary>In memory only; on disk it's <see cref="ProtectedPassword"/>.</summary>
@@ -61,11 +65,56 @@ public sealed class SipAccount
         }
     }
 
+    public const string DefaultTransport = "udp";
+
+    /// <summary>The transports the server can be reached on, as the Transport dropdown offers them.</summary>
+    public static readonly IReadOnlyList<string> Transports = ["udp", "tcp", "tls"];
+
+    [JsonIgnore]
+    public SIPProtocolsEnum Protocol => Transport switch { "tcp" => SIPProtocolsEnum.tcp, "tls" => SIPProtocolsEnum.tls, _ => SIPProtocolsEnum.udp };
+
+    /// <summary>The server as a SIP URI, sip: added if it was left off, with no transport.</summary>
+    [JsonIgnore]
+    public string ServerUri
+    {
+        get
+        {
+            var s = Server.Trim();
+            return s.StartsWith("sip:", StringComparison.OrdinalIgnoreCase) || s.StartsWith("sips:", StringComparison.OrdinalIgnoreCase) ? s : "sip:" + s;
+        }
+    }
+
+    /// <summary>Where REGISTERs go: the server, with the transport named unless it's UDP.</summary>
+    [JsonIgnore]
+    public string RegistrarUri => Protocol == SIPProtocolsEnum.udp ? ServerUri : $"{ServerUri};transport={Transport}";
+
+    /// <summary>
+    /// Moves a transport the server address names (sip:host;transport=tcp, as accounts were set up
+    /// before the Transport dropdown, or a sips: URI) into <see cref="Transport"/>, so the two can't
+    /// disagree. One this phone doesn't know is left in the address.
+    /// </summary>
+    public void TakeTransportFromServer()
+    {
+        var s = Server.Trim();
+        var m = Regex.Match(s, @";\s*transport\s*=\s*(\w+)", RegexOptions.IgnoreCase);
+        if (m.Success && Transports.Contains(m.Groups[1].Value.ToLowerInvariant()))
+        {
+            Transport = m.Groups[1].Value.ToLowerInvariant();
+            s = s.Remove(m.Index, m.Length);
+        }
+        else if (s.StartsWith("sips:", StringComparison.OrdinalIgnoreCase))
+        {
+            Transport = "tls";
+        }
+        Server = s;
+        if (!Transports.Contains(Transport)) Transport = DefaultTransport;
+    }
+
     public SipAccount Clone() => (SipAccount)MemberwiseClone();
 
     /// <summary>Everything registration depends on: a change here means registering again.</summary>
     [JsonIgnore]
-    public string RegistrationKey => string.Join("\n", Enabled, Register, Username, Server, AuthUser, Password, Expiry);
+    public string RegistrationKey => string.Join("\n", Enabled, Register, Username, Server, Transport, AuthUser, Password, Expiry);
 }
 
 /// <summary>
@@ -112,11 +161,13 @@ public sealed class AccountStore
                 _model.Seeded.Add(key);
                 if (!_model.Accounts.Any(a => $"{a.Username}@{a.Server}".Equals(key, StringComparison.OrdinalIgnoreCase)))
                 {
-                    _model.Accounts.Add(new SipAccount
+                    var seeded = new SipAccount
                     {
                         Id = NewId(), DisplayName = seed.DisplayName,
                         Username = seed.Username, Server = seed.Server, Password = seed.Password ?? "",
-                    });
+                    };
+                    seeded.TakeTransportFromServer();
+                    _model.Accounts.Add(seeded);
                 }
                 Write();
             }
@@ -201,6 +252,8 @@ public sealed class AccountStore
             var model = JsonSerializer.Deserialize<FileModel>(File.ReadAllText(_path), JsonOpts) ?? new FileModel();
             foreach (var a in model.Accounts)
             {
+                // An account saved before the Transport dropdown has its transport, if any, in the server.
+                a.TakeTransportFromServer();
                 try { a.Password = a.ProtectedPassword is { Length: > 0 } p ? Unprotect(p) : ""; }
                 catch (Exception ex)
                 {

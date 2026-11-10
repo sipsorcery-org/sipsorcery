@@ -239,6 +239,7 @@ internal sealed class MainForm : Form
             DisplayName = NullIfBlank((string?)a["displayName"]),
             Username = ((string?)a["username"] ?? "").Trim(),
             Server = ((string?)a["server"] ?? "").Trim(),
+            Transport = ((string?)a["transport"] ?? SipAccount.DefaultTransport).Trim().ToLowerInvariant(),
             AuthUsername = NullIfBlank((string?)a["authUsername"]),
             Password = (string?)a["password"] ?? "",
             Register = (bool?)a["register"] ?? true,
@@ -256,6 +257,13 @@ internal sealed class MainForm : Form
             Post(new { type = "account-error", text = "The username and server can't contain spaces." });
             return;
         }
+        if (!SipAccount.Transports.Contains(account.Transport))
+        {
+            Post(new { type = "account-error", text = $"The transport has to be one of {string.Join(", ", SipAccount.Transports.Select(t => t.ToUpperInvariant()))}." });
+            return;
+        }
+        // A server typed as sip:host;transport=tcp says which transport it means.
+        account.TakeTransportFromServer();
         var saved = _accounts.Save(account);
         WriteLog($"{saved.Label}: account {(existing == null ? "added" : "saved")}");
         _phone.SetAccounts(_accounts.All);
@@ -318,7 +326,7 @@ internal sealed class MainForm : Form
             accountId = selected?.Id,
             accounts = _accounts.All.Select(a => new
             {
-                a.Id, name = a.Label, a.DisplayName, a.Username, a.Server, a.AuthUsername, hasPassword = a.Password.Length > 0,
+                a.Id, name = a.Label, a.DisplayName, a.Username, a.Server, a.Transport, a.AuthUsername, hasPassword = a.Password.Length > 0,
                 a.Register, a.Expiry, a.Enabled,
                 reg = regs.TryGetValue(a.Id, out var r) ? r.State : "off",
                 regDetail = regs.TryGetValue(a.Id, out var rd) ? rd.Detail : null,

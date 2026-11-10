@@ -199,6 +199,10 @@ public sealed class Phone : IDisposable
             ?? new SIPTCPChannel(new IPEndPoint(IPAddress.Any, 0));
         _transport.AddSIPChannel(udp);
         _transport.AddSIPChannel(tcp);
+        // TLS for accounts set to it: client only, as nothing calls this PC on TLS directly. The
+        // connection it opens to the server is the one calls come back on. The server's
+        // certificate is checked as for any TLS connection.
+        _transport.AddSIPChannel(new SIPTLSChannel(new IPEndPoint(IPAddress.Any, 0)));
         DirectAddress = $"sip:{SIPSorcery.Sys.NetServices.InternetDefaultAddress ?? IPAddress.Loopback}:{udp.Port}";
 
         // SIP over WebSocket for browser phones, on its own port. Plain ws: browsers allow it from
@@ -285,7 +289,8 @@ public sealed class Phone : IDisposable
         // Registering the same address again (Re-register, a new password) replaces the binding,
         // so the old agent leaves it be: its Expires: 0 could arrive after the new REGISTER and
         // remove it. A different address, or none, is unregistered.
-        bool same = a.Enabled && a.Register && reg.RegisteredAs == $"{a.Username}\n{a.Server}";
+        // A new transport is a new contact, so the old binding goes.
+        bool same = a.Enabled && a.Register && reg.RegisteredAs == $"{a.Username}\n{a.Server}\n{a.Transport}";
         StopRegistration(reg, unregister: !same);
         if (!a.Enabled || !a.Register)
         {
@@ -298,19 +303,21 @@ public sealed class Phone : IDisposable
             return;
         }
 
-        var server = a.Server.Trim();
-        if (!server.StartsWith("sip:", StringComparison.OrdinalIgnoreCase) && !server.StartsWith("sips:", StringComparison.OrdinalIgnoreCase)) server = "sip:" + server;
-        if (!SIPURI.TryParse(server, out var serverUri) || serverUri == null)
+        if (!SIPURI.TryParse(a.ServerUri, out var serverUri) || serverUri == null)
         {
             SetRegistration(reg, "failed", $"\"{a.Server}\" isn't a server address");
             return;
         }
         var aor = serverUri.CopyOf();
         aor.User = a.Username;
-        var agent = new SIPRegistrationUserAgent(_transport, null, aor, a.AuthUser, a.Password, null, a.Server,
-            new SIPURI(aor.Scheme, IPAddress.Any, 0), a.Expiry, null);
+        // The REGISTER goes to the server on the account's transport. The Contact names that
+        // transport too: the library leaves it off a REGISTER's Contact, and a contact without
+        // one means UDP, so a registrar that took it as given would call back on the wrong one.
+        var contact = new SIPURI(aor.Scheme, new SIPEndPoint(a.Protocol, IPAddress.Any, 0));
+        var agent = new SIPRegistrationUserAgent(_transport, null, aor, a.AuthUser, a.Password, null, a.RegistrarUri,
+            contact, a.Expiry, null);
         reg.Agent = agent;
-        reg.RegisteredAs = $"{a.Username}\n{a.Server}";
+        reg.RegisteredAs = $"{a.Username}\n{a.Server}\n{a.Transport}";
         // Events from an agent that's since been replaced or stopped are ignored: its final
         // unregister would otherwise show over the new one's state.
         agent.RegistrationSuccessful += (_, _) => { if (reg.Agent == agent) SetRegistration(reg, "registered", null); };
@@ -482,6 +489,14 @@ public sealed class Phone : IDisposable
             if (a == null) return (await ua.Call(c.Remote, null, null, rtp), failure, response);
             // From the account's address and display name, with its credentials if challenged.
             var dst = SIPURI.ParseSIPURIRelaxed(c.Remote);
+            // A call to the account's own domain goes to its server, so on the account's transport,
+            // unless the address typed names one.
+            if (a.Protocol != SIPProtocolsEnum.udp && dst.Scheme == SIPSchemesEnum.sip
+                && !dst.Parameters.Has("transport")
+                && (string.Equals(dst.Host, a.Host, StringComparison.OrdinalIgnoreCase) || string.Equals(dst.HostAddress, a.Domain, StringComparison.OrdinalIgnoreCase)))
+            {
+                dst.Protocol = a.Protocol;
+            }
             var from = new SIPFromHeader(a.DisplayName, SIPURI.ParseSIPURIRelaxed($"sip:{a.Username}@{a.Host}"), null).ToString();
             var descriptor = new SIPCallDescriptor(a.AuthUser, a.Password, dst.ToString(), from, dst.CanonicalAddress,
                 null, null, null, SIPCallDirection.Out, SDP.SDP_MIME_CONTENTTYPE, null, null);
