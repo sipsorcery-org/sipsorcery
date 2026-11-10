@@ -7,11 +7,12 @@ namespace SIPSorcery.Softphone;
 
 /// <summary>
 /// The window: a WebView2 showing <c>wwwroot/index.html</c>, and the message bridge between that
-/// page and <see cref="Phone"/>. Page → host: ready, dial, answer, decline, hangup, add-video,
-/// loss, media-answer, and for accounts account-select, account-save, account-enable,
-/// account-remove, account-register. Host → page: state (with the accounts and their
-/// registrations), media-offer (again when video is added), media-health, quality (RTCP reception
-/// reports, for diagnostics), video-refused, account-saved, account-error, log.
+/// page and <see cref="Phone"/>. Page → host: ready, dial, answer, decline, hangup, hold,
+/// add-video, text, add-text, loss, media-answer, and for accounts account-select, account-save,
+/// account-enable, account-remove, account-register. Host → page: state (every call, with the
+/// accounts and their registrations), media-offer (again when video is added), media-health,
+/// quality (RTCP reception reports, for diagnostics), details, text, video-refused, account-saved,
+/// account-error, log. Messages about one call carry its <c>id</c>.
 /// </summary>
 internal sealed class MainForm : Form
 {
@@ -21,10 +22,11 @@ internal sealed class MainForm : Form
     private readonly Phone _phone;
     private readonly AccountStore _accounts;
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
-    private string? _pendingOffer;
+    private readonly List<object> _pendingOffers = new();   // media offers made before the page was ready
     private bool _pageReady;
-    private Phone.CallState _lastState;
+    private readonly Dictionary<string, Phone.CallState> _lastStates = new();   // each call's state at the last Changed
     private int _dialsLeft;
+    private string? _dialCallId;   // the call --dial placed, to place it again when it ends (--dial-count)
     private readonly StreamWriter _logFile;
 
     public MainForm(Settings settings)
@@ -44,38 +46,51 @@ internal sealed class MainForm : Form
         _phone.Changed += () =>
         {
             Post(StateMessage());
-            var state = _phone.State;
-            // Once, on starting to ring: Changed comes again while ringing (the page's media, details).
-            if (_settings.AutoAnswer && state == Phone.CallState.Ringing && _lastState != state)
-                _ = Task.Delay(1000).ContinueWith(_ => _phone.AnswerAsync());
-            // Testing switches: hang up after a while, and dial again once a call has ended.
-            if (state == Phone.CallState.Connected && _lastState != state && _settings.HangupAfter is { } secs)
-                _ = Task.Delay(secs * 1000).ContinueWith(_ => { if (_phone.State == Phone.CallState.Connected) _phone.Hangup(); });
-            if (state == Phone.CallState.Ended && _lastState != state && --_dialsLeft > 0 && !string.IsNullOrWhiteSpace(_settings.Dial))
-                _ = Task.Delay(2000).ContinueWith(_ => _phone.DialAsync(_settings.Dial, _settings.VideoCall, _accounts.SelectedId));
-            _lastState = state;
+            lock (_lastStates)
+            {
+                foreach (var c in _phone.Calls)
+                {
+                    var state = c.State;
+                    _lastStates.TryGetValue(c.Id, out var last);
+                    if (state == last) continue;
+                    _lastStates[c.Id] = state;
+                    var id = c.Id;
+                    // Once per call, on starting to ring: Changed comes again while it rings.
+                    // Answered alongside any other calls; holding them is the page's choice.
+                    if (_settings.AutoAnswer && state == Phone.CallState.Ringing)
+                        _ = Task.Delay(1000).ContinueWith(_ => _phone.AnswerAsync(id));
+                    // Testing switches: hang up after a while, and dial again once a call has ended.
+                    if (state == Phone.CallState.Connected && _settings.HangupAfter is { } secs)
+                        _ = Task.Delay(secs * 1000).ContinueWith(_ => _phone.Hangup(id));
+                    if (state == Phone.CallState.Ended && id == _dialCallId && --_dialsLeft > 0 && !string.IsNullOrWhiteSpace(_settings.Dial))
+                        _ = Task.Delay(2000).ContinueWith(_ => DialAtStart());
+                }
+                // Calls the phone has dropped from its list.
+                foreach (var gone in _lastStates.Keys.Where(k => _phone.Find(k) == null).ToList()) _lastStates.Remove(gone);
+            }
         };
         _phone.Log += WriteLog;
         LibraryLog.Line += WriteLog;
         _phone.Trace += text => { lock (_logFile) _logFile.WriteLine(text); };
-        _phone.TxLostChanged += lost => Post(new { type = "media-health", txLost = lost });
-        _phone.Quality += q => Post(new { type = "quality", q.Dir, q.Kind, q.LossPct, q.Lost, q.JitterMs, q.RttMs });
-        _phone.TextReceived += text =>
+        _phone.TxLostChanged += (c, lost) => Post(new { type = "media-health", id = c.Id, txLost = lost });
+        _phone.Quality += (c, q) => Post(new { type = "quality", id = c.Id, q.Dir, q.Kind, q.LossPct, q.Lost, q.JitterMs, q.RttMs });
+        _phone.TextReceived += (c, text) =>
         {
             // The log file only, and only how much: what they type stays out of the log.
-            lock (_logFile) _logFile.WriteLine($"{DateTime.Now:HH:mm:ss.fff} real-time text in: {text.Length} characters");
-            Post(new { type = "text", text });
+            lock (_logFile) _logFile.WriteLine($"{DateTime.Now:HH:mm:ss.fff} real-time text in on call {c.Id}: {text.Length} characters");
+            Post(new { type = "text", id = c.Id, text });
         };
-        _phone.Details += d => Post(new
+        _phone.Details += (c, d) => Post(new
         {
-            type = "details", d.Direction, d.Account, d.Signalling, d.TheirPhone, d.CallId, d.TheirMedia,
+            type = "details", id = c.Id, d.Direction, d.Account, d.Signalling, d.TheirPhone, d.CallId, d.TheirMedia,
             d.MediaEncrypted, d.SignallingEncrypted, d.Audio, d.Video,
         });
-        _phone.VideoRefused +=() => Post(new { type = "video-refused" });
-        _phone.MediaOffer += sdp =>
+        _phone.VideoRefused += c => Post(new { type = "video-refused", id = c.Id });
+        _phone.MediaOffer += (c, sdp) =>
         {
-            if (_pageReady) Post(new { type = "media-offer", sdp });
-            else _pendingOffer = sdp;
+            var msg = new { type = "media-offer", id = c.Id, sdp };
+            if (_pageReady) Post(msg);
+            else lock (_pendingOffers) _pendingOffers.Add(msg);
         };
 
         Load += async (_, _) => await StartAsync();
@@ -136,14 +151,14 @@ internal sealed class MainForm : Form
                     WriteLog($"SIP listening on {_phone.ListeningOn}");
                     if (_phone.WebSocketAddress != null) WriteLog($"browser phones: connect to {_phone.WebSocketAddress} (from this PC, ws://localhost:{_settings.WsPort})");
                     Post(StateMessage());
-                    if (_pendingOffer != null) { Post(new { type = "media-offer", sdp = _pendingOffer }); _pendingOffer = null; }
-                    if (!string.IsNullOrWhiteSpace(_settings.Dial)) await _phone.DialAsync(_settings.Dial, _settings.VideoCall, _accounts.SelectedId);
+                    lock (_pendingOffers) { _pendingOffers.ForEach(Post); _pendingOffers.Clear(); }
+                    if (!string.IsNullOrWhiteSpace(_settings.Dial)) DialAtStart();
                     break;
                 case "log":
                     lock (_logFile) _logFile.WriteLine($"{DateTime.Now:HH:mm:ss.fff} page: {msg["text"]}");
                     break;
                 case "dial":
-                    await _phone.DialAsync((string)msg["address"]!, (bool?)msg["video"] ?? false, _accounts.SelectedId);
+                    _phone.Dial((string)msg["address"]!, (bool?)msg["video"] ?? false, _accounts.SelectedId);
                     break;
                 case "account-select":
                     _accounts.Select((string?)msg["id"]);
@@ -169,22 +184,25 @@ internal sealed class MainForm : Form
                     _phone.Reregister((string)msg["id"]!);
                     break;
                 case "add-video":
-                    _phone.AddVideo();
+                    _phone.AddVideo(Id(msg));
                     break;
                 case "text":
-                    _phone.SendText((string)msg["text"]!);
+                    _phone.SendText(Id(msg), (string)msg["text"]!);
                     break;
                 case "add-text":
-                    _phone.AddText();
+                    _phone.AddText(Id(msg));
                     break;
                 case "answer":
-                    await _phone.AnswerAsync();
+                    await _phone.AnswerAsync(Id(msg));
                     break;
                 case "decline":
-                    _phone.Decline();
+                    _phone.Decline(Id(msg));
                     break;
                 case "hangup":
-                    _phone.Hangup();
+                    _phone.Hangup(Id(msg));
+                    break;
+                case "hold":
+                    _phone.Hold(Id(msg), (bool?)msg["hold"] ?? true);
                     break;
                 case "copy":
                     // The host's clipboard rather than the page's, which needs permissions the
@@ -196,7 +214,7 @@ internal sealed class MainForm : Form
                     _phone.SetLoss((int?)msg["audio"] ?? 0, (int?)msg["video"] ?? 0);
                     break;
                 case "media-answer":
-                    _phone.SetPageAnswer((string)msg["sdp"]!);
+                    _phone.SetPageAnswer(Id(msg), (string)msg["sdp"]!);
                     break;
             }
         }
@@ -245,6 +263,12 @@ internal sealed class MainForm : Form
         Post(StateMessage());
     }
 
+    /// <summary>The call a page message is about.</summary>
+    private static string Id(JsonObject msg) => (string?)msg["id"] ?? "";
+
+    /// <summary>--dial (testing): places its call, and remembers it for --dial-count.</summary>
+    private void DialAtStart() => _dialCallId = _phone.Dial(_settings.Dial!, _settings.VideoCall, _accounts.SelectedId)?.Id;
+
     private static string? NullIfBlank(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
     private void WriteLog(string line)
@@ -260,14 +284,27 @@ internal sealed class MainForm : Form
         var (registration, registrationDetail) = _phone.RegistrationOf(selected?.Id);
         // Our name, for the placeholder the page sends while the camera is off: the call's
         // account's, else the one calls go out from.
-        var me = _phone.CallAccount ?? selected;
+        var calls = _phone.Calls;
+        var me = calls.LastOrDefault(c => c.Live && c.Account != null)?.Account ?? selected;
         var regs = _phone.Registrations.ToDictionary(r => r.Account.Id);
         return new
         {
             type = "state",
-            call = _phone.State.ToString().ToLowerInvariant(),
-            remote = _phone.Remote,
-            reason = _phone.EndReason,
+            // Every call, oldest first: calling, ringing, connected, or ended (for a few seconds).
+            calls = calls.Select(c => new
+            {
+                id = c.Id,
+                call = c.State.ToString().ToLowerInvariant(),
+                remote = c.Remote,
+                reason = c.EndReason,
+                outgoing = c.Outgoing,
+                incomingVideo = c.IncomingVideo,
+                held = c.Held,
+                heldByThem = c.HeldByThem,
+                // Real-time text on the call: off, adding, on, refused or disabled.
+                text = c.TextState,
+            }).ToList(),
+            maxCalls = Phone.MaxCalls,
             // The account calls go out from (Call from), and its registration.
             registration = selected == null ? "none" : registration,
             registrationDetail,
@@ -287,9 +324,6 @@ internal sealed class MainForm : Form
                 regDetail = regs.TryGetValue(a.Id, out var rd) ? rd.Detail : null,
             }).ToList(),
             videoAllowed = _settings.OfferVideo,
-            incomingVideo = _phone.IncomingVideo,
-            // Real-time text on the call: off, adding, on, refused or disabled.
-            text = _phone.TextState,
             lossAudio = _phone.AudioLossPercent,
             lossVideo = _phone.VideoLossPercent,
         };

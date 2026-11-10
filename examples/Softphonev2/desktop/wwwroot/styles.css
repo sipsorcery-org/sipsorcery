@@ -95,7 +95,7 @@ body:not(.diag) .diag-only { display: none; }
 /* The stage shows one of: card (no call, or calling/ringing/ended), video, nocam (video agreed
    but none arriving) or audio (no video on the call). */
 .remote { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: none; }
-.stage[data-mode="video"] .remote { display: block; }
+.stage[data-mode="video"] .remote.sel { display: block; }
 .card { position: absolute; inset: 0; display: none; place-content: center; text-align: center; gap: 6px; color: var(--tile-ink); padding: 16px; }
 .stage[data-mode="card"] .card { display: grid; }
 .card-title { font-size: 22px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
@@ -253,12 +253,12 @@ body:not(.diag) .diag-only { display: none; }
    the ▾ opening a device menu above. The three call buttons are centred; Self view sits at the
    right end, under the self view it controls. */
 .controls {
-  display: grid; grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 168px)) minmax(0, 120px) minmax(max-content, 1fr);
+  display: grid; grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 168px)) repeat(2, minmax(0, 112px)) minmax(max-content, 1fr);
   align-items: center; gap: 8px;
 }
 .controls > :first-child { grid-column: 2; }
 /* At the right: Text (an icon) and Self view. */
-.controls-right { grid-column: 5; justify-self: end; display: flex; gap: 8px; }
+.controls-right { grid-column: 6; justify-self: end; display: flex; gap: 8px; }
 .controls .self-toggle { color: var(--muted); font-weight: 500; }
 .controls .btn.icon-btn { width: 38px; padding: 0; color: var(--muted); }
 .controls .btn.icon-btn:hover:not(:disabled) { color: var(--text); }
@@ -560,7 +560,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
   position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center;
   padding: 10px; border: 1px solid transparent; border-radius: 10px;
 }
-/* The call on the stage. (Today it's the only one.) */
+/* The call on the stage. */
 .call-row[aria-current="true"] { background: var(--surface); border-color: var(--border); box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
 .call-row[aria-current="true"]::before {
   content: ""; position: absolute; left: -1px; top: 10px; bottom: 10px; width: 3px; background: var(--accent); border-radius: 0 3px 3px 0;
@@ -609,3 +609,47 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 }
 
 @media (prefers-reduced-motion: reduce) { .call-row .call-avatar { animation: none; } }
+
+/* ---------- Several calls ---------- */
+
+.call-row { cursor: pointer; }
+.call-row:not([aria-current="true"]):hover { background: var(--surface-3); }
+.call-row.held .call-avatar { box-shadow: 0 0 0 2px var(--border-strong); }
+.call-row.connected.held .call-status, .call-row.connected.audio-off .call-status { color: var(--muted); }
+.call-row.connected.held.long .call-status { color: var(--warn-ink); }
+.call-row.ended { opacity: .6; }
+.call-row.ended .call-avatar { box-shadow: none; }
+.media-ico.live.typing { animation: calls-pulse-ico 1.2s ease-in-out infinite; }
+.media-ico.unread { position: relative; }
+.media-ico.unread::after { content: ""; position: absolute; top: -2px; right: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--danger); }
+@keyframes calls-pulse-ico { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .media-ico.live.typing { animation: none; } }
+
+/* On hold: a note over the middle of the stage, with Resume. Amber after a minute. */
+.held-note {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 3;
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--text); font-weight: 600;
+  box-shadow: 0 6px 24px rgb(0 0 0 / .18); font-variant-numeric: tabular-nums;
+}
+.held-note[hidden] { display: none; }
+.held-note.long { color: var(--warn-ink); }
+.held-note .btn { height: 34px; display: inline-flex; align-items: center; gap: 6px; }
+.held-note .btn[hidden] { display: none; }
+.held-note .btn svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
+.controls #holdBtn svg { fill: currentColor; stroke: none; width: 14px; height: 14px; }
+.controls #holdBtn[aria-pressed="true"] { background: var(--warn-bg); border-color: var(--warn-ink); color: var(--warn-ink); }
+
+/* A call ringing while you're on another: a banner along the top of the stage. */
+.incoming {
+  position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 12;
+  display: flex; align-items: center; gap: 10px; max-width: calc(100% - 24px);
+  padding: 8px 8px 8px 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border);
+  box-shadow: 0 8px 28px rgb(0 0 0 / .2);
+}
+.incoming[hidden] { display: none; }
+.incoming-who { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--text); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.incoming-who:hover { text-decoration: underline; }
+.incoming-what { color: var(--warn-ink); font-size: 13px; white-space: nowrap; }
+.incoming-actions { display: flex; gap: 6px; flex: none; }
+.incoming-actions .btn { height: 34px; }

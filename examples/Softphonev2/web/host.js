@@ -37,7 +37,7 @@ let ui = null;   // the account chip and dialog, once the page's markup is in
 // ---- The page's chrome.webview, and the messages to and from it ----
 
 const listeners = [];
-const waiting = new Map();   // message type -> resolve, for the media replies we wait on
+const waiting = new Map();   // "type:call id" -> resolve, for the media replies we wait on
 let pageReady = false;
 
 function toPage(msg) {
@@ -45,8 +45,8 @@ function toPage(msg) {
   setTimeout(() => listeners.forEach((fn) => fn({ data })), 0);
 }
 
-function fromPage(type) {
-  return new Promise((resolve) => waiting.set(type, resolve));
+function fromPage(type, id) {
+  return new Promise((resolve) => waiting.set(`${type}:${id}`, resolve));
 }
 
 window.chrome ??= {};
@@ -65,45 +65,66 @@ function log(text) {
 const earlyLog = [];
 
 // ---- Call state, as the desktop host reports it ----
+//
+// Several calls at once, as on the desktop: each a record in `calls` with the SIP.js session
+// and the page's RTCPeerConnection for it. Messages about one call carry its id. Which call has
+// the microphone and speaker is the page's business. Hold is a re-INVITE with our media
+// sendonly, offered by the page on the call's own connection (see PageMedia).
 
-const st = {
-  call: "idle", remote: null, reason: null,
-  registration: "none", registrationDetail: null,
-  incomingVideo: false,
-};
-let session = null;        // the SIP.js Inviter or Invitation
-let outgoing = false;
-let wantVideo = false;     // video on the call we're placing
-let theirPhone = null;
+const MAX_CALLS = 8;
+const ENDED_KEEP_MS = 4000;   // an ended call stays in the list this long, so the page can say how it ended
+const regState = { state: "none", detail: null };
+const calls = new Map();      // id -> call record, see newCall
+let nextId = 0;
+
+function newCall(fields) {
+  const c = {
+    id: String(++nextId), session: null, call: "idle", remote: null, reason: null, outgoing: false,
+    wantVideo: false, incomingVideo: false, theirPhone: null, held: false, heldByThem: false,
+    mediaUp: false,            // the first offer and answer are done: later ones are re-INVITEs
+    pc: null,                  // the page's RTCPeerConnection for the call
+    text: { state: "off", timer: 0 },
+    quality: { pc: null, reportSeen: {}, videoIn: null },
+    ...fields,
+  };
+  calls.set(c.id, c);
+  return c;
+}
+const liveCalls = () => [...calls.values()].filter((c) => ["calling", "ringing", "connected"].includes(c.call));
 
 function stateMessage() {
   return {
     type: "state",
-    call: st.call, remote: st.remote, reason: st.reason,
+    calls: [...calls.values()].map((c) => ({
+      id: c.id, call: c.call, remote: c.remote, reason: c.reason, outgoing: c.outgoing,
+      incomingVideo: c.incomingVideo, held: c.held, heldByThem: c.heldByThem,
+      // Real-time text on a T.140 data channel (see below): off, adding (opening), on or refused.
+      text: c.call === "connected" ? c.text.state : "off",
+    })),
+    maxCalls: MAX_CALLS,
     // The page knows registered, registering and failed; connected without registering shows as registered.
-    registration: !acct ? "none" : st.registration === "connected" ? "registered" : st.registration,
-    registrationDetail: st.registrationDetail,
+    registration: !acct ? "none" : regState.state === "connected" ? "registered" : regState.state,
+    registrationDetail: regState.detail,
     account: acct ? `${acct.username}@${acct.domain}` : null, address: acct ? addressOf(acct) : null, me: displayName(),
-    videoAllowed: true, incomingVideo: st.incomingVideo,
-    // Real-time text on a T.140 data channel (see below): off, adding (opening), on or refused.
-    text: st.call === "connected" ? text.state : "off",
+    videoAllowed: true,
     lossAudio: loss.audio, lossVideo: loss.video,
   };
 }
 
-function setCall(call, reason = null) {
-  st.call = call;
-  if (call === "calling" || call === "ringing" || call === "ended") resetText();
-  st.reason = call === "ended" ? reason : null;
-  log(`call ${call} ${st.remote ?? ""} ${st.reason ?? ""}`.trimEnd());
-  if (call === "connected") updateText();
-  if (pageReady) toPage(stateMessage());
+function setCall(c, phase, reason = null) {
+  c.call = phase;
+  if (phase === "calling" || phase === "ringing" || phase === "ended") resetText(c);
+  c.reason = phase === "ended" ? reason : null;
+  log(`call ${c.id} ${phase} ${c.remote ?? ""} ${c.reason ?? ""}`.trimEnd());
+  if (phase === "connected") { c.mediaUp = true; updateText(c); }
+  sendState();
 }
 
-function end(reason) {
-  if (st.call === "idle" || st.call === "ended") return;
-  session = null;
-  setCall("ended", reason);
+function end(c, reason) {
+  if (!c || c.call === "idle" || c.call === "ended") return;
+  c.held = c.heldByThem = false;
+  setCall(c, "ended", reason);
+  setTimeout(() => { calls.delete(c.id); sendState(); }, ENDED_KEEP_MS);
 }
 
 function sendState() { if (pageReady) toPage(stateMessage()); }
@@ -113,37 +134,54 @@ function nameOf(identity) {
   return identity.displayName ? `${identity.displayName} <${uri}>` : uri;
 }
 
+// The audio line of an SDP says the far end has put us on hold: sendonly or inactive.
+function holdsUs(sdp) {
+  const audio = sdp?.split(/\r?\n(?=m=)/).find((s) => /^m=audio [1-9]/.test(s));
+  return !!audio && /^a=(sendonly|inactive)\s*$/m.test(audio);
+}
+
 // ---- The page's media as SIP.js's session description handler ----
+// One per session. Once the call is up (mediaUp), offers and answers are re-INVITEs: the page
+// makes or answers them on the call's existing connection (renegotiate) instead of a new one.
 
 class PageMedia {
-  constructor() {
+  constructor(session) {
+    this.session = session;
     this.theirOffer = null;    // an offer from the far end, for the page to answer
     this.ourOffer = false;     // the page made an offer and waits for the far end's answer
   }
 
+  get rec() { return this.session.callRec; }
+
   hasDescription(contentType) { return contentType === "application/sdp"; }
 
   async setDescription(sdp) {
+    const c = this.rec;
     if (this.ourOffer) {
       this.ourOffer = false;
-      toPage({ type: "media-remote-answer", sdp });
+      toPage({ type: "media-remote-answer", id: c.id, sdp });
     } else {
       this.theirOffer = sdp;
+      if (c.mediaUp) {
+        const held = holdsUs(sdp);
+        if (held !== c.heldByThem) { c.heldByThem = held; log(`call ${c.id}: they ${held ? "put the call on hold" : "took the call off hold"}`); sendState(); }
+      }
     }
   }
 
   async getDescription() {
+    const c = this.rec;
     let sdp;
     if (this.theirOffer) {
       const offer = this.theirOffer;
       this.theirOffer = null;
-      const reply = fromPage("media-answer");
-      toPage({ type: "media-offer", sdp: offer });
-      sdp = withDcmap(await reply);
+      const reply = fromPage("media-answer", c.id);
+      toPage({ type: "media-offer", id: c.id, sdp: offer, renegotiate: c.mediaUp });
+      sdp = withDcmap(c, await reply);
     } else {
-      const reply = fromPage("media-offer-made");
-      toPage({ type: "media-request", video: wantVideo });
-      sdp = withDcmap(await reply);
+      const reply = fromPage("media-offer-made", c.id);
+      toPage({ type: "media-request", id: c.id, video: c.wantVideo, renegotiate: c.mediaUp });
+      sdp = withDcmap(c, await reply);
       this.ourOffer = true;
     }
     return { body: sdp, contentType: "application/sdp" };
@@ -158,15 +196,14 @@ class PageMedia {
 //
 // On the desktop the host does text itself (an m=text stream on plain RTP calls, a data channel
 // on WebRTC ones), and the page sends and gets it as `text` messages. Here the page's connection
-// goes to the far end, so the channel is on it: the wrapper above adds one to every offer the
+// goes to the far end, so the channel is on it: the wrapper below adds one to every offer the
 // page makes, or to the answer to an offer that has one. It's a negotiated channel (no in-band
 // open) on the stream the SDP's dcmap gives (RFC 8864), which browsers don't write: withDcmap
 // adds it to what the page hands SIP.js. Messages are the T.140 text as strings: letters,
-// backspaces and line separators, as they're typed.
+// backspaces and line separators, as they're typed. Each call has its own, on its own connection.
 
 const T140 = "t140";
 const T140_OFFER_STREAM = 1;   // any will do: both ends open it from the SDP
-const text = { state: "off", timer: 0 };
 
 // The stream of the T.140 channel on an SDP's active m=application line, or null.
 function findT140(sdp) {
@@ -180,9 +217,9 @@ function findT140(sdp) {
   return null;
 }
 
-// The page's SDP with our T.140 channel's dcmap on its m=application line (if it has one).
-function withDcmap(sdp) {
-  const dc = pagePc?.t140;
+// The page's SDP with the call's T.140 channel's dcmap on its m=application line (if it has one).
+function withDcmap(c, sdp) {
+  const dc = c.pc?.t140;
   if (!sdp || !dc?.negotiated || findT140(sdp) != null) return sdp;
   const eol = sdp.includes("\r\n") ? "\r\n" : "\n";
   const lines = sdp.split(/\r?\n/);
@@ -195,50 +232,53 @@ function withDcmap(sdp) {
   return lines.join(eol);
 }
 
+const callOfPc = (pc) => [...calls.values()].find((c) => c.pc === pc) ?? null;
+
 function useT140(pc, dc) {
   pc.t140 = dc;
-  dc.onopen = () => updateText();
-  dc.onclose = () => { if (pc === pagePc && text.state === "on") log("the T.140 data channel closed"); };
+  dc.onopen = () => { const c = callOfPc(pc); if (c) updateText(c); };
+  dc.onclose = () => { const c = callOfPc(pc); if (c?.text.state === "on") log(`call ${c.id}: the T.140 data channel closed`); };
   dc.onmessage = (e) => {
-    if (pc !== pagePc || st.call !== "connected") return;
+    const c = callOfPc(pc);
+    if (c?.call !== "connected") return;
     const chars = typeof e.data === "string" ? e.data : new TextDecoder().decode(e.data);
-    log(`real-time text in: ${chars.length} characters`);
-    toPage({ type: "text", text: chars });
+    log(`call ${c.id}: real-time text in: ${chars.length} characters`);
+    toPage({ type: "text", id: c.id, text: chars });
   };
 }
 
-function setText(state, why) {
-  if (text.state === state) return;
-  text.state = state;
-  if (state !== "adding") { clearTimeout(text.timer); text.timer = 0; }
-  if (why) log(why);
+function setText(c, state, why) {
+  if (c.text.state === state) return;
+  c.text.state = state;
+  if (state !== "adding") { clearTimeout(c.text.timer); c.text.timer = 0; }
+  if (why) log(`call ${c.id}: ${why}`);
   sendState();
 }
 
 // Moves text on as the call does: their SDP agrees or not, the channel opens, or it doesn't.
-function updateText() {
-  if (st.call !== "connected" || text.state === "on" || text.state === "refused") return;
-  const pc = pagePc, dc = pc?.t140;
-  if (!dc) return setText("refused", "they didn't offer text (no T.140 data channel in their SDP)");
-  if (pc.remoteDescription && !pc.t140Agreed) return setText("refused", "they didn't take text (no T.140 data channel in their SDP)");
-  if (pc.t140Agreed && dc.readyState === "open") return setText("on", `real-time text on (RFC 8865, T.140 data channel on stream ${dc.id})`);
-  if (text.state !== "adding") {
-    setText("adding");
-    text.timer = setTimeout(() => {
-      if (text.state === "adding") setText("refused", "the T.140 data channel didn't open: no text on this call");
+function updateText(c) {
+  if (c.call !== "connected" || c.text.state === "on" || c.text.state === "refused") return;
+  const pc = c.pc, dc = pc?.t140;
+  if (!dc) return setText(c, "refused", "they didn't offer text (no T.140 data channel in their SDP)");
+  if (pc.remoteDescription && !pc.t140Agreed) return setText(c, "refused", "they didn't take text (no T.140 data channel in their SDP)");
+  if (pc.t140Agreed && dc.readyState === "open") return setText(c, "on", `real-time text on (RFC 8865, T.140 data channel on stream ${dc.id})`);
+  if (c.text.state !== "adding") {
+    setText(c, "adding");
+    c.text.timer = setTimeout(() => {
+      if (c.text.state === "adding") setText(c, "refused", "the T.140 data channel didn't open: no text on this call");
     }, 10000);
   }
 }
 
-function resetText() {
-  clearTimeout(text.timer);
-  text.timer = 0;
-  text.state = "off";
+function resetText(c) {
+  clearTimeout(c.text.timer);
+  c.text.timer = 0;
+  c.text.state = "off";
 }
 
-function sendText(chars) {
-  const dc = pagePc?.t140;
-  if (text.state === "on" && dc?.readyState === "open") dc.send(chars);
+function sendText(c, chars) {
+  const dc = c?.pc?.t140;
+  if (c?.text.state === "on" && dc?.readyState === "open") dc.send(chars);
 }
 
 // ---- Call quality: their RTCP reports, from the browser's stats ----
@@ -246,15 +286,16 @@ function sendText(chars) {
 // On the desktop the host reads the far end's RTCP on the SIP leg and posts it as `quality`
 // messages (how they receive what we send). Here the page's own RTCPeerConnection is the media
 // leg, and the browser already reads their reports: remote-inbound-rtp in getStats(). So the host
-// finds the page's connection (the page makes it with `new RTCPeerConnection`, wrapped below
-// before app.js loads) and posts the same messages from those stats.
+// finds the page's connection for each call (the page makes it with `new RTCPeerConnection({ callId })`,
+// wrapped below before app.js loads) and posts the same messages from those stats.
 
 const NativeRTCPeerConnection = window.RTCPeerConnection;
-let pagePc = null;
 window.RTCPeerConnection = class extends NativeRTCPeerConnection {
-  constructor(...args) {
-    super(...args);
-    pagePc = this;
+  constructor(config, ...rest) {
+    super(config, ...rest);
+    // The call this connection is for: the page says, and a renegotiated call gets a new one.
+    const c = calls.get(String(config?.callId));
+    if (c) c.pc = this;
     this.t140 = null;          // the T.140 data channel, once there is one
     this.t140Agreed = false;   // their SDP has it too (or they opened it in band)
     // A far end that opens its T.140 channel in band (DCEP) rather than in the SDP.
@@ -262,7 +303,8 @@ window.RTCPeerConnection = class extends NativeRTCPeerConnection {
       if (this.t140 || e.channel.protocol.toLowerCase() !== T140) return;
       useT140(this, e.channel);
       this.t140Agreed = true;
-      updateText();
+      const rec = callOfPc(this);
+      if (rec) updateText(rec);
     });
   }
 
@@ -290,28 +332,29 @@ window.RTCPeerConnection = class extends NativeRTCPeerConnection {
     await super.setRemoteDescription(...args);
     this.getTransceivers().forEach(addLossTransform);
     if (this.t140?.negotiated) this.t140Agreed = theirs != null && theirs === this.t140.id;
-    updateText();
+    const rec = callOfPc(this);
+    if (rec) updateText(rec);
   }
 };
 
 const round1 = (n) => Math.round(n * 10) / 10;
-let qualityPc = null;   // the connection the state below is for
-let reportSeen = {};    // remote-inbound-rtp id -> timestamp of the report last posted
-let videoIn = null;     // { t, received, lost } at the last "received" video post
 
-setInterval(async () => {
-  const pc = pagePc;
-  if (st.call !== "connected" || !pc || pc.connectionState === "closed") return;
-  if (pc !== qualityPc) { qualityPc = pc; reportSeen = {}; videoIn = null; }
+setInterval(() => {
+  for (const c of calls.values()) if (c.call === "connected" && c.pc && c.pc.connectionState !== "closed") reportQuality(c);
+}, 1000);
+
+async function reportQuality(c) {
+  const pc = c.pc, q = c.quality;
+  if (pc !== q.pc) { q.pc = pc; q.reportSeen = {}; q.videoIn = null; }
   let stats;
   try { stats = await pc.getStats(); } catch { return; }
   stats.forEach((r) => {
     // Their latest reception report on each stream we send: one message per new report.
     if (r.type === "remote-inbound-rtp" && (r.kind === "audio" || r.kind === "video")) {
-      if (reportSeen[r.id] === r.timestamp) return;
-      reportSeen[r.id] = r.timestamp;
+      if (q.reportSeen[r.id] === r.timestamp) return;
+      q.reportSeen[r.id] = r.timestamp;
       toPage({
-        type: "quality", dir: "sent", kind: r.kind,
+        type: "quality", id: c.id, dir: "sent", kind: r.kind,
         lossPct: round1((r.fractionLost ?? 0) * 100),
         lost: Math.max(0, r.packetsLost ?? 0),
         jitterMs: round1((r.jitter ?? 0) * 1000),
@@ -321,19 +364,19 @@ setInterval(async () => {
     // Their video as we receive it, every 5 s (the desktop host sends its own RTCP report on it).
     if (r.type === "inbound-rtp" && r.kind === "video") {
       const now = { t: r.timestamp, received: r.packetsReceived ?? 0, lost: Math.max(0, r.packetsLost ?? 0) };
-      if (videoIn && now.t - videoIn.t < 5000) return;
-      if (videoIn) {
-        const got = now.received - videoIn.received, lost = Math.max(0, now.lost - videoIn.lost);
+      if (q.videoIn && now.t - q.videoIn.t < 5000) return;
+      if (q.videoIn) {
+        const got = now.received - q.videoIn.received, lost = Math.max(0, now.lost - q.videoIn.lost);
         toPage({
-          type: "quality", dir: "received", kind: "video",
+          type: "quality", id: c.id, dir: "received", kind: "video",
           lossPct: got + lost > 0 ? round1((lost * 100) / (got + lost)) : 0,
           lost: now.lost, jitterMs: round1((r.jitter ?? 0) * 1000), rttMs: null,
         });
       }
-      videoIn = now;
+      q.videoIn = now;
     }
   });
-}, 1000);
+}
 
 // ---- Simulated loss (the Diagnostics menu's Network tab) ----
 //
@@ -411,8 +454,8 @@ let ua = null;
 let registerer = null;
 
 function setReg(state, detail = null) {
-  st.registration = state;
-  st.registrationDetail = detail;
+  regState.state = state;
+  regState.detail = detail;
   ui?.set(acct, { state, detail });
   sendState();
 }
@@ -428,7 +471,7 @@ async function startSip(a) {
     authorizationUsername: a.password ? a.username : undefined,
     authorizationPassword: a.password ?? undefined,
     transportOptions: { server: a.wsUri },
-    sessionDescriptionHandlerFactory: () => new PageMedia(),
+    sessionDescriptionHandlerFactory: (session) => new PageMedia(session),
     // No automatic 180: onIncoming checks the offer first, so a call we can't take is turned
     // down (488) before it rings at either end.
     sendInitialProvisionalResponse: false,
@@ -496,7 +539,7 @@ async function startSip(a) {
 async function stopSip() {
   const [oldUa, oldReg] = [ua, registerer];
   if (!oldUa) return;
-  if (session) hangup();
+  for (const c of liveCalls()) hangup(c);
   ua = registerer = null;
   try { if (oldReg?.state === SIP.RegistererState.Registered) await oldReg.unregister(); } catch { }
   try { await oldUa.stop(); } catch { }
@@ -526,26 +569,28 @@ async function signOut() {
 // dial= places its call once we're registered (or connected) and the page is up, whichever comes last.
 let dialledAtStart = false;
 function dialAtStart() {
-  if (dialledAtStart || !q.get("dial") || !pageReady || !["registered", "connected"].includes(st.registration)) return;
+  if (dialledAtStart || !q.get("dial") || !pageReady || !["registered", "connected"].includes(regState.state)) return;
   dialledAtStart = true;
   dial(q.get("dial"), q.get("call") === "video");
 }
 
-function watch(s) {
+function watch(c) {
+  const s = c.session;
+  s.callRec = c;
   s.stateChange.addListener((state) => {
     if (state === SIP.SessionState.Established) {
-      setCall("connected");
+      setCall(c, "connected");
       const after = Number(q.get("hangup"));
-      if (after > 0) setTimeout(() => session === s && hangup(), after * 1000);
-    } else if (state === SIP.SessionState.Terminated && session === s) {
+      if (after > 0) setTimeout(() => hangup(c), after * 1000);
+    } else if (state === SIP.SessionState.Terminated) {
       // A call we're placing that's turned down: SIP.js ends the session before it hands dial()'s
       // onReject the response, so wait a tick for that to give the reason ("486 Busy Here").
-      if (outgoing && st.call === "calling") {
-        setTimeout(() => { if (session === s) end("Call failed"); }, 0);
+      if (c.outgoing && c.call === "calling") {
+        setTimeout(() => end(c, "Call failed"), 0);
         return;
       }
       // Whoever ended it set the reason first (end() is a no-op the second time); this is them.
-      end(st.call === "ringing" ? "Missed call" : "They hung up");
+      end(c, c.call === "ringing" ? "Missed call" : "They hung up");
     }
   });
 }
@@ -556,29 +601,25 @@ function target(address) {
   return address.includes("@") ? `sip:${address}` : `sip:${address}@${acct.domain}`;
 }
 
+// A new call, alongside any others (the page holds the one you were on).
 async function dial(address, video) {
-  if (session) return;
   if (!ua) { ui.showSignIn(); return; }
+  if (liveCalls().length >= MAX_CALLS) { log(`not calling ${address}: already ${MAX_CALLS} calls`); return; }
   const uri = SIP.UserAgent.makeURI(target(address));
-  if (!uri) { st.remote = address; st.call = "calling"; end("Not a SIP address"); return; }
-  outgoing = true;
-  wantVideo = video;
-  theirPhone = null;
-  st.remote = uri.toString();
-  st.incomingVideo = false;
+  if (!uri) { const c = newCall({ remote: address, outgoing: true, call: "calling" }); end(c, "Not a SIP address"); return; }
   const inviter = new SIP.Inviter(ua, uri);
-  session = inviter;
-  watch(inviter);
-  setCall("calling");
+  const c = newCall({ session: inviter, outgoing: true, wantVideo: video, remote: uri.toString() });
+  watch(c);
+  setCall(c, "calling");
   try {
     await inviter.invite({
       requestDelegate: {
-        onAccept: (resp) => { theirPhone = resp.message.getHeader("Server") ?? resp.message.getHeader("User-Agent"); sendDetails(); },
-        onReject: (resp) => end(`${resp.message.statusCode} ${resp.message.reasonPhrase}`),
+        onAccept: (resp) => { c.theirPhone = resp.message.getHeader("Server") ?? resp.message.getHeader("User-Agent"); sendDetails(c); },
+        onReject: (resp) => end(c, `${resp.message.statusCode} ${resp.message.reasonPhrase}`),
       },
     });
   } catch (err) {
-    end(`Call failed: ${err.message}`);
+    end(c, `Call failed: ${err.message}`);
   }
 }
 
@@ -619,8 +660,9 @@ async function rejectPlainRtp(invitation) {
   await invitation.reject({ statusCode: 488, extraHeaders: [warning], body }).catch(() => {});
 }
 
+// An incoming call rings alongside any others; only one past MAX_CALLS is busy.
 function onIncoming(invitation) {
-  if (session) {
+  if (liveCalls().length >= MAX_CALLS) {
     invitation.reject({ statusCode: 486 });
     return;
   }
@@ -629,42 +671,60 @@ function onIncoming(invitation) {
     return;
   }
   invitation.progress().catch(() => {});   // 180 Ringing, now we know we can take it
-  outgoing = false;
-  session = invitation;
-  theirPhone = invitation.request.getHeader("User-Agent");
-  st.remote = nameOf(invitation.remoteIdentity);
-  st.incomingVideo = /^m=video [1-9]/m.test(invitation.body ?? "");
-  watch(invitation);
-  setCall("ringing");
-  if (q.get("auto") === "1") setTimeout(() => answer(), 1000);
+  const c = newCall({
+    session: invitation, outgoing: false,
+    theirPhone: invitation.request.getHeader("User-Agent"),
+    remote: nameOf(invitation.remoteIdentity),
+    incomingVideo: /^m=video [1-9]/m.test(invitation.body ?? ""),
+  });
+  watch(c);
+  setCall(c, "ringing");
+  if (q.get("auto") === "1") setTimeout(() => answer(c), 1000);
 }
 
-async function answer() {
-  if (!(session instanceof SIP.Invitation) || st.call !== "ringing") return;
+async function answer(c) {
+  if (!(c?.session instanceof SIP.Invitation) || c.call !== "ringing") return;
   try {
-    await session.accept();
-    sendDetails();
+    await c.session.accept();
+    sendDetails(c);
   } catch (err) {
-    session?.reject().catch(() => {});
-    end(`Couldn't answer: ${err.message}`);
+    c.session?.reject().catch(() => {});
+    end(c, `Couldn't answer: ${err.message}`);
   }
 }
 
-function decline() {
-  if (!(session instanceof SIP.Invitation) || st.call !== "ringing") return;
-  const s = session;
-  end("Declined");
-  s.reject({ statusCode: 603 }).catch(() => {});
+function decline(c) {
+  if (!(c?.session instanceof SIP.Invitation) || c.call !== "ringing") return;
+  end(c, "Declined");
+  c.session.reject({ statusCode: 603 }).catch(() => {});
 }
 
-function hangup() {
-  const s = session;
+function hangup(c) {
+  const s = c?.session;
   if (!s) return;
-  if (st.call === "ringing") return decline();
-  const was = st.call;
-  end("You hung up");
+  if (c.call === "ringing") return decline(c);
+  const was = c.call;
+  end(c, "You hung up");
   if (was === "calling") s.cancel?.().catch(() => {});
-  else s.bye().catch(() => {});
+  else if (was === "connected") s.bye().catch(() => {});
+}
+
+// Hold or resume: a re-INVITE whose offer the page makes on the call's connection (sendonly to
+// hold, sendrecv to resume; see PageMedia and the page's renegotiateMedia).
+async function hold(c, on) {
+  if (c?.call !== "connected" || c.held === on || !(c.session?.state === SIP.SessionState.Established)) return;
+  log(`call ${c.id}: ${on ? "holding" : "resuming"}: re-INVITE`);
+  try {
+    await c.session.invite({
+      requestDelegate: {
+        onAccept: () => { c.held = on; sendState(); },
+        onReject: (resp) => { log(`call ${c.id}: ${on ? "hold" : "resume"} turned down: ${resp.message.statusCode} ${resp.message.reasonPhrase}`); sendState(); },
+      },
+    });
+  } catch (err) {
+    log(`call ${c.id}: ${on ? "hold" : "resume"} failed: ${err.message}`);
+    sendState();
+  }
 }
 
 // What the info bar's Call details shows (diagnostics mode).
@@ -677,15 +737,16 @@ function signallingOf(wsUri) {
   } catch { return null; }
 }
 
-function sendDetails() {
-  const s = session;
+function sendDetails(c) {
+  const s = c?.session;
   if (!s) return;
   toPage({
     type: "details",
-    direction: outgoing ? "outgoing" : "incoming",
+    id: c.id,
+    direction: c.outgoing ? "outgoing" : "incoming",
     account: acct ? `${acct.username}@${acct.domain}` : null,
     signalling: signallingOf(acct?.wsUri),
-    theirPhone,
+    theirPhone: c.theirPhone,
     callId: s.dialog?.callId ?? s.request?.callId ?? null,
     theirMedia: null,
     mediaEncrypted: true,
@@ -698,8 +759,10 @@ function sendDetails() {
 // ---- Messages from the page ----
 
 async function onPageMessage(msg) {
-  const resolve = waiting.get(msg.type);
-  if (resolve) { waiting.delete(msg.type); resolve(msg.sdp); return; }
+  const key = `${msg.type}:${msg.id}`;
+  const resolve = waiting.get(key);
+  if (resolve) { waiting.delete(key); resolve(msg.sdp); return; }
+  const c = msg.id != null ? calls.get(String(msg.id)) : null;
   switch (msg.type) {
     case "ready":
       pageReady = true;
@@ -712,12 +775,13 @@ async function onPageMessage(msg) {
       console.log(`page: ${msg.text}`);
       break;
     case "dial": await dial(msg.address, !!msg.video); break;
-    case "answer": await answer(); break;
-    case "decline": decline(); break;
-    case "hangup": hangup(); break;
+    case "answer": await answer(c); break;
+    case "decline": decline(c); break;
+    case "hangup": hangup(c); break;
+    case "hold": await hold(c, msg.hold !== false); break;
     case "add-video":
       log("adding video isn't done in the web softphone yet");
-      toPage({ type: "video-refused" });
+      toPage({ type: "video-refused", id: msg.id });
       break;
     case "copy":
       navigator.clipboard?.writeText(msg.text).catch(() => {});
@@ -726,7 +790,7 @@ async function onPageMessage(msg) {
       setLoss(msg.audio, msg.video);
       break;
     case "text":
-      sendText(msg.text);
+      sendText(c, msg.text);
       break;
     case "add-text":
       // Text goes in every call's SDP; there's no adding it to one that doesn't have it.
@@ -763,7 +827,7 @@ ui = accountUi({ signIn, signOut });
 // Leaving or reloading the page ends a call properly (BYE, CANCEL or decline) rather than just
 // dropping its media, then unregisters.
 window.addEventListener("beforeunload", () => {
-  hangup();
+  for (const c of liveCalls()) hangup(c);
   registerer?.unregister().catch(() => {});
 });
 
