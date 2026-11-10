@@ -39,6 +39,8 @@ const ICON = {
   mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>',
   micOff: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/><path d="M3 3l18 18"/></svg>',
   chevronDown: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+  focus: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/></svg>',
+  grid: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>',
   text: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 8h8M12 8v6"/></svg>',
   close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   collapse: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18M8 9l3 3-3 3"/></svg>',
@@ -125,6 +127,36 @@ function selectCall(id) {
 
 // The most recent live call other than the selected one, for "Back to …".
 const otherLive = () => listed().find((e) => e.id !== selectedId && isLive(e)) ?? null;
+
+// ---- Focus and grid views ----
+// Focus (the default) shows the selected call, with its controls. Grid shows every active call as
+// an equal tile with no buttons, so it's never in doubt which call a button acts on: picking a
+// call there (its tile, its row in Active calls, or its number key) opens it in Focus. The choice
+// is remembered (Settings has it too) and only applies with two or more calls. A ringing call
+// shows its answer view either way, and leaves the choice alone: answered, it's back to the grid.
+let view = prefs.view === "grid" ? "grid" : "focus";
+// The calls in the grid, newest first like the list: the live ones, and the selected one even
+// while it's ending, so it doesn't vanish.
+const gridCalls = () => [...entries.values()].filter((e) => (!e.gone && isLive(e)) || e.id === selectedId)
+  .sort((a, b) => Number(b.id) - Number(a.id));
+function inGrid() {
+  const e = sel();
+  return view === "grid" && !!e && e.h.call !== "ringing" && gridCalls().length > 1;
+}
+function setView(v) {
+  if (v === view) return;
+  view = v;
+  savePref("view", v);
+  log(`view: ${v}`);
+  settings?.refresh();
+  render();
+}
+// A call picked from the grid opens in Focus; elsewhere it's just selected.
+function focusCall(id) {
+  const fromGrid = inGrid();
+  selectCall(id);
+  if (fromGrid && entries.get(id)?.h.call !== "ringing") setView("focus");
+}
 
 // Moves the microphone and speaker to the audio call: its sender gets the microphone, its <video>
 // plays; every other call sends no audio and is silent. The selected call takes the audio when it's
@@ -1039,7 +1071,11 @@ function hideToast() {
   $("rttToast").hidden = true;
 }
 $("rttToastIcon").innerHTML = ICON.text;
-$("rttReply").onclick = () => { if (toastCallId && entries.has(toastCallId)) selectCall(toastCallId); setTextOpen(true); };
+$("rttReply").onclick = () => {
+  if (toastCallId && entries.has(toastCallId)) selectCall(toastCallId);
+  setView("focus");   // the text panel is in Focus view only
+  setTextOpen(true);
+};
 
 // Sends what's in the box, with a line separator to finish it. Nothing goes until then.
 function sendLine() {
@@ -1079,6 +1115,8 @@ document.addEventListener("keydown", (e) => {
   if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
   if ($("textBtn").disabled) return;
   e.preventDefault();
+  // From the grid: Focus on the selected call, with the text panel open.
+  if (inGrid()) { setView("focus"); setTextOpen(true); return; }
   setTextOpen(!textOpen);
 });
 
@@ -1385,6 +1423,8 @@ function stageMode() {
 function render() {
   deriveState();
   syncAudio();
+  const grid = inGrid();
+  if (grid && textOpen) textOpen = false;   // the text panel is in Focus view only
   const { call: phase, remote, reason } = state;
   const live = phase === "calling" || phase === "ringing" || phase === "connected";
   const connected = phase === "connected" && !!call;
@@ -1569,6 +1609,7 @@ function render() {
     }
   }
   renderIncoming();
+  renderGrid(grid);
 
   if (phase !== "ringing" && openMenu === "answer") closeMenu();
   // A choice from the Answer menu is for that call only (onMediaOffer uses it, then clears it);
@@ -1623,7 +1664,7 @@ function tick() {
     if (s > 0 && s % 5 === 0) statsLine(e);
     $("timer").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   }
-  if ([...entries.values()].some((x) => x.h.held)) render();
+  if (inGrid() || [...entries.values()].some((x) => x.h.held)) render();
   else renderCallTimes();
 }
 setInterval(tick, 1000);
@@ -1729,6 +1770,87 @@ function renderIncoming() {
   $("incomingAnswer").onclick = () => answerCall(e.id, true);
 }
 
+// The grid's tiles, kept from one render to the next (each holds its call's <video>, which
+// mustn't be pulled out and put back every second), and the Focus | Grid switch.
+const tiles = new Map();   // call id -> { root, feed, avatar, time, name, status, media }
+function makeTile(e) {
+  const el = (tag, cls) => Object.assign(document.createElement(tag), { className: cls });
+  const t = { root: el("div", "tile"), feed: el("div", "tile-feed"), avatar: el("span", "avatar tile-avatar"), time: el("span", "tile-time"),
+    name: el("span", "tile-name"), status: el("span", "tile-status"), media: el("span", "call-media") };
+  t.root.dataset.call = e.id;
+  t.root.tabIndex = 0;
+  t.root.setAttribute("role", "button");
+  t.root.onclick = () => focusCall(e.id);
+  t.root.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); focusCall(e.id); } };
+  t.avatar.setAttribute("aria-hidden", "true");
+  const text = el("span", "tile-text");
+  text.append(t.name, t.status);
+  const meta = el("div", "tile-meta");
+  meta.append(text, t.media);
+  t.feed.append(t.avatar, t.time);
+  t.root.append(t.feed, meta);
+  return t;
+}
+
+function renderGrid(grid) {
+  const stage = $("stage"), box = $("tiles");
+  stage.classList.toggle("grid", grid);
+  box.hidden = !grid;
+  $("controls").classList.toggle("grid", grid);
+  // The switch: shown once there's a call; Grid needs two.
+  const n = gridCalls().length;
+  $("viewToggle").hidden = !n;
+  const f = $("viewFocus"), g = $("viewGrid");
+  const fHtml = `${ICON.focus}<span>Focus</span>`, gHtml = `${ICON.grid}<span>Grid</span>${n > 1 ? `<span class="count">${n}</span>` : ""}`;
+  if (f.innerHTML !== fHtml) f.innerHTML = fHtml;
+  if (g.innerHTML !== gHtml) g.innerHTML = gHtml;
+  f.classList.toggle("on", !grid);
+  g.classList.toggle("on", grid);
+  f.setAttribute("aria-pressed", String(!grid));
+  g.setAttribute("aria-pressed", String(grid));
+  g.disabled = n < 2;
+  f.title = "Show only the selected call, with its controls (G)";
+  g.title = n < 2 ? "Grid shows every call, once there are two" : "Show all active calls (G)";
+
+  const shown = grid ? gridCalls() : [];
+  const ids = new Set(shown.map((e) => e.id));
+  box.style.setProperty("--cols", stage.clientWidth < 560 ? 1 : shown.length > 4 ? 3 : 2);
+  // Calls leaving the grid (or all of them, back in Focus): their <video> goes back on the stage.
+  for (const [id, t] of tiles) {
+    if (ids.has(id)) continue;
+    const e = entries.get(id);
+    if (e && e.el.parentElement !== stage) {
+      stage.insertBefore(e.el, $("card"));
+      if (e.el.srcObject && e.el.paused) e.el.play().catch(() => {});
+    }
+    t.root.remove();
+    tiles.delete(id);
+  }
+  shown.forEach((e, i) => {
+    let t = tiles.get(e.id);
+    if (!t) { t = makeTile(e); tiles.set(e.id, t); }
+    if (e.el.parentElement !== t.feed) {
+      t.feed.prepend(e.el);
+      if (e.el.srcObject && e.el.paused) e.el.play().catch(() => {});
+    }
+    if (box.children[i] !== t.root) box.insertBefore(t.root, box.children[i] ?? null);
+    const c = callStatus(e);
+    const name = nameOf(e);
+    const m = e.m;
+    const video = !!m?.hasVideo && !e.h.held && performance.now() - m.lastFrameAt < NO_FRAMES_MS;
+    t.root.className = `tile ${c.status}${video ? " video" : ""}${e.id === selectedId ? " sel" : ""}${c.muted ? " muted" : ""}${c.held ? " held" : ""}${c.long ? " long" : ""}`;
+    t.root.title = [e.h.remote || name, c.statusText, i < 8 ? `${i + 1} opens it` : "Open this call"].join(" · ");
+    t.root.setAttribute("aria-label", `${name}, ${c.statusText}`);
+    t.avatar.textContent = initial(name);
+    t.name.textContent = name;
+    t.status.textContent = c.statusText;
+    t.time.textContent = c.since ? fmtElapsed(Date.now() - c.since) : "";
+    const media = c.media.map(([ico, cls, label]) => `<span class="media-ico ${cls}" role="img" title="${label}" aria-label="${label}">${ICON[ico]}</span>`).join("");
+    if (t.media.innerHTML !== media) t.media.innerHTML = media;
+  });
+}
+for (const b of [$("viewFocus"), $("viewGrid")]) b.onclick = () => setView(b.dataset.view);
+
 // ---- Active calls panel, down the left ----
 // Every call, newest at the top. Each row shows who, what you're sending (mic and camera), and
 // the call's state: calling, ringing, connected, "Audio off" (connected, but the audio is on
@@ -1825,7 +1947,7 @@ function callRow(e, i) {
   li.onclick = (ev) => {
     ev.stopPropagation();
     if (callsPeek) { callsPeek = false; renderCalls(); }
-    selectCall(e.id);
+    focusCall(e.id);
   };
   const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls, textContent: text ?? "" });
   const avatar = el("span", "call-avatar", initial(name));
@@ -2145,7 +2267,7 @@ $("selfViewBtn").onclick = toggleSelfView;
 document.addEventListener("keydown", (e) => {
   if (e.key.toLowerCase() !== "v" || e.ctrlKey || e.altKey || e.metaKey || openMenu) return;
   if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
-  if ($("selfViewBtn").hidden) return;   // no self view to show or hide
+  if ($("selfViewBtn").hidden || inGrid()) return;   // no self view to show or hide
   e.preventDefault();
   toggleSelfView();
 });
@@ -2299,9 +2421,10 @@ function camerasOff() {
 }
 
 // Keys for calls (not while typing, or with a menu or dialog open): 1–8 put that call in the
-// list on the stage (1 is the newest), A answers the caller who has waited longest, M mutes the
-// selected call, Shift+M mutes all, Shift+C turns every camera off, H holds or resumes, and Esc
-// leaves an ended call for another.
+// list on the stage (1 is the newest; from the grid, in Focus), A answers the caller who has
+// waited longest, M mutes the selected call, Shift+M mutes all, Shift+C turns every camera off,
+// H holds or resumes (M and H not in the grid), G switches Focus and Grid, and Esc leaves an
+// ended call for another.
 document.addEventListener("keydown", (ev) => {
   if (ev.ctrlKey || ev.altKey || ev.metaKey || openMenu) return;
   if (ev.target.closest?.("input, textarea, select, [contenteditable], dialog")) return;
@@ -2311,22 +2434,26 @@ document.addEventListener("keydown", (ev) => {
     const e = listed()[Number(ev.key) - 1];
     if (!e) return;
     ev.preventDefault();
-    selectCall(e.id);
+    focusCall(e.id);
   } else if (key === "a" && !ev.shiftKey) {
     const e = [...entries.values()].filter((x) => x.h.call === "ringing").sort((x, y) => Number(x.id) - Number(y.id))[0];
     if (!e) return;
     ev.preventDefault();
     answerCall(e.id, true);
   } else if (key === "m") {
+    // Like the buttons, M and H act in Focus view only, where it's clear which call they're for.
     if (ev.shiftKey) { ev.preventDefault(); muteAll(); }
-    else if (!$("muteBtn").disabled) { ev.preventDefault(); toggleMute(); }
+    else if (!$("muteBtn").disabled && !inGrid()) { ev.preventDefault(); toggleMute(); }
   } else if (key === "c" && ev.shiftKey) {
     ev.preventDefault();
     camerasOff();
   } else if (key === "h" && !ev.shiftKey) {
-    if ($("holdBtn").disabled) return;
+    if ($("holdBtn").disabled || inGrid()) return;
     ev.preventDefault();
     $("holdBtn").click();
+  } else if (key === "g" && !ev.shiftKey) {
+    ev.preventDefault();
+    setView(view === "grid" ? "focus" : "grid");
   } else if (ev.key === "Escape" && state.call === "ended" && otherLive() && !textOpen && !callsPeek) {
     ev.preventDefault();
     selectCall(otherLive().id);
@@ -2421,6 +2548,7 @@ const settings = initSettings({
   setSelfView(on) { if (on !== selfViewOn) toggleSelfView(); },
   diagnostics: () => !$("devPanel").hidden,
   setDiagnostics,
+  setView,
   // Who you are: the account, or with none, the address others can call you on.
   account: () => state.account || (state.address ? `No account · ${state.address}` : null),
 });

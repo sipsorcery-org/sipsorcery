@@ -37,6 +37,8 @@ during a call, so the microphone and camera can be set up first:
 - **Audio | Video**: the chosen half is a raised neutral pill, so the green is only on Call.
 - **Text** (an icon, at the right beside Self view, since it's rarely used): opens the
   real-time text popover (T does too). During a call only.
+- **Focus | Grid** (at the right, G too): see [Focus and grid views](#focus-and-grid-views).
+  There once there's a call; Grid needs two, and shows how many.
 - **Hold** (H): puts the selected call on hold, or Resume takes it off (see
   [Several calls](#several-calls)). During a call only.
 - **End**: Cancel while calling, End once connected.
@@ -63,6 +65,8 @@ in this app are there; each applies straight away:
 - **Calls.** *Answer calls automatically*: after a second, always with the camera off, since
   the camera is never opened without you asking. The microphone is on as soon as it answers.
   (`--auto-answer` is the testing switch, answered by the host with the Camera button's choice.)
+  *Show all calls in a grid*: the view with two or more calls (see
+  [Focus and grid views](#focus-and-grid-views)); Focus | Grid and G change it too.
 - **Appearance.** Theme: System, Light or Dark. System follows Windows' light or dark mode.
 - **Account.** Who you are: the account, or with none, the address others can call, and a
   *Manage accounts* button that opens the same view as the dial bar's people button (see
@@ -70,9 +74,9 @@ in this app are there; each applies straight away:
 - **Diagnostics.** Opens or closes the panel F12 does.
 
 The page keeps them in its `localStorage`, which is in the WebView2 profile's folder, so each
-`--profile` has its own. The prototype's ringtone (there's no ringtone yet), grid (one call),
-and real-time text options (saved transcripts; there's no call history) are left out until
-there's something behind them.
+`--profile` has its own. The prototype's ringtone (there's no ringtone yet) and real-time
+text options (saved transcripts; there's no call history) are left out until there's something
+behind them.
 
 ## Several calls
 
@@ -101,7 +105,31 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   (before a call, Mute is the same thing: calls start muted). `Shift+C` turns the camera off
   on every call and for new ones; it never turns cameras on.
 - **Keys**: `1`–`8` put that call in the list on the stage (`1` is the newest), `A` answers,
-  `M` mutes, `Shift+M` mutes all, `Shift+C` turns all cameras off, `H` holds or resumes.
+  `M` mutes, `Shift+M` mutes all, `Shift+C` turns all cameras off, `H` holds or resumes, `G`
+  switches between Focus and Grid.
+
+## Focus and grid views
+
+As in the prototype. **Focus** (the default) shows only the selected call, with its controls
+under its info bar. **Grid** (Focus | Grid in the control bar, or `G`) shows every active call
+as an equal tile, newest first like the list, with no buttons: each tile is their video (or
+their initial when there's none, or it's on hold), the call's time, their name and its status
+line, the same as the list's: "On hold · 02:10" (amber), "Typing…", their last unread line,
+"Audio off", and the mic, camera and text icons. The selected call's tile, which has the audio,
+is outlined. The control bar keeps only the switch, so it's never in doubt which call a button
+acts on.
+
+- **Picking a call** from the grid, by its tile (or Enter on it), its row in Active calls, or
+  its number key, opens it in Focus.
+- **A ringing call** shows its answer view and leaves the choice alone: answered, it's back to
+  the grid. While you're in the grid, a call that rings shows on the banner, and as a tile.
+- **`T`** in the grid switches to Focus with the text panel open, as does *Reply* on a text
+  toast. `M`, `H` and `V` do nothing in the grid; `Shift+M` and `Shift+C` still act on every call.
+- The choice is remembered (`view` in the page's settings) and only applies with two or more
+  calls: with one, it's Focus. Settings has it as *Show all calls in a grid*.
+- Each call's `<video>` moves into its tile and back (`renderGrid` in `app.js` keeps the tiles
+  from one render to the next), so its picture and audio carry on. Two columns up to four
+  calls, then three; one on a narrow stage. Past what fits, the stage scrolls.
 
 ## Active calls
 
@@ -518,6 +546,11 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | C (audio) calls B while B is on its call with A | B's banner: "Thisis · Calling" with Answer and Decline; B's host auto-answers it alongside: "Audio off" on the new row, A's call keeps the audio. No 486. |
 | B: `1`, `M`, End, `Esc` | C's call on the stage with the audio; `M` mutes only it ("Muted", red mic; A's row "Audio is on another call"). End: "You hung up" with *Back to Thisis*; `Esc` goes back to A's call, which takes the audio. |
 | A with two calls: `Shift+M`, `Shift+C`, `Shift+M` | Both rows "Muted" and "Video stopped"; then both unmuted, cameras still off. |
+| Grid, the same three copies: A with video calls to B and C, then the Grid switch | Two tiles, C's (selected, outlined) with its test pattern, B's "On hold · 00:14"; the control bar shows only Focus \| Grid 2. `M` and `H` change nothing. |
+| From the grid: B's tile; `G`; C's row in the list; `G`; `2`; `G`; `T` | Each opens that call in Focus (B's with "On hold" and Resume); `G` goes back to the grid each time; `T` opens Focus on the selected call with the text input focused. |
+| In the grid, C calls A | The banner, and a ringing tile; the view stays Grid. The banner's name: the answer view (Settings still says grid). *Answer & hold current*: back to the grid, three tiles, the new call selected and the other two "On hold". |
+| A text message without its line end on the selected tile's call (injected as the host's `text` message), then Reply on the toast | The tile and the row say "Typing…" with the text icon's red dot; Reply opens Focus with the text panel. (Two copies of this app send a line at a time, on Enter, so they don't show Typing… to each other; with Enter, the tile shows the line, unread.) |
+| Settings: *Show all calls in a grid* | Ticked: the grid, `view: "grid"` stored; after restarting the copies, A's two calls open in the grid. |
 | Accounts, against a stand-in SIPSorcery registrar with digest auth on 127.0.0.1:5070 (`--profile accttest --fake-media --diagnostics --auto-answer`, a config with alice) | First start: alice seeded from the config, stored with a DPAPI password, registered. Bob added in the form with a wrong password: "Not registered: Wrong username or password (401 Unauthorised)", Manage accounts red. Password fixed: registered. An account with auth username carol registered as dave. `nosuch.invalid`: "Can't find the server nosuch.invalid (DNS lookup failed)". |
 | Calls from accounts, same set-up | Call from Bob to `echo`: the server saw From `"Bob B" <sip:bob@127.0.0.1:5070>`, authenticated as bob. Call from alice to `callback`: the server called alice's contact back (To alice), auto-answered, Call details "Incoming · alice@127.0.0.1:5070". |
 | Account changes and restarts | Restart: all three accounts back, registered, the seed not added twice. Rename: no REGISTER. Disable Bob, remove Dave: each unregistered (Expires: 0). Re-register: one new REGISTER, no unregister racing it. *No account (direct)* still chosen after a restart. Closing the app unregisters every account. |

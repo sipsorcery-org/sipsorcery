@@ -95,6 +95,8 @@ body:not(.diag) .diag-only { display: none; }
 /* The stage shows one of: card (no call, or calling/ringing/ended), video, nocam (video agreed
    but none arriving) or audio (no video on the call). */
 .remote { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: none; }
+/* Grid view: only the tiles; the stage's overlays are the selected call's, for Focus view. */
+.stage.grid > :not(.tiles) { display: none !important; }
 .stage[data-mode="video"] .remote.sel { display: block; }
 .card { position: absolute; inset: 0; display: none; place-content: center; text-align: center; gap: 6px; color: var(--tile-ink); padding: 16px; }
 .stage[data-mode="card"] .card { display: grid; }
@@ -653,3 +655,56 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .incoming-what { color: var(--warn-ink); font-size: 13px; white-space: nowrap; }
 .incoming-actions { display: flex; gap: 6px; flex: none; }
 .incoming-actions .btn { height: 34px; }
+
+/* ---------- Focus and grid views ---------- */
+/* The switch, in the control bar at the right, in both views. */
+.view-toggle { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-3); }
+.view-toggle[hidden] { display: none; }
+.view-toggle button {
+  display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 0; border-radius: 7px; background: none;
+  color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+}
+.view-toggle button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.view-toggle button:hover:not(:disabled):not(.on) { color: var(--text); }
+.view-toggle button.on { background: var(--seg-on); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .12), 0 0 0 1px var(--border); }
+.view-toggle button:disabled { opacity: .45; cursor: not-allowed; }
+.view-toggle button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.view-toggle .count { font-size: 11px; padding: 0 6px; border-radius: 9px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+/* In the grid the call buttons go: they'd act on one call, and the grid shows them all. */
+.controls.grid > :not(.controls-right), .controls.grid .controls-right > :not(.view-toggle) { visibility: hidden; }
+
+/* The tiles fill the stage: two columns up to four calls, then three (app.js sets --cols; one on a
+   narrow stage), each with its name and status under it. Past what fits, the stage scrolls. */
+.tiles {
+  position: absolute; inset: 0; padding: 12px; overflow: auto; display: grid; gap: 12px;
+  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); grid-auto-rows: minmax(140px, 1fr);
+}
+.tiles[hidden] { display: none; }
+.tile {
+  position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; border-radius: var(--radius-sm);
+  background: var(--surface); border: 1px solid var(--border); cursor: pointer; overflow: hidden; text-align: left;
+  padding: 0; font: inherit; color: var(--text);
+}
+.tile:hover { border-color: var(--border-strong); }
+.tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* The selected call, which has the audio when it's connected. */
+.tile.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.tile-feed { position: relative; flex: 1; min-height: 0; background: var(--tile); color: var(--tile-ink); display: grid; place-items: center; overflow: hidden; }
+.tile-feed .remote { display: none; object-fit: cover; }
+.tile.video .tile-feed .remote { display: block; }
+.tile.video .tile-avatar { display: none; }
+.tile-avatar { width: 64px; height: 64px; font-size: 28px; }
+.tile-time {
+  position: absolute; top: 8px; right: 10px; padding: 1px 7px; border-radius: 6px; font-size: 12px; font-variant-numeric: tabular-nums;
+  background: rgba(0, 0, 0, .45); color: #fff;
+}
+.tile-time:empty { display: none; }
+.tile-meta { display: flex; align-items: center; gap: 8px; padding: 8px 10px; min-width: 0; }
+.tile-text { display: grid; min-width: 0; flex: 1; }
+.tile-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile-status { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile.muted .tile-status { color: var(--danger); }
+.tile.held .tile-status, .tile.ringing .tile-status { color: var(--warn-ink); }
+.tile.held .tile-feed { opacity: .6; }
+.tile.ended { opacity: .7; }
+.tile .call-media { display: inline-flex; gap: 4px; flex: none; }

@@ -3,18 +3,20 @@
 //  - Audio & video: the microphone, speaker and camera calls use (the same choice as the ▾ menus
 //    on Mute and Camera), whether video calls start with your camera on (the Camera button
 //    before a call), and the self view (the self-view button, V).
-//  - Calls: answer automatically, with your camera off.
+//  - Calls: answer automatically, with your camera off, and whether several calls show in a grid
+//    (the Focus | Grid switch in the control bar, and G, set the same thing).
 //  - Appearance: the theme, system, light or dark.
 //  - Account: who you're signed in as. Managing SIP accounts will live here.
 //  - Diagnostics: opens the panel F12 opens, handy where a browser keeps F12 for itself.
 // Every change applies straight away. They're kept in the page's storage: on the desktop that's
 // the WebView2 profile's (--profile), so each profile has its own; on the web, this browser's.
-// The prototype's ringtone, grid and saved-transcript options have nothing behind them here yet,
-// so they're left out.
+// The prototype's ringtone and saved-transcript options have nothing behind them here yet, so
+// they're left out.
 
 const KEY = "softphonev2.settings";
-// theme: "system", "light" or "dark". camOn: video calls start with the camera on.
-export const prefs = { theme: "system", camOn: true, autoAnswer: false };
+// theme: "system", "light" or "dark". camOn: video calls start with the camera on. view: "focus"
+// shows only the selected call; "grid" shows every active call side by side, with two or more.
+export const prefs = { theme: "system", camOn: true, autoAnswer: false, view: "focus" };
 try { Object.assign(prefs, JSON.parse(localStorage.getItem(KEY) ?? "{}")); } catch { /* storage unavailable */ }
 
 export function savePref(name, value) {
@@ -59,6 +61,8 @@ export function initSettings(app) {
         <h3 id="setCallsHead">Calls</h3>
         <label class="check-row"><input type="checkbox" data-pref="autoAnswer">Answer calls automatically</label>
         <p class="settings-note">After a second, with your camera off. Your microphone is on as soon as it answers.</p>
+        <label class="check-row"><input type="checkbox" data-pref="grid">Show all calls in a grid</label>
+        <p class="settings-note">With two or more calls. Picking one opens it on its own, with its controls. Focus | Grid in the control bar, or G, switches too.</p>
       </section>
       <section class="settings-section" aria-labelledby="setThemeHead">
         <h3 id="setThemeHead">Appearance</h3>
@@ -114,6 +118,7 @@ export function initSettings(app) {
     q('[data-pref="camOn"]').checked = app.camPref();
     q('[data-pref="selfView"]').checked = app.selfView();
     q('[data-pref="autoAnswer"]').checked = prefs.autoAnswer;
+    q('[data-pref="grid"]').checked = prefs.view === "grid";
     for (const r of dlg.querySelectorAll('input[name="theme"]')) r.checked = r.value === (prefs.theme || "system");
     const acct = app.account();
     q("#setAccount").textContent = acct || "Not signed in";
@@ -151,6 +156,8 @@ export function initSettings(app) {
     } else if (t.dataset.pref === "autoAnswer") {
       savePref("autoAnswer", t.checked);
       app.log(`settings: answer calls automatically ${t.checked ? "on" : "off"}`);
+    } else if (t.dataset.pref === "grid") {
+      app.setView(t.checked ? "grid" : "focus");
     } else if (t.name === "theme") {
       savePref("theme", t.value);
       applyTheme();

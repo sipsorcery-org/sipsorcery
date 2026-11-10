@@ -58,6 +58,10 @@
       <!-- Each call's video goes here (app.js makes one <video class="remote"> per call): the
            selected call's shows, and only the call with the audio plays out loud. -->
 
+      <!-- Grid view: every active call as an equal tile, with no buttons (app.js moves each
+           call's <video> into its tile). Clicking a tile opens that call in Focus view. -->
+      <div class="tiles" id="tiles" role="list" aria-label="Active calls" hidden></div>
+
       <div class="card" id="card">
         <div class="card-title" id="cardTitle">Ready</div>
         <div class="card-sub" id="cardSub">Type an address above to start a call.</div>
@@ -182,6 +186,11 @@
       <button type="button" class="btn" id="holdBtn" aria-pressed="false" disabled></button>
       <button type="button" class="btn btn-danger" id="hangupBtn" disabled></button>
       <div class="controls-right">
+        <!-- Focus (the selected call) or Grid (every active call), G too. Grid needs two calls. -->
+        <div class="view-toggle" id="viewToggle" role="group" aria-label="Call view" hidden>
+          <button type="button" data-view="focus" id="viewFocus"></button>
+          <button type="button" data-view="grid" id="viewGrid"></button>
+        </div>
         <!-- Real-time text, rarely used: an icon that opens the popover above it (T too). -->
         <button type="button" class="btn icon-btn text-btn" id="textBtn" aria-pressed="false" aria-label="Text" disabled></button>
         <!-- On a video call: hides or shows your self view (V too). At the right, under it. -->
