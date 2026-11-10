@@ -110,10 +110,12 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
 
 - Audio and video calls both ways, with the desktop's controls (the same page, so they change
   together): Mute / Unmute with the *You're muted* pill, Stop video / Start video, the camera
-  button switching an Audio call to Video before dialling, the device menus, self view,
+  button switching an Audio call to Video before dialling, the device menus, self view (which
+  you can drag, resize from its corner and double-click to reset),
   ringing, answer, decline, cancel, hang up, the SIP log (F12).
 - **Settings** (the gear, top right): the desktop page's own (see the desktop README), kept in
-  this browser's `localStorage` (`softphonev2.settings`, and `devices` and `selfView` as before).
+  this browser's `localStorage` (`softphonev2.settings`, and `devices` and `selfView` as before;
+  `selfViewBox` is where you've dragged the self view and how large, as in the desktop README).
   Devices, camera on at the start of video calls, self view, auto-answer (camera off), theme and
   a button for diagnostics, handy since a browser may keep F12 for its own tools. `host.js` sets
   `data-host="web"` on the page, so the Account section points at the account button instead of
