@@ -1,14 +1,15 @@
 # Softphone v2 – desktop prototype
 
-A minimal Windows softphone that makes or takes **one SIP video call**. It is the first build of
+A minimal Windows softphone that makes and takes **SIP video calls, several at once**. It is the first build of
 the desktop app, using the media design the video spike
 ([../spikes/VideoPipeline](../spikes/VideoPipeline/RESULTS.md)) picked: the **relay**.
 
 - **C# (this project)** does SIP with SIPSorcery: the transport, a registration for each SIP
-  account (see [SIP accounts](#sip-accounts)), and one call (dial, answer, decline, cancel, hang up).
+  account (see [SIP accounts](#sip-accounts)), and up to 8 calls at once (dial, answer, decline,
+  cancel, hang up, hold; see [Several calls](#several-calls)).
 - **The page** (`wwwroot`, shown in WebView2) does all the media: it captures the camera and
   microphone, does echo cancellation, encodes, decodes (in hardware where it can) and renders.
-- **`MediaRelay`** joins the two. Once a call connects, it creates a local `RTCPeerConnection` to
+- **`MediaRelay`** joins the two, one per call. Once a call connects, it creates a local `RTCPeerConnection` to
   the page that offers the codecs the SIP call negotiated, and passes the media between the two
   without decoding it:
   - audio packet by packet, keeping the timestamps and sequence numbers;
@@ -36,12 +37,16 @@ during a call, so the microphone and camera can be set up first:
 - **Audio | Video**: the chosen half is a raised neutral pill, so the green is only on Call.
 - **Text** (an icon, at the right beside Self view, since it's rarely used): opens the
   real-time text popover (T does too). During a call only.
+- **Focus | Grid** (at the right, G too): see [Focus and grid views](#focus-and-grid-views).
+  There once there's a call; Grid needs two, and shows how many.
+- **Hold** (H): puts the selected call on hold, or Resume takes it off (see
+  [Several calls](#several-calls)). During a call only.
 - **End**: Cancel while calling, End once connected.
 
 A device you pick takes effect at once, mid-call too, by swapping the track on the page's
 connection (no renegotiation), and is remembered between runs (per profile). A remembered
-device that's gone falls back to the default. The prototype's Hold, Keypad and Transfer
-aren't here yet; they come with those features.
+device that's gone falls back to the default. The prototype's Keypad and Transfer aren't here
+yet; they come with those features.
 
 ## Settings
 
@@ -60,6 +65,8 @@ in this app are there; each applies straight away:
 - **Calls.** *Answer calls automatically*: after a second, always with the camera off, since
   the camera is never opened without you asking. The microphone is on as soon as it answers.
   (`--auto-answer` is the testing switch, answered by the host with the Camera button's choice.)
+  *Show all calls in a grid*: the view with two or more calls (see
+  [Focus and grid views](#focus-and-grid-views)); Focus | Grid and G change it too.
 - **Appearance.** Theme: System, Light or Dark. System follows Windows' light or dark mode.
 - **Account.** Who you are: the account, or with none, the address others can call, and a
   *Manage accounts* button that opens the same view as the dial bar's people button (see
@@ -67,23 +74,79 @@ in this app are there; each applies straight away:
 - **Diagnostics.** Opens or closes the panel F12 does.
 
 The page keeps them in its `localStorage`, which is in the WebView2 profile's folder, so each
-`--profile` has its own. The prototype's ringtone (there's no ringtone yet), grid (one call),
-and real-time text options (saved transcripts; there's no call history) are left out until
-there's something behind them.
+`--profile` has its own. The prototype's ringtone (there's no ringtone yet) and real-time
+text options (saved transcripts; there's no call history) are left out until there's something
+behind them.
+
+## Several calls
+
+As in the prototype: up to 8 calls at once, each with its own SIP user agent, media session and
+relay on the host (`Phone.Call`), and its own peer connection, `<video>`, quality, details and
+text on the page. Messages about a call carry its `id`; the host's `state` lists every call.
+
+- **Audio focus.** Only one connected call has the microphone and speaker. Selecting another
+  connected call (its row, or its number key) moves them to it: its sender gets the microphone
+  and its `<video>` plays. The previous call stays up, with its video, and shows *Audio off*;
+  the page sends it no audio.
+- **Hold** is separate: *Hold* in the control bar, or `H`, sends a re-INVITE with our media
+  sendonly (`SIPUserAgent.PutOnHold`), and the page sends a held call nothing at all. The stage
+  shows "On hold · 02:10" with *Resume*, amber after a minute, as does the list. A call they've
+  put on hold says so ("Alice put you on hold").
+- **New call.** Placing a call while you're on one holds that call, and the new one goes on the
+  stage. The dial bar is only disabled at 8 calls.
+- **Incoming calls** ring alongside the others (only a ninth gets 486 Busy Here). While you're
+  on a call, a banner over the stage says who, with *Answer & hold current* and *Decline*; the
+  name opens the full answer view, which also has *Answer, keep current*. With several ringing,
+  the one waiting longest is on the banner, with "+N more waiting". `A` answers it.
+  `--auto-answer` answers each call alongside the others, keeping the audio where it is.
+- **When a call ends** it stays in the list for a few seconds with how it ended. If it was on
+  the stage, the stage keeps saying so, with *Back to …* (or `Esc`) to another call.
+- **Mute** is the selected call's; `M` too. `Shift+M` mutes every call, and the ones to come
+  (before a call, Mute is the same thing: calls start muted). `Shift+C` turns the camera off
+  on every call and for new ones; it never turns cameras on.
+- **Keys**: `1`–`8` put that call in the list on the stage (`1` is the newest), `A` answers,
+  `M` mutes, `Shift+M` mutes all, `Shift+C` turns all cameras off, `H` holds or resumes, `G`
+  switches between Focus and Grid.
+
+## Focus and grid views
+
+As in the prototype. **Focus** (the default) shows only the selected call, with its controls
+under its info bar. **Grid** (Focus | Grid in the control bar, or `G`) shows every active call
+as an equal tile, newest first like the list, with no buttons: each tile is their video (or
+their initial when there's none, or it's on hold), the call's time, their name and its status
+line, the same as the list's: "On hold · 02:10" (amber), "Typing…", their last unread line,
+"Audio off", and the mic, camera and text icons. The selected call's tile, which has the audio,
+is outlined. The control bar keeps only the switch, so it's never in doubt which call a button
+acts on.
+
+- **Picking a call** from the grid, by its tile (or Enter on it), its row in Active calls, or
+  its number key, opens it in Focus.
+- **A ringing call** shows its answer view and leaves the choice alone: answered, it's back to
+  the grid. While you're in the grid, a call that rings shows on the banner, and as a tile.
+- **`T`** in the grid switches to Focus with the text panel open, as does *Reply* on a text
+  toast. `M`, `H` and `V` do nothing in the grid; `Shift+M` and `Shift+C` still act on every call.
+- The choice is remembered (`view` in the page's settings) and only applies with two or more
+  calls: with one, it's Focus. Settings has it as *Show all calls in a grid*.
+- Each call's `<video>` moves into its tile and back (`renderGrid` in `app.js` keeps the tiles
+  from one render to the next), so its picture and audio carry on. Two columns up to four
+  calls, then three; one on a narrow stage. Past what fits, the stage scrolls.
 
 ## Active calls
 
-A panel down the left, beside the stage and the control bar, from the prototype's sidebar. The
-app carries one call at a time, so it lists that call while it's live (calling, ringing or
-connected) and otherwise says *No active calls*. Nothing is made up: there's no call history
-yet, so the prototype's History section isn't here. Each row has an id and the list is built
-from `panelCalls()` in `app.js`, so more calls can be listed once the host carries them.
+A panel down the left, beside the stage and the control bar, from the prototype's sidebar. It
+lists every call, newest at the top, while it's live (calling, ringing or connected) and for a
+few seconds after it ends, and otherwise says *No active calls*. Nothing is made up: there's no
+call history yet, so the prototype's History section isn't here. Clicking a row puts that call
+on the stage. The list is built from `listed()` and `callStatus()` in `app.js`.
 
 - **A row**: their initial, their name (the full address in the tooltip), the status and, once
   connected, the timer. Calling… (grey ring, pulsing), Incoming call / Incoming video call
-  (amber, pulsing), then Audio call or Video call (green), or Muted in red. A connected call
-  also shows what you're sending: the mic (red when muted) and camera (green when sending,
-  red when stopped, faint on an audio call).
+  (amber, pulsing), then Audio call or Video call (green), Audio off, On hold · 02:10 (amber
+  after a minute), Muted in red, or how it ended. A connected call also shows what you're
+  sending: the mic (red when muted, faint when the audio is on another call or it's on hold)
+  and camera (green when sending, red when stopped, faint on an audio call or on hold), and
+  with text on, a text icon that pulses while they type and gets a red dot for text you haven't
+  read; the status line then says "Typing…" or their last line.
 - **Collapse**: the chevron folds it to a 48 px rail of initials and timers, so a live call
   still shows; the chevron, or a click anywhere on the rail, opens it again. The choice is
   remembered (`localStorage`, `callsPanel`, per profile on the desktop).
@@ -340,7 +403,7 @@ Where the numbers come from:
   isn't one) plus twice the jitter plus 20 ms, and loss is random with concealment (Bpl 25).
   Wideband codecs sound better than it says. It's for spotting trouble, not grading codecs.
 
-There is no settings screen, call history, contacts, DTMF, hold, transfer or device picker yet.
+There is no call history, contacts, DTMF or transfer yet.
 
 **Later:** a help or info section, to explain the Call quality panel: that ↑ Sent comes from
 the far end's RTCP reports (every 5 s or so) and ↓ Received is measured here, what the MOS
@@ -478,6 +541,16 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 
 | Test | Result |
 |---|---|
+| Several calls: three copies, A (`--profile fgA --port 5191 --ws-port 8191 --video --diagnostics`), B and C (`fgB`/`fgC`, ports 5192/8192 and 5193/8193, `--auto-answer`), all `--fake-media --test-pattern` | A calls B: video both ways. A calls C: A's B call goes on hold ("On hold · 00:06", B shows "Thisis put you on hold"), C's call on the stage with the audio. |
+| A: `2` (the older call), then `H` | B's call on the stage with "On hold" and Resume; after `H` it has the audio (its `<video>` plays, C's is muted) and C's row says "Audio off". B gets A's video again within a second (the held call's sender goes back on). |
+| C (audio) calls B while B is on its call with A | B's banner: "Thisis · Calling" with Answer and Decline; B's host auto-answers it alongside: "Audio off" on the new row, A's call keeps the audio. No 486. |
+| B: `1`, `M`, End, `Esc` | C's call on the stage with the audio; `M` mutes only it ("Muted", red mic; A's row "Audio is on another call"). End: "You hung up" with *Back to Thisis*; `Esc` goes back to A's call, which takes the audio. |
+| A with two calls: `Shift+M`, `Shift+C`, `Shift+M` | Both rows "Muted" and "Video stopped"; then both unmuted, cameras still off. |
+| Grid, the same three copies: A with video calls to B and C, then the Grid switch | Two tiles, C's (selected, outlined) with its test pattern, B's "On hold · 00:14"; the control bar shows only Focus \| Grid 2. `M` and `H` change nothing. |
+| From the grid: B's tile; `G`; C's row in the list; `G`; `2`; `G`; `T` | Each opens that call in Focus (B's with "On hold" and Resume); `G` goes back to the grid each time; `T` opens Focus on the selected call with the text input focused. |
+| In the grid, C calls A | The banner, and a ringing tile; the view stays Grid. The banner's name: the answer view (Settings still says grid). *Answer & hold current*: back to the grid, three tiles, the new call selected and the other two "On hold". |
+| A text message without its line end on the selected tile's call (injected as the host's `text` message), then Reply on the toast | The tile and the row say "Typing…" with the text icon's red dot; Reply opens Focus with the text panel. (Two copies of this app send a line at a time, on Enter, so they don't show Typing… to each other; with Enter, the tile shows the line, unread.) |
+| Settings: *Show all calls in a grid* | Ticked: the grid, `view: "grid"` stored; after restarting the copies, A's two calls open in the grid. |
 | Accounts, against a stand-in SIPSorcery registrar with digest auth on 127.0.0.1:5070 (`--profile accttest --fake-media --diagnostics --auto-answer`, a config with alice) | First start: alice seeded from the config, stored with a DPAPI password, registered. Bob added in the form with a wrong password: "Not registered: Wrong username or password (401 Unauthorised)", Manage accounts red. Password fixed: registered. An account with auth username carol registered as dave. `nosuch.invalid`: "Can't find the server nosuch.invalid (DNS lookup failed)". |
 | Calls from accounts, same set-up | Call from Bob to `echo`: the server saw From `"Bob B" <sip:bob@127.0.0.1:5070>`, authenticated as bob. Call from alice to `callback`: the server called alice's contact back (To alice), auto-answered, Call details "Incoming · alice@127.0.0.1:5070". |
 | Account changes and restarts | Restart: all three accounts back, registered, the seed not added twice. Rename: no REGISTER. Disable Bob, remove Dave: each unregistered (Expires: 0). Re-register: one new REGISTER, no unregister racing it. *No account (direct)* still chosen after a restart. Closing the app unregisters every account. |

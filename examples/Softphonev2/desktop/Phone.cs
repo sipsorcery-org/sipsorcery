@@ -9,26 +9,79 @@ namespace SIPSorcery.Softphone;
 
 /// <summary>
 /// The SIP side of the prototype: one transport, a registration for each account that registers
-/// (see <see cref="SetAccounts"/>), and at most one call.
+/// (see <see cref="SetAccounts"/>), and up to <see cref="MaxCalls"/> calls at once, each a
+/// <see cref="Call"/> with its own user agent, media session and relay to the page.
 /// Everything the page needs to show is reported through <see cref="Changed"/> as a small state
-/// object; the page's WebRTC side is handed over to <see cref="MediaRelay"/> once a call connects.
-/// A second incoming call while one is in progress is answered 486 Busy Here.
+/// object; each call's WebRTC side is handed over to its own <see cref="MediaRelay"/> once it
+/// connects. Which call has the microphone and speaker is the page's business: it only sends
+/// its microphone on one call at a time. Hold is a SIP re-INVITE (<see cref="Hold"/>).
+/// An incoming call rings alongside the calls in progress; only one past <see cref="MaxCalls"/>
+/// is answered 486 Busy Here.
 /// </summary>
 public sealed class Phone : IDisposable
 {
     public enum CallState { Idle, Calling, Ringing, Connected, Ended }
 
+    /// <summary>The most calls at once, as in the UX prototype's Active calls list.</summary>
+    public const int MaxCalls = 8;
+    /// <summary>How long an ended call stays in <see cref="Calls"/>, so the page can say how it ended.</summary>
+    private const int EndedKeepMs = 4000;
+
+    /// <summary>One call: its SIP side, media session, relay to the page and text.</summary>
+    public sealed class Call
+    {
+        public required string Id { get; init; }
+        public CallState State { get; internal set; } = CallState.Idle;
+        public string Remote { get; internal set; } = "";
+        /// <summary>
+        /// Whether the ringing call offers video we'd take: an m=video line that isn't turned down
+        /// (port 0), and video allowed here. An INVITE with no SDP counts as yes, as we'd make the
+        /// offer, with video in it.
+        /// </summary>
+        public bool IncomingVideo { get; internal set; }
+        public string? EndReason { get; internal set; }
+        /// <summary>We placed it (rather than answered it).</summary>
+        public bool Outgoing { get; internal set; }
+        /// <summary>The account it's on: the one it was placed from, or the one it was made to.</summary>
+        public SipAccount? Account { get; internal set; }
+        /// <summary>We put it on hold (a re-INVITE with sendonly).</summary>
+        public bool Held { get; internal set; }
+        /// <summary>They put us on hold.</summary>
+        public bool HeldByThem { get; internal set; }
+        /// <summary>
+        /// Text on the call: off (not set up), adding (re-INVITE out, or a WebRTC call's T.140 data
+        /// channel opening), on, refused, or disabled (--no-text).
+        /// </summary>
+        public string TextState { get; internal set; } = "off";
+        /// <summary>The call is with a browser phone (SIP over WebSocket), so its media is WebRTC.</summary>
+        public bool WebRtc { get; internal set; }
+
+        internal SIPUserAgent? Ua;
+        internal SIPServerUserAgent? Incoming;
+        internal RTPSession? Rtp;
+        internal MediaRelay? Relay;
+        internal RttEndPoint? Rtt;
+        internal System.Threading.Timer? AddTextTimer;
+        internal System.Threading.Timer? AddVideoTimer;
+        internal string? TheirPhone;
+        internal string? IncomingOffer;   // the ringing call's SDP, if its INVITE had one
+        internal bool HangingUp;          // we're hanging it up ourselves
+        internal bool Answering;          // Answer is under way (a double click mustn't answer twice)
+        public bool Live => State is CallState.Calling or CallState.Ringing or CallState.Connected;
+    }
+
     private readonly Settings _settings;
     private readonly SIPTransport _transport = new();
     /// <summary>The accounts, by id, each with its registration (if it registers).</summary>
     private readonly Dictionary<string, AccountRegistration> _accounts = new();
-    /// <summary>The account the current call is on: the one it was placed from, or the one it was made to.</summary>
-    private SipAccount? _callAccount;
-    public SipAccount? CallAccount => _callAccount;
-    private SIPUserAgent? _ua;
-    private SIPServerUserAgent? _incoming;
-    private RTPSession? _rtp;
-    private MediaRelay? _relay;
+    /// <summary>The calls, oldest first, including ended ones for a few seconds.</summary>
+    private readonly List<Call> _calls = new();
+    private int _nextId;
+    private readonly object _lock = new();
+
+    /// <summary>A snapshot of the calls, oldest first.</summary>
+    public IReadOnlyList<Call> Calls { get { lock (_lock) return _calls.ToList(); } }
+    public Call? Find(string? id) { lock (_lock) return _calls.FirstOrDefault(c => c.Id == id); }
 
     /// <summary>Simulated loss on what we send, in percent (diagnostics); carries over to new calls and relays.</summary>
     public int AudioLossPercent { get; private set; }
@@ -38,23 +91,10 @@ public sealed class Phone : IDisposable
     {
         AudioLossPercent = Math.Clamp(audio, 0, 100);
         VideoLossPercent = Math.Clamp(video, 0, 100);
-        if (_relay is { } relay) { relay.AudioLossPercent = AudioLossPercent; relay.VideoLossPercent = VideoLossPercent; }
+        foreach (var c in Calls)
+            if (c.Relay is { } relay) { relay.AudioLossPercent = AudioLossPercent; relay.VideoLossPercent = VideoLossPercent; }
         Log?.Invoke($"simulated loss: audio {AudioLossPercent}%, video {VideoLossPercent}%");
     }
-    private readonly object _lock = new();
-
-    public CallState State { get; private set; } = CallState.Idle;
-    public string Remote { get; private set; } = "";
-
-    /// <summary>
-    /// Whether the ringing call offers video we'd take: an m=video line that isn't turned down
-    /// (port 0), and video allowed here. An INVITE with no SDP counts as yes, as we'd make the
-    /// offer, with video in it.
-    /// </summary>
-    public bool IncomingVideo { get; private set; }
-    public string? EndReason { get; private set; }
-    private SIPUserAgent? _hangingUp;
-    private SIPServerUserAgent? _answering;   // the call we're hanging up ourselves
 
     /// <summary>
     /// An account and its registration. State: off (disabled, or doesn't register), registering,
@@ -84,12 +124,12 @@ public sealed class Phone : IDisposable
     /// <summary>Raised on a SIP thread whenever anything the page shows changes.</summary>
     public event Action? Changed;
     /// <summary>A connected call's relay needs the page's answer to this offer.</summary>
-    public event Action<string>? MediaOffer;
+    public event Action<Call, string>? MediaOffer;
     public event Action<string>? Log;
     /// <summary>The far end's RTCP says our audio is (true) or is again not (false) failing to reach them.</summary>
-    public event Action<bool>? TxLostChanged;
+    public event Action<Call, bool>? TxLostChanged;
     /// <summary>An RTCP reception report on the SIP leg: theirs about what we send, or ours about their video.</summary>
-    public event Action<MediaRelay.QualitySample>? Quality;
+    public event Action<Call, MediaRelay.QualitySample>? Quality;
 
     /// <summary>
     /// The facts about a connected call for the page's Call details panel: how it was set up,
@@ -99,7 +139,7 @@ public sealed class Phone : IDisposable
     public sealed record CallDetails(
         string Direction, string? Account, string? Signalling, string? TheirPhone, string? CallId,
         string? TheirMedia, bool MediaEncrypted, bool SignallingEncrypted, string? Audio, string? Video);
-    public event Action<CallDetails>? Details;
+    public event Action<Call, CallDetails>? Details;
 
     // ---- Real-time text, handled here in C# ----
     // On plain RTP calls: an m=text stream, T.140 with RED redundancy (RFC 4103). On WebRTC calls:
@@ -107,23 +147,10 @@ public sealed class Phone : IDisposable
     // the page's peer connection: the page sends what's typed as host messages and gets what
     // arrives the same way.
 
-    /// <summary>
-    /// Text on the call: off (not set up), adding (re-INVITE out, or a WebRTC call's T.140 data
-    /// channel opening), on, refused, or disabled (--no-text).
-    /// </summary>
-    public string TextState { get; private set; } = "off";
     /// <summary>Characters from them, as they arrive: may include backspace (U+0008) and line separators.</summary>
-    public event Action<string>? TextReceived;
-    private RttEndPoint? _rtt;
-    private System.Threading.Timer? _addTextTimer;
-    private bool _outgoing;
-    private string? _theirPhone;
-    private string? _incomingOffer;   // the ringing call's SDP, if its INVITE had one
+    public event Action<Call, string>? TextReceived;
 
     // ---- Browser phones: SIP over WebSocket, with WebRTC media ----
-
-    /// <summary>The call is with a browser phone (SIP over WebSocket), so its media is WebRTC.</summary>
-    public bool WebRtc { get; private set; }
 
     /// <summary>Where browser phones connect, e.g. ws://192.168.1.20:8081, or null if WebSocket is off.</summary>
     public string? WebSocketAddress { get; private set; }
@@ -361,59 +388,74 @@ public sealed class Phone : IDisposable
         return "sip:" + typed;   // e.g. an IP address or host name
     }
 
-    /// <summary>
-    /// Places a call: a video call offers audio and video, an audio call leaves video out (it can
-    /// be added later). If they turn the offer down because of its media profile (see
-    /// <see cref="WantsOtherMedia"/>), it's placed once more straight away with the other kind:
-    /// WebRTC instead of plain RTP, or the other way round.
-    /// </summary>
-    public async Task DialAsync(string typed, bool video, string? accountId)
+    /// <summary>Calls that are calling, ringing or connected.</summary>
+    private int LiveCount => _calls.Count(c => c.Live);
+
+    private Call NewCall()
     {
-        SIPUserAgent ua;
-        RTPSession rtp;
+        var c = new Call { Id = (++_nextId).ToString(), TextState = _settings.OfferText ? "off" : "disabled" };
+        _calls.Add(c);
+        return c;
+    }
+
+    /// <summary>
+    /// Places a call, alongside any others: a video call offers audio and video, an audio call
+    /// leaves video out (it can be added later). Returns the new call at once, or null if there
+    /// are already <see cref="MaxCalls"/>; the INVITE goes on in the background. If they turn the
+    /// offer down because of its media profile (see <see cref="WantsOtherMedia"/>), it's placed
+    /// once more straight away with the other kind: WebRTC instead of plain RTP, or the other way round.
+    /// </summary>
+    public Call? Dial(string typed, bool video, string? accountId)
+    {
+        Call c;
         lock (_lock)
         {
-            if (State is CallState.Calling or CallState.Ringing or CallState.Connected) return;
+            if (LiveCount >= MaxCalls) { Log?.Invoke($"not calling {typed}: already {MaxCalls} calls"); return null; }
+            c = NewCall();
             // The chosen account, if it's enabled; with none, a direct call with no credentials.
-            _callAccount = AccountById(accountId) is { Enabled: true } acct ? acct : null;
-            Remote = ResolveAddress(typed, _callAccount);
+            c.Account = AccountById(accountId) is { Enabled: true } acct ? acct : null;
+            c.Remote = ResolveAddress(typed, c.Account);
+            c.Outgoing = true;
             // WebRTC media for an address that says transport=ws (a browser phone), or for every
             // call with --webrtc. Otherwise plain RTP, and a browser behind a server says so with
             // a 488 (see WantsOtherMedia).
-            WebRtc = IsWebSocketUri(Remote) || _settings.WebRtcCalls;
-            ua = NewUserAgent();
-            rtp = NewSession(video && _settings.OfferVideo);
-            (_ua, _rtp) = (ua, rtp);
-            SetState(CallState.Calling);
+            c.WebRtc = IsWebSocketUri(c.Remote) || _settings.WebRtcCalls;
+            c.Ua = NewUserAgent(c);
+            c.Rtp = NewSession(c, video && _settings.OfferVideo);
+            SetState(c, CallState.Calling);
         }
-        _outgoing = true;
+        _ = Task.Run(() => DialAsync(c, video));
+        return c;
+    }
 
+    private async Task DialAsync(Call c, bool video)
+    {
         for (int attempt = 1; ; attempt++)
         {
-            var (ok, failure, response) = await CallOnceAsync(ua, rtp);
-            if (ok) { await ConnectedAsync(rtp); return; }
+            var (ua, rtp) = (c.Ua!, c.Rtp!);
+            var (ok, failure, response) = await CallOnceAsync(c, ua, rtp);
+            if (ok) { await ConnectedAsync(c, rtp); return; }
 
             lock (_lock)
             {
-                // Still ours to retry: nobody hung up or started another call meanwhile.
-                if (attempt == 1 && _ua == ua && State == CallState.Calling && WantsOtherMedia(response, WebRtc))
+                // Still ours to retry: nobody hung up meanwhile.
+                if (attempt == 1 && c.Ua == ua && c.State == CallState.Calling && WantsOtherMedia(response, c.WebRtc))
                 {
-                    WebRtc = !WebRtc;
-                    Log?.Invoke($"they can't take {(WebRtc ? "plain RTP" : "WebRTC")} media (488, {response!.Header.Warning ?? (string.IsNullOrWhiteSpace(response.Body) ? "no reason given" : "their SDP")}); calling again with {(WebRtc ? "WebRTC" : "plain RTP")}");
+                    c.WebRtc = !c.WebRtc;
+                    Log?.Invoke($"they can't take {(c.WebRtc ? "plain RTP" : "WebRTC")} media (488, {response!.Header.Warning ?? (string.IsNullOrWhiteSpace(response.Body) ? "no reason given" : "their SDP")}); calling again with {(c.WebRtc ? "WebRTC" : "plain RTP")}");
                     rtp.Close("retrying with other media");
-                    ua = NewUserAgent();
-                    rtp = NewSession(video && _settings.OfferVideo);
-                    (_ua, _rtp) = (ua, rtp);
+                    c.Ua = NewUserAgent(c);
+                    c.Rtp = NewSession(c, video && _settings.OfferVideo);
                     continue;
                 }
             }
-            if (_ua == ua) End(failure ?? "Call failed");
+            if (c.Ua == ua) End(c, failure ?? "Call failed");
             return;
         }
     }
 
     /// <summary>One INVITE: whether it was answered, and if not, why and the response that said so.</summary>
-    private async Task<(bool Ok, string? Failure, SIPResponse? Response)> CallOnceAsync(SIPUserAgent ua, RTPSession rtp)
+    private async Task<(bool Ok, string? Failure, SIPResponse? Response)> CallOnceAsync(Call c, SIPUserAgent ua, RTPSession rtp)
     {
         string? failure = null;
         SIPResponse? response = null;
@@ -433,13 +475,13 @@ public sealed class Phone : IDisposable
                     ? $"Not answered: rang for {(DateTime.Now - r).TotalSeconds:0} s, then the far end said {said}"
                 : resp != null ? $"The far end said {said}" : err;
         };
-        ua.ClientCallAnswered += (_, resp) => _theirPhone = resp?.Header.Server ?? resp?.Header.UserAgent;
-        var a = _callAccount;
+        ua.ClientCallAnswered += (_, resp) => c.TheirPhone = resp?.Header.Server ?? resp?.Header.UserAgent;
+        var a = c.Account;
         try
         {
-            if (a == null) return (await ua.Call(Remote, null, null, rtp), failure, response);
+            if (a == null) return (await ua.Call(c.Remote, null, null, rtp), failure, response);
             // From the account's address and display name, with its credentials if challenged.
-            var dst = SIPURI.ParseSIPURIRelaxed(Remote);
+            var dst = SIPURI.ParseSIPURIRelaxed(c.Remote);
             var from = new SIPFromHeader(a.DisplayName, SIPURI.ParseSIPURIRelaxed($"sip:{a.Username}@{a.Host}"), null).ToString();
             var descriptor = new SIPCallDescriptor(a.AuthUser, a.Password, dst.ToString(), from, dst.CanonicalAddress,
                 null, null, null, SIPCallDirection.Out, SDP.SDP_MIME_CONTENTTYPE, null, null);
@@ -469,116 +511,141 @@ public sealed class Phone : IDisposable
         return IsWebRtcOffer(resp.Body) != offeredWebRtc;
     }
 
-    public async Task AnswerAsync()
+    public async Task AnswerAsync(string id)
     {
+        Call? c;
         SIPUserAgent? ua;
         SIPServerUserAgent? uas;
         RTPSession rtp;
         lock (_lock)
         {
+            c = _calls.FirstOrDefault(x => x.Id == id);
             // Once: a second answer while the first is under way (a double click) would make its
             // own media session, fail, and end the call.
-            if (State != CallState.Ringing || _incoming == null || _answering == _incoming) return;
-            _answering = _incoming;
-            (ua, uas) = (_ua, _incoming);
+            if (c == null || c.State != CallState.Ringing || c.Incoming == null || c.Answering) return;
+            c.Answering = true;
+            (ua, uas) = (c.Ua, c.Incoming);
             // A WebRTC answer can't add a stream the offer didn't have (RTCPeerConnection would
             // put our video in as an extra m-line, and the browser rejects the answer), so video
             // only if they offered it.
-            rtp = NewSession(WebRtc ? IncomingVideo : _settings.OfferVideo, _incomingOffer);
-            _rtp = rtp;
+            rtp = NewSession(c, c.WebRtc ? c.IncomingVideo : _settings.OfferVideo, c.IncomingOffer);
+            c.Rtp = rtp;
         }
-        if (ua != null && uas != null && await ua.Answer(uas, rtp)) await ConnectedAsync(rtp);
-        else End("Couldn't answer");
+        if (ua != null && uas != null && await ua.Answer(uas, rtp)) await ConnectedAsync(c, rtp);
+        else End(c, "Couldn't answer");
     }
 
-    public void Decline()
+    public void Decline(string id)
     {
+        var c = Find(id);
+        if (c == null) return;
         lock (_lock)
         {
-            if (State != CallState.Ringing) return;
-            _incoming?.Reject(SIPResponseStatusCodesEnum.BusyHere, null);
+            if (c.State != CallState.Ringing) return;
+            c.Incoming?.Reject(SIPResponseStatusCodesEnum.BusyHere, null);
         }
-        End("Declined");
+        End(c, "Declined");
     }
 
-    public void Hangup()
+    public void Hangup(string id)
     {
+        var c = Find(id);
+        if (c == null) return;
         lock (_lock)
         {
-            if (State == CallState.Ringing) { Decline(); return; }
-            if (State is not (CallState.Calling or CallState.Connected)) return;
+            if (c.State == CallState.Ringing) { Decline(id); return; }
+            if (c.State is not (CallState.Calling or CallState.Connected)) return;
             // SIPUserAgent raises OnCallHungup from inside its own Hangup, which would record
             // this as "They hung up". (Ending the call here first instead stops the BYE: the
             // user agent only sends one while the call is still up.)
-            _hangingUp = _ua;
-            if (State == CallState.Calling) _ua?.Cancel();
-            else _ua?.Hangup();
+            c.HangingUp = true;
+            if (c.State == CallState.Calling) c.Ua?.Cancel();
+            else c.Ua?.Hangup();
         }
-        End("You hung up");
+        End(c, "You hung up");
     }
 
-    public void SetPageAnswer(string sdp) => _relay?.SetAnswer(sdp);
+    /// <summary>
+    /// Puts a connected call on hold, or takes it off: a re-INVITE with our media sendonly (the
+    /// far end's phone shows it's held), or sendrecv again. The page stops sending on a held call.
+    /// </summary>
+    public void Hold(string id, bool hold)
+    {
+        var c = Find(id);
+        if (c == null) return;
+        lock (_lock)
+        {
+            if (c.State != CallState.Connected || c.Ua == null || c.Held == hold) return;
+            c.Held = hold;
+            Log?.Invoke($"{(hold ? "holding" : "resuming")} {c.Remote}: re-INVITE");
+            if (hold) c.Ua.PutOnHold(); else c.Ua.TakeOffHold();
+        }
+        Changed?.Invoke();
+    }
+
+    public void SetPageAnswer(string id, string sdp) => Find(id)?.Relay?.SetAnswer(sdp);
 
     /// <summary>The far end turned down our request to add video (m=video 0, an error, or no answer).</summary>
-    public event Action? VideoRefused;
-    private System.Threading.Timer? _addVideoTimer;
+    public event Action<Call>? VideoRefused;
 
     /// <summary>
     /// Adds video to an audio call: our video codecs go on the session and a re-INVITE offers
     /// them. If they accept, the relay is rebuilt with video (see <see cref="OnRemoteDescriptionChanged"/>);
     /// if they refuse, or don't answer within 8 s, <see cref="VideoRefused"/> is raised.
     /// </summary>
-    public void AddVideo()
+    public void AddVideo(string id)
     {
+        var c = Find(id);
+        if (c == null) return;
         lock (_lock)
         {
-            if (State != CallState.Connected || _ua == null || _rtp == null || !_settings.OfferVideo) { VideoRefused?.Invoke(); return; }
-            if (MediaRelay.HasNegotiatedVideo(_rtp)) return;
-            MediaRelay.AddVideoTrack(_rtp);
-            _addVideoTimer?.Dispose();
-            _addVideoTimer = new System.Threading.Timer(_ => AddVideoDone(false), null, 8000, Timeout.Infinite);
+            if (c.State != CallState.Connected || c.Ua == null || c.Rtp == null || !_settings.OfferVideo) { VideoRefused?.Invoke(c); return; }
+            if (MediaRelay.HasNegotiatedVideo(c.Rtp)) return;
+            MediaRelay.AddVideoTrack(c.Rtp);
+            c.AddVideoTimer?.Dispose();
+            c.AddVideoTimer = new System.Threading.Timer(_ => AddVideoDone(c, false), null, 8000, Timeout.Infinite);
             Log?.Invoke("adding video: re-INVITE with m=video");
-            _ua.AddVideo();
+            c.Ua.AddVideo();
         }
     }
 
     /// <summary>
-    /// The SIP side's media session for a new call: WebRTC for a browser phone, with real-time
+    /// The SIP side's media session for a call: WebRTC for a browser phone, with real-time
     /// text on a data channel, or plain RTP with an m=text stream. <paramref name="theirOffer"/>
     /// is the SDP of a call we're answering, or null if we make the offer.
     /// </summary>
-    private RTPSession NewSession(bool video, string? theirOffer = null)
+    private RTPSession NewSession(Call c, bool video, string? theirOffer = null)
     {
-        var rtp = MediaRelay.CreateSipSession(video, WebRtc);
+        var rtp = MediaRelay.CreateSipSession(video, c.WebRtc);
         if (rtp is TextPeerConnection pc)
         {
-            _rtt?.Dispose();
-            _rtt = null;
-            AttachDataChannelText(pc, theirOffer);
+            c.Rtt?.Dispose();
+            c.Rtt = null;
+            AttachDataChannelText(c, pc, theirOffer);
             pc.onconnectionstatechange += state =>
             {
                 Log?.Invoke($"WebRTC media (ICE, DTLS) {state}");
-                if (state == RTCPeerConnectionState.failed && _rtp == pc) { _ua?.Hangup(); End("Media connection failed"); }
+                if (state == RTCPeerConnectionState.failed && c.Rtp == pc) { c.Ua?.Hangup(); End(c, "Media connection failed"); }
                 // The far end closed its media without a BYE: a browser phone's page reloaded or
                 // closed, say (DTLS close_notify, with no BYE sent). The call would otherwise stay
-                // up with no media, and every call to us meanwhile would be turned down as busy.
-                // But the media closes on every hang up too, ours and theirs (the user agent closes
-                // it before it reports a BYE), so give those a moment to end the call first.
-                if (state == RTCPeerConnectionState.closed && _rtp == pc && State == CallState.Connected)
+                // up with no media. But the media closes on every hang up too, ours and theirs (the
+                // user agent closes it before it reports a BYE), so give those a moment to end the
+                // call first.
+                if (state == RTCPeerConnectionState.closed && c.Rtp == pc && c.State == CallState.Connected)
                 {
-                    var ua = _ua;
+                    var ua = c.Ua;
                     _ = Task.Delay(1000).ContinueWith(_ =>
                     {
-                        if (_rtp != pc || _ua != ua || State != CallState.Connected) return;
+                        if (c.Rtp != pc || c.Ua != ua || c.State != CallState.Connected) return;
                         Log?.Invoke("WebRTC media closed without a BYE: hanging up");
-                        _hangingUp = ua;
+                        c.HangingUp = true;
                         ua?.Hangup();
-                        End("Media connection closed");
+                        End(c, "Media connection closed");
                     });
                 }
             };
         }
-        else AttachText(rtp);
+        else AttachText(c, rtp);
         return rtp;
     }
 
@@ -590,11 +657,11 @@ public sealed class Phone : IDisposable
     /// <see cref="RttEndPoint"/> to send and receive on it, wired the way VoIPMediaSession does.
     /// It's offered on every call (unless --no-text), and only started once it's agreed.
     /// </summary>
-    private void AttachText(RTPSession rtp)
+    private void AttachText(Call c, RTPSession rtp)
     {
-        _rtt?.Dispose();
-        _rtt = null;
-        TextState = _settings.OfferText ? "off" : "disabled";
+        c.Rtt?.Dispose();
+        c.Rtt = null;
+        c.TextState = _settings.OfferText ? "off" : "disabled";
         if (!_settings.OfferText) return;
         var rtt = new RttEndPoint();
         var red = rtt.GetTextSourceFormat();
@@ -616,8 +683,8 @@ public sealed class Phone : IDisposable
             var h = pkt.Header;
             rtt.GotTextRtp(from, h.SyncSource, h.SequenceNumber, h.Timestamp, h.PayloadType, h.MarkerBit, pkt.GetPayloadBytes());
         };
-        rtt.OnTextReceived += e => TextReceived?.Invoke(e.Text);
-        _rtt = rtt;
+        rtt.OnTextReceived += e => TextReceived?.Invoke(c, e.Text);
+        c.Rtt = rtt;
     }
 
     /// <summary>
@@ -625,49 +692,49 @@ public sealed class Phone : IDisposable
     /// stream we pick, or in our answer on the stream their offer has. An offer without one
     /// (a browser phone that doesn't do it) means no text, unless they open one in band.
     /// </summary>
-    private void AttachDataChannelText(TextPeerConnection pc, string? theirOffer)
+    private void AttachDataChannelText(Call c, TextPeerConnection pc, string? theirOffer)
     {
-        TextState = _settings.OfferText ? "off" : "disabled";
+        c.TextState = _settings.OfferText ? "off" : "disabled";
         if (!_settings.OfferText) return;
-        pc.TextReceived += text => { if (_rtp == pc) TextReceived?.Invoke(text); };
+        pc.TextReceived += text => { if (c.Rtp == pc) TextReceived?.Invoke(c, text); };
         pc.TextOpened += () =>
         {
-            if (Interlocked.Exchange(ref _addTextTimer, null) is { } t) t.Dispose();
-            if (_rtp != pc || TextState == "on") return;
+            if (Interlocked.Exchange(ref c.AddTextTimer, null) is { } t) t.Dispose();
+            if (c.Rtp != pc || c.TextState == "on") return;
             // A negotiated channel opens here once SCTP is up, whether or not they have one on
             // that stream: it only counts if their SDP agreed to it. One they opened in band does.
             if (pc.T140?.negotiated == true && TextPeerConnection.FindT140(pc.RemoteDescription) == null) return;
-            TextState = "on";
+            c.TextState = "on";
             Log?.Invoke($"real-time text on (RFC 8865, T.140 data channel on stream {pc.T140?.id})");
             Changed?.Invoke();
         };
         ushort? stream = string.IsNullOrWhiteSpace(theirOffer) ? TextPeerConnection.OfferStreamId : TextPeerConnection.FindT140(theirOffer);
-        if (stream is ushort id) { pc.AddT140(id); TextState = "adding"; }
-        else TextState = "refused";
+        if (stream is ushort id) { pc.AddT140(id); c.TextState = "adding"; }
+        else c.TextState = "refused";
     }
 
     /// <summary>
     /// A connected WebRTC call's text: on if the channel's open already; refused if their SDP has
     /// no T.140 channel; otherwise it's opening, and refused if it isn't open within 10 s.
     /// </summary>
-    private void StartDataChannelText(TextPeerConnection pc)
+    private void StartDataChannelText(Call c, TextPeerConnection pc)
     {
-        if (TextState != "adding" || pc.TextOpen) return;
+        if (c.TextState != "adding" || pc.TextOpen) return;
         if (TextPeerConnection.FindT140(pc.RemoteDescription) == null)
         {
-            TextState = "refused";
+            c.TextState = "refused";
             Log?.Invoke("they didn't take text (no T.140 data channel in their SDP)");
             Changed?.Invoke();
             return;
         }
         Log?.Invoke("real-time text agreed: opening the T.140 data channel");
-        _addTextTimer?.Dispose();
-        _addTextTimer = new System.Threading.Timer(_ =>
+        c.AddTextTimer?.Dispose();
+        c.AddTextTimer = new System.Threading.Timer(_ =>
         {
-            if (Interlocked.Exchange(ref _addTextTimer, null) is not { } t) return;
+            if (Interlocked.Exchange(ref c.AddTextTimer, null) is not { } t) return;
             t.Dispose();
-            if (_rtp != pc || TextState != "adding") return;
-            TextState = "refused";
+            if (c.Rtp != pc || c.TextState != "adding") return;
+            c.TextState = "refused";
             Log?.Invoke("the T.140 data channel didn't open: no text on this call");
             Changed?.Invoke();
         }, null, 10000, Timeout.Infinite);
@@ -679,59 +746,62 @@ public sealed class Phone : IDisposable
         rtp.TextStream?.RemoteTrack != null && rtp.TextStream.RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
 
     /// <summary>Starts sending and receiving text if it's agreed and not already on.</summary>
-    private async Task StartTextIfAgreed(RTPSession rtp)
+    private async Task StartTextIfAgreed(Call c, RTPSession rtp)
     {
-        if (rtp is TextPeerConnection pc) { StartDataChannelText(pc); return; }
-        if (_rtt == null || TextState == "on" || !HasNegotiatedText(rtp)) return;
-        await _rtt.Start();
-        if (Interlocked.Exchange(ref _addTextTimer, null) is { } t) t.Dispose();
-        TextState = "on";
+        if (rtp is TextPeerConnection pc) { StartDataChannelText(c, pc); return; }
+        if (c.Rtt == null || c.TextState == "on" || !HasNegotiatedText(rtp)) return;
+        await c.Rtt.Start();
+        if (Interlocked.Exchange(ref c.AddTextTimer, null) is { } t) t.Dispose();
+        c.TextState = "on";
         Log?.Invoke("real-time text on (RFC 4103)");
         Changed?.Invoke();
     }
 
     /// <summary>Sends what was typed (letters, backspaces, line separators) as real-time text.</summary>
-    public void SendText(string text)
+    public void SendText(string id, string text)
     {
-        if (TextState != "on") return;
-        if (_rtp is TextPeerConnection pc) pc.SendText(text);
-        else if (_rtt?.CanSendText == true) _rtt.SendText(text);
+        var c = Find(id);
+        if (c == null || c.TextState != "on") return;
+        if (c.Rtp is TextPeerConnection pc) pc.SendText(text);
+        else if (c.Rtt?.CanSendText == true) c.Rtt.SendText(text);
     }
 
     /// <summary>
     /// Adds text to a call that doesn't have it: a re-INVITE with m=text. If they accept, text
     /// starts (see <see cref="OnRemoteDescriptionChanged"/>); if not within 8 s, it's refused.
     /// </summary>
-    public void AddText()
+    public void AddText(string id)
     {
+        var c = Find(id);
+        if (c == null) return;
         lock (_lock)
         {
-            if (State != CallState.Connected || _ua == null || _rtp == null || _rtt == null || TextState is "on" or "adding") return;
-            TextState = "adding";
-            _addTextTimer?.Dispose();
-            _addTextTimer = new System.Threading.Timer(_ =>
+            if (c.State != CallState.Connected || c.Ua == null || c.Rtp == null || c.Rtt == null || c.TextState is "on" or "adding") return;
+            c.TextState = "adding";
+            c.AddTextTimer?.Dispose();
+            c.AddTextTimer = new System.Threading.Timer(_ =>
             {
-                if (Interlocked.Exchange(ref _addTextTimer, null) is not { } t) return;
+                if (Interlocked.Exchange(ref c.AddTextTimer, null) is not { } t) return;
                 t.Dispose();
-                if (TextState != "adding") return;
-                TextState = "refused";
+                if (c.TextState != "adding") return;
+                c.TextState = "refused";
                 Log?.Invoke("they didn't take text");
                 Changed?.Invoke();
             }, null, 8000, Timeout.Infinite);
             Log?.Invoke("adding text: re-INVITE with m=text");
-            _ua.AddText();
+            c.Ua.AddText();
         }
         Changed?.Invoke();
     }
 
-    private void AddVideoDone(bool ok)
+    private void AddVideoDone(Call c, bool ok)
     {
-        if (Interlocked.Exchange(ref _addVideoTimer, null) is not { } timer) return;
+        if (Interlocked.Exchange(ref c.AddVideoTimer, null) is not { } timer) return;
         timer.Dispose();
         if (!ok)
         {
             Log?.Invoke("they didn't take video; the call carries on as audio");
-            VideoRefused?.Invoke();
+            VideoRefused?.Invoke(c);
         }
     }
 
@@ -739,69 +809,69 @@ public sealed class Phone : IDisposable
     /// Any new SDP from the far end: an answer to our re-INVITE, or their re-INVITE. If it adds
     /// video to a call that didn't have it, the relay is rebuilt so the page gets a video line.
     /// </summary>
-    private void OnRemoteDescriptionChanged(RTPSession rtp)
+    private void OnRemoteDescriptionChanged(Call c, RTPSession rtp)
     {
         bool video = MediaRelay.HasNegotiatedVideo(rtp);
-        if (_addVideoTimer != null) AddVideoDone(video);
+        if (c.AddVideoTimer != null) AddVideoDone(c, video);
         // Text added by either side: start it once the user agent has finished with the SDP.
-        if (_rtp == rtp && TextState != "on" && HasNegotiatedText(rtp))
-            _ = Task.Run(async () => { await Task.Delay(200); if (_rtp == rtp) await StartTextIfAgreed(rtp); });
+        if (c.Rtp == rtp && c.TextState != "on" && HasNegotiatedText(rtp))
+            _ = Task.Run(async () => { await Task.Delay(200); if (c.Rtp == rtp) await StartTextIfAgreed(c, rtp); });
         // Their answer to our adding text turned it down (m=text with port 0): say so now, not at the timeout.
-        else if (_rtp == rtp && rtp is not TextPeerConnection && TextState == "adding" && Interlocked.Exchange(ref _addTextTimer, null) is { } t)
+        else if (c.Rtp == rtp && rtp is not TextPeerConnection && c.TextState == "adding" && Interlocked.Exchange(ref c.AddTextTimer, null) is { } t)
         {
             t.Dispose();
-            TextState = "refused";
+            c.TextState = "refused";
             Log?.Invoke("they turned down text");
             Changed?.Invoke();
         }
-        if (!video || _rtp != rtp || _relay == null || _relay.Video.HasValue) return;
+        if (!video || c.Rtp != rtp || c.Relay == null || c.Relay.Video.HasValue) return;
         // Let the SIP user agent finish (send its answer, start the stream) before rebuilding.
         _ = Task.Run(async () =>
         {
             await Task.Delay(200);
             lock (_lock)
             {
-                if (_rtp != rtp || State != CallState.Connected) return;
-                _relay?.Dispose();
-                _relay = null;
+                if (c.Rtp != rtp || c.State != CallState.Connected) return;
+                c.Relay?.Dispose();
+                c.Relay = null;
             }
             Log?.Invoke("video added to the call");
-            await StartRelayAsync(rtp);
+            await StartRelayAsync(c, rtp);
         });
     }
 
-    private async Task ConnectedAsync(RTPSession rtp)
+    private async Task ConnectedAsync(Call c, RTPSession rtp)
     {
-        rtp.OnRemoteDescriptionChanged += _ => OnRemoteDescriptionChanged(rtp);
-        SetState(CallState.Connected);
-        await StartTextIfAgreed(rtp);
-        await StartRelayAsync(rtp);
+        rtp.OnRemoteDescriptionChanged += _ => OnRemoteDescriptionChanged(c, rtp);
+        SetState(c, CallState.Connected);
+        await StartTextIfAgreed(c, rtp);
+        await StartRelayAsync(c, rtp);
     }
 
-    private async Task StartRelayAsync(RTPSession rtp)
+    private async Task StartRelayAsync(Call c, RTPSession rtp)
     {
         var relay = new MediaRelay(rtp, s => Log?.Invoke(s)) { AudioLossPercent = AudioLossPercent, VideoLossPercent = VideoLossPercent };
-        relay.TxLostChanged += lost => TxLostChanged?.Invoke(lost);
-        relay.Quality += sample => Quality?.Invoke(sample);
-        _relay = relay;
+        relay.TxLostChanged += lost => TxLostChanged?.Invoke(c, lost);
+        relay.Quality += sample => Quality?.Invoke(c, sample);
+        c.Relay = relay;
         Log?.Invoke($"call connected: {relay.Describe()}");
-        Details?.Invoke(DescribeCall(rtp, relay));
-        MediaOffer?.Invoke(await relay.CreateOfferAsync());
+        Details?.Invoke(c, DescribeCall(c, rtp, relay));
+        MediaOffer?.Invoke(c, await relay.CreateOfferAsync());
     }
 
-    private CallDetails DescribeCall(RTPSession rtp, MediaRelay relay)
+    private static CallDetails DescribeCall(Call c, RTPSession rtp, MediaRelay relay)
     {
-        var dialogue = _ua?.Dialogue;
+        var dialogue = c.Ua?.Dialogue;
         var ep = dialogue?.RemoteSIPEndPoint;
-        var a = _callAccount;
+        var a = c.Account;
         var media = rtp.RemoteDescription?.Media.Where(m => m.Port != 0).ToList() ?? new();
         static string? Codec(SDPAudioVideoMediaFormat? f) =>
             f is { } x ? $"{x.Name()} {(x.ClockRate() % 1000 == 0 ? $"{x.ClockRate() / 1000} kHz" : $"{x.ClockRate()} Hz")}" : null;
         return new CallDetails(
-            Direction: _outgoing ? "outgoing" : "incoming",
+            Direction: c.Outgoing ? "outgoing" : "incoming",
             Account: a?.Aor,
             Signalling: ep == null ? null : $"{ep.Protocol.ToString().ToUpperInvariant()} {ep.Address}:{ep.Port}",
-            TheirPhone: string.IsNullOrWhiteSpace(_theirPhone) ? null : _theirPhone,
+            TheirPhone: string.IsNullOrWhiteSpace(c.TheirPhone) ? null : c.TheirPhone,
             CallId: dialogue?.CallId,
             TheirMedia: rtp.HasAudio ? rtp.AudioStream.DestinationEndPoint?.ToString() : null,
             // SRTP shows as RTP/SAVP (or UDP/TLS/RTP/SAVP) on their media lines; SIP over TLS as tls.
@@ -822,35 +892,36 @@ public sealed class Phone : IDisposable
         }
         if (req.Method != SIPMethodsEnum.INVITE || !string.IsNullOrEmpty(req.Header.To.ToTag)) return;
 
+        Call c;
         lock (_lock)
         {
-            if (State is CallState.Calling or CallState.Ringing or CallState.Connected)
+            if (LiveCount >= MaxCalls)
             {
                 _ = _transport.SendResponseAsync(SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.BusyHere, null));
                 return;
             }
+            c = NewCall();
             // A browser phone's Contact is an address nothing can reach (sip:x@y.invalid;transport=ws,
             // RFC 7118): our requests in the call (BYE, re-INVITEs) only get to it over the
             // WebSocket connection its INVITE came on. As the outbound proxy, they go there.
-            var ua = NewUserAgent(remote.Protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss ? remote : null);
-            _ua = ua;
-            _incoming = ua.AcceptCall(req);
-            ua.ServerCallCancelled += (_, _) => End("Missed call");
-            Remote = req.Header.From.FromURI.ToString();
-            _outgoing = false;
-            _callAccount = AccountForIncoming(req);
-            _theirPhone = req.Header.UserAgent;
-            _incomingOffer = req.Body;
+            var ua = NewUserAgent(c, remote.Protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss ? remote : null);
+            c.Ua = ua;
+            c.Incoming = ua.AcceptCall(req);
+            ua.ServerCallCancelled += (_, _) => End(c, "Missed call");
+            c.Remote = req.Header.From.FromURI.ToString();
+            c.Outgoing = false;
+            c.Account = AccountForIncoming(req);
+            c.TheirPhone = req.Header.UserAgent;
+            c.IncomingOffer = req.Body;
             // A call from a browser phone is answered with WebRTC media: one over WebSocket, or
             // one whose offer is WebRTC's (it came through a server, so over UDP, TCP or TLS).
-            WebRtc = remote.Protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss || IsWebRtcOffer(req.Body);
+            c.WebRtc = remote.Protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss || IsWebRtcOffer(req.Body);
             var name = req.Header.From.FromName;
-            if (!string.IsNullOrWhiteSpace(name)) Remote = $"{name} <{Remote}>";
-            IncomingVideo = _settings.OfferVideo && OffersVideo(req.Body);
-            SetState(CallState.Ringing);
+            if (!string.IsNullOrWhiteSpace(name)) c.Remote = $"{name} <{c.Remote}>";
+            c.IncomingVideo = _settings.OfferVideo && OffersVideo(req.Body);
+            SetState(c, CallState.Ringing);
         }
-        _incoming!.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
-        await Task.CompletedTask;
+        c.Incoming!.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
     }
 
     /// <summary>
@@ -873,43 +944,50 @@ public sealed class Phone : IDisposable
     }
 
     /// <summary>A user agent for a call, sending its requests via <paramref name="outboundProxy"/> if given.</summary>
-    private SIPUserAgent NewUserAgent(SIPEndPoint? outboundProxy = null)
+    private SIPUserAgent NewUserAgent(Call c, SIPEndPoint? outboundProxy = null)
     {
         var ua = new SIPUserAgent(_transport, outboundProxy);
-        // Only the current, connected call's. The user agent raises this too when a call we place
-        // fails with WebRTC media (closing the RTCPeerConnection), and for a turned-down attempt
-        // DialAsync retries; there, DialAsync gives the real reason.
-        ua.OnCallHungup += _ => { if (_hangingUp != ua && _ua == ua && State == CallState.Connected) End("They hung up"); };
+        // Only the call's current user agent, once connected. The user agent raises this too when
+        // a call we place fails with WebRTC media (closing the RTCPeerConnection), and for a
+        // turned-down attempt DialAsync retries; there, DialAsync gives the real reason.
+        ua.OnCallHungup += _ => { if (!c.HangingUp && c.Ua == ua && c.State == CallState.Connected) End(c, "They hung up"); };
+        ua.RemotePutOnHold += () => { if (c.Ua != ua) return; c.HeldByThem = true; Log?.Invoke($"{c.Remote} put the call on hold"); Changed?.Invoke(); };
+        ua.RemoteTookOffHold += () => { if (c.Ua != ua) return; c.HeldByThem = false; Log?.Invoke($"{c.Remote} took the call off hold"); Changed?.Invoke(); };
         return ua;
     }
 
-    private void End(string reason)
+    private void End(Call c, string reason)
     {
         lock (_lock)
         {
-            if (State is CallState.Idle or CallState.Ended) return;
-            EndReason = reason;
-            Interlocked.Exchange(ref _addVideoTimer, null)?.Dispose();
-            Interlocked.Exchange(ref _addTextTimer, null)?.Dispose();
-            _rtt?.Dispose();
-            _rtt = null;
-            TextState = _settings.OfferText ? "off" : "disabled";
-            WebRtc = false;
-            _relay?.Dispose();
-            _relay = null;
-            try { _rtp?.Close(reason); } catch { }
-            _rtp = null;
-            _ua = null;
-            _incoming = null;
-            SetState(CallState.Ended);
+            if (c.State is CallState.Idle or CallState.Ended) return;
+            c.EndReason = reason;
+            Interlocked.Exchange(ref c.AddVideoTimer, null)?.Dispose();
+            Interlocked.Exchange(ref c.AddTextTimer, null)?.Dispose();
+            c.Rtt?.Dispose();
+            c.Rtt = null;
+            c.Relay?.Dispose();
+            c.Relay = null;
+            try { c.Rtp?.Close(reason); } catch { }
+            c.Rtp = null;
+            c.Ua = null;
+            c.Incoming = null;
+            c.Held = c.HeldByThem = false;
+            SetState(c, CallState.Ended);
         }
+        // Kept for a moment, so the page can say how it ended, then dropped from the list.
+        _ = Task.Delay(EndedKeepMs).ContinueWith(_ =>
+        {
+            lock (_lock) _calls.Remove(c);
+            Changed?.Invoke();
+        });
     }
 
-    private void SetState(CallState state)
+    private void SetState(Call c, CallState state)
     {
-        State = state;
-        if (state != CallState.Ended) EndReason = null;
-        Log?.Invoke($"call {state.ToString().ToLowerInvariant()} {Remote} {EndReason}".TrimEnd());
+        c.State = state;
+        if (state != CallState.Ended) c.EndReason = null;
+        Log?.Invoke($"call {c.Id} {state.ToString().ToLowerInvariant()} {c.Remote} {c.EndReason}".TrimEnd());
         Changed?.Invoke();
     }
 
@@ -924,7 +1002,7 @@ public sealed class Phone : IDisposable
 
     public void Dispose()
     {
-        if (State == CallState.Connected) _ua?.Hangup();
+        foreach (var c in Calls.Where(c => c.State == CallState.Connected)) c.Ua?.Hangup();
         lock (_accounts) foreach (var reg in _accounts.Values) StopRegistration(reg);
         Thread.Sleep(300);
         _transport.Shutdown();

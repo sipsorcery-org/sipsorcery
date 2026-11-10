@@ -119,8 +119,17 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   `data-host="web"` on the page, so the Account section points at the account button instead of
   the desktop's `softphone.json`. The speaker list is hidden where the browser can't pick one
   (no `setSinkId`). Device names show once the page has had the microphone or camera.
+- **Several calls at once**, as on the desktop (see the [desktop README](../desktop/README.md#several-calls)):
+  each call is a SIP.js session with its own record in `host.js` and its own connection on the
+  page (`new RTCPeerConnection({ callId })`, which the wrapper uses to tell them apart), and
+  messages about a call carry its id. An incoming call rings alongside the others (486 only
+  past 8). Hold is a re-INVITE whose offer the page makes on the call's own connection
+  (sendonly, or sendrecv to resume); a re-INVITE from the far end is answered on it too, rather
+  than with a new connection.
 - The **Active calls** panel down the left (see the [desktop README](../desktop/README.md#active-calls)):
-  the call while it's live, collapsible to a rail, the choice kept in `localStorage`.
+  every call, collapsible to a rail, the choice kept in `localStorage`.
+- **Focus and grid views**, the desktop page's (see the [desktop README](../desktop/README.md#focus-and-grid-views)):
+  Focus | Grid in the control bar, or G, with the grid default in Settings.
 - **A call it can't take doesn't ring.** A browser can only answer a WebRTC offer, so an
   incoming offer with no DTLS-SRTP m-line (an ordinary SIP phone's RTP/AVP) is turned down
   before ringing: `488 Not Acceptable Here` with `Warning: 302 <host> "Incompatible transport
@@ -181,7 +190,9 @@ microphone, both on one PC.
 | Web `dial=desktop&call=video`, Call details | "Outgoing · web@localhost", "Media encrypted (SRTP); SIP not (WS)", video "VP8 640×360", SIP "WS localhost:8091". (It said "Incoming" and showed the WebSocket URL before.) |
 | Settings (`server=ws://127.0.0.1:8099`, nothing there): the gear, Dark, auto-answer on, camera on at start off, Open diagnostics, then a hard reload | Settings opens over the page; the page goes dark at once; Open diagnostics closes Settings and opens the panel, whose log shows each change. After the reload the theme and both choices are kept. The device lists say *System default* with the note about names (the browser pane allows no microphone). |
 | Web `server=ws://127.0.0.1:8382&dial=setb`, the desktop copy with *Answer calls automatically* ticked in its Settings | The desktop answers after a second: "answering automatically, camera off", audio only. Settings on the web page shows `web@127.0.0.1` under Account. |
-| A second browser dials the desktop while it's on a call | "486 BusyHere". (It said "They hung up" before: SIP.js ends the session before handing over the rejection.) |
+| A second browser dials the desktop while it's on a call | Before several calls: "486 BusyHere". (It said "They hung up" before: SIP.js ends the session before handing over the rejection.) Now it rings as a second call. |
+| Several calls: `?server=ws://localhost:8192&user=web&diag=1` in Claude's browser pane, dial `b` (a desktop copy with `--auto-answer`), then End | No console errors. Call 1 listed, its offer and answer passed with its id; the call connects and ends ("You hung up"). The media fails as before in the pane (mic blocked: "Incompatible send direction"). |
+| Focus and grid: the same page after the views were added | No console errors; registered (`web@localhost`); the switch hidden with no call, Settings has *Show all calls in a grid*. (The views were tried on the desktop copies: the pane has no microphone for a call with media.) |
 | Web `server=ws://localhost:8095&diag=1&call=video&video=test&dial=desktop`, desktop `--fake-media --auto-answer --test-pattern`; Network sliders to 10% mid-call, then 0% | Web log: "dropped 27 of 250 audio frames, 15 of 151 video frames in 5 s" and so on. The desktop receives 44–45 audio pkt/s instead of 50, with concealment climbing, and 14–17 fps video instead of 30; its page asks for keyframes (55, then 75 PLIs). Their RTCP still says 0% loss. Back to 0%: 30 fps and 50 pkt/s again. |
 | Web dials the desktop (`server=`), then reloads mid-call | The page hangs up as it unloads: the desktop gets a BYE ("They hung up") and answers the reloaded page's new call at once. Before, the page sent no BYE: the desktop stayed in a call with closed media and turned every new call down with 486. |
 | Web dials the desktop (`server=`), then its `RTCPeerConnection` is closed with no BYE | The desktop logs "WebRTC media (ICE, DTLS) closed", hangs up a second later ("Media connection closed") and its BYE reaches the page over its WebSocket connection (200 OK; web "They hung up"). Before, it stayed in the call, and its BYEs, End button's included, went to the page's `.invalid` Contact and never arrived. |

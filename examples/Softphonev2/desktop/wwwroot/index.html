@@ -55,7 +55,12 @@
     <!-- The stage, with the real-time text popover and toast over its bottom edge. -->
     <div class="stage-row">
     <main class="stage" id="stage" data-mode="card">
-      <video id="remote" class="remote" autoplay playsinline></video>
+      <!-- Each call's video goes here (app.js makes one <video class="remote"> per call): the
+           selected call's shows, and only the call with the audio plays out loud. -->
+
+      <!-- Grid view: every active call as an equal tile, with no buttons (app.js moves each
+           call's <video> into its tile). Clicking a tile opens that call in Focus view. -->
+      <div class="tiles" id="tiles" role="list" aria-label="Active calls" hidden></div>
 
       <div class="card" id="card">
         <div class="card-title" id="cardTitle">Ready</div>
@@ -84,6 +89,11 @@
       <div class="self self-off" id="selfOff" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M2 2l20 20"/></svg>
         <span id="selfOffText">Camera off</span>
+      </div>
+      <!-- On hold: how long, with Resume; or that they've put you on hold. -->
+      <div class="held-note" id="heldNote" hidden>
+        <span id="heldText"></span>
+        <button type="button" class="btn" id="heldResume"></button>
       </div>
       <!-- Who the call is with and for how long; the chevron drops down the call's details. -->
       <div class="info" id="info" hidden>
@@ -114,6 +124,17 @@
         <div class="q-foot" id="qFoot"></div>
       </div>
     </main>
+
+    <!-- A call ringing while you're on another: who, and Answer & hold current or Decline. The
+         name opens the full answer view. -->
+    <div class="incoming" id="incoming" role="alert" hidden>
+      <button type="button" class="incoming-who" id="incomingWho"></button>
+      <span class="incoming-what" id="incomingWhat"></span>
+      <span class="incoming-actions">
+        <button type="button" class="btn btn-danger" id="incomingDecline">Decline</button>
+        <button type="button" class="btn btn-primary" id="incomingAnswer">Answer</button>
+      </span>
+    </div>
 
     <!-- Manage accounts (desktop only, accounts.js): over the stage, which carries on under it. -->
     <section class="am" id="accounts" hidden aria-label="Accounts"></section>
@@ -161,8 +182,15 @@
           aria-label="Choose camera" title="Choose camera"></button>
         <div class="device-menu" id="camMenu" role="menu" aria-label="Camera" hidden></div>
       </div>
+      <!-- Hold or Resume the selected call (H): a SIP re-INVITE. -->
+      <button type="button" class="btn" id="holdBtn" aria-pressed="false" disabled></button>
       <button type="button" class="btn btn-danger" id="hangupBtn" disabled></button>
       <div class="controls-right">
+        <!-- Focus (the selected call) or Grid (every active call), G too. Grid needs two calls. -->
+        <div class="view-toggle" id="viewToggle" role="group" aria-label="Call view" hidden>
+          <button type="button" data-view="focus" id="viewFocus"></button>
+          <button type="button" data-view="grid" id="viewGrid"></button>
+        </div>
         <!-- Real-time text, rarely used: an icon that opens the popover above it (T too). -->
         <button type="button" class="btn icon-btn text-btn" id="textBtn" aria-pressed="false" aria-label="Text" disabled></button>
         <!-- On a video call: hides or shows your self view (V too). At the right, under it. -->
