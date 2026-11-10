@@ -160,7 +160,7 @@ namespace Vpx.Net.UnitTest
             var codec = new VP8Codec();
             var frame = Vp8GoldenScenario.Get("I420_64x48_Default").CreateFrame(0);
 
-            Assert.Throws<ArgumentNullException>(() => codec.EncodeVideo(64, 48, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, null));
+            Assert.Throws<ArgumentNullException>(() => codec.EncodeVideo(64, 48, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8, (Stream)null));
         }
 
         [Fact]
