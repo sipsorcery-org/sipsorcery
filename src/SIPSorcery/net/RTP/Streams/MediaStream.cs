@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -98,6 +99,22 @@ namespace SIPSorcery.Net
         /// </summary>
         private ushort _twccPacketCount = 0;
 
+        /// <summary>
+        /// The packets sent, kept while generic NACK (RFC 4585) is negotiated so lost ones can be sent again.
+        /// </summary>
+        private RtpPacketResendBuffer _resendBuffer;
+
+        /// <summary>
+        /// Added to the round trip time to get how long a resent packet may still be on its way, during which
+        /// further requests for the same packet are ignored.
+        /// </summary>
+        private static readonly TimeSpan ResendInFlightMargin = TimeSpan.FromMilliseconds(5);
+
+        /// <summary>
+        /// Times the packets kept for resending. Unlike the system clock it never jumps.
+        /// </summary>
+        private static readonly Stopwatch ResendClock = Stopwatch.StartNew();
+
         public int Index = -1;
 
         /// <summary>
@@ -125,6 +142,11 @@ namespace SIPSorcery.Net
         /// Metrics tracking media sends, FEC repair generation, send rates, and impairment drops.
         /// </summary>
         public RtpFecMetrics FecMetrics { get; } = new RtpFecMetrics();
+
+        /// <summary>
+        /// Counters for the generic NACKs (RFC 4585) received for this stream and the packets sent again because of them.
+        /// </summary>
+        public RtpRetransmissionMetrics RetransmissionMetrics { get; } = new RtpRetransmissionMetrics();
 
         /// <summary>
         /// Enables ULPFEC / RED forward error correction on this stream with the negotiated payload types.
@@ -265,6 +287,14 @@ namespace SIPSorcery.Net
         public event Action<int, SDPMediaTypesEnum, RTCPCompoundPacket> OnSendReportByIndex;
 
         /// <summary>
+        /// Gets fired for each generic NACK (RFC 4585) received for this stream, once the packets it reported lost
+        /// have been sent again. Parameters are:
+        ///  - every sequence number the NACK reported lost, in the order reported,
+        ///  - those that could not be sent again because they were no longer kept, which usually calls for a key frame.
+        /// </summary>
+        public event Action<IReadOnlyList<ushort>, IReadOnlyList<ushort>> OnNackReceived;
+
+        /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
         /// Parameters are:
         ///  - index of the AudioStream or VideoStream
@@ -355,6 +385,7 @@ namespace SIPSorcery.Net
             set
             {
                 m_localTrack = value;
+                _resendBuffer?.Clear();
                 if (m_localTrack != null)
                 {
                     // Need to create a sending SSRC and set it on the RTCP session. 
@@ -402,7 +433,21 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The remote RTP end point this stream is sending media to.
         /// </summary>
-        public IPEndPoint DestinationEndPoint { get; set; }
+        public IPEndPoint DestinationEndPoint
+        {
+            get => m_destinationEndPoint;
+            set
+            {
+                if (!Equals(m_destinationEndPoint, value))
+                {
+                    _resendBuffer?.Clear();
+                }
+
+                m_destinationEndPoint = value;
+            }
+        }
+
+        private IPEndPoint m_destinationEndPoint;
 
         /// <summary>
         /// The remote RTP control end point this stream is sending to RTCP reports for the media stream to.
@@ -483,6 +528,7 @@ namespace SIPSorcery.Net
             }
 
             SecureContext = new SecureContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
+            _resendBuffer?.Clear();
 
             DispatchPendingPackages();
         }
@@ -873,17 +919,11 @@ namespace SIPSorcery.Net
                 }
             }
 
+            _resendBuffer?.Add(sequenceNumber, rtpBuffer, payloadLength, ResendClock.Elapsed);
+
             try
             {
-                if (IsUsingRelayEndPoint)
-                {
-                    rtpChannel.SendRelay(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer, RtpRelayEndPoint.RelayServerEndPoint);
-                }
-                else
-                {
-                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
-                }
-
+                SendOnRtpChannel(rtpBuffer);
                 RtcpSession?.RecordRtpPacketSend(sequenceNumber, timestamp, payloadLength);
             }
             catch (Exception ex)
@@ -891,6 +931,89 @@ namespace SIPSorcery.Net
                 logger.LogError(ex, "Exception sending RTP packet on {MediaType}.", MediaType);
                 FecMetrics.RecordTransportError();
             }
+        }
+
+        private void SendOnRtpChannel(byte[] rtpBuffer)
+        {
+            if (IsUsingRelayEndPoint)
+            {
+                rtpChannel.SendRelay(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer, RtpRelayEndPoint.RelayServerEndPoint);
+            }
+            else
+            {
+                rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
+            }
+        }
+
+        /// <summary>
+        /// Keeps the packets sent on this stream to send again if generic NACK (RFC 4585) was negotiated.
+        /// </summary>
+        /// <param name="capabilities">The negotiated formats for this stream.</param>
+        internal void ConfigureResendBuffer(List<SDPAudioVideoMediaFormat> capabilities)
+        {
+            bool genericNackNegotiated = capabilities?.Any(format => format.SupportedRtcpFeedbackMessages.Contains(
+                SDPAudioVideoMediaFormat.RTCP_FEEDBACK_NACK, StringComparer.OrdinalIgnoreCase)) == true;
+            _resendBuffer = genericNackNegotiated ? _resendBuffer ?? new RtpPacketResendBuffer() : null;
+        }
+
+        /// <summary>
+        /// Sends again, unchanged, the packets a generic NACK (RFC 4585) from the remote party reports lost,
+        /// unless this stream may not send.
+        /// </summary>
+        internal void ResendLostPackets(RTCPFeedback nack)
+        {
+            if (!HasRtpChannel() || !CheckIfCanSendRtpRaw())
+            {
+                return;
+            }
+
+            var resendBuffer = _resendBuffer;
+            var now = ResendClock.Elapsed;
+            var minResendInterval = (RtcpSession?.RoundTripTime ?? TimeSpan.Zero) + ResendInFlightMargin;
+            List<ushort> notKept = null;
+
+            RetransmissionMetrics.RecordNack(nack.LostSequenceNumbers.Count);
+
+            foreach (ushort sequenceNumber in nack.LostSequenceNumbers)
+            {
+                byte[] packet = null;
+                uint payloadLength = 0;
+                var claim = resendBuffer == null
+                    ? RtpPacketResendBuffer.ClaimResult.NotKept
+                    : resendBuffer.ClaimForResend(sequenceNumber, now, minResendInterval, out packet, out payloadLength);
+
+                switch (claim)
+                {
+                case RtpPacketResendBuffer.ClaimResult.Claimed:
+                    try
+                    {
+                        SendOnRtpChannel(packet);
+                        RtcpSession?.RecordRtpPacketResend(payloadLength);
+                        RetransmissionMetrics.RecordRetransmission(packet.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Exception sending RTP packet again on {MediaType}.", MediaType);
+                        FecMetrics.RecordTransportError();
+                    }
+                    break;
+
+                case RtpPacketResendBuffer.ClaimResult.RecentlyResent:
+                    RetransmissionMetrics.RecordSuppressed();
+                    break;
+
+                case RtpPacketResendBuffer.ClaimResult.OverBudget:
+                    RetransmissionMetrics.RecordOverBudget();
+                    break;
+
+                default:
+                    RetransmissionMetrics.RecordNotKept();
+                    (notKept ??= new List<ushort>()).Add(sequenceNumber);
+                    break;
+                }
+            }
+
+            OnNackReceived?.Invoke(nack.LostSequenceNumbers, (IReadOnlyList<ushort>)notKept ?? Array.Empty<ushort>());
         }
 
         private void SendRtpRawWithFec(RTPPacket primaryPacket, ArraySegment<byte> data, ProtectRtpPacket protectRtpPacket, int srtpProtectionLength)

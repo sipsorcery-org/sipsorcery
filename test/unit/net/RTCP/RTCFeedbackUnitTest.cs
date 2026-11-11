@@ -136,5 +136,35 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(rtcpREMB.FeedbackSSRC, parsedREMB.FeedbackSSRC);
             Assert.Equal(rtcpREMB.FeedbackSSRCs, parsedREMB.FeedbackSSRCs);
         }
+
+        /// <summary>
+        /// The bitmask of a generic NACK reports the packets after its packet ID, wrapping at the end of the
+        /// sequence number space.
+        /// </summary>
+        [Fact]
+        public void ParseGenericNackLostSequenceNumbersUnitTest()
+        {
+            var nack = new RTCPFeedback(33, 44, RTCPFeedbackTypesEnum.NACK, ushort.MaxValue - 1, 0b1000_0000_0000_0101);
+
+            var parsed = new RTCPFeedback(nack.GetBytes());
+
+            Assert.Equal(new ushort[] { ushort.MaxValue - 1, ushort.MaxValue, 1, 14 }, parsed.LostSequenceNumbers);
+            Assert.Empty(new RTCPFeedback(new RTCPFeedback(33, 44, RTCPFeedbackTypesEnum.TMMBR, 1, 1).GetBytes()).LostSequenceNumbers);
+        }
+
+        /// <summary>
+        /// RTCP padding after the entries of a generic NACK is not read as more entries.
+        /// </summary>
+        [Fact]
+        public void ParsePaddedGenericNackUnitTest()
+        {
+            const byte PADDING_FLAG = 0x20;
+            const byte PADDING_LENGTH = 4;
+            byte[] padded = [.. new RTCPFeedback(33, 44, RTCPFeedbackTypesEnum.NACK, 7, 0).GetBytes(), 0, 0, 0, PADDING_LENGTH];
+            padded[0] |= PADDING_FLAG;
+            padded[3] += PADDING_LENGTH / 4;
+
+            Assert.Equal(new ushort[] { 7 }, new RTCPFeedback(padded).LostSequenceNumbers);
+        }
     }
 }
