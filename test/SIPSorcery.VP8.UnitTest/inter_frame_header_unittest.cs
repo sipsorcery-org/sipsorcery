@@ -128,7 +128,9 @@ namespace Vpx.Net.UnitTest
             // frames have no start code or dimensions) back through the
             // existing decoder's bool reader.
             int boolStart = bitstream.INTER_FRAME_PREFIX_BYTES;
-            byte[] partition = new byte[total - boolStart + 8];  // pad for decoder lookahead
+            // Padded for the decoder's lookahead, and pinned because the decoder keeps a pointer into it after
+            // vp8dx_start_decode returns.
+            byte[] partition = System.GC.AllocateArray<byte>(total - boolStart + 8, pinned: true);
             System.Array.Copy(buf, boolStart, partition, 0, total - boolStart);
 
             BOOL_DECODER br = new BOOL_DECODER();
@@ -212,7 +214,8 @@ namespace Vpx.Net.UnitTest
 
             // Decode the delta-q fields and verify they recover.
             int boolStart = bitstream.INTER_FRAME_PREFIX_BYTES;
-            byte[] partition = new byte[total - boolStart + 8];
+            // Pinned because the decoder keeps a pointer into it after vp8dx_start_decode returns.
+            byte[] partition = System.GC.AllocateArray<byte>(total - boolStart + 8, pinned: true);
             System.Array.Copy(buf, boolStart, partition, 0, total - boolStart);
 
             BOOL_DECODER br = new BOOL_DECODER();
