@@ -2891,6 +2891,23 @@ namespace SIPSorcery.Net
             if (rtcpPkt != null)
             {
                 mediaStream = GetMediaStream(rtcpPkt);
+
+                if (!IsClosed)
+                {
+                    // Lost packets are sent again even when the compound packet also carries a BYE, which the
+                    // remote party may send for one of its SSRCs while still receiving our media.
+                    foreach (var feedback in rtcpPkt.FeedbackMessages)
+                    {
+                        if (feedback.Header.PacketType == RTCPReportTypesEnum.RTPFB &&
+                            feedback.Header.FeedbackMessageType == RTCPFeedbackTypesEnum.NACK &&
+                            GetMediaStream(feedback.MediaSSRC) is { LocalTrack: { } localTrack } nackedStream &&
+                            localTrack.Ssrc == feedback.MediaSSRC)
+                        {
+                            nackedStream.ResendLostPackets(feedback);
+                        }
+                    }
+                }
+
                 if (rtcpPkt.Bye != null)
                 {
                     logger.LogDebug("RTCP BYE received for SSRC {SSRC}, reason {Reason}.", rtcpPkt.Bye.SSRC, rtcpPkt.Bye.Reason);
@@ -2919,17 +2936,6 @@ namespace SIPSorcery.Net
                     foreach (var receptionReport in (rtcpPkt.SenderReport?.ReceptionReports ?? []).Concat(rtcpPkt.ReceiverReport?.ReceptionReports ?? []))
                     {
                         GetMediaStream(receptionReport.SSRC)?.RtcpSession?.UpdateRoundTripTime(receptionReport);
-                    }
-
-                    foreach (var feedback in rtcpPkt.FeedbackMessages)
-                    {
-                        if (feedback.Header.PacketType == RTCPReportTypesEnum.RTPFB &&
-                            feedback.Header.FeedbackMessageType == RTCPFeedbackTypesEnum.NACK &&
-                            GetMediaStream(feedback.MediaSSRC) is { LocalTrack: { } localTrack } nackedStream &&
-                            localTrack.Ssrc == feedback.MediaSSRC)
-                        {
-                            nackedStream.ResendLostPackets(feedback);
-                        }
                     }
 
                     if (mediaStream?.RtcpSession != null)

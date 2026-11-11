@@ -290,7 +290,11 @@ namespace SIPSorcery.Net
         /// Gets fired for each generic NACK (RFC 4585) received for this stream, once the packets it reported lost
         /// have been sent again. Parameters are:
         ///  - every sequence number the NACK reported lost, in the order reported,
-        ///  - those that could not be sent again because they were no longer kept, which usually calls for a key frame.
+        ///  - those that were not sent again, because they were no longer kept or resending them would have gone over
+        ///    the resend budget, which usually calls for a key frame.
+        /// Packets are sent again exactly as first sent, so header extensions such as abs-send-time and the
+        /// transport-wide sequence number keep their original values.
+        /// An exception thrown by a handler is logged and does not stop the RTCP packet being processed.
         /// </summary>
         public event Action<IReadOnlyList<ushort>, IReadOnlyList<ushort>> OnNackReceived;
 
@@ -970,7 +974,7 @@ namespace SIPSorcery.Net
             var resendBuffer = _resendBuffer;
             var now = ResendClock.Elapsed;
             var minResendInterval = (RtcpSession?.RoundTripTime ?? TimeSpan.Zero) + ResendInFlightMargin;
-            List<ushort> notKept = null;
+            List<ushort> notResent = null;
 
             RetransmissionMetrics.RecordNack(nack.LostSequenceNumbers.Count);
 
@@ -1004,16 +1008,24 @@ namespace SIPSorcery.Net
 
                 case RtpPacketResendBuffer.ClaimResult.OverBudget:
                     RetransmissionMetrics.RecordOverBudget();
+                    (notResent ??= new List<ushort>()).Add(sequenceNumber);
                     break;
 
                 default:
                     RetransmissionMetrics.RecordNotKept();
-                    (notKept ??= new List<ushort>()).Add(sequenceNumber);
+                    (notResent ??= new List<ushort>()).Add(sequenceNumber);
                     break;
                 }
             }
 
-            OnNackReceived?.Invoke(nack.LostSequenceNumbers, (IReadOnlyList<ushort>)notKept ?? Array.Empty<ushort>());
+            try
+            {
+                OnNackReceived?.Invoke(nack.LostSequenceNumbers, (IReadOnlyList<ushort>)notResent ?? Array.Empty<ushort>());
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Exception in OnNackReceived handler on {MediaType}.", MediaType);
+            }
         }
 
         private void SendRtpRawWithFec(RTPPacket primaryPacket, ArraySegment<byte> data, ProtectRtpPacket protectRtpPacket, int srtpProtectionLength)

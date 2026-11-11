@@ -287,6 +287,45 @@ public class RTPSessionNackRetransmissionUnitTest
     }
 
     /// <summary>
+    /// A NACK in the same compound packet as a BYE for one of the remote party's SSRCs is still acted on.
+    /// </summary>
+    [Fact]
+    public async Task RetransmitsForANackSentWithABye()
+    {
+        using var sender = await CreateSender(true);
+        var sent = SendPackets(sender);
+        ushort first = sent.Keys.Min();
+
+        sender.ReceiveRtcp([
+            .. Nack(sender.Session.VideoLocalTrack.Ssrc, (first, 0)),
+            .. new RTCPBye(REMOTE_SSRC, null).GetBytes()]);
+
+        Assert.Equal(sent[first], sender.Receive());
+        Assert.Empty(Assert.Single(sender.Nacks).NotKept);
+    }
+
+    /// <summary>
+    /// An exception from an <see cref="MediaStream.OnNackReceived"/> handler does not stop the rest of the
+    /// compound packet being processed.
+    /// </summary>
+    [Fact]
+    public async Task KeepsProcessingWhenANackHandlerThrows()
+    {
+        using var sender = await CreateSender(true);
+        var sent = SendPackets(sender);
+        ushort first = sent.Keys.Min();
+        sender.Session.VideoStream.OnNackReceived += (_, _) => throw new InvalidOperationException("handler failed");
+
+        sender.ReceiveRtcp([
+            .. Nack(sender.Session.VideoLocalTrack.Ssrc, (first, 0)),
+            .. Nack(sender.Session.VideoLocalTrack.Ssrc, ((ushort)(first + 1), 0))]);
+
+        Assert.Equal(sent[first], sender.Receive());
+        Assert.Equal(sent[(ushort)(first + 1)], sender.Receive());
+        Assert.Equal(2, sender.Nacks.Count);
+    }
+
+    /// <summary>
     /// Once the stream may no longer send, NACKs are ignored rather than sending kept packets again.
     /// </summary>
     [Fact]

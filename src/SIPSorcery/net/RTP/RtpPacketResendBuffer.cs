@@ -23,6 +23,7 @@ internal sealed class RtpPacketResendBuffer
 {
     /// <summary>
     /// The most packets kept. Chrome's SRTP replay window is 1024 packets too, so it would refuse older ones.
+    /// Above 1024 packets a second the history is therefore shorter than <see cref="MaxAge"/>.
     /// </summary>
     internal const int CAPACITY = 1024;
 
