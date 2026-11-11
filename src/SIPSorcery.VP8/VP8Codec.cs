@@ -211,8 +211,9 @@ namespace Vpx.Net
         /// <see cref="EncodeVideo(int, int, byte[], VideoPixelFormatsEnum, VideoCodecsEnum)"/>.
         /// </para>
         /// <para>
-        /// Input that is not I420 is converted in a re-used buffer, and the I420 planes are read in place, so encoding
-        /// does not allocate per frame once the buffers have been sized for the resolution.
+        /// Input that is not I420 is converted in a re-used buffer, and the I420 planes are read in place, so once the
+        /// buffers have been sized for the resolution nothing frame sized is allocated per frame. The encoder itself
+        /// still allocates a few dozen bytes for each frame.
         /// </para>
         /// <para>
         /// If writing to <paramref name="output"/> throws, the exception is passed on and the next frame is encoded as a
@@ -240,6 +241,74 @@ namespace Vpx.Net
                 try
                 {
                     output.Write(_frameBuffers.OutBuf, 0, length);
+                }
+                catch
+                {
+                    // The receiver will not get this frame, so the next one must not reference it.
+                    _forceKeyFrame = true;
+                    throw;
+                }
+
+                return length;
+            }
+        }
+
+        /// <summary>
+        /// Encodes a raw frame and writes the encoded VP8 frame to a buffer writer, without the new array per frame
+        /// that <see cref="EncodeVideo(int, int, byte[], VideoPixelFormatsEnum, VideoCodecsEnum)"/> returns.
+        /// </summary>
+        /// <param name="width">The frame width in pixels, a positive multiple of 16.</param>
+        /// <param name="height">The frame height in pixels, a positive multiple of 16.</param>
+        /// <param name="sample">The raw frame in <paramref name="pixelFormat"/>.</param>
+        /// <param name="pixelFormat">The pixel format of <paramref name="sample"/>.</param>
+        /// <param name="codec">Must be <see cref="VideoCodecsEnum.VP8"/>.</param>
+        /// <param name="output">The buffer writer to write the encoded frame to.</param>
+        /// <returns>The number of bytes written to <paramref name="output"/>, the length of the encoded frame. This
+        /// encoder produces a frame for every input frame.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="output"/> is null.</exception>
+        /// <exception cref="ArgumentException">The length of <paramref name="sample"/> does not match the dimensions
+        /// and pixel format.</exception>
+        /// <exception cref="NotSupportedException"><paramref name="codec"/> is not VP8, or the dimensions are not
+        /// positive multiples of 16.</exception>
+        /// <remarks>
+        /// <para>
+        /// The frame is assembled in the codec's re-used output buffer, for the reasons given on
+        /// <see cref="EncodeVideo(int, int, ReadOnlySpan{byte}, VideoPixelFormatsEnum, VideoCodecsEnum, Stream)"/>,
+        /// then copied into one span of <paramref name="output"/> requested with the frame's length and committed with
+        /// one <see cref="IBufferWriter{T}.Advance(int)"/> call. Assembling it in the writer's memory instead would
+        /// need a span the size of that output buffer, two bytes per pixel, for every frame, kept pinned for the whole
+        /// encode, as the boolean coders hold raw pointers into it.
+        /// </para>
+        /// <para>
+        /// Input that is not I420 is converted in a re-used buffer, and the I420 planes are read in place, so once the
+        /// buffers have been sized for the resolution and <paramref name="output"/> has the capacity for the frame,
+        /// nothing frame sized is allocated per frame. The encoder itself still allocates a few dozen bytes for each
+        /// frame.
+        /// </para>
+        /// <para>
+        /// If writing to <paramref name="output"/> fails, the exception is passed on and the next frame is encoded as a
+        /// key frame, as the receiver will not have the frame the encoder would otherwise predict from.
+        /// </para>
+        /// </remarks>
+        public int EncodeVideo(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec, IBufferWriter<byte> output)
+        {
+            // Checked before encoding, otherwise the frame would advance the encoder state (key frame counter and
+            // reference frame) and then be lost on the write.
+            if (output == null)
+            {
+                throw new ArgumentNullException(nameof(output));
+            }
+
+            lock (_encoderLock)
+            {
+                int length = EncodeFrame(width, height, sample, pixelFormat, codec);
+
+                try
+                {
+                    // The whole frame is requested at once, so it lands in one contiguous span and the writer can
+                    // size its buffer for it in one step.
+                    _frameBuffers.OutBuf.AsSpan(0, length).CopyTo(output.GetSpan(length));
+                    output.Advance(length);
                 }
                 catch
                 {
