@@ -18,6 +18,7 @@
     <Project Path="test/SIPSorcery.VP8.TestVectors/SIPSorcery.VP8.TestVectors.csproj" />
     <Project Path="test/SIPSorcery.VP8.UnitTest/SIPSorcery.VP8.UnitTest.csproj" />
     <Project Path="test/SIPSorceryMedia.Abstractions.UnitTest/SIPSorceryMedia.Abstractions.UnitTest.csproj" />
+    <Project Path="test/SIPSorceryMedia.FFmpeg.UnitTest/SIPSorceryMedia.FFmpeg.UnitTest.csproj" />
     <Project Path="test/unit/SIPSorcery.UnitTests.csproj" />
     <Project Path="test/VideoCaptureTest/VideoCaptureTest.csproj" />
   </Folder>
