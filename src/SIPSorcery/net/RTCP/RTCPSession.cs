@@ -60,6 +60,7 @@ namespace SIPSorcery.Net
         private const float RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR = 0.5F;
         private const float RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR = 1.5F;
         private const int NO_ACTIVITY_TIMEOUT_FACTOR = 6;
+        private const double NTP_TIMESTAMP32_UNITS_PER_SECOND = 65536;
         
         private static readonly ILogger logger = LogFactory.CreateLogger<RTCPSession>();
 
@@ -132,6 +133,12 @@ namespace SIPSorcery.Net
         public ulong LastNtpTimestampSent { get; private set; }
 
         /// <summary>
+        /// The round trip time to the remote party, from the last reception report it sent for our packets
+        /// (RFC 3550 section 6.4.1). Zero until measured.
+        /// </summary>
+        public TimeSpan RoundTripTime { get; private set; }
+
+        /// <summary>
         /// Number of RTP packets received from the remote party.
         /// </summary>
         public uint PacketsReceivedCount { get; private set; }
@@ -186,6 +193,7 @@ namespace SIPSorcery.Net
 
         private ReceptionReport m_receptionReport;
         private uint m_previousPacketsSentCount = 0;    // Used to track whether we have sent any packets since the last report was sent.
+        private readonly object m_sentCountsLock = new object();
 
         /// <summary>
         /// Event handler for sending RTCP reports.
@@ -368,11 +376,44 @@ namespace SIPSorcery.Net
                 Start();
             }
 
-            PacketsSentCount++;
-            OctetsSentCount += payloadLength;
+            lock (m_sentCountsLock)
+            {
+                PacketsSentCount++;
+                OctetsSentCount += payloadLength;
+            }
+
             LastSeqNum = sequenceNumber;
             LastRtpTimestampSent = timestamp;
             LastNtpTimestampSent = DateTimeToNtpTimestamp(DateTime.Now);
+        }
+
+        /// <summary>
+        /// Records an RTP packet having been sent again. It counts towards the sender report totals but, being
+        /// older, does not change the RTP timestamp sender reports pair with the current time.
+        /// </summary>
+        internal void RecordRtpPacketResend(uint payloadLength)
+        {
+            lock (m_sentCountsLock)
+            {
+                PacketsSentCount++;
+                OctetsSentCount += payloadLength;
+            }
+        }
+
+        /// <summary>
+        /// Updates the round trip time from a reception report the remote party sent about our packets
+        /// (RFC 3550 section 6.4.1). Reports about other SSRCs, or that echo no sender report, are ignored.
+        /// </summary>
+        internal void UpdateRoundTripTime(ReceptionReportSample receptionReport)
+        {
+            if (receptionReport.SSRC == Ssrc && receptionReport.LastSenderReportTimestamp != 0)
+            {
+                int roundTrip = unchecked((int)(DateTimeToNtpTimestamp32(DateTime.Now) - receptionReport.LastSenderReportTimestamp - receptionReport.DelaySinceLastSenderReport));
+                if (roundTrip >= 0)
+                {
+                    RoundTripTime = TimeSpan.FromSeconds(roundTrip / NTP_TIMESTAMP32_UNITS_PER_SECOND);
+                }
+            }
         }
 
         /// <summary>

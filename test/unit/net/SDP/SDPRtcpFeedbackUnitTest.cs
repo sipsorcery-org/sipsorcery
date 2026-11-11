@@ -53,8 +53,8 @@ namespace SIPSorcery.Net.UnitTests
                 .ToList();
 
         /// <summary>
-        /// A locally generated video offer advertises key frame requests (PLI and FIR) plus
-        /// transport-cc, but not generic NACK since there is no retransmission support.
+        /// A locally generated video offer advertises generic NACK, key frame requests (PLI and FIR)
+        /// plus transport-cc.
         /// </summary>
         [Fact]
         public void VideoOfferIncludesKeyFrameFeedback()
@@ -65,9 +65,8 @@ namespace SIPSorcery.Net.UnitTests
 
             foreach (var formatID in new[] { 96, 100 })
             {
-                Assert.Equal(new[] { "nack pli", "ccm fir", "transport-cc" }, FeedbackLines(offer, formatID));
+                Assert.Equal(new[] { "nack", "nack pli", "ccm fir", "transport-cc" }, FeedbackLines(offer, formatID));
             }
-            Assert.DoesNotContain("a=rtcp-fb:96 nack" + CRLF, offer.ToString());
         }
 
         /// <summary>
@@ -110,7 +109,7 @@ namespace SIPSorcery.Net.UnitTests
 
             var answer = session.CreateAnswer(IPAddress.Loopback);
 
-            Assert.Equal(new[] { "transport-cc", "ccm fir", "nack pli" }, FeedbackLines(answer, 96));
+            Assert.Equal(new[] { "transport-cc", "ccm fir", "nack", "nack pli" }, FeedbackLines(answer, 96));
             Assert.Equal(new[] { "nack pli" }, FeedbackLines(answer, 100));
         }
 
@@ -246,7 +245,7 @@ namespace SIPSorcery.Net.UnitTests
             var compatible = SDPAudioVideoMediaFormat.GetCompatibleFormats(
                 new List<SDPAudioVideoMediaFormat> { remote }, new List<SDPAudioVideoMediaFormat> { local });
 
-            Assert.Equal(new[] { "Nack PLI" }, compatible.Single().SupportedRtcpFeedbackMessages);
+            Assert.Equal(new[] { "Nack PLI", "nack" }, compatible.Single().SupportedRtcpFeedbackMessages);
 
             var pcmu = new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU);
             var audio = SDPAudioVideoMediaFormat.GetCompatibleFormats(

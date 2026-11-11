@@ -302,6 +302,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(RTCPReportTypesEnum.RTPFB, feedback[0].Header.PacketType);
             Assert.Equal(RTCPFeedbackTypesEnum.NACK, feedback[0].Header.FeedbackMessageType);
             Assert.Equal((ushort)0x1200, feedback[0].PID);
+            Assert.Equal(new ushort[] { 0x1200, 0x1201, 0x1202, 0x12CB, 0x12CC, 0x12F0 }, feedback[0].LostSequenceNumbers);
             Assert.Equal(RTCPReportTypesEnum.PSFB, feedback[1].Header.PacketType);
             Assert.Equal(PSFBFeedbackTypesEnum.PLI, feedback[1].Header.PayloadFeedbackMessageType);
             Assert.Equal(NACK_TEST_MEDIA_SSRC, feedback[1].MediaSSRC);
