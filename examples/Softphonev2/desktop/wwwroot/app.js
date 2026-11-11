@@ -1084,7 +1084,10 @@ function analyserFor(track) {
 
 const BANDS = 28;
 const FALL_MS = 260;
-const bars = { them: new Float32Array(BANDS), me: new Float32Array(BANDS) };
+// Bars as drawn, and where they're heading, per canvas: the stage's, and each grid tile's (e.bars).
+const newBars = () => ({ them: new Float32Array(BANDS), me: new Float32Array(BANDS),
+  target: { them: new Float32Array(BANDS), me: new Float32Array(BANDS) } });
+const stageBars = newBars();
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 let lastDraw = 0;
 
@@ -1106,23 +1109,42 @@ function bands(analyser, out) {
   return sum / BANDS;
 }
 
-const target = { them: new Float32Array(BANDS), me: new Float32Array(BANDS) };
-
 function drawViz(t) {
   if ($("stage").dataset.mode !== "audio" || !call) return;
   requestAnimationFrame(drawViz);
   const dt = Math.min(250, t - (lastDraw || t));
   lastDraw = t;
-  const level = { them: bands(call.rxDead ? null : call.remoteAnalyser, target.them), me: bands(call.localAnalyser, target.me) };
+  drawBars($("viz"), stageBars, { them: call.remoteAnalyser, me: call.localAnalyser, rxDead: call.rxDead, txLost: call.txLost }, dt);
+}
+
+// The grid's audio tiles, while the grid's up. A tile shows your bars only while that call gets
+// your microphone, so a held call's tile shows them talking (or their music) and you silent.
+let tilesDrawing = false, lastTileDraw = 0;
+function drawTiles(t) {
+  if (!inGrid()) { tilesDrawing = false; return; }
+  requestAnimationFrame(drawTiles);
+  const dt = Math.min(250, t - (lastTileDraw || t));
+  lastTileDraw = t;
+  for (const [id, tile] of tiles) {
+    const e = entries.get(id);
+    if (!e?.m || !tile.root.classList.contains("audio")) continue;
+    e.bars ??= newBars();
+    drawBars(tile.viz, e.bars, { them: e.m.remoteAnalyser, me: getsMic(e) ? e.m.localAnalyser : null, rxDead: e.m.rxDead, txLost: false }, dt);
+  }
+}
+
+// Two rows of frequency bars on canvas c, theirs growing up from the middle and yours down.
+function drawBars(c, b, { them, me, rxDead, txLost }, dt) {
+  const level = { them: bands(rxDead ? null : them, b.target.them), me: bands(me, b.target.me) };
   const fall = Math.exp(-dt / FALL_MS);
   for (const k of ["them", "me"]) {
-    for (let b = 0; b < BANDS; b++) {
+    const bars = b[k], target = b.target[k];
+    for (let i = 0; i < BANDS; i++) {
       // Rise most of the way at once; sink slowly, so the picture settles rather than flickers.
-      bars[k][b] = target[k][b] > bars[k][b] ? bars[k][b] + (target[k][b] - bars[k][b]) * 0.6 : Math.max(target[k][b], bars[k][b] * fall);
+      bars[i] = target[i] > bars[i] ? bars[i] + (target[i] - bars[i]) * 0.6 : Math.max(target[i], bars[i] * fall);
     }
   }
 
-  const c = $("viz");
   const dpr = devicePixelRatio || 1;
   const w = Math.round(c.clientWidth * dpr), ht = Math.round(c.clientHeight * dpr);
   if (!w || !ht) return;
@@ -1130,13 +1152,13 @@ function drawViz(t) {
   const g = c.getContext("2d");
   g.clearRect(0, 0, w, ht);
   const css = getComputedStyle(c);
-  const colour = { them: css.color, me: (call.txLost ? css.getPropertyValue("--viz-warn") : css.getPropertyValue("--viz-me")).trim() };
+  const colour = { them: css.color, me: (txLost ? css.getPropertyValue("--viz-warn") : css.getPropertyValue("--viz-me")).trim() };
   const mid = ht / 2, gap = 3 * dpr, room = mid - gap - 2 * dpr;
   for (const [k, dir] of [["them", -1], ["me", 1]]) {
     const base = mid + dir * gap;
     g.fillStyle = colour[k];
     g.globalAlpha = 0.9;
-    if (k === "them" && call.rxDead) {
+    if (k === "them" && rxDead) {
       // No packets: no bars at all, just one thin line, unlike the resting pills of a quiet line.
       g.globalAlpha = 0.45;
       g.fillRect(0, base - dpr / 2, w, dpr);
@@ -1147,9 +1169,9 @@ function drawViz(t) {
       continue;
     }
     const slot = w / BANDS, bar = Math.max(2 * dpr, slot * 0.6), pad = (slot - bar) / 2;
-    for (let b = 0; b < BANDS; b++) {
-      const len = Math.max(2 * dpr, bars[k][b] * room);
-      const x = b * slot + pad, y = dir < 0 ? base - len : base;
+    for (let i = 0; i < BANDS; i++) {
+      const len = Math.max(2 * dpr, b[k][i] * room);
+      const x = i * slot + pad, y = dir < 0 ? base - len : base;
       g.beginPath();
       g.roundRect(x, y, bar, len, Math.min(bar, len) / 2);
       g.fill();
@@ -2046,7 +2068,8 @@ const tiles = new Map();   // call id -> { root, feed, avatar, time, name, statu
 function makeTile(e) {
   const el = (tag, cls) => Object.assign(document.createElement(tag), { className: cls });
   const t = { root: el("div", "tile"), feed: el("div", "tile-feed"), avatar: el("span", "avatar tile-avatar"), time: el("span", "tile-time"),
-    name: el("span", "tile-name"), status: el("span", "tile-status"), media: el("span", "call-media"),
+    name: el("span", "tile-name"), status: el("span", "tile-status"), media: el("span", "call-sends"), viz: el("canvas", "tile-viz"),
+    self: Object.assign(el("video", "tile-self"), { autoplay: true, playsInline: true, muted: true, hidden: true }),
     held: el("div", "held-note"), heldText: el("span", ""), resume: el("button", "btn") };
   t.root.dataset.call = e.id;
   t.root.tabIndex = 0;
@@ -2065,7 +2088,7 @@ function makeTile(e) {
   t.resume.innerHTML = `${ICON.play}<span>Resume</span>`;
   t.resume.onclick = (ev) => { ev.stopPropagation(); selectCall(e.id); goLive(e); };
   t.held.append(t.heldText, t.resume);
-  t.feed.append(t.avatar, t.time, t.held);
+  t.feed.append(t.avatar, t.viz, t.self, t.time, t.held);
   t.root.append(t.feed, meta);
   return t;
 }
@@ -2113,16 +2136,26 @@ function renderGrid(grid) {
     const c = callStatus(e);
     const name = nameOf(e);
     const m = e.m;
-    const video = !!m?.hasVideo && !e.h.held && performance.now() - m.lastFrameAt < NO_FRAMES_MS;
-    t.root.className = `tile ${c.status}${video ? " video" : ""}${e.id === selectedId ? " sel" : ""}${c.muted ? " muted" : ""}${c.held ? " held" : ""}${c.long ? " long" : ""}`;
+    // What Focus would show: their video while it's arriving (on hold too: with music on hold
+    // it keeps coming), and on an audio call the bars.
+    const video = !!m?.hasVideo && performance.now() - m.lastFrameAt < NO_FRAMES_MS;
+    const audio = !!m && !m.hasVideo && c.status === "connected";
+    t.root.className = `tile ${c.status}${video ? " video" : ""}${audio ? " audio" : ""}${e.id === selectedId ? " sel" : ""}${c.muted ? " muted" : ""}${c.held ? " held" : ""}${c.long ? " long" : ""}`;
     t.root.title = [e.h.remote || name, c.statusText, i < 8 ? `${i + 1} opens it` : "Open this call"].join(" · ");
     t.root.setAttribute("aria-label", `${name}, ${c.statusText}`);
     t.avatar.textContent = initial(name);
     t.name.textContent = name;
     t.status.textContent = c.statusText;
     t.time.textContent = c.since ? fmtElapsed(Date.now() - c.since) : "";
-    const media = c.media.map(([ico, cls, label]) => `<span class="media-ico ${cls}" role="img" title="${label}" aria-label="${label}">${ICON[ico]}</span>`).join("");
+    const media = sendsHtml(c);
     if (t.media.innerHTML !== media) t.media.innerHTML = media;
+    // The self view, as in Focus: on a video call, what this call sends them (your camera, your
+    // initial while it's off, the "On hold" card while it's held), small in the corner. Self
+    // view off hides it here too.
+    const self = selfViewOn && m?.videoSender && c.status === "connected" ? videoToSend(e) : null;
+    if ((t.self.srcObject?.getVideoTracks()[0] ?? null) !== self) t.self.srcObject = self ? new MediaStream([self]) : null;
+    t.self.hidden = !self;
+    t.self.classList.toggle("mirror", !!self && self === localTrack("video") && !isTestTrack(self));
     t.held.hidden = !(m && c.status === "connected" && (c.held || e.h.heldByThem));
     if (!t.held.hidden) {
       t.heldText.textContent = c.held ? c.statusText : `${name} put you on hold`;
@@ -2130,6 +2163,7 @@ function renderGrid(grid) {
       t.resume.hidden = !c.held;
     }
   });
+  if (grid && !tilesDrawing) { tilesDrawing = true; requestAnimationFrame(drawTiles); }
 }
 for (const b of [$("viewFocus"), $("viewGrid")]) b.onclick = () => setView(b.dataset.view);
 
@@ -2156,12 +2190,16 @@ const fmtElapsed = (ms) => {
   return h ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${String(m).padStart(2, "0")}:${ss}`;
 };
 
-// One call's status line, for the list (and grid tiles): its state, what you're sending, and
+// Whether a call gets your microphone: it's the live call, you haven't muted it, and neither
+// side has it on hold (held, it gets music or silence instead).
+const getsMic = (e) => hasMic && !!e.m && !e.m.muted && e.id === audioId && !holdState(e) && !e.h.heldByThem;
+
+// One call's status line, for the list (and grid tiles): its state, what it gets from you, and
 // text. { status (row class), statusText, since, muted, held, long (held over a minute), audioOff,
-// media: [[icon, class, label]], typing, unread }.
+// sends: { mic, cam } each { on, muted, label } (cam null on an audio call), typing, unread }.
 function callStatus(e) {
   const h = e.h, m = e.m;
-  const c = { status: h.call, statusText: "", since: 0, muted: false, held: false, long: false, audioOff: false, media: [], typing: false, unread: false };
+  const c = { status: h.call, statusText: "", since: 0, muted: false, held: false, long: false, audioOff: false, sends: null, typing: false, unread: false };
   if (h.call === "calling") c.statusText = "Calling…";
   else if (h.call === "ringing") c.statusText = h.incomingVideo ? "Incoming video call" : "Incoming call";
   else if (h.call === "ended") c.statusText = h.reason || "Call ended";
@@ -2182,20 +2220,31 @@ function callStatus(e) {
     else if (c.typing) c.statusText = "Typing…";
     else if (c.unread) c.statusText = e.text.lines.findLast((l) => !l.me)?.text || "New message";
     else c.statusText = c.audioOff ? "Audio off" : c.muted ? "Muted" : m.hasVideo ? "Video call" : "Audio call";
-    // Faint: not flowing for another reason (audio on another call, on hold, audio-only).
-    c.media.push(!hasMic ? ["micOff", "idle", "No mic"]
-      : m.muted ? ["micOff", "off", "Muted"]
-      : c.held ? ["mic", "idle", "On hold"]
-      : h.heldByThem ? ["mic", "idle", "They've put you on hold"]
-      : c.audioOff ? ["mic", "idle", "Audio is on another call"]
-      : ["mic", "live", "Your mic is live"]);
-    c.media.push(!m.hasVideo ? ["videoOff", "idle", "Audio only"]
-      : !m.camOn ? ["videoOff", "off", "Video stopped"]
-      : c.held ? ["video", "idle", "On hold"]
-      : ["video", "live", "Sending your video"]);
-    if (h.text === "on") c.media.push(["text", c.unread ? "live unread" : c.typing ? "live typing" : "idle", c.unread ? "Text you haven't read" : c.typing ? "They're typing" : "Real-time text"]);
+    // What they get from you, at a glance: your mic and camera, or why not.
+    const held = holdState(e), music = h.holdMode !== "sip";
+    const mic = getsMic(e) ? { on: true, label: `${nameOf(e)} hears you` }
+      : { on: false, muted: hasMic && m.muted,
+          label: !hasMic ? "No mic"
+            : m.muted ? "Muted: they don't hear you"
+            : held ? `On hold: they hear ${music ? "music" : "silence"}, not you`
+            : h.heldByThem ? "They've put you on hold: they don't hear you"
+            : "Your mic is on another call" };
+    const camOn = m.hasVideo && m.camOn && !held && sourceAvailable(sourceOf(e));
+    const cam = !m.hasVideo ? null : camOn ? { on: true, label: `${nameOf(e)} sees your video` }
+      : { on: false, muted: !m.camOn,
+          label: held ? (music ? "On hold: they see the On hold card" : "On hold: they see nothing")
+            : !m.camOn ? "Video stopped: they see your initial"
+            : "No camera: they see your initial" };
+    c.sends = { mic, cam };
   }
   return c;
+}
+
+// The chips for what a call gets from you (see callStatus).
+function sendsHtml(c) {
+  if (!c.sends) return "";
+  const chip = (s, on, off) => `<span class="send${s.on ? " on" : s.muted ? " muted" : ""}" role="img" title="${escHtml(s.label)}" aria-label="${escHtml(s.label)}">${s.on ? on : off}</span>`;
+  return chip(c.sends.mic, ICON.mic, ICON.micOff) + (c.sends.cam ? chip(c.sends.cam, ICON.video, ICON.videoOff) : "");
 }
 
 function renderCalls() {
@@ -2216,10 +2265,46 @@ function renderCalls() {
   $("callCount").textContent = calls.filter(isLive).length || "";
 
   const list = $("callList");
-  list.replaceChildren(...(calls.length ? calls.map(callRow) : [Object.assign(document.createElement("li"), { className: "call-empty", textContent: "No active calls" })]));
+  list.replaceChildren(...(calls.length ? calls.map((e, i) => callRow(e, i, collapsed)) : [Object.assign(document.createElement("li"), { className: "call-empty", textContent: "No active calls" })]));
+  renderAllButtons();
 }
 
-function callRow(e, i) {
+// ---- Every call at once: Mute all, End all ----
+// Under the list once there are two calls. End all asks again ("End 3 calls?") for a few seconds
+// before it ends them: calls you've placed and calls you're on, not one that's only ringing.
+const endable = () => liveEntries().filter((e) => e.h.call === "calling" || e.h.call === "connected");
+const allMuted = () => { const on = [...entries.values()].filter((e) => e.m && e.h.call === "connected"); return on.length > 0 && on.every((e) => e.m.muted); };
+let endAllUntil = 0;
+function renderAllButtons() {
+  const n = endable().length;
+  $("callsFoot").hidden = n < 2;
+  if (n < 2) { endAllUntil = 0; return; }
+  const muted = allMuted();
+  const mute = $("muteAllBtn"), end = $("endAllBtn");
+  const set = (el, html, label) => { if (el.innerHTML !== html) el.innerHTML = html; el.title = label; el.setAttribute("aria-label", label); };
+  mute.disabled = !hasMic;
+  mute.setAttribute("aria-pressed", String(muted));
+  set(mute, `${muted ? ICON.micOff : ICON.mic}<span>${muted ? "Unmute all" : "Mute all"}</span>`,
+    muted ? "Unmute every call (Shift+M)" : "Mute every call, and the ones to come (Shift+M)");
+  const armed = Date.now() < endAllUntil;
+  set(end, `${ICON.hangup}<span>${armed ? `End ${n}?` : "End all"}</span>`, armed ? `Click again to end all ${n} calls` : `End all ${n} calls`);
+}
+$("muteAllBtn").onclick = () => muteAll();
+$("endAllBtn").onclick = () => {
+  if (Date.now() >= endAllUntil) {
+    endAllUntil = Date.now() + 4000;
+    setTimeout(renderAllButtons, 4100);
+    renderAllButtons();
+    return;
+  }
+  endAllUntil = 0;
+  const calls = endable();
+  log(`ending all ${calls.length} calls`);
+  for (const e of calls) post({ type: "hangup", id: e.id });
+  renderAllButtons();
+};
+
+function callRow(e, i, collapsed = false) {
   const c = callStatus(e);
   const name = nameOf(e);
   const li = document.createElement("li");
@@ -2238,23 +2323,17 @@ function callRow(e, i) {
   avatar.setAttribute("aria-hidden", "true");
   const top = el("span", "call-top");
   top.append(el("span", "call-name", name));
-  if (c.media.length) {
-    const media = el("span", "call-media");
-    for (const [ico, cls, label] of c.media) {
-      const m = el("span", `media-ico ${cls}`);
-      m.title = label;
-      m.setAttribute("role", "img");
-      m.setAttribute("aria-label", label);
-      m.innerHTML = ICON[ico];
-      media.append(m);
-    }
-    top.append(media);
-  }
+  // What it gets from you: beside the name, or on the rail under the avatar.
+  const sends = el("span", "call-sends");
+  sends.innerHTML = sendsHtml(c);
+  if (c.sends && !collapsed) top.append(sends);
   const main = el("span", "call-main");
   main.append(top, el("span", "call-status", c.statusText));
   const time = el("span", "call-time", c.since ? fmtElapsed(Date.now() - c.since) : "");
   if (c.since) time.dataset.since = c.since;
-  li.append(avatar, main, time);
+  li.append(avatar, main);
+  if (c.sends && collapsed) li.append(sends);
+  li.append(time);
   return li;
 }
 
@@ -2275,7 +2354,7 @@ $("callsToggle").onclick = (e) => { e.stopPropagation(); setCallsCollapsed(!$("c
 // A click anywhere in the panel but on a call (or the chevron, which does it itself) expands or
 // collapses it, so the whole panel is the toggle, not just the small chevron.
 $("calls").addEventListener("click", (e) => {
-  if (e.target.closest(".call-row, #callsToggle")) return;
+  if (e.target.closest(".call-row, #callsToggle, .calls-foot")) return;
   setCallsCollapsed(!$("calls").classList.contains("collapsed"));
 });
 // Narrow windows: clicking away or Esc puts the panel back to the rail.
@@ -2713,7 +2792,7 @@ function toggleMute() {
 $("muteBtn").onclick = toggleMute;
 // Shift+M, Mute all: every call, and the ones to come. Pressed again, all unmuted.
 function muteAll() {
-  micMuted = !micMuted;
+  micMuted = !allMuted();
   for (const e of entries.values()) if (e.m) e.m.muted = micMuted;
   log(micMuted ? "muted all calls" : "unmuted all calls");
   render();

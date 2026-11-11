@@ -639,13 +639,6 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .call-row.connected.muted .call-status { color: var(--danger); }
 .call-time { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .call-time:empty { display: none; }
-/* What you're sending: mic and camera. Red is off by your choice; faint isn't flowing. */
-.call-media { display: inline-flex; gap: 4px; margin-left: auto; flex: none; }
-.media-ico { display: inline-flex; width: 14px; height: 14px; }
-.media-ico svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.media-ico.live { color: var(--accent); }
-.media-ico.idle { color: var(--border-strong); }
-.media-ico.off { color: var(--danger); }
 
 /* Collapsed: a rail with the expand chevron, and each call as its avatar and timer. */
 .calls { cursor: pointer; }   /* clicking anywhere but on a call expands or collapses it */
@@ -653,12 +646,40 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .calls.collapsed .calls-head { flex-direction: column; padding: 0; gap: 6px; }
 .calls.collapsed .calls-title { display: none; }
 .calls.collapsed .calls-toggle { margin-left: 0; }
-.calls.collapsed .call-list { justify-items: center; gap: 10px; }
-.calls.collapsed .call-row { grid-template-columns: 30px; gap: 4px; padding: 4px 0; justify-items: center; background: none; border-color: transparent; box-shadow: none; }
+/* The list scrolls, so it clips: room around the avatar for its ring (up to 3px). */
+.calls.collapsed .call-list { justify-items: center; gap: 10px; padding: 4px 5px; }
+.calls.collapsed .call-avatar { width: 26px; height: 26px; font-size: 12px; }
+.calls.collapsed .call-row { grid-template-columns: 26px; gap: 4px; padding: 4px 0; justify-items: center; background: none; border-color: transparent; box-shadow: none; }
 .calls.collapsed .call-row::before { display: none; }
 .calls.collapsed .call-main, .calls.collapsed .call-empty { display: none; }
 .calls.collapsed .call-time { font-size: 11px; }
 .calls.collapsed .call-count { display: none; }
+.calls.collapsed .call-list { overflow-x: hidden; }
+.calls.collapsed .call-row { grid-template-columns: auto; }
+.calls.collapsed .call-sends { gap: 2px; margin-left: 0; }
+.calls.collapsed .send { width: 15px; height: 15px; padding: 2px; }
+
+/* Mute all and End all, under the list; on the rail, icons only. */
+.calls-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px 2px 0; margin-top: auto; border-top: 1px solid var(--border); }
+.calls-foot[hidden] { display: none; }
+.calls-all {
+  height: 34px; padding: 0 8px; font-size: 12.5px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 0; white-space: nowrap;
+}
+.calls-all > span { overflow: hidden; text-overflow: ellipsis; }
+.calls-all svg { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.calls-all[aria-pressed="true"] { color: var(--danger); }
+.calls.collapsed .calls-foot { grid-template-columns: 34px; padding: 10px 0 0; justify-content: center; }
+.calls.collapsed .calls-all { width: 34px; height: 34px; padding: 0; }
+.calls.collapsed .calls-all > span { display: none; }
+
+/* What a call gets from you: a filled chip while it gets your mic (or camera), a struck-out
+   faint icon while it doesn't (muted, on hold, another call has it, camera off). */
+.call-sends { display: inline-flex; gap: 4px; margin-left: auto; flex: none; }
+.send { display: inline-flex; width: 20px; height: 20px; padding: 3px; border-radius: 50%; color: var(--muted); }
+.send svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.send.on { background: var(--accent); color: #fff; }
+.send.muted { color: var(--danger); }
 
 /* Narrow windows: the column is always the rail's width. Expanded, the panel lies over the
    stage (its negative margin keeps the column narrow) until you collapse it or click away. */
@@ -679,11 +700,6 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .call-row.connected.held.long .call-status { color: var(--warn-ink); }
 .call-row.ended { opacity: .6; }
 .call-row.ended .call-avatar { box-shadow: none; }
-.media-ico.live.typing { animation: calls-pulse-ico 1.2s ease-in-out infinite; }
-.media-ico.unread { position: relative; }
-.media-ico.unread::after { content: ""; position: absolute; top: -2px; right: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--danger); }
-@keyframes calls-pulse-ico { 50% { opacity: .35; } }
-@media (prefers-reduced-motion: reduce) { .media-ico.live.typing { animation: none; } }
 
 /* On hold: a note over the middle of the stage, with Resume. Amber after a minute. */
 .held-note {
@@ -759,4 +775,14 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .tile.held .tile-feed > :not(.held-note) { opacity: .6; }   /* dimmed, but not the note over it */
 .tile .held-note { max-width: calc(100% - 16px); white-space: nowrap; cursor: default; }
 .tile.ended { opacity: .7; }
-.tile .call-media { display: inline-flex; gap: 4px; flex: none; }
+/* An audio call's tile: their audio above, yours below, as on the stage. */
+.tile-viz { position: absolute; left: 8%; top: 20%; width: 84%; height: 60%; display: none; color: var(--tile-ink); --viz-me: var(--accent); --viz-warn: var(--danger); }
+.tile.audio .tile-viz { display: block; }
+.tile.audio .tile-avatar { display: none; }
+/* The self view in a video call's tile: what that call sends, small in the corner. */
+.tile-self {
+  position: absolute; right: 8px; bottom: 8px; width: 28%; max-width: 200px; aspect-ratio: 16 / 9; object-fit: cover;
+  border-radius: 6px; border: 1px solid rgb(255 255 255 / .55); box-shadow: 0 2px 8px rgb(0 0 0 / .3); background: #000;
+}
+.tile-self[hidden] { display: none; }
+.tile-self.mirror { transform: scaleX(-1); }

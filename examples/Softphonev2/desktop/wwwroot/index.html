@@ -52,6 +52,11 @@
         <button type="button" class="calls-toggle" id="callsToggle" aria-controls="callList"></button>
       </div>
       <ol class="call-list" id="callList"></ol>
+      <!-- With two or more calls: every call at once. End all asks again before it ends them. -->
+      <div class="calls-foot" id="callsFoot" hidden>
+        <button type="button" class="btn calls-all" id="muteAllBtn"></button>
+        <button type="button" class="btn btn-danger calls-all" id="endAllBtn"></button>
+      </div>
     </aside>
 
     <!-- The stage, with the real-time text popover and toast over its bottom edge. -->

@@ -127,6 +127,10 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
 - **Mute** is the selected call's; `M` too. `Shift+M` mutes every call, and the ones to come
   (before a call, Mute is the same thing: calls start muted). `Shift+C` turns the camera off
   on every call and for new ones; it never turns cameras on.
+- **Mute all and End all**, under the Active calls list once there are two calls (icons only on
+  the rail). *Mute all* is `Shift+M`, and reads *Unmute all* once every call is muted. *End
+  all* asks once more ("End 3?", for 4 s) and then hangs up every call you've placed or are
+  on; a call that's only ringing is left to Answer or Decline.
 - **Keys**: `1`–`8` put that call in the list on the stage (`1` is the top, the oldest), `A` answers,
   `M` mutes, `Shift+M` mutes all, `Shift+C` turns all cameras off, `H` holds or resumes, `G`
   switches between Focus and Grid.
@@ -135,10 +139,14 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
 
 As in the prototype. **Focus** (the default) shows only the selected call, with its controls
 under its info bar. **Grid** (the Focus and Grid buttons in the control bar, or `G`) shows every active call
-as an equal tile, oldest first like the list, with no buttons: each tile is their video (or
-their initial when there's none, or it's on hold), the call's time, their name and its status
-line, the same as the list's: "On hold · 02:10" (amber), "Typing…", their last unread line,
-and the mic, camera and text icons. The selected call's tile, which has the audio,
+as an equal tile, oldest first like the list, with no buttons: each tile shows what Focus
+would, so you can tell the calls apart at a glance: their video while it's arriving (on hold
+too: with music on hold it keeps coming), on an audio call the two rows of bars (theirs above,
+yours below only while that call gets your mic), else their initial; and on a video call your
+self view in the corner, showing what that call sends (your camera, your initial, or the "On
+hold" card), unless Self view is off. Under it the call's time,
+their name and its status line, the same as the list's: "On hold · 02:10" (amber), "Typing…",
+their last unread line, and what the call gets from you (as in the list). The selected call's tile, which has the audio,
 is outlined. The control bar keeps only Focus and Grid, so it's never in doubt which call a button
 acts on. Clicking a tile opens that call in Focus, resuming it if it's held (and holding the
 live one). The one button on a tile is on a call you've put on hold: the same "On hold · 00:42 ▶ Resume"
@@ -169,13 +177,14 @@ on the stage. The list is built from `listed()` and `callStatus()` in `app.js`.
 - **A row**: their initial, their name (the full address in the tooltip), the status and, once
   connected, the timer. Calling… (grey ring, pulsing), Incoming call / Incoming video call
   (amber, pulsing), then Audio call or Video call (green), On hold · 02:10 (amber
-  after a minute), Holding… or Resuming…, Muted in red, or how it ended. A connected call also shows what you're
-  sending: the mic (red when muted, faint when the audio is on another call or it's on hold)
-  and camera (green when sending, red when stopped, faint on an audio call or on hold), and
-  with text on, a text icon that pulses while they type and gets a red dot for text you haven't
-  read; the status line then says "Typing…" or their last line.
-- **Collapse**: the chevron folds it to a 48 px rail of initials and timers, so a live call
-  still shows. The chevron, or a click anywhere in the panel that isn't on a call, folds it or
+  after a minute), Holding… or Resuming…, Muted in red, or how it ended. A connected call also shows,
+  at a glance, what it gets from you: the mic, and on a video call the camera, as a filled
+  green chip while it gets it, and struck out when it doesn't, red if that's your choice
+  (muted, video stopped) and faint otherwise (on hold, held by them, the mic on another call).
+  The tooltip says which: "Bob hears you", "On hold: they hear music, not you". With text,
+  the status line says "Typing…" or their last line.
+- **Collapse**: the chevron folds it to a 48 px rail of initials, the mic and camera chips, and
+  timers, so a live call still shows. The chevron, or a click anywhere in the panel that isn't on a call, folds it or
   opens it again; a click on a call only selects it. The choice is
   remembered (`localStorage`, `callsPanel`, per profile on the desktop).
 - **Narrow windows** (under 700 px): it's always the rail, to leave the stage its room.
@@ -608,6 +617,8 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | SIP hold: the same, A's account Hold *SIP re-INVITE* | A sends the re-INVITE; B says "put the call on hold". B still sends (silence) on that call, and A's relay receives it; no "Stream Status set to RecvOnly" warnings in B's log. |
 | C (audio) calls B while B is on its call with A | B's banner: "Thisis · Calling" with Answer and Decline; B's host auto-answers it alongside (a test mode, so nothing is held): "Audio off" on the new row, A's call keeps the audio. No 486. |
 | B: `1`, `M`, End, `Esc` | C's call on the stage with the audio; `M` mutes only it ("Muted", red mic; A's row "Audio is on another call"). End: "You hung up" with *Back to Thisis*; `Esc` goes back to A's call, which takes the audio. |
+| Two accounts a side, B calls A twice (audio, A `--auto-answer`), A adds video to the first | A's list: Bob with filled mic and camera chips ("Bob hears you", "Bob sees your video"), Dave with a faint struck-out mic ("Your mic is on another call"); *Mute all* and *End all* under the list. Grid: Bob's tile shows B's video (B's "On hold" card, as B has it held), Dave's the bars, yours flat. |
+| Same: *Mute all*, collapse, expand, *Unmute all*, *End all* twice | Both rows Muted, red chips, the button *Unmute all*; the rail shows the chips under each initial without a scrollbar. *End all* reads "End 2?", then both calls end ("They hung up" on B) and the buttons go. |
 | A with two calls: `Shift+M`, `Shift+C`, `Shift+M` | Both rows "Muted" and "Video stopped"; then both unmuted, cameras still off. |
 | Grid, the same three copies: A with video calls to B and C, then the Grid switch | Two tiles, C's (selected, outlined) with its test pattern, B's "On hold · 00:14"; the control bar shows only Focus \| Grid 2. `M` and `H` change nothing. |
 | From the grid: B's tile; `G`; C's row in the list; `G`; `2`; `G`; `T` | Each opens that call in Focus, resuming it and holding the other; `G` goes back to the grid each time; `T` opens Focus on the selected call with the text input focused. |
