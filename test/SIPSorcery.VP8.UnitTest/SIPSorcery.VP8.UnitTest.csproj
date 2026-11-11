@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="capture.stm">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
