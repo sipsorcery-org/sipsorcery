@@ -26,12 +26,17 @@ const ICON = {
 // proxy, STUN, SRTP, DTMF). [key, label, type, placeholder, hint]; a select's type is its
 // options as [value, text] pairs, the first being the default.
 const TRANSPORTS = [["udp", "UDP"], ["tcp", "TCP"], ["tls", "TLS"]];
+// Music on hold: they hear music, nothing is signalled and the call's media keeps flowing both
+// ways (no NAT binding can close). SIP re-INVITE: the server sees the hold, for a PBX that plays
+// its own music or parks calls.
+const HOLDS = [["music", "Music on hold"], ["sip", "SIP re-INVITE"]];
 const FIELDS = [
   ["Account", [["name", "Account name", "text", "Username@server"], ["displayName", "Display name", "text", "Shown to people you call"]]],
   ["Server", [["username", "Username", "text", "alice"], ["server", "Server", "text", "sip.example.com", "A host, or host:port"],
     ["transport", "Transport", TRANSPORTS, null, "How to reach the server. TLS encrypts the signalling"]]],
   ["Authentication", [["authUsername", "Auth username", "text", "Same as the username"], ["password", "Password", "password"]]],
   ["Registration", [["register", "Register with the server so this account can receive calls", "check"], ["expiry", "Expiry (seconds)", "number"]]],
+  ["Calls", [["hold", "Hold", HOLDS, null, "Music: they hear music and the call keeps flowing. SIP re-INVITE: for a PBX that needs to see the hold"]]],
 ];
 
 let post = () => {};
@@ -203,7 +208,7 @@ function renderList(root) {
 
 function renderForm(root) {
   const isNew = view.page === "new";
-  const a = isNew ? { name: "", displayName: "", username: "", server: "", transport: "udp", authUsername: "", register: true, expiry: 300, hasPassword: false } : byId(view.page);
+  const a = isNew ? { name: "", displayName: "", username: "", server: "", transport: "udp", authUsername: "", register: true, expiry: 300, hold: "music", hasPassword: false } : byId(view.page);
   root.dataset.page = view.page;
   const field = ([key, label, type, placeholder, hint]) => {
     const id = `am-${key}`;

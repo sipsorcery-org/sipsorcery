@@ -53,6 +53,30 @@ public sealed class MediaRelay : IDisposable
     private bool _txLost;
 
     /// <summary>
+    /// They've put us on hold the SIP way, so our side of the audio is recvonly (or inactive) and
+    /// the RTP session won't send. The page sends silence on a call held like that, and it goes
+    /// anyway, straight onto the RTP socket: our NAT binding stays open, and when they resume
+    /// there's a stream already flowing to latch onto. Not on an encrypted leg (a browser phone),
+    /// which would need SRTP; there it's dropped as before. False if the session sends it itself.
+    /// </summary>
+    private bool SendPastTheirHold(RTPPacket pkt)
+    {
+        var stream = _sip.AudioStream;
+        var track = stream?.LocalTrack;
+        if (stream == null || track == null || track.StreamStatus is not (MediaStreamStatusEnum.RecvOnly or MediaStreamStatusEnum.Inactive)) return false;
+        if (_sip is RTCPeerConnection || stream.GetSecurityContext() != null || stream.DestinationEndPoint == null || !stream.HasRtpChannel()) return true;
+        var copy = new RTPPacket(pkt.Payload.Length);
+        copy.Header.SyncSource = track.Ssrc;
+        copy.Header.SequenceNumber = pkt.Header.SequenceNumber;
+        copy.Header.Timestamp = pkt.Header.Timestamp;
+        copy.Header.MarkerBit = pkt.Header.MarkerBit;
+        copy.Header.PayloadType = pkt.Header.PayloadType;
+        Buffer.BlockCopy(pkt.Payload, 0, copy.Payload, 0, pkt.Payload.Length);
+        stream.GetRTPChannel().Send(RTPChannelSocketsEnum.RTP, stream.DestinationEndPoint, copy.GetBytes());
+        return true;
+    }
+
+    /// <summary>
     /// True when the far end's RTCP shows our audio isn't reaching them (one-way audio), false
     /// when it is again. Far ends that send no RTCP never raise it.
     /// </summary>
@@ -231,7 +255,7 @@ public sealed class MediaRelay : IDisposable
         {
             if (kind == SDPMediaTypesEnum.video) _pageVideoSsrc = pkt.Header.SyncSource;
             if (kind == SDPMediaTypesEnum.audio && Lose(AudioLossPercent)) return;
-            if (kind == SDPMediaTypesEnum.audio && SipReady && ++_audioOut > 0)
+            if (kind == SDPMediaTypesEnum.audio && SipReady && ++_audioOut > 0 && !SendPastTheirHold(pkt))
                 _sip.SendRtpRaw(SDPMediaTypesEnum.audio, pkt.Payload, pkt.Header.Timestamp, pkt.Header.MarkerBit, pkt.Header.PayloadType, pkt.Header.SequenceNumber);
         };
         pc.OnVideoFrameReceived += (_, ts, frame, _) =>

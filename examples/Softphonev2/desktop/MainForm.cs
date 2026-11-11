@@ -256,6 +256,7 @@ internal sealed class MainForm : Form
             Password = (string?)a["password"] ?? "",
             Register = (bool?)a["register"] ?? true,
             Expiry = Math.Clamp((int?)a["expiry"] ?? 300, 60, 7200),
+            Hold = ((string?)a["hold"] ?? SipAccount.DefaultHold).Trim().ToLowerInvariant(),
             Enabled = existing?.Enabled ?? true,
         };
         var missing = new[] { ("username", account.Username), ("server", account.Server) }.Where(f => f.Item2.Length == 0).Select(f => f.Item1).ToList();
@@ -274,6 +275,7 @@ internal sealed class MainForm : Form
             Post(new { type = "account-error", text = $"The transport has to be one of {string.Join(", ", SipAccount.Transports.Select(t => t.ToUpperInvariant()))}." });
             return;
         }
+        if (!SipAccount.HoldModes.Contains(account.Hold)) account.Hold = SipAccount.DefaultHold;
         // A server typed as sip:host;transport=tcp says which transport it means.
         account.TakeTransportFromServer();
         var saved = _accounts.Save(account);
@@ -329,6 +331,10 @@ internal sealed class MainForm : Form
                 heldByThem = c.HeldByThem,
                 // A hold or resume re-INVITE is out (the page shows "Holding…" or "Resuming…").
                 holdBusy = c.HoldBusy,
+                // How it's held: "music" (sent by the page, nothing signalled) or "sip" (a re-INVITE).
+                holdMode = c.HoldMode,
+                // Our name on this call (its account's), for the camera-off placeholder and hold card.
+                me = c.Account is { } ca ? (string.IsNullOrWhiteSpace(ca.DisplayName) ? ca.Username : ca.DisplayName) : null,
                 // Real-time text on the call: off, adding, on, refused or disabled.
                 text = c.TextState,
             }).ToList(),
@@ -347,7 +353,7 @@ internal sealed class MainForm : Form
             accounts = _accounts.All.Select(a => new
             {
                 a.Id, name = a.Label, a.DisplayName, a.Username, a.Server, a.Transport, a.AuthUsername, hasPassword = a.Password.Length > 0,
-                a.Register, a.Expiry, a.Enabled,
+                a.Register, a.Expiry, a.Enabled, a.Hold,
                 reg = regs.TryGetValue(a.Id, out var r) ? r.State : "off",
                 regDetail = regs.TryGetValue(a.Id, out var rd) ? rd.Detail : null,
             }).ToList(),

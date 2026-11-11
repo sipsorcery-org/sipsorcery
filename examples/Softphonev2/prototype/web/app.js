@@ -67,13 +67,13 @@ const now = () => Date.now();
 const ACCOUNTS = [
   { id: "sipsorcery", name: "SIPSorcery", displayName: "Aaron", user: "aaron", domain: "sipsorcery.cloud", registrar: "", proxy: "",
     transport: "TLS", authUser: "aaron", hasPassword: true, register: true, expiry: 3600, enabled: true,
-    stun: "stun.sipsorcery.com", srtp: "Optional", dtmf: "RFC 4733", video: true, rtt: true, reg: { state: "registered", expiresAt: now() + 52 * 60_000 } },
+    stun: "stun.sipsorcery.com", srtp: "Optional", dtmf: "RFC 4733", video: true, rtt: true, hold: "Music on hold", reg: { state: "registered", expiresAt: now() + 52 * 60_000 } },
   { id: "iptel", name: "iptel.org", displayName: "Aaron", user: "aaron", domain: "iptel.org", registrar: "", proxy: "",
     transport: "UDP", authUser: "aaron", hasPassword: true, register: true, expiry: 600, enabled: true,
-    stun: "stun.iptel.org", srtp: "Off", dtmf: "RFC 4733", video: true, rtt: true, reg: { state: "registered", expiresAt: now() + 7 * 60_000 } },
+    stun: "stun.iptel.org", srtp: "Off", dtmf: "RFC 4733", video: true, rtt: true, hold: "Music on hold", reg: { state: "registered", expiresAt: now() + 7 * 60_000 } },
   { id: "local", name: "Local (no registrar)", displayName: "Aaron", user: "aaron", domain: "192.168.0.50", registrar: "", proxy: "",
     transport: "UDP", authUser: "", hasPassword: false, register: false, expiry: 3600, enabled: true,
-    stun: "", srtp: "Off", dtmf: "RFC 4733", video: true, rtt: false, reg: { state: "off" } },
+    stun: "", srtp: "Off", dtmf: "RFC 4733", video: true, rtt: false, hold: "SIP re-INVITE", reg: { state: "off" } },
 ];
 
 // The editable fields, grouped as they appear in the Accounts form.
@@ -90,6 +90,9 @@ const ACCOUNT_FIELDS = [
     // Off leaves video out of every offer, for the odd server or gateway that rejects calls with it.
     ["video", "Offer video on calls (turn off for servers that can't handle it)", "check"],
     ["rtt", "Offer real-time text on calls (RFC 4103)", "check"]]],
+  // Music on hold: they hear music and media keeps flowing (no NAT binding closes); SIP
+  // re-INVITE: for a PBX that needs to see the hold.
+  ["Calls", [["hold", "Hold", ["Music on hold", "SIP re-INVITE"]]]],
 ];
 const ACCOUNT_KEYS = ACCOUNT_FIELDS.flatMap(([, fields]) => fields.map(([k]) => k)).filter((k) => k !== "password");
 // The Accounts view replaces the selected call in the main view; this is its value in state.selected.
@@ -1860,7 +1863,7 @@ function addAccount() {
   const id = "new";
   if (!state.acct.drafts[id]) {
     state.acct.drafts[id] = { name: "", displayName: "", user: "", domain: "", registrar: "", proxy: "", transport: "UDP",
-      authUser: "", password: "", register: true, expiry: 3600, stun: "", srtp: "Optional", dtmf: "RFC 4733", video: true, rtt: true };
+      authUser: "", password: "", register: true, expiry: 3600, stun: "", srtp: "Optional", dtmf: "RFC 4733", video: true, rtt: true, hold: "Music on hold" };
   }
   state.acct.selected = id;
   state.acct.error = null;

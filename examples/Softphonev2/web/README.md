@@ -127,8 +127,11 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   messages about a call carry its id. An incoming call rings alongside the others (486 only
   past 8). Hold is a re-INVITE whose offer the page makes on the call's own connection
   (sendonly, or sendrecv to resume); a re-INVITE from the far end is answered on it too, rather
-  than with a new connection. As on the desktop, a call's hold re-INVITEs go one at a time: a
-  change asked for while one is out waits for its answer, and only the last counts.
+  than with a new connection. Hold is music on hold, as on the desktop by default: the page
+  sends music (and an "On hold" card on a video call) and nothing is signalled; `?hold=sip`
+  sends re-INVITEs instead, one at a time per call, as on the desktop. When the far end holds
+  us with a re-INVITE, the browser's connection is recvonly, so unlike the desktop nothing is
+  sent until they resume.
 - The **Active calls** panel down the left (see the [desktop README](../desktop/README.md#active-calls)):
   every call, collapsible to a rail, the choice kept in `localStorage`.
 - **Focus and grid views**, the desktop page's (see the [desktop README](../desktop/README.md#focus-and-grid-views)):

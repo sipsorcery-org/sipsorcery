@@ -65,6 +65,8 @@ public sealed class Phone : IDisposable
         internal System.Threading.Timer? AddVideoTimer;
         /// <summary>A hold or resume re-INVITE is out, waiting for its answer (or this timing out).</summary>
         internal System.Threading.Timer? HoldTimer;
+        /// <summary>How the call is held, from its account as it was when the call started (see <see cref="SipAccount.Hold"/>).</summary>
+        public string HoldMode => Account?.Hold ?? SipAccount.DefaultHold;
         /// <summary>A hold or resume re-INVITE is out.</summary>
         public bool HoldBusy => HoldTimer != null;
         /// <summary>What the user last asked for: held or not. Sent once the re-INVITE that's out is done.</summary>
@@ -587,10 +589,13 @@ public sealed class Phone : IDisposable
     }
 
     /// <summary>
-    /// Puts a connected call on hold, or takes it off: a re-INVITE with our media sendonly (the
-    /// far end's phone shows it's held), or sendrecv again. The page stops sending on a held call.
-    /// One re-INVITE at a time per call: switching calls quickly (hold, resume, hold) would
-    /// otherwise send a second while the first is still out, and the far end answers that 491.
+    /// Puts a connected call on hold, or takes it off. With music on hold (the account's Hold,
+    /// and the default) nothing is signalled: the page sends them music instead of the microphone
+    /// and stops playing theirs, and media keeps flowing both ways. With SIP hold it's a
+    /// re-INVITE with our media sendonly (the far end's phone shows it's held), or sendrecv
+    /// again, and the page sends silence. One re-INVITE at a time per call: switching calls
+    /// quickly (hold, resume, hold) would otherwise send a second while the first is still out,
+    /// and the far end answers that 491.
     /// A change asked for meanwhile waits, and only the last one counts.
     /// </summary>
     public void Hold(string id, bool hold)
@@ -600,13 +605,23 @@ public sealed class Phone : IDisposable
         lock (_lock)
         {
             if (c.State != CallState.Connected || c.Ua == null) return;
-            c.HoldWanted = hold;
-            if (c.HoldTimer != null)
+            if (c.HoldMode != "sip")
             {
+                if (c.Held == hold) return;
+                c.Held = c.HoldWanted = hold;
+                Log?.Invoke($"{(hold ? "holding" : "resuming")} {c.Remote}: music on hold, nothing signalled");
+            }
+            else if (c.HoldTimer != null)
+            {
+                c.HoldWanted = hold;
                 Log?.Invoke($"{(hold ? "hold" : "resume")} {c.Remote}: after the re-INVITE that's out");
                 return;
             }
-            if (!SendHold(c)) return;
+            else
+            {
+                c.HoldWanted = hold;
+                if (!SendHold(c)) return;
+            }
         }
         Changed?.Invoke();
     }
@@ -1010,6 +1025,18 @@ public sealed class Phone : IDisposable
         ua.OnCallHungup += _ => { if (!c.HangingUp && c.Ua == ua && c.State == CallState.Connected) End(c, "They hung up"); };
         ua.RemotePutOnHold += () => { if (c.Ua != ua) return; c.HeldByThem = true; Log?.Invoke($"{c.Remote} put the call on hold"); Changed?.Invoke(); };
         ua.RemoteTookOffHold += () => { if (c.Ua != ua) return; c.HeldByThem = false; Log?.Invoke($"{c.Remote} took the call off hold"); Changed?.Invoke(); };
+        // They add video to a call that has none of ours yet (an audio call we placed: its
+        // session was made without video): put our video codecs on it before the answer is
+        // written, or the answer turns video down (m=video 0). Video they add starts with our
+        // camera off (see the page's onMediaOffer). Not on a WebRTC call, whose connection can't
+        // take a track like this mid-call.
+        ua.OnRemoteMediaStreamAdded += kind =>
+        {
+            if (kind != SDPMediaTypesEnum.video || c.Ua != ua || c.WebRtc || !_settings.OfferVideo || c.Rtp is not { } rtp || rtp is RTCPeerConnection) return false;
+            MediaRelay.AddVideoTrack(rtp);
+            Log?.Invoke($"{c.Remote} is adding video: taking it");
+            return true;
+        };
         return ua;
     }
 

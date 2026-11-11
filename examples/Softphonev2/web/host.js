@@ -97,7 +97,7 @@ function stateMessage() {
     type: "state",
     calls: [...calls.values()].map((c) => ({
       id: c.id, call: c.call, remote: c.remote, reason: c.reason, outgoing: c.outgoing,
-      incomingVideo: c.incomingVideo, held: c.held, heldByThem: c.heldByThem, holdBusy: !!c.holdBusy,
+      incomingVideo: c.incomingVideo, held: c.held, heldByThem: c.heldByThem, holdBusy: !!c.holdBusy, holdMode: HOLD_MODE,
       // Real-time text on a T.140 data channel (see below): off, adding (opening), on or refused.
       text: c.call === "connected" ? c.text.state : "off",
     })),
@@ -714,10 +714,21 @@ function hangup(c) {
 // call, as the desktop host does: switching calls quickly (hold, resume, hold) would otherwise
 // start a second while the first is out, which SIP.js refuses and the far end would answer 491.
 // A change asked for meanwhile waits, and only the last one counts.
+// How calls are held: music on hold (the page sends music, nothing is signalled, media keeps
+// flowing both ways), as the desktop's accounts do by default; ?hold=sip for the re-INVITE.
+// The web softphone's guest accounts are on a plain server, not a PBX that needs to see it.
+const HOLD_MODE = q.get("hold") === "sip" ? "sip" : "music";
 const HOLD_ANSWER_MS = 5000;   // give up waiting for an answer after this
 const HOLD_SETTLE_MS = 250;    // after one, so it's ACKed before the next goes
 async function hold(c, on) {
   if (c?.call !== "connected") return;
+  if (HOLD_MODE !== "sip") {
+    if (c.held === on) return;
+    c.held = c.holdWanted = on;
+    log(`call ${c.id}: ${on ? "holding" : "resuming"}: music on hold, nothing signalled`);
+    sendState();
+    return;
+  }
   c.holdWanted = on;
   if (c.holdBusy) { log(`call ${c.id}: ${on ? "hold" : "resume"}: after the re-INVITE that's out`); return; }
   while (c.call === "connected" && c.held !== c.holdWanted && c.session?.state === SIP.SessionState.Established) {

@@ -26,7 +26,8 @@ Then open http://localhost:5179.
   real-time text is on: it pulses while the other person types, and gets a red dot for text you
   haven't read. Meanwhile the status line shows "Typing…" and then their last line.
 - **One live call at a time.** Like a desk phone: the call you're talking to is live, and every
-  other call you're on is on hold (a SIP re-INVITE). Switching to a held call (its row, its
+  other call you're on is on hold: music on hold by default, or a SIP re-INVITE, as each account's
+  *Hold* setting says (under *Calls* in its form). Switching to a held call (its row, its
   tile, or its number key) resumes it and holds the one you were on. Placing or answering a call
   holds the live one when you press the button, not before: typing an address holds nothing.
   Looking elsewhere (History, Accounts) holds nothing either. When a call ends, the held call comes back on

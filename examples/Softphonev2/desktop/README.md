@@ -91,13 +91,29 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   its number key, or *Resume*) resumes it and holds the one you were on. Looking at a call
   without picking it (a ringing call, an ended one's *Back to …*, History, Accounts) holds
   nothing, and when a call ends nothing resumes on its own: a held call stays held, with Resume.
-- **Hold** is a re-INVITE with our media sendonly (`SIPUserAgent.PutOnHold`), and the page sends
-  a held call nothing at all. *Hold* in the control bar, or `H`, holds the selected call. The
-  stage shows "On hold · 02:10" with *Resume*, amber after a minute, as does the list, and
-  "Holding…" or "Resuming…" while the re-INVITE is out. A call they've put on hold says so
-  ("Alice put you on hold"). The host sends a call's re-INVITEs one at a time (`Phone.Hold`):
-  a change asked for while one is out waits for its answer (or 4 s), and only the last counts,
-  so switching quickly back and forth doesn't get a 491 Request Pending.
+- **Hold** is the account's *Hold* setting (see [SIP accounts](#sip-accounts)), fixed when the
+  call starts. A held call is never silent on the wire: media keeps flowing, so neither side's
+  NAT binding times out and resuming doesn't depend on one being reopened.
+  - **Music on hold** (the default): nothing is signalled. The page stops playing their audio
+    and sends them music instead of the microphone, and on a video call an "On hold" card
+    instead of the camera, a few frames a second. They keep sending, and switching calls is
+    instant. The music is a few gentle chords rendered once with an `OfflineAudioContext` and
+    looped, so it doesn't stutter when timers are throttled in a minimised window.
+  - **SIP re-INVITE**, for a PBX that needs to see the hold (to play its own music, or park the
+    call): a re-INVITE with our media sendonly (`SIPUserAgent.PutOnHold`), and the page sends
+    silence. "Holding…" or "Resuming…" shows while it's out. The host sends a call's re-INVITEs
+    one at a time (`Phone.Hold`): a change asked for while one is out waits for its answer (or
+    4 s), and only the last counts, so switching quickly doesn't get a 491 Request Pending.
+
+  *Hold* in the control bar, or `H`, holds the selected call. The stage shows "On hold · 02:10"
+  with *Resume*, amber after a minute, as does the list. A call that isn't the live one gets
+  music or silence, never the microphone and never nothing.
+- **Held by them.** When they put us on hold with a re-INVITE, the call says so ("Alice put you
+  on hold"), and we send silence rather than your microphone, even past our recvonly answer:
+  the RTP session won't send then, so `MediaRelay.SendPastTheirHold` puts the page's packets
+  straight onto the RTP socket (not on an encrypted browser-phone leg). Our NAT binding stays
+  open and they get a stream to latch onto when they resume. On hold either way round, the
+  "No audio arriving" and "isn't getting your audio" notes stay quiet: the hold note says it.
 - **New call.** Typing an address changes nothing. On a call, the button says what it will do:
   *Call & hold Alice*; pressing it holds that call, and the new one goes on the stage. The dial
   bar is only disabled at 8 calls.
@@ -279,7 +295,10 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   on the same SIP session and the page gets a new offer with video. If they refuse (`m=video 0`,
   an error, or no answer in 8 s), the button becomes a disabled *No video*. Video you add
   starts with your camera on. When the *other* side adds video, it's accepted with your camera
-  off, so a request from them never turns your camera on by itself.
+  off, so a request from them never turns your camera on by itself. That includes an audio call
+  we placed, whose SIP session was made without video: our video codecs go on it as their
+  re-INVITE is answered (`SIPUserAgent.OnRemoteMediaStreamAdded`), so the answer isn't
+  `m=video 0`.
 - **The camera is only open when it's needed:** before a call while the switch is on Video (as
   a preview in the self view), and during a video call with your camera on. With the switch on
   Audio, on an audio call, or with your camera turned off, it's closed: no self view and no
@@ -300,7 +319,10 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   opened and closed when the camera would be, Camera off still sends the placeholder, and it
   can be switched mid-call. The source is per call: with several calls, the Camera ▾ picks
   for the selected call only, so one call can send the test pattern while another sends the
-  camera. The source picked last is what the preview and new calls start with.
+  camera. So is the camera itself: a camera picked for one call (even an audio call, as the
+  one for Add video) doesn't change another's, and going to a call that wants another camera
+  switches to it. The source and camera picked last are what the preview and new calls start
+  with.
   It has colour bars and a grey ramp (colour and banding), a dial
   whose hand steps once per frame drawn (a dropped frame is a skipped tick), a clock to the
   millisecond (compare the far end's picture with this screen for the delay), the sender's
@@ -343,8 +365,9 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
 - **Camera on/off** during a video call turns it on or off with no renegotiation: the page keeps
   the video sendrecv and swaps the track in and out (`replaceTrack`).
 - **Video never stops while your camera is off.** A video call with your camera off, or with no
-  camera at all, sends a placeholder: your initial (from the account's display name or user
-  name, or a head-and-shoulders icon with no account) in a circle, drawn on a canvas at
+  camera at all, sends a placeholder: your initial (from the display name or user name of the
+  call's account, so with two accounts each call has its own, or a head-and-shoulders icon with
+  no account) in a circle, drawn on a canvas at
   1280×720 and sent at 5 fps. A still picture costs a few kbps. So any SIP phone just shows a
   picture, not a frozen last frame or a stream that looks broken. NAT bindings and media timers
   on the video port stay alive, and turning the camera on is a track swap with the encoder
@@ -454,10 +477,12 @@ at once; *Call from* picks the one calls go out from.
   and its tooltip names them. The view starts on a table of every account and its status;
   clicking one opens its form. `Esc` steps back: form, then table, then closed.
 - **The form**: account name (blank: user@server), display name (shown to people you call, and
-  used for the camera-off placeholder), username, server (`host`, `host:port`, or a SIP URI
-  such as `sip:host;transport=tcp`), auth username (if not the username), password, *Register*,
-  and expiry (60–7200 s, default 300). Transport, outbound proxy, STUN, SRTP and DTMF from the
-  prototype aren't there yet: the host doesn't do them per account. *Re-register* registers
+  used for the camera-off placeholder), username, server (`host` or `host:port`), transport
+  (UDP, TCP or TLS), auth username (if not the username), password, *Register*, expiry
+  (60–7200 s, default 300), and under *Calls*, *Hold*: *Music on hold* (the default) or *SIP
+  re-INVITE* for a PBX (see [Several calls](#several-calls)). A call keeps the Hold it started
+  with. Outbound proxy, STUN, SRTP and DTMF from the prototype aren't there yet: the host
+  doesn't do them per account. *Re-register* registers
   again now; the *Enabled* switch turns the account off (unregistered, not offered in Call
   from) without losing it; *Remove account* asks for a second click.
 - **What changes registration**: a new or enabled account registers; a removed or disabled one
@@ -578,7 +603,9 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 |---|---|
 | Several calls: three copies, A (`--profile fgA --port 5191 --ws-port 8191 --video --diagnostics`), B and C (`fgB`/`fgC`, ports 5192/8192 and 5193/8193, `--auto-answer`), all `--fake-media --test-pattern` | A calls B: video both ways. A calls C: A's B call goes on hold ("On hold · 00:06", B shows "Thisis put you on hold"), C's call on the stage with the audio. |
 | A: `2` (the older call) | B's call comes off hold and has the audio (its `<video>` plays, C's is muted), and C's goes on hold: one live call. B gets A's video again within a second (the held call's sender goes back on). |
-| A: `1`, `2`, `1`, `2` quickly | Each call ends up where the last key left it (B live, C on hold), with no 491 in the log: the host queues a call's re-INVITEs ("after the re-INVITE that's out"). |
+| A: `1`, `2`, `1`, `2` quickly | Each call ends up where the last key left it (B live, C on hold). With *SIP re-INVITE*, no 491 in the log: the host queues a call's re-INVITEs ("after the re-INVITE that's out"). |
+| Music on hold (the default): A (an account with Hold *Music on hold*) calls B twice, `--auto-answer` on B | A's log: "holding …: music on hold, nothing signalled", no re-INVITE. Both relays keep 50 audio packets a second both ways on the held call; B's stats for it show audio in with a varying level (the music), and on a video call (`--video` on A) video in at 5 fps (the "On hold" card). |
+| SIP hold: the same, A's account Hold *SIP re-INVITE* | A sends the re-INVITE; B says "put the call on hold". B still sends (silence) on that call, and A's relay receives it; no "Stream Status set to RecvOnly" warnings in B's log. |
 | C (audio) calls B while B is on its call with A | B's banner: "Thisis · Calling" with Answer and Decline; B's host auto-answers it alongside (a test mode, so nothing is held): "Audio off" on the new row, A's call keeps the audio. No 486. |
 | B: `1`, `M`, End, `Esc` | C's call on the stage with the audio; `M` mutes only it ("Muted", red mic; A's row "Audio is on another call"). End: "You hung up" with *Back to Thisis*; `Esc` goes back to A's call, which takes the audio. |
 | A with two calls: `Shift+M`, `Shift+C`, `Shift+M` | Both rows "Muted" and "Video stopped"; then both unmuted, cameras still off. |
@@ -653,6 +680,8 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Same, then Camera on, then Camera off | The callee's video goes 5 fps placeholder, then 30 fps camera, then 5 fps placeholder, without a gap. The caller's camera opens and closes with it. |
 | Two softphones on Video with the real camera, then the first switched to Audio | The second shows "Camera in use" and still hasn't opened the camera 8 s after the first closed it. Clicking Video opens it. |
 | A softphone answers a video call while another has the real camera | It answers with "Camera in use" and sends the placeholder. 8 s after the other lets go it still hasn't opened the camera; Camera on opens it. |
+| Two accounts a side (A: Alice, Carol, `--auto-answer`; B: Bob, Dave). B calls A from Bob, then from Dave, audio only. A adds video to Dave's call, then to Bob's, with Dave still B's selected account | B takes both ("is adding video: taking it"), though it placed them without video. A gets D on Dave's call and B on Bob's (the placeholder), and on whichever B has held, the hold card with that account's name. |
+| Same, A: Camera ▾ picks a camera for Dave's call, then goes to Bob's and back | "camera for call 2: …"; Bob's call keeps its camera: each switch logs "camera closed, to switch cameras" and opens that call's. |
 | Audio call, caller presses Add video (`--add-video 4`) | re-INVITE accepted; both relays rebuilt with VP8. The callee shows the caller's video at 30 fps; the caller gets the callee's placeholder at 5 fps, since the callee accepted with its camera off. |
 | Three video calls in a row, the caller's camera already open from the preview (`--video --dial-count 3`, callee `--hangup-after 9`) | The callee shows the caller's video on every call. |
 | Same, but the callee has `--no-video` | The callee answers `m=video 0`; the caller logs "they didn't take video", shows *No video*, and both stay on the audio bars. |

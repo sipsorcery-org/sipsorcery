@@ -31,6 +31,13 @@ public sealed class SipAccount
     public int Expiry { get; set; } = 300;
     /// <summary>Off: the account stays in the list but doesn't register and can't be called from.</summary>
     public bool Enabled { get; set; } = true;
+    /// <summary>
+    /// How a call on this account is put on hold (see <see cref="HoldModes"/>): "music", the
+    /// default, sends them music with nothing signalled, so media keeps flowing both ways and no
+    /// NAT binding can close; "sip" sends a re-INVITE (our media sendonly), for a PBX that needs
+    /// to see the hold, say to play its own music or to park the call.
+    /// </summary>
+    public string Hold { get; set; } = DefaultHold;
 
     [JsonIgnore] public string Aor => $"{Username}@{Host}";
     [JsonIgnore] public string Label => string.IsNullOrWhiteSpace(Name) ? Aor : Name;
@@ -66,6 +73,10 @@ public sealed class SipAccount
     }
 
     public const string DefaultTransport = "udp";
+    public const string DefaultHold = "music";
+
+    /// <summary>The ways a call can be held, as the Hold dropdown offers them.</summary>
+    public static readonly IReadOnlyList<string> HoldModes = ["music", "sip"];
 
     /// <summary>The transports the server can be reached on, as the Transport dropdown offers them.</summary>
     public static readonly IReadOnlyList<string> Transports = ["udp", "tcp", "tls"];

@@ -15,8 +15,11 @@
 // Several calls at once, as in the prototype: each call the host reports has an entry here (see
 // entries), with its own peer connection, <video> element, quality, details and text. The stage
 // shows the selected call. One live call at a time, like a desk phone: the call you're talking
-// to has the microphone and speaker (audioId), and every other call you're on is held (a SIP
-// re-INVITE; a held call sends nothing). Picking a held call (its row, its tile, its number key,
+// to has the microphone and speaker (audioId), and every other call you're on is held. How it's
+// held is the account's Hold setting (holdMode): music on hold, the default, sends them music
+// (and on a video call an "On hold" card) with nothing signalled, so media flows both ways and
+// no NAT binding closes; SIP hold sends a re-INVITE and silence. A call that isn't the live one
+// never gets the microphone: it gets music or silence, never nothing (see quietAudio). Picking a held call (its row, its tile, its number key,
 // or Resume) resumes it and holds the live one. Call and Answer hold the live call when you press
 // them, not before: typing an address, or looking at a ringing call, History or Accounts, holds
 // nothing. When a call ends, nothing resumes on its own: a held call stays held, with Resume.
@@ -189,9 +192,9 @@ function focusCall(id) {
 // connected and not on hold. A held call sends nothing at all.
 function syncAudio() {
   const s = sel();
-  if (s?.h.call === "connected" && !s.h.held && s.m) audioId = s.id;
+  if (s?.h.call === "connected" && !holdState(s) && s.m) audioId = s.id;
   const a = entries.get(audioId);
-  if (!a || a.h.call !== "connected" || a.h.held) audioId = null;
+  if (!a || a.h.call !== "connected" || holdState(a)) audioId = null;
   const mic = localTrack("audio");
   if (mic) mic.enabled = !(entries.get(audioId)?.m?.muted ?? micMuted);
   for (const e of entries.values()) {
@@ -201,8 +204,141 @@ function syncAudio() {
     // can't be seen (another call's, or an audio-only call's), and it stays paused when unmuted.
     if (e.el.srcObject && e.el.paused) e.el.play().catch(() => {});
     const sender = e.m?.audioSender;
-    const want = on ? mic : null;
+    // Held by them, even the live call sends silence rather than you, until they resume.
+    const want = on && !e.h.heldByThem ? mic : sender ? quietAudio(e) : null;
     if (sender && sender.track !== want) sender.replaceTrack(want).catch((err) => log(`audio switch failed: ${err.message}`));
+  }
+  // The music plays only while a call is sending it.
+  if (holdAudio && ![...entries.values()].some((e) => e.m?.audioSender?.track === holdAudio.music.stream.getAudioTracks()[0])) stopHoldMusic();
+}
+
+// ---- Music on hold, and silence ----
+// A call that isn't the live one sends music (held, music on hold) or silence (held the SIP way,
+// they've held us, or briefly while a call is switching): never nothing, so the stream keeps
+// flowing, the far end's media timers stay happy and our NAT binding stays open. Silence on a call
+// they've held the SIP way is more than SIP asks for: our side is recvonly, so the host sends it
+// past the RTP session (MediaRelay.SendPastTheirHold).
+const quietAudio = (e) => (holdState(e) && e.h.holdMode !== "sip" ? holdMusicTrack() : silenceTrack());
+
+// The music is a loop rendered once (a few chords, picked out gently), then played round and
+// round: no timers, so it doesn't stutter when the window is minimised and timers are throttled.
+let holdAudio = null;   // { ctx, music, silence, buffer, source }
+const HOLD_BPM = 84;
+const HOLD_CHORDS = [[53, 57, 60, 64], [52, 55, 59, 62], [50, 53, 57, 60], [48, 52, 55, 59]];   // Fmaj7 Em7 Dm7 Cmaj7
+const HOLD_ARP = [0, 1, 2, 3, 2, 1, 2, 3];
+
+function holdAudioContext() {
+  if (!holdAudio) {
+    const ctx = new AudioContext({ sampleRate: 48000 });
+    const music = ctx.createMediaStreamDestination();
+    const silence = ctx.createMediaStreamDestination();
+    // Something always connected, so the silent track has frames to send.
+    const zero = ctx.createConstantSource();
+    zero.offset.value = 0;
+    zero.connect(silence);
+    zero.start();
+    holdAudio = { ctx, music, silence, buffer: null, source: null };
+    renderHoldMusic().then((buffer) => { holdAudio.buffer = buffer; if (holdAudio.wanted) startHoldMusic(); })
+      .catch((err) => log(`hold music failed: ${err.message}`));
+  }
+  holdAudio.ctx.resume().catch(() => {});
+  return holdAudio;
+}
+
+async function renderHoldMusic() {
+  const step = 60 / HOLD_BPM / 2;   // eighth notes
+  const steps = HOLD_CHORDS.length * 16;
+  const ctx = new OfflineAudioContext(1, Math.ceil(steps * step * 48000), 48000);
+  const out = ctx.createGain();
+  out.gain.value = 0.22;
+  out.connect(ctx.destination);
+  const note = (midi, at, len, level) => {
+    const o = ctx.createOscillator();
+    o.type = "triangle";
+    o.frequency.value = 440 * 2 ** ((midi - 69) / 12);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.linearRampToValueAtTime(level, at + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + len);
+    o.connect(g).connect(out);
+    o.start(at);
+    o.stop(at + len + 0.05);
+  };
+  for (let i = 0; i < steps; i++) {
+    const chord = HOLD_CHORDS[Math.floor(i / 16)];
+    const at = i * step;
+    // The last notes of the loop are cut short, so nothing rings over the join.
+    const left = (steps - i) * step - 0.05;
+    note(chord[HOLD_ARP[i % 8]] + 12, at, Math.min(step * 2.5, left), 0.35);
+    if (i % 16 === 0) for (const m of chord.slice(0, 3)) note(m, at, Math.min(step * 15, left), 0.12);
+  }
+  return ctx.startRendering();
+}
+
+function startHoldMusic() {
+  const h = holdAudio;
+  if (h.source || !h.buffer) return;
+  h.source = Object.assign(h.ctx.createBufferSource(), { buffer: h.buffer, loop: true });
+  h.source.connect(h.music);
+  h.source.start();
+}
+
+function holdMusicTrack() {
+  const h = holdAudioContext();
+  h.wanted = true;
+  startHoldMusic();
+  return h.music.stream.getAudioTracks()[0];
+}
+
+function stopHoldMusic() {
+  holdAudio.wanted = false;
+  holdAudio.source?.stop();
+  holdAudio.source = null;
+}
+
+const silenceTrack = () => holdAudioContext().silence.stream.getAudioTracks()[0];
+
+// On a video call held with music on hold, they see this card instead of your camera: a pause
+// sign and "On hold", a few frames a second, like the camera-off placeholder.
+const holdCards = new Map();   // name -> { name, canvas, track, timer }
+function holdCardTrack(e) {
+  const name = meOf(e);
+  let c = holdCards.get(name);
+  if (!c) {
+    const canvas = Object.assign(document.createElement("canvas"), { width: 1280, height: 720 });
+    const track = canvas.captureStream(0).getVideoTracks()[0];
+    c = { name, canvas, track, timer: 0 };
+    c.timer = setInterval(() => holdCardFrame(c), 1000 / PLACEHOLDER_FPS);
+    holdCards.set(name, c);
+    holdCardFrame(c);
+  }
+  return c.track;
+}
+function holdCardFrame(c) {
+  const { canvas, track } = c;
+  const g = canvas.getContext("2d");
+  const { width: w, height: h } = canvas;
+  g.fillStyle = "#3a3324";
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = "#e8d3a2";
+  g.fillRect(w / 2 - 44, h / 2 - 110, 28, 110);
+  g.fillRect(w / 2 + 16, h / 2 - 110, 28, 110);
+  g.font = '300 64px "Segoe UI", system-ui, sans-serif';
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.fillText("On hold", w / 2, h / 2 + 70);
+  g.font = '300 32px "Segoe UI", system-ui, sans-serif';
+  g.fillStyle = "#bfae86";
+  g.fillText(c.name ? `${c.name} will be back shortly` : "Back shortly", w / 2, h / 2 + 130);
+  track.requestFrame();
+}
+// Stops the hold cards no call is sending.
+function stopHoldCards() {
+  for (const [name, c] of holdCards) {
+    if ([...entries.values()].some((e) => e.m?.videoSender?.track === c.track)) continue;
+    clearInterval(c.timer);
+    c.track.stop();
+    holdCards.delete(name);
   }
 }
 
@@ -327,7 +463,7 @@ function wantedSources() {
   if (!local) return want;   // not before the microphone's open (local is set)
   const all = [...entries.values()];
   // Any call sending (not on hold).
-  for (const e of all) if (e.m?.hasVideo && e.m.camOn && !e.h.held && e.h.call === "connected") want.add(sourceOf(e));
+  for (const e of all) if (e.m?.hasVideo && e.m.camOn && !holdState(e) && e.h.call === "connected") want.add(sourceOf(e));
   if (!call) {
     if (all.some((e) => e.h.call === "connected" && !e.m)) {
       // Connected, but the media isn't set up yet: leave what's open as it is, so a video
@@ -357,25 +493,33 @@ const sameSources = (a, b) => a.size === b.size && [...a].every((k) => b.has(k))
 // stops, so every SIP phone just sees a picture rather than a frozen frame or a dead stream,
 // NAT bindings and media timers stay alive, and turning the camera on is a track swap with the
 // encoder already running. It's drawn on a canvas and sent at the camera's size, so the far
-// end doesn't see the picture change shape.
+// end doesn't see the picture change shape. The initial is the call's account's (e.h.me): with
+// two accounts, Bob's call shows B and Dave's D. One placeholder per name, shared by its calls.
 const PLACEHOLDER_FPS = 5;   // a still picture costs a few kbps; much sparser upsets some decoders
-let placeholder = null;      // { canvas, track, timer, drawn }
+const placeholders = new Map();   // name -> { name, canvas, track, timer }
 
-function placeholderTrack() {
-  if (!placeholder) {
+// The name we go by on a call: its account's, else (before a call, or the web softphone) ours.
+const meOf = (e) => e?.h?.me ?? state.me ?? "";
+
+function placeholderTrack(e = null) {
+  const name = meOf(e);
+  let p = placeholders.get(name);
+  if (!p) {
     const canvas = Object.assign(document.createElement("canvas"), { width: 1280, height: 720 });
     // Frame rate 0 and requestFrame: a frame goes out each time one is drawn and asked for. A
     // canvas only produces a frame after a draw, so the picture is redrawn every time.
     const track = canvas.captureStream(0).getVideoTracks()[0];
-    placeholder = { canvas, track, timer: setInterval(placeholderFrame, 1000 / PLACEHOLDER_FPS) };
-    placeholderFrame();
+    p = { name, canvas, track, timer: 0 };
+    p.timer = setInterval(() => placeholderFrame(p), 1000 / PLACEHOLDER_FPS);
+    placeholders.set(name, p);
+    placeholderFrame(p);
   }
-  return placeholder.track;
+  return p.track;
 }
 
-function placeholderFrame() {
-  const { canvas, track } = placeholder;
-  const label = state.me ? initial(state.me) : "";
+function placeholderFrame(p) {
+  const { canvas, track } = p;
+  const label = p.name ? initial(p.name) : "";
   const g = canvas.getContext("2d");
   const { width: w, height: h } = canvas;
   g.fillStyle = "#1f3a31";
@@ -402,11 +546,15 @@ function placeholderFrame() {
   track.requestFrame();
 }
 
-function stopPlaceholder() {
-  if (!placeholder) return;
-  clearInterval(placeholder.timer);
-  placeholder.track.stop();
-  placeholder = null;
+// Stops the placeholders no call with video could be sending (by name, so one that's just being
+// put on a call stays) and that aren't showing (keep: the self view's track).
+function stopPlaceholders(keep = null) {
+  for (const [name, p] of placeholders) {
+    if (p.track === keep || [...entries.values()].some((e) => e.m?.videoSender && meOf(e) === name)) continue;
+    clearInterval(p.timer);
+    p.track.stop();
+    placeholders.delete(name);
+  }
 }
 
 // ---- Test pattern (diagnostics) ----
@@ -437,6 +585,12 @@ const SOURCE_LABEL = { test: "Test pattern", bars: "Audio bars" };
 
 // A call's source; before its media is set up (or with no call), the one new calls start with.
 const sourceOf = (e) => e?.source ?? videoSource;
+// Likewise the camera (device): each call keeps the one it was given or picked, so picking a
+// camera for one call doesn't change another's. One camera is open at a time, the one the call
+// sending it wants (only the live call sends it: the others are held), switched when you go to
+// a call that wants another (see syncCameraTrack).
+const cameraIdOf = (e) => e?.cameraId ?? devices.camera;
+let cameraOpenedFor = null;   // the device asked for when the open camera was opened
 // Whether a source can be opened: the test sources always; a camera if there is one and it
 // isn't in use elsewhere.
 const sourceAvailable = (kind) => kind !== "camera" || (hasCamera && !cameraInUse);
@@ -635,8 +789,9 @@ function setVideoSource(source, e = null, reopen = false) {
 }
 
 // What a call's video sender should carry: its source when the camera's on and the source is
-// open, else the placeholder. Nothing while it's on hold.
-const videoToSend = (e) => (e.h.held ? null : (e.m.camOn && sourceTrack(sourceOf(e))) || placeholderTrack());
+// open, else the placeholder. On hold, the "On hold" card (music on hold) or nothing (SIP hold).
+const videoToSend = (e) => (holdState(e) ? (e.h.holdMode === "sip" ? null : holdCardTrack(e))
+  : (e.m.camOn && sourceTrack(sourceOf(e))) || placeholderTrack(e));
 const anyVideoSender = () => [...entries.values()].some((e) => e.m?.videoSender);
 
 // Puts what's sent (or, before a call, what would be) in the self view. Only the camera is
@@ -644,11 +799,11 @@ const anyVideoSender = () => [...entries.values()].some((e) => e.m?.videoSender)
 // once neither the self view nor a call needs it.
 function showSelfVideo(show) {
   const el = $("self");
-  const track = !show ? null : call?.videoSender ? videoToSend(sel()) : sourceTrack(videoSource) ?? placeholderTrack();
+  const track = !show ? null : call?.videoSender ? videoToSend(sel()) : sourceTrack(videoSource) ?? placeholderTrack(sel());
   if ((el.srcObject?.getVideoTracks()[0] ?? null) !== track) el.srcObject = track ? new MediaStream([track]) : null;
   el.hidden = !track;
   el.classList.toggle("mirror", !!track && track === localTrack("video") && !isTestTrack(track));
-  if (placeholder && track !== placeholder.track && !anyVideoSender()) stopPlaceholder();
+  stopPlaceholders(track);
 }
 
 // Opens or closes the camera and the test sources to match wantedSources(), and puts on each call
@@ -675,12 +830,24 @@ function syncCamera() {
       const send = videoToSend(e);
       if (sender.track !== send) await sender.replaceTrack(send);
     }
+    stopHoldCards();
     render();   // the self view follows what's sent
   }).catch((err) => log(`camera sync failed: ${err.message}`));   // so one failure doesn't stall the queue
   return cameraBusy;
 }
 
-// Opens or closes the camera itself. If it can't open, every call sending it goes to camera off.
+// The camera that should be open: the one the call sending it wants (the selected call if more
+// than one does), or before a call, the preview's. Null: no preference, keep what's open.
+function wantedCameraId() {
+  const sending = [...entries.values()].filter((e) => e.m?.hasVideo && e.m.camOn && !holdState(e)
+    && e.h.call === "connected" && sourceOf(e) === "camera");
+  const e = sending.find((x) => x.id === selectedId) ?? sending[0];
+  if (e) return cameraIdOf(e);
+  return call ? null : devices.camera;
+}
+
+// Opens or closes the camera itself, or switches it to the one wanted. If it can't open, every
+// call sending it goes to camera off.
 async function syncCameraTrack(want) {
   let track = localTrack("video");
   if (!want && track) {
@@ -688,15 +855,23 @@ async function syncCameraTrack(want) {
     closeCamera(track);
     return;
   }
-  if (!want || track) return;
+  if (!want) return;
+  const chosen = wantedCameraId();
+  if (track && chosen != null && chosen !== cameraOpenedFor) {
+    log("camera closed, to switch cameras");
+    closeCamera(track);
+    track = null;
+  }
+  if (track) return;
   const cameraCallsOff = () => { for (const e of entries.values()) if (e.m && sourceOf(e) === "camera") e.m.camOn = false; };
   try {
     // The chosen camera exactly, or if it's gone, the default.
     const open = (id) => navigator.mediaDevices.getUserMedia({
       video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, ...(id ? { deviceId: { exact: id } } : {}) },
     });
-    const cam = await open(devices.camera).catch((err) => {
-      if (!devices.camera || err.name !== "OverconstrainedError" && err.name !== "NotFoundError") throw err;
+    const id = chosen ?? devices.camera;
+    const cam = await open(id).catch((err) => {
+      if (!id || err.name !== "OverconstrainedError" && err.name !== "NotFoundError") throw err;
       log("chosen camera not found, using the default");
       return open("");
     });
@@ -704,6 +879,7 @@ async function syncCameraTrack(want) {
     // Changed while it was opening (including a switch to the test pattern).
     if (!wantedSources().has("camera")) { track.stop(); return; }
     local.addTrack(track);
+    cameraOpenedFor = id;
     log("camera opened");
   } catch (err) {
     if (err.name === "NotReadableError" || err.name === "AbortError") {
@@ -743,8 +919,9 @@ async function onMediaOffer(id, sdp, video = false, renegotiate = false) {
   const wantCamera = e.addingVideo ? true : midCall ? false : (answerCamera ?? camPref);
   e.addingVideo = false;
   if (wantCamera) cameraInUse = false;   // you placed, answered or added video: try the camera again
-  // A new call starts with the source last picked; a call that's renegotiating keeps its own.
+  // A new call starts with the source and camera last picked; a call that's renegotiating keeps its own.
   e.source ??= videoSource;
+  e.cameraId ??= devices.camera;
   const m = {
     // The call has video at all (an m=video line from the host). Read from the offer now, not
     // once the transceivers are set up, or a render in between briefly shows the audio bars.
@@ -874,7 +1051,7 @@ function closeMedia(e) {
   for (const a of [e.m?.remoteAnalyser, e.m?.localAnalyser]) a?.source.disconnect();
   e.m = null;
   e.el.srcObject = null;
-  if (!anyVideoSender()) stopPlaceholder();
+  stopPlaceholders();
 }
 
 // Camera on or off during a video call. Off swaps in the placeholder, then closes the camera
@@ -883,7 +1060,7 @@ async function setCamera(on, e = sel()) {
   if (!e?.m?.videoSender || !(hasCamera || sourceOf(e) !== "camera")) return;
   e.m.camOn = on;
   if (on) cameraInUse = false;   // try again, because you asked
-  if (!on && !e.h.held) await e.m.videoSender.replaceTrack(placeholderTrack());
+  if (!on && !holdState(e)) await e.m.videoSender.replaceTrack(placeholderTrack(e));
   log(`call ${e.id}: camera ${on ? "on" : "off"}`);
   render();
   await syncCamera();
@@ -999,8 +1176,8 @@ setInterval(async () => {
       if (r.kind === "video" && r.framesDecoded > 0 && r.framesDecoded !== m.framesDecoded) { m.framesDecoded = r.framesDecoded; m.lastFrameAt = t; }
     });
     // rxChangedAt starts when the media is set up, so a call gets the same 2 s grace at the start.
-    // Nothing arrives on hold, either way round, and that's expected.
-    if (e.h.held || e.h.heldByThem) m.rxChangedAt = t;
+    // On hold, either way round, their audio isn't played or doesn't come: not worth a warning.
+    if (holdState(e) || e.h.heldByThem) m.rxChangedAt = t;
     const rxDead = t - m.rxChangedAt > NO_AUDIO_MS;
     if (rxDead !== m.rxDead) { m.rxDead = rxDead; changed = true; log(`call ${e.id}: ${rxDead ? "no audio arriving" : "audio arriving again"}`); }
   }
@@ -1559,8 +1736,10 @@ function render() {
     el.classList.toggle("bad", !!bad);
     el.firstElementChild.textContent = text || "";
   };
-  note("noteThem", connected && call.rxDead ? `No audio arriving from ${name}` : "", true);
-  note("noteMe", !connected ? "" : call.txLost ? `${name} isn't getting your audio` : call.muted ? "You're muted" : "", connected && call.txLost);
+  // On hold, either way round, the held note says it all: no warnings about audio under it.
+  const onHold = connected && (holdState(e) || state.heldByThem);
+  note("noteThem", connected && !onHold && call.rxDead ? `No audio arriving from ${name}` : "", true);
+  note("noteMe", !connected ? "" : call.txLost && !onHold ? `${name} isn't getting your audio` : call.muted ? "You're muted" : "", connected && call.txLost && !onHold);
 
   // Self view: only for video, and always what they see (or will see). On a video call that's
   // your camera, or the placeholder while it's off; before a call it's a preview while the
@@ -1839,7 +2018,8 @@ function holdCall(e, hold) {
   e.holdAskedAt = Date.now();
   log(`${hold ? "holding" : "resuming"} call ${e.id} (${nameOf(e)})`);
   post({ type: "hold", id: e.id, hold });
-  render();   // "Holding…" or "Resuming…" now, even if the host only queues it
+  render();   // the audio moves now (syncAudio), and "Holding…" shows if the host queues it
+  syncCamera();   // the "On hold" card, or the camera back
 }
 
 // Calls ringing while you're on another: a banner over the stage, the caller who has waited
@@ -2198,10 +2378,11 @@ function renderAnswer(current) {
 }
 
 const currentMicId = () => localTrack("audio")?.getSettings().deviceId ?? (devices.mic || "default");
-function currentCameraId(cameras) {
+// The camera ticked: the call's (or for Answer, the next call's), as opened if it's the open one.
+function currentCameraId(cameras, want) {
   const track = localTrack("video");
-  if (track) return track.getSettings().deviceId;
-  return cameras.some((d) => d.deviceId === devices.camera) ? devices.camera : cameras[0]?.deviceId;
+  if (track && want === cameraOpenedFor) return track.getSettings().deviceId;
+  return cameras.some((d) => d.deviceId === want) ? want : cameras[0]?.deviceId;
 }
 
 async function showMenu(kind) {
@@ -2217,7 +2398,7 @@ async function showMenu(kind) {
   const groups = kind === "mic"
     ? [["mic", "Microphone", of("audioinput"), currentMicId()],
        ["speaker", "Speaker", of("audiooutput"), devices.speaker || "default"]]
-    : [["camera", "Camera", of("videoinput"), source !== "camera" ? null : currentCameraId(of("videoinput"))]];
+    : [["camera", "Camera", of("videoinput"), source !== "camera" ? null : currentCameraId(of("videoinput"), kind === "answer" ? devices.camera : cameraIdOf(sel()))]];
   if (kind !== "mic" && document.body.classList.contains("diag")) {
     groups.push(["test", "Diagnostics", Object.entries(SOURCE_LABEL).map(([deviceId, label]) => ({ deviceId, label })),
       source !== "camera" ? source : null]);
@@ -2297,8 +2478,11 @@ async function pickDevice(key, id, forAnswer = false) {
   } else if (key === "camera") {
     devices.camera = id;
     saveDevices();
-    log(`camera: ${id}`);
-    setVideoSource("camera", target, true);
+    if (target?.m) target.cameraId = id;
+    log(`camera${target?.m ? ` for call ${target.id}` : ""}: ${id}`);
+    cameraInUse = false;   // a fresh try, because you asked
+    setVideoSource("camera", target);
+    await syncCamera();   // switches to it, if something is sending the camera
     if (!forAnswer) await cameraOnForPick();
   } else if (key === "test") {
     setVideoSource(id, target);   // the test pattern or audio bars
@@ -2661,8 +2845,10 @@ const settings = initSettings({
     else if (key === "camera") {
       devices.camera = id;
       saveDevices();
+      // For new calls, and the selected call; other calls keep theirs.
+      if (sel()?.m) sel().cameraId = id;
       log(`camera for calls: ${id || "system default"}`);
-      if (localTrack("video")) { closeCamera(localTrack("video")); syncCamera(); }
+      syncCamera();   // switches if the open camera is now the wrong one
     }
     render();
   },
