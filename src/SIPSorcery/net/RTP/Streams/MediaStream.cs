@@ -55,6 +55,19 @@ namespace SIPSorcery.Net
         protected SecureContext SecureContext;
         protected SrtpHandler SrtpHandler;
 
+        /// <summary>
+        /// Best-effort SDES only: the offer and answer settled on plain RTP for this stream (the far
+        /// end didn't take up our crypto, or offered none). Until then the stream is treated as
+        /// secure, holding back media until its keys are known.
+        /// </summary>
+        internal bool IsPlainRtpAgreed { get; private set; }
+
+        /// <summary>
+        /// Best-effort SDES only: the far end uses the RTP/SAVP profile for this stream (it offered
+        /// or answered it), so our offers keep to it rather than RTP/AVP.
+        /// </summary>
+        internal bool UsesSecureProfile { get; set; }
+
         private RTPReorderBuffer RTPReorderBuffer = null;
         private readonly object _fecReceiveLock = new object();
         private RtpFecReceiveBuffer _fecReceiveBuffer;
@@ -543,6 +556,52 @@ namespace SIPSorcery.Net
             return SecureContext != null;
         }
 
+        /// <summary>
+        /// Whether this stream's media has to be SRTP: always with DTLS-SRTP or mandatory SDES, and
+        /// with best-effort SDES unless the offer and answer settled on plain RTP.
+        /// </summary>
+        public bool RequiresSecureContext
+        {
+            get => RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation ||
+                (RtpSessionConfig.UseSdpCryptoBestEffort && !IsPlainRtpAgreed);
+        }
+
+        /// <summary>
+        /// Whether received media has to wait for this stream's SRTP keys. With best-effort SDES
+        /// only once there's something to wait for: our offer with crypto, or the far end's
+        /// description of the stream, not a local track the far end never offered.
+        /// </summary>
+        internal bool IsAwaitingSecureContext
+        {
+            get => RequiresSecureContext && !IsSecurityContextReady() &&
+                (!RtpSessionConfig.UseSdpCryptoBestEffort || RemoteTrack != null || SrtpHandler != null);
+        }
+
+        /// <summary>
+        /// Best-effort SDES: the stream's media is plain RTP, dropping any keys from before (a
+        /// re-offer without crypto on an SRTP call).
+        /// </summary>
+        internal void UsePlainRtp()
+        {
+            if (!IsPlainRtpAgreed && SecureContext != null)
+            {
+                logger.LogDebug("{MediaType} stream {Index} changing from SRTP to plain RTP.", MediaType, Index);
+            }
+            IsPlainRtpAgreed = true;
+            UsesSecureProfile = false;
+            SecureContext = null;
+            SrtpHandler = null;
+            ClearPendingPackages();
+        }
+
+        /// <summary>
+        /// Best-effort SDES: the stream's media is to be SRTP (an offer or answer with crypto).
+        /// </summary>
+        internal void UseSrtp()
+        {
+            IsPlainRtpAgreed = false;
+        }
+
         private (bool, byte[]) UnprotectBuffer(byte[] buffer)
         {
             if (SecureContext != null)
@@ -568,7 +627,7 @@ namespace SIPSorcery.Net
 
         public bool EnsureBufferUnprotected(byte[] buf, RTPHeader header, out RTPPacket packet)
         {
-            if (RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation)
+            if (RequiresSecureContext)
             {
                 var (succeeded, newBuffer) = UnprotectBuffer(buf);
                 if (!succeeded)
@@ -630,7 +689,7 @@ namespace SIPSorcery.Net
                 return false;
             }
 
-            if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && SecureContext?.ProtectRtpPacket == null)
+            if (RequiresSecureContext && SecureContext?.ProtectRtpPacket == null)
             {
                 logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
                 return false;
@@ -1196,7 +1255,7 @@ namespace SIPSorcery.Net
         /// <returns>True if report was sent</returns>
         private bool SendRtcpReport(byte[] reportBuffer)
         {
-            if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecurityContextReady())
+            if (RequiresSecureContext && !IsSecurityContextReady())
             {
                 logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
                 return false;
@@ -1250,7 +1309,7 @@ namespace SIPSorcery.Net
         /// <param name="report">RTCP report to send.</param>
         public void SendRtcpReport(RTCPCompoundPacket report)
         {
-            if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecurityContextReady() && report.Bye != null)
+            if (RequiresSecureContext && !IsSecurityContextReady() && report.Bye != null)
             {
                 // Do nothing. The RTCP BYE gets generated when an RTP session is closed.
                 // If that occurs before the connection was able to set up the secure context

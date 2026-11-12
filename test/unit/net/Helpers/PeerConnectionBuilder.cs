@@ -151,6 +151,15 @@ namespace SIPSorcery.Net.UnitTests.Helpers
             return this;
         }
 
+        /// <summary>
+        /// Enables best-effort SDES: crypto offered on RTP/AVP, SRTP only if the far end takes it up.
+        /// </summary>
+        public RtpSessionBuilder WithSdpCryptoBestEffort(bool value = true)
+        {
+            _secureMediaOption = value ? RtpSecureMediaOptionEnum.SdpCryptoBestEffort : RtpSecureMediaOptionEnum.None;
+            return this;
+        }
+
         public RtpSessionBuilder WithBindAddress(IPAddress address)
         {
             _bindAddress = address;
