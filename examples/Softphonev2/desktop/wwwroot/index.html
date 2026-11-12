@@ -142,27 +142,6 @@
         </button>
         <div class="details" id="details" hidden></div>
       </div>
-      <!-- Diagnostics: call quality, ↑ what we send (their RTCP) and ↓ what we receive (measured here). -->
-      <div class="quality diag-only collapsed" id="quality" hidden>
-        <button type="button" class="q-head" id="qHead" aria-expanded="false" title="Show the details"><span class="q-title">Call quality</span><span class="q-rtt" id="qRtt"></span><span class="q-sum" id="qSum"></span><span class="q-chevron" id="qChevron"></span></button>
-        <div class="q-table" id="qTable"></div>
-        <!-- Video calls: PLIs as they happen, received and sent, over the last half minute. -->
-        <div class="q-pli" id="qPli" hidden>
-          <div class="q-pli-legend"><span class="q-pli-head">PLIs</span><span class="q-pli-keys"><span id="qPliRxKey">Rcvd</span><span id="qPliTxKey">Sent</span></span></div>
-          <canvas class="q-pli-chart" id="qPliChart" width="240" height="40" role="img" aria-label="PLIs received and sent, last 30 seconds"></canvas>
-        </div>
-        <!-- Which direction the graph shows, and who measured it. -->
-        <div class="q-graph-head">
-          <span class="q-graph-by" id="qGraphCol"></span>
-          <div class="q-switch" id="qSwitch" role="radiogroup" aria-label="Graph">
-            <button type="button" role="radio" data-col="sent">↑ Sent</button>
-            <button type="button" role="radio" data-col="recv">↓ Received</button>
-          </div>
-        </div>
-        <canvas class="q-chart" id="qChart" width="472" height="112" role="img"></canvas>
-        <div class="q-legend" id="qLegend"></div>
-        <div class="q-foot" id="qFoot"></div>
-      </div>
     </main>
     <!-- The dock: a side panel right of the call, where the keypad and the text panel open (the
          keypad on top). It shows while either is open (app.js renderDock). -->
@@ -304,6 +283,7 @@
       <h2 class="dev-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Diagnostics</h2>
       <div class="dev-tabs" role="tablist" aria-label="Diagnostics">
         <button type="button" class="dev-tab" role="tab" id="tabLog" data-tab="log" aria-controls="log" aria-selected="true">SIP log</button>
+        <button type="button" class="dev-tab" role="tab" id="tabQuality" data-tab="quality" aria-controls="paneQuality" aria-selected="false">Call quality</button>
         <button type="button" class="dev-tab" role="tab" id="tabNet" data-tab="net" aria-controls="paneNet" aria-selected="false">Network</button>
       </div>
       <span class="dev-spacer"></span>
@@ -313,6 +293,34 @@
       <button type="button" class="dev-close" id="devClose" aria-label="Close diagnostics" title="Close diagnostics (F12)"></button>
     </div>
     <pre class="dev-pane" id="log" role="tabpanel" aria-labelledby="tabLog" tabindex="0"></pre>
+    <!-- Call quality for the selected call: ↑ what we send (their RTCP) and ↓ what we receive
+         (measured here), the table and PLIs at the left and the graph at the right. -->
+    <div class="dev-pane dev-quality" id="paneQuality" role="tabpanel" aria-labelledby="tabQuality" hidden>
+      <p class="q-empty" id="qEmpty">Call quality shows here during a call.</p>
+      <div class="quality" id="quality" hidden>
+        <div class="q-left">
+          <div class="q-table" id="qTable"></div>
+          <!-- Video calls: PLIs as they happen, received and sent, over the last half minute. -->
+          <div class="q-pli" id="qPli" hidden>
+            <div class="q-pli-legend"><span class="q-pli-head">PLIs</span><span class="q-pli-keys"><span id="qPliRxKey">Rcvd</span><span id="qPliTxKey">Sent</span></span></div>
+            <canvas class="q-pli-chart" id="qPliChart" width="240" height="40" role="img" aria-label="PLIs received and sent, last 30 seconds"></canvas>
+          </div>
+        </div>
+        <div class="q-right">
+          <!-- Which direction the graph shows, and who measured it. -->
+          <div class="q-graph-head">
+            <span class="q-graph-by" id="qGraphCol"></span>
+            <div class="q-switch" id="qSwitch" role="radiogroup" aria-label="Graph">
+              <button type="button" role="radio" data-col="sent">↑ Sent</button>
+              <button type="button" role="radio" data-col="recv">↓ Received</button>
+            </div>
+          </div>
+          <canvas class="q-chart" id="qChart" width="472" height="112" role="img"></canvas>
+          <div class="q-legend" id="qLegend"></div>
+          <div class="q-foot" id="qFoot"></div>
+        </div>
+      </div>
+    </div>
     <div class="dev-pane dev-net" id="paneNet" role="tabpanel" aria-labelledby="tabNet" hidden>
       <div class="loss-sliders">
         <label class="loss-row"><span>Audio loss</span><input type="range" id="lossAudio" min="0" max="50" step="1" value="0"><output id="lossAudioOut">0%</output></label>

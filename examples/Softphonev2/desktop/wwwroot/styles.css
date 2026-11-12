@@ -234,7 +234,7 @@ body:not(.diag) .diag-only { display: none; }
 .btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
 .btn-danger:hover { background: var(--danger); filter: brightness(1.08); }
 
-/* The self view and the Call quality panel share the stage's right edge and this width, so they line up. */
+/* The self view's default width (selfview.js), and the room the call info leaves for it. */
 .stage { --side-w: 260px; position: relative; min-height: 0; border-radius: var(--radius); overflow: hidden; background: var(--tile); }
 /* The stage shows one of: card (no call, or calling/ringing/ended), video, nocam (video agreed
    but none arriving) or audio (no video on the call). */
@@ -263,7 +263,7 @@ body:not(.diag) .diag-only { display: none; }
 .device-menu.down { bottom: auto; top: calc(100% + 6px); }
 /* The self view's box: bottom-right by default; selfview.js moves and sizes it (from the default
    up to 3x) within the stage. Shown while either the video or the note in it is. Overlays with
-   buttons (call info, Call quality, on hold, the answer buttons) sit above it. */
+   buttons (call info, on hold, the answer buttons) sit above it. */
 .self-box {
   position: absolute; right: 12px; bottom: 12px; width: var(--side-w); max-width: 45%; aspect-ratio: 16 / 9; z-index: 1;
   border-radius: var(--radius-sm); box-shadow: 0 4px 16px rgba(0, 0, 0, .3);
@@ -332,7 +332,7 @@ body:not(.diag) .diag-only { display: none; }
   position: absolute; left: 12px; top: 12px; z-index: 2; display: grid; gap: 8px; padding: 6px 10px; border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, .55); color: #fff; font-size: 13px; max-width: min(420px, calc(100% - 24px - var(--side-w) - 12px));
 }
-.info-head { display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; min-width: 0; }
+.info-head { height: 18px; display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; min-width: 0; }
 .info-head > :first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* A saved contact's mark and name, in a light green that reads on the dark overlay. */
 .info-contact { display: inline-flex; align-items: center; gap: 4px; flex: none; white-space: nowrap; color: #9be7cb; font-weight: 500; }
@@ -364,36 +364,34 @@ body:not(.diag) .diag-only { display: none; }
 
 .info[hidden] { display: none; }
 
-/* Diagnostics: Call quality, top right over the stage (below the audio chip on an audio call). */
+/* A video call: a strip across the top of the stage (the stage's own colour) holds the call info
+   and how a transfer is going, and the video starts below it, so they never cover it. Opened
+   (diagnostics), the call details drop down over the video as before. */
+.stage { --strip-h: 0px; }
+.stage.strip:not(.grid) { --strip-h: 36px; }
+.stage.strip .remote { top: var(--strip-h); height: calc(100% - var(--strip-h)); }
+.stage.strip .nocam { top: var(--strip-h); }
+.stage.strip .info { top: 3px; }
+.stage.strip .info:not(:has(> .details:not([hidden]))) { background: none; color: var(--text); }
+.stage.strip .info:not(:has(> .details:not([hidden]))) .info-contact { color: var(--accent); }
+
+/* Diagnostics: Call quality, its own tab in the diagnostics panel. A dark card in either theme,
+   like an instrument (the graphs are drawn for it): the table and PLIs at the left, the graph at
+   the right; one above the other in a narrow window. */
+.dev-quality { padding: 10px 16px; }
+.q-empty { margin: 0; color: var(--muted); }
+.q-empty[hidden] { display: none; }
 .quality {
-  position: absolute; right: 12px; top: 12px; z-index: 2; width: var(--side-w); max-width: calc(100% - 24px); padding: 10px 12px; border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, .62); color: #fff; font-size: 12px; display: grid; gap: 6px;
+  display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 560px); gap: 12px 28px; align-items: start; width: max-content; max-width: 100%;
+  padding: 10px 14px; border-radius: var(--radius-sm); background: #121a17; color: #fff; font-size: 12px;
 }
 .quality[hidden] { display: none; }
-.q-head {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 0; border: 0; background: none;
-  color: inherit; font: inherit; font-weight: 600; font-size: 13px; text-align: left; cursor: pointer;
-}
-.q-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* Collapsed: one line, the title and both audio MOS, and the chevron to open it. */
-/* Folded, the same height as the info bar opposite: 6 px padding round an 18 px line. */
-.quality.collapsed { padding-top: 6px; padding-bottom: 6px; }
-.quality.collapsed .q-head, .info-head { height: 18px; }
-.quality.collapsed > :not(.q-head) { display: none; }
-.q-head > :first-child { margin-right: auto; }
-.q-title { white-space: nowrap; }
-.quality:not(.collapsed) .q-rtt { display: none; }
-/* The round trip, in the folded line, styled like the MOS beside it: an out-and-back arrow and the value. */
-.q-rtt { display: inline-flex; align-items: baseline; gap: 3px; font: 600 13px Consolas, monospace; white-space: nowrap; opacity: .85; }
-.q-rtt svg { align-self: center; width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-.q-sum { display: none; gap: 6px; font: 600 13px Consolas, monospace; white-space: nowrap; }
-.quality.collapsed .q-sum { display: inline-flex; }
-.q-chevron { display: grid; place-items: center; align-self: center; opacity: .8; }
-.q-chevron svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
-.quality:not(.collapsed) .q-chevron svg { transform: rotate(180deg); }
-.q-chart { width: 100%; height: 56px; background: rgba(255, 255, 255, .05); border-radius: 4px; }
+.q-left, .q-right { display: grid; gap: 6px; min-width: 0; }
+.q-right { width: 560px; max-width: 100%; }
+@media (max-width: 760px) { .quality { grid-template-columns: minmax(0, 1fr); width: auto; } .q-right { width: auto; } }
+.q-chart { width: 100%; height: 88px; background: rgba(255, 255, 255, .05); border-radius: 4px; }
 /* The title on the left, the switch on the right. */
-.q-graph-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.q-graph-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .q-graph-by { font-weight: 600; white-space: nowrap; }
 .q-switch { margin-left: auto; }
 /* ↑ Sent | ↓ Received: picks the graph's direction, like the Audio | Video switch. */
@@ -1150,5 +1148,14 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .xfer-note.done { color: #9be7cb; }
 .xfer-note .rtt-close { flex: none; color: #fff; opacity: .75; width: 24px; height: 24px; }
 .xfer-note .rtt-close:hover { opacity: 1; background: rgba(255, 255, 255, .12); color: #fff; }
+/* In the call strip on a video call: its text on the stage's colour (a narrow window: just below it). */
+.stage.strip .xfer-note { top: 3px; background: none; color: var(--text); }
+.stage.strip .xfer-note.bad { color: var(--danger); }
+.stage.strip .xfer-note.done { color: var(--ok); }
+@media (max-width: 900px) {
+  .stage.strip .xfer-note { top: calc(var(--strip-h) + 8px); background: rgba(0, 0, 0, .55); color: #fff; }
+  .stage.strip .xfer-note.bad { color: #ffc2c2; }
+  .stage.strip .xfer-note.done { color: #9be7cb; }
+}
 .xfer-note .rtt-close[hidden] { display: none; }
 .xfer-note .rtt-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
