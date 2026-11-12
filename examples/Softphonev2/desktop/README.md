@@ -234,18 +234,17 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   (before a call, Mute is the same thing: calls start muted). `Shift+C` (or *Cameras off*, below) turns
   the camera off on every call and for new ones; with every camera already off, it turns them all
   back on.
-- **Grid, Mute all, Cameras off and End all**, under the Active calls list once there are two calls (icons only on
-  the rail). *Grid* has its own row above the others: see
-  [Focus and grid views](#focus-and-grid-views). *Mute all* is `Shift+M`, and reads *Unmute all* once every call is muted.
-  *Cameras off*, beside it while any of the calls has video, is its equivalent for the camera
-  (`Shift+C`): every video call sends your placeholder card (the camera-off picture, your
-  initial) instead of the camera, which closes, and new calls start with the camera off. It reads
-  *Cameras on* (pressed, in red) once every video call's camera is off, and then turns them all
-  back on. With it there, *End all* has its own row under the two. *End
-  all* asks once more ("End 3?", for 4 s) and then hangs up every call you've placed or are
-  on; a call that's only ringing is left to Answer or Decline. On the collapsed rail, where it's
-  only an icon, the first click opens the panel instead, so what you confirm is the full button
-  ("End all", then "End 3?"): ending every call always takes the full button's two clicks.
+- **Grid and ⋯**, under the Active calls list (icons only on the rail). *Grid*: see
+  [Focus and grid views](#focus-and-grid-views). *⋯*, with two calls you can end, opens a menu of
+  what's rarely needed, so it isn't three more buttons:
+  - *Mute all* (`Shift+M`), *Unmute all* once every call is muted.
+  - *Cameras off* (`Shift+C`), while any of the calls has video: every video call sends your
+    placeholder card (the camera-off picture, your initial) instead of the camera, which closes,
+    and new calls start with the camera off. It reads *Cameras on* once every video call's camera
+    is off, and then turns them all back on.
+  - *End all N calls*, in red, asks once more ("End 3 calls? Click again", for 4 s, the menu
+    staying open) and then hangs up every call you've placed or are on; a call that's only
+    ringing is left to Answer or Decline.
 - **Keys**: `1`–`8` put that call in the list on the stage (`1` is the top, the oldest), `A` answers,
   `M` mutes, `Shift+M` mutes all, `Shift+C` turns all cameras off (or back on), `H` holds or resumes, `G`
   switches between Focus and Grid.
@@ -286,10 +285,12 @@ the audio, and the view stays Grid.
 
 ## Active calls
 
-A panel down the left, beside the stage and the control bar, from the prototype's sidebar. It
+A panel down the left, beside the stage and the control bar, from the prototype's sidebar, shown
+only while there are two or more calls (or the grid is on screen): with one, the stage already
+says who it's with and how it's going, so the stage and controls take the whole width. It
 lists every call, oldest at the top and new ones at the bottom, while it's live (calling, ringing or connected) and for a
-few seconds after it ends, and otherwise says *No active calls*. Clicking a row puts that call
-on the stage. The list is built from `listed()` and `callStatus()` in `app.js`.
+few seconds after it ends. Clicking a row puts that call on the stage. The list is built from
+`listed()` and `callStatus()` in `app.js`.
 
 - **A row**: their initial, their name (the full address in the tooltip), the status and, once
   connected, the timer. Calling… (grey ring, pulsing), Incoming call / Incoming video call
@@ -300,14 +301,10 @@ on the stage. The list is built from `listed()` and `callStatus()` in `app.js`.
   (muted, video stopped) and faint otherwise (on hold, held by them, the mic on another call).
   The tooltip says which: "Bob hears you", "On hold: they hear music, not you". With text,
   the status line says "Typing…" or their last line.
-- **Collapse**: the chevron folds it to a 48 px rail of initials, the mic and camera chips, and
-  timers, so a live call still shows. The chevron, or a click anywhere in the panel that isn't on a call, folds it or
-  opens it again; a click on a call on the rail selects it and opens the panel (under 700 px it
-  only selects it, leaving the stage its room). The choice is
-  remembered (`localStorage`, `callsPanel`, per profile on the desktop).
-- **Narrow windows** (under 700 px): it's always the rail, to leave the stage its room.
-  Expanding it lays the panel over the stage until you collapse it, click away or press Esc,
-  without changing the remembered choice.
+- **Narrow windows** (under 700 px): a 48 px rail of initials, the mic and camera chips, and
+  timers, to leave the stage its room; a click on one selects that call. (There used to be a
+  chevron to fold it to the rail on any window, remembered, and a way to open it over the stage
+  on a narrow one. Showing it only with two calls made that unnecessary.)
 
 ## Call history
 
@@ -985,7 +982,6 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | K restarted, L calls again | No tab before the call; once answered, the bar starts tucked with the tab. A click on the tab brings the bar back; `infoTucked: false`. |
 | K in diagnostics (F12): the info bar's chevron, then `‹` | The details drop down; tucking the bar closes them. |
 | K with reduced motion emulated | No transition on the bar, no animation on the tab. |
-| K: the Active calls chevron | The 48 px rail as before (initials, chips, timer, History button with its badge); the chevron opens it again. |
 | Several calls: three copies, A (`--profile fgA --port 5191 --ws-port 8191 --video --diagnostics`), B and C (`fgB`/`fgC`, ports 5192/8192 and 5193/8193, `--auto-answer`), all `--fake-media --test-pattern` | A calls B: video both ways. A calls C: A's B call goes on hold ("On hold · 00:06", B shows "Thisis put you on hold"), C's call on the stage with the audio. |
 | A: `2` (the older call) | B's call comes off hold and has the audio (its `<video>` plays, C's is muted), and C's goes on hold: one live call. B gets A's video again within a second (the held call's sender goes back on). |
 | A: `1`, `2`, `1`, `2` quickly | Each call ends up where the last key left it (B live, C on hold). With *SIP re-INVITE*, no 491 in the log: the host queues a call's re-INVITEs ("after the re-INVITE that's out"). |
@@ -993,15 +989,13 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | SIP hold: the same, A's account Hold *SIP re-INVITE* | A sends the re-INVITE; B says "put the call on hold". B still sends (silence) on that call, and A's relay receives it; no "Stream Status set to RecvOnly" warnings in B's log. |
 | C (audio) calls B while B is on its call with A | B's banner: "Thisis · Calling" with Answer and Decline; B's host auto-answers it alongside (a test mode, so nothing is held): "Audio off" on the new row, A's call keeps the audio. No 486. |
 | B: `1`, `M`, End, `Esc` | C's call on the stage with the audio; `M` mutes only it ("Muted", red mic; A's row "Audio is on another call"). End: "You hung up" with *Back to Thisis*; `Esc` goes back to A's call, which takes the audio. |
-| Two accounts a side, B calls A twice (audio, A `--auto-answer`), A adds video to the first | A's list: Bob with filled mic and camera chips ("Bob hears you", "Bob sees your video"), Dave with a faint struck-out mic ("Your mic is on another call"); *Mute all* and *End all* under the list. Grid: Bob's tile shows B's video (B's "On hold" card, as B has it held), Dave's the bars, yours flat. |
-| Same: *Mute all*, collapse, expand, *Unmute all*, *End all* twice | Both rows Muted, red chips, the button *Unmute all*; the rail shows the chips under each initial without a scrollbar. *End all* reads "End 2?", then both calls end ("They hung up" on B) and the buttons go. |
+| Two accounts a side, B calls A twice (audio, A `--auto-answer`), A adds video to the first | A's list: Bob with filled mic and camera chips ("Bob hears you", "Bob sees your video"), Dave with a faint struck-out mic ("Your mic is on another call"); *Grid 2* and *⋯* under the list. Grid: Bob's tile shows B's video (B's "On hold" card, as B has it held), Dave's the bars, yours flat. |
+| Same: ⋯ *Mute all*, ⋯ *Unmute all*, ⋯ *End all 2 calls* twice | Both rows Muted, red chips, the item then *Unmute all*. *End all* reads "End 2 calls? Click again" with the menu still open, then both calls end ("They hung up" on B), the ⋯ goes, and once the ended rows go the panel hides. |
 | A with two calls: `Shift+M`, `Shift+C`, `Shift+M` | Both rows "Muted" and "Video stopped"; then both unmuted, cameras still off. |
 | Address bar cleared on answer: M types `sip:vtN@127.0.0.1:5432` and presses Enter (focus stays in the field); N has `stale text` in its bar; N answers | M's field empty (focus still there), N's empty too; each logs `call 1 answered: address bar cleared`. |
-| Buttons in the calls panel don't toggle it: M with two video calls; Mute all, Unmute all, Cameras off, Cameras on, with the panel open and then collapsed (clicks on the buttons' icon or label, which they redraw); then End all on the rail; a click on the panel's empty space | The panel stays as it was for all four (before: each click toggled it, as the redrawn label was no longer inside the panel when the panel's own click handler checked). End all on the rail opens the panel and nothing more (before: opened, then closed again, so it seemed to do nothing). The empty space still toggles it. |
-| End all on the rail: M with two calls (N held, O live), panel collapsed, End all three times | First click: the panel opens, both calls up, the button *End all* (the rail icon's tooltip says it opens the panel to confirm). Second: *End 2?*. Third: both end *You hung up*. |
 | Missed-call badge: N calls M and hangs up while it rings (M's People view closed) | The badge at 1 on People. People: the view opens on Recent (People pressed), the badge cleared; People again: closed. Contacts tab, close, People: opens on Contacts (the last tab); a missed call meanwhile: People opens on Recent. |
 | Panels close when the call ends: M calls N, opens the keypad and the text (both in the dock); N hangs up | Before: the dock at the right, the stage narrowed. After: M logs `call 1 ended: keypad and text closed`, the dock is hidden and the stage is back to full width with "They hung up". |
-| Cameras off: M with two video calls (N held, O live; `--fake-media`), *Cameras off*, then *Cameras on* | The footer: Grid; *Mute all* and *Cameras off* side by side; *End all* in its own row. *Cameras off*: both calls `camera off`, the camera closes, the self view shows the camera-off card, O's stage shows M's placeholder (the initial in a circle); the button reads *Cameras on*, pressed, in red, and the call's own button *Start video*. *Cameras on*: both calls `camera on`, the camera opens, O sees M's video again, the button *Cameras off*. With only audio calls the button isn't shown. |
+| Cameras off: M with two video calls (N held, O live; `--fake-media`), ⋯ *Cameras off*, then ⋯ *Cameras on* | *Cameras off*: both calls `camera off`, the camera closes, the self view shows the camera-off card, O's stage shows M's placeholder (the initial in a circle); the item then reads *Cameras on*, and the call's own button *Start video*. *Cameras on*: both calls `camera on`, the camera opens, O sees M's video again. With only audio calls the item isn't there. |
 | Grid, the same three copies: A with video calls to B and C, then *Grid* under the list | Two tiles, C's (selected, outlined) with its test pattern, B's "On hold · 00:14"; *Grid* pressed; the control bar empty. `M` and `H` change nothing. |
 | From the grid: B's tile; `G`; C's row in the list; `G`; `2`; `G`; `T` | Each opens that call in Focus, resuming it and holding the other; `G` goes back to the grid each time; `T` opens Focus on the selected call with the text input focused. |
 | In the grid, C calls A | The banner over the grid, no ringing tile; the view stays Grid. The banner's name: the answer view (Settings still says grid). *Answer & hold current*: the new call in Focus, the other two "On hold" in the list. |
@@ -1019,8 +1013,8 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | A idle on Audio, Settings: Camera to `fake_device_0`, theme Dark | The camera stays closed ("camera for calls: …"); the page goes dark at once. |
 | Both copies restarted | A comes back dark with its devices; B has auto-answer and the system theme: each profile keeps its own. |
 | A on Video, Camera button off, then Settings | *Start video calls with my camera on* is unticked, and kept. |
-| Active calls: copy A (`--port 5091 --ws-port 8091`) calls B (`--auto-answer`, `--port 5092 --ws-port 8092`) | A's panel: "B · Calling…", then "B · Audio call" with the timer counting; B's "Thisis · Audio call". Mute: "Muted" in red, red mic; Add video: "Video call", camera green on A, red ("Video stopped") on B, which answered with its camera off. Hang up: "No active calls" on both. |
-| Active calls: collapse, restart, narrow | Collapsed: a 48 px rail with "B" and the timer ticking. Restarting A with the same profile keeps the rail; a click on it opens the panel and saves "open". With two calls, a click on the other call's initial on the rail selects that call and opens the panel. At 560 px it's the rail whatever was saved; expanding lays the 240 px panel over the stage and the saved choice stays put. |
+| Active calls: copy A (`--port 5091 --ws-port 8091`) calls B (`--auto-answer`, `--port 5092 --ws-port 8092`), then a second call | One call: no panel, the stage 1068 px wide at 1100. A second call ringing: the panel shows (stage 816 px) with "B · Audio call" and the new one ringing. Mute: "Muted" in red, red mic; Add video: "Video call", camera green on A. Both hung up: the ended rows stay a few seconds, then the panel hides. |
+| Active calls: narrow (650×600) with two calls | The 48 px rail: each initial with its chips and timer, *Grid* with its count badge and *⋯* stacked at the bottom; a click on the other initial selects that call. |
 | Active calls: B calls A (no auto-answer) | A's row: "Thisis · Incoming call" in amber; Decline empties the list. |
 | Video call, `--test-pattern` to `--fake-media` | Both ways at 30 fps; the callee shows the pattern with the caller's clock, and the caller's self view shows it unmirrored. |
 | Same, Camera off, Camera on, then diagnostics off | Off: placeholder at 5 fps; on: pattern back at 30 fps; diagnostics off: the pattern stops, the placeholder is sent, the self view says "Camera off" and the button "Turn camera on". The camera only opens when that's pressed. |

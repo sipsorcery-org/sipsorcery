@@ -2556,14 +2556,8 @@ function renderGrid(grid) {
 // remembered. Under 700 px it's always the rail, and expanding it lays the panel over the stage
 // until it's collapsed or you click away.
 
-const CALLS_ICON = {
-  collapse: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
-  expand: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
-};
+// Narrow windows (under 700 px): the panel is a rail of avatars, to leave the stage its room.
 const narrowCalls = matchMedia("(max-width: 699px)");
-let callsCollapsed = false;   // your choice on wider windows
-let callsPeek = false;        // narrow windows: the panel open over the stage, for now
-try { callsCollapsed = localStorage.getItem("callsPanel") === "collapsed"; } catch { /* storage unavailable */ }
 
 const fmtElapsed = (ms) => {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -2634,34 +2628,26 @@ function sendsHtml(c) {
   return chip(c.sends.mic, ICON.mic, ICON.micOff) + (c.sends.cam ? chip(c.sends.cam, ICON.video, ICON.videoOff) : "");
 }
 
+// The panel shows only with two or more calls (or while the grid is on screen): with one, the
+// stage says all there is to say about it.
 function renderCalls() {
   const calls = listed();
-  const narrow = narrowCalls.matches;
-  if (!narrow) callsPeek = false;
-  const collapsed = narrow ? !callsPeek : callsCollapsed;
   const panel = $("calls");
-  panel.classList.toggle("collapsed", collapsed);
-  panel.classList.toggle("peek", narrow && callsPeek);
-  panel.title = collapsed ? "Show active calls" : "";
-  const toggle = $("callsToggle");
-  toggle.setAttribute("aria-expanded", String(!collapsed));
-  toggle.setAttribute("aria-label", collapsed ? "Show active calls" : "Collapse active calls");
-  toggle.title = collapsed ? "Show active calls" : "Collapse active calls";
-  const icon = collapsed ? CALLS_ICON.expand : CALLS_ICON.collapse;
-  if (toggle.innerHTML !== icon) toggle.innerHTML = icon;
+  panel.hidden = calls.length < 2 && !inGrid();
+  const rail = narrowCalls.matches;
+  panel.classList.toggle("collapsed", rail);
   $("callCount").textContent = calls.filter(isLive).length || "";
-
-  const list = $("callList");
-  list.replaceChildren(...(calls.length ? calls.map((e, i) => callRow(e, i, collapsed)) : [Object.assign(document.createElement("li"), { className: "call-empty", textContent: "No active calls" })]));
+  $("callList").replaceChildren(...calls.map((e, i) => callRow(e, i, rail)));
   renderAllButtons();
 }
 
-// ---- Every call at once: Grid, Mute all, End all ----
-// Under the list once there are two calls (and while the grid is on screen). Grid is a toggle that
-// looks pressed while the grid is the view (a ringing call's answer view leaves it pressed, as it
-// goes back to the grid once answered); picking a call (its row, its tile) goes back to Focus too.
-// End all asks again ("End 3 calls?") for a few seconds before it ends them: calls you've placed
-// and calls you're on, not one that's only ringing.
+// ---- Every call at once: Grid, and ⋯ for Mute all, Cameras off and End all ----
+// Under the list. Grid is a toggle that looks pressed while the grid is the view (a ringing call's
+// answer view leaves it pressed, as it goes back to the grid once answered); picking a call (its
+// row, its tile) goes back to Focus too. ⋯ (with two calls you can end) opens a menu of the rest,
+// which are rarely needed: Mute all, Cameras off (with a video call), and End all, which asks
+// again ("End 3 calls?") for a few seconds before it ends them: calls you've placed and calls
+// you're on, not one that's only ringing.
 // (Not a call you're placing over another: that's the banner's to Cancel.)
 const endable = () => liveEntries().filter((e) => !e.pending && (e.h.call === "calling" || e.h.call === "connected"));
 const allMuted = () => { const on = [...entries.values()].filter((e) => e.m && e.h.call === "connected"); return on.length > 0 && on.every((e) => e.m.muted); };
@@ -2672,47 +2658,48 @@ let endAllUntil = 0;
 function renderAllButtons() {
   const n = endable().length, grid = inGrid();
   $("callsFoot").hidden = n < 2 && !grid;
-  const mute = $("muteAllBtn"), end = $("endAllBtn"), gridBtn = $("gridBtn");
-  const set = (el, html, label) => { if (el.innerHTML !== html) el.innerHTML = html; el.title = label; el.setAttribute("aria-label", label); };
+  const gridBtn = $("gridBtn");
   const tiles = gridCalls().length;
   const gridOn = view === "grid";
   gridBtn.disabled = !gridOn && tiles < 2;
   gridBtn.setAttribute("aria-pressed", String(gridOn));
   // With the number of calls it shows, as a badge (on the rail, over the icon's corner).
-  set(gridBtn, `${ICON.grid}<span>Grid</span>${tiles > 1 ? `<span class="count">${tiles}</span>` : ""}`, gridOn
-    ? "Showing every call in a grid. Click again, or pick a call, for one call (G)"
-    : `Show all ${tiles} calls in a grid (G)`);
-  const cams = $("camAllBtn");
-  mute.hidden = end.hidden = n < 2;
-  // Cameras off: beside Mute all, while one of the calls has video.
-  cams.hidden = n < 2 || videoCalls().length === 0;
-  if (n < 2) { endAllUntil = 0; return; }
-  if (!cams.hidden) {
-    const off = allCamerasOff();
-    cams.setAttribute("aria-pressed", String(off));
-    set(cams, `${off ? ICON.videoOff : ICON.video}<span>${off ? "Cameras on" : "Cameras off"}</span>`,
-      off ? "Turn the camera back on on every video call (Shift+C)" : "Send your placeholder instead of the camera on every video call, and the ones to come (Shift+C)");
-  }
-  const muted = allMuted();
-  mute.disabled = !hasMic;
-  mute.setAttribute("aria-pressed", String(muted));
-  set(mute, `${muted ? ICON.micOff : ICON.mic}<span>${muted ? "Unmute all" : "Mute all"}</span>`,
-    muted ? "Unmute every call (Shift+M)" : "Mute every call, and the ones to come (Shift+M)");
-  const armed = Date.now() < endAllUntil;
-  set(end, `${ICON.hangup}<span>${armed ? `End ${n}?` : "End all"}</span>`, armed ? `Click again to end all ${n} calls`
-    : $("calls").classList.contains("collapsed") ? `End all ${n} calls: opens the panel to confirm` : `End all ${n} calls`);
+  const html = `${ICON.grid}<span>Grid</span>${tiles > 1 ? `<span class="count">${tiles}</span>` : ""}`;
+  if (gridBtn.innerHTML !== html) gridBtn.innerHTML = html;
+  gridBtn.title = gridOn ? "Showing every call in a grid. Click again, or pick a call, for one call (G)" : `Show all ${tiles} calls in a grid (G)`;
+  $("allMenuBtn").hidden = n < 2;
+  if (n < 2) { endAllUntil = 0; if (openMenu === "all") closeMenu(); }
+  else if (openMenu === "all") fillAllMenu();
 }
-$("gridBtn").onclick = () => setView(view === "grid" ? "focus" : "grid");
-$("muteAllBtn").onclick = () => muteAll();
-$("camAllBtn").onclick = () => camerasOff();
-$("endAllBtn").onclick = () => {
-  // On the rail it's only an icon: the first click opens the panel, so the full button (and how
-  // many calls it ends) is what you confirm, with two more clicks as usual.
-  if ($("calls").classList.contains("collapsed")) {
-    endAllUntil = 0;
-    setCallsCollapsed(false);
-    return;
+// The ⋯ menu's items, refilled as things change while it's open (End all's confirm, say).
+function fillAllMenu() {
+  const menu = $("allMenu"), n = endable().length;
+  const at = [...menu.querySelectorAll(".device-option")].indexOf(document.activeElement);
+  const item = (icon, text, title, onclick, cls = "") => {
+    const b = Object.assign(document.createElement("button"), { type: "button", className: `device-option ${cls}`.trim(), title, onclick });
+    b.setAttribute("role", "menuitem");
+    b.innerHTML = `<span class="device-check">${icon}</span><span></span>`;
+    b.lastChild.textContent = text;
+    return b;
+  };
+  const muted = allMuted();
+  const mute = item(muted ? ICON.micOff : ICON.mic, muted ? "Unmute all" : "Mute all",
+    muted ? "Unmute every call (Shift+M)" : "Mute every call, and the ones to come (Shift+M)", () => { closeMenu(); muteAll(); });
+  mute.disabled = !hasMic;
+  const items = [mute];
+  if (videoCalls().length) {
+    const off = allCamerasOff();
+    items.push(item(off ? ICON.videoOff : ICON.video, off ? "Cameras on" : "Cameras off",
+      off ? "Turn the camera back on on every video call (Shift+C)" : "Send your placeholder instead of the camera on every video call, and the ones to come (Shift+C)",
+      () => { closeMenu(); camerasOff(); }));
   }
+  const armed = Date.now() < endAllUntil;
+  items.push(Object.assign(document.createElement("div"), { className: "device-menu-sep" }),
+    item(ICON.hangup, armed ? `End ${n} calls? Click again` : `End all ${n} calls`, armed ? `Click again to end all ${n} calls` : `End all ${n} calls`, endAll, "danger"));
+  menu.replaceChildren(...items);
+  if (at >= 0) menu.querySelectorAll(".device-option")[at]?.focus();
+}
+function endAll() {
   if (Date.now() >= endAllUntil) {
     endAllUntil = Date.now() + 4000;
     setTimeout(renderAllButtons, 4100);
@@ -2720,11 +2707,14 @@ $("endAllBtn").onclick = () => {
     return;
   }
   endAllUntil = 0;
+  closeMenu();
   const calls = endable();
   log(`ending all ${calls.length} calls`);
   for (const e of calls) post({ type: "hangup", id: e.id });
   renderAllButtons();
-};
+}
+$("gridBtn").onclick = () => setView(view === "grid" ? "focus" : "grid");
+$("allMenuBtn").onclick = () => showMenu("all");
 
 function callRow(e, i, collapsed = false) {
   const c = callStatus(e);
@@ -2734,12 +2724,9 @@ function callRow(e, i, collapsed = false) {
   li.dataset.call = e.id;
   if (e.id === selectedId) li.setAttribute("aria-current", "true");   // the call on the stage
   li.title = [e.h.remote || name, c.statusText, i < 8 ? `(${i + 1})` : ""].filter(Boolean).join(" · ");
-  // A click picks the call. On the rail (wider windows) it also expands the panel, as a click on
-  // the rail's empty space does; under 700 px the panel would cover the stage, so it stays a rail.
+  // A click picks the call.
   li.onclick = (ev) => {
     ev.stopPropagation();
-    if (callsPeek) { callsPeek = false; renderCalls(); }
-    else if (callsCollapsed && !narrowCalls.matches) setCallsCollapsed(false);
     focusCall(e.id);
   };
   const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls, textContent: text ?? "" });
@@ -2769,28 +2756,6 @@ function renderCallTimes() {
   for (const t of document.querySelectorAll("#callList .call-time[data-since]")) t.textContent = fmtElapsed(Date.now() - Number(t.dataset.since));
 }
 
-function setCallsCollapsed(collapsed) {
-  if (narrowCalls.matches) callsPeek = !collapsed;
-  else {
-    callsCollapsed = collapsed;
-    try { localStorage.setItem("callsPanel", collapsed ? "collapsed" : "open"); } catch { /* storage unavailable */ }
-  }
-  renderCalls();
-}
-$("callsToggle").onclick = (e) => { e.stopPropagation(); setCallsCollapsed(!$("calls").classList.contains("collapsed")); };
-// A click anywhere in the panel but on a call or a button (each does its own thing; the chevron
-// toggles it itself, and End all on the rail only opens it) expands or collapses it, so the
-// whole panel is the toggle, not just the small chevron. Checked on the event's path, not the
-// target: a button's handler can re-render it (Mute all, Cameras off), leaving the target
-// detached from the panel by the time the click gets here, which made it look like a click on
-// the panel itself.
-$("calls").addEventListener("click", (e) => {
-  if (e.composedPath().some((n) => n instanceof Element && n.matches(".call-row, button, .calls-foot"))) return;
-  setCallsCollapsed(!$("calls").classList.contains("collapsed"));
-});
-// Narrow windows: clicking away or Esc puts the panel back to the rail.
-document.addEventListener("pointerdown", (e) => { if (callsPeek && !e.target.closest("#calls")) { callsPeek = false; renderCalls(); } });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape" && callsPeek) { callsPeek = false; renderCalls(); } });
 narrowCalls.addEventListener("change", renderCalls);
 
 // ---- Controls ----
@@ -3194,8 +3159,8 @@ $("callType").addEventListener("keydown", (e) => {
 // test pattern. A pick takes effect straight away, mid-call too (a track swap, no renegotiation),
 // and is remembered for next time.
 
-let openMenu = null;   // "mic", "cam", "answer" or null
-const MENUS = { mic: ["micMenu", "micMenuBtn"], cam: ["camMenu", "camMenuBtn"], answer: ["answerMenu", "answerMenuBtn"] };
+let openMenu = null;   // "mic", "cam", "answer", "all" (the calls panel's ⋯) or null
+const MENUS = { mic: ["micMenu", "micMenuBtn"], cam: ["camMenu", "camMenuBtn"], answer: ["answerMenu", "answerMenuBtn"], all: ["allMenu", "allMenuBtn"] };
 let cameras = [];      // the video inputs, for the Answer button's label; refreshed when devices change
 let lastPhase = null;  // the call phase at the last render, to focus Answer once when ringing starts
 let lastSelected = null;   // and the call that was on the stage
@@ -3262,6 +3227,14 @@ async function showMenu(kind) {
   if (openMenu === kind) { closeMenu(); return; }
   closeMenu();
   openMenu = kind;
+  if (kind === "all") {
+    fillAllMenu();
+    $("allMenu").hidden = false;
+    fitInStage($("allMenu"));
+    $("allMenuBtn").setAttribute("aria-expanded", "true");
+    $("allMenu").querySelector(".device-option:not(:disabled)")?.focus();
+    return;
+  }
   let list = [];
   try { list = await navigator.mediaDevices.enumerateDevices(); } catch { /* none to show */ }
   if (openMenu !== kind) return;
@@ -3306,7 +3279,7 @@ async function showMenu(kind) {
 }
 
 // The Answer menu is inside the stage, which clips (overflow: hidden), so a z-index can't lift
-// it out. It's positioned against the window instead (position: fixed isn't clipped by the
+// it out (the ⋯ menu likewise, in the calls panel). It's positioned against the window instead (position: fixed isn't clipped by the
 // stage), below the button if it fits, else above, else on the roomier side, scrolling.
 function fitInStage(menu) {
   const btn = menu.parentElement.getBoundingClientRect();
@@ -3322,12 +3295,13 @@ function fitInStage(menu) {
   if (height > room) menu.style.maxHeight = `${Math.max(room, 80)}px`;
   menu.style.left = `${Math.max(margin, Math.min(btn.left, innerWidth - menu.offsetWidth - margin))}px`;
 }
-addEventListener("resize", () => { if (openMenu === "answer") closeMenu(); });
+addEventListener("resize", () => { if (openMenu === "answer" || openMenu === "all") closeMenu(); });
 
 function closeMenu() {
   if (!openMenu) return;
   const kind = openMenu;
   openMenu = null;
+  if (kind === "all") endAllUntil = 0;
   $(MENUS[kind][0]).hidden = true;
   $(MENUS[kind][1]).setAttribute("aria-expanded", "false");
 }
@@ -3405,7 +3379,7 @@ async function pickMic(id) {
 $("micMenuBtn").onclick = () => showMenu("mic");
 $("camMenuBtn").onclick = () => showMenu("cam");
 document.addEventListener("pointerdown", (e) => {
-  if (openMenu && !e.target.closest(".device-menu, .split-caret")) closeMenu();
+  if (openMenu && !e.target.closest(".device-menu, .split-caret, .calls-more")) closeMenu();
 });
 document.addEventListener("keydown", (e) => {
   if (!openMenu) return;
@@ -3637,7 +3611,7 @@ document.addEventListener("keydown", (ev) => {
   } else if (key === "g" && !ev.shiftKey) {
     ev.preventDefault();
     setView(view === "grid" ? "focus" : "grid");
-  } else if (ev.key === "Escape" && state.call === "ended" && otherLive() && !textOpen && !callsPeek) {
+  } else if (ev.key === "Escape" && state.call === "ended" && otherLive() && !textOpen) {
     ev.preventDefault();
     selectCall(otherLive().id);
   }

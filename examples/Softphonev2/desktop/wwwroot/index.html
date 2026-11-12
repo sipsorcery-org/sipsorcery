@@ -57,25 +57,22 @@
       <button type="submit" class="btn btn-primary" id="callBtn">Call</button>
     </form>
 
-    <!-- Active calls, down the left beside the stage and controls. The chevron collapses it to a
-         narrow rail that still shows a live call; the choice is remembered. On narrow windows
-         it's always the rail, and expanding it lays the panel over the stage for a moment. -->
-    <aside class="calls" id="calls" aria-label="Calls">
+    <!-- Active calls, down the left beside the stage and controls, only while there are two or
+         more (app.js renderCalls). On narrow windows it's a rail of avatars. -->
+    <aside class="calls" id="calls" aria-label="Calls" hidden>
       <div class="calls-head">
         <span class="calls-title" id="callsTitle">Active calls</span>
         <span class="call-count" id="callCount"></span>
-        <button type="button" class="calls-toggle" id="callsToggle" aria-controls="callList"></button>
       </div>
       <ol class="call-list" id="callList"></ol>
-      <!-- With two or more calls: every call at once. Grid shows them all as tiles (G too); it looks
-           pressed while it's on, and picking a call (its row or its tile) goes back to Focus.
-           Cameras off (with a video call) sends the placeholder on every video call. End all asks
-           again before it ends them. -->
+      <!-- Every call at once. Grid shows them all as tiles (G too); it looks pressed while it's on,
+           and picking a call (its row or its tile) goes back to Focus. ⋯ has Mute all, Cameras
+           off (with a video call) and End all, which asks again before it ends them. -->
       <div class="calls-foot" id="callsFoot" hidden>
         <button type="button" class="btn calls-all calls-grid" id="gridBtn" aria-pressed="false"></button>
-        <button type="button" class="btn calls-all" id="muteAllBtn"></button>
-        <button type="button" class="btn calls-all" id="camAllBtn" hidden></button>
-        <button type="button" class="btn btn-danger calls-all" id="endAllBtn"></button>
+        <button type="button" class="btn calls-all calls-more" id="allMenuBtn" aria-haspopup="menu" aria-expanded="false"
+          aria-label="More for every call" title="Mute all, Cameras off, End all"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+        <div class="device-menu all-menu" id="allMenu" role="menu" aria-label="Every call" hidden></div>
       </div>
     </aside>
 
