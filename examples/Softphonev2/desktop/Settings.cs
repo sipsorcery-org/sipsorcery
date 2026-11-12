@@ -52,6 +52,13 @@ public sealed class Settings
     public bool OfferText { get; set; } = true;
 
     /// <summary>
+    /// Offer SRTP on plain SIP calls, best effort (SDES keys on RTP/AVP): used if the other phone
+    /// takes it up, plain RTP if not. Off (--no-srtp) offers none, and takes it only from a phone
+    /// that requires it (RTP/SAVP).
+    /// </summary>
+    public bool OfferSrtp { get; set; } = true;
+
+    /// <summary>
     /// Calls we place use WebRTC media (ICE, DTLS-SRTP) whatever the transport, for calling browser
     /// phones registered with a server. A plain SIP phone won't take them. Incoming calls don't
     /// need it: a WebRTC offer is answered in kind. (The real app will have this per account.)
@@ -118,6 +125,7 @@ public sealed class Settings
                 case "--auto-answer": settings.AutoAnswer = true; break;
                 case "--no-video": settings.OfferVideo = false; break;
                 case "--no-text": settings.OfferText = false; break;
+                case "--no-srtp": settings.OfferSrtp = false; break;
                 case "--webrtc": settings.WebRtcCalls = true; break;
                 case "--diagnostics": settings.Diagnostics = true; break;
                 case "--say" when i + 1 < args.Length: settings.Say = args[++i]; break;

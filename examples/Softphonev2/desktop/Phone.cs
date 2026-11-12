@@ -1285,7 +1285,10 @@ public sealed class Phone : IDisposable
     /// </summary>
     private RTPSession NewSession(Call c, bool video, string? theirOffer = null)
     {
-        var rtp = MediaRelay.CreateSipSession(video, c.WebRtc);
+        // SRTP whenever we can: a phone that requires it offers RTP/SAVP, which plain RTP can't
+        // answer, so take it even with --no-srtp.
+        bool srtp = _settings.OfferSrtp || (theirOffer != null && OffersSavp(theirOffer));
+        var rtp = MediaRelay.CreateSipSession(video, c.WebRtc, srtp);
         // Who's sending, per kind: a transfer needs the old far end's sources (ForgetOldSources).
         rtp.OnRtpPacketReceived += (_, kind, pkt) => { if (c.Rtp == rtp) c.Sources[kind] = pkt.Header.SyncSource; };
         if (rtp is TextPeerConnection pc)
@@ -1318,6 +1321,12 @@ public sealed class Phone : IDisposable
         }
         else AttachText(c, rtp);
         return rtp;
+    }
+
+    private static bool OffersSavp(string sdp)
+    {
+        try { return SDP.ParseSDPDescription(sdp).Media.Any(m => m.Port != 0 && m.Transport == "RTP/SAVP"); }
+        catch { return false; }
     }
 
     private static bool IsWebSocketUri(string uri) =>
@@ -1626,6 +1635,14 @@ public sealed class Phone : IDisposable
         MediaOffer?.Invoke(c, await relay.CreateOfferAsync());
     }
 
+    private static MediaStream? StreamFor(RTPSession rtp, SDPMediaTypesEnum kind) => kind switch
+    {
+        SDPMediaTypesEnum.audio => rtp.AudioStream,
+        SDPMediaTypesEnum.video => rtp.VideoStream,
+        SDPMediaTypesEnum.text => rtp.TextStream,
+        _ => null,
+    };
+
     private static CallDetails DescribeCall(Call c, RTPSession rtp, MediaRelay relay)
     {
         var dialogue = c.Ua?.Dialogue;
@@ -1641,8 +1658,11 @@ public sealed class Phone : IDisposable
             TheirPhone: string.IsNullOrWhiteSpace(c.TheirPhone) ? null : c.TheirPhone,
             CallId: dialogue?.CallId,
             TheirMedia: rtp.HasAudio ? rtp.AudioStream.DestinationEndPoint?.ToString() : null,
-            // SRTP shows as RTP/SAVP (or UDP/TLS/RTP/SAVP) on their media lines; SIP over TLS as tls.
-            MediaEncrypted: media.Count > 0 && media.All(m => m.Transport.Contains("SAVP", StringComparison.OrdinalIgnoreCase)),
+            // Every stream encrypted: WebRTC's DTLS (UDP/TLS/RTP/SAVP, and the data channel's
+            // DTLS/SCTP), or SRTP with keys agreed in the SDP, which best effort does on RTP/AVP
+            // lines too, so it's the stream that says. SIP over TLS shows as tls.
+            MediaEncrypted: media.Count > 0 && media.All(m => m.Transport.Contains("TLS", StringComparison.OrdinalIgnoreCase)
+                || StreamFor(rtp, m.Media)?.IsSecurityContextReady() == true),
             SignallingEncrypted: ep?.Protocol is SIPProtocolsEnum.tls or SIPProtocolsEnum.wss,
             Audio: Codec(relay.Audio),
             Video: relay.Video is { } v ? v.Name() : null);

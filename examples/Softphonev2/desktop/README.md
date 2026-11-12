@@ -374,7 +374,7 @@ arrow and tab went.
 |---|---|---|
 | Call | Outgoing or incoming, and the account (or "no account") | the host |
 | Their phone | their `User-Agent` (or `Server` on the 200 OK we got), or "Didn't say" | the host |
-| Security | Encrypted or not: SRTP shows as `RTP/SAVP` on all their media lines, SIP over TLS (or WSS) as the transport. Today it's always "Not encrypted: plain RTP, SIP over UDP", in amber | the host |
+| Security | Encrypted or not: the media is when every stream has SRTP keys (see [SRTP](#srtp)) or is WebRTC's DTLS-SRTP, SIP when it's over TLS (or WSS). "Media encrypted (SRTP); SIP not (UDP)" between two of these softphones, "Not encrypted: plain RTP, SIP over UDP", in amber, with a phone without SRTP | the host |
 | Audio, Video | The codec each way, "↑ Opus 48 kHz ↓ G722 16 kHz", or one name when both match. Each end can send a different codec, and this is the only place that shows it. G.722 is labelled 16 kHz, its sample rate, not its 8 kHz RTP clock. Video has its frame size, "VP8 1280×720", refreshed every second while the panel is open | the page's WebRTC stats, which are the SIP leg's, since the relay doesn't re-encode |
 | SIP | transport and their SIP address and port, `UDP 127.0.0.1:5080` | the dialog |
 | Media | where their audio goes, the RTP address from their SDP | the SIP session |
@@ -382,6 +382,30 @@ arrow and tab went.
 
 The host sends these as a `details` message when the call connects, and again if video is
 added.
+
+## SRTP
+
+Every plain SIP call offers SRTP, best effort: each media line stays `RTP/AVP`, which every SIP
+phone takes, with `a=crypto` lines (SDES keys, AES_CM_128_HMAC_SHA1_80 and \_32) added. A phone
+without SRTP ignores them and answers plain RTP, so the call goes ahead unencrypted rather than
+failing; one with SRTP answers with a crypto line of its own and the media is encrypted. It's
+SIPSorcery's `RtpSecureMediaOptionEnum.SdpCryptoBestEffort`.
+
+- **Answering**: crypto on `RTP/AVP` is answered with crypto (SRTP), an offer without it plain RTP,
+  and `RTP/SAVP` (a phone set to require SRTP) with `RTP/SAVP` and SRTP; `RTP/SAVP` without a key
+  we can use is turned down (488).
+- **Each stream on its own**: audio, video and text each settle on SRTP or plain RTP. Once one is
+  plain our re-offers (hold, adding video) leave its crypto out; a re-offer from them without
+  crypto on an SRTP call changes it to plain, one with crypto on a plain call to SRTP.
+- **Where it shows**: the call details' *Security* row (diagnostics mode).
+- **The limit**: a phone that requires SRTP and only takes `RTP/SAVP` offers turns down our calls
+  to it (488), as it would any best-effort offer. Calls from it work.
+- **The keys are in the SDP**, so they're only as private as the SIP: over UDP or TCP anyone who
+  can see the media can read them from the INVITE. Over TLS (a `sips:` or `transport=tls`
+  account) they aren't.
+- `--no-srtp` offers none, for checking a phone that mishandles crypto lines; calls from a phone
+  that requires SRTP are still answered with it. Browser phones (WebSocket) use WebRTC's DTLS-SRTP
+  regardless.
 
 ## Real-time text
 
@@ -849,7 +873,7 @@ at once; *Call from* picks the one calls go out from.
   (UDP, TCP or TLS), auth username (if not the username), password, *Register*, expiry
   (60–7200 s, default 300), and under *Calls*, *Hold*: *Music on hold* (the default) or *SIP
   re-INVITE* for a PBX (see [Several calls](#several-calls)). A call keeps the Hold it started
-  with. Outbound proxy, STUN, SRTP and the DTMF choice from the prototype aren't there yet: the
+  with. Outbound proxy, STUN, an SRTP choice (it's always offered, best effort: see [SRTP](#srtp)) and the DTMF choice from the prototype aren't there yet: the
   host doesn't do them per account (DTMF is RFC 4733, or SIP INFO when the far end doesn't
   agree it; see [Keypad](#keypad-dtmf)). *Re-register* registers
   again now; the *Enabled* switch turns the account off (unregistered, not offered in Call
@@ -924,6 +948,7 @@ Switches, mostly for testing:
 | `--loss-audio <percent>`, `--loss-video <percent>` | Start with the Network tab's loss sliders at these values. |
 | `--ws-port <n>` | SIP over WebSocket port for browser phones (default 8081, 0 for none). |
 | `--webrtc` | Calls we place use WebRTC media whatever the transport, for browsers registered with a server. A plain SIP phone won't take them. (Will be per account.) |
+| `--no-srtp` | No SRTP offered on plain SIP calls (see [SRTP](#srtp)); an offer that requires it (`RTP/SAVP`) is still answered with it. |
 | `--no-text` | No real-time text: it's left out of offers and answers (no `m=text`, and on WebRTC calls no T.140 data channel), so the other side adding it is turned down. (Will be per account.) |
 | `--say <text>` | Once text is up on a call, send this message. |
 | `--dtmf <keys>` | Once a call's audio is up, open the keypad and press these keys (0–9, \*, #), as typed keys, 2 s in and one every 400 ms. |

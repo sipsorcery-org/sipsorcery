@@ -174,12 +174,17 @@ public sealed class MediaRelay : IDisposable
     ///
     /// Calls over SIP WebSocket are with browser phones, which only do WebRTC media (ICE,
     /// DTLS-SRTP, rtcp-mux, bundle), so for those the SIP side is a peer connection of its own;
-    /// it's an RTPSession too, so the relay works the same either way. Everything else is plain
-    /// RTP.
+    /// it's an RTPSession too, so the relay works the same either way. Everything else is RTP,
+    /// with SRTP offered best effort (<paramref name="srtp"/>): SDES keys on RTP/AVP media lines,
+    /// which a phone without SRTP ignores and answers plain RTP, and one with SRTP takes up. An
+    /// offer of RTP/SAVP (SRTP required) is answered with SRTP, and one without keys plain RTP.
     /// </summary>
-    public static RTPSession CreateSipSession(bool offerVideo = true, bool webRtc = false)
+    public static RTPSession CreateSipSession(bool offerVideo = true, bool webRtc = false, bool srtp = true)
     {
-        RTPSession rtp = webRtc ? new TextPeerConnection() : new RTPSession(false, false, false);
+        RTPSession rtp = webRtc ? new TextPeerConnection() : new RTPSession(new RtpSessionConfig
+        {
+            RtpSecureMediaOption = srtp ? RtpSecureMediaOptionEnum.SdpCryptoBestEffort : RtpSecureMediaOptionEnum.None,
+        });
         rtp.addTrack(new MediaStreamTrack(new List<AudioFormat>
         {
             new(111, "OPUS", 48000, 2, "minptime=10;useinbandfec=1"),
