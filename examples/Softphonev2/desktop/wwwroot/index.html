@@ -36,12 +36,12 @@
         <!-- Why a call to a contact didn't use its account (accounts.js useAccount). -->
         <span class="from-note" id="fromNote" role="status" hidden></span>
       </div>
-      <!-- Focusing the address (or /) lists recent calls and contacts; typing filters them (app.js,
-           "Address field suggestions"). -->
+      <!-- Focusing the address (or /) lists contacts and recent calls; typing filters them (app.js,
+           "Address fields"). -->
       <div class="dest-wrap">
         <input id="address" type="text" placeholder="Name, number or SIP address, e.g. sip:alice@example.com" spellcheck="false" aria-label="Number or SIP address"
           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="dialSuggest">
-        <div class="dial-suggest" id="dialSuggest" role="listbox" aria-label="Recent calls and contacts" hidden></div>
+        <div class="dial-suggest" id="dialSuggest" role="listbox" aria-label="Contacts and recent calls" hidden></div>
         <!-- The address is a saved contact's: the mark and their name, inside the field (app.js). -->
         <span class="dest-contact" id="destContact" role="status" hidden></span>
         <!-- Empties the field, at its far right while it has text (app.js renderDestContact). -->
@@ -57,10 +57,9 @@
       <button type="submit" class="btn btn-primary" id="callBtn">Call</button>
     </form>
 
-    <!-- Active calls, down the left beside the stage and controls. The chevron (or [) hides it
-         to the left, leaving the arrow tab below to bring it back; the choice is remembered. On
-         narrow windows it's a rail instead, and expanding it lays the panel over the stage for a
-         moment. -->
+    <!-- Active calls, down the left beside the stage and controls. The chevron collapses it to a
+         narrow rail that still shows a live call; the choice is remembered. On narrow windows
+         it's always the rail, and expanding it lays the panel over the stage for a moment. -->
     <aside class="calls" id="calls" aria-label="Calls">
       <div class="calls-head">
         <span class="calls-title" id="callsTitle">Active calls</span>
@@ -69,11 +68,13 @@
       </div>
       <ol class="call-list" id="callList"></ol>
       <!-- With two or more calls: every call at once. Grid shows them all as tiles (G too); it looks
-           pressed while it's on, and picking a call (its row or its tile) goes back to Focus. End
-           all asks again before it ends them. -->
+           pressed while it's on, and picking a call (its row or its tile) goes back to Focus.
+           Cameras off (with a video call) sends the placeholder on every video call. End all asks
+           again before it ends them. -->
       <div class="calls-foot" id="callsFoot" hidden>
         <button type="button" class="btn calls-all calls-grid" id="gridBtn" aria-pressed="false"></button>
         <button type="button" class="btn calls-all" id="muteAllBtn"></button>
+        <button type="button" class="btn calls-all" id="camAllBtn" hidden></button>
         <button type="button" class="btn btn-danger calls-all" id="endAllBtn"></button>
       </div>
       <!-- Call history (history.js), under the calls: the latest few, each with a call-back
@@ -92,14 +93,6 @@
         <button type="button" class="btn hist-rail" id="histRail" aria-label="Call history"><span class="missed-count" id="histRailCount"></span></button>
       </section>
     </aside>
-    <!-- With the panel hidden (wider windows): a small arrow tab on the left edge brings it back
-         ([ too). It shows how many calls are live, and a red dot for a ringing call or missed
-         calls you haven't seen. -->
-    <button type="button" class="calls-tab" id="callsTab" aria-controls="calls" aria-expanded="false" hidden>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-      <span class="tab-count" id="callsTabCount"></span>
-      <span class="missed-count" id="callsTabMissed"></span>
-    </button>
 
     <!-- The stage, with the real-time text popover and toast over its bottom edge. -->
     <div class="stage-row">
@@ -150,13 +143,25 @@
         <span id="heldText"></span>
         <button type="button" class="btn" id="heldResume"></button>
       </div>
-      <!-- Who the call is with and for how long; the chevron drops down the call's details. -->
+      <!-- How a transfer on the selected call is going (ours or theirs): a quiet pill at the top right
+           of the stage, in place of the held note: Resume and Try again if ours failed. -->
+      <div class="held-note xfer-note" id="xferNote" role="status" hidden>
+        <span id="xferText"></span>
+        <button type="button" class="btn" id="xferResume">Resume</button>
+        <button type="button" class="btn" id="xferRetry">Try again</button>
+        <button type="button" class="rtt-close" id="xferDismiss" aria-label="Dismiss" title="Dismiss"></button>
+      </div>
+      <!-- Who the call is with and for how long; the chevron drops down the call's details. The
+           arrow at its start tucks it away off the stage's left edge, leaving a small arrow tab
+           (infoTab) to bring it back; the choice is remembered. -->
       <div class="info" id="info" hidden>
+        <button type="button" class="info-hide" id="infoHide" aria-controls="info" title="Hide call info" aria-label="Hide call info"></button>
         <button type="button" class="info-head" id="infoHead" aria-expanded="false" aria-controls="details" title="Show call details">
           <span id="infoName"></span><span class="info-contact" id="infoContact" hidden></span><span class="timer" id="timer"></span><span class="muted-pill" id="mutedPill" hidden></span><span class="info-chevron" id="infoChevron"></span>
         </button>
         <div class="details" id="details" hidden></div>
       </div>
+      <button type="button" class="info-tab" id="infoTab" aria-controls="info" aria-expanded="false" hidden></button>
       <!-- Diagnostics: call quality, ↑ what we send (their RTCP) and ↓ what we receive (measured here). -->
       <div class="quality diag-only collapsed" id="quality" hidden>
         <button type="button" class="q-head" id="qHead" aria-expanded="false" title="Show the details"><span class="q-title">Call quality</span><span class="q-rtt" id="qRtt"></span><span class="q-sum" id="qSum"></span><span class="q-chevron" id="qChevron"></span></button>
@@ -247,6 +252,30 @@
       <div class="keypad-in" id="keypadIn" role="status"></div>
     </aside>
 
+    <!-- Transfer (app.js, "Transfer"): a popover over the stage, above the Transfer button. Join
+         the call with another of yours (attended), or send it to an address (blind), in a field
+         that is the address bar's (addressField). Esc or a click away closes it. -->
+    <form class="xfer-pop" id="xferPop" hidden aria-label="Transfer" autocomplete="off">
+      <div class="rtt-head">
+        <span class="rtt-title" id="xferTitle">Transfer</span>
+        <button type="button" class="rtt-close" id="xferClose" aria-label="Close transfer" title="Close (Esc)"></button>
+      </div>
+      <div class="xfer-body">
+        <div class="xfer-calls" id="xferCalls"></div>
+        <label class="xfer-label" for="xferAddr" id="xferAddrLabel">To an address</label>
+        <div class="xfer-entry">
+          <div class="dest-wrap">
+            <input type="text" class="xfer-input" id="xferAddr" spellcheck="false" placeholder="Name, number or SIP address"
+              role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="xferSug">
+            <span class="dest-contact" id="xferContact" role="status" hidden></span>
+            <button type="button" class="dest-clear" id="xferClear" aria-label="Clear" title="Clear" hidden></button>
+          </div>
+          <button type="submit" class="btn btn-primary" id="xferGo" disabled>Transfer</button>
+        </div>
+        <div class="xfer-sug" id="xferSug" role="listbox" aria-label="Contacts and recent calls"></div>
+      </div>
+    </form>
+
     <!-- Text arriving with the popover closed: who and what, for a few seconds. -->
     <div class="rtt-toast" id="rttToast" role="status" hidden>
       <span class="rtt-toast-icon" id="rttToastIcon" aria-hidden="true"></span>
@@ -276,6 +305,9 @@
       <button type="button" class="btn" id="holdBtn" aria-pressed="false" disabled></button>
       <button type="button" class="btn btn-danger" id="hangupBtn" disabled></button>
       <div class="controls-right">
+        <!-- Transfer the selected call, in Focus view and only once it's connected: opens the
+             transfer popover above it. Hidden where the host can't transfer (the web softphone). -->
+        <button type="button" class="btn icon-btn xfer-btn" id="transferBtn" aria-pressed="false" aria-expanded="false" aria-label="Transfer" aria-controls="xferPop" disabled hidden></button>
         <!-- The keypad (DTMF) for the selected call, in Focus view: opens the pad above it. -->
         <button type="button" class="btn icon-btn keypad-btn" id="keypadBtn" aria-pressed="false" aria-label="Keypad" aria-controls="keypad" disabled></button>
         <!-- Real-time text, rarely used: an icon that opens the popover above it (T too). -->

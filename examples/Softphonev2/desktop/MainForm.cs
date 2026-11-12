@@ -8,7 +8,8 @@ namespace SIPSorcery.Softphone;
 /// <summary>
 /// The window: a WebView2 showing <c>wwwroot/index.html</c>, and the message bridge between that
 /// page and <see cref="Phone"/>. Page → host: ready, dial, answer, decline, hangup, hold,
-/// add-video, text, add-text, loss, media-answer, for accounts account-select, account-save,
+/// add-video, text, add-text, loss, media-answer, transfer {id, target} or {id, address, label},
+/// transfer-dismiss, for accounts account-select, account-save,
 /// account-enable, account-remove, account-register, and for the call history history-remove
 /// {ids} and history-restore {ids} (Undo). Host → page: state (every call, with the accounts and
 /// their registrations), history (every past call, newest first: on ready and whenever it
@@ -252,6 +253,14 @@ internal sealed class MainForm : Form
                 case "hold":
                     _phone.Hold(Id(msg), (bool?)msg["hold"] ?? true);
                     break;
+                case "transfer":
+                    // To another of our calls (attended, {target}), or to an address (blind, {address, label?}).
+                    if ((string?)msg["target"] is { Length: > 0 } target) await _phone.AttendedTransfer(Id(msg), target);
+                    else await _phone.BlindTransfer(Id(msg), (string?)msg["address"] ?? "", (string?)msg["label"]);
+                    break;
+                case "transfer-dismiss":
+                    _phone.DismissTransfer(Id(msg));
+                    break;
                 case "copy":
                     // The host's clipboard rather than the page's, which needs permissions the
                     // page may not have.
@@ -389,8 +398,13 @@ internal sealed class MainForm : Form
                 me = c.Account is { } ca ? (string.IsNullOrWhiteSpace(ca.DisplayName) ? ca.Username : ca.DisplayName) : null,
                 // Real-time text on the call: off, adding, on, refused or disabled.
                 text = c.TextState,
+                // A transfer on the call, ours or theirs: { role: out | in | replace, target, by,
+                // attended, partner, status: asking | calling | done | failed, detail (in words) }.
+                transfer = c.Transfer is { } t ? new { t.Role, t.Target, t.By, t.Attended, partner = t.PartnerId, t.Status, t.Detail } : null,
             }).ToList(),
             maxCalls = Phone.MaxCalls,
+            // This host can transfer calls (the web softphone's doesn't, and the page hides Transfer).
+            canTransfer = true,
             // The account calls go out from (Call from), and its registration.
             registration = selected == null ? "none" : registration,
             registrationDetail,

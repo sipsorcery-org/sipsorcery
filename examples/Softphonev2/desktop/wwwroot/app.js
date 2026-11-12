@@ -63,6 +63,7 @@ const ICON = {
   // The dock (a panel at the right) and back out of it.
   dock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18M8 9l3 3-3 3"/></svg>',
   undock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18M11 9l-3 3 3 3"/></svg>',
+  transfer: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 2 4 4-4 4"/><path d="M14 6h8"/><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
   keypad: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>',
   pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
   play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>',
@@ -1322,6 +1323,37 @@ function setDetailsOpen(open) {
 $("infoChevron").innerHTML = ICON.chevronDown;
 // Call details are technical, so only in diagnostics mode: otherwise the info bar is just
 // who and how long, with no chevron, and closing diagnostics closes them.
+// The info bar can be tucked away off the stage's left edge (its arrow), leaving a small arrow
+// tab to bring it back, with a red dot while you're muted. Remembered (prefs.infoTucked).
+let infoTucked = !!prefs.infoTucked;
+const INFO_ARROW = {
+  hide: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
+  show: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
+};
+$("infoHide").innerHTML = INFO_ARROW.hide;
+$("infoTab").innerHTML = INFO_ARROW.show;
+function renderInfoTuck() {
+  const info = $("info"), tab = $("infoTab");
+  info.classList.toggle("tucked", infoTucked);
+  info.inert = infoTucked;
+  tab.hidden = info.hidden || !infoTucked;
+  const muted = !$("mutedPill").hidden;
+  tab.classList.toggle("muted", muted);
+  const label = ["Show call info", $("infoName").textContent, muted && "You're muted"].filter(Boolean).join(" · ");
+  tab.title = label;
+  tab.setAttribute("aria-label", label);
+}
+function setInfoTucked(on) {
+  infoTucked = on;
+  savePref("infoTucked", on);
+  if (on && !$("details").hidden) setDetailsOpen(false);
+  // From the keyboard, the focus goes on to the arrow that undoes it (not after a click: no ring).
+  const refocus = !!document.activeElement?.matches("#info :focus-visible, #infoTab:focus-visible");
+  renderInfoTuck();
+  if (refocus) (on ? $("infoTab") : $("infoHide")).focus();
+}
+$("infoHide").onclick = () => setInfoTucked(true);
+$("infoTab").onclick = () => setInfoTucked(false);
 function allowDetails(on) {
   $("infoHead").disabled = !on;
   if (!on && !$("details").hidden) setDetailsOpen(false);
@@ -1442,6 +1474,7 @@ function setTextOpen(open, focus = true) {
     // open (they sit in the same place): an open keypad popover closes, or joins a docked text.
     textDocked = !!prefs.dockText || (keypadOpen && keypadDocked);
     if (keypadOpen && !keypadDocked) { if (textDocked) keypadDocked = true; else keypadOpen = false; }
+    if (!textDocked) xferOpen = false;
   }
   textOpen = open;
   if (open) { const e = sel(); if (e) e.text.unread = false; hideToast(); renderText(); }
@@ -1558,6 +1591,7 @@ function setKeypadOpen(open) {
     // As for text: docked by choice or to join the text panel; one popover at a time.
     keypadDocked = !!prefs.dockKeypad || (textOpen && textDocked);
     if (textOpen && !textDocked) { if (keypadDocked) textDocked = true; else setTextOpen(false, false); }
+    if (!keypadDocked) xferOpen = false;
   }
   keypadOpen = open;
   keypadFor = open ? selectedId : null;
@@ -1601,6 +1635,158 @@ document.addEventListener("keydown", (ev) => {
 document.addEventListener("click", (ev) => {
   if (prefs.dockText && $("textBtn").contains(ev.target)) return;   // it joins the docked text
   if (keypadOpen && !keypadDocked && !$("keypad").contains(ev.target) && !$("keypadBtn").contains(ev.target)) setKeypadOpen(false);
+}, true);
+
+// ---- Transfer ----
+// As in the prototype: "Attended to another active call, or blind to an address". The Transfer
+// button (Focus view, a connected call, a host that can: not the web softphone's) opens a
+// popover above it: your other connected calls first (Join: they're asked to call that person,
+// replacing your call with them, and both your calls end), then an address field that is the
+// address bar's (addressField, below: the same contacts and recent calls, keys, mark and ×).
+// Enter or a click puts a row in the field; Transfer, or Enter again, sends the call there. A
+// bare name or number goes to the call's account's server (the host resolves it). The
+// call goes on hold as the transfer starts, and a note on the stage says how it's going, from the
+// host's transfer state (see MainForm). Failed, the call stays on hold: Resume or Try again,
+// your choice. A transfer done to you (they send you elsewhere, or someone takes over from them)
+// shows in the same note, for a few seconds.
+let xferOpen = false;
+let xferFor = null;        // the call it was opened on: it closes if another is selected
+const xferBusy = (e) => ["asking", "calling"].includes(e?.h.transfer?.status);
+// Why the selected call can't be transferred now, or null if it can.
+function transferBlocked() {
+  const e = sel();
+  if (!e || e.h.call !== "connected") return "Transfer, during a call";
+  if (inGrid()) return "Transfer: pick the call to open it in Focus";
+  if (xferBusy(e)) return "A transfer is under way on this call";
+  return null;
+}
+function setTransferOpen(open) {
+  if (open && transferBlocked()) return;
+  if (open && !xferOpen) {
+    // One popover at a time: the keypad and text close unless they're docked.
+    if (keypadOpen && !keypadDocked) keypadOpen = false;
+    if (textOpen && !textDocked) setTextOpen(false, false);
+    $("xferAddr").value = "";
+    xferField.pick = null;
+  }
+  xferOpen = open;
+  xferFor = open ? selectedId : null;
+  render();
+  if (open) {
+    xferField.refresh();
+    ($("xferCalls").querySelector("button") ?? $("xferAddr")).focus();
+  } else if (document.activeElement && $("xferPop").contains(document.activeElement)) $("transferBtn").focus();
+}
+// Your other calls it can be joined with: connected, and not being transferred themselves.
+const xferCandidates = () => listed().filter((x) => x.id !== selectedId && x.h.call === "connected" && !xferBusy(x));
+function renderTransfer() {
+  const btn = $("transferBtn");
+  const can = !!hostState.canTransfer;
+  btn.hidden = !can || inGrid();
+  const blocked = can ? transferBlocked() : "Transfer";
+  if (xferOpen && (blocked || selectedId !== xferFor)) {
+    xferOpen = false;
+    if (document.activeElement && $("xferPop").contains(document.activeElement)) btn.focus();
+  }
+  btn.disabled = !!blocked;
+  btn.setAttribute("aria-pressed", String(xferOpen));
+  btn.setAttribute("aria-expanded", String(xferOpen));
+  if (!btn.innerHTML) btn.innerHTML = ICON.transfer;
+  btn.title = blocked ?? (xferOpen ? "Close transfer (Esc)" : "Transfer this call: to another of your calls, or an address");
+  $("xferPop").hidden = !xferOpen;
+  renderTransferNote();
+  if (!xferOpen) return;
+  const e = sel();
+  $("xferTitle").textContent = `Transfer ${nameOf(e)}`;
+  // Rebuilt only when it changes: render runs every second while a call's held.
+  const others = xferCandidates();
+  const html = others.length ? `<div class="xfer-label">To another of your calls</div>${others.map((o) => `
+    <button type="button" class="xfer-call" data-call="${o.id}" title="${escHtml(`${nameOf(e)} will be put through to ${nameOf(o)}, and you'll leave both calls`)}">
+      <span class="suggest-avatar" aria-hidden="true"${avatarAttr(o.h.remote)}>${escHtml(initial(nameOf(o)))}</span>
+      <span class="suggest-main"><span class="suggest-name">${escHtml(nameOf(o))}</span><span class="suggest-uri">${escHtml(o.h.remote)}</span></span>
+      <span class="xfer-call-go">Join</span></button>`).join("")}` : "";
+  if ($("xferCalls").dataset.html !== html) { $("xferCalls").dataset.html = html; $("xferCalls").innerHTML = html; }
+  $("xferAddrLabel").textContent = others.length ? "Or to an address" : "To an address";
+  renderXferEntry();
+}
+// The address: the address bar's field (addressField), its list always showing, without the
+// person being transferred and without the Contacts… and Add to contacts rows.
+const xferField = addressField({
+  input: $("xferAddr"), list: $("xferSug"), clear: $("xferClear"), badge: $("xferContact"),
+  idPrefix: "xsug", popup: false, foot: false, goIcon: () => ICON.transfer, goLabel: "Transfer here",
+  skip: () => sel()?.h.remote ?? null,
+  pick: () => renderXferEntry(),
+  changed: () => renderXferEntry(),
+});
+// The Transfer button: enabled with something typed or highlighted.
+function renderXferEntry() {
+  $("xferGo").disabled = !$("xferAddr").value.trim() && !xferField.items[xferField.active];
+}
+// Starts a transfer of the selected call: { target } another call's id, or { address, label }.
+// The host holds the call (both, attended) as it sends the REFER; here they count as held at
+// once, so the audio moves off them now.
+function startTransfer(how) {
+  const e = sel();
+  if (!e || transferBlocked()) return;
+  for (const x of [e, how.target ? entries.get(how.target) : null]) {
+    if (!x || holdState(x)) continue;
+    x.holdWanted = true;
+    x.holdAskedAt = Date.now();
+  }
+  log(how.target ? `call ${e.id}: transfer to call ${how.target} (${nameOf(entries.get(how.target))}), attended`
+    : `call ${e.id}: transfer to ${how.address}, blind`);
+  post({ type: "transfer", id: e.id, ...how });
+  setTransferOpen(false);
+  syncCamera();   // the On hold card
+}
+// it: the row picked; without one, what's typed.
+function transferToAddress(it = null) {
+  const typed = $("xferAddr").value.trim();
+  // A row picked into the field (and not edited since) goes with its name.
+  if (!it && xferField.pick && sameUri(xferField.pick.uri, typed)) it = xferField.pick;
+  if (it) startTransfer({ address: it.uri, label: it.name });
+  else if (typed) startTransfer({ address: typed, label: contactFor(typed)?.name ?? null });
+}
+// The note on the stage: the selected call's transfer, while it's going and for a moment after.
+function renderTransferNote() {
+  const e = sel();
+  const t = e?.h.call === "connected" ? e.h.transfer : null;
+  const note = $("xferNote");
+  note.hidden = !t || inGrid();
+  if (note.hidden) return;
+  const ours = t.role === "out";
+  $("xferText").textContent = t.detail || (ours ? `Transferring to ${t.target}…` : `Being transferred to ${t.target}…`);
+  note.classList.toggle("bad", t.status === "failed");
+  note.classList.toggle("done", t.status === "done");
+  // Ours failed: the call's still on hold, and what next is yours to choose.
+  const failedOurs = ours && t.status === "failed";
+  $("xferResume").hidden = !(failedOurs && holdState(e));
+  $("xferRetry").hidden = !failedOurs;
+  $("xferDismiss").hidden = !(t.status === "failed" || (t.status === "done" && !ours));
+}
+$("transferBtn").onclick = () => setTransferOpen(!xferOpen);
+$("xferClose").innerHTML = ICON.close;
+$("xferClose").onclick = () => setTransferOpen(false);
+$("xferDismiss").innerHTML = ICON.close;
+$("xferDismiss").onclick = () => post({ type: "transfer-dismiss", id: selectedId });
+$("xferResume").innerHTML = `${ICON.play}<span>Resume</span>`;
+$("xferResume").onclick = () => goLive(sel());
+$("xferRetry").onclick = () => { post({ type: "transfer-dismiss", id: selectedId }); setTransferOpen(true); };
+$("xferCalls").onclick = (ev) => { const b = ev.target.closest("[data-call]"); if (b) startTransfer({ target: b.dataset.call }); };
+$("xferPop").onsubmit = (ev) => {
+  ev.preventDefault();
+  const it = xferField.items[xferField.active];
+  transferToAddress(it?.action ? null : it);
+};
+// Esc closes it (before the other shortcuts), and so does a click away from it.
+document.addEventListener("keydown", (ev) => {
+  if (!xferOpen || ev.key !== "Escape" || openMenu) return;
+  ev.preventDefault();
+  ev.stopImmediatePropagation();
+  setTransferOpen(false);
+}, true);
+document.addEventListener("click", (ev) => {
+  if (xferOpen && !$("xferPop").contains(ev.target) && !$("transferBtn").contains(ev.target)) setTransferOpen(false);
 }, true);
 
 // ---- The dock: the keypad and the text panel beside the call ----
@@ -2014,6 +2200,7 @@ function render() {
   const pill = $("mutedPill");
   pill.hidden = !(live && hasMic && muted);
   if (!pill.hidden && !pill.innerHTML) pill.innerHTML = `${ICON.micOff}<span>You're muted</span>`;
+  renderInfoTuck();
 
   // Camera: during a video call it turns your camera on and off; on an audio call it's Add video,
   // unless video can't be had. Before a call it decides whether a video call starts with your
@@ -2047,6 +2234,7 @@ function render() {
 
   renderTextControls(phase);
   renderKeypad();
+  renderTransfer();
   renderDock();
   // Hold: a re-INVITE. On hold the stage says so, with Resume.
   const hold = $("holdBtn");
@@ -2055,7 +2243,7 @@ function render() {
   setBtn(hold, state.held ? ICON.play : ICON.pause, state.held ? "Resume" : "Hold");
   hold.title = !connected ? "Hold, during a call" : state.held ? "Take the call off hold (H)" : "Put the call on hold (H)";
   const heldNote = $("heldNote");
-  heldNote.hidden = !(connected && (state.held || state.heldByThem));
+  heldNote.hidden = !(connected && (state.held || state.heldByThem)) || !$("xferNote").hidden;
   if (!heldNote.hidden) {
     $("heldText").textContent = state.held ? `On hold · ${fmtElapsed(Date.now() - e.heldAt)}` : `${name} put you on hold`;
     heldNote.classList.toggle("long", state.held && Date.now() - e.heldAt > 60000);
@@ -2182,8 +2370,14 @@ function onState(msg) {
     let e = entries.get(h.id);
     const isNew = !e;
     if (isNew) { e = newEntry(h.id); entries.set(h.id, e); }
-    const was = e.h.call, wasHeld = !!e.h.held;
+    const was = e.h.call, wasHeld = !!e.h.held, wasWith = e.h.remote;
     e.h = h;
+    // Transferred, by them or to us: the same call, with someone else now. Its timer starts again.
+    if (was === "connected" && h.call === "connected" && wasWith && h.remote !== wasWith) {
+      log(`call ${e.id}: now with ${h.remote} (was ${wasWith})`);
+      e.connectedAt = Date.now();
+      e.heldAt = 0;
+    }
     // Hold settled: the host has done what was asked, or has nothing out and has had time to
     // start it (so it was turned down). Then the host's word is what counts.
     if (e.holdWanted !== undefined && !h.holdBusy && (!!h.held === e.holdWanted || Date.now() - e.holdAskedAt > 1000)) delete e.holdWanted;
@@ -2193,6 +2387,7 @@ function onState(msg) {
     if (!!h.held !== wasHeld) syncCamera();
     if (isNew) onNewCall(e);
     if (h.call !== was) onPhase(e);
+    if (h.call === "connected" && was !== "connected") clearAddressOnAnswer(e);
   }
   for (const e of [...entries.values()]) {
     if (seen.has(e.id)) continue;
@@ -2253,6 +2448,13 @@ function onPhase(e) {
     closeMedia(e);
     if (audioId === e.id) audioId = null;
     if (toastCallId === e.id) hideToast();
+    // The call on the stage ended: its keypad and text panels close (docked or not), so the
+    // stage is back to its full width for the ended call's card.
+    if (e.id === selectedId && (keypadOpen || textOpen)) {
+      if (keypadOpen) setKeypadOpen(false);
+      if (textOpen) setTextOpen(false, false);
+      log(`call ${e.id} ended: keypad and text closed`);
+    }
   }
 }
 
@@ -2423,10 +2625,8 @@ function renderGrid(grid) {
 // Every call, oldest at the top and new ones at the bottom, so a call never moves. Each row shows who, what you're sending (mic and camera), and
 // the call's state: calling, ringing, connected, on hold with how long (or "Holding…" and
 // "Resuming…" while the re-INVITE is out), or how it ended. Clicking a row puts that call on the
-// stage, as do the number keys. Its chevron (or [) hides it to the left and the stage takes the
-// width, leaving a small arrow tab on the stage's edge (with the live-call count, and a red dot for
-// a ringing call or unseen missed calls) to bring it back; the choice is remembered (prefs). Under
-// 700 px it's a rail of avatars and timers instead, and expanding it lays the panel over the stage
+// stage, as do the number keys. Collapsed, it's a rail of avatars and timers; the choice is
+// remembered. Under 700 px it's always the rail, and expanding it lays the panel over the stage
 // until it's collapsed or you click away.
 
 const CALLS_ICON = {
@@ -2434,11 +2634,9 @@ const CALLS_ICON = {
   expand: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
 };
 const narrowCalls = matchMedia("(max-width: 699px)");
-// Hidden on wider windows: your choice, kept with the other prefs. (Before, it was a rail kept
-// under its own key; a rail chosen then is hidden now.)
-let callsHidden = prefs.callsHidden ?? false;
-if (prefs.callsHidden === undefined) try { callsHidden = localStorage.getItem("callsPanel") === "collapsed"; } catch { /* storage unavailable */ }
+let callsCollapsed = false;   // your choice on wider windows
 let callsPeek = false;        // narrow windows: the panel open over the stage, for now
+try { callsCollapsed = localStorage.getItem("callsPanel") === "collapsed"; } catch { /* storage unavailable */ }
 
 const fmtElapsed = (ms) => {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -2468,7 +2666,13 @@ function callStatus(e) {
     c.typing = !!openLine(e.text, false, false);
     c.unread = e.text.unread;
     const pending = e.holdWanted !== undefined && e.holdWanted !== c.held;
-    if (pending) c.statusText = e.holdWanted ? "Holding…" : "Resuming…";
+    const xt = h.transfer;
+    // A transfer under way says so first: it's what's happening to the call.
+    if (xt && (xt.status === "asking" || xt.status === "calling"))
+      c.statusText = xt.role === "out" ? (xt.attended ? `Joining with ${xt.target}…` : `Transferring to ${xt.target}…`)
+        : xt.role === "in" ? `Transferring you to ${xt.target}…` : `Handing over to ${xt.target}…`;
+    else if (xt?.status === "failed" && xt.role === "out") c.statusText = "Transfer failed · on hold";
+    else if (pending) c.statusText = e.holdWanted ? "Holding…" : "Resuming…";
     else if (c.held) {
       c.long = Date.now() - e.heldAt > 60000;
       c.statusText = `On hold · ${fmtElapsed(Date.now() - e.heldAt)}`;
@@ -2507,37 +2711,18 @@ function renderCalls() {
   const calls = listed();
   const narrow = narrowCalls.matches;
   if (!narrow) callsPeek = false;
-  const collapsed = narrow && !callsPeek;   // the rail
-  const stowed = !narrow && callsHidden;
+  const collapsed = narrow ? !callsPeek : callsCollapsed;
   const panel = $("calls");
-  // Moving focus out before the panel goes inert, to the tab that brings it back.
-  const refocus = stowed && !panel.classList.contains("stowed") && panel.contains(document.activeElement);
   panel.classList.toggle("collapsed", collapsed);
-  panel.classList.toggle("stowed", stowed);
   panel.classList.toggle("peek", narrow && callsPeek);
-  panel.inert = stowed;
   panel.title = collapsed ? "Show active calls" : "";
   const toggle = $("callsToggle");
-  const hideLabel = narrow ? "Collapse active calls" : "Hide active calls ([)";
   toggle.setAttribute("aria-expanded", String(!collapsed));
-  toggle.setAttribute("aria-label", collapsed ? "Show active calls" : hideLabel);
-  toggle.title = collapsed ? "Show active calls" : hideLabel;
+  toggle.setAttribute("aria-label", collapsed ? "Show active calls" : "Collapse active calls");
+  toggle.title = collapsed ? "Show active calls" : "Collapse active calls";
   const icon = collapsed ? CALLS_ICON.expand : CALLS_ICON.collapse;
   if (toggle.innerHTML !== icon) toggle.innerHTML = icon;
-  const live = calls.filter(isLive).length;
-  $("callCount").textContent = live || "";
-  // The arrow tab, while hidden: the count, and a red dot for a ringing call (missed calls you
-  // haven't seen light it too: history.js fills its missed count).
-  const tab = $("callsTab");
-  tab.hidden = !stowed;
-  const ringing = calls.filter((e) => e.h.call === "ringing").length;
-  tab.classList.toggle("ringing", ringing > 0);
-  $("callsTabCount").textContent = live || "";
-  const missed = $("callsTabMissed").textContent;
-  const tabLabel = ["Show calls ([)", live && `${live} active`, ringing && `${ringing} ringing`, missed && `${missed} missed`].filter(Boolean).join(" · ");
-  tab.title = tabLabel;
-  tab.setAttribute("aria-label", tabLabel);
-  if (refocus) tab.focus();
+  $("callCount").textContent = calls.filter(isLive).length || "";
 
   const list = $("callList");
   list.replaceChildren(...(calls.length ? calls.map((e, i) => callRow(e, i, collapsed)) : [Object.assign(document.createElement("li"), { className: "call-empty", textContent: "No active calls" })]));
@@ -2553,6 +2738,9 @@ function renderCalls() {
 // (Not a call you're placing over another: that's the banner's to Cancel.)
 const endable = () => liveEntries().filter((e) => !e.pending && (e.h.call === "calling" || e.h.call === "connected"));
 const allMuted = () => { const on = [...entries.values()].filter((e) => e.m && e.h.call === "connected"); return on.length > 0 && on.every((e) => e.m.muted); };
+// Connected calls sending video (camera, test source or the placeholder): the ones Cameras off acts on.
+const videoCalls = () => [...entries.values()].filter((e) => e.m?.videoSender && e.h.call === "connected");
+const allCamerasOff = () => { const v = videoCalls(); return v.length > 0 && v.every((e) => !e.m.camOn); };
 let endAllUntil = 0;
 function renderAllButtons() {
   const n = endable().length, grid = inGrid();
@@ -2567,19 +2755,37 @@ function renderAllButtons() {
   set(gridBtn, `${ICON.grid}<span>Grid</span>${tiles > 1 ? `<span class="count">${tiles}</span>` : ""}`, gridOn
     ? "Showing every call in a grid. Click again, or pick a call, for one call (G)"
     : `Show all ${tiles} calls in a grid (G)`);
+  const cams = $("camAllBtn");
   mute.hidden = end.hidden = n < 2;
+  // Cameras off: beside Mute all, while one of the calls has video.
+  cams.hidden = n < 2 || videoCalls().length === 0;
   if (n < 2) { endAllUntil = 0; return; }
+  if (!cams.hidden) {
+    const off = allCamerasOff();
+    cams.setAttribute("aria-pressed", String(off));
+    set(cams, `${off ? ICON.videoOff : ICON.video}<span>${off ? "Cameras on" : "Cameras off"}</span>`,
+      off ? "Turn the camera back on on every video call (Shift+C)" : "Send your placeholder instead of the camera on every video call, and the ones to come (Shift+C)");
+  }
   const muted = allMuted();
   mute.disabled = !hasMic;
   mute.setAttribute("aria-pressed", String(muted));
   set(mute, `${muted ? ICON.micOff : ICON.mic}<span>${muted ? "Unmute all" : "Mute all"}</span>`,
     muted ? "Unmute every call (Shift+M)" : "Mute every call, and the ones to come (Shift+M)");
   const armed = Date.now() < endAllUntil;
-  set(end, `${ICON.hangup}<span>${armed ? `End ${n}?` : "End all"}</span>`, armed ? `Click again to end all ${n} calls` : `End all ${n} calls`);
+  set(end, `${ICON.hangup}<span>${armed ? `End ${n}?` : "End all"}</span>`, armed ? `Click again to end all ${n} calls`
+    : $("calls").classList.contains("collapsed") ? `End all ${n} calls: opens the panel to confirm` : `End all ${n} calls`);
 }
 $("gridBtn").onclick = () => setView(view === "grid" ? "focus" : "grid");
 $("muteAllBtn").onclick = () => muteAll();
+$("camAllBtn").onclick = () => camerasOff();
 $("endAllBtn").onclick = () => {
+  // On the rail it's only an icon: the first click opens the panel, so the full button (and how
+  // many calls it ends) is what you confirm, with two more clicks as usual.
+  if ($("calls").classList.contains("collapsed")) {
+    endAllUntil = 0;
+    setCallsCollapsed(false);
+    return;
+  }
   if (Date.now() >= endAllUntil) {
     endAllUntil = Date.now() + 4000;
     setTimeout(renderAllButtons, 4100);
@@ -2601,10 +2807,12 @@ function callRow(e, i, collapsed = false) {
   li.dataset.call = e.id;
   if (e.id === selectedId) li.setAttribute("aria-current", "true");   // the call on the stage
   li.title = [e.h.remote || name, c.statusText, i < 8 ? `(${i + 1})` : ""].filter(Boolean).join(" · ");
-  // On the rail too: a click picks the call rather than expanding the panel.
+  // A click picks the call. On the rail (wider windows) it also expands the panel, as a click on
+  // the rail's empty space does; under 700 px the panel would cover the stage, so it stays a rail.
   li.onclick = (ev) => {
     ev.stopPropagation();
     if (callsPeek) { callsPeek = false; renderCalls(); }
+    else if (callsCollapsed && !narrowCalls.matches) setCallsCollapsed(false);
     focusCall(e.id);
   };
   const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls, textContent: text ?? "" });
@@ -2634,23 +2842,24 @@ function renderCallTimes() {
   for (const t of document.querySelectorAll("#callList .call-time[data-since]")) t.textContent = fmtElapsed(Date.now() - Number(t.dataset.since));
 }
 
-// Closed: the rail on narrow windows, hidden on wider ones.
-const callsClosed = () => narrowCalls.matches ? !callsPeek : callsHidden;
 function setCallsCollapsed(collapsed) {
   if (narrowCalls.matches) callsPeek = !collapsed;
   else {
-    callsHidden = collapsed;
-    savePref("callsHidden", collapsed);
+    callsCollapsed = collapsed;
+    try { localStorage.setItem("callsPanel", collapsed ? "collapsed" : "open"); } catch { /* storage unavailable */ }
   }
   renderCalls();
 }
-$("callsToggle").onclick = (e) => { e.stopPropagation(); setCallsCollapsed(!callsClosed()); };
-$("callsTab").onclick = () => { setCallsCollapsed(false); $("callsToggle").focus(); };
-// Narrow windows: a click anywhere in the panel but on a call (or the chevron, which does it
-// itself) expands or collapses it, so the whole rail is the toggle, not just the small chevron.
+$("callsToggle").onclick = (e) => { e.stopPropagation(); setCallsCollapsed(!$("calls").classList.contains("collapsed")); };
+// A click anywhere in the panel but on a call or a button (each does its own thing; the chevron
+// toggles it itself, and End all on the rail only opens it) expands or collapses it, so the
+// whole panel is the toggle, not just the small chevron. Checked on the event's path, not the
+// target: a button's handler can re-render it (Mute all, Cameras off), leaving the target
+// detached from the panel by the time the click gets here, which made it look like a click on
+// the panel itself.
 $("calls").addEventListener("click", (e) => {
-  if (!narrowCalls.matches || e.target.closest(".call-row, #callsToggle, .calls-foot, .hist-side")) return;
-  setCallsCollapsed(!callsClosed());
+  if (e.composedPath().some((n) => n instanceof Element && n.matches(".call-row, button, .calls-foot, .hist-side"))) return;
+  setCallsCollapsed(!$("calls").classList.contains("collapsed"));
 });
 // Narrow windows: clicking away or Esc puts the panel back to the rail.
 document.addEventListener("pointerdown", (e) => { if (callsPeek && !e.target.closest("#calls")) { callsPeek = false; renderCalls(); } });
@@ -2669,11 +2878,27 @@ $("dialForm").addEventListener("submit", (e) => {
   const c = contactFor(address);
   placeCall(address, c ? c.account : pick?.account, c?.name);
 });
+// A call answered (ours, or theirs to one we placed) empties the address bar, so it's ready for
+// the next one; not while you're in it typing something else (another address, say).
+let lastDialled = "";
+function clearAddressOnAnswer(e) {
+  const input = $("address");
+  const text = input.value.trim();
+  if (!text) return;
+  if (document.activeElement === input && text !== lastDialled && !sameUri(text, e.h.remote)) return;
+  input.value = "";
+  dial.pick = null;
+  dial.close();
+  log(`call ${e.id} answered: address bar cleared`);
+  render();
+}
+
 // Call, or Call back from History. account: the one to call from (a contact's, or the one that
 // call was on): Call from switches to it first, so it shows what's used, unless it's been removed
 // or disabled, when the call goes from Call from's account and a note says so.
 function placeCall(address, account = null, who = null) {
   if (!address || $("callBtn").disabled) return;
+  lastDialled = address;
   account = account ? useAccount(account, who) : null;
   openMic();   // alongside the INVITE, so it's ready when the call connects
   // A new call holds the one you're on, now that you've pressed Call (the new one goes on the
@@ -2684,16 +2909,21 @@ function placeCall(address, account = null, who = null) {
   setTimeout(() => { if (!liveEntries().length) closeMic(); }, 5000);
 }
 
-// ---- Address field suggestions: recent calls and contacts ----
-// As in the prototype: focusing the address (or /) lists recent calls and contacts. Typing ranks
-// them together (see rankedSuggestions): the best few, a contact once even when there are calls
-// to it. Typing part of a name highlights the first match, so Enter calls it; a full address or
-// number doesn't, so Enter calls what you typed. ↑/↓ move through
-// the list, Enter or a click calls the highlighted entry, and Esc closes it. Calls that didn't
-// connect show their outcome, and missed calls are red. Recents come from the call history (see
-// recentCalls); contacts from contacts.js. Each entry's person button adds it to contacts, or
-// removes it. The last row opens the People view's Contacts tab: "Contacts…" with nothing typed, or "Add …
-// to contacts" for a typed address that isn't one yet.
+// ---- Address fields: the address bar's, and Transfer's ----
+// As in the prototype: focusing the address (or /) lists contacts and recent calls; typing
+// filters them (see suggestions). Contacts come first, in their own group: with nothing typed the
+// ones you call most, then your latest calls to anyone else; typed, the contacts that match, then
+// other addresses you've called that match. Typing part of a name highlights the first match, so
+// Enter calls it; a full address or number doesn't, so Enter calls what you typed. ↑/↓ move
+// through the list, Enter or a click puts the highlighted entry in the field (Call, or Enter
+// again, calls it), and Esc closes it. Calls that
+// didn't connect show their outcome, and missed calls are red. Recents come from the call history
+// (see recentCalls); contacts from contacts.js. Each entry's person button adds it to contacts, or
+// removes it. The last row opens the People view's Contacts tab: "Contacts…" with nothing typed,
+// or "Add … to contacts" for a typed address that isn't one yet.
+//
+// addressField puts all that on an input: the address bar's (dial, a dropdown) and Transfer's
+// (xferField, its list always showing), so the two can't drift apart.
 
 const SUGGEST_ICON = {
   outgoing: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>',
@@ -2702,9 +2932,10 @@ const SUGGEST_ICON = {
   addContact: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>',
   removeContact: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6"/></svg>',
 };
+const MAX_CONTACT_SUGGESTIONS = 5;   // nothing typed: your most-called contacts
 const MAX_RECENT_SUGGESTIONS = 6;
-const MAX_CONTACT_SUGGESTIONS = 4;
-const MAX_TYPED_SUGGESTIONS = 6;
+const MAX_TYPED_CONTACTS = 5;
+const MAX_TYPED_RECENT = 4;
 const RECENCY_DAYS = 14;   // a call this long ago counts half as much as one just now
 
 // The call history (history.js), newest first: { name, uri, dir: "out" | "in" | "missed", at
@@ -2724,9 +2955,6 @@ function relTime(at) {
   if (hours < 48) return "Yesterday";
   return `${Math.round(hours / 24)} days ago`;
 }
-
-// pick: the entry last called from the list, so the submit knows its account.
-const dial = { open: false, items: [], active: -1, pick: null };
 
 // The user part of an address: "sip:alice@example.com" → "alice", "tel:+353…" → "+353…".
 const userPart = (uri) => String(uri ?? "").toLowerCase().replace(/^(sips?|tel):/, "").split(/[@;]/)[0];
@@ -2758,140 +2986,218 @@ function callStats() {
   return stats;
 }
 
-// With something typed: contacts and recent calls together, ranked. A prefix match (on a word of
-// the name, or the address's user part) beats one inside, then contacts come before other
-// addresses, then the ones you call most and most lately. A contact with calls shows once, as
-// the contact, with its latest call's outcome.
-function rankedSuggestions(q) {
-  const stats = callStats();
-  const cands = new Map();
-  for (const c of allContacts()) {
-    const k = normAddress(c.uri);
-    const last = stats.get(k)?.last;
-    cands.set(k, { name: c.name, uri: c.uri, account: c.account ?? null, contact: true,
-      ...(last ? { dir: last.dir, note: last.note, sip: last.sip, at: last.at } : {}) });
-  }
-  for (const r of recentCalls()) {
-    const k = r?.uri ? normAddress(r.uri) : "";
-    if (!k || cands.has(k)) continue;
-    cands.set(k, { ...r, name: r.name || shortName(r.uri), contact: false });
-  }
-  return [...cands.entries()]
-    .map(([k, x]) => ({ x, tier: matchTier(x, q), score: stats.get(k)?.score ?? 0 }))
-    .filter((m) => m.tier >= 0)
-    .sort((a, b) => a.tier - b.tier || b.x.contact - a.x.contact || b.score - a.score
-      || a.x.name.localeCompare(b.x.name, undefined, { sensitivity: "base" }))
-    .slice(0, MAX_TYPED_SUGGESTIONS)
-    .map(({ x }) => ({ ...x, group: "Best matches" }));
-}
-
-// Recent first (one per address, newest), then contacts not already listed. A recent call to a
-// contact shows the contact's name.
-function dialSuggestions(typed) {
+// The list for what's typed: { group: "Contacts" | "Recent", name, uri, contact, account?, dir?,
+// note?, sip?, at? } entries, then the foot row ({ action: "manage" | "add" }) when foot is set.
+// Contacts first: nothing typed, the ones you call most (by callStats: how often and how lately),
+// then by name; typed, those that match, a prefix match (a word of the name, or the address's
+// user part) before one inside, then the most called. Then Recent: one per address, newest
+// first, less the contacts already listed (a contact further down shows here, by its name);
+// typed, the other addresses that match, ranked the same way. skip: an address to leave out.
+function suggestions(typed, { skip = null, foot = true } = {}) {
   typed = typed.trim();
   const q = typed.toLowerCase();
-  if (q) {
-    const items = rankedSuggestions(q);
-    if (looksLikeAddress(typed) && !contactFor(typed)) items.push({ group: "", action: "add", uri: typed });
-    return items;
-  }
-  const match = (x) => !q || x.name.toLowerCase().includes(q) || x.uri.toLowerCase().includes(q);
+  const stats = callStats();
+  const skipKey = skip ? normAddress(skip) : null;
+  const score = (x) => stats.get(normAddress(x.uri))?.score ?? 0;
+  const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+  const contacts = [];
   const seen = new Set();
-  const recent = [];
-  for (const r of recentCalls()) {
-    if (!r?.uri || recent.length >= MAX_RECENT_SUGGESTIONS) continue;
-    const key = normAddress(r.uri);
-    if (seen.has(key)) continue;
-    const c = contactFor(r.uri);
-    const item = { ...r, name: c?.name || r.name || shortName(r.uri), group: "Recent", contact: !!c };
-    if (!match(item)) continue;
-    seen.add(key);
-    recent.push(item);
+  for (const c of allContacts()) {
+    const k = normAddress(c.uri);
+    if (k === skipKey || seen.has(k)) continue;
+    seen.add(k);
+    const last = stats.get(k)?.last;
+    contacts.push({ name: c.name, uri: c.uri, account: c.account ?? null, contact: true,
+      ...(last ? { dir: last.dir, note: last.note, sip: last.sip, at: last.at } : {}) });
   }
-  const fromContacts = allContacts().filter((c) => !seen.has(normAddress(c.uri)) && match(c))
-    .slice(0, MAX_CONTACT_SUGGESTIONS).map((c) => ({ ...c, group: "Contacts", contact: true }));
-  const items = [...recent, ...fromContacts];
-  // The foot: the way to the Contacts tab. Not while filtering by name, so a name that
-  // matches nothing closes the list, as in the prototype.
-  if (!typed) items.push({ group: "", action: "manage" });
-  else if (looksLikeAddress(typed) && !contactFor(typed)) items.push({ group: "", action: "add", uri: typed });
+  const recent = [];
+  const seenRecent = new Set();
+  for (const r of recentCalls()) {
+    const k = r?.uri ? normAddress(r.uri) : "";
+    if (!k || k === skipKey || seenRecent.has(k)) continue;
+    seenRecent.add(k);
+    const c = contactFor(r.uri);
+    recent.push({ ...r, name: c?.name || r.name || shortName(r.uri), contact: !!c, ...(c ? { account: c.account ?? null } : {}) });
+  }
+  let top, rest;
+  if (!q) {
+    top = contacts.sort((a, b) => score(b) - score(a) || byName(a, b)).slice(0, MAX_CONTACT_SUGGESTIONS);
+    const shown = new Set(top.map((x) => normAddress(x.uri)));
+    rest = recent.filter((x) => !shown.has(normAddress(x.uri))).slice(0, MAX_RECENT_SUGGESTIONS);
+  } else {
+    const rank = (list, max) => list.map((x) => ({ x, tier: matchTier(x, q) })).filter((m) => m.tier >= 0)
+      .sort((a, b) => a.tier - b.tier || score(b.x) - score(a.x) || byName(a.x, b.x)).slice(0, max).map((m) => m.x);
+    top = rank(contacts, MAX_TYPED_CONTACTS);
+    rest = rank(recent.filter((x) => !x.contact), MAX_TYPED_RECENT);
+  }
+  const items = [...top.map((x) => ({ ...x, group: "Contacts" })), ...rest.map((x) => ({ ...x, group: "Recent" }))];
+  if (foot) {
+    // The way to the Contacts tab; not while filtering by name, so a name that matches nothing
+    // closes the list, as in the prototype.
+    if (!typed) items.push({ group: "", action: "manage" });
+    else if (looksLikeAddress(typed) && !contactFor(typed)) items.push({ group: "", action: "add", uri: typed });
+  }
   return items;
 }
 
 const looksLikeAddress = (q) => /[@:]/.test(q) || /^[+\d*#\s]+$/.test(q.trim());
 
-// keepActive: a refresh (contacts or history changed) keeps the highlighted entry where it can.
-function openDialSuggest(keepActive = false) {
-  if ($("address").disabled) return;
-  const q = $("address").value;
-  const items = dialSuggestions(q);
-  let active = q.trim() && !looksLikeAddress(q) && items.length && !items[0].action ? 0 : -1;
-  if (keepActive && dial.active >= 0) {
-    const was = dial.items[dial.active];
-    const i = items.findIndex((x) => x.group === was?.group && sameUri(x.uri, was?.uri));
-    active = i >= 0 ? i : Math.min(dial.active, items.length - 1);
-  }
-  Object.assign(dial, { open: items.length > 0, items, active });
-  if (!dial.open) dial.active = -1;
-  renderDialSuggest();
-  renderDestContact();
-}
+/**
+ * Suggestions on an address input, for the address bar and Transfer. popup: the list drops down
+ * while the field has focus (the address bar's); otherwise it's always there (Transfer's). badge:
+ * the saved-contact pill inside the field; clear: its × button (both inside a .dest-wrap). foot:
+ * the Contacts… and Add to contacts rows. goIcon: the icon on the highlighted row (what Enter
+ * does). skip(): an address to leave out. pick(entry): a row was chosen: its address is in the
+ * field (f.pick is the entry, for its name and account), and nothing is dialled or sent. changed(): after every refresh. Returns its state: { open, items, active, pick,
+ * refresh(keepActive), close(), renderBadge() }.
+ */
+function addressField({ input, list, clear, badge, idPrefix, popup, foot, goIcon, goLabel, skip = () => null, pick, changed = () => {} }) {
+  const wrap = input.closest(".dest-wrap");
+  const f = { open: false, items: [], active: -1, pick: null };
 
-// The address field's badge: what's in it is a saved contact's address (typed, pasted or picked).
-// Also the clear (×) button, shown while there's any text.
-function renderDestContact() {
-  const value = $("address").value;
-  const c = contactFor(value.trim());
-  const badge = $("destContact");
-  const wrap = $("address").closest(".dest-wrap");
-  badge.hidden = !c;
-  $("destClear").hidden = !value;
-  wrap.classList.toggle("has-text", !!value);
-  wrap.classList.toggle("has-contact", !!c);
-  if (c) {
-    badge.innerHTML = `${contactMark(c.name)}<span class="dest-contact-name">${escHtml(c.name)}</span>`;
-    badge.title = `Saved contact: ${c.name}`;
-  }
-}
-
-function closeDialSuggest() {
-  renderDestContact();
-  if (!dial.open) return;
-  Object.assign(dial, { open: false, items: [], active: -1 });
-  renderDialSuggest();
-}
-
-function renderDialSuggest() {
-  const el = $("dialSuggest");
-  const input = $("address");
-  const { open, items, active } = dial;
-  el.hidden = !open;
-  input.setAttribute("aria-expanded", String(open));
-  if (open && active >= 0) input.setAttribute("aria-activedescendant", `sug-${active}`); else input.removeAttribute("aria-activedescendant");
-  if (!open) { el.innerHTML = ""; return; }
-  let group = "";
-  el.innerHTML = items.map((it, i) => {
-    if (it.action) {
-      const text = it.action === "add" ? `Add <b>${escHtml(it.uri)}</b> to contacts…` : "Contacts…";
-      return `<div class="suggest-item suggest-foot ${i === active ? "active" : ""}" role="option" id="sug-${i}" aria-selected="${i === active}" data-idx="${i}">
-        ${SUGGEST_ICON.addContact}<span class="suggest-foot-text">${text}</span></div>`;
+  // keepActive: a refresh (contacts or history changed) keeps the highlighted entry where it can.
+  f.refresh = (keepActive = false) => {
+    if (input.disabled) return;
+    const q = input.value;
+    const items = suggestions(q, { skip: skip(), foot });
+    let active = q.trim() && !looksLikeAddress(q) && items.length && !items[0].action ? 0 : -1;
+    if (keepActive && f.active >= 0) {
+      const was = f.items[f.active];
+      const i = items.findIndex((x) => x.group === was?.group && sameUri(x.uri, was?.uri));
+      active = i >= 0 ? i : Math.min(f.active, items.length - 1);
     }
-    const head = it.group !== group ? `<div class="suggest-group" role="presentation">${(group = it.group)}</div>` : "";
-    const missed = it.dir === "missed";
-    const meta = !it.at ? "<span></span>"
-      : `<span class="suggest-meta ${missed ? "bad" : ""}" ${it.sip ? `title="${escHtml(it.sip)}"` : ""}>${SUGGEST_ICON[missed ? "missed" : it.dir === "in" ? "inbound" : "outgoing"]}
-          ${missed ? "Missed · " : it.note ? `${escHtml(it.note)} · ` : ""}${it.at ? relTime(it.at) : ""}</span>`;
-    const label = it.contact ? `Remove ${it.name} from contacts` : `Add ${it.name} to contacts`;
-    return `${head}<div class="suggest-item ${i === active ? "active" : ""}" role="option" id="sug-${i}" aria-selected="${i === active}" data-idx="${i}">
-      <span class="suggest-avatar" aria-hidden="true"${avatarAttr(it.uri)}>${escHtml(initial(it.name))}</span>
-      <span class="suggest-main"><span class="suggest-name">${escHtml(it.name)}${it.contact ? contactMark(it.name) : ""}</span><span class="suggest-uri">${escHtml(it.uri)}${fromLabel(it)}</span></span>
-      ${meta}
-      <button type="button" class="suggest-contact" tabindex="-1" data-contact="${it.contact ? "remove" : "add"}" data-idx="${i}"
-        title="${escHtml(label)}" aria-label="${escHtml(label)}">${it.contact ? SUGGEST_ICON.removeContact : SUGGEST_ICON.addContact}</button>
-      <span class="suggest-call" aria-hidden="true">${ICON.phone}</span>
-    </div>`;
-  }).join("");
-  el.querySelector(".suggest-item.active")?.scrollIntoView({ block: "nearest" });
+    Object.assign(f, { open: popup ? items.length > 0 : true, items, active });
+    if (!f.open) f.active = -1;
+    render();
+    f.renderBadge();
+    changed();
+  };
+
+  f.close = () => {
+    f.renderBadge();
+    if (!popup || !f.open) return;
+    Object.assign(f, { open: false, items: [], active: -1 });
+    render();
+  };
+
+  // The badge: what's in the field is a saved contact's address (typed, pasted or picked). Also
+  // the clear (×) button, shown while there's any text.
+  f.renderBadge = () => {
+    const value = input.value;
+    const c = contactFor(value.trim());
+    badge.hidden = !c;
+    clear.hidden = !value;
+    wrap.classList.toggle("has-text", !!value);
+    wrap.classList.toggle("has-contact", !!c);
+    if (c) {
+      badge.innerHTML = `${contactMark(c.name)}<span class="dest-contact-name">${escHtml(c.name)}</span>`;
+      badge.title = `Saved contact: ${c.name}`;
+    }
+  };
+
+  function render() {
+    const { open, items, active } = f;
+    list.hidden = !open;
+    input.setAttribute("aria-expanded", String(open && items.length > 0));
+    if (open && active >= 0) input.setAttribute("aria-activedescendant", `${idPrefix}-${active}`); else input.removeAttribute("aria-activedescendant");
+    if (!open) { list.innerHTML = ""; return; }
+    let group = "";
+    list.innerHTML = items.map((it, i) => {
+      const cls = `suggest-item${i === active ? " active" : ""}`;
+      const attrs = `role="option" id="${idPrefix}-${i}" aria-selected="${i === active}" data-idx="${i}"`;
+      if (it.action) {
+        const text = it.action === "add" ? `Add <b>${escHtml(it.uri)}</b> to contacts…` : "Contacts…";
+        return `<div class="${cls} suggest-foot" ${attrs}>${SUGGEST_ICON.addContact}<span class="suggest-foot-text">${text}</span></div>`;
+      }
+      const head = it.group !== group
+        ? `<div class="suggest-group${it.group === "Contacts" ? " contacts" : ""}" role="presentation">${(group = it.group)}</div>` : "";
+      const missed = it.dir === "missed";
+      const meta = !it.at ? "<span></span>"
+        : `<span class="suggest-meta ${missed ? "bad" : ""}" ${it.sip ? `title="${escHtml(it.sip)}"` : ""}>${SUGGEST_ICON[missed ? "missed" : it.dir === "in" ? "inbound" : "outgoing"]}
+            ${missed ? "Missed · " : it.note ? `${escHtml(it.note)} · ` : ""}${relTime(it.at)}</span>`;
+      const label = it.contact ? `Remove ${it.name} from contacts` : `Add ${it.name} to contacts`;
+      return `${head}<div class="${cls}${it.contact ? " is-contact" : ""}" ${attrs}>
+        <span class="suggest-avatar" aria-hidden="true"${avatarAttr(it.uri)}>${escHtml(initial(it.name))}</span>
+        <span class="suggest-main"><span class="suggest-name">${escHtml(it.name)}${it.contact ? contactMark(it.name) : ""}</span><span class="suggest-uri">${escHtml(it.uri)}${fromLabel(it)}</span></span>
+        ${meta}
+        <button type="button" class="suggest-contact" tabindex="-1" data-contact="${it.contact ? "remove" : "add"}" data-idx="${i}"
+          title="${escHtml(label)}" aria-label="${escHtml(label)}">${it.contact ? SUGGEST_ICON.removeContact : SUGGEST_ICON.addContact}</button>
+        <span class="suggest-call" title="${escHtml(goLabel)}" aria-hidden="true">${goIcon()}</span>
+      </div>`;
+    }).join("");
+    list.querySelector(".suggest-item.active")?.scrollIntoView({ block: "nearest" });
+  }
+
+  // A row chosen: the foot opens the Contacts tab; an entry goes into the field, and nothing
+  // more: the call (or transfer) waits for its button, or Enter with no row highlighted.
+  function choose(i) {
+    const it = f.items[i];
+    if (!it) return;
+    if (it.action) {
+      f.close();
+      openContacts(it.action === "add" ? { name: "", uri: it.uri } : null);
+      return;
+    }
+    input.value = it.uri;
+    f.pick = it;
+    if (popup) f.close(); else f.refresh();
+    input.focus();
+    pick(it);
+  }
+
+  if (popup) {
+    input.addEventListener("focus", () => f.refresh());
+    input.addEventListener("blur", () => setTimeout(f.close, 0));
+  }
+  input.addEventListener("input", () => f.refresh());
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!f.open) { f.refresh(); return; }
+      const n = f.items.length;
+      if (!n) return;
+      f.active = e.key === "ArrowDown" ? (f.active + 1) % n : (f.active <= 0 ? n - 1 : f.active - 1);
+      render();
+      changed();
+    } else if (e.key === "Enter" && f.open && f.active >= 0) {
+      e.preventDefault();
+      choose(f.active);
+    } else if (e.key === "Escape" && popup && f.open) {
+      e.preventDefault();
+      e.stopPropagation();   // Esc closes the list, and nothing else (not a menu, panel or ended call)
+      f.close();
+    } else if (e.key === "Escape" && popup && input.value) {
+      // A second Esc, with the list closed, empties the field (leaving the list closed).
+      e.preventDefault();
+      e.stopPropagation();
+      input.value = "";
+      f.renderBadge();
+    }
+  });
+  // The clear (×) button: empties the field and lists Contacts and Recent, as deleting the text
+  // would. mousedown's preventDefault keeps focus in the field (and the list open) until the click.
+  clear.innerHTML = ICON.close;
+  clear.addEventListener("mousedown", (e) => e.preventDefault());
+  clear.addEventListener("click", () => {
+    if (input.disabled) return;
+    input.value = "";
+    input.focus();
+    f.refresh();
+  });
+  list.addEventListener("mousedown", (e) => e.preventDefault());   // keep focus in the field
+  list.addEventListener("click", (e) => {
+    const btn = e.target.closest(".suggest-contact");
+    if (btn) {
+      const it = f.items[Number(btn.dataset.idx)];
+      if (!it) return;
+      if (btn.dataset.contact === "remove") removeContact(it.uri); else saveContact(it.name, it.uri, it.account);
+      f.refresh(true);
+      return;
+    }
+    const item = e.target.closest(".suggest-item");
+    if (item) choose(Number(item.dataset.idx));
+  });
+  return f;
 }
 
 // A contact's own Call from account, after its address (not a recent call's: that's in History).
@@ -2900,73 +3206,21 @@ function fromLabel(it) {
   return name ? ` · from ${escHtml(name)}` : "";
 }
 
-// Calls it the way Call does, with the entry's address in the field.
-function callSuggestion(i) {
-  const it = dial.items[i];
-  if (!it) return;
-  if (it.action) {
-    closeDialSuggest();
-    openContacts(it.action === "add" ? { name: "", uri: it.uri } : null);
-    return;
-  }
-  $("address").value = it.uri;
-  closeDialSuggest();
-  dial.pick = it;
-  $("dialForm").requestSubmit();
+// The address bar's. dial.pick: the entry last picked from the list, so Call knows its account.
+const dial = addressField({
+  input: $("address"), list: $("dialSuggest"), clear: $("destClear"), badge: $("destContact"),
+  idPrefix: "sug", popup: true, foot: true, goIcon: () => ICON.phone, goLabel: "Call",
+  pick: () => {},
+});
+$("dialForm").addEventListener("submit", () => dial.close());
+// Either list, when what it reads changes: the history store says when a call's ended, and
+// contacts.js when a contact's saved or removed.
+function refreshAddressFields() {
+  if (dial.open) dial.refresh(true);
+  dial.renderBadge();
+  if (xferOpen) xferField.refresh(true);
 }
-
-$("address").addEventListener("focus", () => openDialSuggest());
-$("address").addEventListener("input", () => openDialSuggest());
-$("address").addEventListener("blur", () => setTimeout(closeDialSuggest, 0));
-$("address").addEventListener("keydown", (e) => {
-  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-    e.preventDefault();
-    if (!dial.open) { openDialSuggest(); return; }
-    const n = dial.items.length;
-    dial.active = e.key === "ArrowDown" ? (dial.active + 1) % n : (dial.active <= 0 ? n - 1 : dial.active - 1);
-    renderDialSuggest();
-  } else if (e.key === "Enter" && dial.open && dial.active >= 0) {
-    e.preventDefault();
-    callSuggestion(dial.active);
-  } else if (e.key === "Escape" && dial.open) {
-    e.preventDefault();
-    e.stopPropagation();   // Esc closes the list, and nothing else (not a menu, panel or ended call)
-    closeDialSuggest();
-  } else if (e.key === "Escape" && $("address").value) {
-    // A second Esc, with the list closed, empties the field (leaving the list closed).
-    e.preventDefault();
-    e.stopPropagation();
-    $("address").value = "";
-    renderDestContact();
-  }
-});
-// The clear (×) button: empties the field and lists Recent and Contacts, as deleting the text
-// would. mousedown's preventDefault keeps focus in the field (and the list open) until the click.
-$("destClear").innerHTML = ICON.close;
-$("destClear").addEventListener("mousedown", (e) => e.preventDefault());
-$("destClear").addEventListener("click", () => {
-  const input = $("address");
-  if (input.disabled) return;
-  input.value = "";
-  input.focus();
-  openDialSuggest();
-});
-$("dialForm").addEventListener("submit", closeDialSuggest);
-$("dialSuggest").addEventListener("mousedown", (e) => e.preventDefault());   // keep focus in the field
-$("dialSuggest").addEventListener("click", (e) => {
-  const btn = e.target.closest(".suggest-contact");
-  if (btn) {
-    const it = dial.items[Number(btn.dataset.idx)];
-    if (!it) return;
-    if (btn.dataset.contact === "remove") removeContact(it.uri); else saveContact(it.name, it.uri, it.account);
-    openDialSuggest(true);
-    return;
-  }
-  const item = e.target.closest(".suggest-item");
-  if (item) callSuggestion(Number(item.dataset.idx));
-});
-// The history store says when it changes, so an open list shows a call that just ended.
-document.addEventListener("history-changed", () => { if (dial.open) openDialSuggest(true); });
+document.addEventListener("history-changed", () => { if (dial.open) dial.refresh(true); if (xferOpen) xferField.refresh(true); });
 // Contacts (contacts.js): the store the suggestions read, and the People view's Contacts tab
 // that edits it.
 initContacts({
@@ -2977,7 +3231,7 @@ initContacts({
   // with the contact's address in the field.
   // The view stays open while the call is placed: it closes if the call's answered (onPhase).
   call(uri) { $("address").value = uri; $("dialForm").requestSubmit(); },
-  changed() { if (dial.open) openDialSuggest(true); renderDestContact(); render(); },
+  changed() { refreshAddressFields(); render(); },
   openPeople,
 });
 // / anywhere but a text field goes to the address field, which opens the list.
@@ -3049,7 +3303,8 @@ function answerSourceLabel() {
       : videoSource === "camera" && cameraInUse ? "Camera in use" : "Camera off";
   }
   if (videoSource !== "camera") return SOURCE_LABEL[videoSource];
-  return cameras.find((d) => d.deviceId === currentCameraId(cameras))?.label || "Camera";
+  // The camera the answered call will open (devices.camera, as the ▾ ticks), not the first one.
+  return cameras.find((d) => d.deviceId === currentCameraId(cameras, devices.camera))?.label || "Camera";
 }
 
 // current: the call you're on, which answering holds.
@@ -3409,21 +3664,23 @@ function muteAll() {
   log(micMuted ? "muted all calls" : "unmuted all calls");
   render();
 }
-// Shift+C, Camera off: on every call, and the ones to come (they start with the camera off). It
-// never turns cameras on: that's each call's own Camera button.
+// Shift+C, or Cameras off under the calls (as Mute all is to the microphone): every video call
+// sends your placeholder instead of the camera, and new calls start with the camera off. Pressed
+// again, with every camera off, they all go back on (as asked: a click or the key).
 function camerasOff() {
-  setCamPref(false);
-  for (const e of entries.values()) if (e.m?.camOn) setCamera(false, e);
-  log("cameras off on all calls");
+  const on = allCamerasOff();
+  setCamPref(on);
+  for (const e of videoCalls()) if (e.m.camOn !== on) setCamera(on, e);
+  log(on ? "cameras on on all video calls" : "cameras off on all calls");
   syncCamera();
   render();
 }
 
 // Keys for calls (not while typing, or with a menu or dialog open): 1–8 put that call in the
 // list on the stage (1 is the top, the oldest; from the grid, in Focus), A answers the caller who has
-// waited longest, M mutes the selected call, Shift+M mutes all, Shift+C turns every camera off,
-// H holds or resumes (M and H not in the grid), G switches Focus and Grid, [ hides or shows the
-// Active calls panel, and Esc leaves an ended call for another.
+// waited longest, M mutes the selected call, Shift+M mutes all, Shift+C turns every camera off (or all back on),
+// H holds or resumes (M and H not in the grid), G switches Focus and Grid, and Esc leaves an
+// ended call for another.
 document.addEventListener("keydown", (ev) => {
   if (ev.ctrlKey || ev.altKey || ev.metaKey || openMenu) return;
   if (ev.target.closest?.("input, textarea, select, [contenteditable], dialog")) return;
@@ -3453,9 +3710,6 @@ document.addEventListener("keydown", (ev) => {
   } else if (key === "g" && !ev.shiftKey) {
     ev.preventDefault();
     setView(view === "grid" ? "focus" : "grid");
-  } else if (ev.key === "[") {
-    ev.preventDefault();
-    setCallsCollapsed(!callsClosed());
   } else if (ev.key === "Escape" && state.call === "ended" && otherLive() && !textOpen && !callsPeek) {
     ev.preventDefault();
     selectCall(otherLive().id);

@@ -54,6 +54,8 @@ public sealed class HistoryEntry
         {
             e.Dir = c.Outgoing ? "out" : "in";
             e.Duration = (long)Math.Max(0, ((c.EndedAt ?? DateTime.Now) - connected).TotalMilliseconds);
+            // "Transferred to Dave": the call went on, with someone else.
+            e.Note = c.TransferNote;
         }
         else if (!c.Outgoing)
         {

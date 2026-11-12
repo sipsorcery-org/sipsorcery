@@ -100,9 +100,11 @@ function dayLabel(at) {
 // "Outgoing · 1:35", "Busy", "Missed", … with its icon and colour.
 function outcome(e) {
   const ico = e.dir === "missed" ? ICON.missed : e.dir === "in" ? ICON.inbound : ICON.outgoing;
+  // A note on a call that connected is how it ended ("Transferred to Dave"), not a problem.
   const text = e.dir === "missed" ? "Missed"
+    : e.note && e.duration ? `${e.note} · ${fmtDuration(e.duration)}`
     : e.note ?? `${e.dir === "in" ? "Incoming" : "Outgoing"}${e.duration ? ` · ${fmtDuration(e.duration)}` : ""}`;
-  return { ico, text, tone: e.dir === "missed" ? "bad" : e.note ? "warn" : "" };
+  return { ico, text, tone: e.dir === "missed" ? "bad" : e.note && !e.duration ? "warn" : "" };
 }
 /** A call as the lists show it: {ico, text, tone, when ("5 min ago"), at ("Today, 08:09")}. */
 export const describeCall = (e) => ({ ...outcome(e), when: relTime(e.at), at: `${dayLabel(e.at)}, ${clockTime(e.at)}` });
@@ -113,6 +115,7 @@ export function initHistory(a) {
     ev.stopPropagation();
     collapsed = !collapsed;
     store("historyCollapsed", collapsed ? "yes" : "no");
+    if (!collapsed) markSeen();   // the missed calls are on show now, so they are no longer new
     renderSide();
   };
   // History (See all history, the rail's button) opens the view on Recent and People (the dial
@@ -123,7 +126,12 @@ export function initHistory(a) {
   $("seeAllHistory").onclick = toggleRecent;
   $("histRail").onclick = toggleRecent;
   $("peopleBtn").insertAdjacentHTML("afterbegin", ICON.people);
-  $("peopleBtn").onclick = (ev) => { ev.stopPropagation(); onTab("contacts") ? closeHistory() : openPeople("contacts"); };
+  // With new missed calls (the badge) People goes straight to Recent, which clears the badge.
+  $("peopleBtn").onclick = (ev) => {
+    ev.stopPropagation();
+    if (unseenMissed()) openPeople("recent");
+    else onTab("contacts") ? closeHistory() : openPeople("contacts");
+  };
   $("histList").onclick = (ev) => {
     ev.stopPropagation();
     const btn = ev.target.closest("button[data-act]");
@@ -269,7 +277,7 @@ export function renderSide() {
   if (!entries) return;
   const n = unseenMissed();
   const label = n ? `${n} new missed call${n === 1 ? "" : "s"}` : "";
-  for (const id of ["missedCount", "histRailCount", "peopleCount", "callsTabMissed"]) {
+  for (const id of ["missedCount", "histRailCount", "peopleCount"]) {
     $(id).textContent = n || "";
     $(id).title = label;
     $(id).setAttribute("aria-label", label);

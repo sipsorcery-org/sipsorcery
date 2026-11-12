@@ -43,6 +43,14 @@ public sealed class MediaRelay : IDisposable
 
     private long _audioIn, _audioOut, _videoIn, _videoOut, _pliIn, _pliOut, _rtcpFromSip, _rtcpFromPage, _pliPageUnderAudio;
     private volatile uint _sipVideoSsrc, _pageVideoSsrc;
+    // SIP audio to the page goes out as one stream, whoever sends it. When the far end changes (a
+    // transfer, or a call taken over in place) the new one's sequence numbers and timestamps start
+    // anywhere, and a page that sees them jump on the same stream drops them as late or duplicate
+    // ("no audio arriving") until they happen to catch up. So they're carried on from ours: an
+    // offset per source, set when its first packet arrives. The old source's stragglers are dropped.
+    private uint _sipAudioSsrc, _oldSipAudioSsrc, _audioTs, _audioTsStep, _audioTsOffset;
+    private ushort _audioSeq, _audioSeqOffset;
+    private bool _audioSent;
     private Action<System.Net.IPEndPoint, SDPMediaTypesEnum, RTPPacket>? _sipRtp;
     private Action<System.Net.IPEndPoint, uint, byte[], VideoFormat>? _sipFrame;
     private Action<System.Net.IPEndPoint, SDPMediaTypesEnum, RTCPCompoundPacket>? _sipReport;
@@ -259,9 +267,20 @@ public sealed class MediaRelay : IDisposable
         // new relay on the same SIP session.
         _sipRtp = (_, kind, pkt) =>
         {
-            if (kind == SDPMediaTypesEnum.video) _sipVideoSsrc = pkt.Header.SyncSource;
-            if (_up && kind == SDPMediaTypesEnum.audio && ++_audioIn > 0)
-                pc.SendRtpRaw(SDPMediaTypesEnum.audio, pkt.Payload, pkt.Header.Timestamp, pkt.Header.MarkerBit, pkt.Header.PayloadType, pkt.Header.SequenceNumber);
+            if (kind == SDPMediaTypesEnum.video && _sipVideoSsrc != pkt.Header.SyncSource)
+            {
+                // Video from a new source (the far end changed: a transfer, or a call taken over
+                // in place) starts mid-stream, and the page can't decode it until a keyframe: ask
+                // for one now rather than wait for their next periodic one.
+                bool changed = _sipVideoSsrc != 0;
+                _sipVideoSsrc = pkt.Header.SyncSource;
+                if (changed && _up)
+                {
+                    _log($"relay: their video is from a new source ({pkt.Header.SyncSource}): asking it for a keyframe");
+                    RequestKeyframe(_sip, _sipVideoSsrc);
+                }
+            }
+            if (_up && kind == SDPMediaTypesEnum.audio) SipAudioToPage(pc, pkt);
         };
         _sipFrame = (_, ts, frame, _) =>
         {
@@ -497,6 +516,50 @@ public sealed class MediaRelay : IDisposable
         if (mediaSsrc == 0) return;
         var pli = new RTCPFeedback(session.VideoLocalTrack.Ssrc, mediaSsrc, PSFBFeedbackTypesEnum.PLI);
         session.SendRtcpFeedback(SDPMediaTypesEnum.video, pli);
+    }
+
+    /// <summary>
+    /// The call's far end has changed (a transfer, or a call taken over in place): our video
+    /// reaches someone new mid-stream, so the page sends a keyframe now, and theirs is asked
+    /// for one too (and again when their video's first packet arrives, see the SIP RTP handler).
+    /// </summary>
+    /// <summary>
+    /// SIP audio to the page, its sequence numbers and timestamps carried on across a change of
+    /// far end (see _sipAudioSsrc). Called on the SIP receive thread only.
+    /// </summary>
+    private void SipAudioToPage(RTCPeerConnection pc, RTPPacket pkt)
+    {
+        var h = pkt.Header;
+        bool marker = h.MarkerBit == 1;
+        if (h.SyncSource != _sipAudioSsrc)
+        {
+            if (h.SyncSource == _oldSipAudioSsrc) return;   // the one before, still sending: not the call any more
+            if (_audioSent)
+            {
+                // Pick up one packet on from the last we sent, as the start of a talkspurt.
+                _audioSeqOffset = (ushort)(_audioSeq + 1 - h.SequenceNumber);
+                _audioTsOffset = _audioTs + (_audioTsStep == 0 ? 960u : _audioTsStep) - h.Timestamp;
+                marker = true;
+                _log($"relay: their audio is from a new source ({h.SyncSource}): carrying on our sequence and timestamps to the page");
+            }
+            _oldSipAudioSsrc = _sipAudioSsrc;
+            _sipAudioSsrc = h.SyncSource;
+        }
+        ushort seq = (ushort)(h.SequenceNumber + _audioSeqOffset);
+        uint ts = h.Timestamp + _audioTsOffset;
+        // The usual step between packets (a frame's worth of samples), for the next change.
+        uint step = ts - _audioTs;
+        if (_audioSent && (ushort)(seq - _audioSeq) == 1 && step > 0 && step <= 48000) _audioTsStep = step;
+        (_audioSeq, _audioTs, _audioSent) = (seq, ts, true);
+        _audioIn++;
+        pc.SendRtpRaw(SDPMediaTypesEnum.audio, pkt.Payload, ts, marker ? 1 : 0, h.PayloadType, seq);
+    }
+
+    public void FarEndChanged()
+    {
+        if (!_up || _pc is not { } pc) return;
+        RequestKeyframe(pc, _pageVideoSsrc);
+        RequestKeyframe(_sip, _sipVideoSsrc);
     }
 
     public void Dispose()

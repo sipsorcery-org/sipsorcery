@@ -55,8 +55,8 @@ public sealed class Phone : IDisposable
         public string TextState { get; internal set; } = "off";
         /// <summary>The call is with a browser phone (SIP over WebSocket), so its media is WebRTC.</summary>
         public bool WebRtc { get; internal set; }
-        /// <summary>When it was placed, or started ringing.</summary>
-        public DateTime StartedAt { get; } = DateTime.Now;
+        /// <summary>When it was placed, or started ringing (or, after a transfer, joined to whoever it's with now).</summary>
+        public DateTime StartedAt { get; internal set; } = DateTime.Now;
         /// <summary>When it was answered; null if it never was.</summary>
         public DateTime? ConnectedAt { get; internal set; }
         /// <summary>When it ended.</summary>
@@ -85,7 +85,46 @@ public sealed class Phone : IDisposable
         internal string? IncomingOffer;   // the ringing call's SDP, if its INVITE had one
         internal bool HangingUp;          // we're hanging it up ourselves
         internal bool Answering;          // Answer is under way (a double click mustn't answer twice)
+        /// <summary>The SSRC each kind of media last arrived with on the SIP side.</summary>
+        internal readonly System.Collections.Concurrent.ConcurrentDictionary<SDPMediaTypesEnum, uint> Sources = new();
         public bool Live => State is CallState.Calling or CallState.Ringing or CallState.Connected;
+        /// <summary>A transfer of this call, ours or theirs, while it's under way and for a moment after; null if none.</summary>
+        public TransferInfo? Transfer { get; internal set; }
+        /// <summary>How a transferred call ended, for the history: "Transferred to Dave".</summary>
+        public string? TransferNote { get; internal set; }
+    }
+
+    /// <summary>
+    /// A transfer on a call. Role: "out" is ours (blind, or attended to <see cref="PartnerId"/>);
+    /// "in" is the far end asking us to call <see cref="Target"/> in their place (a REFER);
+    /// "replace" is <see cref="Target"/> taking this call over from <see cref="By"/> (an
+    /// INVITE with Replaces: the last step of their attended transfer). Status: asking (our
+    /// REFER is out), calling (it's under way), done or failed, with <see cref="Detail"/> in words.
+    /// </summary>
+    public sealed class TransferInfo
+    {
+        public required string Role { get; init; }
+        /// <summary>Who the call is going to, as a short name ("Dave").</summary>
+        public required string Target { get; init; }
+        /// <summary>Who's transferring us ("in", "replace").</summary>
+        public string? By { get; init; }
+        public bool Attended { get; init; }
+        /// <summary>Attended, ours: the other call, which ends with this one.</summary>
+        public string? PartnerId { get; init; }
+        public string Status { get; internal set; } = "asking";
+        public string? Detail { get; internal set; }
+        /// <summary>"in": the call with the transferor, for the NOTIFYs that tell them how it went.</summary>
+        internal SIPDialogue? Dialogue;
+        /// <summary>"in": why the call to the target failed, if it did (its response, or the error).</summary>
+        internal SIPResponse? Failure;
+        internal string? FailureError;
+        /// <summary>"replace": who's taking over, in full ("Bob &lt;sip:bob@…&gt;").</summary>
+        internal string? NewRemote;
+        internal string? NewPhone;
+        /// <summary>"in", "replace": the sources arriving on the call as it began, i.e. the transferor's (see <see cref="ForgetOldSources"/>).</summary>
+        internal Dictionary<SDPMediaTypesEnum, uint>? OldSources;
+        /// <summary>"in": the transferor hung up on us while we were calling the target.</summary>
+        internal bool TransferorGone;
     }
 
     private readonly Settings _settings;
@@ -420,6 +459,20 @@ public sealed class Phone : IDisposable
         return "sip:" + typed;   // e.g. an IP address or host name
     }
 
+    /// <summary>
+    /// A call to the account's own domain goes to its server, so on the account's transport
+    /// (TLS to sipsorcery.com, say), unless the address names one.
+    /// </summary>
+    private static void OnAccountTransport(SIPURI dst, SipAccount a)
+    {
+        if (a.Protocol != SIPProtocolsEnum.udp && dst.Scheme == SIPSchemesEnum.sip
+            && !dst.Parameters.Has("transport")
+            && (string.Equals(dst.Host, a.Host, StringComparison.OrdinalIgnoreCase) || string.Equals(dst.HostAddress, a.Domain, StringComparison.OrdinalIgnoreCase)))
+        {
+            dst.Protocol = a.Protocol;
+        }
+    }
+
     /// <summary>Calls that are calling, ringing or connected.</summary>
     private int LiveCount => _calls.Count(c => c.Live);
 
@@ -499,6 +552,9 @@ public sealed class Phone : IDisposable
         ua.ClientCallRinging += (_, _) => ringing ??= DateTime.Now;
         ua.ClientCallFailed += (_, err, resp) =>
         {
+            // The same user agent places the call to a transfer's target (see TransferRequested):
+            // that's the transfer's business, not this call's.
+            if (c.State == CallState.Connected) return;
             response = resp;
             c.FailureResponse = resp is { StatusCode: >= 300 } ? $"{resp.StatusCode} {resp.ReasonPhrase}".TrimEnd() : null;
             string said = resp != null ? $"{resp.StatusCode} {resp.ReasonPhrase}" : "";
@@ -515,14 +571,7 @@ public sealed class Phone : IDisposable
             if (a == null) return (await ua.Call(c.Remote, null, null, rtp), failure, response);
             // From the account's address and display name, with its credentials if challenged.
             var dst = SIPURI.ParseSIPURIRelaxed(c.Remote);
-            // A call to the account's own domain goes to its server, so on the account's transport,
-            // unless the address typed names one.
-            if (a.Protocol != SIPProtocolsEnum.udp && dst.Scheme == SIPSchemesEnum.sip
-                && !dst.Parameters.Has("transport")
-                && (string.Equals(dst.Host, a.Host, StringComparison.OrdinalIgnoreCase) || string.Equals(dst.HostAddress, a.Domain, StringComparison.OrdinalIgnoreCase)))
-            {
-                dst.Protocol = a.Protocol;
-            }
+            OnAccountTransport(dst, a);
             var from = new SIPFromHeader(a.DisplayName, SIPURI.ParseSIPURIRelaxed($"sip:{a.Username}@{a.Host}"), null).ToString();
             var descriptor = new SIPCallDescriptor(a.AuthUser, a.Password, dst.ToString(), from, dst.CanonicalAddress,
                 null, null, null, SIPCallDirection.Out, SDP.SDP_MIME_CONTENTTYPE, null, null);
@@ -601,6 +650,13 @@ public sealed class Phone : IDisposable
             // user agent only sends one while the call is still up.)
             c.HangingUp = true;
             if (c.State == CallState.Calling) c.Ua?.Cancel();
+            // While we're calling a transfer's target, the user agent's call is that one: cancel
+            // it, and hang up on the transferor ourselves (its Hangup would do neither).
+            else if (c.Transfer is { Role: "in", Status: "calling" } t)
+            {
+                c.Ua?.Cancel();
+                if (!t.TransferorGone) try { t.Dialogue?.Hangup(_transport, null); } catch { }
+            }
             else c.Ua?.Hangup();
         }
         End(c, "You hung up");
@@ -623,9 +679,11 @@ public sealed class Phone : IDisposable
         lock (_lock)
         {
             if (c.State != CallState.Connected || c.Ua == null) return;
+            // Resuming after a failed transfer is the answer to it: the note goes.
+            bool cleared = !hold && c.Transfer is { Role: "out", Status: "failed" } && ClearTransfer(c);
             if (c.HoldMode != "sip")
             {
-                if (c.Held == hold) return;
+                if (c.Held == hold) { if (cleared) Changed?.Invoke(); return; }
                 c.Held = c.HoldWanted = hold;
                 Log?.Invoke($"{(hold ? "holding" : "resuming")} {c.Remote}: music on hold, nothing signalled");
             }
@@ -672,6 +730,530 @@ public sealed class Phone : IDisposable
 
     public void SetPageAnswer(string id, string sdp) => Find(id)?.Relay?.SetAnswer(sdp);
 
+    // ---- Transfer (RFC 3515 REFER, RFC 5589) ----
+    // Ours: blind sends a REFER asking them to call an address; attended sends one asking them to
+    // call the party on another of our calls, with Replaces (RFC 3891) so that call is taken over.
+    // Either way the call is held first, and how it goes comes back in NOTIFYs with a sipfrag
+    // ("SIP/2.0 180 Ringing", then 200 OK or why not). Done, they hang up on us (we do, if they
+    // don't); failed, the call stays held, for you to resume or end. Theirs: a REFER on one of
+    // our calls is taken (see TransferRequested for why without asking), and the user agent
+    // calls the target on the same media, hanging up on the transferor once it's answered. An
+    // INVITE with Replaces for one of our calls is taken over in place by that call's user agent.
+
+    /// <summary>How long our REFER waits for 202 Accepted.</summary>
+    private const int ReferAnswerMs = 10000;
+    /// <summary>How long a transfer they accepted can go without an outcome before we say we don't know.</summary>
+    private const int TransferOutcomeMs = 60000;
+    /// <summary>How long after a 200 OK NOTIFY we wait for their BYE before hanging up ourselves.</summary>
+    private const int TransferByeMs = 3000;
+    /// <summary>How long a transfer done to us (or failed) stays on the call's note.</summary>
+    private const int TransferNoteMs = 8000;
+
+    /// <summary>
+    /// Transfers a connected call to an address (blind). <paramref name="label"/> is what to call
+    /// the target ("Dave"); without one, their address's user part. A bare name or number goes to
+    /// the call's account's server. No From account comes into it: the REFER goes on the call's
+    /// dialog, and the far end places the new call as itself.
+    /// </summary>
+    public async Task BlindTransfer(string id, string typed, string? label)
+    {
+        var c = Find(id);
+        SIPUserAgent ua;
+        SIPURI? uri;
+        SipAccount? a;
+        lock (_lock)
+        {
+            if (c == null || c.State != CallState.Connected || c.Ua == null || TransferBusy(c)) return;
+            var address = ResolveAddress(typed, c.Account);
+            var target = string.IsNullOrWhiteSpace(label) ? ShortName(address) : label.Trim();
+            if (string.IsNullOrWhiteSpace(typed) || !SIPURI.TryParse(address, out uri) || uri == null)
+            {
+                c.Transfer = new TransferInfo { Role = "out", Target = target, Status = "failed", Detail = $"\"{typed}\" isn't an address to transfer to" };
+                Changed?.Invoke();
+                return;
+            }
+            // On the call's account's own server, its transport goes in the Refer-To (TLS, say), so
+            // their phone reaches it the way we would.
+            if (c.Account is { } acct) OnAccountTransport(uri, acct);
+            c.Transfer = new TransferInfo { Role = "out", Target = target, Status = "asking", Detail = $"Asking {ShortName(c.Remote)}'s phone to call {target}…" };
+            (ua, a) = (c.Ua, c.Account);
+            Log?.Invoke($"call {c.Id}: blind transfer of {c.Remote} to {uri}: REFER");
+        }
+        Hold(id, true);
+        Changed?.Invoke();
+        var asked = DateTime.Now;
+        bool ok = await ua.BlindTransfer(uri, TimeSpan.FromMilliseconds(ReferAnswerMs), CancellationToken.None, null, a?.AuthUser, a?.Password);
+        ReferAnswered(c, ua, ok, DateTime.Now - asked);
+    }
+
+    /// <summary>
+    /// Joins a connected call to another (attended): <paramref name="id"/>'s far end is asked to
+    /// call <paramref name="targetId"/>'s, replacing our call with them. Done, both calls end.
+    /// </summary>
+    public async Task AttendedTransfer(string id, string targetId)
+    {
+        Call? c = Find(id), t = Find(targetId);
+        SIPUserAgent ua;
+        SIPDialogue dialogue;
+        SipAccount? a;
+        lock (_lock)
+        {
+            if (c == null || t == null || c == t || c.State != CallState.Connected || t.State != CallState.Connected
+                || c.Ua == null || t.Ua?.Dialogue == null || TransferBusy(c) || TransferBusy(t)) return;
+            string cName = ShortName(c.Remote), tName = ShortName(t.Remote);
+            c.Transfer = new TransferInfo { Role = "out", Target = tName, Attended = true, PartnerId = t.Id, Detail = $"Asking {cName}'s phone to join {tName}…" };
+            t.Transfer = new TransferInfo { Role = "out", Target = cName, Attended = true, PartnerId = c.Id, Detail = $"Joining {cName} with {tName}…" };
+            (ua, dialogue, a) = (c.Ua, t.Ua.Dialogue, c.Account);
+            Log?.Invoke($"call {c.Id}: attended transfer of {c.Remote} to call {t.Id} ({t.Remote}): REFER with Replaces");
+        }
+        Hold(id, true);
+        Hold(targetId, true);
+        Changed?.Invoke();
+        var asked = DateTime.Now;
+        bool ok = await ua.AttendedTransfer(dialogue, TimeSpan.FromMilliseconds(ReferAnswerMs), CancellationToken.None, null, a?.AuthUser, a?.Password);
+        ReferAnswered(c, ua, ok, DateTime.Now - asked);
+    }
+
+    /// <summary>Drops a transfer's note (a failed one, once you've seen it).</summary>
+    public void DismissTransfer(string id)
+    {
+        var c = Find(id);
+        if (c == null) return;
+        bool cleared;
+        lock (_lock) cleared = c.Transfer is { Status: "failed" or "done" } && ClearTransfer(c);
+        if (cleared) Changed?.Invoke();
+    }
+
+    /// <summary>A transfer is under way on the call (ours or theirs). Under the lock.</summary>
+    private static bool TransferBusy(Call c) => c.Transfer is { Status: "asking" or "calling" };
+
+    /// <summary>Removes a call's transfer, and its partner's if it's the same one. Under the lock.</summary>
+    private bool ClearTransfer(Call c)
+    {
+        if (c.Transfer is not { } t) return false;
+        c.Transfer = null;
+        if (t.PartnerId != null && _calls.FirstOrDefault(x => x.Id == t.PartnerId) is { Transfer.PartnerId: var p } partner && p == c.Id) partner.Transfer = null;
+        return true;
+    }
+
+    /// <summary>Sets our transfer's status on the call, and on the other call of an attended one. Under the lock.</summary>
+    private void SetTransfer(Call c, string status, string? detail)
+    {
+        if (c.Transfer is not { } t) return;
+        t.Status = status;
+        t.Detail = detail;
+        if (t.PartnerId != null && _calls.FirstOrDefault(x => x.Id == t.PartnerId) is { Transfer: { } pt } partner && pt.PartnerId == c.Id)
+        {
+            pt.Status = status;
+            pt.Detail = detail;
+        }
+    }
+
+    /// <summary>Our REFER's answer: 202 Accepted (true), or turned down or unanswered.</summary>
+    private void ReferAnswered(Call c, SIPUserAgent ua, bool accepted, TimeSpan took)
+    {
+        lock (_lock)
+        {
+            if (c.Ua != ua || c.Transfer is not { Role: "out", Status: "asking" } t) return;
+            var them = ShortName(c.Remote);
+            if (accepted)
+            {
+                Log?.Invoke($"call {c.Id}: transfer accepted (202): {them} is calling {t.Target}");
+                SetTransfer(c, "calling", t.Attended ? $"Joining {them} with {t.Target}…" : $"Transferring to {t.Target}…");
+                // A phone that sends no NOTIFYs (norefersub) still hangs up on us when it's done;
+                // one that does neither leaves us not knowing.
+                _ = Task.Delay(TransferOutcomeMs).ContinueWith(_ =>
+                {
+                    lock (_lock)
+                    {
+                        if (c.Ua != ua || c.Transfer != t || t.Status != "calling") return;
+                        SetTransfer(c, "failed", $"No word from {them}'s phone on how the transfer went. The call is still on hold.");
+                    }
+                    Changed?.Invoke();
+                });
+            }
+            else
+            {
+                bool quick = took.TotalMilliseconds < ReferAnswerMs - 500;
+                Log?.Invoke($"call {c.Id}: transfer {(quick ? "turned down" : "not answered")} by {them}");
+                SetTransfer(c, "failed", quick ? $"{them}'s phone turned the transfer down. The call is still on hold."
+                    : $"{them}'s phone didn't answer the transfer request. The call is still on hold.");
+            }
+        }
+        Changed?.Invoke();
+    }
+
+    /// <summary>A NOTIFY on our transfer: the sipfrag of their call to the target, e.g. "SIP/2.0 180 Ringing".</summary>
+    private void OnTransferNotify(Call c, SIPUserAgent ua, string sipfrag)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(sipfrag ?? "", @"^SIP/2\.0\s+(?<code>\d{3})\s*(?<reason>[^\r\n]*)");
+        if (!m.Success) return;
+        int code = int.Parse(m.Groups["code"].Value);
+        string reason = m.Groups["reason"].Value.Trim();
+        lock (_lock)
+        {
+            // An outcome after a failure we'd already given (the timeout, say) still counts.
+            if (c.Ua != ua || c.State != CallState.Connected || c.Transfer is not { Role: "out", Status: "asking" or "calling" or "failed" } t) return;
+            Log?.Invoke($"call {c.Id}: transfer NOTIFY {code} {reason}");
+            var them = ShortName(c.Remote);
+            if (code < 200)
+            {
+                if (t.Status == "failed") return;
+                SetTransfer(c, "calling", code is 180 or 183 ? $"{t.Target} is ringing…" : t.Attended ? $"Joining {them} with {t.Target}…" : $"Transferring to {t.Target}…");
+            }
+            else if (code < 300)
+            {
+                SetTransfer(c, "done", t.Attended ? $"{them} and {t.Target} are talking" : $"Transferred to {t.Target}");
+                // They hang up on us now (both of them, attended); if not, we do.
+                var partner = t.PartnerId == null ? null : _calls.FirstOrDefault(x => x.Id == t.PartnerId);
+                foreach (var leg in new[] { c, partner })
+                {
+                    if (leg?.Ua is not { } legUa || leg.Transfer is not { } lt) continue;
+                    _ = Task.Delay(TransferByeMs).ContinueWith(_ =>
+                    {
+                        lock (_lock)
+                        {
+                            if (leg.Ua != legUa || leg.State != CallState.Connected) return;
+                            Log?.Invoke($"call {leg.Id}: transferred, and they haven't hung up: hanging up");
+                            leg.HangingUp = true;
+                            legUa.Hangup();
+                        }
+                        EndTransferred(leg, lt.Target);
+                    });
+                }
+            }
+            else SetTransfer(c, "failed", $"Couldn't transfer: {TransferFailure(code, reason, t.Target)}. The call is still on hold.");
+        }
+        Changed?.Invoke();
+    }
+
+    /// <summary>A call that's been transferred ends: "Transferred to Dave", in its end reason and the history.</summary>
+    private void EndTransferred(Call c, string target)
+    {
+        c.TransferNote = $"Transferred to {target}";
+        End(c, c.TransferNote);
+    }
+
+    /// <summary>Why the call to a transfer's target failed, in words, from its response.</summary>
+    private static string TransferFailure(int code, string reason, string who) => code switch
+    {
+        404 or 604 => $"{who} wasn't found",
+        486 or 600 => $"{who} is busy",
+        // 408: nothing replied at all (no such host, or nothing listening there); 480, 487: it rang out.
+        408 => $"nothing answered at {who}'s address",
+        480 or 487 => $"{who} didn't answer",
+        603 => $"{who} declined the call",
+        401 or 403 or 407 => $"the call to {who} wasn't allowed",
+        488 or 606 => $"{who}'s phone couldn't take the call",
+        502 or 503 or 504 => $"{who} couldn't be reached",
+        _ => $"the call to {who} failed",
+    } + $" ({code} {reason})".Replace(" )", ")");
+
+    /// <summary>
+    /// The far end asks us to call someone in their place (a REFER on our call with them). The
+    /// user agent asks this on its SIP receive thread and needs the answer straight away (202 or
+    /// 603), so there's no time to ask the user: it's taken, unless the call can't be moved.
+    /// That's the safer of the two defaults the user agent allows: refusing every transfer would
+    /// break the ordinary case (a receptionist putting you through), while what's taken is
+    /// narrow and shown. It must come inside a connected call, from the person you're talking to;
+    /// the call goes out with your account's password only to that account's own server (so a
+    /// transfer can't use your account to reach an outside number), and the stage says who's
+    /// transferring you to whom while it rings, so you can hang up.
+    /// </summary>
+    private bool TransferRequested(Call c, SIPUserAgent ua, SIPUserField referTo, string? referredBy)
+    {
+        bool attended = referTo.URI.Headers.Has(SIPHeaderAncillary.SIP_REFER_REPLACES);
+        string to = !string.IsNullOrWhiteSpace(referTo.Name) ? referTo.Name.Trim('"', ' ') : ShortName(referTo.URI.ToParameterlessString());
+        TransferInfo t;
+        lock (_lock)
+        {
+            string by = ShortName(c.Remote);
+            string? why = c.Ua != ua || c.State != CallState.Connected ? "the call isn't connected"
+                : c.WebRtc ? "a browser phone's call can't be moved to another call"
+                : TransferBusy(c) ? "a transfer is already under way on it"
+                : referTo.URI.Scheme is not (SIPSchemesEnum.sip or SIPSchemesEnum.sips) ? $"{referTo.URI} isn't a SIP address"
+                : null;
+            if (why != null)
+            {
+                Log?.Invoke($"call {c.Id}: {by} asked to transfer us to {referTo.URI}: turned down (603), {why}");
+                c.Transfer = new TransferInfo { Role = "in", Target = to, By = by, Attended = attended, Status = "failed", Detail = $"{by} tried to transfer you to {to}, but {why}." };
+                _ = ClearTransferLater(c, c.Transfer);
+                Changed?.Invoke();
+                return false;
+            }
+            t = c.Transfer = new TransferInfo
+            {
+                Role = "in", Target = to, By = by, Attended = attended, Status = "calling", Dialogue = ua.Dialogue, OldSources = new(c.Sources),
+                Detail = $"{by} is transferring you to {to}…",
+            };
+            Log?.Invoke($"call {c.Id}: {by} is transferring us to {referTo.URI.ToParameterlessString()}{(attended ? " (attended: replacing their call with them)" : "")}{(referredBy != null ? $", referred by {referredBy}" : "")}: accepted (202)");
+        }
+        Changed?.Invoke();
+        // The first NOTIFY once the 202 is out (the user agent sends it when this returns).
+        _ = Task.Delay(200).ContinueWith(_ => NotifyTransferor(c, t, "100 Trying", false));
+        return true;
+    }
+
+    /// <summary>
+    /// The call to a transfer's target, before it goes: from our account (with its password if
+    /// the target is on that account's server, see <see cref="TransferRequested"/>), and with
+    /// the transferor named in Referred-By (RFC 3892) so the target can show who sent us.
+    /// </summary>
+    private void TransferCallDescriptor(Call c, SIPCallDescriptor d, SIPRequest refer)
+    {
+        // The user agent calls the Refer-To address without its parameters, so a transport it
+        // named is lost, and a call to the account's server would go over UDP however the account
+        // reaches it (a TLS-only server never answers). Routed as when we dial it.
+        if (SIPURI.TryParse(d.Uri, out var dst) && dst != null)
+        {
+            try
+            {
+                var named = SIPUserField.ParseSIPUserField(refer.Header.ReferTo).URI;
+                if (named.Parameters.Has("transport")) dst.Protocol = named.Protocol;
+            }
+            catch { }
+            if (c.Account is { } acct) OnAccountTransport(dst, acct);
+            d.Uri = dst.ToString();
+        }
+        if (c.Account is { } a)
+        {
+            d.From = new SIPFromHeader(a.DisplayName, SIPURI.ParseSIPURIRelaxed($"sip:{a.Username}@{a.Host}"), null).ToString();
+            if (SIPURI.TryParse(d.Uri, out var uri) && uri != null
+                && (string.Equals(uri.HostAddress, a.Host, StringComparison.OrdinalIgnoreCase) || string.Equals(uri.HostAddress, a.Domain, StringComparison.OrdinalIgnoreCase)))
+            {
+                (d.Username, d.AuthUsername, d.Password) = (a.Username, a.AuthUser, a.Password);
+            }
+        }
+        // A direct call: from the address the transferor reached us at (sip:vtO@host:port, say),
+        // so the target sees who's calling rather than the user agent's anonymous default.
+        else if (c.Transfer?.Dialogue?.LocalUserField is { URI.User.Length: > 0 } me)
+        {
+            d.From = new SIPFromHeader(me.Name, me.URI.CopyOf(), null).ToString();
+        }
+        if (!string.IsNullOrWhiteSpace(refer.Header.ReferredBy))
+        {
+            d.CustomHeaders ??= new List<string>();
+            d.CustomHeaders.Add($"{SIPHeaders.SIP_HEADER_REFERREDBY}: {refer.Header.ReferredBy}");
+        }
+    }
+
+    /// <summary>
+    /// The call to a transfer's target is answered (or not). Answered, the user agent hangs up on
+    /// the transferor; this call is now with the target: same id and media, new far end. The
+    /// call with the transferor goes into the history as transferred. Not answered, the user
+    /// agent takes the transferor off hold, and the call carries on with them.
+    /// </summary>
+    private void TransferOutcome(Call c, SIPUserAgent ua, bool ok)
+    {
+        TransferInfo t;
+        Call? before = null;
+        lock (_lock)
+        {
+            if (c.Ua != ua || c.Transfer is not { Role: "in", Status: "calling" } tt) return;
+            t = tt;
+            if (ok)
+            {
+                // Before the user agent's BYE: the transferor hears how it went first.
+                NotifyTransferor(c, t, "200 OK", true);
+                before = Snapshot(c, $"{t.By} transferred you to {t.Target}", $"Transferred to {t.Target}");
+                var dialogue = ua.Dialogue;
+                var them = dialogue?.RemoteUserField;
+                c.Remote = them == null ? t.Target : !string.IsNullOrWhiteSpace(them.Name) ? $"{them.Name} <{them.URI.ToParameterlessString()}>"
+                    : t.Target != ShortName(them.URI.ToParameterlessString()) ? $"{t.Target} <{them.URI.ToParameterlessString()}>" : them.URI.ToParameterlessString();
+                c.Outgoing = true;
+                c.StartedAt = DateTime.Now;
+                c.ConnectedAt = DateTime.Now;
+                c.HeldByThem = false;
+                t.Status = "done";
+                t.Detail = $"{t.By} transferred you to {t.Target}";
+                ForgetOldSources(c, t);
+                Log?.Invoke($"call {c.Id}: transferred: now with {c.Remote}");
+            }
+            else
+            {
+                var r = t.Failure;
+                var (code, reason) = r != null && r.StatusCode >= 300 ? (r.StatusCode, r.ReasonPhrase)
+                    : t.FailureError?.Contains("resolve", StringComparison.OrdinalIgnoreCase) == true ? (404, "Not Found")
+                    : (408, "Request Timeout");
+                if (t.TransferorGone)
+                {
+                    // No one to go back to (the user agent's re-INVITE to them gets a 481).
+                    t.Status = "failed";
+                    Log?.Invoke($"call {c.Id}: transfer to {t.Target} failed ({code} {reason}), and {t.By} had hung up");
+                    var why = $"Couldn't reach {t.Target}: {TransferFailure(code, reason, t.Target)}, and {t.By} had hung up";
+                    _ = Task.Run(() => End(c, why));
+                    return;
+                }
+                NotifyTransferor(c, t, $"{code} {reason}", true);
+                t.Status = "failed";
+                t.Detail = $"{t.By} tried to transfer you to {t.Target}, but {TransferFailure(code, reason, t.Target)}. You're still with {t.By}.";
+                Log?.Invoke($"call {c.Id}: transfer to {t.Target} failed ({code} {reason}{(t.FailureError != null ? $", {t.FailureError}" : "")}); back with {t.By}");
+            }
+            _ = ClearTransferLater(c, t);
+        }
+        if (before != null) RecordEnded(before);
+        Changed?.Invoke();
+        if (ok && c.Rtp is { } rtp && c.Relay is { } relay) Details?.Invoke(c, DescribeCall(c, rtp, relay));
+    }
+
+    /// <summary>
+    /// An INVITE with Replaces has arrived for this call (their attended transfer, with us as the
+    /// target): the user agent answers it, and once it's up, hangs up the call it replaces.
+    /// Nothing to decide: the person we're talking to arranged it, and it's the same call to us.
+    /// </summary>
+    private void ReplacementArriving(Call c, SIPUserAgent ua, SIPRequest invite)
+    {
+        lock (_lock)
+        {
+            if (c.Ua != ua || c.State != CallState.Connected) return;
+            var from = invite.Header.From;
+            var newRemote = from.FromURI.ToParameterlessString();
+            if (!string.IsNullOrWhiteSpace(from.FromName)) newRemote = $"{from.FromName} <{newRemote}>";
+            string by = ShortName(c.Remote), to = ShortName(newRemote);
+            c.Transfer = new TransferInfo
+            {
+                Role = "replace", Target = to, By = by, Status = "calling", NewRemote = newRemote, NewPhone = invite.Header.UserAgent, OldSources = new(c.Sources),
+                Detail = $"{by} is handing you over to {to}…",
+            };
+            Log?.Invoke($"call {c.Id}: INVITE with Replaces from {newRemote}{(invite.Header.ReferredBy != null ? $" (referred by {invite.Header.ReferredBy})" : "")}: taking over the call with {c.Remote}");
+        }
+        Changed?.Invoke();
+    }
+
+    /// <summary>The call replacing this one is answered: it's now with them, and the old one goes into the history.</summary>
+    private void ReplacementDone(Call c, SIPUserAgent ua)
+    {
+        Call before;
+        lock (_lock)
+        {
+            if (c.Ua != ua || c.Transfer is not { Role: "replace" } t) return;
+            before = Snapshot(c, $"{t.By} handed you over to {t.Target}", $"Transferred to {t.Target}");
+            c.Remote = t.NewRemote ?? t.Target;
+            c.TheirPhone = t.NewPhone;
+            c.Outgoing = false;
+            c.Incoming = null;
+            c.StartedAt = DateTime.Now;
+            c.ConnectedAt = DateTime.Now;
+            c.HeldByThem = false;
+            t.Status = "done";
+            t.Detail = $"{t.By} handed you over to {t.Target}";
+            ForgetOldSources(c, t);
+            Log?.Invoke($"call {c.Id}: replaced: now with {c.Remote}");
+            _ = ClearTransferLater(c, t);
+        }
+        RecordEnded(before);
+        Changed?.Invoke();
+        if (c.Rtp is { } rtp && c.Relay is { } relay) Details?.Invoke(c, DescribeCall(c, rtp, relay));
+    }
+
+    /// <summary>
+    /// After a transfer the user agent carries on with the same media session, and each stream's
+    /// RTCP keeps its reception report on the first source it heard: the transferor's. Our
+    /// reports would then go on describing a stream that's stopped and never list the new far
+    /// end's, which reads to them as their media not reaching us ("isn't getting your audio").
+    /// Dropping the old source's report makes the next packet, from the new far end, start a
+    /// fresh one; done again a second later in case a late packet from the old one brought it back.
+    /// </summary>
+    private void ForgetOldSources(Call c, TransferInfo t)
+    {
+        // Video to and from someone new starts mid-stream: keyframes both ways, now.
+        c.Relay?.FarEndChanged();
+        if (t.OldSources is not { Count: > 0 } old || c.Rtp is not { } rtp) return;
+        void Forget()
+        {
+            if (c.Rtp != rtp) return;
+            foreach (var (kind, ssrc) in old)
+            {
+                MediaStream? stream = kind switch
+                {
+                    SDPMediaTypesEnum.audio => rtp.AudioStream,
+                    SDPMediaTypesEnum.video => rtp.VideoStream,
+                    SDPMediaTypesEnum.text => rtp.TextStream,
+                    _ => null,
+                };
+                stream?.RtcpSession?.RemoveReceptionReport(ssrc);
+            }
+        }
+        Forget();
+        Log?.Invoke($"call {c.Id}: RTCP: dropped the reports on the transferor's media ({string.Join(", ", old.Select(o => $"{o.Key} {o.Value}"))})");
+        _ = Task.Delay(1000).ContinueWith(_ => Forget());
+    }
+
+    /// <summary>The part of a call before a transfer, as an ended call of its own, for the history.</summary>
+    private static Call Snapshot(Call c, string reason, string note) => new()
+    {
+        Id = c.Id, State = CallState.Ended, Remote = c.Remote, Outgoing = c.Outgoing, Account = c.Account, WebRtc = c.WebRtc,
+        StartedAt = c.StartedAt, ConnectedAt = c.ConnectedAt, EndedAt = DateTime.Now, EndReason = reason, TransferNote = note,
+    };
+
+    private void RecordEnded(Call c)
+    {
+        try { Ended?.Invoke(c); } catch (Exception ex) { Log?.Invoke($"recording call {c.Id} in history failed: {ex.Message}"); }
+    }
+
+    /// <summary>A transfer done to us, or a failed one, stays on the call's note for a few seconds.</summary>
+    private async Task ClearTransferLater(Call c, TransferInfo t)
+    {
+        await Task.Delay(TransferNoteMs);
+        lock (_lock) { if (c.Transfer != t || t.Status is "asking" or "calling") return; c.Transfer = null; }
+        Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// Tells the transferor how their transfer's going: a NOTIFY (Event: refer) in our call with
+    /// them, with the call to the target's status line as a sipfrag. The user agent sends none.
+    /// </summary>
+    /// <summary>
+    /// A BYE from the person transferring us, while we call the target. The user agent answers it
+    /// but, busy with the new call, doesn't end anything, and that's right: a transferor may
+    /// hang up as soon as we've accepted (RFC 5589). So the call to the target goes on; if it
+    /// fails there's no one to go back to, and the call ends (see <see cref="TransferOutcome"/>).
+    /// </summary>
+    private void TransferorHungUp(SIPRequest bye)
+    {
+        lock (_lock)
+        {
+            var c = _calls.FirstOrDefault(x => x.Transfer is { Role: "in", Status: "calling", TransferorGone: false } t && t.Dialogue?.CallId == bye.Header.CallId);
+            if (c?.Transfer is not { } t) return;
+            t.TransferorGone = true;
+            t.Detail = $"{t.By} hung up. Still calling {t.Target}…";
+            Log?.Invoke($"call {c.Id}: {t.By} hung up during the transfer; still calling {t.Target}");
+        }
+        Changed?.Invoke();
+    }
+
+    private void NotifyTransferor(Call c, TransferInfo t, string status, bool final)
+    {
+        if (t.Dialogue is not { } dialogue || t.TransferorGone) return;
+        try
+        {
+            var notify = dialogue.GetInDialogRequest(SIPMethodsEnum.NOTIFY);
+            notify.Header.Event = "refer";
+            notify.Header.SubscriptionState = final ? "terminated;reason=noresource" : "active;expires=60";
+            notify.Header.ContentType = SIPMIMETypes.REFER_CONTENT_TYPE + ";version=2.0";
+            notify.Body = $"SIP/2.0 {status}\r\n";
+            notify.Header.ContentLength = notify.Body.Length;
+            new SIPNonInviteTransaction(_transport, notify, null).SendRequest();
+            Log?.Invoke($"call {c.Id}: NOTIFY to {t.By}: {status}");
+        }
+        catch (Exception ex)
+        {
+            Log?.Invoke($"call {c.Id}: NOTIFY to {t.By} failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>Who a call's with, short: the display name, else the address's user part ("dave"), else its host.</summary>
+    public static string ShortName(string? remote)
+    {
+        if (string.IsNullOrWhiteSpace(remote)) return "them";
+        var m = System.Text.RegularExpressions.Regex.Match(remote, @"^\s*""?(?<name>[^""<]*?)""?\s*<(?<uri>[^>]*)>");
+        if (m.Success && m.Groups["name"].Value.Trim().Length > 0) return m.Groups["name"].Value.Trim();
+        var uri = System.Text.RegularExpressions.Regex.Replace(m.Success ? m.Groups["uri"].Value : remote.Trim(), "^(sips?|tel):", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        var user = uri.Split('@', ';', '>')[0];
+        if (user.Length == 0) return "them";
+        return user.All(ch => char.IsDigit(ch) || ch is '+' or '*' or '#' or '.' or ':') ? user : char.ToUpperInvariant(user[0]) + user[1..];
+    }
+
     /// <summary>The far end turned down our request to add video (m=video 0, an error, or no answer).</summary>
     public event Action<Call>? VideoRefused;
 
@@ -704,6 +1286,8 @@ public sealed class Phone : IDisposable
     private RTPSession NewSession(Call c, bool video, string? theirOffer = null)
     {
         var rtp = MediaRelay.CreateSipSession(video, c.WebRtc);
+        // Who's sending, per kind: a transfer needs the old far end's sources (ForgetOldSources).
+        rtp.OnRtpPacketReceived += (_, kind, pkt) => { if (c.Rtp == rtp) c.Sources[kind] = pkt.Header.SyncSource; };
         if (rtp is TextPeerConnection pc)
         {
             c.Rtt?.Dispose();
@@ -1074,7 +1658,19 @@ public sealed class Phone : IDisposable
             return;
         }
         if (req.Method == SIPMethodsEnum.INFO) { await OnInfo(req); return; }
+        if (req.Method == SIPMethodsEnum.BYE) { TransferorHungUp(req); return; }
         if (req.Method != SIPMethodsEnum.INVITE || !string.IsNullOrEmpty(req.Header.To.ToTag)) return;
+        // An INVITE with Replaces (RFC 3891) is someone's attended transfer taking over one of
+        // our calls: that call's user agent answers it (ReplacementArriving). One for a call we
+        // don't have is answered 481, as the RFC says.
+        if (!string.IsNullOrWhiteSpace(req.Header.Replaces))
+        {
+            var replaces = SIPReplacesParameter.Parse(req.Header.Replaces);
+            if (replaces != null && Calls.Any(x => x.State == CallState.Connected && x.Ua?.Dialogue?.CallId == replaces.CallID)) return;
+            Log?.Invoke($"INVITE with Replaces for a call we don't have ({req.Header.Replaces}): 481");
+            await _transport.SendResponseAsync(SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, "No call to replace"));
+            return;
+        }
 
         Call c;
         lock (_lock)
@@ -1134,7 +1730,24 @@ public sealed class Phone : IDisposable
         // Only the call's current user agent, once connected. The user agent raises this too when
         // a call we place fails with WebRTC media (closing the RTCPeerConnection), and for a
         // turned-down attempt DialAsync retries; there, DialAsync gives the real reason.
-        ua.OnCallHungup += _ => { if (!c.HangingUp && c.Ua == ua && c.State == CallState.Connected) End(c, "They hung up"); };
+        ua.OnCallHungup += _ =>
+        {
+            if (c.HangingUp || c.Ua != ua || c.State != CallState.Connected) return;
+            // Hanging up on us while our transfer's going (and hasn't failed) is it done: the
+            // transferee does when the target answers, and so does the target of an attended one.
+            if (c.Transfer is { Role: "out", Status: "calling" or "done" } t) EndTransferred(c, t.Target);
+            else End(c, "They hung up");
+        };
+        // Transfer (see BlindTransfer and TransferRequested).
+        ua.OnTransferNotify += sipfrag => OnTransferNotify(c, ua, sipfrag);
+        ua.OnTransferRequested += (referTo, referredBy) => TransferRequested(c, ua, referTo, referredBy);
+        ua.OnTransferCallDescriptorCreated += (d, refer) => TransferCallDescriptor(c, d, refer);
+        ua.OnTransferToTargetSuccessful += _ => TransferOutcome(c, ua, true);
+        ua.OnTransferToTargetFailed += _ => TransferOutcome(c, ua, false);
+        ua.ClientCallRinging += (_, _) => { if (c.Transfer is { Role: "in", Status: "calling" } t && c.Ua == ua) NotifyTransferor(c, t, "180 Ringing", false); };
+        ua.ClientCallFailed += (_, err, resp) => { if (c.Transfer is { Role: "in", Status: "calling" } t && c.Ua == ua) (t.Failure, t.FailureError) = (resp, err); };
+        ua.OnAttendedTransferRequested += invite => ReplacementArriving(c, ua, invite);
+        ua.OnAttendedTransferAccepted += _ => ReplacementDone(c, ua);
         ua.RemotePutOnHold += () => { if (c.Ua != ua) return; c.HeldByThem = true; Log?.Invoke($"{c.Remote} put the call on hold"); Changed?.Invoke(); };
         ua.RemoteTookOffHold += () => { if (c.Ua != ua) return; c.HeldByThem = false; Log?.Invoke($"{c.Remote} took the call off hold"); Changed?.Invoke(); };
         // Keypad tones they send as RFC 4733 telephone-events: once per tone, at its start.

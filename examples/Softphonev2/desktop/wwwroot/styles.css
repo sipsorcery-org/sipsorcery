@@ -104,16 +104,23 @@ body:not(.diag) .diag-only { display: none; }
 .dial-suggest[hidden] { display: none; }
 .suggest-group { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 10px 4px; }
 .suggest-item {
-  display: grid; grid-template-columns: 30px minmax(0, 1fr) auto 26px 18px; gap: 10px; align-items: center;
-  padding: 7px 10px; border-radius: 8px; cursor: pointer;
+  display: grid; grid-template-columns: 36px minmax(0, 1fr) auto 26px 18px; gap: 10px; align-items: center;
+  padding: 6px 10px; border-radius: 8px; cursor: pointer;
 }
 .suggest-item:hover, .suggest-item.active { background: var(--surface-3); }
 .suggest-avatar {
-  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; justify-self: center;
   background: var(--tile); color: var(--tile-ink); font-size: 13px; font-weight: 600;
 }
 .suggest-main { display: grid; min-width: 0; }
-.suggest-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggest-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Contacts stand out from recent calls: their own group first, with a header in the accent colour,
+   and bigger rows: a larger avatar (their picture, if they have one) and the name in bold. */
+.suggest-group.contacts { color: var(--accent); font-weight: 600; }
+.suggest-group.contacts ~ .suggest-group { margin-top: 4px; border-top: 1px solid var(--border); padding-top: 10px; }
+.suggest-item.is-contact { padding: 7px 10px; }
+.suggest-item.is-contact .suggest-avatar { width: 36px; height: 36px; font-size: 15px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+.suggest-item.is-contact .suggest-name { font-weight: 700; font-size: 15px; }
 .suggest-uri { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .suggest-meta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .suggest-meta svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -129,7 +136,7 @@ body:not(.diag) .diag-only { display: none; }
 .suggest-item:hover .suggest-call, .suggest-item.active .suggest-call,
 .suggest-item:hover .suggest-contact, .suggest-item.active .suggest-contact { opacity: 1; }
 @media (max-width: 640px) {
-  .suggest-item { grid-template-columns: 30px minmax(0, 1fr) auto 26px; }
+  .suggest-item { grid-template-columns: 36px minmax(0, 1fr) auto 26px; }
   .suggest-call { display: none; }
 }
 /* The last row: Contacts…, or Add … to contacts. */
@@ -357,6 +364,28 @@ body:not(.diag) .diag-only { display: none; }
 
 .info[hidden] { display: none; }
 
+/* Tucked away: the arrow at the info bar's start slides it off the stage's left edge (the stage
+   clips it), leaving a small arrow tab there to bring it back. Muted, the tab has a red dot. */
+.info { grid-template-columns: auto minmax(0, 1fr); column-gap: 6px; transition: transform .2s ease, opacity .2s ease, visibility 0s; }
+.info > .details { grid-column: 1 / -1; }
+.info.tucked { transform: translateX(calc(-100% - 12px)); opacity: 0; visibility: hidden; transition: transform .2s ease, opacity .2s ease, visibility 0s .2s; }
+.info-hide, .info-tab {
+  display: grid; place-items: center; padding: 0; border: 0; color: #fff; cursor: pointer;
+}
+.info-hide { width: 20px; height: 18px; margin-left: -4px; border-radius: 4px; background: none; opacity: .75; }
+.info-hide:hover { opacity: 1; background: rgba(255, 255, 255, .14); }
+.info-hide svg, .info-tab svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.info-tab {
+  position: absolute; left: 0; top: 12px; z-index: 2; width: 20px; height: 30px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: rgba(0, 0, 0, .55); animation: info-tab-in .2s ease .15s both;
+}
+.info-tab[hidden] { display: none; }
+.info-tab:hover { background: rgba(0, 0, 0, .7); }
+.info-hide:focus-visible, .info-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.info-tab.muted::after { content: ""; position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .55); }
+@keyframes info-tab-in { from { opacity: 0; transform: translateX(-6px); } }
+@media (prefers-reduced-motion: reduce) { .info, .info.tucked { transition: none; } .info-tab { animation: none; } }
+
 /* Diagnostics: Call quality, top right over the stage (below the audio chip on an audio call). */
 .quality {
   position: absolute; right: 12px; top: 12px; z-index: 2; width: var(--side-w); max-width: calc(100% - 24px); padding: 10px 12px; border-radius: var(--radius-sm);
@@ -545,7 +574,7 @@ body:not(.diag) .diag-only { display: none; }
 .dock > .rtt { flex: 1 1 auto; height: auto; min-height: 140px; }
 .dock.both .keypad { grid-template-rows: repeat(4, minmax(28px, 42px)); }
 /* A popover open beside the dock (undocked while the other stays): over the stage, not the dock. */
-.stage-row.docked > .rtt, .stage-row.docked > .keypad-pop { right: calc(var(--dock-w) + 24px); }
+.stage-row.docked > .rtt, .stage-row.docked > .keypad-pop, .stage-row.docked > .xfer-pop { right: calc(var(--dock-w) + 24px); }
 /* Narrow windows: no room for a column, so the dock floats over the stage's right edge like the
    popovers, at the bottom by the buttons, and the stage keeps its width. */
 @media (max-width: 959px) {
@@ -554,7 +583,7 @@ body:not(.diag) .diag-only { display: none; }
   .dock { grid-column: auto; grid-row: auto; position: absolute; right: 12px; top: 12px; bottom: 12px; z-index: 6; width: min(var(--dock-w), calc(100% - 24px)); justify-content: flex-end; overflow: visible; }
   .dock > .rtt, .dock > .keypad-pop { box-shadow: 0 10px 30px rgba(0, 0, 0, .25); }
   .dock > .rtt { flex: 0 1 400px; min-height: 160px; }
-  .stage-row.docked > .rtt, .stage-row.docked > .keypad-pop { right: 12px; }
+  .stage-row.docked > .rtt, .stage-row.docked > .keypad-pop, .stage-row.docked > .xfer-pop { right: 12px; }
 }
 /* The dock button in each panel's header, beside ×: accent while docked. */
 .rtt-dock[aria-pressed="true"] { color: var(--accent); }
@@ -845,7 +874,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .calls.collapsed .call-sends { gap: 2px; margin-left: 0; }
 .calls.collapsed .send { width: 15px; height: 15px; padding: 2px; }
 
-/* Mute all and End all, under the list; on the rail, icons only. */
+/* Mute all, Cameras off and End all, under the list; on the rail, icons only. */
 .calls-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px 2px 0; margin-top: auto; border-top: 1px solid var(--border); }
 .calls-foot[hidden] { display: none; }
 .calls-all {
@@ -855,6 +884,8 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .calls-all > span { overflow: hidden; text-overflow: ellipsis; }
 .calls-all svg { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .calls-all[aria-pressed="true"] { color: var(--danger); }
+/* With Cameras off beside Mute all, End all takes its own row under them. */
+.calls-foot:has(#camAllBtn:not([hidden])) #endAllBtn { grid-column: 1 / -1; }
 /* Grid: its own row across the footer, above Mute all and End all; pressed while the grid is on. */
 .calls-grid { grid-column: 1 / -1; position: relative; }
 .calls-grid .count {
@@ -888,37 +919,6 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 }
 
 @media (prefers-reduced-motion: reduce) { .call-row .call-avatar { animation: none; } }
-
-/* Hidden (wider windows): the panel slides off to the left, past the column gap, and the stage
-   takes the width; the arrow tab on the stage's left edge brings it back. Only the empty panel
-   toggles on the rail (narrow windows); open and wide, it's the chevron. */
-.calls { transition: margin-left .22s ease, opacity .22s ease, visibility 0s; }
-.calls.stowed { margin-left: calc(-1 * var(--calls-w) - 12px); opacity: 0; visibility: hidden; transition: margin-left .22s ease, opacity .22s ease, visibility 0s .22s; }
-@media (min-width: 700px) { .calls:not(.collapsed) { cursor: auto; } }
-/* In the panel's column (zero wide while it's hidden), so it takes no cell from the stage, hanging
-   out over the column gap onto the stage's edge. */
-.shell > .calls-tab { grid-column: 1; grid-row: 3; justify-self: start; align-self: start; margin: 14px -22px 0 -12px; }
-.calls-tab {
-  position: relative; z-index: 21; width: 22px; min-height: 40px; padding: 6px 0; display: flex; flex-direction: column; align-items: center; gap: 4px;
-  border: 1px solid var(--border); border-left: 0; border-radius: 0 10px 10px 0; background: var(--surface-2); color: var(--muted);
-  cursor: pointer; box-shadow: 0 1px 3px rgb(0 0 0 / .08); animation: calls-tab-in .2s ease .18s both;
-}
-.calls-tab[hidden] { display: none; }
-.calls-tab:hover { background: var(--surface-3); color: var(--text); }
-.calls-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.calls-tab svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.calls-tab .tab-count { min-width: 16px; height: 16px; padding: 0 3px; border-radius: 8px; display: grid; place-items: center; background: var(--accent); color: var(--surface); font-size: 10px; font-weight: 600; line-height: 1; }
-.calls-tab .tab-count:empty { display: none; }
-/* A ringing call or unseen missed calls: one red dot on the tab's corner (the count is in the tooltip). */
-.calls-tab .missed-count { position: absolute; top: -4px; right: -4px; width: 10px; min-width: 0; height: 10px; padding: 0; border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 2px var(--page); font-size: 0; }
-.calls-tab .missed-count:empty { display: none; }
-.calls-tab.ringing .missed-count { display: block; animation: calls-pulse-dot 1.4s ease-in-out infinite; }
-@keyframes calls-pulse-dot { 50% { opacity: .35; } }
-@keyframes calls-tab-in { from { opacity: 0; transform: translateX(-8px); } }
-@media (prefers-reduced-motion: reduce) {
-  .calls, .calls.stowed { transition: none; }
-  .calls-tab, .calls-tab.ringing .missed-count { animation: none; }
-}
 
 /* ---------- Several calls ---------- */
 
@@ -1169,3 +1169,69 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .hist-toast-x { flex: none; width: 26px; height: 26px; border: 0; border-radius: 50%; background: none; color: #fff; opacity: .7; font-size: 16px; line-height: 1; cursor: pointer; }
 .hist-toast-x:hover { opacity: 1; background: rgba(255, 255, 255, .12); }
 .hist-toast button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+
+/* ---- Transfer: the popover above its button, and the note on the stage ---- */
+/* Like the keypad: over the stage's bottom right, left of the dock when it's open. */
+.xfer-pop {
+  position: absolute; right: 12px; bottom: 12px; z-index: 7; width: min(380px, calc(100% - 24px)); max-height: calc(100% - 24px);
+  display: flex; flex-direction: column; margin: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+}
+.xfer-pop[hidden] { display: none; }
+.xfer-pop .rtt-head { flex: none; }
+.xfer-pop .rtt-title { margin-right: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.xfer-body { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; min-height: 0; }
+.xfer-calls:empty { display: none; }
+.xfer-calls { display: grid; gap: 6px; }
+.xfer-label { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.xfer-call {
+  display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%;
+  padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2);
+  color: var(--text); font: inherit; text-align: left; cursor: pointer;
+}
+.xfer-call:hover, .xfer-call:focus-visible { border-color: var(--accent); }
+.xfer-call .suggest-uri { font-size: 12.5px; }
+.xfer-call-go { font-size: 12.5px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+.xfer-entry { display: flex; gap: 8px; }
+.xfer-input {
+  flex: 1; min-width: 0; height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--text); font: inherit;
+}
+/* The address bar's pill and ×, in a narrower field. */
+.xfer-entry .dest-wrap.has-contact input { padding-right: 132px; }
+.xfer-entry .dest-contact { max-width: 92px; }
+.xfer-input:focus { outline: none; border-color: var(--accent); }
+.xfer-entry .btn { height: 36px; }
+.xfer-sug { overflow: auto; min-height: 0; margin: 0 -6px; }
+.xfer-sug:empty { display: none; }
+/* The address bar's rows, less the last call (no room): the contact button and the transfer icon. */
+.xfer-sug .suggest-item { grid-template-columns: 36px minmax(0, 1fr) 26px 18px; }
+.xfer-sug .suggest-meta, .xfer-sug .suggest-item > span:empty { display: none; }
+.controls .btn.xfer-btn[aria-pressed="true"] {
+  color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+.controls .btn.xfer-btn[hidden] { display: none; }
+.controls .btn.xfer-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* The note: how a transfer's going, in place of the held note. Wraps, as what it says can be long. */
+/* At the top right of the stage, not over the middle of their video (the call info has the top
+   left): a quiet pill like the call info (dark, translucent, small), fading in. Failed, it keeps
+   its buttons and reads in a soft red. */
+.xfer-note {
+  top: 12px; left: auto; right: 12px; transform: none; width: max-content; max-width: min(440px, 55%);
+  flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 5px 6px 5px 12px; border-radius: 999px;
+  background: rgba(0, 0, 0, .55); color: #fff; font-size: 13px; font-weight: 500; box-shadow: none; z-index: 4;
+  animation: xfer-note-in .25s ease-out;
+}
+@keyframes xfer-note-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+/* A narrow window: across the top, below the call info. */
+@media (max-width: 900px) { .xfer-note { top: 52px; left: 12px; max-width: none; width: auto; justify-content: flex-start; } }
+.xfer-note:has(.btn:not([hidden])) { border-radius: var(--radius-sm); }
+.xfer-note #xferText { flex: 1 1 auto; min-width: 0; text-align: left; }
+.xfer-note .btn { height: 26px; padding: 0 10px; font-size: 12.5px; white-space: nowrap; }
+.xfer-note.bad { color: #ffc2c2; }
+.xfer-note.done { color: #9be7cb; }
+.xfer-note .rtt-close { flex: none; color: #fff; opacity: .75; width: 24px; height: 24px; }
+.xfer-note .rtt-close:hover { opacity: 1; background: rgba(255, 255, 255, .12); color: #fff; }
+.xfer-note .rtt-close[hidden] { display: none; }
+.xfer-note .rtt-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
