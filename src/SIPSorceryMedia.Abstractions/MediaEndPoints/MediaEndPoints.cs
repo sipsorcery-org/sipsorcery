@@ -15,9 +15,21 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+
 namespace SIPSorceryMedia.Abstractions;
 
 public delegate void EncodedSampleDelegate(uint durationRtpUnits, byte[] sample);
+
+/// <summary>
+/// Delegate for an encoded video frame supplied in memory owned by the source, avoiding a byte[] allocation per frame.
+/// </summary>
+/// <param name="durationRtpUnits">The duration of the frame in RTP timestamp units.</param>
+/// <param name="sample">The encoded frame. It is only valid for the duration of the call: the source writes the next
+/// frame into the same memory. A handler that needs the frame later must copy it, for example with
+/// <see cref="ReadOnlySpan{T}.ToArray"/>. A span based RTP send method, which copies each packet it builds, can use it
+/// in place.</param>
+public delegate void EncodedSampleFasterDelegate(uint durationRtpUnits, ReadOnlySpan<byte> sample);
 
 
 public delegate void SourceErrorDelegate(string errorMessage);

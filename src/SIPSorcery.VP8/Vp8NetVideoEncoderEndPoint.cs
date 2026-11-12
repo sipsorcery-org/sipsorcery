@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
@@ -50,6 +51,20 @@ namespace Vpx.Net
         /// This event will be fired whenever a video sample is encoded and is ready to transmit to the remote party.
         /// </summary>
         public event EncodedSampleDelegate OnVideoSourceEncodedSample;
+
+        /// <summary>
+        /// Fired, like <see cref="OnVideoSourceEncodedSample"/>, for every encoded frame, but with the frame in a buffer
+        /// the end point re-uses for the next one rather than in a new array, so no array is allocated for each frame.
+        /// The sample is only valid for the duration of the handler. Subscribing an RTP session's span based send,
+        /// <c>OnVideoSourceEncodedSampleFaster += rtpSession.SendVideo</c>, sends each frame without copying it into an
+        /// array first. If both events have subscribers, each frame is encoded once and raised on both.
+        /// </summary>
+        public event EncodedSampleFasterDelegate OnVideoSourceEncodedSampleFaster;
+
+        // The re-used destination for frames raised on OnVideoSourceEncodedSampleFaster, and the lock that keeps each
+        // frame in it until its handlers have returned.
+        private readonly ArrayBufferWriter<byte> _encodedFrame = new ArrayBufferWriter<byte>();
+        private readonly object _encodedFrameLock = new object();
 
         /// <summary>
         /// This event is fired after the sink decodes a video frame from the remote party.
@@ -120,7 +135,7 @@ namespace Vpx.Net
         public void ForceKeyFrame() => _vp8Codec.ForceKeyFrame();
         public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
             throw new ApplicationException("The VP8 Video End Point requires full video frames rather than individual RTP packets.");
-        public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
+        public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null || OnVideoSourceEncodedSampleFaster != null;
         public bool IsVideoSourcePaused() => false;
         public Task PauseVideo() => Task.CompletedTask;
         public Task ResumeVideo() => Task.CompletedTask;
@@ -143,18 +158,38 @@ namespace Vpx.Net
         {
             if (!_isClosed)
             {
-                if (OnVideoSourceEncodedSample != null)
+                if (OnVideoSourceEncodedSampleFaster != null)
+                {
+                    lock (_encodedFrameLock)
+                    {
+                        _encodedFrame.ResetWrittenCount();
+                        _vp8Codec.EncodeVideo(width, height, sample, pixelFormat, VideoCodecsEnum.VP8, _encodedFrame);
+
+                        uint durationRtpTS = GetDurationRtpUnits(durationMilliseconds);
+
+                        // Note the event handlers can be removed while the encoding is in progress.
+                        OnVideoSourceEncodedSampleFaster?.Invoke(durationRtpTS, _encodedFrame.WrittenSpan);
+
+                        // Subscribers to the array event own what they are given, so they get a copy.
+                        OnVideoSourceEncodedSample?.Invoke(durationRtpTS, _encodedFrame.WrittenSpan.ToArray());
+                    }
+                }
+                else if (OnVideoSourceEncodedSample != null)
                 {
                     var encodedBuffer = _vp8Codec.EncodeVideo(width, height, sample, pixelFormat, VideoCodecsEnum.VP8);
 
                     if (encodedBuffer != null)
                     {
-                        uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : DEFAULT_FRAMES_PER_SECOND;
-                        uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
-                        OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
+                        OnVideoSourceEncodedSample.Invoke(GetDurationRtpUnits(durationMilliseconds), encodedBuffer);
                     }
                 }
             }
+        }
+
+        private static uint GetDurationRtpUnits(uint durationMilliseconds)
+        {
+            uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : DEFAULT_FRAMES_PER_SECOND;
+            return VIDEO_SAMPLING_RATE / fps;
         }
 
         public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] frame, VideoFormat format)
