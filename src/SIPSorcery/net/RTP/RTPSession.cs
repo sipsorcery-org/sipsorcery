@@ -345,6 +345,22 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Whether received media has to wait for a stream's SRTP keys: any stream that must be
+        /// secure (see <see cref="MediaStream.RequiresSecureContext"/>) without its keys yet.
+        /// </summary>
+        private bool IsAwaitingSecureContext()
+        {
+            if (!rtpSessionConfig.IsSecure && !rtpSessionConfig.UsesSdpCrypto)
+            {
+                return false;
+            }
+
+            return (HasAudio && AudioStream.IsAwaitingSecureContext) ||
+                (HasVideo && VideoStream.IsAwaitingSecureContext) ||
+                (HasText && TextStream.IsAwaitingSecureContext);
+        }
+
+        /// <summary>
         /// If this session is using a secure context this list MAY contain custom
         /// Crypto Suites
         /// </summary>
@@ -686,7 +702,7 @@ namespace SIPSorcery.Net
             rtpSessionConfig = config;
             m_sdpSessionID = Crypto.GetRandomInt(SDP_SESSIONID_LENGTH).ToString();
 
-            if (rtpSessionConfig.UseSdpCryptoNegotiation)
+            if (rtpSessionConfig.UsesSdpCrypto)
             {
                 SrtpCryptoSuites = new List<SDPSecurityDescription.CryptoSuites>();
                 SrtpCryptoSuites.Add(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_80);
@@ -1260,9 +1276,37 @@ namespace SIPSorcery.Net
                         continue;
                     }
 
-                    if (rtpSessionConfig.UseSdpCryptoNegotiation)
+                    // Best-effort SDES: SRTP if the far end has a crypto line we can use, otherwise plain
+                    // RTP, except on RTP/SAVP, which has to be SRTP. An answer to an offer of ours that
+                    // had no crypto (the stream had already settled on plain RTP) stays plain.
+                    bool useSdes = rtpSessionConfig.UseSdpCryptoNegotiation;
+                    if (rtpSessionConfig.UseSdpCryptoBestEffort)
                     {
-                        if (announcement.Transport != RTP_SECUREMEDIA_PROFILE)
+                        bool isSavp = announcement.Transport == RTP_SECUREMEDIA_PROFILE;
+                        bool hasUsableCrypto = announcement.SecurityDescriptions.Any(s => SrtpCryptoSuites.Contains(s.CryptoSuite));
+                        bool weOfferedPlain = sdpType == SdpType.answer && currentMediaStream.IsPlainRtpAgreed;
+
+                        if (isSavp && !hasUsableCrypto)
+                        {
+                            logger.LogError("Error negotiating secure media. RTP/SAVP with no compatible crypto suite.");
+                            return SetDescriptionResultEnum.CryptoNegotiationFailed;
+                        }
+                        else if (hasUsableCrypto && (isSavp || !weOfferedPlain))
+                        {
+                            currentMediaStream.UseSrtp();
+                            currentMediaStream.UsesSecureProfile = isSavp;
+                            useSdes = true;
+                        }
+                        else
+                        {
+                            currentMediaStream.UsePlainRtp();
+                            DrainPendingSecurePackets();
+                        }
+                    }
+
+                    if (useSdes)
+                    {
+                        if (rtpSessionConfig.UseSdpCryptoNegotiation && announcement.Transport != RTP_SECUREMEDIA_PROFILE)
                         {
                             logger.LogError("Error negotiating secure media. Invalid Transport {Transport}.", announcement.Transport);
                             return SetDescriptionResultEnum.CryptoNegotiationFailed;
@@ -2301,7 +2345,12 @@ namespace SIPSorcery.Net
 
                 SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(mediaStream.LocalTrack.Kind, rtpPort, mediaStream.LocalTrack.Capabilities);
 
-                announcement.Transport = rtpSessionConfig.UseSdpCryptoNegotiation ? RTP_SECUREMEDIA_PROFILE : RTP_MEDIA_PROFILE;
+                // Best-effort SDES: crypto on every stream that hasn't settled on plain RTP, on
+                // RTP/AVP so a far end without SRTP can ignore it, unless the far end uses RTP/SAVP.
+                bool offerSdes = rtpSessionConfig.UseSdpCryptoNegotiation ||
+                    (rtpSessionConfig.UseSdpCryptoBestEffort && !mediaStream.IsPlainRtpAgreed && rtpPort != 0);
+                announcement.Transport = rtpSessionConfig.UseSdpCryptoNegotiation || (offerSdes && mediaStream.UsesSecureProfile) ?
+                    RTP_SECUREMEDIA_PROFILE : RTP_MEDIA_PROFILE;
                 announcement.MediaStreamStatus = mediaStream.LocalTrack.StreamStatus;
                 announcement.MediaID = midTag;
                 announcement.MLineIndex = mindex;
@@ -2321,7 +2370,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                if (rtpSessionConfig.UseSdpCryptoNegotiation)
+                if (offerSdes)
                 {
                     var sdpType = RemoteDescription == null || RequireRenegotiation ? SdpType.offer : SdpType.answer;
                     var srtpHandler = mediaStream.GetOrCreateSrtpHandler();
@@ -2718,7 +2767,7 @@ namespace SIPSorcery.Net
             // Quick sanity check on whether this is not an RTP or RTCP packet.
             if (IsPlausibleRtpOrRtcpPacket(buffer))
             {
-                if ((rtpSessionConfig.IsSecure || rtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
+                if (IsAwaitingSecureContext())
                 {
                     // The remote peer starts sending as soon as its own handshake completes which can
                     // precede this end finishing its SRTP set up. Hold the packet rather than dropping
@@ -2846,7 +2895,7 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            if ((rtpSessionConfig.IsSecure || rtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
+            if (IsAwaitingSecureContext())
             {
                 return;
             }
