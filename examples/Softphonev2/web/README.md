@@ -135,7 +135,7 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
 - The **Active calls** panel down the left (see the [desktop README](../desktop/README.md#active-calls)):
   every call, collapsible to a rail, the choice kept in `localStorage`.
 - **Focus and grid views**, the desktop page's (see the [desktop README](../desktop/README.md#focus-and-grid-views)):
-  Focus | Grid in the control bar, or G, with the grid default in Settings.
+  the Grid button under the calls, or G, remembered.
 - **A call it can't take doesn't ring.** A browser can only answer a WebRTC offer, so an
   incoming offer with no DTLS-SRTP m-line (an ordinary SIP phone's RTP/AVP) is turned down
   before ringing: `488 Not Acceptable Here` with `Warning: 302 <host> "Incompatible transport

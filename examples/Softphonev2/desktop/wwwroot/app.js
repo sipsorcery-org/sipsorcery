@@ -3720,13 +3720,8 @@ const settings = initSettings({
     }
     render();
   },
-  camPref: () => camPref,
-  setCamPref(on) { setCamPref(on); syncCamera(); render(); },
-  selfView: () => selfViewOn,
-  setSelfView(on) { if (on !== selfViewOn) toggleSelfView(); },
   diagnostics: () => !$("devPanel").hidden,
   setDiagnostics,
-  setView,
   // Who you are: the account, or with none, the address others can call you on.
   account: () => state.account || (state.address ? `No account · ${state.address}` : null),
 });

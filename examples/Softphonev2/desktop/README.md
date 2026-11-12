@@ -154,22 +154,26 @@ history; *Manage accounts* beside the account picker now has a server icon.
 
 The gear at the right of the top bar opens Settings (`wwwroot/settings.js`), a dialog as in the
 UX prototype. Esc, its ×, or a click outside closes it. Only options with something behind them
-in this app are there; each applies straight away:
+in this app are there, and none that repeats a button you already have; each applies straight
+away:
 
 - **Audio & video.** Microphone, speaker and camera: the same choice as the ▾ menus on Mute and
   Camera, so either changes the other. *System default* follows Windows. A microphone or
   speaker picked mid-call swaps in at once. A camera picked here never turns the camera on: if
   it's open it switches, otherwise the next video call uses it. Device names show once the
   microphone or camera has been used.
-  *Start video calls with my camera on* is the Camera button's choice before a call, now
-  remembered between runs (the button changes it too). `--camera-off` still starts with it off,
-  without changing what's kept. *Show my self view* is the Self view button (V).
+  Whether video calls start with your camera on is the Camera button's choice before a call,
+  remembered between runs (`camOn`; `--camera-off` still starts with it off, without changing
+  what's kept), and the self view is the Self view button's (V), remembered too. Both used to be
+  settings as well.
 - **Calls.** *Answer calls automatically*: after a second, always with the camera off, since
   the camera is never opened without you asking. The microphone is on as soon as it answers.
   (`--auto-answer` is the testing switch, answered by the host with the Camera button's choice.)
-  *Show all calls in a grid*: the view with two or more calls (see
-  [Focus and grid views](#focus-and-grid-views)); the Grid button under Active calls and G change it too.
+  The grid is the Grid button's (and G's) choice, remembered (see
+  [Focus and grid views](#focus-and-grid-views)); it used to be a setting as well.
 - **Appearance.** Theme: System, Light or Dark. System follows Windows' light or dark mode.
+  *Show Gravatar pictures for people*: kept, though it has no button, since it decides whether
+  hashes of addresses go to gravatar.com.
 - **Account.** Who you are: the account, or with none, the address others can call, and a
   *Manage accounts* button that opens the same view as the dial bar's accounts (server) button (see
   [SIP accounts](#sip-accounts)).
@@ -278,7 +282,7 @@ the audio, and the view stays Grid.
 - **`T`** in the grid switches to Focus with the text panel open, as does *Reply* on a text
   toast. `M`, `H` and `V` do nothing in the grid; `Shift+M` and `Shift+C` still act on every call.
 - The choice is remembered (`view` in the page's settings) and only applies with two or more
-  calls: with one, it's Focus. Settings has it as *Show all calls in a grid*.
+  calls: with one, it's Focus.
 - Each call's `<video>` moves into its tile and back (`renderGrid` in `app.js` keeps the tiles
   from one render to the next), so its picture and audio carry on. Two columns up to four
   calls, then three; one on a narrow stage. Past what fits, the stage scrolls.
@@ -1002,7 +1006,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Two accounts a side: A calls Bob (B answers), then calls Dave; B *Decline*; A calls Dave again, B answers; A calls Bob again, *Cancel* | While Dave rings, A's list has only Bob (On hold, still on the stage) and the "Dave · Calling… · Cancel" banner; B's Alice call stays a Video call (not held) under its banner. Declined: A's banner "The far end said 486 BusyHere · Close", gone when the host drops the call; Bob still on hold. Answered: Dave joins A's list, selected, in Focus; Bob on hold. Cancel: the banner goes, the list as it was (both on hold), B shows "Missed call". |
 | Grid chosen, one call (so Focus), C calls A; *Decline*; C calls again; *Answer & hold current* | No switch to the grid while it rings: the banner over the call. Declined: the call as it was, still live. Answered: the first call "On hold", the new one in Focus. |
 | A text message without its line end on the selected tile's call (injected as the host's `text` message), then Reply on the toast | The tile and the row say "Typing…" with the text icon's red dot; Reply opens Focus with the text panel. (Two copies of this app send a line at a time, on Enter, so they don't show Typing… to each other; with Enter, the tile shows the line, unread.) |
-| Settings: *Show all calls in a grid* | Ticked: the grid, `view: "grid"` stored; after restarting the copies, A's two calls open in the grid. |
+| Grid, then restart both copies | `view: "grid"` stored; after restarting the copies, A's two calls open in the grid. |
 | Accounts, against a stand-in SIPSorcery registrar with digest auth on 127.0.0.1:5070 (`--profile accttest --fake-media --diagnostics --auto-answer`, a config with alice) | First start: alice seeded from the config, stored with a DPAPI password, registered. Bob added in the form with a wrong password: "Not registered: Wrong username or password (401 Unauthorised)", Manage accounts red. Password fixed: registered. An account with auth username carol registered as dave. `nosuch.invalid`: "Can't find the server nosuch.invalid (DNS lookup failed)". |
 | Calls from accounts, same set-up | Call from Bob to `echo`: the server saw From `"Bob B" <sip:bob@127.0.0.1:5070>`, authenticated as bob. Call from alice to `callback`: the server called alice's contact back (To alice), auto-answered, Call details "Incoming · alice@127.0.0.1:5070". |
 | Account changes and restarts | Restart: all three accounts back, registered, the seed not added twice. Rename: no REGISTER. Disable Bob, remove Dave: each unregistered (Expires: 0). Re-register: one new REGISTER, no unregister racing it. *No account (direct)* still chosen after a restart. Closing the app unregisters every account. |
@@ -1012,7 +1016,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Mid-call on A, Settings: Microphone and Speaker to the second fake devices | "microphone: Fake Audio Input 2" (a track swap), the remote element's `sinkId` changes; both remembered. |
 | A idle on Audio, Settings: Camera to `fake_device_0`, theme Dark | The camera stays closed ("camera for calls: …"); the page goes dark at once. |
 | Both copies restarted | A comes back dark with its devices; B has auto-answer and the system theme: each profile keeps its own. |
-| A on Video, Camera button off, then Settings | *Start video calls with my camera on* is unticked, and kept. |
+| A on Video, Camera button off, then restart A | The Camera button is still off (`camOn: false` kept). |
 | Active calls: copy A (`--port 5091 --ws-port 8091`) calls B (`--auto-answer`, `--port 5092 --ws-port 8092`), then a second call | One call: no panel, the stage 1068 px wide at 1100. A second call ringing: the panel shows (stage 816 px) with "B · Audio call" and the new one ringing. Mute: "Muted" in red, red mic; Add video: "Video call", camera green on A. Both hung up: the ended rows stay a few seconds, then the panel hides. |
 | Active calls: narrow (650×600) with two calls | The 48 px rail: each initial with its chips and timer, *Grid* with its count badge and *⋯* stacked at the bottom; a click on the other initial selects that call. |
 | Active calls: B calls A (no auto-answer) | A's row: "Thisis · Incoming call" in amber; Decline empties the list. |
