@@ -218,14 +218,23 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   straight onto the RTP socket (not on an encrypted browser-phone leg). Our NAT binding stays
   open and they get a stream to latch onto when they resume. On hold either way round, the
   "No audio arriving" and "isn't getting your audio" notes stay quiet: the hold note says it.
-- **New call.** Typing an address changes nothing. On a call, the button says what it will do:
+- **New call.** **Call** is enabled once there's something in the address field (greyed, with
+  "Type a number or address to call", while it's empty or only spaces), kept in step as you
+  type, clear it with ×, pick a suggestion or paste. On a call, the button says what it will do:
   *Call & hold Alice*; pressing it holds that call, which stays on the stage, and the new one
   isn't a call in the list yet: a banner over the stage says "Dave · Calling… · Cancel". Only
   once Dave answers does it join the list and take the stage (in Focus). Not answered (busy,
   declined, no such number), the banner says why until the call goes (or *Close*), and the call
   you were on stays on hold: you may want to call someone else, so resuming it is up to you.
   *Cancel* just takes the banner away. *End all*
-  leaves a call you're placing to the banner. The dial bar is only disabled at 8 calls.
+  leaves a call you're placing to the banner. **One unanswered call at a time**: while a call
+  you placed is calling or ringing out (on the stage or as the banner), Call is greyed ("Wait
+  for Dave to answer, or cancel it, to place another call"), even with another address typed,
+  and Enter, a contact's Call in People and Call back do nothing (`callBlocked` in `app.js`,
+  which `placeCall` checks, so no way of calling gets round it). It's back once that call is
+  answered or ends (declined, failed, cancelled). Calls ringing in, connected or held don't
+  count, so Call & hold works as above. The address field is only disabled at 8 calls, when
+  Call says "That's as many calls as there can be".
 - **Incoming calls** ring alongside the others (only a ninth gets 486 Busy Here). While you're
   on a call, a banner over the stage says who, with *Answer & hold current* and *Decline*, and
   the call you're on carries on untouched (not held, still on the stage) unless you answer; the
@@ -1172,6 +1181,10 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Attended transfer, then hang up, video on all three: N calls M, M calls O, on O's call M *Join*s N (so N is taken over in a call it placed). Then O hangs up; again, and N hangs up; again with M placing both calls, and O hangs up | After the join, both ways: N and O each show video ~30 fps and *audio in 50 pkt/s*; N logs `relay: their audio is from a new source (…): carrying on…`. Before: N "no audio arriving", 0 pkt/s. O hangs up: N's call ends *They hung up* (before: BYE answered 200, the call stayed up). N hangs up: its BYE goes to O (`BYE sip:Anonymous@127.0.0.1:5433`), both end. M placing both: audio both ways, and O's hang-up ends N's call. `SIPUserAgent` unit (31) and integration (20) tests pass. |
 | Transfer note on a video call: M calls N (video), transfers to O; O answers. Again, and O declines | The note is a small dark pill at the top right, over the black bar above the video, not the middle of it: M "Olivia Vt is ringing…", N "VtM is transferring you to VtO…", then on N "VtM transferred you to VtO" in light green, with ×. Declined: M's "Couldn't transfer: Olivia Vt is busy (486 BusyHere). The call is still on hold." in soft red, wrapping within the pill, with Resume, Try again and ×, clear of the call info at the top left. |
 | Picking doesn't dial: vtM, address bar `vtn`, `Enter`; a click on *Olivia Vt*; then Call. On a call with N, Transfer: `oli`, `Enter`; ×, a click on the first row; then Transfer | Address bar: `Enter` puts `sip:vtN@127.0.0.1:5432` in the field, the list closes, focus stays, no call; a click puts Olivia's address in, no call; **Call** places it. Transfer: `Enter` puts `sip:vtO@127.0.0.1:5433` in the field, the popover stays open, nothing highlighted, no transfer; the click the same; **Transfer** sends it (`transfer to sip:vtO@…, blind`), and the call ends *Transferred to Olivia Vt*. |
+| Call's enabled state, vtA/vtB (`--port 5191`/`5192`, `--ws-port 0 --fake-media`): A's empty bar; then typing, ×, spaces, Esc Esc, paste, a suggestion picked | Empty: Call greyed, "Type a number or address to call". Typing enables it; ×, spaces only and Esc Esc grey it again; paste and a picked Recent entry enable it. |
+| One pending call: A calls `sip:bob@127.0.0.1:5192` with Enter, B leaves it ringing; A types `sip:carol@…` and presses Enter, then People's Call on a contact; B answers | While it rings, Call is greyed with another address typed ("Wait for Bob to answer, or cancel it, to place another call"); Enter and People's Call do nothing (People stays open, the bar keeps carol), A logs `not calling …` for each. Answered: the bar clears and Call is back (greyed only until something's typed). |
+| Over a connected call: A on with Bob, *Call & hold Bob* to `bob2`, `bob3`, `bob4` in turn; B leaves bob2 ringing (A *Cancel*s), answers bob3, declines bob4 | Each time the "… · Calling… · Cancel" banner shows, Call greyed even with another address typed. Cancel: Call back at once. bob3 answered: joins the list on the stage, Bob on hold, as before. bob4 declined: "486 BusyHere" on the banner and Call back with `bob4` still in the bar. |
+| Web stub (`web/index.html?api=stub`) after this change | Loads with no console errors; Call greyed, "Type a number or address to call". |
 
 Not tested yet: the saved-contact mark on grid tiles (a second call wasn't answered in that
 run), the one-way audio warnings (there's no easy way to break one direction yet),

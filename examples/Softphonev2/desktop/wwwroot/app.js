@@ -1979,6 +1979,31 @@ function stageMode() {
   return performance.now() - call.lastFrameAt < NO_FRAMES_MS ? "video" : "nocam";
 }
 
+// New calls go alongside the others, up to the host's limit.
+const callsFull = () => liveEntries().length >= (hostState.maxCalls ?? 8);
+// Why a new call can't be placed now, or null. Every way of calling goes by it: Call, Enter in
+// the address bar, a contact's Call in People, Call back, so none of them can get round it. One
+// unanswered call you've placed at a time (calling or ringing out, or the Calling… banner over
+// another call); calls ringing in, connected or held don't count, so Call & hold still works.
+// A cancelled one stops counting at once, before the host reports it's ended.
+function callBlocked() {
+  if (callsFull()) return "That's as many calls as there can be: end one to call again";
+  const out = [...entries.values()].find((e) => e.h.outgoing && e.h.call === "calling" && !e.cancelled);
+  return out ? `Wait for ${nameOf(out)} to answer, or cancel it, to place another call` : null;
+}
+// Call's enabled state and tooltip: off while callBlocked says so, or there's nothing to call.
+// On every change to the address field (typing, ×, a suggestion, paste) as well as in render.
+function syncCallBtn() {
+  const btn = $("callBtn");
+  const blocked = callBlocked();
+  const empty = !$("address").value.trim();
+  btn.disabled = !!blocked || empty;
+  const kept = liveCall();
+  const video = state.videoAllowed !== false && callType === "video";
+  btn.title = blocked ?? (empty ? "Type a number or address to call"
+    : kept ? `${video ? "Video call" : "Call"}, and put ${nameOf(kept)} on hold` : "");
+}
+
 function render() {
   deriveState();
   syncAudio();
@@ -1990,10 +2015,8 @@ function render() {
   const name = shortName(remote);
   const e = sel();
   // New calls go alongside the others, up to the host's limit.
-  const full = liveEntries().length >= (hostState.maxCalls ?? 8);
-  $("callBtn").disabled = full;
+  const full = callsFull();
   $("address").disabled = full;
-  $("callBtn").title = full ? "That's as many calls as there can be: end one to call again" : "";
   $("info").hidden = phase !== "connected";
   $("infoName").textContent = remote || "";
   // A saved contact: the mark and their name beside the address, outside its ellipsis so it
@@ -2030,7 +2053,7 @@ function render() {
   const tail = kept ? ` &amp; hold <span class="hold-name">${keptName}</span>` : "";
   const callHtml = `${type === "video" ? ICON.video : ICON.phone}<span class="label-stack"><span class="${type === "video" ? "off" : ""}">Call${tail}</span><span class="${type === "video" ? "" : "off"}">Video call${tail}</span></span>`;
   if ($("callBtn").innerHTML !== callHtml) $("callBtn").innerHTML = callHtml;
-  if (!full) $("callBtn").title = kept ? `${type === "video" ? "Video call" : "Call"}, and put ${nameOf(kept)} on hold` : "";
+  syncCallBtn();
 
   // The stage.
   const mode = stageMode();
@@ -2758,7 +2781,9 @@ function clearAddressOnAnswer(e) {
 // or disabled, when the call goes from Call from's account and a note says so. People closes, so
 // the stage shows how the call's going.
 function placeCall(address, account = null, who = null) {
-  if (!address || $("callBtn").disabled) return;
+  if (!address) return;
+  const blocked = callBlocked();
+  if (blocked) { log(`not calling ${address}: ${blocked}`); return; }
   closeHistory(false);
   lastDialled = address;
   account = account ? useAccount(account, who) : null;
@@ -3034,6 +3059,7 @@ function addressField({ input, list, clear, badge, idPrefix, popup, foot, goIcon
       e.stopPropagation();
       input.value = "";
       f.renderBadge();
+      changed();
     }
   });
   // The clear (×) button: empties the field and lists Contacts and Recent, as deleting the text
@@ -3072,7 +3098,7 @@ function fromLabel(it) {
 const dial = addressField({
   input: $("address"), list: $("dialSuggest"), clear: $("destClear"), badge: $("destContact"),
   idPrefix: "sug", popup: true, foot: true, goIcon: () => ICON.phone, goLabel: "Call",
-  pick: () => {},
+  pick: syncCallBtn, changed: syncCallBtn,
 });
 $("dialForm").addEventListener("submit", () => dial.close());
 // Either list, when what it reads changes: the history store says when a call's ended, and
@@ -3090,8 +3116,15 @@ initContacts({
   log,
   shortName,
   // Call, from the tab: the way Call does, with the contact's address in the field, which closes
-  // the view (placeCall) so the stage shows how the call's going.
-  call(uri) { $("address").value = uri; $("dialForm").requestSubmit(); },
+  // the view (placeCall) so the stage shows how the call's going. Not while a call can't be
+  // placed (callBlocked): then nothing happens, and the address bar keeps what's in it.
+  call(uri) {
+    const blocked = callBlocked();
+    if (blocked) { log(`not calling ${uri}: ${blocked}`); return; }
+    $("address").value = uri;
+    syncCallBtn();
+    $("dialForm").requestSubmit();
+  },
   changed() { refreshAddressFields(); render(); },
   openPeople,
 });
