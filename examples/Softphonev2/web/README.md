@@ -174,6 +174,20 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   before `app.js` loads) and posts the same `quality` messages from `getStats()`: each new
   `remote-inbound-rtp` report for ↑ Sent (loss, jitter, round trip), and our received video's
   loss every 5 s for ↓ Received.
+- **"X isn't getting your audio"** (one-way audio, the desktop's red row under the bars) comes
+  from the same stats: a report from them (their `remote-outbound-rtp` moves on) that doesn't
+  list our audio (our `remote-inbound-rtp` doesn't), after we've sent 100 audio packets since one
+  last did. Chromium has no `reportsReceived` there, so a new report is told by its timestamp.
+  The desktop also catches a listing whose highest sequence number has stopped; the browser's
+  stats don't give that number, so that case isn't caught here.
+- **Keypad tones from them** show on the keypad ("Bob sent 159#") as on the desktop. Tones in
+  their audio (RFC 4733) the browser plays but doesn't report, so each audio receiver gets an
+  encoded transform too (the simulated-loss worker, passing every frame on) that looks for
+  frames with the call's `telephone-event` payload type and reports each event once, by its
+  RTP timestamp. SIP INFO tones (`application/dtmf-relay` or `application/dtmf`) are answered
+  200 and shown, other INFO 415. Like simulated loss, it needs `RTCRtpScriptTransform`.
+- **Not here:** call transfer (the page hides Transfer: the host says `canTransfer` only on the
+  desktop) and *Manage accounts* / *Call from* (one account, the chip's).
 - The desktop shows up as `sip:thisis@anonymous.invalid` when it calls without an account: that's
   the From SIPSorcery sends by default.
 
@@ -196,6 +210,9 @@ microphone, both on one PC.
 | Headless Edge on a guest account dials the desktop app's guest account (registered over UDP, `--webrtc`), video | Through the proxy: the INVITE reaches the desktop over UDP with a `UDP/TLS/RTP/SAVPF` offer, so it answers with WebRTC media. ICE and DTLS connected in 0.15 s; the desktop receives 20 fps 640×360 video, audio 50 pkt/s with no loss. Web BYE after 10 s: "They hung up". |
 | The desktop (`--webrtc --video`) dials the browser's guest account, browser `auto=1` | Through the proxy to the browser's WebSocket; answered, WebRTC media connected in 0.2 s, video both ways. Web BYE after 10 s. |
 | Web `dial=desktop&call=video`, desktop `--auto-answer --loss-audio 10`, Call quality after 30 s | ↑ Sent: MOS 4.4, loss 0%, 20 fps, from the desktop's RTCP ("their RTCP on our audio: loss 0%… rtt 1 ms" in the log); ↓ Received: MOS 3.6, 8% audio loss; RTT 1.0 ms. Before, ↑ Sent stayed empty and said "No RTCP reports from them". |
+| Headless Edge `server=ws://127.0.0.1:8392&dial=vtB`, a desktop copy with `--fake-media --auto-answer --dtmf 159#`, keypad opened as the call connects | Web log "DTMF '1' received (RFC 4733)", then 5, 9, # 400 ms apart, each once; the keypad says "VtB sent 159#". Over the next 25 s no "isn't reaching them" (each of their reports lists our audio). |
+| Same call, the connection's `getStats` patched to leave out our audio's `remote-inbound-rtp`, then restored | Their next report but one: "their RTCP says our audio isn't reaching them", the bars' note "VtB isn't getting your audio"; restored, "…reaching them again" and the note clears. (Before, Edge's missing `reportsReceived` made every report look like it left us out.) |
+| SIP INFO parsing, `onInfo` on its own (the desktop sends INFO only when `telephone-event` isn't agreed, and the browser always offers it) | `dtmf-relay` "Signal=5", "Signal= #" and `dtmf` "9": 200 and shown; `media_control+xml` and a `dtmf-relay` with no Signal: 415. |
 | Web `dial=desktop&call=video`, Call details | "Outgoing · web@localhost", "Media encrypted (SRTP); SIP not (WS)", video "VP8 640×360", SIP "WS localhost:8091". (It said "Incoming" and showed the WebSocket URL before.) |
 | Settings (`server=ws://127.0.0.1:8099`, nothing there): the gear, Dark, auto-answer on, camera on at start off, Open diagnostics, then a hard reload | Settings opens over the page; the page goes dark at once; Open diagnostics closes Settings and opens the panel, whose log shows each change. After the reload the theme and both choices are kept. The device lists say *System default* with the note about names (the browser pane allows no microphone). |
 | Web `server=ws://127.0.0.1:8382&dial=setb`, the desktop copy with *Answer calls automatically* ticked in its Settings | The desktop answers after a second: "answering automatically, camera off", audio only. Settings on the web page shows `web@127.0.0.1` under Account. |

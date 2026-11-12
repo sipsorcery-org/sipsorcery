@@ -366,6 +366,33 @@ function sendDtmf(c, digit) {
   log(`call ${c.id}: DTMF '${digit}' sent (RFC 4733, RTCDTMFSender)`);
 }
 
+// Tones from them, shown on the keypad ("Bob sent 123"), as the desktop does. Two ways:
+// - RFC 4733 telephone-events in their audio. The browser plays them out but doesn't say, so an
+//   encoded transform on each audio receiver (the loss worker below, which passes every frame
+//   on) looks for frames with a telephone-event payload type and reports each new event once
+//   (an event's packets, its end packets' repeats too, share one RTP timestamp).
+// - SIP INFO (application/dtmf-relay "Signal=5", or application/dtmf "5"), from a phone that
+//   didn't agree telephone-event: 200, or 415 for any other INFO.
+const TONE_EVENTS = "0123456789*#ABCD";
+function onDtmfIn(c, digit, via) {
+  log(`call ${c.id}: DTMF '${digit}' received (${via})`);
+  toPage({ type: "dtmf-in", id: c.id, digit, via });
+}
+function onInfo(c, info) {
+  const req = info.request;
+  const type = String(req.getHeader("Content-Type") ?? "").toLowerCase();
+  const body = String(req.body ?? "");
+  let digit = null;
+  if (type.startsWith("application/dtmf-relay")) digit = /^\s*Signal\s*=\s*(\S)/im.exec(body)?.[1];
+  else if (type.startsWith("application/dtmf")) digit = body.trim()[0];
+  if (!digit || !TONE_EVENTS.includes(digit.toUpperCase())) {
+    info.reject({ statusCode: 415 });
+    return;
+  }
+  info.accept();
+  onDtmfIn(c, digit.toUpperCase(), "SIP INFO");
+}
+
 // ---- Call quality: their RTCP reports, from the browser's stats ----
 //
 // On the desktop the host reads the far end's RTCP on the SIP leg and posts it as `quality`
@@ -375,9 +402,14 @@ function sendDtmf(c, digit) {
 // wrapped below before app.js loads) and posts the same messages from those stats.
 
 const NativeRTCPeerConnection = window.RTCPeerConnection;
+const pcByKey = new Map();   // the key each connection has for the worker (tones in) -> connection
+let pcSeq = 0;
 window.RTCPeerConnection = class extends NativeRTCPeerConnection {
   constructor(config, ...rest) {
     super(config, ...rest);
+    this.key = ++pcSeq;
+    pcByKey.set(this.key, this);
+    this.addEventListener("connectionstatechange", () => { if (this.connectionState === "closed") pcByKey.delete(this.key); });
     // The call this connection is for: the page says, and a renegotiated call gets a new one.
     const c = calls.get(String(config?.callId));
     if (c) c.pc = this;
@@ -404,6 +436,7 @@ window.RTCPeerConnection = class extends NativeRTCPeerConnection {
   addTransceiver(...args) {
     const t = super.addTransceiver(...args);
     addLossTransform(t);
+    addTonesTransform(this, t);
     return t;
   }
 
@@ -415,7 +448,8 @@ window.RTCPeerConnection = class extends NativeRTCPeerConnection {
       useT140(this, this.createDataChannel(T140, { negotiated: true, id: theirs, protocol: T140 }));
     }
     await super.setRemoteDescription(...args);
-    this.getTransceivers().forEach(addLossTransform);
+    this.getTransceivers().forEach((t) => { addLossTransform(t); addTonesTransform(this, t); });
+    sendTonePayloadTypes(this);
     if (this.t140?.negotiated) this.t140Agreed = theirs != null && theirs === this.t140.id;
     const rec = callOfPc(this);
     if (rec) updateText(rec);
@@ -430,10 +464,20 @@ setInterval(() => {
 
 async function reportQuality(c) {
   const pc = c.pc, q = c.quality;
-  if (pc !== q.pc) { q.pc = pc; q.reportSeen = {}; q.videoIn = null; }
+  if (pc !== q.pc) {
+    q.pc = pc; q.reportSeen = {}; q.videoIn = null;
+    if (q.tx?.lost) toPage({ type: "media-health", id: c.id, txLost: false });
+    q.tx = { listed: 0, theirs: 0, sentAtListing: 0, lost: false };
+  }
   let stats;
   try { stats = await pc.getStats(); } catch { return; }
+  let audioOut = null, audioListed = null, audioTheirs = null;
   stats.forEach((r) => {
+    if (r.kind === "audio") {
+      if (r.type === "outbound-rtp") audioOut = r;
+      else if (r.type === "remote-inbound-rtp") audioListed = r;
+      else if (r.type === "remote-outbound-rtp") audioTheirs = r;
+    }
     // Their latest reception report on each stream we send: one message per new report.
     if (r.type === "remote-inbound-rtp" && (r.kind === "audio" || r.kind === "video")) {
       if (q.reportSeen[r.id] === r.timestamp) return;
@@ -461,6 +505,31 @@ async function reportQuality(c) {
       q.videoIn = now;
     }
   });
+  checkAudioReachingThem(c, audioOut?.packetsSent ?? 0, audioListed, audioTheirs);
+}
+
+// One-way audio, the desktop's "X isn't getting your audio" (media-health): each RTCP report
+// from them lists the sources they've heard since the last one. The browser shows a report
+// that lists our audio as remote-inbound-rtp and their own sender report as
+// remote-outbound-rtp, each timestamped when it came. A report from them that doesn't list our
+// audio, once we've sent 100 packets (2 s) since one last did, means it isn't reaching them.
+// (The desktop also notices a listing whose highest sequence number has stopped; the browser's
+// stats don't give that number.)
+function checkAudioReachingThem(c, sent, listedIn, theirs) {
+  const t = c.quality.tx;
+  // A count of their reports, or (Chromium has no reportsReceived) when the last one came.
+  const listed = listedIn ? listedIn.reportsReceived ?? listedIn.timestamp : 0;
+  const theirReports = theirs ? theirs.reportsSent ?? theirs.timestamp : 0;
+  if (listed === t.listed && theirReports === t.theirs) return;   // nothing new from them
+  let lost;
+  if (listedIn && listed !== t.listed) { lost = false; t.sentAtListing = sent; }
+  else lost = sent - t.sentAtListing > 100;
+  t.listed = listed;
+  t.theirs = theirReports;
+  if (lost === t.lost) return;
+  t.lost = lost;
+  log(`call ${c.id}: ${lost ? "their RTCP says our audio isn't reaching them" : "their RTCP says our audio is reaching them again"}`);
+  toPage({ type: "media-health", id: c.id, txLost: lost });
 }
 
 // ---- Simulated loss (the Diagnostics menu's Network tab) ----
@@ -486,10 +555,31 @@ const lossSenders = new WeakSet();   // senders with the transform on
 const LOSS_WORKER = `
 const rate = { audio: 0, video: 0 };
 const count = { audio: { sent: 0, dropped: 0 }, video: { sent: 0, dropped: 0 } };
-self.addEventListener("message", (e) => Object.assign(rate, e.data));
+const tonePts = {};    // connection key -> its telephone-event payload types
+const lastTone = {};   // connection key -> the RTP timestamp of the last event reported
+self.addEventListener("message", (e) => {
+  if (e.data.tonePts) Object.assign(tonePts, e.data.tonePts);
+  else Object.assign(rate, e.data);
+});
+// A received audio frame: passed on unchanged, and reported if it starts a new telephone-event.
+function tone(key, frame) {
+  const meta = frame.getMetadata();
+  if (!tonePts[key]?.includes(meta.payloadType) || frame.data.byteLength < 4) return;
+  const event = new Uint8Array(frame.data)[0];
+  const ts = meta.rtpTimestamp ?? frame.timestamp;
+  if (event > 15 || ts === lastTone[key]) return;
+  lastTone[key] = ts;
+  postMessage({ tone: { key, event } });
+}
 self.addEventListener("rtctransform", (e) => {
   const { readable, writable, options } = e.transformer;
   const kind = options.kind;
+  if (options.tonesFor != null) {
+    readable.pipeThrough(new TransformStream({
+      transform(frame, out) { out.enqueue(frame); try { tone(options.tonesFor, frame); } catch {} },
+    })).pipeTo(writable).catch(() => {});
+    return;
+  }
   readable.pipeThrough(new TransformStream({
     transform(frame, out) {
       if (Math.random() * 100 < rate[kind]) count[kind].dropped++;
@@ -504,19 +594,50 @@ setInterval(() => {
 }, 5000);
 `;
 
+function worker() {
+  if (!lossWorker) {
+    lossWorker = new Worker(URL.createObjectURL(new Blob([LOSS_WORKER], { type: "text/javascript" })));
+    lossWorker.onmessage = ({ data }) => {
+      if (data.tone) {
+        const c = callOfPc(pcByKey.get(data.tone.key));
+        if (c) onDtmfIn(c, TONE_EVENTS[data.tone.event], "RFC 4733");
+        return;
+      }
+      const c = data;
+      log(`simulated loss: dropped ${c.audio.dropped} of ${c.audio.dropped + c.audio.sent} audio frames, ${c.video.dropped} of ${c.video.dropped + c.video.sent} video frames in 5 s`);
+    };
+    lossWorker.postMessage(loss);
+  }
+  return lossWorker;
+}
+
+// Tones in (see onDtmfIn): each audio receiver goes through the worker, set as it's made, like
+// the senders' loss transform.
+const toneReceivers = new WeakSet();
+function addTonesTransform(pc, t) {
+  if (!lossSupported || toneReceivers.has(t.receiver) || t.receiver.track?.kind !== "audio") return;
+  toneReceivers.add(t.receiver);
+  try {
+    t.receiver.transform = new RTCRtpScriptTransform(worker(), { kind: "audio", tonesFor: pc.key });
+  } catch (err) {
+    log(`can't watch for keypad tones on this call: ${err.message}`);
+  }
+}
+// The telephone-event payload types in the offer and answer, for the worker to look for.
+function sendTonePayloadTypes(pc) {
+  if (!lossSupported) return;
+  const sdp = `${pc.remoteDescription?.sdp ?? ""}\n${pc.localDescription?.sdp ?? ""}`;
+  const pts = [...new Set([...sdp.matchAll(/^a=rtpmap:(\d+) telephone-event\//gim)].map((m) => Number(m[1])))];
+  worker().postMessage({ tonePts: { [pc.key]: pts } });
+}
+
 function addLossTransform(t) {
   if (!lossSupported || lossSenders.has(t.sender)) return;
   const kind = t.receiver.track?.kind;
   if (kind !== "audio" && kind !== "video") return;
   lossSenders.add(t.sender);
-  if (!lossWorker) {
-    lossWorker = new Worker(URL.createObjectURL(new Blob([LOSS_WORKER], { type: "text/javascript" })));
-    lossWorker.onmessage = ({ data: c }) =>
-      log(`simulated loss: dropped ${c.audio.dropped} of ${c.audio.dropped + c.audio.sent} audio frames, ${c.video.dropped} of ${c.video.dropped + c.video.sent} video frames in 5 s`);
-    lossWorker.postMessage(loss);
-  }
   try {
-    t.sender.transform = new RTCRtpScriptTransform(lossWorker, { kind });
+    t.sender.transform = new RTCRtpScriptTransform(worker(), { kind });
   } catch (err) {
     log(`simulated loss: can't drop ${kind} on this call: ${err.message}`);
   }
@@ -662,6 +783,7 @@ function dialAtStart() {
 function watch(c) {
   const s = c.session;
   s.callRec = c;
+  s.delegate = { ...(s.delegate ?? {}), onInfo: (info) => onInfo(c, info) };
   s.stateChange.addListener((state) => {
     if (state === SIP.SessionState.Established) {
       setCall(c, "connected");
