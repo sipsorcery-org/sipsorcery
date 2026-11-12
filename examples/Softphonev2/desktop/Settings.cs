@@ -64,6 +64,9 @@ public sealed class Settings
     /// <summary>Testing: once text is up on a call, type this into it, then Enter.</summary>
     public string? Say { get; set; }
 
+    /// <summary>Testing: once a call is connected, open the keypad and press these keys (0–9, *, #), one every 400 ms.</summary>
+    public string? Dtmf { get; set; }
+
     /// <summary>Testing: calls and answers start with the camera off.</summary>
     public bool CameraOff { get; set; }
 
@@ -118,6 +121,7 @@ public sealed class Settings
                 case "--webrtc": settings.WebRtcCalls = true; break;
                 case "--diagnostics": settings.Diagnostics = true; break;
                 case "--say" when i + 1 < args.Length: settings.Say = args[++i]; break;
+                case "--dtmf" when i + 1 < args.Length: settings.Dtmf = args[++i]; break;
                 case "--camera-off": settings.CameraOff = true; break;
                 case "--video": settings.VideoCall = true; break;
                 case "--test-pattern": settings.TestPattern = true; break;

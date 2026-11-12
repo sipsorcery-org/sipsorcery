@@ -8,11 +8,15 @@ namespace SIPSorcery.Softphone;
 /// <summary>
 /// The window: a WebView2 showing <c>wwwroot/index.html</c>, and the message bridge between that
 /// page and <see cref="Phone"/>. Page → host: ready, dial, answer, decline, hangup, hold,
-/// add-video, text, add-text, loss, media-answer, and for accounts account-select, account-save,
-/// account-enable, account-remove, account-register. Host → page: state (every call, with the
-/// accounts and their registrations), media-offer (again when video is added), media-health,
-/// quality (RTCP reception reports, for diagnostics), details, text, video-refused, account-saved,
-/// account-error, log. Messages about one call carry its <c>id</c>.
+/// add-video, text, add-text, loss, media-answer, for accounts account-select, account-save,
+/// account-enable, account-remove, account-register, and for the call history history-remove
+/// {ids} and history-restore {ids} (Undo). Host → page: state (every call, with the accounts and
+/// their registrations), history (every past call, newest first: on ready and whenever it
+/// changes), media-offer (again when video is added), media-health, quality (RTCP reception
+/// reports, for diagnostics), details, text, video-refused, account-saved, account-error, log.
+/// Messages about one call carry its <c>id</c>. Contacts (the address field's
+/// suggestions): contact-save {name, uri, account?} and contact-remove from the page, contacts
+/// {contacts: [{name, uri, account?}]} to it.
 /// </summary>
 internal sealed class MainForm : Form
 {
@@ -21,6 +25,8 @@ internal sealed class MainForm : Form
     private readonly Settings _settings;
     private readonly Phone _phone;
     private readonly AccountStore _accounts;
+    private readonly CallHistory _history;
+    private readonly ContactStore _contacts;
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
     private readonly List<object> _pendingOffers = new();   // media offers made before the page was ready
     private bool _pageReady;
@@ -36,6 +42,8 @@ internal sealed class MainForm : Form
         _dialsLeft = settings.DialCount;
         _phone = new Phone(settings);
         _accounts = new AccountStore(settings.Profile, settings.Account);
+        _history = new CallHistory(settings.Profile);
+        _contacts = new ContactStore(settings.Profile);
         var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SIPSorcery", "Softphonev2");
         Directory.CreateDirectory(logDir);
         _logFile = new StreamWriter(Path.Combine(logDir, $"softphone-{settings.Profile}.log"), append: false) { AutoFlush = true };
@@ -72,10 +80,19 @@ internal sealed class MainForm : Form
             }
         };
         _phone.Log += WriteLog;
+        // Every call that ends goes into the history, which the page is sent again.
+        _phone.Ended += c =>
+        {
+            var e = HistoryEntry.From(c);
+            _history.Add(e);
+            LogLine($"{DateTime.Now:HH:mm:ss.fff} history: call {c.Id} {e.Dir} {e.Uri} {e.Note ?? (e.Duration > 0 ? $"{e.Duration / 1000} s" : "")}".TrimEnd());
+            Post(HistoryMessage());
+        };
         LibraryLog.Line += WriteLog;
         _phone.Trace += LogLine;
         _phone.TxLostChanged += (c, lost) => Post(new { type = "media-health", id = c.Id, txLost = lost });
         _phone.Quality += (c, q) => Post(new { type = "quality", id = c.Id, q.Dir, q.Kind, q.LossPct, q.Lost, q.JitterMs, q.RttMs });
+        _phone.DtmfReceived += (c, digit, via) => Post(new { type = "dtmf-in", id = c.Id, digit, via });
         _phone.TextReceived += (c, text) =>
         {
             // The log file only, and only how much: what they type stays out of the log.
@@ -137,11 +154,13 @@ internal sealed class MainForm : Form
         if (_settings.AudioBars) query.Add("video=bars");
         if (_settings.AddVideoAfter is { } after) query.Add($"addvideo={after}");
         if (!string.IsNullOrEmpty(_settings.Say)) query.Add("say=" + Uri.EscapeDataString(_settings.Say));
+        if (!string.IsNullOrEmpty(_settings.Dtmf)) query.Add("dtmf=" + Uri.EscapeDataString(_settings.Dtmf));
         core.Navigate("https://softphone.app/index.html" + (query.Count > 0 ? "?" + string.Join("&", query) : ""));
 
         try
         {
             if (_accounts.LoadNote != null) WriteLog(_accounts.LoadNote);
+            if (_history.LoadNote != null) WriteLog(_history.LoadNote);
             _phone.SetAccounts(_accounts.All);
         }
         catch (Exception ex)
@@ -162,15 +181,29 @@ internal sealed class MainForm : Form
                     if (_phone.PortNote != null) WriteLog(_phone.PortNote);
                     WriteLog($"SIP listening on {_phone.ListeningOn}");
                     if (_phone.WebSocketAddress != null) WriteLog($"browser phones: connect to {_phone.WebSocketAddress} (from this PC, ws://localhost:{_settings.WsPort})");
+                    Post(HistoryMessage());
                     Post(StateMessage());
                     lock (_pendingOffers) { _pendingOffers.ForEach(Post); _pendingOffers.Clear(); }
+                    if (_contacts.LoadNote != null) WriteLog(_contacts.LoadNote);
+                    PostContacts();
                     if (!string.IsNullOrWhiteSpace(_settings.Dial)) DialAtStart();
                     break;
                 case "log":
                     LogLine($"{DateTime.Now:HH:mm:ss.fff} page: {msg["text"]}");
                     break;
                 case "dial":
-                    _phone.Dial((string)msg["address"]!, (bool?)msg["video"] ?? false, _accounts.SelectedId);
+                    // Call back from History says which account the call was on, if it's still
+                    // there and enabled; otherwise the call goes from Call from's account.
+                    var from = _accounts.Find((string?)msg["account"]) is { Enabled: true } back ? back.Id : _accounts.SelectedId;
+                    _phone.Dial((string)msg["address"]!, (bool?)msg["video"] ?? false, from);
+                    break;
+                case "history-remove":
+                    WriteLog($"history: removed {_history.Remove(Ids(msg))} call(s)");
+                    Post(HistoryMessage());
+                    break;
+                case "history-restore":
+                    WriteLog($"history: restored {_history.Restore(Ids(msg))} call(s)");
+                    Post(HistoryMessage());
                     break;
                 case "account-select":
                     _accounts.Select((string?)msg["id"]);
@@ -201,6 +234,9 @@ internal sealed class MainForm : Form
                 case "text":
                     _phone.SendText(Id(msg), (string)msg["text"]!);
                     break;
+                case "dtmf":
+                    _ = _phone.SendDtmf(Id(msg), (string?)msg["digit"] ?? "");
+                    break;
                 case "add-text":
                     _phone.AddText(Id(msg));
                     break;
@@ -224,6 +260,15 @@ internal sealed class MainForm : Form
                     break;
                 case "loss":
                     _phone.SetLoss((int?)msg["audio"] ?? 0, (int?)msg["video"] ?? 0);
+                    break;
+                case "contact-save":
+                    // account: the SIP account to call them from (its id), or none for Call from's.
+                    _contacts.Save((string?)msg["name"] ?? "", (string)msg["uri"]!, (string?)msg["account"]);
+                    PostContacts();
+                    break;
+                case "contact-remove":
+                    _contacts.Remove((string)msg["uri"]!);
+                    PostContacts();
                     break;
                 case "media-answer":
                     _phone.SetPageAnswer(Id(msg), (string)msg["sdp"]!);
@@ -287,6 +332,13 @@ internal sealed class MainForm : Form
 
     /// <summary>The call a page message is about.</summary>
     private static string Id(JsonObject msg) => (string?)msg["id"] ?? "";
+
+    /// <summary>A history message's entry ids.</summary>
+    private static IEnumerable<string> Ids(JsonObject msg) =>
+        msg["ids"]?.AsArray().Select(n => (string?)n).OfType<string>().ToList() ?? new List<string>();
+
+    /// <summary>Every past call, newest first, with the cap so the page can say when old ones go.</summary>
+    private object HistoryMessage() => new { type = "history", entries = _history.All, max = CallHistory.MaxEntries };
 
     /// <summary>--dial (testing): places its call, and remembers it for --dial-count.</summary>
     private void DialAtStart() => _dialCallId = _phone.Dial(_settings.Dial!, _settings.VideoCall, _accounts.SelectedId)?.Id;
@@ -362,6 +414,8 @@ internal sealed class MainForm : Form
             lossVideo = _phone.VideoLossPercent,
         };
     }
+
+    private void PostContacts() => Post(new { type = "contacts", contacts = _contacts.All });
 
     private void Post(object message)
     {

@@ -38,17 +38,106 @@ during a call, so the microphone and camera can be set up first:
   neutral, so the green is only on Call.
 - **Text** (an icon, at the right beside Self view, since it's rarely used): opens the
   real-time text popover (T does too). During a call only.
-- **Focus** and **Grid** (at the right, G too): see [Focus and grid views](#focus-and-grid-views).
-  There once there's a call. Each goes to its view, so the one on screen is disabled; Grid needs
-  two calls, and shows how many.
+- **Keypad** (an icon, beside Text): opens the DTMF keypad for the selected call (see
+  [Keypad](#keypad-dtmf)). During a call only, in Focus view.
 - **Hold** (H): puts the selected call on hold, or Resume takes it off (see
   [Several calls](#several-calls)). During a call only.
 - **End**: Cancel while calling, End once connected.
 
 A device you pick takes effect at once, mid-call too, by swapping the track on the page's
 connection (no renegotiation), and is remembered between runs (per profile). A remembered
-device that's gone falls back to the default. The prototype's Keypad and Transfer aren't here
-yet; they come with those features.
+device that's gone falls back to the default. The prototype's Transfer isn't here yet.
+
+## Recent calls and contacts
+
+The address field's suggestions, from the UX prototype (its *New call*): focusing the field (or
+`/` anywhere outside a text field) lists recent calls and contacts, and typing ranks them
+together (below). Typing part of a name highlights the first match, so Enter calls it; a full
+address or number doesn't, so Enter calls what you typed. ↑/↓ move through the list (and open
+it), Enter or a click calls the highlighted entry, and `Esc` closes it. Calls that didn't
+connect show their outcome (*Cancelled*, *Busy*, with the SIP response on hover), and missed
+calls are red.
+
+- **Recent**: the call history (see `history.js`), one entry per address, newest first, up to 6.
+  A recent call to a contact shows the contact's name. The list refreshes while it's open
+  when a call ends.
+- **Contacts**: up to 4 more, ones not already under Recent. The host keeps them per profile
+  in `%LOCALAPPDATA%\SIPSorcery\Softphonev2\contacts-{profile}.json` (name and address) and
+  sends them to the page (`contacts`); the page sends `contact-save` and `contact-remove`.
+  The web softphone's host keeps none, so there they're in the browser's localStorage.
+- The person button on the highlighted (or hovered) entry adds a recent call to contacts, with
+  the name it shows, or removes a contact.
+- **Typing** shows the best 6 matches of contacts and recent calls together, under *Best
+  matches*. A match at the start of a word of the name, or of the address's user part (`han`
+  for *Hannah Desk* or `sip:hannah.lab@…`), beats one inside (`ann` in *Hannah*); among equals,
+  contacts come first, then the addresses you call most and most lately (each call counts 1,
+  half that after 14 days, a third after 28…). A contact with calls shows once, as the
+  contact, with its last call's outcome and when.
+- **Calling from the right account**: a contact can have its own *Call from* account. Calling
+  it, from this list, the Contacts tab, or by typing or pasting its exact address, first
+  switches the dial bar's *Call from* to that account (the picker flashes), so it shows what the
+  call uses. A recent call picked here goes from the account that call used. If the account has
+  been removed or disabled, the call goes from the current *Call from* account and a note under
+  the picker says so for 5 s (*G Old is disabled: calling from G Work*). A contact's row here
+  shows its account after the address (*· from G Home*).
+- **Saved contacts are marked**: one small icon, a person with a tick in the accent colour,
+  tooltip *Saved contact: Name* (`contactmark.js`). It's after the name of a contact in this
+  list, in the field itself (a pill with the contact's name at the field's right end, when what's
+  typed, pasted or picked is a contact's address), on Recent rows and in their details
+  (*Contact: Saved contact: Name*), in the sidebar's History, on Active calls rows, grid tiles, and
+  the call's header (the card while calling or ringing; once connected, the info overlay on the
+  stage, with the contact's name in light green, and a *Contact* row in its details). Calls to or
+  from other addresses show nothing extra. Addresses match as the list's dedupe does: the URI out
+  of `Name <sip:…>`, without parameters, case aside and `sip:` optional.
+- **Gravatar pictures** replace the initials (`avatar.js`): in this list, People's Recent and
+  Contacts rows, the sidebar's History, Active calls rows, grid tiles and the stage.
+  `sip:alice@example.com` is looked up as `alice@example.com` (SHA-256, at
+  `gravatar.com/avatar/<hash>?d=identicon`), once per run: their picture, or without one
+  Gravatar's identicon for that address (the same pattern each time); the initial stays only if
+  gravatar.com can't be reached. Addresses
+  with no user part, an IP address or dotless host (`localhost`) and `tel:` numbers aren't
+  looked up. Settings > Appearance > *Show Gravatar pictures for people* (on by default) turns it
+  off, since it sends gravatar.com a hash of each address shown.
+- **Clear (×)**: a button at the field's far right while it has text (the contact pill sits just
+  left of it) empties the field and keeps focus there, so the list shows Recent and Contacts as
+  if you'd deleted the text. `Esc` still closes the list first; a second `Esc`, with the list
+  closed, empties the field too.
+- The last row opens the **Contacts** tab of the People view (below): *Contacts…* with nothing
+  typed, or *Add … to contacts…* for a typed address that isn't one yet, which opens it on the
+  form with the address filled in. A name that matches nothing still closes the list, as in the
+  prototype.
+
+## People: Recent and Contacts
+
+The **People** button (two heads, titled *Contacts*) at the start of the dial bar opens a view
+over the stage on its **Contacts** tab; it carries the missed-call badge. *See all history (N)*
+and the rail's History button open it on **Recent** (see Call history, below). Each closes the
+view if it's already on its own tab and switches to that tab if it's on the other, and each is
+shown pressed only while the view is on its tab. ←/→ move between the tabs. The button shows once the host sends call
+history; *Manage accounts* beside the account picker now has a server icon.
+
+- **Recent** is the call history. Each row has a person button beside the chevron, and its
+  details have a matching button: *Add to contacts* or, for a contact, *Edit contact*. Both open
+  the Contacts tab's form (address filled in), and saving or cancelling comes back to Recent.
+  History shows the contact's name in place of the one the call carried.
+- **Contacts** (`contacts.js`) is laid out like Recent: search, *Add contact*, and a row per
+  contact with its last call and when, a chevron and a call button. A row's details have the
+  address, its last 5 calls, **Call**, **Edit**, *Show all N calls in Recent* (Recent, searched
+  for that address) and **Delete**, which asks again on the button for 3 s. Add and Edit share a
+  form at the top (name, number or SIP address, and *Call from*: *Any (the current Call from
+  account)* or one of the accounts, a disabled one marked so); a blank address, or one another
+  contact has, is refused there. The details show *Call from* too, and say when its account has
+  been removed or disabled. *Add to contacts* from a call on Recent fills in the account that
+  call used. The account is kept in `contacts-{profile}.json` as `account` (the account's id);
+  files from before it have none, which means *Any*. The web softphone has no accounts, so it
+  shows no *Call from* there. Changing a contact's address replaces it. `Esc` closes the form, then clears the
+  search, then closes the view.
+- **Calling from here** (Call, Call back, or the dial bar with People or Accounts open) leaves
+  the view open while the call is placed, with the call's row (or the "Calling… · Cancel" banner,
+  over another call) showing how it's going. Answered, the view closes (an unsaved edit is
+  dropped) and the call is selected; declined or failed, you stay where you were.
+- Without a host that keeps history there's no view, so no Contacts tab either; contacts still
+  come up in the address field's list.
 
 ## Settings
 
@@ -68,17 +157,17 @@ in this app are there; each applies straight away:
   the camera is never opened without you asking. The microphone is on as soon as it answers.
   (`--auto-answer` is the testing switch, answered by the host with the Camera button's choice.)
   *Show all calls in a grid*: the view with two or more calls (see
-  [Focus and grid views](#focus-and-grid-views)); the Focus and Grid buttons and G change it too.
+  [Focus and grid views](#focus-and-grid-views)); the Grid button under Active calls and G change it too.
 - **Appearance.** Theme: System, Light or Dark. System follows Windows' light or dark mode.
 - **Account.** Who you are: the account, or with none, the address others can call, and a
-  *Manage accounts* button that opens the same view as the dial bar's people button (see
+  *Manage accounts* button that opens the same view as the dial bar's accounts (server) button (see
   [SIP accounts](#sip-accounts)).
 - **Diagnostics.** Opens or closes the panel F12 does.
 
 The page keeps them in its `localStorage`, which is in the WebView2 profile's folder, so each
-`--profile` has its own. The prototype's ringtone (there's no ringtone yet) and real-time
-text options (saved transcripts; there's no call history) are left out until there's something
-behind them.
+`--profile` has its own. The prototype's ringtone (there's no ringtone yet) and its *Save text
+conversations in call history* (the history doesn't keep transcripts yet) are left out until
+there's something behind them.
 
 ## Several calls
 
@@ -115,10 +204,16 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   open and they get a stream to latch onto when they resume. On hold either way round, the
   "No audio arriving" and "isn't getting your audio" notes stay quiet: the hold note says it.
 - **New call.** Typing an address changes nothing. On a call, the button says what it will do:
-  *Call & hold Alice*; pressing it holds that call, and the new one goes on the stage. The dial
-  bar is only disabled at 8 calls.
+  *Call & hold Alice*; pressing it holds that call, which stays on the stage, and the new one
+  isn't a call in the list yet: a banner over the stage says "Dave · Calling… · Cancel". Only
+  once Dave answers does it join the list and take the stage (in Focus). Not answered (busy,
+  declined, no such number), the banner says why until the call goes (or *Close*), and the call
+  you were on stays on hold: you may want to call someone else, so resuming it is up to you.
+  *Cancel* just takes the banner away. *End all*
+  leaves a call you're placing to the banner. The dial bar is only disabled at 8 calls.
 - **Incoming calls** ring alongside the others (only a ninth gets 486 Busy Here). While you're
-  on a call, a banner over the stage says who, with *Answer & hold current* and *Decline*; the
+  on a call, a banner over the stage says who, with *Answer & hold current* and *Decline*, and
+  the call you're on carries on untouched (not held, still on the stage) unless you answer; the
   name opens the full answer view. With several ringing,
   the one waiting longest is on the banner, with "+N more waiting". `A` answers it.
   `--auto-answer` answers each call alongside the others, keeping the audio where it is.
@@ -127,18 +222,19 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
 - **Mute** is the selected call's; `M` too. `Shift+M` mutes every call, and the ones to come
   (before a call, Mute is the same thing: calls start muted). `Shift+C` turns the camera off
   on every call and for new ones; it never turns cameras on.
-- **Mute all and End all**, under the Active calls list once there are two calls (icons only on
-  the rail). *Mute all* is `Shift+M`, and reads *Unmute all* once every call is muted. *End
+- **Grid, Mute all and End all**, under the Active calls list once there are two calls (icons only on
+  the rail). *Grid* has its own row above the other two: see
+  [Focus and grid views](#focus-and-grid-views). *Mute all* is `Shift+M`, and reads *Unmute all* once every call is muted. *End
   all* asks once more ("End 3?", for 4 s) and then hangs up every call you've placed or are
   on; a call that's only ringing is left to Answer or Decline.
 - **Keys**: `1`–`8` put that call in the list on the stage (`1` is the top, the oldest), `A` answers,
   `M` mutes, `Shift+M` mutes all, `Shift+C` turns all cameras off, `H` holds or resumes, `G`
-  switches between Focus and Grid.
+  switches between Focus and Grid, `[` hides or shows the Active calls panel.
 
 ## Focus and grid views
 
 As in the prototype. **Focus** (the default) shows only the selected call, with its controls
-under its info bar. **Grid** (the Focus and Grid buttons in the control bar, or `G`) shows every active call
+under its info bar. **Grid** (the *Grid* button under Active calls, or `G`) shows every active call
 as an equal tile, oldest first like the list, with no buttons: each tile shows what Focus
 would, so you can tell the calls apart at a glance: their video while it's arriving (on hold
 too: with music on hold it keeps coming), on an audio call the two rows of bars (theirs above,
@@ -147,8 +243,9 @@ self view in the corner, showing what that call sends (your camera, your initial
 hold" card), unless Self view is off. Under it the call's time,
 their name and its status line, the same as the list's: "On hold · 02:10" (amber), "Typing…",
 their last unread line, and what the call gets from you (as in the list). The selected call's tile, which has the audio,
-is outlined. The control bar keeps only Focus and Grid, so it's never in doubt which call a button
-acts on. Clicking a tile opens that call in Focus, resuming it if it's held (and holding the
+is outlined. The control bar's buttons go, so it's never in doubt which call a button acts on.
+*Grid* looks pressed while it's the view; clicking it again goes back to Focus, though there's
+no Focus button: picking a call does that. Clicking a tile opens that call in Focus, resuming it if it's held (and holding the
 live one). The one button on a tile is on a call you've put on hold: the same "On hold · 00:42 ▶ Resume"
 note as on the stage in Focus, over the middle of the tile ("Bob put you on hold", without Resume,
 when it's them). Resume takes the call off hold, holds the live one, and selects it, so it has
@@ -156,8 +253,10 @@ the audio, and the view stays Grid.
 
 - **Picking a call** from the grid, by its tile (or Enter on it), its row in Active calls, or
   its number key, opens it in Focus.
-- **A ringing call** shows its answer view and leaves the choice alone: answered, it's back to
-  the grid. While you're in the grid, a call that rings shows on the banner, and as a tile.
+- **A call ringing in** never switches to the grid, and isn't a tile: it asks on the banner over
+  the call (or grid) you're on. *Decline* leaves everything as it was; *Answer & hold current*
+  holds the call you're on and opens the new one in Focus. Its own answer view (the banner's
+  name) leaves the choice alone.
 - **`T`** in the grid switches to Focus with the text panel open, as does *Reply* on a text
   toast. `M`, `H` and `V` do nothing in the grid; `Shift+M` and `Shift+C` still act on every call.
 - The choice is remembered (`view` in the page's settings) and only applies with two or more
@@ -170,8 +269,8 @@ the audio, and the view stays Grid.
 
 A panel down the left, beside the stage and the control bar, from the prototype's sidebar. It
 lists every call, oldest at the top and new ones at the bottom, while it's live (calling, ringing or connected) and for a
-few seconds after it ends, and otherwise says *No active calls*. Nothing is made up: there's no
-call history yet, so the prototype's History section isn't here. Clicking a row puts that call
+few seconds after it ends, and otherwise says *No active calls*. Under the calls is the History
+section (see [Call history](#call-history)). Clicking a row puts that call
 on the stage. The list is built from `listed()` and `callStatus()` in `app.js`.
 
 - **A row**: their initial, their name (the full address in the tooltip), the status and, once
@@ -183,13 +282,74 @@ on the stage. The list is built from `listed()` and `callStatus()` in `app.js`.
   (muted, video stopped) and faint otherwise (on hold, held by them, the mic on another call).
   The tooltip says which: "Bob hears you", "On hold: they hear music, not you". With text,
   the status line says "Typing…" or their last line.
-- **Collapse**: the chevron folds it to a 48 px rail of initials, the mic and camera chips, and
-  timers, so a live call still shows. The chevron, or a click anywhere in the panel that isn't on a call, folds it or
-  opens it again; a click on a call only selects it. The choice is
-  remembered (`localStorage`, `callsPanel`, per profile on the desktop).
-- **Narrow windows** (under 700 px): it's always the rail, to leave the stage its room.
-  Expanding it lays the panel over the stage until you collapse it, click away or press Esc,
-  without changing the remembered choice.
+- **Hide**: the chevron, or `[`, slides the whole panel (calls, Grid / Mute all / End all and
+  History) off to the left, and the stage takes the width. All that's left is a small arrow tab
+  on the left edge, *Show calls*, which brings it back (as does `[`). The tab shows the number
+  of live calls, and a red dot for a ringing call (pulsing) or missed calls you haven't seen;
+  its tooltip says which ("Show calls ([) · 2 active · 1 missed"). Nothing needs the panel open:
+  an incoming call's Answer and Decline are on the stage, and `1`–`8`, `A` and the other keys
+  work as before. The choice is remembered with the other settings (`callsHidden`, per profile
+  on the desktop; a rail chosen under the old `callsPanel` key comes back hidden). The slide
+  takes 0.22 s, and is instant with reduced motion. While hidden the panel is inert, so Tab
+  skips it; hiding it from its chevron moves the focus to the tab, and the tab gives it back to
+  the chevron.
+  Hidden rather than a rail: one control, two states (there or not), and the tab carries what
+  the rail was for, that something is going on. A three-step expanded → rail → hidden would
+  need you to learn which click gets which.
+- **Narrow windows** (under 700 px): it's a 48 px rail of initials, the mic and camera chips,
+  and timers, so a live call still shows, and never hides. A click anywhere on the rail opens
+  the panel over the stage until you collapse it, click away or press Esc, without changing the
+  remembered choice; a click on a call only selects it.
+
+## Call history
+
+From the prototype's *Call history*. The host records every call when it ends and keeps the
+list; the page (`history.js`) shows it in two places.
+
+- **The History section**, in the Active calls panel under the calls: the latest 6 calls, each
+  with its outcome and when ("Missed · 5 min ago", "Busy · Yesterday"), and a call-back button on
+  hover. A red badge counts missed calls you haven't looked at; opening History clears it
+  (`historySeenAt` in `localStorage`). The caret folds the section, and that's remembered
+  (`historyCollapsed`). On the rail it's one History button with the badge on its corner.
+  Clicking a call opens History with that call's details.
+- **The History view** (now the People view's *Recent* tab, see above), from *See all history (N)*, over the stage like Accounts: it isn't a
+  call, so opening it holds nothing and the call carries on under it. *Back to …* (while a call
+  is going) and × close it, and so does `Esc` (which first clears a search). Picking a call in
+  the panel, or the ringing banner's name, closes it too, and it and Accounts take turns. It has
+  search (names and addresses), *All / Missed / Outgoing / Incoming*, and day groups (Today,
+  Yesterday, the weekday, then the date). A row, or its chevron, opens its details: direction,
+  when it started, duration (or "Didn't connect"), the account, the outcome with the SIP
+  response, and the address, with **Call back** (from the call's account, if it's still enabled;
+  otherwise from *Call from*'s) and **Copy address**.
+- **Removing**: only the **Remove** button in a row's details, or *Remove all N from this
+  address* beside it, for a flood of spam calls. *Clear history* in the toolbar asks first; with
+  a search or filter on it's *Clear N shown* and only removes those. Each removal shows an
+  **Undo** toast for 10 s, and removals while it's up are undone together.
+- A call ringing on the stage takes over from the view. Answered, the view closes; not
+  answered, it comes back.
+
+What a call is recorded as:
+
+| The call | Recorded as |
+|---|---|
+| Placed, answered | Outgoing, with its duration |
+| Placed, turned down | Outgoing with the response in a word or two (*Busy*, *Declined*, *Number not found*, *No answer*, *Not available*, …) and the SIP response, e.g. `486 Busy Here` |
+| Placed, you hung up before it was answered | Outgoing, *Cancelled* |
+| Incoming, answered | Incoming, with its duration |
+| Incoming, you declined it | Incoming, *Declined* |
+| Incoming, they gave up before you answered | Missed (red) |
+
+**Where it's kept**: `%LOCALAPPDATA%\SIPSorcery\Softphonev2\history-<profile>.json`, beside the
+accounts, newest first, the last 500 calls (`CallHistory` in `History.cs`). The host sends the
+page all of it (`history {entries, max}`) when the page is ready and whenever it changes; the
+page sends `history-remove {ids}` and `history-restore {ids}` (Undo), and the host keeps what was
+removed in memory, so Undo works until the app closes. The address field's Recent list comes
+from the same history. The web softphone's host keeps its history the same way in the browser's
+`localStorage` (`callHistory`); a host that sends no history shows no History section at all.
+
+A direct call (no account) arrives from SIPSorcery's anonymous `sip:thisis@anonymous.invalid`,
+so it's recorded with that address, and calling it back goes nowhere; a call from an account
+has the account's address.
 
 ## Call details
 
@@ -251,6 +411,71 @@ same on both.
   answer or offer with no T.140 channel, or one that doesn't open in 10 s, shows "…'s phone
   doesn't support real-time text". A far end that opens a `t140` channel in band instead is
   taken too. There's no *Add text* here: a WebRTC call has text from the start or not at all.
+
+## Keypad (DTMF)
+
+From the prototype: the **Keypad** button opens a 12-key pad (1–9, \*, 0, #, with their
+letters) in a popover over the bottom right of the stage, like the text one (only one of the two
+popovers is open at a time; both can be open in the dock, see
+[Docking the keypad and text](#docking-the-keypad-and-text)). It acts on the selected call only, and its title says whose it is.
+
+- **Each press sends a tone** on that call and adds the digit to the display above the keys;
+  the log has `keypad '5' → Name` from the page and the host's `DTMF '5' sent (…)`.
+- **While it's open the keyboard's number keys, `*` and `#` send tones** instead of their usual
+  shortcuts (`1`–`8` normally pick calls), except while typing in a field. `Esc`, its ×, the
+  button again or a click anywhere else closes it.
+- **It closes**, and the button is disabled with a tooltip saying why, when the call is put on
+  hold (either way), ends, or another call is selected, and in Grid view (which has no
+  controls). It's also disabled until the call's audio to the page is connected, so the first
+  tone isn't lost.
+- **Tones they send** are logged by the host (`DTMF '5' received (RFC 4733)` or `(SIP INFO)`),
+  and while the keypad is open on that call they show under the keys ("Name sent 123").
+
+How the host sends them (`Phone.SendDtmf`):
+
+- **RFC 4733 telephone-events** when their SDP has `telephone-event` (SIPSorcery offers
+  `101 telephone-event/8000` on every audio track, so we always do). The events go in the call's
+  own audio stream: `MediaRelay.SendDtmfAsync` gives them the timestamp of the audio going out
+  when the key was pressed and the next sequence numbers, moving the page's audio after them
+  along to match, so the far end sees one unbroken stream. (`RTPSession.SendDtmf` keeps a
+  timestamp and sequence of its own, which jump about next to the page's relayed audio.) Each
+  tone is 160 ms: a start packet with the marker bit, an update every 20 ms, and the end packet
+  three times; the audio goes on meanwhile. Presses queue, one tone at a time.
+- **SIP INFO** when they didn't agree `telephone-event`: `application/dtmf-relay`,
+  `Signal=5` / `Duration=160`, in the dialog.
+- **Received** either way: RFC 4733 events through `SIPUserAgent.OnDtmfTone` (once per tone),
+  and INFO (`application/dtmf-relay` or `application/dtmf`) answered 200 by the host, since
+  SIPSorcery's user agent leaves INFO alone when it doesn't own the transport; an INFO of
+  another type gets 415, one outside our calls 481.
+
+In the web softphone (`web/host.js`) the page's connection goes straight to the far end, so the
+page's own audio sender sends the tones (`RTCDTMFSender.insertDTMF`, RFC 4733). There's no SIP
+INFO there: a call whose far end didn't agree `telephone-event` says `dtmf: false` in its state
+and the page disables the keypad. Browsers don't report tones they receive.
+
+## Docking the keypad and text
+
+The keypad and the text panel each have a dock button in their header, beside ×. Docked, the
+panel sits in a side panel (300 px) to the right of the selected call in Focus view, and the
+stage narrows to make room; pressed again, it goes back to its popover.
+
+- **Auto-join**: with one of them docked, opening the other puts it in the dock too, whatever its
+  own choice; an open popover of the other one joins when one is docked. Undocking one of the
+  two leaves the other docked, and the undocked one is a popover over the stage beside the dock.
+- **Both in the dock are stacked**, not tabbed: the keypad at the top, at its own size (the keys
+  shrink to 28 px in a short window), and the text taking the rest. Stacked, you can read what
+  an automated line says while you press keys, with no extra click to switch between them.
+- **Closing**: `Esc`, × or the control-bar button closes each one as before (with both open,
+  `Esc` closes the keypad first, then the text). A click elsewhere doesn't close a docked panel.
+  Closing one leaves the other docked; closing both hides the dock and the stage widens again.
+- **The rest is as before**: the keypad's number keys and `Esc`, `T` for text. The keypad
+  closes on hold, on another call, or in the grid; the text panel follows the selected call and
+  closes in the grid. So the dock hides in Grid view, and `T` from the grid opens Focus with the
+  text docked (if that's its choice).
+- **Remembered**: each panel's choice is kept in the page's settings (`dockKeypad`, `dockText`),
+  per profile, as Settings' are. A panel that joined the dock doesn't change its own choice.
+- **Narrow windows** (under 960 px): there's no room for a column, so the dock floats over the
+  right of the stage like the popovers, with the same stacking, and the stage keeps its width.
 
 ## Browser phones (WebSocket)
 
@@ -462,7 +687,7 @@ Where the numbers come from:
   isn't one) plus twice the jitter plus 20 ms, and loss is random with concealment (Bpl 25).
   Wideband codecs sound better than it says. It's for spotting trouble, not grading codecs.
 
-There is no call history, contacts, DTMF or transfer yet.
+There are no contacts or transfer yet.
 
 **Later:** a help or info section, to explain the Call quality panel: that ↑ Sent comes from
 the far end's RTCP reports (every 5 s or so) and ↓ Received is measured here, what the MOS
@@ -480,7 +705,7 @@ at once; *Call from* picks the one calls go out from.
   green registered, amber registering, red failed, grey not registering. Its tooltip says why
   it failed, and so does the Ready card ("alice@… isn't registered: Wrong username or
   password (401 Unauthorised)"). The choice is remembered, *No account* included.
-- **Manage accounts** (the people icon beside it) opens the Accounts view over the stage; a call
+- **Manage accounts** (the server icon beside it; the two heads are People's) opens the Accounts view over the stage; a call
   carries on underneath, and a ringing call hides the view (the icon brings it back, with
   what you'd typed). The icon turns red with an alert while any enabled account has failed,
   and its tooltip names them. The view starts on a table of every account and its status;
@@ -490,8 +715,9 @@ at once; *Call from* picks the one calls go out from.
   (UDP, TCP or TLS), auth username (if not the username), password, *Register*, expiry
   (60–7200 s, default 300), and under *Calls*, *Hold*: *Music on hold* (the default) or *SIP
   re-INVITE* for a PBX (see [Several calls](#several-calls)). A call keeps the Hold it started
-  with. Outbound proxy, STUN, SRTP and DTMF from the prototype aren't there yet: the host
-  doesn't do them per account. *Re-register* registers
+  with. Outbound proxy, STUN, SRTP and the DTMF choice from the prototype aren't there yet: the
+  host doesn't do them per account (DTMF is RFC 4733, or SIP INFO when the far end doesn't
+  agree it; see [Keypad](#keypad-dtmf)). *Re-register* registers
   again now; the *Enabled* switch turns the account off (unregistered, not offered in Call
   from) without losing it; *Remove account* asks for a second click.
 - **What changes registration**: a new or enabled account registers; a removed or disabled one
@@ -566,6 +792,7 @@ Switches, mostly for testing:
 | `--webrtc` | Calls we place use WebRTC media whatever the transport, for browsers registered with a server. A plain SIP phone won't take them. (Will be per account.) |
 | `--no-text` | No real-time text: it's left out of offers and answers (no `m=text`, and on WebRTC calls no T.140 data channel), so the other side adding it is turned down. (Will be per account.) |
 | `--say <text>` | Once text is up on a call, send this message. |
+| `--dtmf <keys>` | Once a call's audio is up, open the keypad and press these keys (0–9, \*, #), as typed keys, 2 s in and one every 400 ms. |
 | `--no-video` | No video at all: the switch is locked to Audio, and video offers or Add video from the other side are turned down. (Will be the per-account "Video calls" setting.) |
 | `--camera-off` | Start with the Camera button off, so calls and answers start with the camera off. |
 | `--add-video <s>` | Press Add video this many seconds into an audio call. |
@@ -609,7 +836,25 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 ## What's been checked
 
 | Test | Result |
+| Call history, two copies (`--profile hiA --port 5381 --ws-port 8381` and `hiB --port 5382 --ws-port 8382`, both `--fake-media`, no accounts); A calls `sip:hiB@127.0.0.1:5382` | B answers (`A`), A hangs up after 4 s: A's History "HiB · Just now" (Outgoing · 0:04), B's "Thisis" (Incoming · 0:04). B declines: A *Busy* (`486 Busy Here`), B *Declined*. A cancels while it rings: A *Cancelled*, B *Missed* in red, with the badge at 1. Each is in `history-hiA.json` / `history-hiB.json`. |
+| A: the call-back button on the latest History entry | A calls `sip:hiB@127.0.0.1:5382` again; B answers and it's recorded like the first. |
+| B: *See all history (5)* | The view over the stage, "5 calls · 2 missed", the badge cleared; *Missed* lists the two missed calls and the button reads *Clear 2 shown*; the chevron opens the details (Incoming, Today 08:11, 0:03, No account (direct), Completed · They hung up) with Call back, Copy address, Remove and *Remove all 5 from this address*. |
+| B: Remove, then Remove on another call, then Undo; *Remove all 5*, Undo | "Removed Thisis from history", then "Removed 2 calls from history" (one batch); Undo: "Restored 2 calls", 5 calls again in the file. Remove all: 0 calls; Undo: all 5 back. |
+| B: *Missed*, *Clear 2 shown* | A dialog: "Clear 2 calls? This removes the 2 missed calls. Other calls stay in history." Clear: "3 calls · 0 missed", with Undo. |
+| B with History open; A calls B, then cancels | The ringing call takes the stage from the view; when it stops ringing, History comes back with the new missed call, already seen (no badge). |
+| B: `Esc`; then with a call answered, *See all history* | `Esc` closes the view. During the call the view has *Back to Thisis*, which closes it with the call as it was (not held); opening it again and clicking the call's row closes it too. |
+| B: the History caret; the panel's chevron (rail); a missed call while on the rail | Folded, with `historyCollapsed: yes`. On the rail: one History button that opens the view; a missed call puts a red 1 on its corner. |
+| Both copies restarted | The same history on each, and B's unseen missed badge still 1. |
+| Web softphone (`web/index.html?server=ws://localhost:8381&user=web`) with three entries put in its `localStorage` | The History section and view as on the desktop (Dana *Missed* with the badge, Echo, Eve *Busy* under Yesterday); Remove takes it out of `callHistory`, Undo puts it back. With nothing stored: "No calls yet". |
 |---|---|
+| Hide the panel: two copies (`--profile vtK --port 5421 --ws-port 8421`, `vtL --port 5422 --ws-port 8422`, both `--fake-media --test-pattern`, built to a separate folder); K's chevron, then `[` | The panel slides off (mid-slide `margin-left` −210 px, then −252 px), the stage goes from x 268 to 28 and 1056 px wide, and the arrow tab sits in the gutter at the left edge, "Show calls ([)". `inert` on the panel; `callsHidden: true` stored. With reduced motion emulated: no transition, no tab animation. |
+| L calls K while K's panel is hidden | The incoming screen on K's stage with Decline and Answer, as before; the tab shows 1 and a pulsing red dot, "Show calls ([) · 1 active · 1 ringing". |
+| L cancels | The dot stays, now for the missed call ("· 1 missed"), the count goes. |
+| L calls K twice, K answers each with `A` (panel hidden); then `1` | Count 2 on the tab; `1` puts the older call on the stage (it resumes, the other goes on hold). |
+| A click on the tab | The panel slides back with both calls, the footer and History (1 missed); focus on the chevron; `callsHidden: false`. |
+| `[` to hide, then K restarted | K comes back hidden, the tab with the missed dot. |
+| K at 600 px wide | The rail as before (48 px, History button with its badge); no tab. |
+| Web softphone (`web/index.html?api=stub`, 1100 px) | The chevron hides the panel the same way; the tab at the same place; `callsHidden` in its `localStorage`. |
 | Several calls: three copies, A (`--profile fgA --port 5191 --ws-port 8191 --video --diagnostics`), B and C (`fgB`/`fgC`, ports 5192/8192 and 5193/8193, `--auto-answer`), all `--fake-media --test-pattern` | A calls B: video both ways. A calls C: A's B call goes on hold ("On hold · 00:06", B shows "Thisis put you on hold"), C's call on the stage with the audio. |
 | A: `2` (the older call) | B's call comes off hold and has the audio (its `<video>` plays, C's is muted), and C's goes on hold: one live call. B gets A's video again within a second (the held call's sender goes back on). |
 | A: `1`, `2`, `1`, `2` quickly | Each call ends up where the last key left it (B live, C on hold). With *SIP re-INVITE*, no 491 in the log: the host queues a call's re-INVITEs ("after the re-INVITE that's out"). |
@@ -620,9 +865,11 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Two accounts a side, B calls A twice (audio, A `--auto-answer`), A adds video to the first | A's list: Bob with filled mic and camera chips ("Bob hears you", "Bob sees your video"), Dave with a faint struck-out mic ("Your mic is on another call"); *Mute all* and *End all* under the list. Grid: Bob's tile shows B's video (B's "On hold" card, as B has it held), Dave's the bars, yours flat. |
 | Same: *Mute all*, collapse, expand, *Unmute all*, *End all* twice | Both rows Muted, red chips, the button *Unmute all*; the rail shows the chips under each initial without a scrollbar. *End all* reads "End 2?", then both calls end ("They hung up" on B) and the buttons go. |
 | A with two calls: `Shift+M`, `Shift+C`, `Shift+M` | Both rows "Muted" and "Video stopped"; then both unmuted, cameras still off. |
-| Grid, the same three copies: A with video calls to B and C, then the Grid switch | Two tiles, C's (selected, outlined) with its test pattern, B's "On hold · 00:14"; the control bar shows only Focus \| Grid 2. `M` and `H` change nothing. |
+| Grid, the same three copies: A with video calls to B and C, then *Grid* under the list | Two tiles, C's (selected, outlined) with its test pattern, B's "On hold · 00:14"; *Grid* pressed; the control bar empty. `M` and `H` change nothing. |
 | From the grid: B's tile; `G`; C's row in the list; `G`; `2`; `G`; `T` | Each opens that call in Focus, resuming it and holding the other; `G` goes back to the grid each time; `T` opens Focus on the selected call with the text input focused. |
-| In the grid, C calls A | The banner, and a ringing tile; the view stays Grid. The banner's name: the answer view (Settings still says grid). *Answer & hold current*: back to the grid, three tiles, the new call selected and the other two "On hold". |
+| In the grid, C calls A | The banner over the grid, no ringing tile; the view stays Grid. The banner's name: the answer view (Settings still says grid). *Answer & hold current*: the new call in Focus, the other two "On hold" in the list. |
+| Two accounts a side: A calls Bob (B answers), then calls Dave; B *Decline*; A calls Dave again, B answers; A calls Bob again, *Cancel* | While Dave rings, A's list has only Bob (On hold, still on the stage) and the "Dave · Calling… · Cancel" banner; B's Alice call stays a Video call (not held) under its banner. Declined: A's banner "The far end said 486 BusyHere · Close", gone when the host drops the call; Bob still on hold. Answered: Dave joins A's list, selected, in Focus; Bob on hold. Cancel: the banner goes, the list as it was (both on hold), B shows "Missed call". |
+| Grid chosen, one call (so Focus), C calls A; *Decline*; C calls again; *Answer & hold current* | No switch to the grid while it rings: the banner over the call. Declined: the call as it was, still live. Answered: the first call "On hold", the new one in Focus. |
 | A text message without its line end on the selected tile's call (injected as the host's `text` message), then Reply on the toast | The tile and the row say "Typing…" with the text icon's red dot; Reply opens Focus with the text panel. (Two copies of this app send a line at a time, on Enter, so they don't show Typing… to each other; with Enter, the tile shows the line, unread.) |
 | Settings: *Show all calls in a grid* | Ticked: the grid, `view: "grid"` stored; after restarting the copies, A's two calls open in the grid. |
 | Accounts, against a stand-in SIPSorcery registrar with digest auth on 127.0.0.1:5070 (`--profile accttest --fake-media --diagnostics --auto-answer`, a config with alice) | First start: alice seeded from the config, stored with a DPAPI password, registered. Bob added in the form with a wrong password: "Not registered: Wrong username or password (401 Unauthorised)", Manage accounts red. Password fixed: registered. An account with auth username carol registered as dave. `nosuch.invalid`: "Can't find the server nosuch.invalid (DNS lookup failed)". |
@@ -709,8 +956,61 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Browser call, Text popover open, then one click on End | The call ends ("You hung up", BYE, 200). |
 | The web softphone (../web), audio only, `dial=desktop&hangup=12` | Answered with audio only; the browser's BYE ends it here with "They hung up". |
 | Softphone to spike far end, H264 720p30 | 30 fps at 1280x720 in, decoded by `D3D11VideoDecoder` (hardware); camera out at 30 fps. |
+| Address suggestions, two copies (`--profile vtC --port 5391 --ws-port 8391 --diagnostics` and `vtD --port 5392 --ws-port 8392 --auto-answer`, both `--fake-media`). C calls D (answered, 3 s), calls D and cancels at once, then D calls C and gives up while it rings | `/` in C (focus on the page) focuses the field without typing a slash and opens Recent: *Thisis · Missed · Just now* in red, then *VtD · Cancelled · Just now* (one entry per address, the newest call). |
+| C: `vt`, Enter | VtD is highlighted as you type (`VT` matches too); Enter fills in `sip:vtD@127.0.0.1:5392` and places the call, which D answers; the list closes. `dax` matches nothing and the list closes. |
+| C: the person button on a recent entry, then on the contact; ↑ from no selection | *Add Dana to contacts* writes `contacts-vtC.json`; with Dana's recent entry gone (a stand-in history), Dana is listed under Contacts, and typing `da` highlights it. ↑ wraps to the last entry; *Remove Dana from contacts* empties the file. `Esc` closes the list and leaves the typed text and focus. |
+| C restarted (same profile) | The contact added before the restart is listed under Contacts. |
+| The web softphone (`python -m http.server`, `web/index.html?server=ws://localhost:8391`), with a stand-in history entry | Same list and keyboard; *Add to contacts* saves to localStorage (`softphone.contacts`), and a `history-changed` with the entry gone moves it under Contacts. No console errors. |
+| Contacts (then a dialog, now the Contacts tab), in C: ↑ from the empty field to *Contacts…*, Enter | It opens on the search box with the one contact. The rows to *Call on Desk D* below were checked in the dialog. |
+| Edit VtD to *Desk D*; Add contact *Echo* with no address, then `SIP:vtD@127.0.0.1:5392`, then `sip:echo@127.0.0.1:5392` | The file has *Desk D*, and the suggestions show *Desk D* for VtD's recent call. "Type a number or SIP address." then "VtD already has that address." (case aside), then Echo is saved, sorted by name. |
+| Echo's address changed to `sip:echo2@…`; search `zz`, then `ech`; Delete twice | One Echo, at the new address. "No contacts match “zz”."; `ech` shows Echo only. The first click turns the button red, *Delete?*; the second removes it from the file. |
+| Add contact, `Esc`, `Esc` | The form closes with focus on the search box; then the dialog closes. |
+| `sip:Grace@example.net` typed in the address field, ↑, Enter, name *Grace*, Enter | The list's only row is *Add sip:Grace@example.net to contacts…*; it opens the dialog's form with the address in and the name focused. Saved with its case kept; then `gr` in the field highlights Grace under Contacts. |
+| Call on Desk D in the dialog | The dialog closes and the call goes to D, which answers; when it ends, the open list shows it under Recent at once (*Just now*). |
+| C: *See all history*, then the *Contacts* tab; Desk D's row | Tabs *Recent* / *Contacts*, "2 contacts", focus in the contacts search. Desk D's row shows its last call and when; its details list its 5 calls with day and time, and *Show all 5 calls in Recent*. |
+| *Show all … in Recent*; then on Recent, *Add to contacts* in a non-contact's details, `Esc`; the row's person button, name *Anon Tester*, Save | Recent, searched for `sip:vtD@…`, 4 rows. The form opens on Contacts with the address in and the name focused; `Esc` goes back to Recent with the details still open. After Save it's back on Recent, and the row shows *Anon Tester*. |
+| `→` on the Recent tab; Edit *Anon Tester* to *Anon Two*; *Add contact* with `SIP:vtD@127.0.0.1:5392`; `Esc`, `Esc`; Delete twice | Contacts tab, focused. The form says *Edit Anon Tester*, saves on Contacts, focus back in search. "Desk D already has that address." `Esc` closes the form, then the view. Delete reads *Delete? Click again*, then removes it. |
+| Address field: ↑, Enter on *Contacts…*; then `sip:zed@example.org`, ↑, Enter | The view opens on Contacts with focus in search; then on its form, *New contact*, with the address in. |
+| Call on Desk D's row on the Contacts tab | The call goes to D, which answers, and the view closes; after it ends, Desk D's row shows *Outgoing · 0:03*, *Just now*. |
+| vtA/vtB (two accounts a side): A opens People, calls Bob, B declines; A opens *Manage accounts*, calls Bob, B answers; A opens People, calls Dave over Bob, B answers | Declined: People stays open, the row says "486 BusyHere". From Accounts: Accounts open while calling; answered, it closes and Bob is selected (Video call). Over Bob: People open with the "Dave · Calling… · Cancel" banner over it, Bob on hold; answered, People closes and Dave is selected, Bob on hold. |
+| C: the People button; *Contacts*; People again, and again; then *Manage accounts* (server icon), then People | (Before People always opened on Contacts.) People shows with history: it opens on Recent, pressed (accent, not Mute's red); it closes, then reopens on Contacts. *Manage accounts* swaps the view for Accounts, and People swaps it back. |
+| Keypad, two copies (`--profile vtE --port 5195 --ws-port 8195` and `vtF --port 5196 --ws-port 8196 --auto-answer`, both `--fake-media --diagnostics`): E `--dtmf 159*0# --dial sip:vtf@127.0.0.1:5196`, F `--dtmf 42` | Both keypads open 2 s after the page's audio connects. E logs `DTMF '1' sent (RFC 4733, telephone-event/8000 pt 101)` for each key; F's `SIPUserAgent.OnDtmfTone` logs `DTMF '1' received (RFC 4733)` … `'#'`, all six in order, and E receives F's `4` and `2` the same way. |
+| E places two calls to F (Call, then Call & hold), keypad open on the second, keys `1` and `#` | Both go as tones on call 2 (F logs them on its call 2); call 1 stays on hold and isn't selected, so `1` didn't pick it. |
+| Same: `H`, `H`, Keypad, `Esc`, Keypad, a click on call 1's row, then `G` and `G` | Hold closes it and disables the button ("Keypad: resume the call to send tones"); resumed, it's enabled but closed. `Esc` closes it. Picking call 1 closes it. The grid closes and disables it ("Keypad: pick the call to open it in Focus"). |
+| Same, a 1100×720 window with diagnostics open (a 308 px stage) | The popover fits the stage, the keys shortened to 36 px with their letters inside. |
+| E calls a scripted SIP UAS whose answer is PCMU only (no `telephone-event`), `--dtmf 3#` | E: "their SDP has no telephone-event, sending SIP INFO"; the UAS gets two INFOs, `application/dtmf-relay` `Signal=3` and `Signal=#` with `Duration=160`, and its 200s are logged. |
+| An INFO sent by hand into F's call (its Call-ID and tags): `application/dtmf-relay` `Signal=7`, `application/dtmf` `#`, `text/plain` | 200, 200 and 415. F logs `DTMF '7' received (SIP INFO)` and `'#'`. |
+| The web softphone (headless Edge with fake media, `web/index.html?server=ws://127.0.0.1:8196&user=webdtmf`) calls F; keypad, `8`, `6`, `#` | The page's `RTCDTMFSender` sends them ("sent (RFC 4733, RTCDTMFSender)"); F receives all three on the WebRTC call (`DTMF '8' received (RFC 4733)` …). |
+| Dock, two copies (`--profile vtI --port 5397 --ws-port 8397` and `vtJ --port 5398 --ws-port 8398 --auto-answer`, both `--fake-media --test-pattern`, built to a separate output folder), I calls J, 1100×720 | Keypad: a popover. Its dock button: the keypad moves into a 300 px panel right of the call and the stage narrows from 816 to 504 px; `dockKeypad: true` saved. Text (button): it opens below the keypad in the dock, input focused. |
+| The same: a click on the stage; `5`, `#`; `Esc`, `Esc` | Neither closes on the click. `5` and `#` go as tones (J logs `DTMF '5' received (RFC 4733)`, `'#'`). The first `Esc` closes the keypad and leaves the text docked; the second closes the text, the dock goes and the stage is 816 px again. |
+| I restarted (same profile); Keypad; ×; Text; Keypad | The keypad opens docked (the choice kept). The text (not docked by choice) opens as a popover; Keypad then docks with the text joining it. |
+| Both docked: the keypad's dock button | The keypad becomes a popover over the stage, just left of the dock (right edge 760, stage 772, dock from 784); the text stays docked. |
+| Both docked: `H`, `H`; Call & hold to J (a second call); `Esc`, `1` | Hold closes the keypad (button disabled, "Keypad: resume the call to send tones"); the text stays docked. The second call closes the keypad again (another call); the text stays, now that call's. |
+| Text's dock button; `G`; `T` | `dockText: true`. The grid hides the dock (the stage full width); `T` goes back to Focus with the text docked. |
+| Both docked at 820×640 and 1100×560 (CDP device metrics) | 820 wide: the dock floats over the stage's right edge (stage 536 px, no horizontal scroll), keypad at the top, text below it. 1100×560: docked beside the call, the keypad's keys at their smallest; the dock scrolls for the rest of the text panel. |
+| The web softphone (headless Edge, fake media, `web/index.html?server=ws://127.0.0.1:8398&user=webdock`) calls J; Keypad, dock, Text, `9` | The same dock (stage 504 px, both stacked); J logs `DTMF '9' received (RFC 4733)`. |
+| Smarter address field, two copies (`--profile vtG --port 5395 --ws-port 8395`, `vtH --port 5396 --ws-port 8396`), G with accounts *G Work*, *G Home* and a disabled *G Old*, all to 127.0.0.1:5396; G's contacts file in the old format (no account): *Hannah Desk* (`hdesk@…`, one Busy call 1 h ago), *Bob Smith*, *Annabel* (`zz@example.org`); history: `hannah.lab@…` ×3 (G Home), `ohanna@…`, `hal@…` (missed) | The contacts load. Nothing typed: Recent and Contacts as before. `han`: *Hannah Desk* (contact, "Busy · 1 h ago", highlighted), *Hannah.lab*, *Ohanna*; no *Hal*. `ann`: *Annabel* first (word prefix), then the three `han…` (inside a word). `zz`: *Annabel* (user part). `sip:new@…`: only *Add … to contacts…*. |
+| G: Contacts tab, Hannah Desk, Edit: *Call from* lists *Any…*, G Work, G Home, *G Old (disabled)*; G Home, Save | Details say *Call from G Home*; the file has `"account": "g2"`, the others none. After restarting G it's still there. |
+| G on *G Work*: `hann`, Enter | *Hannah Desk · from G Home* highlighted; *Call from* switches to G Home (flash) before the INVITE; H logs `ringing G Home <sip:ghome@127.0.0.1:5396>`. |
+| G back on *G Work*: `hannah.l`, Enter (a recent call on G Home, not a contact) | *Call from* switches to G Home; H rings from `ghome`. |
+| G on *G Work*: Recent, *Hannah.lab*'s person button | The Contacts form opens with the address and *Call from* G Home filled in. Saved as *Hannah Lab* on *G Old* (disabled). |
+| G: `sip:hannah.lab@127.0.0.1:5396` pasted, Call | *Call from* stays on G Work, with "G Old is disabled: calling from G Work" under it; H rings from `gwork`. |
+| G on *G Work*: the call button on Hannah Desk's Contacts row | *Call from* switches to G Home and the view stays open while it rings; H rings from `ghome`. |
+| G: Annabel given an account id no account has | Details: "A removed account (calls use Call from's)"; the form shows *A removed account* selected. Calling it leaves *Call from* alone with "Annabel's account has been removed: calling from G Work". |
+| G (`--diagnostics`) calls Hannah Desk, H answers; G opens the call's details | The stage's info overlay reads `sip:hdesk@… ✓ Hannah Desk 00:03`, the mark and name in light green beside the address (not cut off by its ellipsis); the details add *Contact: Saved contact: Hannah Desk* under *Call*. H's overlay shows *Gee Home*. |
+| G: People, *See all history*, *See all history*, *See all history*, People, People, People, the Recent tab, People, People | Contacts (People pressed); Recent (History pressed); closed; Recent; Contacts; closed; Contacts; Recent (History pressed); Contacts; closed. |
+| Gravatars: G gets a contact and an incoming history entry for `sip:beau@dentedreality.com.au` (Gravatar's documentation example, which has a picture) | Its avatar is the picture (160 px from gravatar.com) in the sidebar's History, the `b` suggestions and the Contacts tab; *Bob Smith* (`bob@example.net`, no Gravatar) and *Annabel* keep their initials, and the `127.0.0.1` addresses aren't looked up. |
+| Settings: *Show Gravatar pictures for people* off, then on | Off: every picture goes, initials only. On: the picture is back (from the cache, no new lookup). |
+| Fallback changed from `d=404` to `d=identicon` (the row above Settings was before it). C: People > Contacts and the sidebar's History | *Grace* (`sip:Grace@example.net`, no Gravatar) and the `thisis@anonymous.invalid` caller show their identicons in place of the initial; *Desk D* (`127.0.0.1`) keeps its initial. |
+| An avatar built in code, as call rows, tiles and the stage are: given the address, redrawn with the same initial, then given an IP address | The picture appears, survives the redraw, and goes for the IP address. `emailOf`: `sip:alice@Example.com:5060;transport=tcp` → `alice@example.com`, `Bob <sips:bob@example.net>` → `bob@example.net`; `tel:+35312345`, `sip:1234@10.0.0.1`, `sip:x@localhost` → none. A live G→H call still shows *H* on the stage and its row. |
+| Saved-contact mark, vtG/vtH as above (H has *Gee Home* = `sip:ghome@127.0.0.1:5396`): G's sidebar History, Recent tab, and Hannah Desk's details | Every row to Hannah Desk or Hannah Lab has the mark (tooltip *Saved contact: Hannah Desk*); the details add *Contact: Saved contact: Hannah Desk*. |
+| G's address field: `SIP:HDESK@127.0.0.1:5396`, `hdesk@127.0.0.1:5396`, `sip:new@127.0.0.1:5396`; then `han`, then empty | The first two show the *Hannah Desk* pill in the field; the new address shows none. Suggestions: the contacts have the mark (*Hannah Lab*, *Hannah Desk*), *Ohanna* and *Hal* don't. |
+| G calls Hannah Desk; H answers | G: the Active calls row and the *Calling…* card have the mark, then the info bar once connected. H: the ringing row and card, then the row and info bar, show *Saved contact: Gee Home* for `G Home <sip:ghome@…>`. |
+| The web softphone (`web/index.html?api=stub`, contacts in localStorage): `ann`; a new contact's form | *Annabel*, then *Hannah Desk*, ranked as on the desktop; no *Call from* in the form or the dial bar; no console errors. |
+| Clear (×), vtG (`--port 5395 --ws-port 8395`): type `han`, click ×; type `sip:hdesk@127.0.0.1:5396`, click ×; type it again, `Esc`, `Esc`; set the address in code and blur | `han`: × shows, *Best matches* (3); × empties the field, focus stays, the list shows *Recent* and *Contacts* (8). The contact's address: the *Hannah Desk* pill just left of the × (pill 621–729 px, × 733–759), the text stops before both (padding 198 px); × clears it the same way. First `Esc` closes the list, the second empties the field with the list still closed. Set in code: pill and × show. Web build (`?api=stub`): × clears and reopens the list, no console errors. |
 
-Not tested yet: the one-way audio warnings (there's no easy way to break one direction yet),
+Not tested yet: the saved-contact mark on grid tiles (a second call wasn't answered in that
+run), the one-way audio warnings (there's no easy way to break one direction yet),
 the placeholder on a non-SIPSorcery far end, a browser on another machine (`wss`), adding video to a browser call, the far end adding video to our audio call
 (only SIPSorcery to SIPSorcery so far, where we're both), a real SIP server with registration, a hardware desk phone or another softphone
 brand, calls across NAT, or the real camera and microphone in this app (the spike covered the

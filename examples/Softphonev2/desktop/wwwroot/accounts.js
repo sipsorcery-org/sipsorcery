@@ -14,7 +14,8 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 const ICON = {
-  users: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>',
+  // A server: SIP accounts are registrations. (The two heads are People's, in history.js.)
+  users: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01M11 6.5h6M11 17.5h6"/></svg>',
   alert: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>',
   close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
@@ -139,6 +140,57 @@ function renderFrom() {
   btn.title = failed.length ? `Manage accounts: ${failed.map((a) => `${a.name} isn't registered (${a.regDetail || "failed"})`).join("; ")}` : "Manage accounts";
 }
 
+// The accounts, for the contacts' "Call from" picker (null in the web softphone, which has none).
+export const accountList = () => accounts;
+export const accountName = (id) => byId(id)?.name ?? null;
+
+let noteTimer = 0;
+// A short note under Call from, for a few seconds.
+function fromNote(text) {
+  const el = $("fromNote");
+  if (!el) return;
+  el.textContent = text;
+  el.hidden = false;
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => { el.hidden = true; }, 5000);
+}
+
+/**
+ * Before a call to a contact (or back to a recent call): Call from switches to the account it's
+ * called from, so the picker shows what the call uses. One that's been removed or disabled
+ * leaves Call from as it is, and says so. Returns the account id to dial with, or null for
+ * Call from's (also when there are no accounts, as in the web softphone).
+ */
+export function useAccount(id, who) {
+  if (!accounts || !id) return null;
+  const a = byId(id);
+  const cur = byId(selectedId);
+  const now = cur?.enabled ? cur.name : "no account (direct)";
+  if (!a || !a.enabled) {
+    const why = a ? `${a.name} is disabled` : `${who ? `${who}'s` : "Its"} account has been removed`;
+    fromNote(`${why}: calling from ${now}`);
+    log(`${why}: calling from ${now}`);
+    return null;
+  }
+  if (a.id !== selectedId) {
+    selectedId = a.id;
+    renderFrom();
+    post({ type: "account-select", id: a.id });
+    log(`call from ${a.name}${who ? ` (${who}'s account)` : ""}`);
+    // A brief flash, so the switch is seen.
+    const pick = $("fromSelect").parentElement;
+    pick.classList.remove("switched");
+    void pick.offsetWidth;
+    pick.classList.add("switched");
+  }
+  return a.id;
+}
+
+// History's view takes the stage's place: Accounts closes (an edit in progress is dropped, as with ×).
+export function closeAccounts() {
+  if (view.open) close(false);
+}
+
 function open(page) {
   if (!view.open) Object.assign(view, { open: true, page: "list", error: null, confirmRemove: false });
   if (page) view.page = page;
@@ -147,12 +199,12 @@ function open(page) {
   renderFrom();
 }
 
-function close() {
+function close(focus = true) {
   Object.assign(view, { open: false, page: "list", error: null, confirmRemove: false });
   $("accounts").hidden = true;
   $("accounts").replaceChildren();
   renderFrom();
-  $("manageAccounts").focus();
+  if (focus) $("manageAccounts").focus();
 }
 
 function showList() {

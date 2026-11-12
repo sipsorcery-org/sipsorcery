@@ -25,13 +25,28 @@
     </header>
 
     <form class="dialbar" id="dialForm" autocomplete="off">
+      <!-- People (history.js): the Recent and Contacts view, with the missed-call badge. Hidden
+           until the host sends call history. -->
+      <button type="button" class="btn icon-btn people-btn" id="peopleBtn" aria-label="Contacts" title="Contacts" hidden><span class="missed-count" id="peopleCount"></span></button>
       <!-- Desktop only (accounts.js): the account calls go out from, its registration, and Manage
            accounts. Hidden until the host sends its accounts; the web softphone never does. -->
       <div class="from" id="from" hidden>
         <button type="button" class="btn icon-btn from-manage" id="manageAccounts" aria-label="Manage accounts" title="Manage accounts"></button>
         <span class="from-pick"><span class="from-dot" id="fromDot"></span><select id="fromSelect" aria-label="Call from"></select></span>
+        <!-- Why a call to a contact didn't use its account (accounts.js useAccount). -->
+        <span class="from-note" id="fromNote" role="status" hidden></span>
       </div>
-      <input id="address" type="text" placeholder="Number or SIP address, e.g. sip:alice@example.com" spellcheck="false" aria-label="Number or SIP address">
+      <!-- Focusing the address (or /) lists recent calls and contacts; typing filters them (app.js,
+           "Address field suggestions"). -->
+      <div class="dest-wrap">
+        <input id="address" type="text" placeholder="Name, number or SIP address, e.g. sip:alice@example.com" spellcheck="false" aria-label="Number or SIP address"
+          role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="dialSuggest">
+        <div class="dial-suggest" id="dialSuggest" role="listbox" aria-label="Recent calls and contacts" hidden></div>
+        <!-- The address is a saved contact's: the mark and their name, inside the field (app.js). -->
+        <span class="dest-contact" id="destContact" role="status" hidden></span>
+        <!-- Empties the field, at its far right while it has text (app.js renderDestContact). -->
+        <button type="button" class="dest-clear" id="destClear" aria-label="Clear" title="Clear" hidden></button>
+      </div>
       <!-- What kind of call Call places. Audio leaves video out of the offer; it can be added later. -->
       <!-- A slide switch, not two buttons: the words either side say what it chooses between. -->
       <div class="slide call-type" id="callType">
@@ -42,9 +57,10 @@
       <button type="submit" class="btn btn-primary" id="callBtn">Call</button>
     </form>
 
-    <!-- Active calls, down the left beside the stage and controls. The chevron collapses it to a
-         narrow rail that still shows a live call; the choice is remembered. On narrow windows
-         it's always the rail, and expanding it lays the panel over the stage for a moment. -->
+    <!-- Active calls, down the left beside the stage and controls. The chevron (or [) hides it
+         to the left, leaving the arrow tab below to bring it back; the choice is remembered. On
+         narrow windows it's a rail instead, and expanding it lays the panel over the stage for a
+         moment. -->
     <aside class="calls" id="calls" aria-label="Calls">
       <div class="calls-head">
         <span class="calls-title" id="callsTitle">Active calls</span>
@@ -52,12 +68,38 @@
         <button type="button" class="calls-toggle" id="callsToggle" aria-controls="callList"></button>
       </div>
       <ol class="call-list" id="callList"></ol>
-      <!-- With two or more calls: every call at once. End all asks again before it ends them. -->
+      <!-- With two or more calls: every call at once. Grid shows them all as tiles (G too); it looks
+           pressed while it's on, and picking a call (its row or its tile) goes back to Focus. End
+           all asks again before it ends them. -->
       <div class="calls-foot" id="callsFoot" hidden>
+        <button type="button" class="btn calls-all calls-grid" id="gridBtn" aria-pressed="false"></button>
         <button type="button" class="btn calls-all" id="muteAllBtn"></button>
         <button type="button" class="btn btn-danger calls-all" id="endAllBtn"></button>
       </div>
+      <!-- Call history (history.js), under the calls: the latest few, each with a call-back
+           button, and See all history for the History view. The caret folds it (remembered); the
+           red badge counts missed calls you haven't looked at. On the rail it's one History
+           button with that badge. Hidden until the host sends a history. -->
+      <section class="hist-side" id="histSide" aria-labelledby="histHead" hidden>
+        <div class="hist-head">
+          <button type="button" class="hist-fold" id="histToggle" aria-controls="histBody"><span id="histHead">History</span></button>
+          <span class="missed-count" id="missedCount"></span>
+        </div>
+        <div class="hist-body" id="histBody">
+          <ol class="hist-list" id="histList"></ol>
+          <button type="button" class="see-all" id="seeAllHistory">See all history</button>
+        </div>
+        <button type="button" class="btn hist-rail" id="histRail" aria-label="Call history"><span class="missed-count" id="histRailCount"></span></button>
+      </section>
     </aside>
+    <!-- With the panel hidden (wider windows): a small arrow tab on the left edge brings it back
+         ([ too). It shows how many calls are live, and a red dot for a ringing call or missed
+         calls you haven't seen. -->
+    <button type="button" class="calls-tab" id="callsTab" aria-controls="calls" aria-expanded="false" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+      <span class="tab-count" id="callsTabCount"></span>
+      <span class="missed-count" id="callsTabMissed"></span>
+    </button>
 
     <!-- The stage, with the real-time text popover and toast over its bottom edge. -->
     <div class="stage-row">
@@ -111,7 +153,7 @@
       <!-- Who the call is with and for how long; the chevron drops down the call's details. -->
       <div class="info" id="info" hidden>
         <button type="button" class="info-head" id="infoHead" aria-expanded="false" aria-controls="details" title="Show call details">
-          <span id="infoName"></span><span class="timer" id="timer"></span><span class="muted-pill" id="mutedPill" hidden></span><span class="info-chevron" id="infoChevron"></span>
+          <span id="infoName"></span><span class="info-contact" id="infoContact" hidden></span><span class="timer" id="timer"></span><span class="muted-pill" id="mutedPill" hidden></span><span class="info-chevron" id="infoChevron"></span>
         </button>
         <div class="details" id="details" hidden></div>
       </div>
@@ -137,9 +179,21 @@
         <div class="q-foot" id="qFoot"></div>
       </div>
     </main>
+    <!-- The dock: a side panel right of the call, holding the keypad and the text panel when
+         they're docked (their dock buttons; app.js moves them in and out). -->
+    <div class="dock" id="dock" hidden></div>
 
     <!-- A call ringing while you're on another: who, and Answer & hold current or Decline. The
          name opens the full answer view. -->
+    <!-- A call you're placing while on another: Calling… until it's answered (then it's in the
+         list and on the stage), or why it wasn't. -->
+    <div class="incoming outgoing" id="outgoing" role="status" hidden>
+      <span class="incoming-who" id="outgoingWho"></span>
+      <span class="incoming-what" id="outgoingWhat"></span>
+      <span class="incoming-actions">
+        <button type="button" class="btn btn-danger" id="outgoingCancel">Cancel</button>
+      </span>
+    </div>
     <div class="incoming" id="incoming" role="alert" hidden>
       <button type="button" class="incoming-who" id="incomingWho"></button>
       <span class="incoming-what" id="incomingWhat"></span>
@@ -151,12 +205,21 @@
 
     <!-- Manage accounts (desktop only, accounts.js): over the stage, which carries on under it. -->
     <section class="am" id="accounts" hidden aria-label="Accounts"></section>
+    <!-- Call history (history.js): over the stage like Accounts, which carries on under it. -->
+    <section class="am hv" id="historyView" hidden aria-label="People: recent calls and contacts"></section>
+    <!-- History's notices: Removed … with Undo, and Copied. -->
+    <div class="hist-toast" id="histToast" role="status" hidden>
+      <span class="hist-toast-text" id="histToastText"></span>
+      <button type="button" class="hist-toast-undo" id="histToastUndo">Undo</button>
+      <button type="button" class="hist-toast-x" id="histToastClose" aria-label="Dismiss" title="Dismiss">×</button>
+    </div>
 
     <!-- Real-time text (RFC 4103): a popover over the stage, above the Text button. Clicking
          away or Esc closes it. -->
     <aside class="rtt" id="rtt" hidden aria-label="Real-time text">
       <div class="rtt-head">
         <span class="rtt-title">Text</span><span class="rtt-sub">Real-time · RFC 4103</span>
+        <button type="button" class="rtt-close rtt-dock" id="rttDock" aria-pressed="false" aria-label="Dock text"></button>
         <button type="button" class="rtt-close" id="rttClose" aria-label="Close text" title="Close text (Esc)"></button>
       </div>
       <div class="rtt-log" id="rttLog" role="log" aria-label="Conversation"></div>
@@ -168,6 +231,20 @@
         <div class="rtt-hint" id="rttHint"></div>
         <button type="button" class="btn rtt-add" id="rttAdd">Add text to this call</button>
       </div>
+    </aside>
+
+    <!-- The keypad: a popover over the stage, above the Keypad button. Each key sends a DTMF tone
+         on the selected call (RFC 4733, or SIP INFO). While it's open the number keys, * and #
+         send tones too; Esc or a click away closes it. -->
+    <aside class="keypad-pop" id="keypad" hidden aria-label="Keypad">
+      <div class="rtt-head">
+        <span class="rtt-title" id="keypadTitle">Keypad</span><span class="rtt-sub">Tones · DTMF</span>
+        <button type="button" class="rtt-close rtt-dock" id="keypadDock" aria-pressed="false" aria-label="Dock keypad"></button>
+        <button type="button" class="rtt-close" id="keypadClose" aria-label="Close keypad" title="Close keypad (Esc)"></button>
+      </div>
+      <div class="dtmf-display" id="keypadDigits" role="status" aria-label="Tones sent"></div>
+      <div class="keypad" id="keypadKeys"></div>
+      <div class="keypad-in" id="keypadIn" role="status"></div>
     </aside>
 
     <!-- Text arriving with the popover closed: who and what, for a few seconds. -->
@@ -199,11 +276,8 @@
       <button type="button" class="btn" id="holdBtn" aria-pressed="false" disabled></button>
       <button type="button" class="btn btn-danger" id="hangupBtn" disabled></button>
       <div class="controls-right">
-        <!-- Focus (the selected call) or Grid (every active call), G too. Grid needs two calls. -->
-        <div class="view-btns" id="viewToggle" role="group" aria-label="Call view" hidden>
-          <button type="button" class="btn" data-view="focus" id="viewFocus"></button>
-          <button type="button" class="btn" data-view="grid" id="viewGrid"></button>
-        </div>
+        <!-- The keypad (DTMF) for the selected call, in Focus view: opens the pad above it. -->
+        <button type="button" class="btn icon-btn keypad-btn" id="keypadBtn" aria-pressed="false" aria-label="Keypad" aria-controls="keypad" disabled></button>
         <!-- Real-time text, rarely used: an icon that opens the popover above it (T too). -->
         <button type="button" class="btn icon-btn text-btn" id="textBtn" aria-pressed="false" aria-label="Text" disabled></button>
         <!-- On a video call: hides or shows your self view (V too). At the right, under it. -->

@@ -5,7 +5,7 @@
 //    before a call), and the self view (the self-view button, V).
 //  - Calls: answer automatically, with your camera off, and whether several calls show in a grid
 //    (the Focus | Grid switch in the control bar, and G, set the same thing).
-//  - Appearance: the theme, system, light or dark.
+//  - Appearance: the theme, system, light or dark, and Gravatar pictures for people (avatar.js).
 //  - Account: who you're signed in as. Managing SIP accounts will live here.
 //  - Diagnostics: opens the panel F12 opens, handy where a browser keeps F12 for itself.
 // Every change applies straight away. They're kept in the page's storage: on the desktop that's
@@ -16,7 +16,8 @@
 const KEY = "softphonev2.settings";
 // theme: "system", "light" or "dark". camOn: video calls start with the camera on. view: "focus"
 // shows only the selected call; "grid" shows every active call side by side, with two or more.
-export const prefs = { theme: "system", camOn: true, autoAnswer: false, view: "focus" };
+// gravatar: show Gravatar pictures in place of initials (avatar.js).
+export const prefs = { theme: "system", camOn: true, autoAnswer: false, view: "focus", gravatar: true };
 try { Object.assign(prefs, JSON.parse(localStorage.getItem(KEY) ?? "{}")); } catch { /* storage unavailable */ }
 
 export function savePref(name, value) {
@@ -69,6 +70,8 @@ export function initSettings(app) {
         <div class="settings-seg" role="radiogroup" aria-labelledby="setThemeHead">
           ${["system", "light", "dark"].map((t) => `<label><input type="radio" name="theme" value="${t}">${t === "system" ? "System" : t === "light" ? "Light" : "Dark"}</label>`).join("")}
         </div>
+        <label class="check-row"><input type="checkbox" data-pref="gravatar">Show Gravatar pictures for people</label>
+        <p class="settings-note">In place of their initial: their picture, or a pattern made from their address if they have none. It asks gravatar.com, sending a hash of each address shown.</p>
       </section>
       <section class="settings-section" aria-labelledby="setAcctHead">
         <h3 id="setAcctHead">Account</h3>
@@ -119,6 +122,7 @@ export function initSettings(app) {
     q('[data-pref="selfView"]').checked = app.selfView();
     q('[data-pref="autoAnswer"]').checked = prefs.autoAnswer;
     q('[data-pref="grid"]').checked = prefs.view === "grid";
+    q('[data-pref="gravatar"]').checked = prefs.gravatar !== false;
     for (const r of dlg.querySelectorAll('input[name="theme"]')) r.checked = r.value === (prefs.theme || "system");
     const acct = app.account();
     q("#setAccount").textContent = acct || "Not signed in";
@@ -158,6 +162,10 @@ export function initSettings(app) {
       app.log(`settings: answer calls automatically ${t.checked ? "on" : "off"}`);
     } else if (t.dataset.pref === "grid") {
       app.setView(t.checked ? "grid" : "focus");
+    } else if (t.dataset.pref === "gravatar") {
+      savePref("gravatar", t.checked);
+      document.dispatchEvent(new CustomEvent("gravatar-changed"));
+      app.log(`settings: Gravatar pictures ${t.checked ? "on" : "off"}`);
     } else if (t.name === "theme") {
       savePref("theme", t.value);
       applyTheme();

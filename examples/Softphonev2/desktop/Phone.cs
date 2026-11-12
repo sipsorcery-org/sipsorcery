@@ -55,6 +55,16 @@ public sealed class Phone : IDisposable
         public string TextState { get; internal set; } = "off";
         /// <summary>The call is with a browser phone (SIP over WebSocket), so its media is WebRTC.</summary>
         public bool WebRtc { get; internal set; }
+        /// <summary>When it was placed, or started ringing.</summary>
+        public DateTime StartedAt { get; } = DateTime.Now;
+        /// <summary>When it was answered; null if it never was.</summary>
+        public DateTime? ConnectedAt { get; internal set; }
+        /// <summary>When it ended.</summary>
+        public DateTime? EndedAt { get; internal set; }
+        /// <summary>The final response that turned down a call we placed, e.g. "486 Busy Here".</summary>
+        public string? FailureResponse { get; internal set; }
+        /// <summary>We hung it up (or cancelled it) ourselves.</summary>
+        public bool EndedByUs => HangingUp;
 
         internal SIPUserAgent? Ua;
         internal SIPServerUserAgent? Incoming;
@@ -133,6 +143,8 @@ public sealed class Phone : IDisposable
     public event Action? Changed;
     /// <summary>A connected call's relay needs the page's answer to this offer.</summary>
     public event Action<Call, string>? MediaOffer;
+    /// <summary>A call has ended, once: for the call history.</summary>
+    public event Action<Call>? Ended;
     public event Action<string>? Log;
     /// <summary>The far end's RTCP says our audio is (true) or is again not (false) failing to reach them.</summary>
     public event Action<Call, bool>? TxLostChanged;
@@ -321,7 +333,10 @@ public sealed class Phone : IDisposable
         // The REGISTER goes to the server on the account's transport. The Contact names that
         // transport too: the library leaves it off a REGISTER's Contact, and a contact without
         // one means UDP, so a registrar that took it as given would call back on the wrong one.
-        var contact = new SIPURI(aor.Scheme, new SIPEndPoint(a.Protocol, IPAddress.Any, 0));
+        // It names the account's user too: two accounts on one server share this address, and a
+        // server that calls us on the contact (rewriting To to it, as sipsorcery.com does) then
+        // still says which account the call is for.
+        var contact = new SIPURI(aor.Scheme, new SIPEndPoint(a.Protocol, IPAddress.Any, 0)) { User = a.Username };
         var agent = new SIPRegistrationUserAgent(_transport, null, aor, a.AuthUser, a.Password, null, a.RegistrarUri,
             contact, a.Expiry, null);
         reg.Agent = agent;
@@ -378,15 +393,17 @@ public sealed class Phone : IDisposable
     /// </summary>
     private SipAccount? AccountForIncoming(SIPRequest req)
     {
-        var to = req.Header.To?.ToURI;
-        if (to == null) return null;
         lock (_accounts)
         {
             var enabled = _accounts.Values.Select(r => r.Account).Where(a => a.Enabled).ToList();
-            return (enabled.FirstOrDefault(a => string.Equals(a.Username, to.User, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(a.Domain, to.HostAddress, StringComparison.OrdinalIgnoreCase))
-                ?? enabled.FirstOrDefault(a => string.Equals(a.Username, to.User, StringComparison.OrdinalIgnoreCase)))
-                ?.Clone();
+            SipAccount? ByUser(SIPURI? uri) => uri == null || string.IsNullOrEmpty(uri.User) ? null
+                : enabled.FirstOrDefault(a => string.Equals(a.Username, uri.User, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(a.Domain, uri.HostAddress, StringComparison.OrdinalIgnoreCase))
+                ?? enabled.FirstOrDefault(a => string.Equals(a.Username, uri.User, StringComparison.OrdinalIgnoreCase));
+            // To names who they called; a server that calls the registered contact may rewrite To
+            // to it (sipsorcery.com does), and then the user in our contact (the request URI)
+            // says which account. With one account it can only be that one.
+            return (ByUser(req.Header.To?.ToURI) ?? ByUser(req.URI) ?? (enabled.Count == 1 ? enabled[0] : null))?.Clone();
         }
     }
 
@@ -483,6 +500,7 @@ public sealed class Phone : IDisposable
         ua.ClientCallFailed += (_, err, resp) =>
         {
             response = resp;
+            c.FailureResponse = resp is { StatusCode: >= 300 } ? $"{resp.StatusCode} {resp.ReasonPhrase}".TrimEnd() : null;
             string said = resp != null ? $"{resp.StatusCode} {resp.ReasonPhrase}" : "";
             failure = resp is { StatusCode: >= 200 and < 300 } ? "Their answer's media doesn't match ours"
                 : resp is { Status: SIPResponseStatusCodesEnum.NotAcceptableHere } ? "They can't take this call's media (488)"
@@ -835,6 +853,98 @@ public sealed class Phone : IDisposable
         else if (c.Rtt?.CanSendText == true) c.Rtt.SendText(text);
     }
 
+    // ---- DTMF: the keypad ----
+    // Sent as RFC 4733 telephone-events in the call's audio when the far end's SDP has
+    // telephone-event (we always offer it: SIPSorcery adds it to every audio track), otherwise
+    // as SIP INFO (application/dtmf-relay), which many PBXs and IVRs also take. Received either
+    // way, and reported through DtmfReceived for the call's log.
+
+    /// <summary>A keypad digit they sent on a call, and how: "RFC 4733" or "SIP INFO".</summary>
+    public event Action<Call, string, string>? DtmfReceived;
+
+    /// <summary>The DTMF event codes, in order (RFC 4733 section 3.2): 0–9, then *, #, A–D.</summary>
+    private const string DtmfDigits = "0123456789*#ABCD";
+
+    /// <summary>The far end's telephone-event format (e.g. 101 telephone-event/8000), or null if their SDP has none.</summary>
+    private static SDPAudioVideoMediaFormat? NegotiatedDtmf(RTPSession rtp)
+    {
+        var audio = rtp.RemoteDescription?.Media.FirstOrDefault(m => m.Media == SDPMediaTypesEnum.audio && m.Port != 0);
+        // As nullable: FirstOrDefault on the struct itself gives a default format, not "none".
+        return audio?.MediaFormats.Values
+            .Where(f => string.Equals(f.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase))
+            .Select(f => (SDPAudioVideoMediaFormat?)f).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Sends a keypad digit (0–9, *, #) on a connected call that isn't on hold either way:
+    /// RFC 4733 if they agreed telephone-event, otherwise SIP INFO. Presses queue, one tone at a time.
+    /// </summary>
+    public async Task SendDtmf(string id, string digit)
+    {
+        var c = Find(id);
+        int code = digit?.Length == 1 ? DtmfDigits.IndexOf(char.ToUpperInvariant(digit[0])) : -1;
+        if (c == null || code < 0) return;
+        if (c.State != CallState.Connected || c.Held || c.HeldByThem)
+        {
+            Log?.Invoke($"call {c.Id}: DTMF '{digit}' not sent: the call is {(c.State != CallState.Connected ? "not connected" : "on hold")}");
+            return;
+        }
+        var (rtp, relay, ua) = (c.Rtp, c.Relay, c.Ua);
+        if (rtp != null && NegotiatedDtmf(rtp) is { } ev)
+        {
+            bool sent = relay != null && await relay.SendDtmfAsync((byte)code, ev.ID, ev.ClockRate());
+            Log?.Invoke(sent ? $"call {c.Id}: DTMF '{digit}' sent (RFC 4733, telephone-event/{ev.ClockRate()} pt {ev.ID})"
+                : $"call {c.Id}: DTMF '{digit}' not sent: no audio going to them yet");
+            return;
+        }
+        if (ua?.Dialogue is not { } dialogue)
+        {
+            Log?.Invoke($"call {c.Id}: DTMF '{digit}' not sent: no SIP dialog");
+            return;
+        }
+        var info = dialogue.GetInDialogRequest(SIPMethodsEnum.INFO);
+        info.Body = $"Signal={digit}\r\nDuration=160\r\n";
+        info.Header.ContentType = "application/dtmf-relay";
+        info.Header.ContentLength = info.Body.Length;
+        var tx = new SIPNonInviteTransaction(_transport, info, null);
+        tx.NonInviteTransactionFinalResponseReceived += (_, _, _, resp) =>
+        {
+            Log?.Invoke($"call {c.Id}: DTMF '{digit}' by SIP INFO: {resp.ShortDescription}");
+            return Task.FromResult(System.Net.Sockets.SocketError.Success);
+        };
+        Log?.Invoke($"call {c.Id}: DTMF '{digit}': their SDP has no telephone-event, sending SIP INFO");
+        tx.SendRequest();
+    }
+
+    /// <summary>
+    /// A SIP INFO in one of our calls. SIPSorcery's user agent leaves INFO alone (it doesn't own
+    /// the transport), so it's answered here: 200 for DTMF (application/dtmf-relay "Signal=5", or
+    /// application/dtmf "5"), 415 for anything else, 481 if it isn't in a call of ours.
+    /// </summary>
+    private async Task OnInfo(SIPRequest req)
+    {
+        var c = Calls.FirstOrDefault(x => x.Live && x.Ua?.Dialogue?.CallId == req.Header.CallId);
+        string? digit = null;
+        var type = req.Header.ContentType ?? "";
+        if (type.StartsWith("application/dtmf-relay", StringComparison.OrdinalIgnoreCase))
+        {
+            var line = (req.Body ?? "").Split('\n').Select(l => l.Trim()).FirstOrDefault(l => l.StartsWith("Signal", StringComparison.OrdinalIgnoreCase));
+            digit = line?.Split('=', 2).ElementAtOrDefault(1)?.Trim();
+        }
+        else if (type.StartsWith("application/dtmf", StringComparison.OrdinalIgnoreCase)) digit = req.Body?.Trim();
+        bool ok = digit?.Length == 1 && DtmfDigits.Contains(char.ToUpperInvariant(digit[0]));
+        var status = c == null ? SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist
+            : ok ? SIPResponseStatusCodesEnum.Ok : SIPResponseStatusCodesEnum.UnsupportedMediaType;
+        await _transport.SendResponseAsync(SIPResponse.GetResponse(req, status, null));
+        if (c != null && ok) OnDtmfIn(c, char.ToUpperInvariant(digit![0]).ToString(), "SIP INFO");
+    }
+
+    private void OnDtmfIn(Call c, string digit, string via)
+    {
+        Log?.Invoke($"call {c.Id}: DTMF '{digit}' received ({via})");
+        DtmfReceived?.Invoke(c, digit, via);
+    }
+
     /// <summary>
     /// Adds text to a call that doesn't have it: a re-INVITE with m=text. If they accept, text
     /// starts (see <see cref="OnRemoteDescriptionChanged"/>); if not within 8 s, it's refused.
@@ -915,6 +1025,7 @@ public sealed class Phone : IDisposable
     private async Task ConnectedAsync(Call c, RTPSession rtp)
     {
         rtp.OnRemoteDescriptionChanged += _ => OnRemoteDescriptionChanged(c, rtp);
+        c.ConnectedAt ??= DateTime.Now;
         SetState(c, CallState.Connected);
         await StartTextIfAgreed(c, rtp);
         await StartRelayAsync(c, rtp);
@@ -962,6 +1073,7 @@ public sealed class Phone : IDisposable
             await _transport.SendResponseAsync(SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.MethodNotAllowed, "Not a registrar"));
             return;
         }
+        if (req.Method == SIPMethodsEnum.INFO) { await OnInfo(req); return; }
         if (req.Method != SIPMethodsEnum.INVITE || !string.IsNullOrEmpty(req.Header.To.ToTag)) return;
 
         Call c;
@@ -1025,6 +1137,8 @@ public sealed class Phone : IDisposable
         ua.OnCallHungup += _ => { if (!c.HangingUp && c.Ua == ua && c.State == CallState.Connected) End(c, "They hung up"); };
         ua.RemotePutOnHold += () => { if (c.Ua != ua) return; c.HeldByThem = true; Log?.Invoke($"{c.Remote} put the call on hold"); Changed?.Invoke(); };
         ua.RemoteTookOffHold += () => { if (c.Ua != ua) return; c.HeldByThem = false; Log?.Invoke($"{c.Remote} took the call off hold"); Changed?.Invoke(); };
+        // Keypad tones they send as RFC 4733 telephone-events: once per tone, at its start.
+        ua.OnDtmfTone += (tone, _) => { if (c.Ua == ua && tone < DtmfDigits.Length) OnDtmfIn(c, DtmfDigits[tone].ToString(), "RFC 4733"); };
         // They add video to a call that has none of ours yet (an audio call we placed: its
         // session was made without video): put our video codecs on it before the answer is
         // written, or the answer turns video down (m=video 0). Video they add starts with our
@@ -1058,8 +1172,10 @@ public sealed class Phone : IDisposable
             c.Ua = null;
             c.Incoming = null;
             c.Held = c.HeldByThem = c.HoldWanted = false;
+            c.EndedAt = DateTime.Now;
             SetState(c, CallState.Ended);
         }
+        try { Ended?.Invoke(c); } catch (Exception ex) { Log?.Invoke($"recording call {c.Id} in history failed: {ex.Message}"); }
         // Kept for a moment, so the page can say how it ended, then dropped from the list.
         _ = Task.Delay(EndedKeepMs).ContinueWith(_ =>
         {

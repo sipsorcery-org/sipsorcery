@@ -105,6 +105,59 @@ public sealed class MediaRelay : IDisposable
     public volatile int AudioLossPercent, VideoLossPercent;
     private readonly Dictionary<string, (uint Seq, double Lost)> _lossTotals = [];
 
+    // DTMF (RFC 4733): the last audio packet sent to the SIP side, and how far the page's audio
+    // sequence numbers have been moved along to make room for the event packets put in between.
+    private readonly object _audioOutLock = new();
+    private ushort _seqShift, _lastAudioSeq;
+    private uint _lastAudioTs;
+    private bool _audioSeen;
+    private readonly SemaphoreSlim _dtmfOne = new(1, 1);
+
+    /// <summary>
+    /// Sends a DTMF digit (0–15: 0–9, * is 10, # is 11) as an RFC 4733 telephone-event on the
+    /// SIP leg, in the page's audio stream: the event's timestamp is the audio's at the moment the
+    /// key was pressed, and its packets take the next sequence numbers, the audio after it moving
+    /// along to match. (RTPSession.SendDtmf keeps a timestamp and sequence of its own, which here,
+    /// with the page's audio relayed as it is, would jump about.) The audio goes on meanwhile.
+    /// One digit at a time: presses queue. False if no audio has gone yet to put it in.
+    /// </summary>
+    public async Task<bool> SendDtmfAsync(byte digit, int payloadType, int clockRate, int toneMs = 160)
+    {
+        await _dtmfOne.WaitAsync();
+        try
+        {
+            uint ts;
+            lock (_audioOutLock)
+            {
+                if (!_audioSeen || !SipReady) return false;
+                ts = _lastAudioTs;
+            }
+            const int packetMs = 20;
+            ushort step = (ushort)(clockRate * packetMs / 1000), total = (ushort)(clockRate * toneMs / 1000);
+            void Send(bool end, ushort duration, int marker)
+            {
+                ushort seq;
+                lock (_audioOutLock) { _seqShift++; seq = ++_lastAudioSeq; }
+                var payload = new RTPEvent(digit, end, RTPEvent.DEFAULT_VOLUME, duration, payloadType).GetEventPayload();
+                _sip.SendRtpRaw(SDPMediaTypesEnum.audio, payload, ts, marker, payloadType, seq);
+            }
+            // The start (marker bit on the first), an update every 20 ms, then the end, three times
+            // over as RFC 4733 suggests for the packets that matter most.
+            Send(false, step, 1);
+            for (ushort d = step; d < total; )
+            {
+                await Task.Delay(packetMs);
+                d = (ushort)Math.Min(total, d + step);
+                if (d < total) Send(false, d, 0);
+            }
+            for (int i = 0; i < 3; i++) Send(true, total, 0);
+            // A short gap before the next digit, so two of the same aren't heard as one.
+            await Task.Delay(60);
+            return true;
+        }
+        finally { _dtmfOne.Release(); }
+    }
+
 
     /// <summary>
     /// The audio and video codecs we offer on the SIP side, in order of preference. All are ones
@@ -250,12 +303,21 @@ public sealed class MediaRelay : IDisposable
             sipPc.onconnectionstatechange += _sipPcState;
         }
 
-        // Page -> SIP.
+        // Page -> SIP. Audio goes on with the page's sequence numbers, moved along by one for each
+        // DTMF packet put in between (see SendDtmfAsync), so the far end sees no gap or repeat.
         pc.OnRtpPacketReceived += (_, kind, pkt) =>
         {
             if (kind == SDPMediaTypesEnum.video) _pageVideoSsrc = pkt.Header.SyncSource;
-            if (kind == SDPMediaTypesEnum.audio && Lose(AudioLossPercent)) return;
-            if (kind == SDPMediaTypesEnum.audio && SipReady && ++_audioOut > 0 && !SendPastTheirHold(pkt))
+            if (kind != SDPMediaTypesEnum.audio) return;
+            lock (_audioOutLock)
+            {
+                pkt.Header.SequenceNumber = (ushort)(pkt.Header.SequenceNumber + _seqShift);
+                _lastAudioSeq = pkt.Header.SequenceNumber;
+                _lastAudioTs = pkt.Header.Timestamp;
+                _audioSeen = true;
+            }
+            if (Lose(AudioLossPercent)) return;
+            if (SipReady && ++_audioOut > 0 && !SendPastTheirHold(pkt))
                 _sip.SendRtpRaw(SDPMediaTypesEnum.audio, pkt.Payload, pkt.Header.Timestamp, pkt.Header.MarkerBit, pkt.Header.PayloadType, pkt.Header.SequenceNumber);
         };
         pc.OnVideoFrameReceived += (_, ts, frame, _) =>

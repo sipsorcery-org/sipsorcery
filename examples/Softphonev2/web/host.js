@@ -80,6 +80,7 @@ let nextId = 0;
 function newCall(fields) {
   const c = {
     id: String(++nextId), session: null, call: "idle", remote: null, reason: null, outgoing: false,
+    startedAt: Date.now(), connectedAt: 0,   // for the call history
     wantVideo: false, incomingVideo: false, theirPhone: null, held: false, heldByThem: false,
     mediaUp: false,            // the first offer and answer are done: later ones are re-INVITEs
     pc: null,                  // the page's RTCPeerConnection for the call
@@ -100,6 +101,8 @@ function stateMessage() {
       incomingVideo: c.incomingVideo, held: c.held, heldByThem: c.heldByThem, holdBusy: !!c.holdBusy, holdMode: HOLD_MODE,
       // Real-time text on a T.140 data channel (see below): off, adding (opening), on or refused.
       text: c.call === "connected" ? c.text.state : "off",
+      // Whether the keypad can send tones on it (see sendDtmf); left out while not known.
+      dtmf: c.call === "connected" ? canDtmf(c) : undefined,
     })),
     maxCalls: MAX_CALLS,
     // The page knows registered, registering and failed; connected without registering shows as registered.
@@ -116,7 +119,7 @@ function setCall(c, phase, reason = null) {
   if (phase === "calling" || phase === "ringing" || phase === "ended") resetText(c);
   c.reason = phase === "ended" ? reason : null;
   log(`call ${c.id} ${phase} ${c.remote ?? ""} ${c.reason ?? ""}`.trimEnd());
-  if (phase === "connected") { c.mediaUp = true; updateText(c); }
+  if (phase === "connected") { c.mediaUp = true; c.connectedAt ||= Date.now(); updateText(c); }
   sendState();
 }
 
@@ -124,7 +127,65 @@ function end(c, reason) {
   if (!c || c.call === "idle" || c.call === "ended") return;
   c.held = c.heldByThem = false;
   setCall(c, "ended", reason);
+  addHistory(c);
   setTimeout(() => { calls.delete(c.id); sendState(); }, ENDED_KEEP_MS);
+}
+
+// ---- Call history ----
+//
+// As the desktop host keeps it (History.cs), but in this browser's storage: every call that ends,
+// newest first, at most HISTORY_MAX. The page gets all of it in a history message on ready and
+// whenever it changes, and sends history-remove {ids} and history-restore {ids} (Undo).
+
+const HISTORY_MAX = 500;
+const HISTORY_KEY = "callHistory";
+const removedHistory = new Map();   // id -> entry, for Undo, until the page is closed
+function loadHistory() {
+  try { const h = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]"); return Array.isArray(h) ? h : []; } catch { return []; }
+}
+let history = loadHistory();
+function saveHistory() {
+  history.sort((a, b) => b.at - a.at);
+  history = history.slice(0, HISTORY_MAX);
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch { /* storage unavailable */ }
+  if (pageReady) toPage({ type: "history", entries: history, max: HISTORY_MAX });
+}
+// "486 Busy Here" in a word or two, as History.cs has them.
+function historyNote(reason) {
+  const code = Number(/^(\d{3}) /.exec(reason ?? "")?.[1]);
+  return ({ 404: "Number not found", 604: "Number not found", 408: "No answer", 487: "No answer", 480: "Not available",
+    486: "Busy", 600: "Busy", 603: "Declined", 488: "Media not accepted", 606: "Media not accepted",
+    401: "Not allowed", 403: "Not allowed", 407: "Not allowed", 503: "Service unavailable" })[code] ?? "Call failed";
+}
+function addHistory(c) {
+  const m = /^\s*"?([^"<]*?)"?\s*<([^>]+)>/.exec(c.remote ?? "");
+  const e = {
+    id: Math.random().toString(16).slice(2, 14), dir: c.outgoing ? "out" : "in",
+    name: m?.[1].trim() || null, uri: m ? m[2].trim() : c.remote ?? "", account: null, accountName: acct ? `${acct.username}@${acct.domain}` : null,
+    at: c.startedAt, duration: c.connectedAt ? Date.now() - c.connectedAt : 0, note: null, sip: null, reason: c.reason,
+  };
+  if (!e.uri) return;
+  if (!c.connectedAt) {
+    if (!c.outgoing) { if (c.reason === "Declined") e.note = "Declined"; else if (c.reason?.startsWith("Couldn't answer")) e.note = "Couldn't answer"; else e.dir = "missed"; }
+    else if (c.reason === "You hung up") e.note = "Cancelled";
+    else { e.sip = /^\d{3} /.test(c.reason ?? "") ? c.reason : null; e.note = historyNote(c.reason); }
+  }
+  history.unshift(e);
+  saveHistory();
+}
+function removeHistory(ids) {
+  const set = new Set(ids ?? []);
+  for (const e of history.filter((x) => set.has(x.id))) removedHistory.set(e.id, e);
+  history = history.filter((x) => !set.has(x.id));
+  saveHistory();
+}
+function restoreHistory(ids) {
+  for (const id of ids ?? []) {
+    const e = removedHistory.get(id);
+    if (e && !history.some((x) => x.id === id)) history.push(e);
+    removedHistory.delete(id);
+  }
+  saveHistory();
 }
 
 function sendState() { if (pageReady) toPage(stateMessage()); }
@@ -279,6 +340,30 @@ function resetText(c) {
 function sendText(c, chars) {
   const dc = c?.pc?.t140;
   if (c?.text.state === "on" && dc?.readyState === "open") dc.send(chars);
+}
+
+// ---- DTMF: the keypad, with the page's own audio sender ----
+// On the desktop the host sends the tones (RFC 4733, or SIP INFO). Here the page's connection goes
+// to the far end, so its audio sender does: RTCDTMFSender.insertDTMF puts RFC 4733
+// telephone-events in the outgoing audio. A call whose far end didn't agree telephone-event
+// can't (no SIP INFO here): its state says dtmf: false, and the page disables its keypad.
+const dtmfSender = (c) => c?.pc?.getSenders().find((s) => s.dtmf)?.dtmf ?? null;
+function canDtmf(c) {
+  const sdp = c?.pc?.remoteDescription?.sdp;
+  if (!sdp) return undefined;   // not known yet
+  return /^a=rtpmap:\d+ telephone-event\//im.test(sdp) && !!dtmfSender(c);
+}
+function sendDtmf(c, digit) {
+  if (!c || c.call !== "connected" || !/^[0-9*#]$/.test(digit ?? "")) return;
+  const dtmf = dtmfSender(c);
+  if (!dtmf?.canInsertDTMF) {
+    log(`call ${c.id}: DTMF '${digit}' not sent: the call didn't agree telephone-event (RFC 4733)`);
+    sendState();
+    return;
+  }
+  // Queued after any tones still playing: 100 ms each, 70 ms apart (the defaults).
+  dtmf.insertDTMF(dtmf.toneBuffer + digit);
+  log(`call ${c.id}: DTMF '${digit}' sent (RFC 4733, RTCDTMFSender)`);
 }
 
 // ---- Call quality: their RTCP reports, from the browser's stats ----
@@ -796,6 +881,7 @@ async function onPageMessage(msg) {
       pageReady = true;
       earlyLog.splice(0).forEach((text) => toPage({ type: "log", text }));
       log(acct ? `web softphone: ${aor()} via ${acct.wsUri}` : "web softphone: not signed in");
+      toPage({ type: "history", entries: history, max: HISTORY_MAX });
       toPage(stateMessage());
       dialAtStart();
       break;
@@ -817,8 +903,13 @@ async function onPageMessage(msg) {
     case "loss":
       setLoss(msg.audio, msg.video);
       break;
+    case "history-remove": removeHistory(msg.ids); break;
+    case "history-restore": restoreHistory(msg.ids); break;
     case "text":
       sendText(c, msg.text);
+      break;
+    case "dtmf":
+      sendDtmf(c, msg.digit);
       break;
     case "add-text":
       // Text goes in every call's SDP; there's no adding it to one that doesn't have it.
