@@ -199,8 +199,9 @@ namespace Vpx.Net.UnitTest
         // decoder reconstructs from its own state machine.
         private static List<(int Token, int Extra)> DecodeTokens(byte[] packed, IList<TOKENEXTRA> reference)
         {
-            // Pad with zeros for the bool reader's lookahead.
-            byte[] padded = new byte[packed.Length + 8];
+            // Pad with zeros for the bool reader's lookahead. Pinned because the reader keeps a pointer into it
+            // after vp8dx_start_decode returns.
+            byte[] padded = System.GC.AllocateArray<byte>(packed.Length + 8, pinned: true);
             System.Array.Copy(packed, padded, packed.Length);
 
             BOOL_DECODER br = new BOOL_DECODER();
