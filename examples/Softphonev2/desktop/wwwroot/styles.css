@@ -33,7 +33,7 @@ html, body { margin: 0; height: 100%; }
 /* The app above, and the diagnostics panel docked under it when open. */
 body { display: flex; flex-direction: column; background: var(--page); color: var(--text); font: 14px/1.4 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
 .shell { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: auto auto 1fr auto; gap: 12px; padding: 12px 16px 12px; }
-/* The stage, with the text popover and toast placed over it. */
+/* The stage, with the dock beside it and the toast placed over it. */
 .stage-row { position: relative; display: grid; min-height: 0; }
 
 .topbar { display: flex; align-items: center; justify-content: space-between; }
@@ -518,22 +518,16 @@ body:not(.diag) .diag-only { display: none; }
 .loss-row output.on { color: var(--danger); font-weight: 600; }
 .loss-note { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
 
-/* ---- Real-time text panel, beside the stage ---- */
-/* A popover over the stage's bottom right, just above the Text button. */
+/* ---- Real-time text panel, in the dock ---- */
 .rtt {
-  position: absolute; right: 12px; bottom: 12px; z-index: 6; width: min(320px, calc(100% - 24px)); height: min(400px, calc(100% - 24px));
   display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
 }
 .rtt[hidden] { display: none; }
 /* The keypad, from the prototype: the tones sent so far, then 12 keys with their letters. */
 .keypad-pop {
-  position: absolute; right: 12px; bottom: 12px; z-index: 6; width: min(250px, calc(100% - 24px));
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .25); padding-bottom: 12px;
-  /* Never taller than the stage: on a short one the keys get shorter (down to 28 px). */
-  max-height: calc(100% - 24px); display: flex; flex-direction: column;
+  padding-bottom: 12px; display: flex; flex-direction: column;
 }
 .keypad-pop[hidden] { display: none; }
 .keypad-pop .rtt-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
@@ -559,34 +553,31 @@ body:not(.diag) .diag-only { display: none; }
 .key small { font-size: 9.5px; letter-spacing: .15em; color: var(--muted); }
 .keypad-in { margin: 8px 12px 0; font-size: 12px; color: var(--muted); min-height: 1em; }
 .keypad-in:empty { display: none; }
-/* The dock (app.js renderDock): a column right of the stage, which narrows to make room. The
-   keypad and text panels move into it and lose their popover placing; with both, the keypad
-   keeps its size at the top and the text takes the rest. */
+/* The dock (app.js renderDock): a column right of the stage, which narrows to make room, holding
+   the keypad and text panels; with both, the keypad keeps its size at the top and the text takes
+   the rest. */
 .stage-row { --dock-w: 300px; }
 .stage-row.docked { grid-template-columns: minmax(0, 1fr) var(--dock-w); column-gap: 12px; }
 .stage-row.docked > .stage { grid-column: 1; grid-row: 1; }
 .dock { grid-column: 2; grid-row: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
 .dock[hidden] { display: none; }
-.dock > .rtt, .dock > .keypad-pop { position: static; width: auto; box-shadow: none; }
-/* In a short window the keys get shorter (to 28 px, as in the popover) before the text gets squeezed. */
+/* In a short window the keys get shorter (to 28 px) before the text gets squeezed. */
 /* (Its smallest: the header, the tones sent, and four rows of 28 px keys.) */
 .dock > .keypad-pop { flex: 0 1 auto; max-height: none; min-height: 256px; }
 .dock > .rtt { flex: 1 1 auto; height: auto; min-height: 140px; }
 .dock.both .keypad { grid-template-rows: repeat(4, minmax(28px, 42px)); }
-/* A popover open beside the dock (undocked while the other stays): over the stage, not the dock. */
-.stage-row.docked > .rtt, .stage-row.docked > .keypad-pop, .stage-row.docked > .xfer-pop { right: calc(var(--dock-w) + 24px); }
-/* Narrow windows: no room for a column, so the dock floats over the stage's right edge like the
-   popovers, at the bottom by the buttons, and the stage keeps its width. */
+/* Transfer, opened beside the dock: over the stage, not the dock. */
+.stage-row.docked > .xfer-pop { right: calc(var(--dock-w) + 24px); }
+/* Narrow windows: no room for a column, so the dock floats over the stage's right edge, at the
+   bottom by the buttons, and the stage keeps its width. */
 @media (max-width: 959px) {
   .stage-row.docked { grid-template-columns: minmax(0, 1fr); }
   /* grid-column auto: an absolute grid item placed in a column takes that column as its box. */
   .dock { grid-column: auto; grid-row: auto; position: absolute; right: 12px; top: 12px; bottom: 12px; z-index: 6; width: min(var(--dock-w), calc(100% - 24px)); justify-content: flex-end; overflow: visible; }
   .dock > .rtt, .dock > .keypad-pop { box-shadow: 0 10px 30px rgba(0, 0, 0, .25); }
   .dock > .rtt { flex: 0 1 400px; min-height: 160px; }
-  .stage-row.docked > .rtt, .stage-row.docked > .keypad-pop, .stage-row.docked > .xfer-pop { right: 12px; }
+  .stage-row.docked > .xfer-pop { right: 12px; }
 }
-/* The dock button in each panel's header, beside ×: accent while docked. */
-.rtt-dock[aria-pressed="true"] { color: var(--accent); }
 .rtt-head { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
 .rtt-title { font-weight: 600; }
 .rtt-sub { font-size: 12px; color: var(--muted); margin-right: auto; }
@@ -616,7 +607,7 @@ body:not(.diag) .diag-only { display: none; }
 .rtt-entry[hidden], .rtt-add[hidden] { display: none; }
 .rtt-hint { font-size: 12px; color: var(--muted); }
 .rtt-add { height: 34px; font-size: 13px; }
-/* Text arriving with the popover closed: a toast at the bottom of the stage. */
+/* Text arriving with the text panel closed: a toast at the bottom of the stage. */
 .rtt-toast {
   position: absolute; left: 50%; bottom: 16px; z-index: 6; transform: translateX(-50%); max-width: min(460px, calc(100% - 32px));
   display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; border-radius: 999px;
@@ -1122,7 +1113,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .hist-toast button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 
 /* ---- Transfer: the popover above its button, and the note on the stage ---- */
-/* Like the keypad: over the stage's bottom right, left of the dock when it's open. */
+/* Over the stage's bottom right, left of the dock when it's open. */
 .xfer-pop {
   position: absolute; right: 12px; bottom: 12px; z-index: 7; width: min(380px, calc(100% - 24px)); max-height: calc(100% - 24px);
   display: flex; flex-direction: column; margin: 0;

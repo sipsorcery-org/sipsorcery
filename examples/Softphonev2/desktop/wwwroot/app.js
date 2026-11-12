@@ -60,9 +60,6 @@ const ICON = {
   // Out and back: the round trip.
   roundTrip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h13a4 4 0 0 1 0 8H7"/><path d="m10 12-4 4 4 4"/></svg>',
   selfView: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect x="12" y="13" width="10" height="7" rx="2"/></svg>',
-  // The dock (a panel at the right) and back out of it.
-  dock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18M8 9l3 3-3 3"/></svg>',
-  undock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18M11 9l-3 3 3 3"/></svg>',
   transfer: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 2 4 4-4 4"/><path d="M14 6h8"/><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
   keypad: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>',
   pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
@@ -78,13 +75,9 @@ let state = { call: "idle" };
 let pc = null;             // the selected call's peer connection
 let call = null;           // the selected call's media state, see onMediaOffer
 let answerCamera = null;   // the Answer button's menu: camera on (true) or off (false) for the call being answered; null follows camPref
-let keypadOpen = false;    // the keypad popover, see renderKeypad
+let keypadOpen = false;    // the keypad, in the dock: see renderKeypad
 let keypadFor = null;      // the call it was opened on: it closes if another is selected
 let keypadDigits = "";     // the tones sent since it opened
-// Where each is while open: docked in the side panel at the right of the call (see renderDock), or
-// a popover over it. Set as each opens, from prefs.dockKeypad / prefs.dockText or by joining the other.
-let keypadDocked = false;
-let textDocked = false;
 
 // ---- The calls ----
 // Every call the host reports, by id: { id, h (the host's view of it), m (its media state, once
@@ -1369,8 +1362,8 @@ const LINE_SEP = "\u2028";
 // Each call has its own conversation (entry.text): { lines: [{ me, text, open }], unread (they
 // typed while you weren't reading it: a dot on the Text button and in the call list), bomSent
 // (T.140 starts with a byte order mark), said (--say, testing, typed once per call) }. The
-// popover shows the selected call's.
-let textOpen = false;        // the popover
+// text panel shows the selected call's.
+let textOpen = false;        // the text panel, in the dock
 let toastTimer = 0;
 let toastCallId = null;      // the call the toast is about
 
@@ -1400,7 +1393,7 @@ function onTextReceived(id, chars) {
   render();
 }
 
-// With the popover closed (or for another call), what they type shows in a toast for 6 s after
+// With the text panel closed (or for another call), what they type shows in a toast for 6 s after
 // the last letter. Reply opens that call's text.
 function showToast(e) {
   const l = openLine(e.text, false, false) ?? e.text.lines.findLast((x) => !x.me);
@@ -1445,19 +1438,12 @@ $("rttAdd").onclick = () => post({ type: "add-text", id: selectedId });
 $("rttClose").innerHTML = ICON.close;
 $("rttClose").onclick = () => setTextOpen(false);
 $("textBtn").onclick = () => setTextOpen(!textOpen);
-// Esc, or a click anywhere outside it (other than the Text button), closes the popover.
+// Esc closes the text panel.
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape" || !textOpen || openMenu) return;
   e.preventDefault();
   setTextOpen(false);
 });
-// On click rather than pointerdown: closing re-renders the controls, and doing that between
-// pointerdown and pointerup lost the click itself (End took two clicks with the popover open).
-document.addEventListener("click", (e) => {
-  // Not for the Keypad button when the keypad docks: the text joins it there (setKeypadOpen).
-  if (prefs.dockKeypad && $("keypadBtn").contains(e.target)) return;
-  if (textOpen && !textDocked && !$("rtt").contains(e.target) && !$("textBtn").contains(e.target)) setTextOpen(false, false);
-}, true);
 document.addEventListener("keydown", (e) => {
   if (e.key.toLowerCase() !== "t" || e.ctrlKey || e.altKey || e.metaKey || openMenu) return;
   if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
@@ -1469,13 +1455,6 @@ document.addEventListener("keydown", (e) => {
 });
 
 function setTextOpen(open, focus = true) {
-  if (open && !textOpen) {
-    // Docked if that's the choice, or to join the keypad in the dock. Two popovers can't both be
-    // open (they sit in the same place): an open keypad popover closes, or joins a docked text.
-    textDocked = !!prefs.dockText || (keypadOpen && keypadDocked);
-    if (keypadOpen && !keypadDocked) { if (textDocked) keypadDocked = true; else keypadOpen = false; }
-    if (!textDocked) xferOpen = false;
-  }
   textOpen = open;
   if (open) { const e = sel(); if (e) e.text.unread = false; hideToast(); renderText(); }
   render();
@@ -1587,12 +1566,6 @@ function renderKeypad() {
 }
 function setKeypadOpen(open) {
   if (open && keypadBlocked()) return;
-  if (open && !keypadOpen) {
-    // As for text: docked by choice or to join the text panel; one popover at a time.
-    keypadDocked = !!prefs.dockKeypad || (textOpen && textDocked);
-    if (textOpen && !textDocked) { if (keypadDocked) textDocked = true; else setTextOpen(false, false); }
-    if (!keypadDocked) xferOpen = false;
-  }
   keypadOpen = open;
   keypadFor = open ? selectedId : null;
   if (open && sel()) sel().dtmfIn = "";
@@ -1631,11 +1604,6 @@ document.addEventListener("keydown", (ev) => {
   ev.stopImmediatePropagation();
   if (!ev.repeat) pressKey(ev.key);
 }, true);
-// A click away from it (other than on the Keypad button) closes it, like the text popover.
-document.addEventListener("click", (ev) => {
-  if (prefs.dockText && $("textBtn").contains(ev.target)) return;   // it joins the docked text
-  if (keypadOpen && !keypadDocked && !$("keypad").contains(ev.target) && !$("keypadBtn").contains(ev.target)) setKeypadOpen(false);
-}, true);
 
 // ---- Transfer ----
 // As in the prototype: "Attended to another active call, or blind to an address". The Transfer
@@ -1663,9 +1631,6 @@ function transferBlocked() {
 function setTransferOpen(open) {
   if (open && transferBlocked()) return;
   if (open && !xferOpen) {
-    // One popover at a time: the keypad and text close unless they're docked.
-    if (keypadOpen && !keypadDocked) keypadOpen = false;
-    if (textOpen && !textDocked) setTextOpen(false, false);
     $("xferAddr").value = "";
     xferField.pick = null;
   }
@@ -1790,56 +1755,18 @@ document.addEventListener("click", (ev) => {
 }, true);
 
 // ---- The dock: the keypad and the text panel beside the call ----
-// Each panel's header has a dock button. Docked, it sits in a side panel to the right of the
-// selected call (Focus view), and the stage narrows to make room; it stays open when you click
-// elsewhere, and Esc or its × closes it. With one docked, opening the other puts it in the dock
-// too: both stacked, the keypad (a fixed size) at the top and the text taking the rest, so you
-// can read and send tones at once. The dock follows the panels: it shows while either is open
-// in it, and goes with them (the grid, hold and switching calls close them as before). In a
-// narrow window (under 960 px) the dock floats over the stage's right edge instead, like the
-// popovers. The choice is kept per panel (prefs.dockKeypad, prefs.dockText).
-function setDocked(which, on) {
-  if (which === "keypad") {
-    savePref("dockKeypad", on);
-    keypadDocked = on;
-    if (on && textOpen) textDocked = true;   // a text popover joins it
-  } else {
-    savePref("dockText", on);
-    textDocked = on;
-    if (on && keypadOpen) keypadDocked = true;
-  }
-  render();
-  $(which === "keypad" ? "keypadDock" : "rttDock").focus();
-}
+// Both open in a side panel to the right of the selected call (Focus view), and the stage narrows
+// to make room; they stay open when you click elsewhere, and Esc or their × closes them. With both
+// open they're stacked, the keypad (a fixed size) at the top and the text taking the rest, so you
+// can read and send tones at once. The dock shows while either is open, and goes with them (the
+// grid, hold and switching calls close them). In a narrow window (under 960 px) it floats over
+// the stage's right edge instead.
 function renderDock() {
   const dock = $("dock");
-  const row = dock.parentElement;
-  // Moves a panel into the dock or back over the stage, keeping the focus where it was.
-  const place = (el, docked) => {
-    const parent = docked ? dock : row;
-    if (el.parentElement === parent) return;
-    const had = el.contains(document.activeElement) ? document.activeElement : null;
-    if (docked) dock.appendChild(el); else row.insertBefore(el, $("rttToast"));
-    had?.focus();
-  };
-  place($("keypad"), keypadDocked);
-  place($("rtt"), textDocked);
-  if ($("keypad").parentElement === dock && $("keypad").nextElementSibling !== $("rtt") && $("rtt").parentElement === dock)
-    dock.insertBefore($("keypad"), $("rtt"));   // the keypad on top
-  const kp = keypadOpen && keypadDocked, tx = textOpen && textDocked;
-  dock.hidden = inGrid() || !(kp || tx);
-  row.classList.toggle("docked", !dock.hidden);
-  dock.classList.toggle("both", kp && tx);
-  for (const [id, docked, what] of [["keypadDock", keypadDocked, "keypad"], ["rttDock", textDocked, "text"]]) {
-    const b = $(id);
-    const html = docked ? ICON.undock : ICON.dock;
-    if (b.innerHTML !== html) b.innerHTML = html;
-    b.setAttribute("aria-pressed", String(docked));
-    b.title = docked ? `Undock the ${what}: float it over the call` : `Dock the ${what} beside the call`;
-  }
+  dock.hidden = inGrid() || !(keypadOpen || textOpen);
+  dock.parentElement.classList.toggle("docked", !dock.hidden);
+  dock.classList.toggle("both", keypadOpen && textOpen);
 }
-$("keypadDock").onclick = () => setDocked("keypad", !keypadDocked);
-$("rttDock").onclick = () => setDocked("text", !textDocked);
 
 $("infoHead").onclick = () => setDetailsOpen($("details").hidden);
 let qColumn = "sent";   // the column the graph shows

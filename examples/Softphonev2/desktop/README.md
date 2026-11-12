@@ -37,7 +37,7 @@ during a call, so the microphone and camera can be set up first:
 - **Audio ◯━ Video**: a slide switch, with the chosen word bold beside the thumb. The track is
   neutral, so the green is only on Call.
 - **Text** (an icon, at the right beside Self view, since it's rarely used): opens the
-  real-time text popover (T does too). During a call only.
+  real-time text panel in the dock (T does too). During a call only.
 - **Keypad** (an icon, beside Text): opens the DTMF keypad for the selected call (see
   [Keypad](#keypad-dtmf)). During a call only, in Focus view.
 - **Hold** (H): puts the selected call on hold, or Resume takes it off (see
@@ -402,13 +402,12 @@ same on both.
   unfinished line shows live, dashed with a caret. U+FEFF is dropped, backspace (U+0008)
   takes back their last letter, U+2028, U+2029, CR or LF end their line, and other control
   characters are ignored.
-- **A popover, not a panel.** It opens over the bottom right of the stage, just above the Text
-  button, so the video doesn't shrink (it covers the self view while open). Esc, its ×, the
-  Text button, T, or a click anywhere else closes it, and Esc puts the focus back on the button.
+- **In the dock**, to the right of the call (see [The dock](#the-dock-keypad-and-text)). Esc,
+  its ×, the Text button or T closes it, and Esc puts the focus back on the button.
 - **Text arriving while it's closed** shows as a toast at the bottom of the stage: their name,
   what they've typed (live, if their phone sends letter by letter) and *Reply*, which opens the
-  popover. It fades 6 s after the last letter, and the Text button keeps a red dot until the
-  popover is opened. Nothing opens by itself.
+  panel. It fades 6 s after the last letter, and the Text button keeps a red dot until the
+  panel is opened. Nothing opens by itself.
 - **Not on the call** (their phone didn't answer `m=text`): "Text isn't set up on this call"
   and *Add text to this call*, which sends a re-INVITE with `m=text`. If they turn it down
   (`m=text` with port 0) it says their phone doesn't support real-time text; with no answer in
@@ -430,9 +429,8 @@ same on both.
 ## Keypad (DTMF)
 
 From the prototype: the **Keypad** button opens a 12-key pad (1–9, \*, 0, #, with their
-letters) in a popover over the bottom right of the stage, like the text one (only one of the two
-popovers is open at a time; both can be open in the dock, see
-[Docking the keypad and text](#docking-the-keypad-and-text)). It acts on the selected call only, and its title says whose it is.
+letters) in the dock to the right of the call, above the text panel if that's open too (see
+[The dock](#the-dock-keypad-and-text)). It acts on the selected call only, and its title says whose it is.
 
 - **Each press sends a tone** on that call and adds the digit to the display above the keys;
   the log has `keypad '5' → Name` from the page and the host's `DTMF '5' sent (…)`.
@@ -473,8 +471,7 @@ and the page disables the keypad. Browsers don't report tones they receive.
 From the prototype: "Attended to another active call, or blind to an address". The **Transfer**
 button (the phone with an arrow, beside Keypad) is there in Focus view only, since Grid view has
 no controls, and is enabled on a connected call with no transfer already under way. It opens a
-popover above it, where the keypad's goes (one popover at a time; beside the dock if a panel is
-docked, so it never covers them):
+popover above it (beside the dock if the keypad or text is open, so it never covers them):
 
 - **To another of your calls** (attended): your other connected calls, each with *Join*. The
   selected call's far end is asked to call that person, replacing your call with them (REFER
@@ -592,31 +589,27 @@ name, so after a direct (no-account) attended transfer the transferee sees an ad
 `127.0.0.1:5432` rather than a name. A failed blind transfer to an address where nothing
 answers takes the SIP timeout (about 32 s) to fail.
 
-## Docking the keypad and text
+## The dock: keypad and text
 
-The keypad and the text panel each have a dock button in their header, beside ×. Docked, the
-panel sits in a side panel (300 px) to the right of the selected call in Focus view, and the
-stage narrows to make room; pressed again, it goes back to its popover.
+The keypad and the text panel open in a side panel (300 px) to the right of the selected call in
+Focus view, and the stage narrows to make room. There's no choice to make: they used to be
+popovers, each with a dock button and rules for joining the other, and that was more to learn
+than it gave.
 
-- **Auto-join**: with one of them docked, opening the other puts it in the dock too, whatever its
-  own choice; an open popover of the other one joins when one is docked. Undocking one of the
-  two leaves the other docked, and the undocked one is a popover over the stage beside the dock.
 - **Both in the dock are stacked**, not tabbed: the keypad at the top, at its own size (the keys
   shrink to 28 px in a short window), and the text taking the rest. Stacked, you can read what
   an automated line says while you press keys, with no extra click to switch between them.
 - **Closing**: `Esc`, × or the control-bar button closes each one as before (with both open,
-  `Esc` closes the keypad first, then the text). A click elsewhere doesn't close a docked panel.
-  Closing one leaves the other docked; closing both hides the dock and the stage widens again.
+  `Esc` closes the keypad first, then the text). A click elsewhere doesn't close them.
+  Closing one leaves the other; closing both hides the dock and the stage widens again.
 - **The call ends**: when the call on the stage ends (either side hangs up), its keypad and text
-  panel both close, docked or not, so the ended call's card has the stage at its full width.
+  panel both close, so the ended call's card has the stage at its full width.
 - **The rest is as before**: the keypad's number keys and `Esc`, `T` for text. The keypad
   closes on hold, on another call, or in the grid; the text panel follows the selected call and
   closes in the grid. So the dock hides in Grid view, and `T` from the grid opens Focus with the
-  text docked (if that's its choice).
-- **Remembered**: each panel's choice is kept in the page's settings (`dockKeypad`, `dockText`),
-  per profile, as Settings' are. A panel that joined the dock doesn't change its own choice.
+  text in the dock.
 - **Narrow windows** (under 960 px): there's no room for a column, so the dock floats over the
-  right of the stage like the popovers, with the same stacking, and the stage keeps its width.
+  right of the stage, with the same stacking, and the stage keeps its width.
 
 ## Browser phones (WebSocket)
 
@@ -1007,7 +1000,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Buttons in the calls panel don't toggle it: M with two video calls; Mute all, Unmute all, Cameras off, Cameras on, with the panel open and then collapsed (clicks on the buttons' icon or label, which they redraw); then End all on the rail; a click on the panel's empty space | The panel stays as it was for all four (before: each click toggled it, as the redrawn label was no longer inside the panel when the panel's own click handler checked). End all on the rail opens the panel and nothing more (before: opened, then closed again, so it seemed to do nothing). The empty space still toggles it. |
 | End all on the rail: M with two calls (N held, O live), panel collapsed, End all three times | First click: the panel opens, both calls up, the button *End all* (the rail icon's tooltip says it opens the panel to confirm). Second: *End 2?*. Third: both end *You hung up*. |
 | Missed-call badge: N calls M and hangs up while it rings (M's People view closed) | The badge at 1 on People. People: the view opens on Recent (People pressed), the badge cleared; People again: closed. Contacts tab, close, People: opens on Contacts (the last tab); a missed call meanwhile: People opens on Recent. |
-| Panels close when the call ends: M calls N, opens the keypad (docked) and the text (joins the dock); N hangs up | Before: the dock at the right, the stage narrowed. After: M logs `call 1 ended: keypad and text closed`, the dock is hidden and the stage is back to full width with "They hung up". |
+| Panels close when the call ends: M calls N, opens the keypad and the text (both in the dock); N hangs up | Before: the dock at the right, the stage narrowed. After: M logs `call 1 ended: keypad and text closed`, the dock is hidden and the stage is back to full width with "They hung up". |
 | Cameras off: M with two video calls (N held, O live; `--fake-media`), *Cameras off*, then *Cameras on* | The footer: Grid; *Mute all* and *Cameras off* side by side; *End all* in its own row. *Cameras off*: both calls `camera off`, the camera closes, the self view shows the camera-off card, O's stage shows M's placeholder (the initial in a circle); the button reads *Cameras on*, pressed, in red, and the call's own button *Start video*. *Cameras on*: both calls `camera on`, the camera opens, O sees M's video again, the button *Cameras off*. With only audio calls the button isn't shown. |
 | Grid, the same three copies: A with video calls to B and C, then *Grid* under the list | Two tiles, C's (selected, outlined) with its test pattern, B's "On hold · 00:14"; *Grid* pressed; the control bar empty. `M` and `H` change nothing. |
 | From the grid: B's tile; `G`; C's row in the list; `G`; `2`; `G`; `T` | Each opens that call in Focus, resuming it and holding the other; `G` goes back to the grid each time; `T` opens Focus on the selected call with the text input focused. |
@@ -1044,14 +1037,14 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Switch to Video, Self view off, then a video call | The button appears with the switch; off hides the preview and closes the camera; the camera opens when the call connects and sends 30 fps. |
 | Video call, `--audio-bars` to `--fake-media` | The callee sees the caller's microphone bars move with the fake beep, the microphone's name, and the caller's clock, at 30 fps. Before the call the preview shows flat bars and "Microphone opens with the call"; muting mid-call shows "Muted" and flat bars at the far end. |
 | Video call, caller with `--say hello_there_from_A`, to `--auto-answer` | Both log "real-time text on (RFC 4103)". The callee gets a toast, "Thisis hello_there_from_A" with Reply, for 6 s, and a dot on the Text icon; nothing opens. |
-| Same, callee: Text icon, types "Hi A", Enter, then clicks the video | The popover opens over the stage (the video keeps its size) with both messages; the click closes it. The caller gets a "B Hi A" toast. |
-| Caller: Text icon, then Esc | The popover opens with the conversation; Esc closes it and focuses the Text icon. |
+| Same, callee: Text icon, types "Hi A", Enter, then clicks the video | The text opens in the dock with both messages and stays open after the click. The caller gets a "B Hi A" toast. |
+| Caller: Text icon, then Esc | The text panel opens with the conversation; Esc closes it and focuses the Text icon. |
 | Audio call, caller types "Hi from A" | No "Audio only" label. Nothing reaches the callee while the caller types; on Enter the callee gets the toast and the dot. |
 | `--webrtc` call, caller `--say hello`, to `--auto-answer --say hello` | Both offer and answer have `a=dcmap:1 label="t140";subprotocol="t140"` on `m=application`. Both log "real-time text agreed", then 0.3 s later "real-time text on (RFC 8865, T.140 data channel on stream 1)", and each gets the other's message ("real-time text in: 7 characters": BOM, "hello", U+2028). |
 | Same, callee `--no-text` | The callee's answer has `m=application` but no dcmap; the caller logs "they didn't take text (no T.140 data channel in their SDP)" and stays at refused, though its own negotiated channel opens when SCTP comes up. |
 | Same, caller `--add-video 4` | Text on, then the re-INVITE (with the dcmap again) adds video; text stays on. |
 | Plain RTP call, both `--say` (after the data channel work) | "real-time text on (RFC 4103)" both ends, and each message arrives. |
-| Web softphone dials it (`server=`), both saying something | Both log "real-time text on (RFC 8865 …)"; each popover has both messages. See the web README. |
+| Web softphone dials it (`server=`), both saying something | Both log "real-time text on (RFC 8865 …)"; each text panel has both messages. See the web README. |
 | Caller with `--no-text`; callee: Text, then Add text to this call | "Text isn't set up on this call" with the button; after it, "Asking … to add text", then within 2 s "…'s phone doesn't support real-time text" (their answer has `m=text` with port 0). |
 | Video call to `--auto-answer` | The caller's panel shows the callee's RTCP: no loss, jitter under 1 ms, round trip about 0.3 ms, MOS 4.4. |
 | Network tab: Audio loss 12%, Video loss 20%, then F12 to close diagnostics | Both sliders back to 0% and the tab's red dot gone; the host is told loss 0/0. (Checked in the web page, which runs the same script.) |
@@ -1097,7 +1090,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | The same with `Warning: 305 … "Incompatible media format"` | One INVITE, no retry: "They can't take this call's media (488)". |
 | A stand-in callee that answers a bare `488` (no Warning, no SDP) | The first INVITE offers RTP/AVP, the second `UDP/TLS/RTP/SAVP`: "they can't take plain RTP media (488, no reason given); calling again with WebRTC". |
 | Calling the web softphone's guest account through the local sipsorcery-servers2, no `--webrtc` | The browser turns the RTP/AVP offer down with 488 in 60 ms, without ringing. The app server doesn't pass the Warning on yet, so no retry: "They can't take this call's media (488)". With `--webrtc`: connected, and the browser's BYE ends it "They hung up". |
-| Browser call, Text popover open, then one click on End | The call ends ("You hung up", BYE, 200). |
+| Browser call, Text panel open, then one click on End | The call ends ("You hung up", BYE, 200). |
 | The web softphone (../web), audio only, `dial=desktop&hangup=12` | Answered with audio only; the browser's BYE ends it here with "They hung up". |
 | Softphone to spike far end, H264 720p30 | 30 fps at 1280x720 in, decoded by `D3D11VideoDecoder` (hardware); camera out at 30 fps. |
 | Address suggestions, two copies (`--profile vtC --port 5391 --ws-port 8391 --diagnostics` and `vtD --port 5392 --ws-port 8392 --auto-answer`, both `--fake-media`). C calls D (answered, 3 s), calls D and cancels at once, then D calls C and gives up while it rings | `/` in C (focus on the page) focuses the field without typing a slash and opens Recent: *Thisis · Missed · Just now* in red, then *VtD · Cancelled · Just now* (one entry per address, the newest call). |
@@ -1125,14 +1118,12 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | E calls a scripted SIP UAS whose answer is PCMU only (no `telephone-event`), `--dtmf 3#` | E: "their SDP has no telephone-event, sending SIP INFO"; the UAS gets two INFOs, `application/dtmf-relay` `Signal=3` and `Signal=#` with `Duration=160`, and its 200s are logged. |
 | An INFO sent by hand into F's call (its Call-ID and tags): `application/dtmf-relay` `Signal=7`, `application/dtmf` `#`, `text/plain` | 200, 200 and 415. F logs `DTMF '7' received (SIP INFO)` and `'#'`. |
 | The web softphone (headless Edge with fake media, `web/index.html?server=ws://127.0.0.1:8196&user=webdtmf`) calls F; keypad, `8`, `6`, `#` | The page's `RTCDTMFSender` sends them ("sent (RFC 4733, RTCDTMFSender)"); F receives all three on the WebRTC call (`DTMF '8' received (RFC 4733)` …). |
-| Dock, two copies (`--profile vtI --port 5397 --ws-port 8397` and `vtJ --port 5398 --ws-port 8398 --auto-answer`, both `--fake-media --test-pattern`, built to a separate output folder), I calls J, 1100×720 | Keypad: a popover. Its dock button: the keypad moves into a 300 px panel right of the call and the stage narrows from 816 to 504 px; `dockKeypad: true` saved. Text (button): it opens below the keypad in the dock, input focused. |
+| Dock, two copies (`--profile vtI --port 5397 --ws-port 8397` and `vtJ --port 5398 --ws-port 8398 --auto-answer`, both `--fake-media --test-pattern`, built to a separate output folder), I calls J, 1100×720 | Keypad: it opens in a 300 px panel right of the call and the stage narrows from 816 to 504 px. Text (button): it opens below the keypad in the dock, input focused. |
 | The same: a click on the stage; `5`, `#`; `Esc`, `Esc` | Neither closes on the click. `5` and `#` go as tones (J logs `DTMF '5' received (RFC 4733)`, `'#'`). The first `Esc` closes the keypad and leaves the text docked; the second closes the text, the dock goes and the stage is 816 px again. |
-| I restarted (same profile); Keypad; ×; Text; Keypad | The keypad opens docked (the choice kept). The text (not docked by choice) opens as a popover; Keypad then docks with the text joining it. |
-| Both docked: the keypad's dock button | The keypad becomes a popover over the stage, just left of the dock (right edge 760, stage 772, dock from 784); the text stays docked. |
-| Both docked: `H`, `H`; Call & hold to J (a second call); `Esc`, `1` | Hold closes the keypad (button disabled, "Keypad: resume the call to send tones"); the text stays docked. The second call closes the keypad again (another call); the text stays, now that call's. |
-| Text's dock button; `G`; `T` | `dockText: true`. The grid hides the dock (the stage full width); `T` goes back to Focus with the text docked. |
-| Both docked at 820×640 and 1100×560 (CDP device metrics) | 820 wide: the dock floats over the stage's right edge (stage 536 px, no horizontal scroll), keypad at the top, text below it. 1100×560: docked beside the call, the keypad's keys at their smallest; the dock scrolls for the rest of the text panel. |
-| The web softphone (headless Edge, fake media, `web/index.html?server=ws://127.0.0.1:8398&user=webdock`) calls J; Keypad, dock, Text, `9` | The same dock (stage 504 px, both stacked); J logs `DTMF '9' received (RFC 4733)`. |
+| Both open: `H`, `H`; Call & hold to J (a second call); `Esc`, `1` | Hold closes the keypad (button disabled, "Keypad: resume the call to send tones"); the text stays. The second call closes the keypad again (another call); the text stays, now that call's. |
+| `G`; `T` | The grid hides the dock (the stage full width); `T` goes back to Focus with the text in the dock. |
+| Both open at 820×640 and 1100×560 (CDP device metrics) | 820 wide: the dock floats over the stage's right edge (stage 536 px, no horizontal scroll), keypad at the top, text below it. 1100×560: beside the call, the keypad's keys at their smallest; the dock scrolls for the rest of the text panel. |
+| The web softphone (headless Edge, fake media, `web/index.html?server=ws://127.0.0.1:8398&user=webdock`) calls J; Keypad, Text, `9` | The same dock (stage 504 px, both stacked); J logs `DTMF '9' received (RFC 4733)`. |
 | Smarter address field, two copies (`--profile vtG --port 5395 --ws-port 8395`, `vtH --port 5396 --ws-port 8396`), G with accounts *G Work*, *G Home* and a disabled *G Old*, all to 127.0.0.1:5396; G's contacts file in the old format (no account): *Hannah Desk* (`hdesk@…`, one Busy call 1 h ago), *Bob Smith*, *Annabel* (`zz@example.org`); history: `hannah.lab@…` ×3 (G Home), `ohanna@…`, `hal@…` (missed) | The contacts load. Nothing typed: Recent and Contacts as before. `han`: *Hannah Desk* (contact, "Busy · 1 h ago", highlighted), *Hannah.lab*, *Ohanna*; no *Hal*. `ann`: *Annabel* first (word prefix), then the three `han…` (inside a word). `zz`: *Annabel* (user part). `sip:new@…`: only *Add … to contacts…*. |
 | G: Contacts tab, Hannah Desk, Edit: *Call from* lists *Any…*, G Work, G Home, *G Old (disabled)*; G Home, Save | Details say *Call from G Home*; the file has `"account": "g2"`, the others none. After restarting G it's still there. |
 | G on *G Work*: `hann`, Enter | *Hannah Desk · from G Home* highlighted; *Call from* switches to G Home (flash) before the INVITE; H logs `ringing G Home <sip:ghome@127.0.0.1:5396>`. |

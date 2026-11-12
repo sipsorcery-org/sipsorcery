@@ -79,7 +79,7 @@
       </div>
     </aside>
 
-    <!-- The stage, with the real-time text popover and toast over its bottom edge. -->
+    <!-- The stage, with the dock (keypad and text) at its right and the toast over its bottom edge. -->
     <div class="stage-row">
     <main class="stage" id="stage" data-mode="card">
       <!-- Each call's video goes here (app.js makes one <video class="remote"> per call): the
@@ -169,9 +169,39 @@
         <div class="q-foot" id="qFoot"></div>
       </div>
     </main>
-    <!-- The dock: a side panel right of the call, holding the keypad and the text panel when
-         they're docked (their dock buttons; app.js moves them in and out). -->
-    <div class="dock" id="dock" hidden></div>
+    <!-- The dock: a side panel right of the call, where the keypad and the text panel open (the
+         keypad on top). It shows while either is open (app.js renderDock). -->
+    <div class="dock" id="dock" hidden>
+      <!-- The keypad, in the dock. Each key sends a DTMF tone on the selected call (RFC 4733, or
+           SIP INFO). While it's open the number keys, * and # send tones too; Esc or its × closes it. -->
+      <aside class="keypad-pop" id="keypad" hidden aria-label="Keypad">
+        <div class="rtt-head">
+          <span class="rtt-title" id="keypadTitle">Keypad</span><span class="rtt-sub">Tones · DTMF</span>
+          <button type="button" class="rtt-close" id="keypadClose" aria-label="Close keypad" title="Close keypad (Esc)"></button>
+        </div>
+        <div class="dtmf-display" id="keypadDigits" role="status" aria-label="Tones sent"></div>
+        <div class="keypad" id="keypadKeys"></div>
+        <div class="keypad-in" id="keypadIn" role="status"></div>
+      </aside>
+
+      <!-- Real-time text (RFC 4103): in the dock, under the keypad if that's open too. Esc or its
+           × closes it. -->
+      <aside class="rtt" id="rtt" hidden aria-label="Real-time text">
+        <div class="rtt-head">
+          <span class="rtt-title">Text</span><span class="rtt-sub">Real-time · RFC 4103</span>
+          <button type="button" class="rtt-close" id="rttClose" aria-label="Close text" title="Close text (Esc)"></button>
+        </div>
+        <div class="rtt-log" id="rttLog" role="log" aria-label="Conversation"></div>
+        <div class="rtt-compose">
+          <div class="rtt-entry" id="rttEntry">
+            <input type="text" class="rtt-input" id="rttInput" autocomplete="off" spellcheck="true" placeholder="Type a message…" aria-label="Message">
+            <button type="button" class="rtt-send" id="rttSend" aria-label="Send" title="Send (Enter)" disabled></button>
+          </div>
+          <div class="rtt-hint" id="rttHint"></div>
+          <button type="button" class="btn rtt-add" id="rttAdd">Add text to this call</button>
+        </div>
+      </aside>
+    </div>
 
     <!-- A call ringing while you're on another: who, and Answer & hold current or Decline. The
          name opens the full answer view. -->
@@ -204,39 +234,6 @@
       <button type="button" class="hist-toast-x" id="histToastClose" aria-label="Dismiss" title="Dismiss">×</button>
     </div>
 
-    <!-- Real-time text (RFC 4103): a popover over the stage, above the Text button. Clicking
-         away or Esc closes it. -->
-    <aside class="rtt" id="rtt" hidden aria-label="Real-time text">
-      <div class="rtt-head">
-        <span class="rtt-title">Text</span><span class="rtt-sub">Real-time · RFC 4103</span>
-        <button type="button" class="rtt-close rtt-dock" id="rttDock" aria-pressed="false" aria-label="Dock text"></button>
-        <button type="button" class="rtt-close" id="rttClose" aria-label="Close text" title="Close text (Esc)"></button>
-      </div>
-      <div class="rtt-log" id="rttLog" role="log" aria-label="Conversation"></div>
-      <div class="rtt-compose">
-        <div class="rtt-entry" id="rttEntry">
-          <input type="text" class="rtt-input" id="rttInput" autocomplete="off" spellcheck="true" placeholder="Type a message…" aria-label="Message">
-          <button type="button" class="rtt-send" id="rttSend" aria-label="Send" title="Send (Enter)" disabled></button>
-        </div>
-        <div class="rtt-hint" id="rttHint"></div>
-        <button type="button" class="btn rtt-add" id="rttAdd">Add text to this call</button>
-      </div>
-    </aside>
-
-    <!-- The keypad: a popover over the stage, above the Keypad button. Each key sends a DTMF tone
-         on the selected call (RFC 4733, or SIP INFO). While it's open the number keys, * and #
-         send tones too; Esc or a click away closes it. -->
-    <aside class="keypad-pop" id="keypad" hidden aria-label="Keypad">
-      <div class="rtt-head">
-        <span class="rtt-title" id="keypadTitle">Keypad</span><span class="rtt-sub">Tones · DTMF</span>
-        <button type="button" class="rtt-close rtt-dock" id="keypadDock" aria-pressed="false" aria-label="Dock keypad"></button>
-        <button type="button" class="rtt-close" id="keypadClose" aria-label="Close keypad" title="Close keypad (Esc)"></button>
-      </div>
-      <div class="dtmf-display" id="keypadDigits" role="status" aria-label="Tones sent"></div>
-      <div class="keypad" id="keypadKeys"></div>
-      <div class="keypad-in" id="keypadIn" role="status"></div>
-    </aside>
-
     <!-- Transfer (app.js, "Transfer"): a popover over the stage, above the Transfer button. Join
          the call with another of yours (attended), or send it to an address (blind), in a field
          that is the address bar's (addressField). Esc or a click away closes it. -->
@@ -261,7 +258,7 @@
       </div>
     </form>
 
-    <!-- Text arriving with the popover closed: who and what, for a few seconds. -->
+    <!-- Text arriving with the text panel closed: who and what, for a few seconds. -->
     <div class="rtt-toast" id="rttToast" role="status" hidden>
       <span class="rtt-toast-icon" id="rttToastIcon" aria-hidden="true"></span>
       <span class="rtt-toast-who" id="rttToastWho"></span>
@@ -295,7 +292,7 @@
         <button type="button" class="btn icon-btn xfer-btn" id="transferBtn" aria-pressed="false" aria-expanded="false" aria-label="Transfer" aria-controls="xferPop" disabled hidden></button>
         <!-- The keypad (DTMF) for the selected call, in Focus view: opens the pad above it. -->
         <button type="button" class="btn icon-btn keypad-btn" id="keypadBtn" aria-pressed="false" aria-label="Keypad" aria-controls="keypad" disabled></button>
-        <!-- Real-time text, rarely used: an icon that opens the popover above it (T too). -->
+        <!-- Real-time text, rarely used: an icon that opens the text panel in the dock (T too). -->
         <button type="button" class="btn icon-btn text-btn" id="textBtn" aria-pressed="false" aria-label="Text" disabled></button>
         <!-- On a video call: hides or shows your self view (V too). At the right, under it. -->
         <button type="button" class="btn self-toggle" id="selfViewBtn" aria-pressed="true" hidden></button>
