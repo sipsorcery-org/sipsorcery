@@ -8,9 +8,9 @@
 // connectivity-check responsibilities out of RtpIceChannel can be verified to
 // preserve behaviour.
 //
-// They are deterministic and network-free beyond binding a loopback UDP socket
-// (the same approach RTPChannelUnitTest uses). The internal _remoteCandidates bag
-// is used to confirm the accept path (InternalsVisibleTo SIPSorcery.UnitTests).
+// They are deterministic and use only loopback UDP sockets, without external ICE
+// servers. Internal candidate and checklist collections expose the publication
+// boundary before a candidate pair is inserted (InternalsVisibleTo SIPSorcery.UnitTests).
 //
 // Author(s):
 // Aaron Clauson
@@ -22,9 +22,12 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
 using Xunit;
@@ -189,6 +192,104 @@ namespace SIPSorcery.Net.UnitTests
             {
                 channel.Close();
             }
+        }
+
+        /// <summary>
+        /// An authenticated request can arrive after a known candidate is published but before
+        /// UpdateChecklist inserts its pair. Both ordinary and translated sources must succeed,
+        /// and a repeated request must reuse the pair without creating a peer-reflexive candidate.
+        /// </summary>
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task BindingRequestBeforeChecklistInsertionCreatesOnePair(bool translateSource)
+        {
+            logger.LogDebug("--> {MethodName} ({TranslateSource})", TestHelper.GetCurrentMethodName(), translateSource);
+            var channel = new RtpIceChannel(IPAddress.Loopback, RTCIceComponent.rtp);
+            using var source = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+            try
+            {
+                var sourceEndPoint = (IPEndPoint)source.Client.LocalEndPoint;
+                var candidate = PublishKnownRemoteCandidate(channel, sourceEndPoint, translateSource);
+                Assert.Empty(channel._checklist);
+                var replies = new List<STUNMessageTypesEnum>();
+                channel.OnStunMessageSent += (message, _, _) => replies.Add(message.Header.MessageType);
+                var request = CreateBindingRequest(channel, validIntegrity: true);
+
+                await channel.ProcessStunMessage(request, sourceEndPoint, wasRelayed: false);
+                await channel.ProcessStunMessage(request, sourceEndPoint, wasRelayed: false);
+
+                Assert.Equal(new[] { STUNMessageTypesEnum.BindingSuccessResponse, STUNMessageTypesEnum.BindingSuccessResponse }, replies);
+                Assert.Same(candidate, Assert.Single(channel._checklist).RemoteCandidate);
+                Assert.Single(channel._remoteCandidates);
+                Assert.Null(channel.NominatedEntry);
+            }
+            finally
+            {
+                channel.Close();
+            }
+        }
+
+        /// <summary>
+        /// Creating a missing pair must not bypass message integrity or relay-only policy.
+        /// </summary>
+        [Theory]
+        [InlineData(RTCIceTransportPolicy.all, false)]
+        [InlineData(RTCIceTransportPolicy.relay, true)]
+        public async Task RejectedBindingRequestDoesNotCreatePair(RTCIceTransportPolicy policy, bool validIntegrity)
+        {
+            logger.LogDebug("--> {MethodName} ({Policy}, {ValidIntegrity})",
+                TestHelper.GetCurrentMethodName(), policy, validIntegrity);
+            var channel = new RtpIceChannel(IPAddress.Loopback, RTCIceComponent.rtp, policy: policy);
+            using var source = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+            try
+            {
+                var sourceEndPoint = (IPEndPoint)source.Client.LocalEndPoint;
+                PublishKnownRemoteCandidate(channel, sourceEndPoint, translateSource: false);
+                var replies = new List<STUNMessageTypesEnum>();
+                channel.OnStunMessageSent += (message, _, _) => replies.Add(message.Header.MessageType);
+
+                await channel.ProcessStunMessage(
+                    CreateBindingRequest(channel, validIntegrity), sourceEndPoint, wasRelayed: false);
+
+                Assert.Equal(STUNMessageTypesEnum.BindingErrorResponse, Assert.Single(replies));
+                Assert.Empty(channel._checklist);
+                Assert.Single(channel._remoteCandidates);
+                Assert.Null(channel.NominatedEntry);
+            }
+            finally
+            {
+                channel.Close();
+            }
+        }
+
+        private static RTCIceCandidate PublishKnownRemoteCandidate(
+            RtpIceChannel channel, IPEndPoint sourceEndPoint, bool translateSource)
+        {
+            var canonicalEndPoint = sourceEndPoint;
+            if (translateSource)
+            {
+                canonicalEndPoint = new IPEndPoint(IPAddress.Parse("192.0.2.1"), sourceEndPoint.Port);
+                channel.RemoteEndpointTranslator = _ => canonicalEndPoint;
+            }
+
+            var candidate = Remote(canonicalEndPoint.Address.ToString(), checked((ushort)canonicalEndPoint.Port));
+            candidate.SetDestinationEndPoint(canonicalEndPoint);
+            channel._remoteCandidates.Add(candidate);
+            channel.RefreshRemoteCandidatesSnapshot();
+            return candidate;
+        }
+
+        private static STUNMessage CreateBindingRequest(RtpIceChannel channel, bool validIntegrity)
+        {
+            var request = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
+            request.AddUsernameAttribute($"{channel.LocalIceUser}:remote");
+            var priority = new byte[sizeof(uint)];
+            BinaryPrimitives.WriteUInt32BigEndian(priority, 1);
+            request.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Priority, priority));
+            var password = validIntegrity ? channel.LocalIcePassword : "incorrect-test-password";
+            var bytes = request.ToByteBufferStringKey(password, true);
+            return STUNMessage.ParseSTUNMessage(bytes, bytes.Length);
         }
 
         /// <summary>

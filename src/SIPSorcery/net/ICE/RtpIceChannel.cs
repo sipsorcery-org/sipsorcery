@@ -2035,11 +2035,8 @@ namespace SIPSorcery.Net
                         // - The entry that has a remote candidate with an end point that matches the endpoint this STUN request came from,
                         // - And if the STUN request was relayed through a TURN server then only match is the checklist local candidate is
                         //   also a relay type. It is possible for the same remote end point to send STUN requests directly and via a TURN server.
-                        matchingChecklistEntry = _checklist.Where(x =>
-                            (x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint) ||
-                             x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, canonicalEndPoint)) &&
-                         (!wasRelayed || x.LocalCandidate.type == RTCIceCandidateType.relay)
-                         ).FirstOrDefault();
+                        matchingChecklistEntry = FindChecklistEntryForBindingRequest(
+                            remoteEndPoint, canonicalEndPoint, wasRelayed);
                     }
 
                     if (matchingChecklistEntry == null &&
@@ -2072,33 +2069,31 @@ namespace SIPSorcery.Net
 
                         matchingChecklistEntry = entry;
                     }
-                    else if (matchingChecklistEntry == null && !ReferenceEquals(canonicalEndPoint, remoteEndPoint))
+                    else if (matchingChecklistEntry == null)
                     {
-                        // The canonical endpoint (post-translation) matches a remote candidate
-                        // but no checklist entry exists for it yet against this local candidate.
-                        // Find or create one so the nomination/connectivity check has somewhere
-                        // to live without inventing a prflx.
+                        // A resolved known candidate can be visible before UpdateChecklist inserts its pair.
+                        // Reuse or create the pair for both untranslated and translated sources.
                         var canonicalCandidate = _remoteCandidates.First(
-                            x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, canonicalEndPoint));
+                            x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, canonicalEndPoint) ||
+                                 x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint));
 
                         ChecklistEntry entry;
                         lock (_checklistLock)
                         {
-                            entry = _checklist.FirstOrDefault(
-                                x => ReferenceEquals(x.RemoteCandidate, canonicalCandidate)
-                                     && (!wasRelayed || x.LocalCandidate.type == RTCIceCandidateType.relay));
-                        }
-                        if (entry == null)
-                        {
-                            entry = new ChecklistEntry(wasRelayed ? _relayChecklistCandidate : _localChecklistCandidate,
-                                canonicalCandidate, IsController);
-                            entry.State = ChecklistEntryState.Waiting;
-                            if (wasRelayed)
+                            entry = FindChecklistEntryForBindingRequest(
+                                remoteEndPoint, canonicalEndPoint, wasRelayed);
+                            if (entry == null)
                             {
-                                entry.TurnPermissionsRequestSent = 1;
-                                entry.TurnPermissionsResponseAt = DateTime.Now;
+                                entry = new ChecklistEntry(wasRelayed ? _relayChecklistCandidate : _localChecklistCandidate,
+                                    canonicalCandidate, IsController);
+                                entry.State = ChecklistEntryState.Waiting;
+                                if (wasRelayed)
+                                {
+                                    entry.TurnPermissionsRequestSent = 1;
+                                    entry.TurnPermissionsResponseAt = DateTime.Now;
+                                }
+                                AddChecklistEntry(entry);
                             }
-                            AddChecklistEntry(entry);
                         }
                         matchingChecklistEntry = entry;
                     }
@@ -2167,6 +2162,16 @@ namespace SIPSorcery.Net
                     }
                 }
             }
+        }
+
+        // The caller holds _checklistLock so lookup and conditional insertion share one critical section.
+        private ChecklistEntry FindChecklistEntryForBindingRequest(
+            IPEndPoint remoteEndPoint, IPEndPoint canonicalEndPoint, bool wasRelayed)
+        {
+            return _checklist.FirstOrDefault(x =>
+                (x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint) ||
+                 x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, canonicalEndPoint)) &&
+                (!wasRelayed || x.LocalCandidate.type == RTCIceCandidateType.relay));
         }
 
         /// <summary>
