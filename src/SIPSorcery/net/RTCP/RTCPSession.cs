@@ -61,6 +61,20 @@ namespace SIPSorcery.Net
         private const float RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR = 1.5F;
         private const int NO_ACTIVITY_TIMEOUT_FACTOR = 6;
         private const double NTP_TIMESTAMP32_UNITS_PER_SECOND = 65536;
+
+        /// <summary>
+        /// How long the source the reception report is for has to have been quiet before RTP
+        /// packets from a different SSRC replace it. Long enough that a stream interleaved with
+        /// another one, or briefly paused, keeps its report.
+        /// </summary>
+        internal const int RECEPTION_REPORT_SOURCE_QUIET_MILLISECONDS = 1000;
+
+        /// <summary>
+        /// How many packets in a row a new SSRC has to send before it replaces the quiet
+        /// source the reception report is for, so a single stray packet cannot replace it.
+        /// Matches the MIN_SEQUENTIAL probation of RFC3550 appendix A.1.
+        /// </summary>
+        internal const int RECEPTION_REPORT_NEW_SOURCE_MIN_PACKETS = 2;
         
         private static readonly ILogger logger = LogFactory.CreateLogger<RTCPSession>();
 
@@ -192,6 +206,9 @@ namespace SIPSorcery.Net
         private Timer m_rtcpReportTimer;
 
         private ReceptionReport m_receptionReport;
+        private DateTime m_receptionReportLastPacketAt;     // Arrival time of the last packet from the reception report's source.
+        private uint m_candidateSsrc;                       // A different SSRC that may be replacing the reception report's source.
+        private int m_candidatePacketCount;                 // Packets in a row received from the candidate SSRC.
         private uint m_previousPacketsSentCount = 0;    // Used to track whether we have sent any packets since the last report was sent.
         private readonly object m_sentCountsLock = new object();
 
@@ -304,10 +321,21 @@ namespace SIPSorcery.Net
             PacketsReceivedCount++;
             OctetsReceivedCount += rtpPacket.GetPayloadLength();
 
+            uint ssrc = rtpPacket.Header.SyncSource;
+
             if (m_receptionReport == null)
             {
-                m_receptionReport = new ReceptionReport(rtpPacket.Header.SyncSource);
+                m_receptionReport = new ReceptionReport(ssrc);
             }
+            else if (m_receptionReport.SSRC != ssrc && !IsReplacingReceptionReportSource(ssrc, arrivalTime))
+            {
+                // The packet is from a different source than the one being reported on. Mixing
+                // its sequence numbers and timestamps into the report would corrupt it.
+                return;
+            }
+
+            m_receptionReportLastPacketAt = arrivalTime;
+            m_candidatePacketCount = 0;
 
             var clockRate = GetReceiveClockRate(rtpPacket.Header.PayloadType);
 
@@ -322,6 +350,42 @@ namespace SIPSorcery.Net
 
             var arrivalTimestamp = clockRate == 0 ? DateTimeToNtpTimestamp32(arrivalTime) : SecondsToRtpUnits((arrivalTime - CreatedAt).TotalSeconds, clockRate);
             m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, arrivalTimestamp);
+        }
+
+        /// <summary>
+        /// Checks whether an RTP packet from a different SSRC to the reception report's source
+        /// means the remote party has changed, for example when the RTP session is reused for
+        /// a transferred call, and if so replaces the reception report with one for the new
+        /// SSRC. Without this the receiver reports would keep describing a source that has
+        /// stopped and never list the new one, which can lead the remote party to decide its
+        /// media is not being received. The source is only replaced once it has gone quiet and
+        /// the new SSRC has sent a few packets in a row, so interleaved sources cannot make the
+        /// report flip-flop between them.
+        /// </summary>
+        /// <param name="ssrc">The SSRC of the received packet.</param>
+        /// <param name="arrivalTime">The time the packet was received.</param>
+        /// <returns>True if the reception report was replaced with one for the new SSRC.</returns>
+        private bool IsReplacingReceptionReportSource(uint ssrc, DateTime arrivalTime)
+        {
+            if (ssrc != m_candidateSsrc || m_candidatePacketCount == 0)
+            {
+                m_candidateSsrc = ssrc;
+                m_candidatePacketCount = 0;
+            }
+
+            m_candidatePacketCount++;
+
+            if (m_candidatePacketCount < RECEPTION_REPORT_NEW_SOURCE_MIN_PACKETS ||
+                (arrivalTime - m_receptionReportLastPacketAt).TotalMilliseconds < RECEPTION_REPORT_SOURCE_QUIET_MILLISECONDS)
+            {
+                return false;
+            }
+
+            logger.LogDebug("RTCP session for {MediaType} switching reception report from remote ssrc {OldSsrc} to {NewSsrc}.",
+                MediaType, m_receptionReport.SSRC, ssrc);
+
+            m_receptionReport = new ReceptionReport(ssrc);
+            return true;
         }
 
         /// <summary>
