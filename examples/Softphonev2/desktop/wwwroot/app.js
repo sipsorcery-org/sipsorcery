@@ -2313,8 +2313,8 @@ function onNewCall(e) {
 }
 
 function onPhase(e) {
-  // A call you placed from Accounts or People (or with either open) leaves you where you were
-  // until it's answered; then the view closes (an unsaved edit is dropped) and the call is selected.
+  // A call you placed with Accounts open leaves you there until it's answered; then it closes (an
+  // unsaved edit is dropped) and the call is selected. (People closes as soon as you call.)
   if (e.h.call === "connected" && !e.connectedAt && e.h.outgoing) {
     closeHistory(false);
     closeAccounts();
@@ -2755,9 +2755,11 @@ function clearAddressOnAnswer(e) {
 
 // Call, or Call back from History. account: the one to call from (a contact's, or the one that
 // call was on): Call from switches to it first, so it shows what's used, unless it's been removed
-// or disabled, when the call goes from Call from's account and a note says so.
+// or disabled, when the call goes from Call from's account and a note says so. People closes, so
+// the stage shows how the call's going.
 function placeCall(address, account = null, who = null) {
   if (!address || $("callBtn").disabled) return;
+  closeHistory(false);
   lastDialled = address;
   account = account ? useAccount(account, who) : null;
   openMic();   // alongside the INVITE, so it's ready when the call connects
@@ -3087,9 +3089,8 @@ initContacts({
   post,
   log,
   shortName,
-  // Call, from the tab: closes the view (as Call back on Recent does), then the way Call does,
-  // with the contact's address in the field.
-  // The view stays open while the call is placed: it closes if the call's answered (onPhase).
+  // Call, from the tab: the way Call does, with the contact's address in the field, which closes
+  // the view (placeCall) so the stage shows how the call's going.
   call(uri) { $("address").value = uri; $("dialForm").requestSubmit(); },
   changed() { refreshAddressFields(); render(); },
   openPeople,

@@ -143,10 +143,10 @@ history; *Manage accounts* beside the account picker now has a server icon.
   files from before it have none, which means *Any*. The web softphone has no accounts, so it
   shows no *Call from* there. Changing a contact's address replaces it. `Esc` closes the form, then clears the
   search, then closes the view.
-- **Calling from here** (Call, Call back, or the dial bar with People or Accounts open) leaves
-  the view open while the call is placed, with the call's row (or the "Calling… · Cancel" banner,
-  over another call) showing how it's going. Answered, the view closes (an unsaved edit is
-  dropped) and the call is selected; declined or failed, you stay where you were.
+- **Calling from here** (Call, Call back, or the dial bar with People open) closes the view
+  straight away, so the stage shows the call ringing out and how it ends (or the "Calling… ·
+  Cancel" banner, over another call). With *Manage accounts* open, the call leaves you there
+  until it's answered, then it closes (an unsaved edit is dropped) and the call is selected.
 - Without a host that keeps history there's no view, so no Contacts tab either; contacts still
   come up in the address field's list.
 
@@ -1103,7 +1103,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | `→` on the Recent tab; Edit *Anon Tester* to *Anon Two*; *Add contact* with `SIP:vtD@127.0.0.1:5392`; `Esc`, `Esc`; Delete twice | Contacts tab, focused. The form says *Edit Anon Tester*, saves on Contacts, focus back in search. "Desk D already has that address." `Esc` closes the form, then the view. Delete reads *Delete? Click again*, then removes it. |
 | Address field: ↑, Enter on *Contacts…*; then `sip:zed@example.org`, ↑, Enter | The view opens on Contacts with focus in search; then on its form, *New contact*, with the address in. |
 | Call on Desk D's row on the Contacts tab | The call goes to D, which answers, and the view closes; after it ends, Desk D's row shows *Outgoing · 0:03*, *Just now*. |
-| vtA/vtB (two accounts a side): A opens People, calls Bob, B declines; A opens *Manage accounts*, calls Bob, B answers; A opens People, calls Dave over Bob, B answers | Declined: People stays open, the row says "486 BusyHere". From Accounts: Accounts open while calling; answered, it closes and Bob is selected (Video call). Over Bob: People open with the "Dave · Calling… · Cancel" banner over it, Bob on hold; answered, People closes and Dave is selected, Bob on hold. |
+| vtA/vtB (two accounts a side): A opens People, calls Bob, B declines; A opens *Manage accounts*, calls Bob, B answers; A opens People, calls Dave over Bob, B answers | Declined: People closes on Call, the stage shows Bob ringing, then why it ended. From Accounts: Accounts open while calling; answered, it closes and Bob is selected (Video call). Over Bob: People closes on Call, the "Dave · Calling… · Cancel" banner over Bob's call, Bob on hold; answered, Dave is selected, Bob on hold. |
 | C: the People button; *Contacts*; People again, and again; then *Manage accounts* (server icon), then People | (Before People always opened on Contacts.) People shows with history: it opens on Recent, pressed (accent, not Mute's red); it closes, then reopens on Contacts. *Manage accounts* swaps the view for Accounts, and People swaps it back. |
 | Keypad, two copies (`--profile vtE --port 5195 --ws-port 8195` and `vtF --port 5196 --ws-port 8196 --auto-answer`, both `--fake-media --diagnostics`): E `--dtmf 159*0# --dial sip:vtf@127.0.0.1:5196`, F `--dtmf 42` | Both keypads open 2 s after the page's audio connects. E logs `DTMF '1' sent (RFC 4733, telephone-event/8000 pt 101)` for each key; F's `SIPUserAgent.OnDtmfTone` logs `DTMF '1' received (RFC 4733)` … `'#'`, all six in order, and E receives F's `4` and `2` the same way. |
 | E places two calls to F (Call, then Call & hold), keypad open on the second, keys `1` and `#` | Both go as tones on call 2 (F logs them on its call 2); call 1 stays on hold and isn't selected, so `1` didn't pick it. |
@@ -1124,7 +1124,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | G back on *G Work*: `hannah.l`, Enter (a recent call on G Home, not a contact) | *Call from* switches to G Home; H rings from `ghome`. |
 | G on *G Work*: Recent, *Hannah.lab*'s person button | The Contacts form opens with the address and *Call from* G Home filled in. Saved as *Hannah Lab* on *G Old* (disabled). |
 | G: `sip:hannah.lab@127.0.0.1:5396` pasted, Call | *Call from* stays on G Work, with "G Old is disabled: calling from G Work" under it; H rings from `gwork`. |
-| G on *G Work*: the call button on Hannah Desk's Contacts row | *Call from* switches to G Home and the view stays open while it rings; H rings from `ghome`. |
+| G on *G Work*: the call button on Hannah Desk's Contacts row | *Call from* switches to G Home and the view closes; H rings from `ghome`. |
 | G: Annabel given an account id no account has | Details: "A removed account (calls use Call from's)"; the form shows *A removed account* selected. Calling it leaves *Call from* alone with "Annabel's account has been removed: calling from G Work". |
 | G (`--diagnostics`) calls Hannah Desk, H answers; G opens the call's details | The stage's info overlay reads `sip:hdesk@… ✓ Hannah Desk 00:03`, the mark and name in light green beside the address (not cut off by its ellipsis); the details add *Contact: Saved contact: Hannah Desk* under *Call*. H's overlay shows *Gee Home*. |
 | Gravatars: G gets a contact and an incoming history entry for `sip:beau@dentedreality.com.au` (Gravatar's documentation example, which has a picture) | Its avatar is the picture (160 px from gravatar.com) in the sidebar's History, the `b` suggestions and the Contacts tab; *Bob Smith* (`bob@example.net`, no Gravatar) and *Annabel* keep their initials, and the `127.0.0.1` addresses aren't looked up. |

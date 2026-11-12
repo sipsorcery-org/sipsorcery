@@ -226,7 +226,7 @@ export function closeHistory(focus = true) {
   if (focus) $("peopleBtn").focus({ preventScroll: true });
 }
 
-// The view stays open until the call's answered (app.js onPhase closes it then).
+// Placing the call closes the view (app.js placeCall), so the stage shows how it's going.
 function callBack(e) {
   if (!e) return;
   api.call(e.uri, e.account);
