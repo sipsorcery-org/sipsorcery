@@ -1753,9 +1753,10 @@ namespace SIPSorcery.SIP.App
             // - If the new call is answered then it now becomes active and a BYE request should be sent to hangup the 
             //   original call.
 
-            // While we process the transfer request we flag the original call so that any subsequent re-INVITE 
+            // While we process the transfer request we flag the original call so that any subsequent re-INVITE
             // requests or response (most likely relating to on/off hold) don't get applied to the media session.
-            _oldCallID = uas.ClientTransaction.TransactionRequest.Header.CallId;
+            // The original call is the dialog being replaced, not the replacing INVITE's (that one becomes the call).
+            _oldCallID = m_sipDialogue?.CallId;
 
             OnAttendedTransferRequested?.Invoke(uas.ClientTransaction.TransactionRequest);
 
@@ -1803,6 +1804,14 @@ namespace SIPSorcery.SIP.App
             if (answerResult)
             {
                 logger.LogDebug("Attended transfer was successfully answered, hanging up original call.");
+
+                // The call is now the one we answered (m_uas). If the call being replaced was one we
+                // placed, its descriptor must go: CallEnded matches a BYE against m_callDescriptor
+                // first, so a BYE from the new party would be answered but never end the call. The
+                // replaced call's hold doesn't carry over to the new one either.
+                m_uac = null;
+                m_callDescriptor = null;
+                IsOnLocalHold = false;
 
                 OnAttendedTransferAccepted?.Invoke(replacedDialogue);
 
