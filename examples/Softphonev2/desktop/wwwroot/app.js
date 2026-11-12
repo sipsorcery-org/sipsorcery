@@ -1316,37 +1316,6 @@ function setDetailsOpen(open) {
 $("infoChevron").innerHTML = ICON.chevronDown;
 // Call details are technical, so only in diagnostics mode: otherwise the info bar is just
 // who and how long, with no chevron, and closing diagnostics closes them.
-// The info bar can be tucked away off the stage's left edge (its arrow), leaving a small arrow
-// tab to bring it back, with a red dot while you're muted. Remembered (prefs.infoTucked).
-let infoTucked = !!prefs.infoTucked;
-const INFO_ARROW = {
-  hide: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
-  show: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
-};
-$("infoHide").innerHTML = INFO_ARROW.hide;
-$("infoTab").innerHTML = INFO_ARROW.show;
-function renderInfoTuck() {
-  const info = $("info"), tab = $("infoTab");
-  info.classList.toggle("tucked", infoTucked);
-  info.inert = infoTucked;
-  tab.hidden = info.hidden || !infoTucked;
-  const muted = !$("mutedPill").hidden;
-  tab.classList.toggle("muted", muted);
-  const label = ["Show call info", $("infoName").textContent, muted && "You're muted"].filter(Boolean).join(" · ");
-  tab.title = label;
-  tab.setAttribute("aria-label", label);
-}
-function setInfoTucked(on) {
-  infoTucked = on;
-  savePref("infoTucked", on);
-  if (on && !$("details").hidden) setDetailsOpen(false);
-  // From the keyboard, the focus goes on to the arrow that undoes it (not after a click: no ring).
-  const refocus = !!document.activeElement?.matches("#info :focus-visible, #infoTab:focus-visible");
-  renderInfoTuck();
-  if (refocus) (on ? $("infoTab") : $("infoHide")).focus();
-}
-$("infoHide").onclick = () => setInfoTucked(true);
-$("infoTab").onclick = () => setInfoTucked(false);
 function allowDetails(on) {
   $("infoHead").disabled = !on;
   if (!on && !$("details").hidden) setDetailsOpen(false);
@@ -2127,7 +2096,6 @@ function render() {
   const pill = $("mutedPill");
   pill.hidden = !(live && hasMic && muted);
   if (!pill.hidden && !pill.innerHTML) pill.innerHTML = `${ICON.micOff}<span>You're muted</span>`;
-  renderInfoTuck();
 
   // Camera: during a video call it turns your camera on and off; on an audio call it's Add video,
   // unless video can't be had. Before a call it decides whether a video call starts with your

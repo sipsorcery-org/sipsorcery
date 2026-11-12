@@ -366,13 +366,9 @@ chevron that drops down the call's details, in diagnostics mode only (F12): they
 so otherwise the info bar is just who and how long, with no chevron. It's closed at the start
 of every call, and when diagnostics closes.
 
-The small `‹` arrow at the info bar's left end tucks it away: it slides off the stage's left
-edge (0.2 s, instant with reduced motion), leaving a small `›` tab there, *Show call info*, to
-bring it back. Tucking it closes the details. While you're muted the tab has a red dot (the
-Muted pill is tucked away with the bar), and its tooltip names the call and says you're
-muted. Tucked, the bar is inert, so Tab skips it; from the keyboard the focus moves to the tab
-and back to the arrow. The choice is remembered with the other settings (`infoTucked`, per
-profile on the desktop) and applies to every call.
+The info bar used to have a `‹` arrow that tucked it off the stage's edge, leaving a tab to
+bring it back. It's small enough to leave where it is, and it carries the Muted pill, so the
+arrow and tab went.
 
 | Row | What it says | From |
 |---|---|---|
@@ -836,7 +832,10 @@ prototype's *Call from* and *Manage accounts* (`prototype/web`). Every enabled a
 at once; *Call from* picks the one calls go out from.
 
 - **Call from**, at the left of the dial bar: the enabled accounts, plus *No account (direct)*
-  for calls straight to an IP address or host. The dot is the chosen account's registration:
+  for calls straight to an IP address or host. It shows only with a choice to make: two or more
+  enabled accounts, or calls set to go direct while there's one. With a single account every
+  call goes from it, so the picker is left out and *Manage accounts*' tooltip says which account
+  calls go from and its registration. The dot is the chosen account's registration:
   green registered, amber registering, red failed, grey not registering. Its tooltip says why
   it failed, and so does the Ready card ("alice@… isn't registered: Wrong username or
   password (401 Unauthorised)"). The choice is remembered, *No account* included.
@@ -981,10 +980,6 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Both copies restarted | The same history on each, and B's unseen missed badge still 1. |
 | Web softphone (`web/index.html?server=ws://localhost:8381&user=web`) with three entries put in its `localStorage` | The People button and view as on the desktop (Dana *Missed* with the badge, Echo, Eve *Busy* under Yesterday); Remove takes it out of `callHistory`, Undo puts it back. With nothing stored: "No calls yet". |
 |---|---|
-| Call info tucked away: two copies (`--profile vtK --port 5421 --ws-port 8421`, `vtL --port 5422 --ws-port 8422`, both `--fake-media --test-pattern`, built to a separate folder); L calls K, K answers (`A`), then the `‹` at the start of K's info bar | The bar slides left (mid-slide `translateX` −211 px) off the stage's edge; a 20×30 px `›` tab at the stage's top left, "Show call info · sip:thisis@anonymous.invalid". `inert` on the bar; `infoTucked: true` stored. No focus ring on the tab after a mouse click. |
-| K: `M` while tucked | A red dot on the tab; tooltip "… · You're muted". |
-| K restarted, L calls again | No tab before the call; once answered, the bar starts tucked with the tab. A click on the tab brings the bar back; `infoTucked: false`. |
-| K in diagnostics (F12): the info bar's chevron, then `‹` | The details drop down; tucking the bar closes them. |
 | K with reduced motion emulated | No transition on the bar, no animation on the tab. |
 | Several calls: three copies, A (`--profile fgA --port 5191 --ws-port 8191 --video --diagnostics`), B and C (`fgB`/`fgC`, ports 5192/8192 and 5193/8193, `--auto-answer`), all `--fake-media --test-pattern` | A calls B: video both ways. A calls C: A's B call goes on hold ("On hold · 00:06", B shows "Thisis put you on hold"), C's call on the stage with the audio. |
 | A: `2` (the older call) | B's call comes off hold and has the audio (its `<video>` plays, C's is muted), and C's goes on hold: one live call. B gets A's video again within a second (the held call's sender goes back on). |
@@ -1009,6 +1004,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Grid, then restart both copies | `view: "grid"` stored; after restarting the copies, A's two calls open in the grid. |
 | Accounts, against a stand-in SIPSorcery registrar with digest auth on 127.0.0.1:5070 (`--profile accttest --fake-media --diagnostics --auto-answer`, a config with alice) | First start: alice seeded from the config, stored with a DPAPI password, registered. Bob added in the form with a wrong password: "Not registered: Wrong username or password (401 Unauthorised)", Manage accounts red. Password fixed: registered. An account with auth username carol registered as dave. `nosuch.invalid`: "Can't find the server nosuch.invalid (DNS lookup failed)". |
 | Calls from accounts, same set-up | Call from Bob to `echo`: the server saw From `"Bob B" <sip:bob@127.0.0.1:5070>`, authenticated as bob. Call from alice to `callback`: the server called alice's contact back (To alice), auto-answered, Call details "Incoming · alice@127.0.0.1:5070". |
+| Call from with one account (vtA with only Alice), and two (vtB: Bob, Dave) | vtA: no picker; *Manage accounts*' tooltip "calls go from alice@127.0.0.1:5192 (Calls out only)". vtB: the picker with Bob, Dave and *No account (direct)*. vtA set to direct: the picker shows (so you see it and can go back); back on Alice, it hides again. |
 | Account changes and restarts | Restart: all three accounts back, registered, the seed not added twice. Rename: no REGISTER. Disable Bob, remove Dave: each unregistered (Expires: 0). Re-register: one new REGISTER, no unregister racing it. *No account (direct)* still chosen after a restart. Closing the app unregisters every account. |
 | Web softphone (`web/index.html?api=stub`) with the same page | No Call from or Accounts view; its own sign-in as before; no console errors. |
 | Settings, two copies (`--profile setA` / `setB`, `--fake-media --diagnostics`) | The gear opens Settings with the fake devices named, and *System default (Fake Default Audio Input)*. Focus starts on Microphone. |

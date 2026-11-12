@@ -29,7 +29,8 @@
            badge. Hidden until the host sends call history. -->
       <button type="button" class="btn icon-btn people-btn" id="peopleBtn" aria-label="People" title="People: recent calls and contacts" hidden><span class="missed-count" id="peopleCount"></span></button>
       <!-- Desktop only (accounts.js): the account calls go out from, its registration, and Manage
-           accounts. Hidden until the host sends its accounts; the web softphone never does. -->
+           accounts. Hidden until the host sends its accounts; the web softphone never does. The
+           picker shows only with a choice to make (two or more accounts). -->
       <div class="from" id="from" hidden>
         <button type="button" class="btn icon-btn from-manage" id="manageAccounts" aria-label="Manage accounts" title="Manage accounts"></button>
         <span class="from-pick"><span class="from-dot" id="fromDot"></span><select id="fromSelect" aria-label="Call from"></select></span>
@@ -133,17 +134,14 @@
         <button type="button" class="btn" id="xferRetry">Try again</button>
         <button type="button" class="rtt-close" id="xferDismiss" aria-label="Dismiss" title="Dismiss"></button>
       </div>
-      <!-- Who the call is with and for how long; the chevron drops down the call's details. The
-           arrow at its start tucks it away off the stage's left edge, leaving a small arrow tab
-           (infoTab) to bring it back; the choice is remembered. -->
+      <!-- Who the call is with and for how long; in diagnostics mode the chevron drops down the
+           call's details. -->
       <div class="info" id="info" hidden>
-        <button type="button" class="info-hide" id="infoHide" aria-controls="info" title="Hide call info" aria-label="Hide call info"></button>
         <button type="button" class="info-head" id="infoHead" aria-expanded="false" aria-controls="details" title="Show call details">
           <span id="infoName"></span><span class="info-contact" id="infoContact" hidden></span><span class="timer" id="timer"></span><span class="muted-pill" id="mutedPill" hidden></span><span class="info-chevron" id="infoChevron"></span>
         </button>
         <div class="details" id="details" hidden></div>
       </div>
-      <button type="button" class="info-tab" id="infoTab" aria-controls="info" aria-expanded="false" hidden></button>
       <!-- Diagnostics: call quality, ↑ what we send (their RTCP) and ↓ what we receive (measured here). -->
       <div class="quality diag-only collapsed" id="quality" hidden>
         <button type="button" class="q-head" id="qHead" aria-expanded="false" title="Show the details"><span class="q-title">Call quality</span><span class="q-rtt" id="qRtt"></span><span class="q-sum" id="qSum"></span><span class="q-chevron" id="qChevron"></span></button>

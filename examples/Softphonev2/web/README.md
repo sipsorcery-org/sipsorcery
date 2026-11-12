@@ -133,7 +133,7 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   us with a re-INVITE, the browser's connection is recvonly, so unlike the desktop nothing is
   sent until they resume.
 - The **Active calls** panel down the left (see the [desktop README](../desktop/README.md#active-calls)):
-  every call, collapsible to a rail, the choice kept in `localStorage`.
+  every call, shown with two or more calls (a rail on narrow windows).
 - **Focus and grid views**, the desktop page's (see the [desktop README](../desktop/README.md#focus-and-grid-views)):
   the Grid button under the calls, or G, remembered.
 - **A call it can't take doesn't ring.** A browser can only answer a WebRTC offer, so an

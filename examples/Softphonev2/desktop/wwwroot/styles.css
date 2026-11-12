@@ -364,28 +364,6 @@ body:not(.diag) .diag-only { display: none; }
 
 .info[hidden] { display: none; }
 
-/* Tucked away: the arrow at the info bar's start slides it off the stage's left edge (the stage
-   clips it), leaving a small arrow tab there to bring it back. Muted, the tab has a red dot. */
-.info { grid-template-columns: auto minmax(0, 1fr); column-gap: 6px; transition: transform .2s ease, opacity .2s ease, visibility 0s; }
-.info > .details { grid-column: 1 / -1; }
-.info.tucked { transform: translateX(calc(-100% - 12px)); opacity: 0; visibility: hidden; transition: transform .2s ease, opacity .2s ease, visibility 0s .2s; }
-.info-hide, .info-tab {
-  display: grid; place-items: center; padding: 0; border: 0; color: #fff; cursor: pointer;
-}
-.info-hide { width: 20px; height: 18px; margin-left: -4px; border-radius: 4px; background: none; opacity: .75; }
-.info-hide:hover { opacity: 1; background: rgba(255, 255, 255, .14); }
-.info-hide svg, .info-tab svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.info-tab {
-  position: absolute; left: 0; top: 12px; z-index: 2; width: 20px; height: 30px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  background: rgba(0, 0, 0, .55); animation: info-tab-in .2s ease .15s both;
-}
-.info-tab[hidden] { display: none; }
-.info-tab:hover { background: rgba(0, 0, 0, .7); }
-.info-hide:focus-visible, .info-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.info-tab.muted::after { content: ""; position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .55); }
-@keyframes info-tab-in { from { opacity: 0; transform: translateX(-6px); } }
-@media (prefers-reduced-motion: reduce) { .info, .info.tucked { transition: none; } .info-tab { animation: none; } }
-
 /* Diagnostics: Call quality, top right over the stage (below the audio chip on an audio call). */
 .quality {
   position: absolute; right: 12px; top: 12px; z-index: 2; width: var(--side-w); max-width: calc(100% - 24px); padding: 10px 12px; border-radius: var(--radius-sm);
@@ -659,6 +637,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .from { display: flex; align-items: center; gap: 6px; flex: none; position: relative; }
 .from[hidden] { display: none; }
 .from-pick { position: relative; display: flex; }
+.from-pick[hidden] { display: none; }
 .from-pick select {
   height: 40px; max-width: 220px; padding: 0 10px 0 26px; border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit;
