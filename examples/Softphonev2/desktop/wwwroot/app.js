@@ -2858,7 +2858,7 @@ $("callsToggle").onclick = (e) => { e.stopPropagation(); setCallsCollapsed(!$("c
 // detached from the panel by the time the click gets here, which made it look like a click on
 // the panel itself.
 $("calls").addEventListener("click", (e) => {
-  if (e.composedPath().some((n) => n instanceof Element && n.matches(".call-row, button, .calls-foot, .hist-side"))) return;
+  if (e.composedPath().some((n) => n instanceof Element && n.matches(".call-row, button, .calls-foot"))) return;
   setCallsCollapsed(!$("calls").classList.contains("collapsed"));
 });
 // Narrow windows: clicking away or Esc puts the panel back to the rail.

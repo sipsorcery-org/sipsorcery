@@ -25,9 +25,9 @@
     </header>
 
     <form class="dialbar" id="dialForm" autocomplete="off">
-      <!-- People (history.js): the Recent and Contacts view, with the missed-call badge. Hidden
-           until the host sends call history. -->
-      <button type="button" class="btn icon-btn people-btn" id="peopleBtn" aria-label="Contacts" title="Contacts" hidden><span class="missed-count" id="peopleCount"></span></button>
+      <!-- People (history.js): the one way into the Recent and Contacts view, with the missed-call
+           badge. Hidden until the host sends call history. -->
+      <button type="button" class="btn icon-btn people-btn" id="peopleBtn" aria-label="People" title="People: recent calls and contacts" hidden><span class="missed-count" id="peopleCount"></span></button>
       <!-- Desktop only (accounts.js): the account calls go out from, its registration, and Manage
            accounts. Hidden until the host sends its accounts; the web softphone never does. -->
       <div class="from" id="from" hidden>
@@ -77,21 +77,6 @@
         <button type="button" class="btn calls-all" id="camAllBtn" hidden></button>
         <button type="button" class="btn btn-danger calls-all" id="endAllBtn"></button>
       </div>
-      <!-- Call history (history.js), under the calls: the latest few, each with a call-back
-           button, and See all history for the History view. The caret folds it (remembered); the
-           red badge counts missed calls you haven't looked at. On the rail it's one History
-           button with that badge. Hidden until the host sends a history. -->
-      <section class="hist-side" id="histSide" aria-labelledby="histHead" hidden>
-        <div class="hist-head">
-          <button type="button" class="hist-fold" id="histToggle" aria-controls="histBody"><span id="histHead">History</span></button>
-          <span class="missed-count" id="missedCount"></span>
-        </div>
-        <div class="hist-body" id="histBody">
-          <ol class="hist-list" id="histList"></ol>
-          <button type="button" class="see-all" id="seeAllHistory">See all history</button>
-        </div>
-        <button type="button" class="btn hist-rail" id="histRail" aria-label="Call history"><span class="missed-count" id="histRailCount"></span></button>
-      </section>
     </aside>
 
     <!-- The stage, with the real-time text popover and toast over its bottom edge. -->

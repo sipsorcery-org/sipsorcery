@@ -1022,68 +1022,19 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 
 /* ---------- Call history (history.js) ---------- */
 
-/* In the Active calls panel, under the calls: it takes the room that's left, and its list scrolls. */
-.call-list { flex: 0 1 auto; }
-.hist-side { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); cursor: default; }
-.hist-side[hidden] { display: none; }
-.hist-head { display: flex; align-items: center; gap: 8px; padding: 0 2px 0 8px; margin-bottom: 6px; min-height: 28px; }
-.hist-fold { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 2px 4px 2px 0; font: inherit; font-weight: 600; font-size: 13.5px; color: var(--text); cursor: pointer; border-radius: 6px; }
-.hist-fold svg { width: 14px; height: 14px; fill: none; stroke: var(--muted); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .12s; }
-.hist-fold[aria-expanded="false"] svg { transform: rotate(-90deg); }
-.hist-fold:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .missed-count {
   min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; display: grid; place-items: center;
   background: var(--danger-soft); color: var(--danger); font-size: 12px; font-weight: 600;
 }
 .missed-count:empty { display: none; }
-.hist-body { display: flex; flex-direction: column; min-height: 0; }
-.hist-body[hidden] { display: none; }
-.hist-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; align-content: start; overflow-y: auto; min-height: 0; }
-.hs-item { position: relative; }
-.hs-line {
-  width: 100%; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: center;
-  padding: 7px 40px 7px 10px; border: 1px solid transparent; border-radius: 10px; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer;
-}
-.hs-line:hover { background: var(--surface-3); }
-.hs-line.selected { background: var(--surface); border-color: var(--border); }
-.hs-line:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.hs-line .call-avatar { background: var(--surface-3); color: var(--muted); }
-.hs-main { min-width: 0; display: grid; }
-.hs-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hs-status { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 12.5px; color: var(--muted); }
-.hs-status > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hs-status.bad { color: var(--danger); }
-.hs-status.warn { color: var(--warn-ink); }
-.hs-status svg, .hv-outcome svg { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-/* Call back: shown on hover or focus, so the list reads as a list. */
-.hs-call {
-  position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; display: grid; place-items: center;
-  border: 0; border-radius: 50%; background: none; color: var(--accent); cursor: pointer; opacity: 0;
-}
-.hs-item:hover .hs-call, .hs-call:focus-visible { opacity: 1; }
-.hs-call:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-.hs-call:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.hs-call svg, .hv-icon svg, .hv-actions svg, .hv-clear svg, .hv-confirm svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.see-all {
-  flex: none; margin-top: 4px; padding: 8px 10px; border: 0; border-radius: 8px; background: none;
-  font: inherit; font-size: 13px; color: var(--accent); text-align: left; cursor: pointer;
-}
-.see-all:hover { background: var(--surface-3); }
-.see-all.on { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.see-all:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-/* The rail: one History button, with the missed badge on its corner. */
-.hist-rail { display: none; position: relative; width: 34px; height: 34px; padding: 0; place-items: center; color: var(--muted); }
-.hist-rail svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.hist-rail.on { color: var(--accent); border-color: var(--accent); }
 .people-btn { position: relative; }
 .people-btn[hidden] { display: none; }
 .people-btn.on { color: var(--accent); border-color: var(--accent); }
 /* Pressed here means "the view is open", not .btn[aria-pressed]'s red (Mute and the like). */
-.btn.people-btn[aria-pressed="true"], .btn.hist-rail[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); border-color: var(--accent); }
-.hist-rail .missed-count, .people-btn .missed-count { position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--danger); color: #fff; }
-.calls.collapsed .hist-side { flex: none; align-items: center; margin-top: 10px; padding-top: 10px; }
-.calls.collapsed .hist-head, .calls.collapsed .hist-body { display: none; }
-.calls.collapsed .hist-rail { display: grid; }
+.btn.people-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); border-color: var(--accent); }
+.people-btn .missed-count { position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--danger); color: #fff; }
+.hv-outcome svg { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hv-icon svg, .hv-actions svg, .hv-clear svg, .hv-confirm svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* The History view, over the stage like Accounts (it shares the .am frame). */
 .hv { gap: 12px; }

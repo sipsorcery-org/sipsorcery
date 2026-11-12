@@ -6,12 +6,11 @@
 // and hears history-remove {ids} and history-restore {ids} (Undo) from here. A host that sends no
 // history shows none of this.
 //
-// Two places show it:
-//  - the History section in the Active calls panel: the latest calls, each with a call-back
-//    button, a red badge for missed calls you haven't looked at, collapsible (remembered), and
-//    See all history. On the rail, a History button with the badge.
-//  - the People view over the stage, with two tabs: Recent (this list) and Contacts (contacts.js
-//    fills that tab, through api.mountContacts). Like Accounts, it's not a call, so looking at it holds nothing;
+// It shows in the People view over the stage, opened by the People button beside the address bar
+// (with a red badge for missed calls you haven't looked at). The address bar's suggestions are the
+// quick way to call someone back; the view is for looking through and tidying up. Two tabs:
+// Recent (this list) and Contacts (contacts.js fills that tab, through api.mountContacts). Like
+// Accounts, it's not a call, so looking at it holds nothing;
 //    Back to … and × close it, and so does Esc. Search, All / Missed / Outgoing / Incoming, day
 //    groups; a row (or its chevron) opens its details, with Call back, Copy address, Remove and
 //    Remove all N from this address, and (there and as an icon on the row) Add to contacts or
@@ -31,19 +30,16 @@ const ICON = {
   missed: svg(`<path d="m16 2 6 6"/><path d="m22 2-6 6"/>${PHONE}`),
   outgoing: svg('<path d="M7 7h10v10"/><path d="M7 17 17 7"/>'),
   inbound: svg('<path d="M17 7 7 17"/><path d="M17 17H7V7"/>'),
-  history: svg('<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>'),
   search: svg('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'),
   trash: svg('<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>'),
   copy: svg('<rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'),
   chevronDown: svg('<path d="m6 9 6 6 6-6"/>'),
-  caret: svg('<path d="m6 9 6 6 6-6"/>'),
   close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
   back: svg('<path d="M19 12H5M12 19l-7-7 7-7"/>'),
   addContact: svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>'),
   contact: svg('<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
   people: svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>'),
 };
-const SIDE_COUNT = 6;          // calls in the sidebar section
 const UNDO_MS = 10000;         // how long the Undo toast stays
 const D = 24 * 3600_000;
 const FILTERS = [["all", "All"], ["missed", "Missed"], ["out", "Outgoing"], ["in", "Incoming"]];
@@ -58,7 +54,6 @@ let undo = { ids: [], timer: 0 };
 const load = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
 const store = (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } };
 let seenAt = Number(load("historySeenAt", "0")) || 0;   // missed calls after this are "new"
-let collapsed = load("historyCollapsed", "no") === "yes";
 
 /** The history, newest first, or null if the host keeps none. */
 export const historyEntries = () => entries;
@@ -111,33 +106,13 @@ export const describeCall = (e) => ({ ...outcome(e), when: relTime(e.at), at: `$
 
 export function initHistory(a) {
   api = a;
-  $("histToggle").onclick = (ev) => {
-    ev.stopPropagation();
-    collapsed = !collapsed;
-    store("historyCollapsed", collapsed ? "yes" : "no");
-    if (!collapsed) markSeen();   // the missed calls are on show now, so they are no longer new
-    renderSide();
-  };
-  // History (See all history, the rail's button) opens the view on Recent and People (the dial
-  // bar) on Contacts. Each closes it again if it's on its own tab, and switches tab if it's on
-  // the other.
-  const onTab = (tab) => historyOpen() && view.tab === tab;
-  const toggleRecent = (ev) => { ev.stopPropagation(); onTab("recent") ? closeHistory() : openHistory(); };
-  $("seeAllHistory").onclick = toggleRecent;
-  $("histRail").onclick = toggleRecent;
   $("peopleBtn").insertAdjacentHTML("afterbegin", ICON.people);
-  // With new missed calls (the badge) People goes straight to Recent, which clears the badge.
+  // People opens the view on the tab you last had (Recent at first), or on Recent with new
+  // missed calls (the badge), which clears the badge; open, it closes it.
   $("peopleBtn").onclick = (ev) => {
     ev.stopPropagation();
-    if (unseenMissed()) openPeople("recent");
-    else onTab("contacts") ? closeHistory() : openPeople("contacts");
-  };
-  $("histList").onclick = (ev) => {
-    ev.stopPropagation();
-    const btn = ev.target.closest("button[data-act]");
-    if (!btn) return;
-    if (btn.dataset.act === "call") callBack(byId(btn.dataset.id));
-    else openHistory(btn.dataset.id);
+    if (historyOpen()) closeHistory();
+    else openPeople(unseenMissed() ? "recent" : view.tab);
   };
   $("historyView").onclick = onViewClick;
   // ←/→ on the tabs move between them.
@@ -183,7 +158,6 @@ export function onHistoryMessage(msg) {
   // Looking at the list counts as seeing what's new on it.
   if (historyOpen()) markSeen();
   if (view.selectedId && !byId(view.selectedId)) view.selectedId = null;
-  $("histSide").hidden = false;
   $("peopleBtn").hidden = false;
   renderSide();
   if (historyOpen()) renderResults();
@@ -214,19 +188,6 @@ function markSeen() {
   if (newest <= seenAt) return;
   seenAt = newest;
   store("historySeenAt", String(seenAt));
-}
-
-export function openHistory(id = null) {
-  if (!entries) return;
-  api.closeAccounts();
-  Object.assign(view, { open: true, takenOver: false, tab: "recent" });
-  if (id) Object.assign(view, { selectedId: id, filter: "all", q: "" });   // so the chosen call shows
-  $("historyView").hidden = false;
-  markSeen();
-  renderView();
-  renderSide();
-  if (id) $("historyView").querySelector(`.hv-row[data-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "center" });
-  else $("histSearch")?.focus();
 }
 
 /**
@@ -262,7 +223,7 @@ export function closeHistory(focus = true) {
   $("historyView").replaceChildren();
   $("histConfirm")?.close();
   renderSide();
-  if (focus) $("seeAllHistory").focus({ preventScroll: true });
+  if (focus) $("peopleBtn").focus({ preventScroll: true });
 }
 
 // The view stays open until the call's answered (app.js onPhase closes it then).
@@ -271,52 +232,21 @@ function callBack(e) {
   api.call(e.uri, e.account);
 }
 
-// ---- The section in the Active calls panel ----
+// ---- The People button ----
 
 export function renderSide() {
   if (!entries) return;
   const n = unseenMissed();
   const label = n ? `${n} new missed call${n === 1 ? "" : "s"}` : "";
-  for (const id of ["missedCount", "histRailCount", "peopleCount"]) {
-    $(id).textContent = n || "";
-    $(id).title = label;
-    $(id).setAttribute("aria-label", label);
-  }
-  const t = $("histToggle");
-  t.setAttribute("aria-expanded", String(!collapsed));
-  t.title = collapsed ? "Show recent calls" : "Hide recent calls";
-  if (!t.querySelector("svg")) t.insertAdjacentHTML("afterbegin", ICON.caret);
-  $("histBody").hidden = collapsed;
+  const count = $("peopleCount");
+  count.textContent = n || "";
+  count.title = label;
+  count.setAttribute("aria-label", label);
   const open = historyOpen();
-  const html = entries.slice(0, SIDE_COUNT).map((e) => {
-    const o = outcome(e), name = nameOf(e);
-    const sel = open && view.selectedId === e.id;
-    return `<li class="hs-item">
-        <button type="button" class="hs-line${sel ? " selected" : ""}" data-act="open" data-id="${esc(e.id)}" title="${esc(`${e.uri} · details`)}">
-          <span class="call-avatar" aria-hidden="true"${avatarAttr(e.uri)}>${esc(initial(name))}</span>
-          <span class="hs-main"><span class="hs-name">${esc(name)}${markOf(e)}</span>
-            <span class="hs-status ${o.tone}">${o.ico}<span>${esc(e.dir === "missed" ? "Missed · " : e.note ? `${e.note} · ` : "")}${esc(relTime(e.at))}</span></span></span>
-        </button>
-        <button type="button" class="hs-call" data-act="call" data-id="${esc(e.id)}" aria-label="Call ${esc(name)}" title="Call ${esc(name)}">${ICON.phone}</button>
-      </li>`;
-  }).join("") || `<li class="call-empty">No calls yet</li>`;
-  if ($("histList").dataset.html !== html) { $("histList").innerHTML = html; $("histList").dataset.html = html; }
-  // Pressed: History's buttons while the view is on Recent, People's while it's on Contacts.
-  const onRecent = open && view.tab === "recent";
-  const onContacts = open && view.tab === "contacts";
-  const all = $("seeAllHistory");
-  all.textContent = `See all history${entries.length ? ` (${entries.length})` : ""}`;
-  all.classList.toggle("on", onRecent);
-  all.setAttribute("aria-pressed", String(onRecent));
-  const rail = $("histRail");
-  rail.classList.toggle("on", onRecent);
-  rail.setAttribute("aria-pressed", String(onRecent));
-  rail.title = `Call history${n ? ` · ${label}` : ""}`;
   const people = $("peopleBtn");
-  people.classList.toggle("on", onContacts);
-  people.setAttribute("aria-pressed", String(onContacts));
-  people.title = `Contacts${n ? ` · ${label}` : ""}`;
-  if (!rail.querySelector("svg")) rail.insertAdjacentHTML("afterbegin", ICON.history);
+  people.classList.toggle("on", open);
+  people.setAttribute("aria-pressed", String(open));
+  people.title = `People: recent calls and contacts${n ? ` · ${label}` : ""}`;
 }
 
 // ---- The History view ----

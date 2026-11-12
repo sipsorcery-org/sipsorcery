@@ -92,13 +92,13 @@ calls are red.
   tooltip *Saved contact: Name* (`contactmark.js`). It's after the name of a contact in this
   list, in the field itself (a pill with the contact's name at the field's right end, when what's
   typed, pasted or picked is a contact's address), on Recent rows and in their details
-  (*Contact: Saved contact: Name*), in the sidebar's History, on Active calls rows, grid tiles, and
+  (*Contact: Saved contact: Name*), on Active calls rows, grid tiles, and
   the call's header (the card while calling or ringing; once connected, the info overlay on the
   stage, with the contact's name in light green, and a *Contact* row in its details). Calls to or
   from other addresses show nothing extra. Addresses match as the list's dedupe does: the URI out
   of `Name <sip:…>`, without parameters, case aside and `sip:` optional.
 - **Gravatar pictures** replace the initials (`avatar.js`): in this list, People's Recent and
-  Contacts rows, the sidebar's History, Active calls rows, grid tiles and the stage.
+  Contacts rows, Active calls rows, grid tiles and the stage.
   `sip:alice@example.com` is looked up as `alice@example.com` (SHA-256, at
   `gravatar.com/avatar/<hash>?d=identicon`), once per run: their picture, or without one
   Gravatar's identicon for that address (the same pattern each time); the initial stays only if
@@ -120,12 +120,11 @@ calls are red.
 
 ## People: Recent and Contacts
 
-The **People** button (two heads, titled *Contacts*) at the start of the dial bar opens a view
-over the stage on its **Contacts** tab; it carries the missed-call badge, and while the badge
-shows it opens straight on **Recent**, which clears it. *See all history (N)*
-and the rail's History button open it on **Recent** (see Call history, below). Each closes the
-view if it's already on its own tab and switches to that tab if it's on the other, and each is
-shown pressed only while the view is on its tab. ←/→ move between the tabs. The button shows once the host sends call
+The **People** button (two heads) at the start of the dial bar is the one way into the call
+history and contacts; to call someone, the address field's suggestions are quicker. It opens a
+view over the stage on the tab you last had (**Recent** at first), and closes it again. It
+carries the missed-call badge, and while the badge shows it opens straight on **Recent**, which
+clears it. It's shown pressed while the view is open. ←/→ move between the tabs. The button shows once the host sends call
 history; *Manage accounts* beside the account picker now has a server icon.
 
 - **Recent** is the call history. Each row has a person button beside the chevron, and its
@@ -289,8 +288,7 @@ the audio, and the view stays Grid.
 
 A panel down the left, beside the stage and the control bar, from the prototype's sidebar. It
 lists every call, oldest at the top and new ones at the bottom, while it's live (calling, ringing or connected) and for a
-few seconds after it ends, and otherwise says *No active calls*. Under the calls is the History
-section (see [Call history](#call-history)). Clicking a row puts that call
+few seconds after it ends, and otherwise says *No active calls*. Clicking a row puts that call
 on the stage. The list is built from `listed()` and `callStatus()` in `app.js`.
 
 - **A row**: their initial, their name (the full address in the tooltip), the status and, once
@@ -314,15 +312,13 @@ on the stage. The list is built from `listed()` and `callStatus()` in `app.js`.
 ## Call history
 
 From the prototype's *Call history*. The host records every call when it ends and keeps the
-list; the page (`history.js`) shows it in two places.
+list; the page (`history.js`) shows it in the People view's *Recent* tab, and the address field
+suggests from it. (An earlier History section under the active calls was dropped: it was a third
+way to the same calls.)
 
-- **The History section**, in the Active calls panel under the calls: the latest 6 calls, each
-  with its outcome and when ("Missed · 5 min ago", "Busy · Yesterday"), and a call-back button on
-  hover. A red badge counts missed calls you haven't looked at; opening History, People while
-  the badge shows, or unfolding the section clears it (`historySeenAt` in `localStorage`). The caret folds the section, and that's remembered
-  (`historyCollapsed`). On the rail it's one History button with the badge on its corner.
-  Clicking a call opens History with that call's details.
-- **The History view** (now the People view's *Recent* tab, see above), from *See all history (N)*, over the stage like Accounts: it isn't a
+- **The badge**: a red count on the People button of missed calls you haven't looked at; opening
+  Recent clears it (`historySeenAt` in `localStorage`).
+- **The History view** (the People view's *Recent* tab, see above), over the stage like Accounts: it isn't a
   call, so opening it holds nothing and the call carries on under it. *Back to …* (while a call
   is going) and × close it, and so does `Esc` (which first clears a search). Picking a call in
   the panel, or the ringing banner's name, closes it too, and it and Accounts take turns. It has
@@ -356,7 +352,7 @@ page all of it (`history {entries, max}`) when the page is ready and whenever it
 page sends `history-remove {ids}` and `history-restore {ids}` (Undo), and the host keeps what was
 removed in memory, so Undo works until the app closes. The address field's Recent list comes
 from the same history. The web softphone's host keeps its history the same way in the browser's
-`localStorage` (`callHistory`); a host that sends no history shows no History section at all.
+`localStorage` (`callHistory`); a host that sends no history shows no People button at all.
 
 A direct call (no account) arrives from SIPSorcery's anonymous `sip:thisis@anonymous.invalid`,
 so it's recorded with that address, and calling it back goes nowhere; a call from an account
@@ -983,14 +979,13 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Test | Result |
 | Call history, two copies (`--profile hiA --port 5381 --ws-port 8381` and `hiB --port 5382 --ws-port 8382`, both `--fake-media`, no accounts); A calls `sip:hiB@127.0.0.1:5382` | B answers (`A`), A hangs up after 4 s: A's History "HiB · Just now" (Outgoing · 0:04), B's "Thisis" (Incoming · 0:04). B declines: A *Busy* (`486 Busy Here`), B *Declined*. A cancels while it rings: A *Cancelled*, B *Missed* in red, with the badge at 1. Each is in `history-hiA.json` / `history-hiB.json`. |
 | A: the call-back button on the latest History entry | A calls `sip:hiB@127.0.0.1:5382` again; B answers and it's recorded like the first. |
-| B: *See all history (5)* | The view over the stage, "5 calls · 2 missed", the badge cleared; *Missed* lists the two missed calls and the button reads *Clear 2 shown*; the chevron opens the details (Incoming, Today 08:11, 0:03, No account (direct), Completed · They hung up) with Call back, Copy address, Remove and *Remove all 5 from this address*. |
+| B: People | The view over the stage on Recent, "5 calls · 2 missed", the badge cleared; *Missed* lists the two missed calls and the button reads *Clear 2 shown*; the chevron opens the details (Incoming, Today 08:11, 0:03, No account (direct), Completed · They hung up) with Call back, Copy address, Remove and *Remove all 5 from this address*. |
 | B: Remove, then Remove on another call, then Undo; *Remove all 5*, Undo | "Removed Thisis from history", then "Removed 2 calls from history" (one batch); Undo: "Restored 2 calls", 5 calls again in the file. Remove all: 0 calls; Undo: all 5 back. |
 | B: *Missed*, *Clear 2 shown* | A dialog: "Clear 2 calls? This removes the 2 missed calls. Other calls stay in history." Clear: "3 calls · 0 missed", with Undo. |
 | B with History open; A calls B, then cancels | The ringing call takes the stage from the view; when it stops ringing, History comes back with the new missed call, already seen (no badge). |
-| B: `Esc`; then with a call answered, *See all history* | `Esc` closes the view. During the call the view has *Back to Thisis*, which closes it with the call as it was (not held); opening it again and clicking the call's row closes it too. |
-| B: the History caret; the panel's chevron (rail); a missed call while on the rail | Folded, with `historyCollapsed: yes`. On the rail: one History button that opens the view; a missed call puts a red 1 on its corner. |
+| B: `Esc`; then with a call answered, People | `Esc` closes the view. During the call the view has *Back to Thisis*, which closes it with the call as it was (not held); opening it again and clicking the call's row closes it too. |
 | Both copies restarted | The same history on each, and B's unseen missed badge still 1. |
-| Web softphone (`web/index.html?server=ws://localhost:8381&user=web`) with three entries put in its `localStorage` | The History section and view as on the desktop (Dana *Missed* with the badge, Echo, Eve *Busy* under Yesterday); Remove takes it out of `callHistory`, Undo puts it back. With nothing stored: "No calls yet". |
+| Web softphone (`web/index.html?server=ws://localhost:8381&user=web`) with three entries put in its `localStorage` | The People button and view as on the desktop (Dana *Missed* with the badge, Echo, Eve *Busy* under Yesterday); Remove takes it out of `callHistory`, Undo puts it back. With nothing stored: "No calls yet". |
 |---|---|
 | Call info tucked away: two copies (`--profile vtK --port 5421 --ws-port 8421`, `vtL --port 5422 --ws-port 8422`, both `--fake-media --test-pattern`, built to a separate folder); L calls K, K answers (`A`), then the `‹` at the start of K's info bar | The bar slides left (mid-slide `translateX` −211 px) off the stage's edge; a 20×30 px `›` tab at the stage's top left, "Show call info · sip:thisis@anonymous.invalid". `inert` on the bar; `infoTucked: true` stored. No focus ring on the tab after a mouse click. |
 | K: `M` while tucked | A red dot on the tab; tooltip "… · You're muted". |
@@ -1011,7 +1006,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Address bar cleared on answer: M types `sip:vtN@127.0.0.1:5432` and presses Enter (focus stays in the field); N has `stale text` in its bar; N answers | M's field empty (focus still there), N's empty too; each logs `call 1 answered: address bar cleared`. |
 | Buttons in the calls panel don't toggle it: M with two video calls; Mute all, Unmute all, Cameras off, Cameras on, with the panel open and then collapsed (clicks on the buttons' icon or label, which they redraw); then End all on the rail; a click on the panel's empty space | The panel stays as it was for all four (before: each click toggled it, as the redrawn label was no longer inside the panel when the panel's own click handler checked). End all on the rail opens the panel and nothing more (before: opened, then closed again, so it seemed to do nothing). The empty space still toggles it. |
 | End all on the rail: M with two calls (N held, O live), panel collapsed, End all three times | First click: the panel opens, both calls up, the button *End all* (the rail icon's tooltip says it opens the panel to confirm). Second: *End 2?*. Third: both end *You hung up*. |
-| Missed-call badge: N calls M and hangs up while it rings (M's People view closed) | The badge at 1 on People, the History section and the rail. People: the view opens on Recent (History pressed), the badge cleared everywhere; People again: Contacts; again: closed. With M's History section folded, another missed call: the badge at 1; unfolding the section clears it. With no badge People opens on Contacts as before. |
+| Missed-call badge: N calls M and hangs up while it rings (M's People view closed) | The badge at 1 on People. People: the view opens on Recent (People pressed), the badge cleared; People again: closed. Contacts tab, close, People: opens on Contacts (the last tab); a missed call meanwhile: People opens on Recent. |
 | Panels close when the call ends: M calls N, opens the keypad (docked) and the text (joins the dock); N hangs up | Before: the dock at the right, the stage narrowed. After: M logs `call 1 ended: keypad and text closed`, the dock is hidden and the stage is back to full width with "They hung up". |
 | Cameras off: M with two video calls (N held, O live; `--fake-media`), *Cameras off*, then *Cameras on* | The footer: Grid; *Mute all* and *Cameras off* side by side; *End all* in its own row. *Cameras off*: both calls `camera off`, the camera closes, the self view shows the camera-off card, O's stage shows M's placeholder (the initial in a circle); the button reads *Cameras on*, pressed, in red, and the call's own button *Start video*. *Cameras on*: both calls `camera on`, the camera opens, O sees M's video again, the button *Cameras off*. With only audio calls the button isn't shown. |
 | Grid, the same three copies: A with video calls to B and C, then *Grid* under the list | Two tiles, C's (selected, outlined) with its test pattern, B's "On hold · 00:14"; *Grid* pressed; the control bar empty. `M` and `H` change nothing. |
@@ -1116,7 +1111,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Add contact, `Esc`, `Esc` | The form closes with focus on the search box; then the dialog closes. |
 | `sip:Grace@example.net` typed in the address field, ↑, Enter, name *Grace*, Enter | The list's only row is *Add sip:Grace@example.net to contacts…*; it opens the dialog's form with the address in and the name focused. Saved with its case kept; then `gr` in the field highlights Grace under Contacts. |
 | Call on Desk D in the dialog | The dialog closes and the call goes to D, which answers; when it ends, the open list shows it under Recent at once (*Just now*). |
-| C: *See all history*, then the *Contacts* tab; Desk D's row | Tabs *Recent* / *Contacts*, "2 contacts", focus in the contacts search. Desk D's row shows its last call and when; its details list its 5 calls with day and time, and *Show all 5 calls in Recent*. |
+| C: People, then the *Contacts* tab; Desk D's row | Tabs *Recent* / *Contacts*, "2 contacts", focus in the contacts search. Desk D's row shows its last call and when; its details list its 5 calls with day and time, and *Show all 5 calls in Recent*. |
 | *Show all … in Recent*; then on Recent, *Add to contacts* in a non-contact's details, `Esc`; the row's person button, name *Anon Tester*, Save | Recent, searched for `sip:vtD@…`, 4 rows. The form opens on Contacts with the address in and the name focused; `Esc` goes back to Recent with the details still open. After Save it's back on Recent, and the row shows *Anon Tester*. |
 | `→` on the Recent tab; Edit *Anon Tester* to *Anon Two*; *Add contact* with `SIP:vtD@127.0.0.1:5392`; `Esc`, `Esc`; Delete twice | Contacts tab, focused. The form says *Edit Anon Tester*, saves on Contacts, focus back in search. "Desk D already has that address." `Esc` closes the form, then the view. Delete reads *Delete? Click again*, then removes it. |
 | Address field: ↑, Enter on *Contacts…*; then `sip:zed@example.org`, ↑, Enter | The view opens on Contacts with focus in search; then on its form, *New contact*, with the address in. |
@@ -1147,7 +1142,6 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | G on *G Work*: the call button on Hannah Desk's Contacts row | *Call from* switches to G Home and the view stays open while it rings; H rings from `ghome`. |
 | G: Annabel given an account id no account has | Details: "A removed account (calls use Call from's)"; the form shows *A removed account* selected. Calling it leaves *Call from* alone with "Annabel's account has been removed: calling from G Work". |
 | G (`--diagnostics`) calls Hannah Desk, H answers; G opens the call's details | The stage's info overlay reads `sip:hdesk@… ✓ Hannah Desk 00:03`, the mark and name in light green beside the address (not cut off by its ellipsis); the details add *Contact: Saved contact: Hannah Desk* under *Call*. H's overlay shows *Gee Home*. |
-| G: People, *See all history*, *See all history*, *See all history*, People, People, People, the Recent tab, People, People | Contacts (People pressed); Recent (History pressed); closed; Recent; Contacts; closed; Contacts; Recent (History pressed); Contacts; closed. |
 | Gravatars: G gets a contact and an incoming history entry for `sip:beau@dentedreality.com.au` (Gravatar's documentation example, which has a picture) | Its avatar is the picture (160 px from gravatar.com) in the sidebar's History, the `b` suggestions and the Contacts tab; *Bob Smith* (`bob@example.net`, no Gravatar) and *Annabel* keep their initials, and the `127.0.0.1` addresses aren't looked up. |
 | Settings: *Show Gravatar pictures for people* off, then on | Off: every picture goes, initials only. On: the picture is back (from the cache, no new lookup). |
 | Fallback changed from `d=404` to `d=identicon` (the row above Settings was before it). C: People > Contacts and the sidebar's History | *Grace* (`sip:Grace@example.net`, no Gravatar) and the `thisis@anonymous.invalid` caller show their identicons in place of the initial; *Desk D* (`127.0.0.1`) keeps its initial. |
