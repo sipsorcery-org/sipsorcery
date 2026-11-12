@@ -4,7 +4,8 @@ namespace SIPSorcery.Softphone;
 
 /// <summary>
 /// A name you've given a SIP address, for the address field's suggestions. Account: the SIP
-/// account (its id) to call them from; null for whichever Call from has. Older files have none.
+/// account (its id) to call them from, "direct" for no account, or null for whichever Call from
+/// has. Older files have none.
 /// </summary>
 public sealed record Contact(string Name, string Uri, string? Account = null);
 

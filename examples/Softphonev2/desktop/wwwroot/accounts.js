@@ -21,6 +21,8 @@ const ICON = {
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
   back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>',
   chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
 };
 
 // The form's fields, grouped as in the prototype, less what the host doesn't do yet (outbound
@@ -64,6 +66,11 @@ function status(a) {
 }
 
 const aor = (a) => `${a.username}@${a.server.replace(/^sips?:/i, "").replace(/;.*$/, "")}`;
+// The address as a URI, for the list: sips: when the account's transport is TLS.
+const uri = (a) => `${a.transport === "tls" ? "sips" : "sip"}:${aor(a)}`;
+// This PC's address and SIP port (the host's DirectAddress), for the note by Close on the list,
+// and until when that note says "Copied".
+let localAddress = "", localCopiedUntil = 0;
 
 export function initAccounts(api) {
   post = api.post;
@@ -91,6 +98,7 @@ export function onAccountsState(state) {
   const first = accounts === null;
   accounts = state.accounts;
   selectedId = state.accountId ?? null;
+  localAddress = state.localAddress || "";
   const live = ["calling", "ringing", "connected"].includes(state.call);
   // A ringing call takes over the stage; Manage accounts brings the view (and your edits) back.
   if (state.call === "ringing" && !callLive && view.open) $("accounts").hidden = true;
@@ -149,7 +157,7 @@ function renderFrom() {
 
 // The accounts, for the contacts' "Call from" picker (null in the web softphone, which has none).
 export const accountList = () => accounts;
-export const accountName = (id) => byId(id)?.name ?? null;
+export const accountName = (id) => (id === DIRECT ? "no account (direct)" : byId(id)?.name ?? null);
 
 let noteTimer = 0;
 // A short note under Call from, for a few seconds.
@@ -162,14 +170,30 @@ function fromNote(text) {
   noteTimer = setTimeout(() => { el.hidden = true; }, 5000);
 }
 
+// A contact's Call from when it's always called directly, with no account (contacts.js).
+export const DIRECT = "direct";
+
 /**
  * Before a call to a contact (or back to a recent call): Call from switches to the account it's
- * called from, so the picker shows what the call uses. One that's been removed or disabled
- * leaves Call from as it is, and says so. Returns the account id to dial with, or null for
- * Call from's (also when there are no accounts, as in the web softphone).
+ * called from, so the picker shows what the call uses (DIRECT: No account (direct)). One that's
+ * been removed or disabled leaves Call from as it is, and says so. Returns the account id to dial
+ * with, or null for Call from's (also when there are no accounts, as in the web softphone).
  */
 export function useAccount(id, who) {
   if (!accounts || !id) return null;
+  if (id === DIRECT) {
+    if (selectedId) {
+      selectedId = null;
+      renderFrom();
+      post({ type: "account-select", id: null });
+      log(`call from no account (direct)${who ? ` (${who}'s)` : ""}`);
+      const pick = $("fromSelect").parentElement;
+      pick.classList.remove("switched");
+      void pick.offsetWidth;
+      pick.classList.add("switched");
+    }
+    return null;
+  }
   const a = byId(id);
   const cur = byId(selectedId);
   const now = cur?.enabled ? cur.name : "no account (direct)";
@@ -237,11 +261,21 @@ function renderView(rebuild) {
   else updateForm(root);
 }
 
-function topbar(title, sub) {
+function topbar(title, sub, note = "") {
   return `<div class="am-top">
       <div><h2 class="am-title">${esc(title)}</h2>${sub ? `<div class="am-sub">${sub}</div>` : ""}</div>
-      <button type="button" class="am-close" data-act="close" aria-label="Close accounts" title="Close (Esc)">${ICON.close}</button>
+      <div class="am-top-right">${note}
+      <button type="button" class="am-close" data-act="close" aria-label="Close accounts" title="Close (Esc)">${ICON.close}</button></div>
     </div>`;
+}
+
+// The note by Close on the list: the address direct calls reach this PC on, without an account
+// (the header used to show it in diagnostics mode). A click copies it.
+function localNote() {
+  if (!localAddress) return "";
+  const copied = performance.now() < localCopiedUntil;
+  return `<button type="button" class="am-local" data-act="copy-local" title="Copy ${esc(localAddress)}: other phones can call it directly, without an account">
+      <span>${copied ? "Copied" : "Direct calls reach this PC at"}</span><span class="am-mono">${esc(localAddress)}</span>${copied ? ICON.check : ICON.copy}</button>`;
 }
 
 function renderList(root) {
@@ -250,12 +284,12 @@ function renderList(root) {
     const st = status(a);
     return `<tr data-id="${esc(a.id)}" class="${a.enabled ? "" : "disabled"}">
         <td><button type="button" class="am-name" data-act="edit" data-id="${esc(a.id)}">${esc(a.name)}</button>${a.id === selectedId && a.enabled ? '<span class="am-tag">Calls from</span>' : ""}</td>
-        <td class="am-mono">${esc(aor(a))}</td>
+        <td class="am-mono">${esc(uri(a))}</td>
         <td><span class="am-status ${st.tone}"><span class="am-dot ${st.tone}"></span>${esc(st.long)}</span></td>
         <td class="am-chev">${ICON.chevron}</td>
       </tr>`;
   }).join("");
-  root.innerHTML = `${topbar("Accounts", "The SIP accounts this phone registers with and calls from.")}
+  root.innerHTML = `${topbar("Accounts", "The SIP accounts this phone registers with and calls from.", localNote())}
     <div class="am-actions"><button type="button" class="btn" data-act="add">${ICON.plus}Add account</button></div>
     ${accounts.length ? `<div class="am-table-wrap"><table class="am-table">
       <thead><tr><th>Account</th><th>Address</th><th>Status</th><th></th></tr></thead>
@@ -341,6 +375,12 @@ function onClick(e) {
   const id = el.dataset.id ?? view.page;
   switch (act) {
     case "close": close(); break;
+    case "copy-local":
+      post({ type: "copy", text: localAddress });
+      localCopiedUntil = performance.now() + 1500;
+      renderView(false);
+      setTimeout(() => renderView(false), 1600);
+      break;
     case "list": showList(); break;
     case "add": showForm("new"); break;
     case "edit": showForm(id); break;

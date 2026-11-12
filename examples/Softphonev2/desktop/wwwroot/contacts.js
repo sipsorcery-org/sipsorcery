@@ -4,8 +4,8 @@
 // The desktop host keeps them per profile (contacts-{profile}.json beside the accounts) and sends
 //   contacts {contacts: [{name, uri, account?}]}
 // on ready and after every change; the page sends contact-save {name, uri, account?} and
-// contact-remove {uri}. account is the SIP account (its id) to call them from; none means
-// whichever Call from has. Calling a contact switches Call from to it (accounts.js useAccount). A host that never sends any (the web softphone) leaves them in this
+// contact-remove {uri}. account is the SIP account (its id) to call them from, "direct" for
+// no account (direct), or none for whichever Call from has. Calling a contact switches Call from to it (accounts.js useAccount). A host that never sends any (the web softphone) leaves them in this
 // browser's localStorage. Changes show here straight away; the host's reply then replaces them.
 //
 // The Contacts tab (history.js owns the view and its tabs, and calls mountContacts): search, Add
@@ -16,7 +16,7 @@
 // call on Recent comes here, and goes back to Recent when the form is done with.
 
 import { historyEntries, describeCall } from "./history.js";
-import { accountList } from "./accounts.js";
+import { accountList, DIRECT } from "./accounts.js";
 import { normAddress, contactMark } from "./contactmark.js";
 import { avatarAttr } from "./avatar.js";
 
@@ -210,15 +210,16 @@ function showForm() {
   form.hidden = false;
   form.name.value = ui.draft?.name ?? "";
   form.uri.value = ui.draft?.uri ?? "";
-  // Call from: the accounts (none in the web softphone, which hides it), and "Any" for Call
-  // from's. One that's since been removed stays listed, so saving doesn't quietly drop it.
+  // Call from: "Any" for Call from's, the accounts (none in the web softphone, which hides it),
+  // and No account (direct). One that's since been removed stays listed, so saving doesn't quietly drop it.
   const accounts = accountList();
   const want = ui.draft?.account ?? "";
   form.querySelector(".contact-account").hidden = !accounts?.length;
   if (accounts?.length) {
     const opts = [`<option value="">Any (the current Call from account)</option>`,
-      ...accounts.map((a) => `<option value="${esc(a.id)}">${esc(a.name)}${a.enabled ? "" : " (disabled)"}</option>`)];
-    if (want && !accounts.some((a) => a.id === want)) opts.push(`<option value="${esc(want)}">A removed account</option>`);
+      ...accounts.map((a) => `<option value="${esc(a.id)}">${esc(a.name)}${a.enabled ? "" : " (disabled)"}</option>`),
+      `<option value="${DIRECT}">No account (direct)</option>`];
+    if (want && want !== DIRECT && !accounts.some((a) => a.id === want)) opts.push(`<option value="${esc(want)}">A removed account</option>`);
     form.account.innerHTML = opts.join("");
     form.account.value = want;
   }
@@ -265,6 +266,7 @@ function disarm() {
 // A contact's Call from account, for its details.
 function fromText(c) {
   if (!c.account) return "Any: the current Call from account";
+  if (c.account === DIRECT) return "No account (direct)";
   const a = accountList()?.find((x) => x.id === c.account);
   if (!a) return "A removed account (calls use Call from's)";
   return a.enabled ? a.name : `${a.name} (disabled: calls use Call from's)`;

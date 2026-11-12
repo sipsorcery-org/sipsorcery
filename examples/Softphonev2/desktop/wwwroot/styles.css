@@ -44,20 +44,6 @@ body { display: flex; flex-direction: column; background: var(--page); color: va
 .brand-sub { color: var(--muted); }
 .topbar-right { display: flex; align-items: center; gap: 14px; }
 body:not(.diag) .diag-only { display: none; }
-.reg {
-  color: var(--muted); font: inherit; font-size: 13px; display: flex; align-items: center; gap: 6px;
-  background: none; border: 0; border-radius: var(--radius-sm); padding: 4px 8px; cursor: pointer;
-}
-.reg:hover { background: var(--surface-2); color: var(--text); }
-.reg:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.reg-copy { display: inline-flex; }
-.reg-copy svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.reg.copied .reg-copy { color: var(--ok); }
-.reg::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
-.reg.registered::before { background: var(--ok); }
-.reg.registering::before { background: var(--warn-ink); }
-.reg.failed { color: var(--danger); }
-.reg.failed::before { background: var(--danger); }
 
 .dialbar { display: flex; gap: 8px; }
 .dialbar input {
@@ -234,7 +220,7 @@ body:not(.diag) .diag-only { display: none; }
 .btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
 .btn-danger:hover { background: var(--danger); filter: brightness(1.08); }
 
-/* The self view's default width (selfview.js), and the room the call info leaves for it. */
+/* The self view's default width (selfview.js). */
 .stage { --side-w: 260px; position: relative; min-height: 0; border-radius: var(--radius); overflow: hidden; background: var(--tile); }
 /* The stage shows one of: card (no call, or calling/ringing/ended), video, nocam (video agreed
    but none arriving) or audio (no video on the call). */
@@ -328,78 +314,83 @@ body:not(.diag) .diag-only { display: none; }
 .viz-note.me { top: 78%; }
 .viz-note > span { display: inline-block; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 85%, transparent); font-size: 13px; font-weight: 500; color: var(--muted); }
 .viz-note.bad > span { color: var(--danger); }
-.info {
-  position: absolute; left: 12px; top: 12px; z-index: 2; display: grid; gap: 8px; padding: 6px 10px; border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, .55); color: #fff; font-size: 13px; max-width: min(420px, calc(100% - 24px - var(--side-w) - 12px));
-}
-.info-head { height: 18px; display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; min-width: 0; }
-.info-head > :first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* A saved contact's mark and name, in a light green that reads on the dark overlay. */
-.info-contact { display: inline-flex; align-items: center; gap: 4px; flex: none; white-space: nowrap; color: #9be7cb; font-weight: 500; }
+/* The selected call's info, at the left of the control bar: who, how long, and a red mic when
+   you're muted. The name is cut short first; the column keeps room for the timer. */
+.call-info { grid-column: 1; display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; font-size: 13px; color: var(--text); white-space: nowrap; }
+.call-info[hidden] { display: none; }
+.controls.grid .call-info { visibility: hidden; }
+/* With Active calls open in full (two calls or more), each row has its name and time, and the
+   buttons need the room: no call info, and its column can close up. Folded to the rail, it's back. */
+.shell:has(> .calls:not([hidden]):not(.collapsed)) > .controls { --info-min: 0px; }
+.shell:has(> .calls:not([hidden]):not(.collapsed)) .call-info { display: none; }
+/* The name (and a saved contact's mark) on the first line, the timer under it. */
+.info-text { display: grid; min-width: 0; line-height: 1.25; }
+.info-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.info-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+/* The padlock: green with SIP and the media encrypted, yellow with one, grey and open with
+   neither; opens Call details. */
+.info-lock { display: grid; place-items: center; flex: none; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ok); cursor: pointer; }
+.info-lock[hidden] { display: none; }
+.info-lock.partial { color: #d19b00; }
+.info-lock.none { color: var(--muted); }
+.info-lock:hover { background: var(--surface-2); }
+.info-lock:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.info-lock svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* A saved contact's mark and name. */
+.info-contact { display: inline-flex; align-items: center; gap: 4px; flex: none; white-space: nowrap; color: var(--accent); font-weight: 500; }
 .info-contact[hidden] { display: none; }
 .info-contact .contact-mark { margin: 0; color: inherit; }
-.info-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* Outside diagnostics mode: no chevron, nothing to click. */
-.info-head:disabled { cursor: default; }
-.info-head:disabled .info-chevron { display: none; }
-.info-chevron { display: grid; place-items: center; opacity: .8; }
-.info-chevron svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
-.info-head[aria-expanded="true"] .info-chevron svg { transform: rotate(180deg); }
-/* Call details: a label and a value per row; values that are addresses or ids in monospace. */
-.details { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 12px; font-size: 12px; padding-bottom: 2px; }
-.details[hidden] { display: none; }
-.details dt { opacity: .65; white-space: nowrap; }
-.details dd { margin: 0; overflow-wrap: anywhere; }
-.details .mono { font: 12px Consolas, monospace; }
-.details .enc { display: inline-flex; align-items: center; gap: 5px; }
-.details .enc svg { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.details .enc.off { color: #f0c27a; }
-.details .copy-id { margin-left: 6px; padding: 0 4px; border: 0; border-radius: 3px; background: rgba(255, 255, 255, .12); color: inherit; font: 11px system-ui, sans-serif; cursor: pointer; }
-.timer { font-variant-numeric: tabular-nums; opacity: .85; }
-/* Muted on a call: a red pill by the timer, so you see it without looking down at the buttons. */
-.muted-pill { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px;
-  background: var(--danger); color: #fff; font-size: 12px; font-weight: 600; white-space: nowrap; flex: none; }
+.timer { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
+/* Muted on a call: a small red mic by the timer. */
+.muted-pill { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--danger); color: #fff; }
 .muted-pill[hidden] { display: none; }
+.muted-pill > span { display: none; }
 .muted-pill svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-.info[hidden] { display: none; }
+/* Diagnostics: Call details, its own tab: a label and a value per row; values that are
+   addresses or ids in monospace. */
+.dev-details { padding: 10px 16px; }
+.details { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 16px; margin: 0; max-width: 760px; font-size: 13px; }
+.details[hidden] { display: none; }
+.details dt { color: var(--muted); white-space: nowrap; }
+.details dd { margin: 0; overflow-wrap: anywhere; }
+.details .mono { font: 12.5px Consolas, monospace; }
+.details .enc { display: inline-flex; align-items: center; gap: 5px; }
+.details .enc svg { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.details .enc.off { color: var(--warn-ink); }
+.details .copy-id { margin-left: 8px; padding: 1px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface-2); color: inherit; font: 11.5px system-ui, sans-serif; cursor: pointer; }
+.details .copy-id:hover { background: var(--surface-3); }
 
-/* A video call: a strip across the top of the stage (the stage's own colour) holds the call info
-   and how a transfer is going, and the video starts below it, so they never cover it. Opened
-   (diagnostics), the call details drop down over the video as before. */
-.stage { --strip-h: 0px; }
-.stage.strip:not(.grid) { --strip-h: 36px; }
-.stage.strip .remote { top: var(--strip-h); height: calc(100% - var(--strip-h)); }
-.stage.strip .nocam { top: var(--strip-h); }
-.stage.strip .info { top: 3px; }
-.stage.strip .info:not(:has(> .details:not([hidden]))) { background: none; color: var(--text); }
-.stage.strip .info:not(:has(> .details:not([hidden]))) .info-contact { color: var(--accent); }
-
-/* Diagnostics: Call quality, its own tab in the diagnostics panel. A dark card in either theme,
-   like an instrument (the graphs are drawn for it): the table and PLIs at the left, the graph at
-   the right; one above the other in a narrow window. */
+/* Diagnostics: Call quality, its own tab. A dark card in either theme, like an instrument (the
+   graphs are drawn for it): the table and PLIs, then a graph for each direction side by side, and
+   under them the legend and what each measure means. Narrower, the graphs go under the table,
+   then one above the other. */
 .dev-quality { padding: 10px 16px; }
 .q-empty { margin: 0; color: var(--muted); }
 .q-empty[hidden] { display: none; }
 .quality {
-  display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 560px); gap: 12px 28px; align-items: start; width: max-content; max-width: 100%;
-  padding: 10px 14px; border-radius: var(--radius-sm); background: #121a17; color: #fff; font-size: 12px;
+  display: grid; grid-template-columns: minmax(220px, 260px) repeat(2, minmax(0, 1fr)); gap: 8px 24px; align-items: start;
+  max-width: 1240px; padding: 10px 14px; border-radius: var(--radius-sm); background: #121a17; color: #fff; font-size: 12px;
 }
 .quality[hidden] { display: none; }
-.q-left, .q-right { display: grid; gap: 6px; min-width: 0; }
-.q-right { width: 560px; max-width: 100%; }
-@media (max-width: 760px) { .quality { grid-template-columns: minmax(0, 1fr); width: auto; } .q-right { width: auto; } }
+.q-left, .q-graph { display: grid; gap: 4px; min-width: 0; }
+.q-left { grid-row: span 2; }
+.q-under { grid-column: 2 / -1; display: grid; gap: 6px; min-width: 0; }
+@media (max-width: 900px) {
+  .quality { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .q-left { grid-column: 1 / -1; grid-row: auto; max-width: 320px; }
+  .q-under { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) { .quality { grid-template-columns: minmax(0, 1fr); } }
 .q-chart { width: 100%; height: 88px; background: rgba(255, 255, 255, .05); border-radius: 4px; }
-/* The title on the left, the switch on the right. */
-.q-graph-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-.q-graph-by { font-weight: 600; white-space: nowrap; }
-.q-switch { margin-left: auto; }
-/* ↑ Sent | ↓ Received: picks the graph's direction, like the Audio | Video switch. */
-.q-switch { display: inline-flex; flex: none; padding: 2px; gap: 2px; border-radius: 7px; background: rgba(255, 255, 255, .08); }
-.q-switch button { padding: 2px 8px; border: 0; border-radius: 5px; background: none; color: rgba(255, 255, 255, .65); font: inherit; cursor: pointer; white-space: nowrap; }
-.q-switch button:hover:not(.on) { color: #fff; }
-.q-switch button.on { background: rgba(255, 255, 255, .2); color: #fff; font-weight: 600; }
-.q-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.q-graph-title { font-weight: 600; font-size: 13px; }
+.q-graph-title span { font-weight: 400; opacity: .75; }
+.q-graph-by { opacity: .65; }
+/* What each measure means, in two columns of label and text. */
+.q-help { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 2px 10px; margin: 2px 0 0; opacity: .8; }
+.q-help dt { font-weight: 600; }
+.q-help dd { margin: 0; }
+@media (max-width: 900px) { .q-help { grid-template-columns: auto minmax(0, 1fr); } }
 .q-legend { display: flex; flex-wrap: wrap; gap: 2px 10px; opacity: .8; }
 .q-legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; background: var(--c); }
 /* PLIs: the legend in one half, the ticks in the other, a row each for received and sent. */
@@ -410,16 +401,13 @@ body:not(.diag) .diag-only { display: none; }
 .q-pli-keys { display: grid; line-height: 12px; font-size: 11px; opacity: .8; }
 .q-pli-keys span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; background: var(--c); }
 .q-pli-chart { width: 100%; height: 24px; background: rgba(255, 255, 255, .05); border-radius: 4px; }
-/* The table: a row per measure, ↑ Sent and ↓ Received side by side; the picked column drives the graph. */
+/* The table: a row per measure, ↑ Sent and ↓ Received side by side. */
 .q-table { display: grid; grid-template-columns: auto auto minmax(max-content, 1fr) minmax(max-content, 1fr); gap: 1px 6px; align-items: baseline; font-variant-numeric: tabular-nums; }
 .q-stream { font-weight: 600; }
 .q-stream.next { margin-top: 4px; }
 .q-metric { opacity: .65; }
-/* The column on the graph has a light tint, to match the switch. */
 .q-col, .q-v { text-align: right; padding: 1px 4px; border-radius: 3px; white-space: nowrap; }
 .q-col { opacity: .65; }
-.q-col.sel { opacity: 1; font-weight: 600; }
-.q-v.sel, .q-col.sel { background: rgba(255, 255, 255, .1); }
 .q-v.mos { font-weight: 600; }
 .q-v.bad { color: #e0718a; }
 .q-foot { opacity: .8; }
@@ -429,10 +417,10 @@ body:not(.diag) .diag-only { display: none; }
    the ▾ opening a device menu above. The three call buttons are centred; Self view sits at the
    right end, under the self view it controls. */
 .controls {
-  display: grid; grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 168px)) repeat(2, minmax(0, 112px)) minmax(max-content, 1fr);
+  display: grid; grid-template-columns: minmax(var(--info-min, 84px), 1fr) repeat(2, minmax(0, 168px)) repeat(2, minmax(0, 112px)) minmax(max-content, 1fr);
   align-items: center; gap: 8px;
 }
-.controls > :first-child { grid-column: 2; }
+.controls > .call-info + * { grid-column: 2; }
 /* At the right: Text (an icon) and Self view. */
 .controls-right { grid-column: 6; justify-self: end; display: flex; gap: 8px; }
 .controls .self-toggle { color: var(--muted); font-weight: 500; }
@@ -668,6 +656,12 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .am-sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
 .am-close { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); cursor: pointer; }
 .am-close:hover { background: var(--surface-2); }
+.am-top-right { display: flex; align-items: center; gap: 12px; flex: none; }
+/* This PC's address for direct calls, beside Close: a quiet note, a click copies it. */
+.am-local { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 4px 6px; border-radius: 6px; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.am-local:hover { background: var(--surface-2); color: var(--text); }
+.am-local:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.am-local svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .am-actions { display: flex; }
 .am .btn { display: inline-flex; align-items: center; gap: 6px; }
 .am-small { height: 34px; padding: 0 14px; font-size: 13px; }
@@ -721,6 +715,29 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
   .am-table th:nth-child(2), .am-table td:nth-child(2) { display: none; }
 }
 /* Settings (settings.js): the gear in the top bar, and the dialog it opens, as in the prototype. */
+/* The privacy switch, just left of Settings: the block sign and a label, and a red chip with the icons while it's on. */
+.privacy-btn { display: inline-flex; align-items: center; height: 34px; min-width: 34px; padding: 0 8px; border-radius: 17px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.privacy-btn:hover { background: var(--surface-2); color: var(--danger); }
+.privacy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.privacy-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.privacy-btn.on { background: var(--danger); border-color: var(--danger); color: #fff; font-weight: 500; }
+.privacy-btn.on:hover { background: var(--danger); color: #fff; filter: brightness(1.08); }
+.privacy-btn.armed, .privacy-btn.armed:hover { border-color: var(--danger); color: var(--danger); }
+.privacy-icons { display: inline-flex; gap: 6px; }
+/* The words slide out from the icon when it's armed or on, and fold away again. */
+.privacy-text { display: inline-block; max-width: 0; margin-left: 0; opacity: 0; overflow: hidden; white-space: nowrap; transition: max-width 0.3s ease, margin-left 0.3s ease, opacity 0.2s ease; }
+.privacy-btn.armed .privacy-text, .privacy-btn.on .privacy-text { max-width: 260px; margin-left: 6px; opacity: 1; }
+.privacy-btn.armed, .privacy-btn.on { padding: 0 11px; }
+/* The × sits inside the armed pill's right end, over the room the padding leaves for it. */
+.privacy { position: relative; display: inline-flex; }
+.privacy-btn.armed { padding-right: 34px; }
+.privacy-cancel { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; padding: 0; }
+.privacy-cancel[hidden] { display: none; }
+.privacy-cancel:hover { background: var(--surface-2); color: var(--text); }
+.privacy-cancel:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
+.privacy-cancel svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.privacy-btn { transition: padding 0.3s ease; }
+@media (prefers-reduced-motion: reduce) { .privacy-btn, .privacy-text { transition: none; } }
 .settings-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); cursor: pointer; }
 .settings-btn:hover { background: var(--surface-2); }
 .settings-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -752,12 +769,10 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .settings .check-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; cursor: pointer; }
 .settings .check-row input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
 .settings-note { margin: -2px 0 8px 26px; font-size: 12.5px; color: var(--muted); }
-.settings-field + .settings-note, .settings-seg + .settings-note, .settings-account + .settings-note, .settings .btn + .settings-note { margin-left: 0; }
+.settings-field + .settings-note, .settings-seg + .settings-note, .settings .btn + .settings-note { margin-left: 0; }
 .settings-note[hidden] { display: none; }
 .settings .btn + .settings-note { margin-top: 8px; }
 .settings .btn { height: 34px; padding: 0 14px; }
-.settings-account { margin: 0 0 6px; font-weight: 600; overflow-wrap: anywhere; }
-.settings-account.none { font-weight: 400; color: var(--muted); }
 /* System | Light | Dark: like Audio | Video, the chosen one raised. */
 .settings-seg { display: inline-flex; padding: 3px; gap: 2px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-3); }
 .settings-seg label { position: relative; padding: 5px 14px; border-radius: 7px; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; }
@@ -789,6 +804,15 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
   background: var(--tile); color: var(--accent); font-size: 12px; font-weight: 500;
 }
 .call-count:empty { display: none; }
+/* The chevron that folds the panel to the rail and back. */
+.calls-toggle {
+  margin-left: auto; flex: none; width: 28px; height: 28px; display: grid; place-items: center;
+  border: 0; border-radius: var(--radius-sm); background: none; color: var(--muted); cursor: pointer;
+}
+.calls-toggle[hidden] { display: none; }
+.calls-toggle:hover { background: var(--surface-3); color: var(--text); }
+.calls-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+.calls-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .call-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; align-content: start; overflow-y: auto; min-height: 0; }
 .call-row {
   position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center;
@@ -820,7 +844,11 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 /* Narrow windows: a rail, each call as its avatar and timer. */
 .call-row { cursor: pointer; }
 .calls.collapsed { width: var(--rail-w); padding: 10px 0; align-items: center; }
-.calls.collapsed .calls-head { display: none; }
+/* Folded: just the chevron at the top (narrow windows have none, so no head at all). */
+.calls.collapsed .calls-head { justify-content: center; padding: 0; margin-bottom: 6px; }
+.calls.collapsed .calls-title, .calls.collapsed .call-count { display: none; }
+.calls.collapsed .calls-toggle { margin-left: 0; }
+.calls.collapsed .calls-head:not(:has(.calls-toggle:not([hidden]))) { display: none; }
 /* The list scrolls, so it clips: room around the avatar for its ring (up to 3px). */
 .calls.collapsed .call-list { justify-items: center; gap: 10px; padding: 4px 5px; }
 .calls.collapsed .call-avatar { width: 26px; height: 26px; font-size: 12px; }
@@ -1129,8 +1157,8 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .controls .btn.xfer-btn[hidden] { display: none; }
 .controls .btn.xfer-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 /* The note: how a transfer's going, in place of the held note. Wraps, as what it says can be long. */
-/* At the top right of the stage, not over the middle of their video (the call info has the top
-   left): a quiet pill like the call info (dark, translucent, small), fading in. Failed, it keeps
+/* At the top right of the stage, not over the middle of their video: a quiet pill (dark,
+   translucent, small), fading in. Failed, it keeps
    its buttons and reads in a soft red. */
 .xfer-note {
   top: 12px; left: auto; right: 12px; transform: none; width: max-content; max-width: min(440px, 55%);
@@ -1139,8 +1167,8 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
   animation: xfer-note-in .25s ease-out;
 }
 @keyframes xfer-note-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-/* A narrow window: across the top, below the call info. */
-@media (max-width: 900px) { .xfer-note { top: 52px; left: 12px; max-width: none; width: auto; justify-content: flex-start; } }
+/* A narrow window: across the top. */
+@media (max-width: 900px) { .xfer-note { top: 12px; left: 12px; max-width: none; width: auto; justify-content: flex-start; } }
 .xfer-note:has(.btn:not([hidden])) { border-radius: var(--radius-sm); }
 .xfer-note #xferText { flex: 1 1 auto; min-width: 0; text-align: left; }
 .xfer-note .btn { height: 26px; padding: 0 10px; font-size: 12.5px; white-space: nowrap; }
@@ -1148,14 +1176,5 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .xfer-note.done { color: #9be7cb; }
 .xfer-note .rtt-close { flex: none; color: #fff; opacity: .75; width: 24px; height: 24px; }
 .xfer-note .rtt-close:hover { opacity: 1; background: rgba(255, 255, 255, .12); color: #fff; }
-/* In the call strip on a video call: its text on the stage's colour (a narrow window: just below it). */
-.stage.strip .xfer-note { top: 3px; background: none; color: var(--text); }
-.stage.strip .xfer-note.bad { color: var(--danger); }
-.stage.strip .xfer-note.done { color: var(--ok); }
-@media (max-width: 900px) {
-  .stage.strip .xfer-note { top: calc(var(--strip-h) + 8px); background: rgba(0, 0, 0, .55); color: #fff; }
-  .stage.strip .xfer-note.bad { color: #ffc2c2; }
-  .stage.strip .xfer-note.done { color: #9be7cb; }
-}
 .xfer-note .rtt-close[hidden] { display: none; }
 .xfer-note .rtt-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

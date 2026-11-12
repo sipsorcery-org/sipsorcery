@@ -48,6 +48,26 @@ A device you pick takes effect at once, mid-call too, by swapping the track on t
 connection (no renegotiation), and is remembered between runs (per profile). A remembered
 device that's gone falls back to the default.
 
+## The privacy switch
+
+At the top right, just left of Settings: the block sign (a circle with a line through it; red
+while the pointer's on it), like
+the mute key on a desk phone, with a cover like a safety switch's. The first click only arms it:
+*Block Audio and Video Devices* slides out of the sign and the button's edge turns red, with a × at its end that folds it back at once. Left alone
+(the pointer moved off, or focus gone) for 3 s, it folds back to the sign. Clicked again (or
+`Shift+M`, which needs no arming), every call is muted and every video call sends your
+placeholder card instead of the camera, which closes; calls you place or answer while it's on
+start the same way. It turns into a red chip, the struck-out mic and camera and *Mic and Cameras Blocked*. Pressed again, each call goes
+back to how it was before (a call that started meanwhile, to how a new call starts), so a call
+you'd muted stays muted and a camera you'd turned off stays off.
+
+Unmuting a call, or turning a camera on (Start video, Add video, a camera picked from a ▾),
+turns it off by itself, and only that call changes: the others stay muted with their cameras
+off. Before a call, Unmute or Start video turns it off, and with no call to keep muted
+the microphone and camera both come back. It's never remembered, so
+the app always starts with it off, and it doesn't change the saved camera choice for new calls.
+It's always there, with or without a call, so you can switch it on before answering.
+
 ## Recent calls and contacts
 
 The address field's suggestions, from the UX prototype (its *New call*): focusing the field (or
@@ -84,7 +104,8 @@ calls are red.
 - **Calling from the right account**: a contact can have its own *Call from* account. Calling
   it, from this list, the Contacts tab, or by typing or pasting its exact address, first
   switches the dial bar's *Call from* to that account (the picker flashes), so it shows what the
-  call uses. A recent call picked here goes from the account that call used. If the account has
+  call uses (or to *No account (direct)*, for a contact set to it). A recent call picked here
+  goes from the account that call used. If the account has
   been removed or disabled, the call goes from the current *Call from* account and a note under
   the picker says so for 5 s (*G Old is disabled: calling from G Work*). A contact's row here
   shows its account after the address (*· from G Home*).
@@ -136,11 +157,12 @@ history; *Manage accounts* beside the account picker now has a server icon.
   address, its last 5 calls, **Call**, **Edit**, *Show all N calls in Recent* (Recent, searched
   for that address) and **Delete**, which asks again on the button for 3 s. Add and Edit share a
   form at the top (name, number or SIP address, and *Call from*: *Any (the current Call from
-  account)* or one of the accounts, a disabled one marked so); a blank address, or one another
+  account)*, one of the accounts, a disabled one marked so, or *No account (direct)*, for a
+  contact always called directly, such as a phone on the LAN); a blank address, or one another
   contact has, is refused there. The details show *Call from* too, and say when its account has
   been removed or disabled. *Add to contacts* from a call on Recent fills in the account that
-  call used. The account is kept in `contacts-{profile}.json` as `account` (the account's id);
-  files from before it have none, which means *Any*. The web softphone has no accounts, so it
+  call used. The account is kept in `contacts-{profile}.json` as `account` (the account's id,
+  or `direct`); files from before it have none, which means *Any*. The web softphone has no accounts, so it
   shows no *Call from* there. Changing a contact's address replaces it. `Esc` closes the form, then clears the
   search, then closes the view.
 - **Calling from here** (Call, Call back, or the dial bar with People open) closes the view
@@ -166,17 +188,15 @@ away:
   remembered between runs (`camOn`; `--camera-off` still starts with it off, without changing
   what's kept), and the self view is the Self view button's (V), remembered too. Both used to be
   settings as well.
-- **Calls.** *Answer calls automatically*: after a second, always with the camera off, since
-  the camera is never opened without you asking. The microphone is on as soon as it answers.
-  (`--auto-answer` is the testing switch, answered by the host with the Camera button's choice.)
   The grid is the Grid button's (and G's) choice, remembered (see
-  [Focus and grid views](#focus-and-grid-views)); it used to be a setting as well.
+  [Focus and grid views](#focus-and-grid-views)); it used to be a setting as well. *Answer calls
+  automatically* was one too, and went unused; `--auto-answer` is still the testing switch,
+  answered by the host with the Camera button's choice. There used to be an *Account* section
+  too (who you are, and a *Manage accounts* button); the dial bar's Call from and accounts
+  (server) button already show and manage them (see [SIP accounts](#sip-accounts)).
 - **Appearance.** Theme: System, Light or Dark. System follows Windows' light or dark mode.
   *Show Gravatar pictures for people*: kept, though it has no button, since it decides whether
   hashes of addresses go to gravatar.com.
-- **Account.** Who you are: the account, or with none, the address others can call, and a
-  *Manage accounts* button that opens the same view as the dial bar's accounts (server) button (see
-  [SIP accounts](#sip-accounts)).
 - **Diagnostics.** Opens or closes the panel F12 does.
 
 The page keeps them in its `localStorage`, which is in the WebView2 profile's folder, so each
@@ -243,23 +263,16 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   `--auto-answer` answers each call alongside the others, keeping the audio where it is.
 - **When a call ends** it stays in the list for a few seconds with how it ended. If it was on
   the stage, the stage keeps saying so, with *Back to …* (or `Esc`) to another call.
-- **Mute** is the selected call's; `M` too. `Shift+M` mutes every call, and the ones to come
-  (before a call, Mute is the same thing: calls start muted). `Shift+C` (or *Cameras off*, below) turns
-  the camera off on every call and for new ones; with every camera already off, it turns them all
-  back on.
+- **Mute** is the selected call's; `M` too. For every call at once, mic and camera, there's the
+  [privacy switch](#the-privacy-switch) at the top (`Shift+M`).
 - **Grid and ⋯**, under the Active calls list (icons only on the rail). *Grid*: see
-  [Focus and grid views](#focus-and-grid-views). *⋯*, with two calls you can end, opens a menu of
-  what's rarely needed, so it isn't three more buttons:
-  - *Mute all* (`Shift+M`), *Unmute all* once every call is muted.
-  - *Cameras off* (`Shift+C`), while any of the calls has video: every video call sends your
-    placeholder card (the camera-off picture, your initial) instead of the camera, which closes,
-    and new calls start with the camera off. It reads *Cameras on* once every video call's camera
-    is off, and then turns them all back on.
-  - *End all N calls*, in red, asks once more ("End 3 calls? Click again", for 4 s, the menu
-    staying open) and then hangs up every call you've placed or are on; a call that's only
-    ringing is left to Answer or Decline.
+  [Focus and grid views](#focus-and-grid-views). *⋯*, with two calls you can end, opens *End all
+  N calls*, in red, which is rarely needed: it asks once more ("End 3 calls? Click again", for
+  4 s, the menu staying open) and then hangs up every call you've placed or are on; a call
+  that's only ringing is left to Answer or Decline. (Mute all and Cameras off were here too; the
+  privacy switch does both.)
 - **Keys**: `1`–`8` put that call in the list on the stage (`1` is the top, the oldest), `A` answers,
-  `M` mutes, `Shift+M` mutes all, `Shift+C` turns all cameras off (or back on), `H` holds or resumes, `G`
+  `M` mutes, `Shift+M` is the privacy switch, `H` holds or resumes, `G`
   switches between Focus and Grid.
 
 ## Focus and grid views
@@ -289,7 +302,7 @@ the audio, and the view stays Grid.
   holds the call you're on and opens the new one in Focus. Its own answer view (the banner's
   name) leaves the choice alone.
 - **`T`** in the grid switches to Focus with the text panel open, as does *Reply* on a text
-  toast. `M`, `H` and `V` do nothing in the grid; `Shift+M` and `Shift+C` still act on every call.
+  toast. `M`, `H` and `V` do nothing in the grid; `Shift+M` (the privacy switch) still works.
 - The choice is remembered (`view` in the page's settings) and only applies with two or more
   calls: with one, it's Focus.
 - Each call's `<video>` moves into its tile and back (`renderGrid` in `app.js` keeps the tiles
@@ -314,10 +327,14 @@ few seconds after it ends. Clicking a row puts that call on the stage. The list 
   (muted, video stopped) and faint otherwise (on hold, held by them, the mic on another call).
   The tooltip says which: "Bob hears you", "On hold: they hear music, not you". With text,
   the status line says "Typing…" or their last line.
-- **Narrow windows** (under 700 px): a 48 px rail of initials, the mic and camera chips, and
-  timers, to leave the stage its room; a click on one selects that call. (There used to be a
-  chevron to fold it to the rail on any window, remembered, and a way to open it over the stage
-  on a narrow one. Showing it only with two calls made that unnecessary.)
+- **Folding it**: the chevron at the top right of the panel folds it to a 48 px rail of
+  initials, the mic and camera chips, and timers (a click on one selects that call), and the
+  chevron at the top of the rail opens it again. The choice is remembered (`localStorage`,
+  `callsPanel`). Open in full, the panel hides the call info beside Mute, as each row has the
+  name and time and the buttons need the room; folded, the call info is back.
+- **Narrow windows** (under 700 px): always the rail, with no chevron, to leave the stage its
+  room. (There used to be a way to open it over the stage on a narrow one; showing the panel
+  only with two calls made that unnecessary.)
 
 ## Call history
 
@@ -370,25 +387,32 @@ has the account's address.
 
 ## Call details
 
-The info bar at the top left of the stage (their address and the call's duration) has a
-chevron that drops down the call's details, in diagnostics mode only (F12): they're technical,
-so otherwise the info bar is just who and how long, with no chevron. It's closed at the start
-of every call, and when diagnostics closes.
+The call info is at the left of the control bar, beside Mute, so nothing sits over their video:
+their address with the call's duration under it, and a small red mic while you're muted. The
+address leaves out its URI parameters and headers (`;transport=tcp`, `?X-Foo=1`), which say
+nothing to a person; the *Address* row in Call details has the full one. A long address is cut
+short with "…", and hovering over it shows all of it. Before them, a
+padlock says how the call is protected: **green** with SIP and the media both encrypted (TLS
+and SRTP), **yellow** with only one of them, and **grey and open** with neither. Its tooltip says which, and
+a click opens Diagnostics on the *Call details* tab. With the Active calls panel open in full (two calls or more) it's
+hidden, as each call's row has its name and time and the buttons need the room; fold the panel
+to its rail (its chevron) to see it. It's hidden in the grid too.
 
-The info bar used to have a `‹` arrow that tucked it off the stage's edge, leaving a tab to
-bring it back; the strip replaced it, so the info bar never covers the video and needs no arrow.
+The call's details are technical, so they're a tab in Diagnostics (F12), **Call details**,
+for the selected call; with no call it says they show here during one. They follow the call
+you pick, and the codecs fill in once the media flows.
+
+The call info used to be a pill at the top left of the stage, with a `‹` arrow to tuck it off
+the edge, then (briefly) a strip across the top of video calls. Both took the picture's room or
+covered it, so it moved down to the control bar, and its chevron for the details became the
+tab.
 
 | Row | What it says | From |
 |---|---|---|
 | Call | Outgoing or incoming, and the account (or "no account") | the host |
+| Address | Their full address, as the call has it, URI parameters and headers included (`sip:bob@host;transport=tcp`) | the page |
 | Their phone | their `User-Agent` (or `Server` on the 200 OK we got), or "Didn't say" | the host |
 | Security | Encrypted or not: the media is when every stream has SRTP keys (see [SRTP](#srtp)) or is WebRTC's DTLS-SRTP, SIP when it's over TLS (or WSS). "Media encrypted (SRTP); SIP not (UDP)" between two of these softphones, "Not encrypted: plain RTP, SIP over UDP", in amber, with a phone without SRTP | the host |
-On a video call the info bar and the transfer note sit in a 36 px strip across the top of the
-stage, in the stage's own colour, and the video starts below it, so neither covers the picture.
-The self view keeps below the strip too. Opened (diagnostics), the call details still drop down
-over the video. Audio calls have no strip: the info bar
-stays at the top left over the frequency bars, which have room above them.
-
 | Audio, Video | The codec each way, "↑ Opus 48 kHz ↓ G722 16 kHz", or one name when both match. Each end can send a different codec, and this is the only place that shows it. G.722 is labelled 16 kHz, its sample rate, not its 8 kHz RTP clock. Video has its frame size, "VP8 1280×720", refreshed every second while the panel is open | the page's WebRTC stats, which are the SIP leg's, since the relay doesn't re-encode |
 | SIP | transport and their SIP address and port, `UDP 127.0.0.1:5080` | the dialog |
 | Media | where their audio goes, the RTP address from their SDP | the SIP session |
@@ -411,7 +435,8 @@ SIPSorcery's `RtpSecureMediaOptionEnum.SdpCryptoBestEffort`.
 - **Each stream on its own**: audio, video and text each settle on SRTP or plain RTP. Once one is
   plain our re-offers (hold, adding video) leave its crypto out; a re-offer from them without
   crypto on an SRTP call changes it to plain, one with crypto on a plain call to SRTP.
-- **Where it shows**: the call details' *Security* row (diagnostics mode).
+- **Where it shows**: the padlock in the call info (green: SIP and media; yellow: one; grey and open: neither), and the
+  call details' *Security* row (Diagnostics).
 - **The limit**: a phone that requires SRTP and only takes `RTP/SAVP` offers turns down our calls
   to it (488), as it would any best-effort offer. Calls from it work.
 - **The keys are in the SDP**, so they're only as private as the SIP: over UDP or TCP anyone who
@@ -526,12 +551,9 @@ popover above it (beside the dock if the keypad or text is open, so it never cov
   it the way we would. A full address goes as typed.
 
 The call goes on hold as the transfer starts (both calls, attended), and a note says how it's
-going, in place of the held note. It's a quiet pill at the top right of the stage (the call
-info has the top left), dark and translucent like the call info, in small type, fading in, so it
-doesn't sit over the middle of their video; in a narrow window it runs across the top, below the
-call info. On a video call it's in the call strip (see Call details), as plain text in the
-stage's colours; in a narrow window it's the dark pill just below the strip. Done reads in light
-green, failed in soft red. It says how it's going from the far end's NOTIFYs
+going, in place of the held note. It's a quiet pill at the top right of the stage, dark and
+translucent, in small type, fading in, so it doesn't sit over the middle of their video; in a
+narrow window it runs across the top. Done reads in light green, failed in soft red. It says how it's going from the far end's NOTIFYs
 (the `sipfrag`): "Asking VtN's phone to call Dave…", "Transferring to Dave…", "Dave is
 ringing…". The call's row says "Transferring to Dave…" too.
 
@@ -761,7 +783,7 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   default size up to three times it, as far as the stage allows. Double-click it to put it
   back in the bottom-right at the default size. It can take keyboard focus (Tab): the arrow
   keys move it, Shift with the arrows resizes it (Up or Right larger, Down or Left smaller)
-  and Home puts it back. The call's name and timer, the on-hold note and the
+  and Home puts it back. The on-hold note, the transfer note and the
   answer buttons stay above it, so it never blocks them and a drag can't start from them.
   Where it sits is kept in the page's `localStorage` (`selfViewBox`) as a fraction of the way
   across and down the stage, with its size as a multiple of the default, so it keeps its
@@ -797,11 +819,12 @@ stopped), your row turns red with "X isn't getting your audio".
 
 ## Call quality (diagnostics mode)
 
-**Call quality** is a tab in Diagnostics (F12), between SIP log and Network, for the selected
-call; with no call it says it shows here during one. It used to sit over the stage's top right,
+**Call quality** is a tab in Diagnostics (F12), after Call details, for the selected call;
+with no call it says it shows here during one. It used to sit over the stage's top right,
 folded to one line with a chevron, but it covered their video, so it moved here, where there's
-room to show it all. It's a dark card, in either theme, with the table and PLIs at the left and
-the graph at the right (one above the other in a narrow window). The table has a column for each direction, so there's no "they"
+room to show it all. It's a dark card, in either theme: the table and PLIs at the left, a graph
+for each direction beside them, and under the graphs the legend and what each measure means
+(under 900 px the graphs go below the table). The table has a column for each direction, so there's no "they"
 or "you" to work out:
 
 | | | ↑ Sent | ↓ Received |
@@ -815,17 +838,18 @@ for each. A PLI means a lost packet has broken the receiver's picture, which sta
 a keyframe arrives. It's an indicator, not a history. PLIs come from the page's `pliCount`; the
 relay passes them straight through, so they're the SIP leg's.
 
-Below that, a graph shows one column over the last two minutes. A switch above it on the
-right, **↑ Sent | ↓ Received** (like the Audio | Video switch), picks which, and the title on
-the left says who measured it: "Reported by them" (their RTCP on what we send) or "Measured by us" (what
-we receive). The column on the graph is tinted in the table to match; the headings themselves
-aren't clickable. The graph has audio MOS (a line, 1–5), audio loss (bars) and video loss (a line), both 0–20%. On ↓
+Beside it, two graphs show both directions over the last two minutes, each the receiver's
+view: **↑ Sent**, how they receive what we send ("Reported by them, in their RTCP every 5 s or
+so"), and **↓ Received**, how we receive what they send ("Measured by us, every second"). (It
+used to be one graph with a ↑ Sent | ↓ Received switch.) Each has audio MOS (a line, 1–5),
+audio loss (bars) and video loss (a line), both 0–20%. On ↓
 Received, white bars along the bottom show how long our picture was actually frozen, from the
 browser's `totalFreezesDuration`; it only counts a freeze once it has ended, so a bar is drawn
 back over the seconds it covered when it does. ↑ Sent has none: RTCP doesn't say whether their
 picture froze. The last line gives
 the round trip ("RTT 0.3 ms"), or says it's waiting for their RTCP, or after 15 s that none has
-come. Hovering over a value says
+come. Under that, a short key says what each measure means: MOS (green from 4, amber from 3.6,
+red below), loss, jitter, PLIs, Frozen and RTT. Hovering over a value says
 what it is, where it comes from, and for loss the total packets lost. Only video calls show the
 video rows.
 
@@ -883,8 +907,13 @@ at once; *Call from* picks the one calls go out from.
 - **Manage accounts** (the server icon beside it; the two heads are People's) opens the Accounts view over the stage; a call
   carries on underneath, and a ringing call hides the view (the icon brings it back, with
   what you'd typed). The icon turns red with an alert while any enabled account has failed,
-  and its tooltip names them. The view starts on a table of every account and its status;
-  clicking one opens its form. `Esc` steps back: form, then table, then closed.
+  and its tooltip names them. The view starts on a table of every account, its address
+  (`sip:alice@example.com`, or `sips:` when its transport is TLS) and its status; clicking one
+  opens its form. `Esc` steps back: form, then table, then closed. Right of the title, by Close,
+  a note gives this PC's own address for direct calls, without an account ("Direct calls reach
+  this PC at `sip:192.168.1.20:5070`"): the address this PC uses to reach the internet (which
+  works from this PC too) and the UDP SIP port. A click copies it ("Copied") for the other side
+  to dial.
 - **The form**: account name (blank: user@server), display name (shown to people you call, and
   used for the camera-off placeholder), username, server (`host` or `host:port`), transport
   (UDP, TCP or TLS), auth username (if not the username), password, *Register*, expiry
@@ -931,22 +960,20 @@ On its own it listens on port 5060 (UDP and TCP), or if that's taken on a port t
 bottom of the window, and F12 again (or its ×) closes it. It's closed at every start
 (`--diagnostics` opens it). Drag its top edge to resize it, between 120 px and 70% of the
 window. The height you leave it at is remembered per profile and used whenever it opens.
-It has three tabs:
+It has four tabs:
 
 - **SIP log**: everything the host and page log, following the newest line unless you've
   scrolled up. *Copy log* puts the whole log on the clipboard; *Clear* empties it.
+- **Call details**: how the selected call was set up (see Call details).
+- **Call quality**: the selected call's table and graphs (see Call quality).
 - **Network**: the simulated loss sliders (see Call quality).
 
-While it's open the app is in diagnostics mode: this softphone's
-address in the header, and the Test pattern and Audio bars sources on the Camera ▾. Closing it
+While it's open the app is in diagnostics mode: the Test pattern and Audio bars sources on the Camera ▾. Closing it
 hides them all. The page catches F12 before WebView2 does, so it doesn't open WebView2's own
 DevTools; Ctrl+Shift+I still does, for working on the page.
 
-The address in the header reads e.g. `No account · sip:192.168.1.20:5070`; click it to copy it for the other side to
-dial. It's the address this PC uses to reach the internet (which works from this PC too) and the
-- **Call quality**: the selected call's table and graph (see Call quality).
-UDP SIP port. With an account chosen in Call from it copies that account's address. To register
-with a server, add an account with Manage accounts (see [SIP accounts](#sip-accounts)), or seed one
+For direct calls (no account) the other side dials this PC's address, which the note on
+*Manage accounts* gives and copies (see [SIP accounts](#sip-accounts)). To register with a server, add an account with Manage accounts (see [SIP accounts](#sip-accounts)), or seed one
 from `softphone.json` (copy `softphone.sample.json` next to the exe and fill it in).
 
 Switches, mostly for testing:
@@ -1032,12 +1059,14 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | C (audio) calls B while B is on its call with A | B's banner: "Thisis · Calling" with Answer and Decline; B's host auto-answers it alongside (a test mode, so nothing is held): "Audio off" on the new row, A's call keeps the audio. No 486. |
 | B: `1`, `M`, End, `Esc` | C's call on the stage with the audio; `M` mutes only it ("Muted", red mic; A's row "Audio is on another call"). End: "You hung up" with *Back to Thisis*; `Esc` goes back to A's call, which takes the audio. |
 | Two accounts a side, B calls A twice (audio, A `--auto-answer`), A adds video to the first | A's list: Bob with filled mic and camera chips ("Bob hears you", "Bob sees your video"), Dave with a faint struck-out mic ("Your mic is on another call"); *Grid 2* and *⋯* under the list. Grid: Bob's tile shows B's video (B's "On hold" card, as B has it held), Dave's the bars, yours flat. |
-| Same: ⋯ *Mute all*, ⋯ *Unmute all*, ⋯ *End all 2 calls* twice | Both rows Muted, red chips, the item then *Unmute all*. *End all* reads "End 2 calls? Click again" with the menu still open, then both calls end ("They hung up" on B), the ⋯ goes, and once the ended rows go the panel hides. |
-| A with two calls: `Shift+M`, `Shift+C`, `Shift+M` | Both rows "Muted" and "Video stopped"; then both unmuted, cameras still off. |
+| Same: ⋯ *End all 2 calls* twice | *End all* reads "End 2 calls? Click again" with the menu still open, then both calls end ("They hung up" on B), the ⋯ goes, and once the ended rows go the panel hides. |
+| Privacy switch: two copies (`--profile vtA --port 5191 --ws-port 0 --video --diagnostics`, `vtB --port 5192 --ws-port 0 --auto-answer`, both `--fake-media`); A calls B twice (video) and presses the switch | A red chip, *Mic and Cameras Blocked*; both rows Muted and Video stopped (the held one On hold), Mute reads Unmute and the camera Start video; `call 1: camera off`, `call 2: camera off`. Pressed again: both back on, both unmuted. |
+| Same: `Shift+M`, `1` (resume the held call), `M` | The resumed call stays muted with its camera off. `M` unmutes it and the switch goes off (`privacy off`); the other call stays muted, camera off. |
+| Same: the switch on, a third call; then Start video; then *End all 3 calls* | The new call starts muted with its camera off (the self view's *Camera off* card). Start video turns the camera on for that call only and the switch off. ⋯ has only *End all 3 calls*. |
+| Same with no call: the switch on, then Start video; on again, then Unmute | On: Unmute and Start video on the buttons. Each press turns the switch off; the saved camera choice is unchanged. |
 | Address bar cleared on answer: M types `sip:vtN@127.0.0.1:5432` and presses Enter (focus stays in the field); N has `stale text` in its bar; N answers | M's field empty (focus still there), N's empty too; each logs `call 1 answered: address bar cleared`. |
 | Missed-call badge: N calls M and hangs up while it rings (M's People view closed) | The badge at 1 on People. People: the view opens on Recent (People pressed), the badge cleared; People again: closed. Contacts tab, close, People: opens on Contacts (the last tab); a missed call meanwhile: People opens on Recent. |
 | Panels close when the call ends: M calls N, opens the keypad and the text (both in the dock); N hangs up | Before: the dock at the right, the stage narrowed. After: M logs `call 1 ended: keypad and text closed`, the dock is hidden and the stage is back to full width with "They hung up". |
-| Cameras off: M with two video calls (N held, O live; `--fake-media`), ⋯ *Cameras off*, then ⋯ *Cameras on* | *Cameras off*: both calls `camera off`, the camera closes, the self view shows the camera-off card, O's stage shows M's placeholder (the initial in a circle); the item then reads *Cameras on*, and the call's own button *Start video*. *Cameras on*: both calls `camera on`, the camera opens, O sees M's video again. With only audio calls the item isn't there. |
 | Grid, the same three copies: A with video calls to B and C, then *Grid* under the list | Two tiles, C's (selected, outlined) with its test pattern, B's "On hold · 00:14"; *Grid* pressed; the control bar empty. `M` and `H` change nothing. |
 | From the grid: B's tile; `G`; C's row in the list; `G`; `2`; `G`; `T` | Each opens that call in Focus, resuming it and holding the other; `G` goes back to the grid each time; `T` opens Focus on the selected call with the text input focused. |
 | In the grid, C calls A | The banner over the grid, no ringing tile; the view stays Grid. The banner's name: the answer view (Settings still says grid). *Answer & hold current*: the new call in Focus, the other two "On hold" in the list. |
@@ -1099,19 +1128,22 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Far end with `--loss-video 100` | "No video arriving from B" under their initial; ↓ Received video fps 0. |
 | Self view, then `V` | The self view hides and comes back; the far end still gets 30 fps throughout. |
 | Video call between two copies (`--profile sdA`/`sdB`, `--fake-media --test-pattern`, B `--auto-answer`); A's self view dragged past the stage's top-left, its handle dragged far out, then moved and the page reloaded | It stops 12 px from the stage's edges; the call's name and timer stay on top and clickable. It grows to 780 px (3 × 260) and no further, inside the stage. After the reload it's in the same place at the same size. `V` hides and shows it, `G` (two calls) hides it in the grid and Focus brings it back. No console errors. |
+| Call info and diagnostics tabs: video call between two copies (`--profile stA`/`stB`, `--fake-media --test-pattern`, A `--video --diagnostics --loss-video 3 --dial`, B `--auto-answer`) at 1100×720; Mute; *Call quality*, then *Call details*; then a second call (Active calls open) | Nothing over the picture. Left of Mute: "sip:stB@127.0.0.1:5462 00:27" and a red mic. *Call quality*: the table (↑ Sent video loss 2.7% in red) and PLIs, then ↑ Sent and ↓ Received graphs side by side, the legend, "RTT 0.3 ms" and the key. *Call details*: Outgoing · no account, `sipsorcery_v10.0.18.0`, Media encrypted (SRTP), the codecs each way, SIP, media, Call-ID with Copy; a stats tick doesn't redraw it. Two calls: Active calls opens and the call info goes, so *Stop video* reads in full; the panel's chevron folds it to the rail and the call info is back beside Mute, and after a reload it's still the rail; the rail's chevron opens it again. |
+| Padlock and two-line call info: the same two copies (SRTP, SIP over UDP); hover the address and the padlock, click the padlock; then again with A `--no-srtp` | A yellow padlock, "sip:stB@127.0.0.1:5462" with "00:12" under it, the address's tooltip the full address; the padlock's "Media encrypted (SRTP), but not SIP (UDP). Click for the call details." The click opens Diagnostics on *Call details*. With `--no-srtp`, a grey open padlock, "Not encrypted: plain RTP, SIP over UDP", which opens Call details too. (Green, with TLS too, isn't tested here: no TLS between the copies.) |
+| Address without parameters: A `--dial "sip:stB@127.0.0.1:5462;transport=udp?X-Test=1"` | The call info reads "sip:stB@127.0.0.1:5462" (its tooltip the same); Call details' *Address* row has the full `sip:stB@127.0.0.1:5462;transport=udp?X-Test=1`. |
+| Direct contact: a profile with one account (`stC`, seeded `accounts-stC.json`); Add contact *Bee Direct* `sip:stB@127.0.0.1:5462` with *Call from: No account (direct)*, then its call button | The form's *Call from* lists *Any*, the account and *No account (direct)*; `contacts-stC.json` has `"account": "direct"`, and the details say *Call from: No account (direct)*. The call switches Call from to no account ("call from no account (direct) (Bee Direct's)" in the log), and Call details say "Outgoing · no account". |
+| Camera ▾ after a call: one copy with two fake cameras (`--use-fake-device-for-media-stream=device-count=2`), Video; a video call ended ("You hung up" still on the stage); Camera ▾, the other camera; again with Start video showing | The tick moves to the camera picked, and it's the one that opens. Before, the tick stayed on the ended call's camera (the camera did switch). |
 | Mic off before dialling, then a video call | The call connects with the mic off (Turn mic on shown). |
 | Mid-call: another microphone, then the fake camera | Both swap without renegotiation; video carries on at about 30 fps, and the far end gets the new microphone's beep. |
 | Pick a microphone, restart | The menu shows the picked microphone in use. |
-| Idle, then F12, Network, drag the top edge up, F12 | Starts with no header address and no panel. F12 opens the panel on SIP log ("SIP listening on…") with the address in the header, and WebView2's DevTools stays shut. Network shows the sliders; the drag makes the panel taller and the stage shorter. F12 again closes it and hides the address. |
+| Idle, then F12, Network, drag the top edge up, F12 | Starts with no panel. F12 opens the panel on SIP log ("SIP listening on…"), and WebView2's DevTools stays shut. Network shows the sliders; the drag makes the panel taller and the stage shorter. F12 again closes it. |
 | Video call, caller with `--diagnostics --loss-audio 5` | The caller has Call quality (↑ MOS 3.8), a red dot on Network and the log following the call; the callee, panel closed, has neither. |
 | Video call answered (`--video`, `--auto-answer`) | Each stage goes card, then their initial, then video; never the audio-only bars (the page logs each `stage:` change). |
-| Click the header on B, then dial what was copied from A | The clipboard held `sip:192.168.1.123:5080`; the header showed "Copied"; A's call to it connected. |
+| Manage accounts on B, click the note by Close, then dial what was copied from A | The clipboard held `sip:192.168.1.123:5080`; the note showed "Copied"; A's call to it connected. |
 | Softphone to softphone, audio call | Both stages show the audio-only bars and Add video. |
 | Softphone to softphone, video call (`--video`) | Audio at 50 pkt/s each way; video at 30 fps each way, VP8. The first stats sample, at 5 s, already shows video. |
 | Video call with `--camera-off` on the caller | The caller sees the callee's video at 30 fps and its self view says "Camera off". The callee gets the caller's placeholder at 5 fps (640×360 at first, 1280×720 once the encoder ramps up): the initial with an account, the icon without. |
 | Same, then Camera on, then Camera off | The callee's video goes 5 fps placeholder, then 30 fps camera, then 5 fps placeholder, without a gap. The caller's camera opens and closes with it. |
-| Call strip: video call between two copies (`--profile stA`/`stB`, `--fake-media --test-pattern`, A `--video --dial`, B `--auto-answer`) at 1100×720; then Mute, F12, both chevrons opened, dark theme; then A's self view pushed up with the arrow keys | A 36 px strip across the top of the stage in the stage's colour: "sip:stB@127.0.0.1:5462 00:13", the video below it, nothing over the picture. Muted: the red *You're muted* pill in the strip; diagnostics: the call details' chevron, and opened they drop down over the video as before, in both themes. The self view stops at 48 px (12 px below the strip). |
-| Call quality tab: the same two copies, A with `--diagnostics`, *Call quality* tab; then the calls ended | Nothing over the stage but the strip. The tab shows the dark card: the table (Audio MOS 4.4 both ways, loss 0.0%, Video fps 31/30) and PLIs at the left, *Reported by them* with the ↑ Sent \| ↓ Received switch, the graph, legend and "RTT 0.8 ms" at the right, all inside the panel's default 240 px. Ended: "Call quality shows here during a call." |
 | Two softphones on Video with the real camera, then the first switched to Audio | The second shows "Camera in use" and still hasn't opened the camera 8 s after the first closed it. Clicking Video opens it. |
 | A softphone answers a video call while another has the real camera | It answers with "Camera in use" and sends the placeholder. 8 s after the other lets go it still hasn't opened the camera; Camera on opens it. |
 | Two accounts a side (A: Alice, Carol, `--auto-answer`; B: Bob, Dave). B calls A from Bob, then from Dave, audio only. A adds video to Dave's call, then to Bob's, with Dave still B's selected account | B takes both ("is adding video: taking it"), though it placed them without video. A gets D on Dave's call and B on Bob's (the placeholder), and on whichever B has held, the hold card with that account's name. |

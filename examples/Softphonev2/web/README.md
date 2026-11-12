@@ -113,13 +113,14 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   button switching an Audio call to Video before dialling, the device menus, self view (which
   you can drag, resize from its corner and double-click to reset),
   ringing, answer, decline, cancel, hang up, the SIP log (F12).
+- **The privacy switch**, *Block Audio and Video Devices* (the block sign, top right, just left of Settings: click to arm, click again; or `Shift+M`): every call muted with its
+  camera off, new calls too, until you press it again, unmute a call or turn a camera on. Never
+  remembered. See the [desktop README](../desktop/README.md#the-privacy-switch).
 - **Settings** (the gear, top right): the desktop page's own (see the desktop README), kept in
   this browser's `localStorage` (`softphonev2.settings`, and `devices` and `selfView` as before;
   `selfViewBox` is where you've dragged the self view and how large, as in the desktop README).
-  Devices, camera on at the start of video calls, self view, auto-answer (camera off), theme and
-  a button for diagnostics, handy since a browser may keep F12 for its own tools. `host.js` sets
-  `data-host="web"` on the page, so the Account section points at the account button instead of
-  the desktop's `softphone.json`. The speaker list is hidden where the browser can't pick one
+  Devices, theme, Gravatar pictures and a button for diagnostics, handy since a browser may keep
+  F12 for its own tools. (Who you are is the account button's, at the top.) The speaker list is hidden where the browser can't pick one
   (no `setSinkId`). Device names show once the page has had the microphone or camera.
 - **Several calls at once**, as on the desktop (see the [desktop README](../desktop/README.md#several-calls)):
   each call is a SIP.js session with its own record in `host.js` and its own connection on the
@@ -165,9 +166,9 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   media is negotiated, so every sender gets one as it's made (passing every frame at 0%), from
   the same `RTCPeerConnection` wrapper as Call quality. Every 5 s with loss on, the log says how
   many frames were dropped. In a browser without `RTCRtpScriptTransform` the sliders are off.
-- **The call strip** is the desktop's (the page is shared): on a video call the call info and the
-  transfer note sit in a strip across the top of the stage, with the video below it.
-- **Call quality** works as on the desktop, in its own Diagnostics tab. There the host reads the far end's RTCP on the SIP
+- **The call info** is the desktop's (the page is shared): at the left of the control bar, beside
+  Mute, and the call's details are a Diagnostics tab, *Call details*.
+- **Call quality** works as on the desktop, in its own Diagnostics tab, with both directions' graphs. There the host reads the far end's RTCP on the SIP
   leg; here the page's own `RTCPeerConnection` is the media leg and the browser reads their
   reports, so `host.js` finds that connection (it wraps the `RTCPeerConnection` constructor
   before `app.js` loads) and posts the same `quality` messages from `getStats()`: each new

@@ -15,10 +15,15 @@
         <span class="brand-divider"></span>
         <span class="brand-sub">Softphone</span>
       </div>
-      <!-- Your SIP address; a click copies it, for the other side to dial. -->
       <div class="topbar-right">
-        <!-- Diagnostics only: shown while the diagnostics panel (F12) is open. -->
-        <button type="button" class="reg diag-only" id="reg"><span class="reg-text" id="regText"></span><span class="reg-copy" id="regCopy"></span></button>
+        <!-- The privacy switch (Shift+M), just left of Settings: every call muted with its camera
+             off, new ones too, until it's pressed again or you unmute a call or turn a camera on.
+             Never remembered. -->
+        <span class="privacy" id="privacy">
+          <button type="button" class="privacy-btn" id="privacyBtn" aria-pressed="false"></button>
+          <!-- Armed, the × folds it back without blocking. -->
+          <button type="button" class="privacy-cancel" id="privacyCancel" aria-label="Don't block" title="Don't block" hidden></button>
+        </span>
         <!-- Settings (settings.js): devices, camera, answering, theme, diagnostics. -->
         <button type="button" class="icon-btn settings-btn" id="settingsBtn" aria-label="Settings" title="Settings" aria-haspopup="dialog"></button>
       </div>
@@ -64,15 +69,18 @@
       <div class="calls-head">
         <span class="calls-title" id="callsTitle">Active calls</span>
         <span class="call-count" id="callCount"></span>
+        <!-- Folds the panel to a rail of avatars and timers (remembered), so the call info shows
+             beside Mute. Under 700 px it's always the rail, and this goes. -->
+        <button type="button" class="calls-toggle" id="callsToggle" aria-controls="callList"></button>
       </div>
       <ol class="call-list" id="callList"></ol>
       <!-- Every call at once. Grid shows them all as tiles (G too); it looks pressed while it's on,
-           and picking a call (its row or its tile) goes back to Focus. ⋯ has Mute all, Cameras
-           off (with a video call) and End all, which asks again before it ends them. -->
+           and picking a call (its row or its tile) goes back to Focus. ⋯ has End all, which asks
+           again before it ends them. -->
       <div class="calls-foot" id="callsFoot" hidden>
         <button type="button" class="btn calls-all calls-grid" id="gridBtn" aria-pressed="false"></button>
         <button type="button" class="btn calls-all calls-more" id="allMenuBtn" aria-haspopup="menu" aria-expanded="false"
-          aria-label="More for every call" title="Mute all, Cameras off, End all"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+          aria-label="More for every call" title="End all"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
         <div class="device-menu all-menu" id="allMenu" role="menu" aria-label="Every call" hidden></div>
       </div>
     </aside>
@@ -133,14 +141,6 @@
         <button type="button" class="btn" id="xferResume">Resume</button>
         <button type="button" class="btn" id="xferRetry">Try again</button>
         <button type="button" class="rtt-close" id="xferDismiss" aria-label="Dismiss" title="Dismiss"></button>
-      </div>
-      <!-- Who the call is with and for how long; in diagnostics mode the chevron drops down the
-           call's details. -->
-      <div class="info" id="info" hidden>
-        <button type="button" class="info-head" id="infoHead" aria-expanded="false" aria-controls="details" title="Show call details">
-          <span id="infoName"></span><span class="info-contact" id="infoContact" hidden></span><span class="timer" id="timer"></span><span class="muted-pill" id="mutedPill" hidden></span><span class="info-chevron" id="infoChevron"></span>
-        </button>
-        <div class="details" id="details" hidden></div>
       </div>
     </main>
     <!-- The dock: a side panel right of the call, where the keypad and the text panel open (the
@@ -245,6 +245,18 @@
          a menu to pick the microphone and speaker, or the camera (and, in diagnostics mode, the
          test pattern). -->
     <div class="controls" id="controls">
+      <!-- Who the selected call is with and, under it, for how long, at the left of the buttons, so
+           nothing sits over their video. A long name is cut short (hover for all of it). The padlock
+           (green: SIP and media encrypted; yellow: one of them; grey and open: neither) opens
+           Diagnostics on Call details. -->
+      <div class="call-info" id="info" hidden>
+        <button type="button" class="info-lock" id="infoLock" hidden></button>
+        <div class="info-text">
+          <div class="info-line"><span class="info-name" id="infoName"></span><span class="info-contact" id="infoContact" hidden></span></div>
+          <span class="timer" id="timer"></span>
+        </div>
+        <span class="muted-pill" id="mutedPill" hidden></span>
+      </div>
       <div class="split">
         <button type="button" class="btn" id="muteBtn" aria-pressed="false"></button>
         <button type="button" class="btn split-caret" id="micMenuBtn" aria-haspopup="menu" aria-expanded="false"
@@ -283,6 +295,7 @@
       <h2 class="dev-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Diagnostics</h2>
       <div class="dev-tabs" role="tablist" aria-label="Diagnostics">
         <button type="button" class="dev-tab" role="tab" id="tabLog" data-tab="log" aria-controls="log" aria-selected="true">SIP log</button>
+        <button type="button" class="dev-tab" role="tab" id="tabDetails" data-tab="details" aria-controls="paneDetails" aria-selected="false">Call details</button>
         <button type="button" class="dev-tab" role="tab" id="tabQuality" data-tab="quality" aria-controls="paneQuality" aria-selected="false">Call quality</button>
         <button type="button" class="dev-tab" role="tab" id="tabNet" data-tab="net" aria-controls="paneNet" aria-selected="false">Network</button>
       </div>
@@ -293,6 +306,12 @@
       <button type="button" class="dev-close" id="devClose" aria-label="Close diagnostics" title="Close diagnostics (F12)"></button>
     </div>
     <pre class="dev-pane" id="log" role="tabpanel" aria-labelledby="tabLog" tabindex="0"></pre>
+    <!-- Call details for the selected call: how it was set up (from the host) and the codecs each
+         way (from the page's stats). -->
+    <div class="dev-pane dev-details" id="paneDetails" role="tabpanel" aria-labelledby="tabDetails" hidden>
+      <p class="q-empty" id="detailsEmpty">Call details show here during a call.</p>
+      <dl class="details" id="details" hidden></dl>
+    </div>
     <!-- Call quality for the selected call: ↑ what we send (their RTCP) and ↓ what we receive
          (measured here), the table and PLIs at the left and the graph at the right. -->
     <div class="dev-pane dev-quality" id="paneQuality" role="tabpanel" aria-labelledby="tabQuality" hidden>
@@ -306,18 +325,29 @@
             <canvas class="q-pli-chart" id="qPliChart" width="240" height="40" role="img" aria-label="PLIs received and sent, last 30 seconds"></canvas>
           </div>
         </div>
-        <div class="q-right">
-          <!-- Which direction the graph shows, and who measured it. -->
-          <div class="q-graph-head">
-            <span class="q-graph-by" id="qGraphCol"></span>
-            <div class="q-switch" id="qSwitch" role="radiogroup" aria-label="Graph">
-              <button type="button" role="radio" data-col="sent">↑ Sent</button>
-              <button type="button" role="radio" data-col="recv">↓ Received</button>
-            </div>
-          </div>
-          <canvas class="q-chart" id="qChart" width="472" height="112" role="img"></canvas>
+        <!-- Both directions over the last two minutes, each the receiver's view. -->
+        <div class="q-graph">
+          <div class="q-graph-title">↑ Sent <span>how they receive what we send</span></div>
+          <div class="q-graph-by">Reported by them, in their RTCP every 5 s or so</div>
+          <canvas class="q-chart" id="qChartSent" width="420" height="112" role="img"></canvas>
+        </div>
+        <div class="q-graph">
+          <div class="q-graph-title">↓ Received <span>how we receive what they send</span></div>
+          <div class="q-graph-by">Measured by us, every second</div>
+          <canvas class="q-chart" id="qChartRecv" width="420" height="112" role="img"></canvas>
+        </div>
+        <div class="q-under">
           <div class="q-legend" id="qLegend"></div>
           <div class="q-foot" id="qFoot"></div>
+          <!-- What the measures mean. -->
+          <dl class="q-help">
+            <dt>MOS</dt><dd>An estimate of how the audio sounds, from 1 (bad) to 5: green from 4, amber from 3.6, red below that.</dd>
+            <dt>Loss</dt><dd>The share of packets that never arrived. Audio copes with a percent or two; video freezes or smears.</dd>
+            <dt>Jitter</dt><dd>How unevenly audio packets arrive. The jitter buffer hides a few tens of milliseconds.</dd>
+            <dt>PLIs</dt><dd>A picture broke after loss and the receiver asked for a fresh keyframe.</dd>
+            <dt>Frozen</dt><dd>How long their picture stood still here (only ↓ Received: RTCP doesn't say whether ours froze for them).</dd>
+            <dt>RTT</dt><dd>The round trip to their phone and back, from their RTCP.</dd>
+          </dl>
         </div>
       </div>
     </div>

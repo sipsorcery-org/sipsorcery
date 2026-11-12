@@ -9,8 +9,7 @@
 // The box (#selfBox) holds #self and #selfOff; app.js shows and hides those as before.
 
 const KEY = "selfViewBox";
-const MARGIN = 12;          // from the stage's edges, as the default position (and below the
-                            // stage's call strip, --strip-h, while it shows on a video call)
+const MARGIN = 12;          // from the stage's edges, as the default position
 const MAX_SCALE = 3;        // the largest, as a multiple of the default size
 const RATIO = 16 / 9;
 const DEFAULT = { x: 1, y: 1, s: 1 };
@@ -30,27 +29,25 @@ export function initSelfView(stage, box, grip) {
   };
 
   // The default width is the stage's --side-w (shared with Call quality), at most 45% of the stage.
-  // T is the top edge it keeps to: the margin, below the call strip when there is one.
   function metrics() {
-    const W = stage.clientWidth, H = stage.clientHeight, css = getComputedStyle(stage);
-    const side = parseFloat(css.getPropertyValue("--side-w")) || 260;
-    const T = MARGIN + (parseFloat(css.getPropertyValue("--strip-h")) || 0);
+    const W = stage.clientWidth, H = stage.clientHeight;
+    const side = parseFloat(getComputedStyle(stage).getPropertyValue("--side-w")) || 260;
     const d = Math.min(side, W * 0.45);
-    const fit = Math.max(0, Math.min(W - 2 * MARGIN, (H - T - MARGIN) * RATIO));
-    return { W, H, T, d, fit };
+    const fit = Math.max(0, Math.min(W - 2 * MARGIN, (H - 2 * MARGIN) * RATIO));
+    return { W, H, d, fit };
   }
   // Where it is now, in stage pixels.
   function rect(m = metrics()) {
     const w = Math.min(m.d * pos.s, m.fit), h = w / RATIO;
-    return { w, h, left: MARGIN + pos.x * (m.W - 2 * MARGIN - w), top: m.T + pos.y * (m.H - m.T - MARGIN - h) };
+    return { w, h, left: MARGIN + pos.x * (m.W - 2 * MARGIN - w), top: MARGIN + pos.y * (m.H - 2 * MARGIN - h) };
   }
   // Takes a place and size in pixels, kept inside the stage, as the new position.
   function place(left, top, w, m = metrics()) {
     const h = w / RATIO;
-    const spanX = m.W - 2 * MARGIN - w, spanY = m.H - m.T - MARGIN - h;
+    const spanX = m.W - 2 * MARGIN - w, spanY = m.H - 2 * MARGIN - h;
     pos = {
       x: spanX > 0 ? clamp((left - MARGIN) / spanX, 0, 1) : pos.x,
-      y: spanY > 0 ? clamp((top - m.T) / spanY, 0, 1) : pos.y,
+      y: spanY > 0 ? clamp((top - MARGIN) / spanY, 0, 1) : pos.y,
       s: w >= m.fit && m.fit < m.d * pos.s ? pos.s : clamp(w / m.d, 1, MAX_SCALE),
     };
     layout(m);
@@ -73,7 +70,7 @@ export function initSelfView(stage, box, grip) {
     const anchorX = gripCorner.includes("l") ? start.left + start.w : start.left;
     const anchorY = gripCorner.includes("t") ? start.top + start.h : start.top;
     const roomX = gripCorner.includes("l") ? anchorX - MARGIN : m.W - MARGIN - anchorX;
-    const roomY = (gripCorner.includes("t") ? anchorY - m.T : m.H - MARGIN - anchorY) * RATIO;
+    const roomY = (gripCorner.includes("t") ? anchorY - MARGIN : m.H - MARGIN - anchorY) * RATIO;
     const lo = Math.min(m.d, m.fit);
     w = clamp(w, lo, Math.max(lo, Math.min(m.d * MAX_SCALE, m.fit, roomX, roomY)));
     const h = w / RATIO;
@@ -97,7 +94,7 @@ export function initSelfView(stage, box, grip) {
     if (!drag.moved && Math.hypot(dx, dy) < 3) return;
     drag.moved = true;
     if (drag.mode === "move") {
-      place(clamp(start.left + dx, MARGIN, m.W - MARGIN - start.w), clamp(start.top + dy, m.T, m.H - MARGIN - start.h), start.w, m);
+      place(clamp(start.left + dx, MARGIN, m.W - MARGIN - start.w), clamp(start.top + dy, MARGIN, m.H - MARGIN - start.h), start.w, m);
     } else {
       const sx = gripCorner.includes("l") ? -1 : 1, sy = gripCorner.includes("t") ? -1 : 1;
       resizeTo(start.w + Math.max(sx * dx, sy * dy * RATIO), start, m);
@@ -134,14 +131,12 @@ export function initSelfView(stage, box, grip) {
       resizeTo(r.w + grow * m.d * 0.1, r, m);
     } else {
       const step = 16;
-      place(clamp(r.left + dir[0] * step, MARGIN, m.W - MARGIN - r.w), clamp(r.top + dir[1] * step, m.T, m.H - MARGIN - r.h), r.w, m);
+      place(clamp(r.left + dir[0] * step, MARGIN, m.W - MARGIN - r.w), clamp(r.top + dir[1] * step, MARGIN, m.H - MARGIN - r.h), r.w, m);
     }
     save();
   });
 
   new ResizeObserver(() => { if (!drag) layout(); }).observe(stage);
-  // The call strip comes and goes with the stage's class, without the stage changing size.
-  new MutationObserver(() => { if (!drag) layout(); }).observe(stage, { attributes: true, attributeFilter: ["class"] });
   layout();
   return { reset };
 }

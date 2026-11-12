@@ -2,13 +2,11 @@
 // the options with something behind them in these apps:
 //  - Audio & video: the microphone, speaker and camera calls use (the same choice as the ▾ menus
 //    on Mute and Camera).
-//  - Calls: answer automatically, with your camera off.
 //  - Appearance: the theme, system, light or dark, and Gravatar pictures for people (avatar.js).
 // Nothing here repeats a button you already have: whether video calls start with your camera on
 // (the Camera button before a call), the self view (Self view, V) and the grid (Grid, G) are each
 // kept by their own button, so they used to be settings too and aren't any more. Gravatar stays,
 // though it has no button, because it's a choice about what's sent to someone else's server.
-//  - Account: who you're signed in as. Managing SIP accounts will live here.
 //  - Diagnostics: opens the panel F12 opens, handy where a browser keeps F12 for itself.
 // Every change applies straight away. They're kept in the page's storage: on the desktop that's
 // the WebView2 profile's (--profile), so each profile has its own; on the web, this browser's.
@@ -19,8 +17,9 @@ const KEY = "softphonev2.settings";
 // theme: "system", "light" or "dark". camOn: video calls start with the camera on. view: "focus"
 // shows only the selected call; "grid" shows every active call side by side, with two or more.
 // gravatar: show Gravatar pictures in place of initials (avatar.js).
-export const prefs = { theme: "system", camOn: true, autoAnswer: false, view: "focus", gravatar: true };
+export const prefs = { theme: "system", camOn: true, view: "focus", gravatar: true };
 try { Object.assign(prefs, JSON.parse(localStorage.getItem(KEY) ?? "{}")); } catch { /* storage unavailable */ }
+delete prefs.autoAnswer;   // "Answer calls automatically" was a setting once; --auto-answer is the testing switch
 
 export function savePref(name, value) {
   prefs[name] = value;
@@ -57,11 +56,6 @@ export function initSettings(app) {
         <label class="settings-field"><span>Camera</span><select data-device="camera"></select></label>
         <p class="settings-note" id="setDevNote" hidden></p>
       </section>
-      <section class="settings-section" aria-labelledby="setCallsHead">
-        <h3 id="setCallsHead">Calls</h3>
-        <label class="check-row"><input type="checkbox" data-pref="autoAnswer">Answer calls automatically</label>
-        <p class="settings-note">After a second, with your camera off. Your microphone is on as soon as it answers.</p>
-      </section>
       <section class="settings-section" aria-labelledby="setThemeHead">
         <h3 id="setThemeHead">Appearance</h3>
         <div class="settings-seg" role="radiogroup" aria-labelledby="setThemeHead">
@@ -69,14 +63,6 @@ export function initSettings(app) {
         </div>
         <label class="check-row"><input type="checkbox" data-pref="gravatar">Show Gravatar pictures for people</label>
         <p class="settings-note">In place of their initial: their picture, or a pattern made from their address if they have none. It asks gravatar.com, sending a hash of each address shown.</p>
-      </section>
-      <section class="settings-section" aria-labelledby="setAcctHead">
-        <h3 id="setAcctHead">Account</h3>
-        <p class="settings-account" id="setAccount"></p>
-        ${web
-          ? `<p class="settings-note">The account button at the top shows its details, signs out, or signs in as someone else.</p>`
-          : `<button type="button" class="btn" id="setManageAccounts">Manage accounts</button>
-        <p class="settings-note">Add, edit or remove your SIP accounts, and see whether each is registered.</p>`}
       </section>
       <section class="settings-section" aria-labelledby="setDiagHead">
         <h3 id="setDiagHead">Diagnostics</h3>
@@ -115,12 +101,8 @@ export function initSettings(app) {
   }
 
   function fill() {
-    q('[data-pref="autoAnswer"]').checked = prefs.autoAnswer;
     q('[data-pref="gravatar"]').checked = prefs.gravatar !== false;
     for (const r of dlg.querySelectorAll('input[name="theme"]')) r.checked = r.value === (prefs.theme || "system");
-    const acct = app.account();
-    q("#setAccount").textContent = acct || "Not signed in";
-    q("#setAccount").classList.toggle("none", !acct);
     q("#setDiag").textContent = app.diagnostics() ? "Close diagnostics" : "Open diagnostics";
     return fillDevices();
   }
@@ -147,9 +129,6 @@ export function initSettings(app) {
     if (t.dataset.device) {
       await app.pickDevice(t.dataset.device, t.value);
       fillDevices();
-    } else if (t.dataset.pref === "autoAnswer") {
-      savePref("autoAnswer", t.checked);
-      app.log(`settings: answer calls automatically ${t.checked ? "on" : "off"}`);
     } else if (t.dataset.pref === "gravatar") {
       savePref("gravatar", t.checked);
       document.dispatchEvent(new CustomEvent("gravatar-changed"));
@@ -161,13 +140,6 @@ export function initSettings(app) {
     }
   });
 
-  // Desktop: Manage accounts (accounts.js) is the view the dial bar's people button opens.
-  const manage = q("#setManageAccounts");
-  if (manage) manage.onclick = () => {
-    dlg.close();
-    // After the dialog's close event has put focus back on the gear.
-    setTimeout(() => document.getElementById("manageAccounts")?.click(), 0);
-  };
   q("#setDiag").onclick = () => {
     const on = !app.diagnostics();
     dlg.close();

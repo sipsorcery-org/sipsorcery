@@ -412,6 +412,8 @@ internal sealed class MainForm : Form
             // What the header copies for others to call us on: the account's address, or with no
             // account, this PC's address and SIP port.
             address = selected != null ? $"sip:{selected.Aor}" : _phone.DirectAddress,
+            // This PC's own address and SIP port, for direct calls (the note on Manage accounts).
+            localAddress = _phone.DirectAddress,
             me = me == null ? null : string.IsNullOrWhiteSpace(me.DisplayName) ? me.Username : me.DisplayName,
             // Every account, for Call from and Manage accounts (the web softphone sends none, and
             // shows neither). Passwords stay here: the page only learns whether there is one.
