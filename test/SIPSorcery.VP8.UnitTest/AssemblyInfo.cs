@@ -13,4 +13,8 @@ using Xunit;
 // xUnit parallelises distinct test collections (classes) by default, which is
 // what produced the 2-3 sporadic failures / host crashes. Serialising the
 // whole assembly removes the race.
+//
+// xunit.runner.visualstudio 4 runs this assembly with parallel collections in
+// spite of the attribute, so xunit.runner.json switches parallelization off as
+// well.
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
