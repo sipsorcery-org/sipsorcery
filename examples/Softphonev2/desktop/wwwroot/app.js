@@ -58,7 +58,6 @@ const ICON = {
   lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
   unlock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.9-1"/></svg>',
   // Out and back: the round trip.
-  roundTrip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h13a4 4 0 0 1 0 8H7"/><path d="m10 12-4 4 4 4"/></svg>',
   selfView: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect x="12" y="13" width="10" height="7" rx="2"/></svg>',
   transfer: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 2 4 4-4 4"/><path d="M14 6h8"/><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
   keypad: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>',
@@ -1239,7 +1238,7 @@ setInterval(async () => {
 }, 500);
 
 // ---- Call quality (diagnostics) ----
-// "Call quality", a panel over the stage in diagnostics mode: ↑ Sent is how the far end receives
+// "Call quality", a tab in Diagnostics (F12): ↑ Sent is how the far end receives
 // what we send, from their RTCP receiver reports (every 5 s or so, from any SIP phone that sends
 // RTCP); ↓ Received is how we receive them, measured here. Received audio comes from the page's
 // WebRTC stats: they're for the hop from the relay, but audio is relayed packet by packet with
@@ -1876,7 +1875,8 @@ const Q_BY = { sent: "Reported by them", recv: "Measured by us" };   // the grap
 function renderQuality() {
   const el = $("quality");
   el.hidden = !(state.call === "connected" && call);
-  if (el.hidden || !document.body.classList.contains("diag")) return;
+  $("qEmpty").hidden = !el.hidden;
+  if (el.hidden || $("paneQuality").hidden) return;
   const q = sel()?.quality ?? newQuality();
   const video = call.hasVideo;
   const fmt = (v, unit = "", digits = 1) => (v == null ? "–" : `${v.toFixed(digits)}${unit}`);
@@ -1909,17 +1909,10 @@ function renderQuality() {
   }
   $("qTable").innerHTML = html;
 
-  // Folded: just the two MOS.
-  const sum = (col, r) => `<span style="color:${mosColour(r?.mos)}" title="${Q_LABEL[col]}: estimated MOS">${Q_LABEL[col][0]} ${fmt(r?.mos)}</span>`;
-  $("qSum").innerHTML = sum("sent", S.audio) + sum("recv", R.audio);
-
-  // Round trip: just the value in the folded line, labelled at the foot when open, where it's
-  // otherwise why ↑ Sent is empty. (What each value means belongs in a help or info section
-  // later; there's no room for it here.)
+  // Round trip, at the foot, where it's otherwise why ↑ Sent is empty. (What each value means
+  // belongs in a help or info section later.)
   const rtt = S.audio?.rttMs ?? S.video?.rttMs;
   const rttText = rtt == null ? "" : fmt(rtt, " ms", rtt < 10 ? 1 : 0);
-  $("qRtt").innerHTML = rttText && `${ICON.roundTrip}${rttText.replace(" ", "")}`;
-  $("qRtt").title = "Round trip, from their RTCP reports";
   const waited = performance.now() - q.startedAt;
   $("qFoot").textContent = S.audio || S.video ? (rttText && `RTT ${rttText}`)
     : waited > NO_RTCP_MS ? "No RTCP reports from them: their phone may not send them"
@@ -2040,6 +2033,9 @@ function render() {
     log(`stage: ${mode}`);
     if (mode === "audio") requestAnimationFrame(drawViz);
   }
+  // A video call (video, or none arriving yet): the call info and the transfer note sit in a strip
+  // across the top, with the video below it, so they never cover it.
+  stage.classList.toggle("strip", (mode === "video" || mode === "nocam") && !$("info").hidden);
   setInitial($("nocamInitial"), name, remote);
   $("nocamNote").textContent = connected && Date.now() - e.connectedAt > NO_FRAMES_MS ? `No video arriving from ${name}` : "";
   setInitial($("vizThem"), name, remote);
@@ -2331,9 +2327,8 @@ function onPhase(e) {
   if (e.h.call === "connected" && !e.connectedAt) {
     e.connectedAt = Date.now();
     if (e.id === selectedId) {
-      // A new call starts with Call details and Call quality closed.
+      // A new call starts with Call details closed.
       if (!$("details").hidden) setDetailsOpen(false);
-      if (!$("quality").classList.contains("collapsed")) setQualityOpen(false);
       renderText();
     }
     if (testAddVideo) setTimeout(() => { if (e.m && !e.m.hasVideo && e.id === selectedId) $("camBtn").click(); }, testAddVideo * 1000);
@@ -3386,15 +3381,6 @@ document.addEventListener("keydown", (e) => {
   toggleSelfView();
 });
 
-// The Call quality panel starts as one line (both audio MOS); the chevron opens it. Closed at the start of every call.
-function setQualityOpen(open) {
-  $("quality").classList.toggle("collapsed", !open);
-  $("qHead").setAttribute("aria-expanded", String(open));
-  $("qHead").title = open ? "Hide the details" : "Show the details";
-}
-$("qChevron").innerHTML = ICON.chevronDown;
-$("qHead").onclick = () => setQualityOpen($("quality").classList.contains("collapsed"));
-
 // Simulated loss (Diagnostics menu): the host drops that share of the audio or video packets
 // we send on the SIP leg. Labels follow the slider as it moves; the host hears once it's let go.
 function showLoss() {
@@ -3414,8 +3400,8 @@ let lossLoaded = false;   // the host's starting values (--loss-audio, --loss-vi
 
 let copiedUntil = 0;   // the header says "Copied" until then
 // ---- Diagnostics (F12) ----
-// A panel docked at the bottom, like a browser's developer tools: the SIP log, and Network (the
-// loss sliders). While it's open the app is in diagnostics mode, which also shows Call quality,
+// A panel docked at the bottom, like a browser's developer tools: the SIP log, Call quality and
+// Network (the loss sliders). While it's open the app is in diagnostics mode, which also shows
 // your SIP address in the header, and the test video sources. Closed at every start
 // (--diagnostics opens it, for testing). Ctrl+Shift+I is left to WebView2's own DevTools.
 function setDiagnostics(on) {
@@ -3462,9 +3448,11 @@ $("devClose").onclick = () => setDiagnostics(false);
 function setDevTab(tab) {
   for (const b of document.querySelectorAll(".dev-tab")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
   $("log").hidden = tab !== "log";
+  $("paneQuality").hidden = tab !== "quality";
   $("paneNet").hidden = tab !== "net";
   $("logCopy").hidden = $("logClear").hidden = tab !== "log";
   if (tab === "log") $("log").scrollTop = $("log").scrollHeight;
+  if (tab === "quality") renderQuality();
 }
 for (const b of document.querySelectorAll(".dev-tab")) b.onclick = () => setDevTab(b.dataset.tab);
 $("logCopy").onclick = () => {

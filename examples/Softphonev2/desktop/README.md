@@ -367,14 +367,19 @@ so otherwise the info bar is just who and how long, with no chevron. It's closed
 of every call, and when diagnostics closes.
 
 The info bar used to have a `‹` arrow that tucked it off the stage's edge, leaving a tab to
-bring it back. It's small enough to leave where it is, and it carries the Muted pill, so the
-arrow and tab went.
+bring it back; the strip replaced it, so the info bar never covers the video and needs no arrow.
 
 | Row | What it says | From |
 |---|---|---|
 | Call | Outgoing or incoming, and the account (or "no account") | the host |
 | Their phone | their `User-Agent` (or `Server` on the 200 OK we got), or "Didn't say" | the host |
 | Security | Encrypted or not: the media is when every stream has SRTP keys (see [SRTP](#srtp)) or is WebRTC's DTLS-SRTP, SIP when it's over TLS (or WSS). "Media encrypted (SRTP); SIP not (UDP)" between two of these softphones, "Not encrypted: plain RTP, SIP over UDP", in amber, with a phone without SRTP | the host |
+On a video call the info bar and the transfer note sit in a 36 px strip across the top of the
+stage, in the stage's own colour, and the video starts below it, so neither covers the picture.
+The self view keeps below the strip too. Opened (diagnostics), the call details still drop down
+over the video. Audio calls have no strip: the info bar
+stays at the top left over the frequency bars, which have room above them.
+
 | Audio, Video | The codec each way, "↑ Opus 48 kHz ↓ G722 16 kHz", or one name when both match. Each end can send a different codec, and this is the only place that shows it. G.722 is labelled 16 kHz, its sample rate, not its 8 kHz RTP clock. Video has its frame size, "VP8 1280×720", refreshed every second while the panel is open | the page's WebRTC stats, which are the SIP leg's, since the relay doesn't re-encode |
 | SIP | transport and their SIP address and port, `UDP 127.0.0.1:5080` | the dialog |
 | Media | where their audio goes, the RTP address from their SDP | the SIP session |
@@ -515,7 +520,9 @@ The call goes on hold as the transfer starts (both calls, attended), and a note 
 going, in place of the held note. It's a quiet pill at the top right of the stage (the call
 info has the top left), dark and translucent like the call info, in small type, fading in, so it
 doesn't sit over the middle of their video; in a narrow window it runs across the top, below the
-call info. Done reads in light green, failed in soft red. It says how it's going from the far end's NOTIFYs
+call info. On a video call it's in the call strip (see Call details), as plain text in the
+stage's colours; in a narrow window it's the dark pill just below the strip. Done reads in light
+green, failed in soft red. It says how it's going from the far end's NOTIFYs
 (the `sipfrag`): "Asking VtN's phone to call Dave…", "Transferring to Dave…", "Dave is
 ringing…". The call's row says "Transferring to Dave…" too.
 
@@ -745,7 +752,7 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   default size up to three times it, as far as the stage allows. Double-click it to put it
   back in the bottom-right at the default size. It can take keyboard focus (Tab): the arrow
   keys move it, Shift with the arrows resizes it (Up or Right larger, Down or Left smaller)
-  and Home puts it back. The call's name and timer, Call quality, the on-hold note and the
+  and Home puts it back. The call's name and timer, the on-hold note and the
   answer buttons stay above it, so it never blocks them and a drag can't start from them.
   Where it sits is kept in the page's `localStorage` (`selfViewBox`) as a fraction of the way
   across and down the stage, with its size as a multiple of the default, so it keeps its
@@ -781,10 +788,11 @@ stopped), your row turns red with "X isn't getting your audio".
 
 ## Call quality (diagnostics mode)
 
-**Call quality**, at the top right of the stage during a call, starts as one line: the title,
-the round trip (an out-and-back arrow and the value, "⮐ 0.3ms", from their RTCP), both audio MOS (↑ what we send, ↓
-what we receive) and a chevron to open it. It's closed at the start of every call. Opened, it's a small
-table with a column for each direction, so there's no "they"
+**Call quality** is a tab in Diagnostics (F12), between SIP log and Network, for the selected
+call; with no call it says it shows here during one. It used to sit over the stage's top right,
+folded to one line with a chevron, but it covered their video, so it moved here, where there's
+room to show it all. It's a dark card, in either theme, with the table and PLIs at the left and
+the graph at the right (one above the other in a narrow window). The table has a column for each direction, so there's no "they"
 or "you" to work out:
 
 | | | ↑ Sent | ↓ Received |
@@ -914,19 +922,20 @@ On its own it listens on port 5060 (UDP and TCP), or if that's taken on a port t
 bottom of the window, and F12 again (or its ×) closes it. It's closed at every start
 (`--diagnostics` opens it). Drag its top edge to resize it, between 120 px and 70% of the
 window. The height you leave it at is remembered per profile and used whenever it opens.
-It has two tabs:
+It has three tabs:
 
 - **SIP log**: everything the host and page log, following the newest line unless you've
   scrolled up. *Copy log* puts the whole log on the clipboard; *Clear* empties it.
 - **Network**: the simulated loss sliders (see Call quality).
 
-While it's open the app is in diagnostics mode: Call quality over the stage, this softphone's
+While it's open the app is in diagnostics mode: this softphone's
 address in the header, and the Test pattern and Audio bars sources on the Camera ▾. Closing it
 hides them all. The page catches F12 before WebView2 does, so it doesn't open WebView2's own
 DevTools; Ctrl+Shift+I still does, for working on the page.
 
 The address in the header reads e.g. `No account · sip:192.168.1.20:5070`; click it to copy it for the other side to
 dial. It's the address this PC uses to reach the internet (which works from this PC too) and the
+- **Call quality**: the selected call's table and graph (see Call quality).
 UDP SIP port. With an account chosen in Call from it copies that account's address. To register
 with a server, add an account with Manage accounts (see [SIP accounts](#sip-accounts)), or seed one
 from `softphone.json` (copy `softphone.sample.json` next to the exe and fill it in).
@@ -1092,6 +1101,8 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Softphone to softphone, video call (`--video`) | Audio at 50 pkt/s each way; video at 30 fps each way, VP8. The first stats sample, at 5 s, already shows video. |
 | Video call with `--camera-off` on the caller | The caller sees the callee's video at 30 fps and its self view says "Camera off". The callee gets the caller's placeholder at 5 fps (640×360 at first, 1280×720 once the encoder ramps up): the initial with an account, the icon without. |
 | Same, then Camera on, then Camera off | The callee's video goes 5 fps placeholder, then 30 fps camera, then 5 fps placeholder, without a gap. The caller's camera opens and closes with it. |
+| Call strip: video call between two copies (`--profile stA`/`stB`, `--fake-media --test-pattern`, A `--video --dial`, B `--auto-answer`) at 1100×720; then Mute, F12, both chevrons opened, dark theme; then A's self view pushed up with the arrow keys | A 36 px strip across the top of the stage in the stage's colour: "sip:stB@127.0.0.1:5462 00:13", the video below it, nothing over the picture. Muted: the red *You're muted* pill in the strip; diagnostics: the call details' chevron, and opened they drop down over the video as before, in both themes. The self view stops at 48 px (12 px below the strip). |
+| Call quality tab: the same two copies, A with `--diagnostics`, *Call quality* tab; then the calls ended | Nothing over the stage but the strip. The tab shows the dark card: the table (Audio MOS 4.4 both ways, loss 0.0%, Video fps 31/30) and PLIs at the left, *Reported by them* with the ↑ Sent \| ↓ Received switch, the graph, legend and "RTT 0.8 ms" at the right, all inside the panel's default 240 px. Ended: "Call quality shows here during a call." |
 | Two softphones on Video with the real camera, then the first switched to Audio | The second shows "Camera in use" and still hasn't opened the camera 8 s after the first closed it. Clicking Video opens it. |
 | A softphone answers a video call while another has the real camera | It answers with "Camera in use" and sends the placeholder. 8 s after the other lets go it still hasn't opened the camera; Camera on opens it. |
 | Two accounts a side (A: Alice, Carol, `--auto-answer`; B: Bob, Dave). B calls A from Bob, then from Dave, audio only. A adds video to Dave's call, then to Bob's, with Dave still B's selected account | B takes both ("is adding video: taking it"), though it placed them without video. A gets D on Dave's call and B on Bob's (the placeholder), and on whichever B has held, the hold card with that account's name. |

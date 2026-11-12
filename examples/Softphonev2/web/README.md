@@ -165,7 +165,9 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   media is negotiated, so every sender gets one as it's made (passing every frame at 0%), from
   the same `RTCPeerConnection` wrapper as Call quality. Every 5 s with loss on, the log says how
   many frames were dropped. In a browser without `RTCRtpScriptTransform` the sliders are off.
-- **Call quality** works as on the desktop. There the host reads the far end's RTCP on the SIP
+- **The call strip** is the desktop's (the page is shared): on a video call the call info and the
+  transfer note sit in a strip across the top of the stage, with the video below it.
+- **Call quality** works as on the desktop, in its own Diagnostics tab. There the host reads the far end's RTCP on the SIP
   leg; here the page's own `RTCPeerConnection` is the media leg and the browser reads their
   reports, so `host.js` finds that connection (it wraps the `RTCPeerConnection` constructor
   before `app.js` loads) and posts the same `quality` messages from `getStats()`: each new
