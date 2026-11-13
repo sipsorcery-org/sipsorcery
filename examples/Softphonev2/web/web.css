@@ -1,7 +1,11 @@
 /* The web softphone's own pieces: the account chip in the header, its menu, and the sign-in
    dialog. The tokens (--surface, --accent…) are the desktop page's. */
 
-.acct-wrap { position: relative; }
+.acct-wrap { position: relative; min-width: 0; }
+@media (max-width: 500px) {
+  .acct { max-width: 110px; padding: 0 10px; }
+  .acct > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
 .acct {
   display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px;
   font: inherit; font-size: 13px; color: var(--text);
@@ -73,3 +77,16 @@
 .acct-copy:hover { background: var(--surface); color: var(--text); }
 .acct-copy.copied { color: var(--ok); }
 .acct-copy svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* On a phone, during a call: keep the page open (host.js, "During a call"). Over the bottom of
+   the stage, above the control bar. */
+.bg-note {
+  position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 40; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px; width: min(440px, calc(100vw - 24px)); padding: 10px 10px 10px 14px;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border); border-left: 4px solid var(--warn-ink);
+  border-radius: var(--radius-sm); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); font-size: 13px; line-height: 1.35;
+}
+.bg-note[hidden] { display: none; }
+.bg-note.away { border-left-color: var(--danger); }
+.bg-note-text { flex: 1; margin: 0; }
+.bg-note-ok { flex: none; height: 32px; padding: 0 12px; }

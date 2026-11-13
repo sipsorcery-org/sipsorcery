@@ -1111,6 +1111,34 @@ The window opens where it was last closed, at the same size (maximised if it was
 `%LOCALAPPDATA%\SIPSorcery\Softphonev2\window-<profile>.json`, so each profile keeps its own. If
 that place is no longer on a screen, it opens at the default size instead.
 
+### As a .NET tool
+
+Like the CLI (`sipsorcery`), the softphone can be installed from NuGet, as the prerelease tool
+`SIPSorcery.Softphone`:
+
+```bash
+dotnet tool install -g SIPSorcery.Softphone --prerelease
+```
+
+```bash
+sipsorcery-softphone
+```
+
+Options are passed on (`sipsorcery-softphone --profile b --fake-media`), and the terminal comes
+straight back. It needs Windows and the .NET 10 SDK (which on Windows includes the desktop runtime
+WinForms needs), so it's for developers and testers. Being a NuGet download, there's no
+SmartScreen warning and nothing to sign.
+
+A .NET tool can't be a WinForms app: the SDK refuses to pack a `net10.0-windows` or
+`UseWindowsForms` project as one (NETSDK1146). So the tool is a small console launcher,
+[`../tool`](../tool) (`net10.0`, `RollForward` Major, like the CLI), whose package carries this
+app's published build in `tools/net10.0/any/app/` and starts `app\Softphone.exe` from there.
+`dotnet pack -c Release` in `tool/` publishes this project (framework-dependent, no `.pdb` or
+`.xml` docs) and packs it, about 7.5 MB. The package's page is `tool/README.md`, its icon
+`tool/softphone.png` (`softphone.ico`'s drawing at 128 px). The tool's `<Version>` is kept in
+step with this `.csproj`'s by hand; with a suffix (`2.0.0-preview`) it's a prerelease. On a Mac
+or Linux it installs but says it runs on Windows only.
+
 ### Two softphones calling each other
 
 ```bash
@@ -1137,6 +1165,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 ## What's been checked
 
 | Test | Result |
+| The .NET tool: `dotnet pack -c Release` in `tool/`; `dotnet tool install SIPSorcery.Softphone --prerelease --add-source <the .nupkg's folder> --tool-path <scratch>`; `sipsorcery-softphone --profile vtA --fake-media` | Packed `SIPSorcery.Softphone.2.0.0-preview.nupkg` (7.5 MB, 40 files: the launcher, and the app under `tools/net10.0/any/app/` with `wwwroot` and WebView2's loaders under `runtimes/`). Installed "version '2.0.0-preview'". The command returned in 240 ms, exit 0; `Softphone.exe` running from the tool store's `app\` with `--profile vtA --fake-media`, its window "SIPSorcery Softphone" up and its page loaded (the log's "page: call history"). Before the launcher, packing this project as a tool failed: NETSDK1146. Not published to NuGet. |
 | Call history, two copies (`--profile hiA --port 5381 --ws-port 8381` and `hiB --port 5382 --ws-port 8382`, both `--fake-media`, no accounts); A calls `sip:hiB@127.0.0.1:5382` | B answers (`A`), A hangs up after 4 s: A's History "HiB · Just now" (Outgoing · 0:04), B's "Thisis" (Incoming · 0:04). B declines: A *Busy* (`486 Busy Here`), B *Declined*. A cancels while it rings: A *Cancelled*, B *Missed* in red, with the badge at 1. Each is in `history-hiA.json` / `history-hiB.json`. |
 | A: the call-back button on the latest History entry | A calls `sip:hiB@127.0.0.1:5382` again; B answers and it's recorded like the first. |
 | B: People | The view over the stage on Recent, "5 calls · 2 missed", the badge cleared; *Missed* lists the two missed calls and the button reads *Clear 2 shown*; the chevron opens the details (Incoming, Today 08:11, 0:03, No account (direct), Completed · They hung up) with Call back, Copy address, Remove and *Remove all 5 from this address*. |

@@ -30,6 +30,8 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
+/* A phone's browser: the height that's really visible, with its address bar showing. */
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
 /* The app above, and the diagnostics panel docked under it when open. */
 body { display: flex; flex-direction: column; background: var(--page); color: var(--text); font: 14px/1.4 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
 .shell { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: auto auto 1fr auto; gap: 12px; padding: 12px 16px 12px; }
@@ -1268,3 +1270,49 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 }
 .controls .btn.xfer-btn[hidden] { display: none; }
 .controls .btn.xfer-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---- A phone (the web softphone in a phone's browser; the desktop window is never under 540 px) ----
+   The header is the mark, the name and its buttons. The dial bar takes two rows: People and the
+   address, then Audio ◯━ Video and a wide Call. The control bar's buttons are icons, their words
+   kept for screen readers (and in their tooltips), and taller, for a finger. Text fields are
+   16 px, so iOS doesn't zoom in when one's tapped. */
+@media (max-width: 500px) {
+  .shell { padding: 10px 12px; gap: 10px; }
+  .brand { gap: 8px; }
+  .brand-divider, .brand-sub { display: none; }
+  .topbar-right { gap: 8px; }
+  .dialbar { flex-wrap: wrap; }
+  .dialbar .dest-wrap { flex: 1 1 200px; }
+  .dialbar .call-type { flex: none; }
+  .dialbar #callBtn { flex: 1 1 auto; height: 44px; }
+  .dialbar input, .xfer-input, .rtt-input, .hv-search input { font-size: 16px; }
+  .dialbar input { height: 44px; }
+  .controls { display: flex; justify-content: space-between; gap: 6px; }
+  .controls-right { gap: 6px; }
+  .controls .btn { height: 44px; padding: 0 12px; }
+  .controls .btn > span:not(.split-caret) {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  .controls .btn { position: relative; }
+  .controls .split-caret { width: 24px; }
+  .controls .btn.icon-btn { width: 40px; }
+  .controls #hangupBtn { padding: 0 16px; }
+  /* The privacy switch's words (armed or on) need the name's room: the name goes, and the
+     words are cut short with "…" before they'd push Settings off the screen. */
+  .topbar:has(.privacy-btn.armed, .privacy-btn.on) .brand-name { display: none; }
+  .topbar-right { min-width: 0; }
+  .privacy { min-width: 0; }
+  .privacy-btn { min-width: 34px; max-width: 100%; }
+  .privacy-icons { flex: none; }
+  .privacy-text { flex: 0 1 auto; min-width: 0; text-overflow: ellipsis; }
+  /* Diagnostics: the tabs, the panel's close and, on the SIP log, Copy and Clear; the title is
+     its icon and F12 (no key for it on a phone) goes. The tabs scroll sideways if they must. */
+  .dev-bar { gap: 4px; padding: 0 6px 0 10px; }
+  .dev-title { font-size: 0; gap: 0; margin-right: 2px; padding-right: 10px; }
+  .dev-key { display: none; }
+  .dev-tabs { min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .dev-tab { flex: none; padding: 0 8px; white-space: nowrap; }
+  .dev-spacer { flex: 0 0 0; }
+  .dev-act { flex: none; padding: 0 7px; }
+  .dev-details, .dev-quality, .dev-net { padding: 10px 12px; }
+}

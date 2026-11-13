@@ -201,6 +201,35 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   went". Now theirs says straight away that the transfer was turned down.
 - The desktop shows up as `sip:thisis@anonymous.invalid` when it calls without an account: that's
   the From SIPSorcery sends by default.
+- **On a phone** (360–430 px): making calls works from a page kept open; receiving calls, or a
+  call surviving a locked screen, needs a native app.
+  - **The layout** (500 px and under, in the desktop's `styles.css`; the desktop window is never
+    that narrow): the header is the mark, "SIPSorcery" and its buttons; the dial bar is two rows,
+    People and the address (its hint shortened to "Name, number or SIP address"), then Audio ◯━
+    Video and a wide Call; the control bar's buttons are icons only (their words kept for screen
+    readers), 44 px tall for a finger. Text fields are 16 px, so iOS doesn't zoom in on them, and
+    the page is the height that's really visible (`100dvh`), so the address bar can't push the
+    control bar off the bottom. With the privacy switch armed or on, the name goes to make room
+    for its words, which are cut short with "…" if they still don't fit ("Mic and Cameras
+    Bloc…"). Diagnostics' bar is the icon (no "Diagnostics"), the four tabs and ×, without the F12
+    key (a phone has none); the tabs scroll sideways if they must. Call quality's charts are the
+    screen's width, one above the other.
+  - **The screen stays on** while a call is calling, ringing or connected (the Screen Wake Lock
+    API, any browser that has it, desktops too). A browser drops the lock while the page is
+    hidden; it's asked for again on coming back, and let go when the last call ends. The SIP log
+    says each.
+  - **Keep the page open**: a phone's browser stops the microphone, and soon the page, when you
+    switch apps or lock the screen, so the call goes one way or drops, and no web page can stop
+    that. On a phone (a touch screen and no mouse: `pointer: coarse`, no `hover`), once a call
+    connects, a note over the bottom of the stage says so ("Keep this page open during the call:
+    switching apps or locking the phone can cut off your audio or end the call.") until *Got it*,
+    remembered in `localStorage` (`backgroundNoteSeen`). Back from the background mid-call, it
+    says how long ("This page was in the background for 25 s, so they may not have heard you
+    then."), with a red edge, whether or not you'd seen the first.
+  - **Not here yet**: STUN and TURN (`host.js` gives the connection no ICE servers), so over mobile
+    data, behind the carrier's NAT, media will often fail or go one way; the page needs HTTPS and
+    `wss://` on a phone (the microphone needs a secure page, and a secure page can't open `ws://`);
+    and the browser picks the speaker, earpiece or Bluetooth.
 
 ## What's been checked
 
@@ -209,6 +238,9 @@ microphone, both on one PC.
 
 | Test | Result |
 |---|---|
+| Phone layout: Edge headless emulating a touch phone (375×812 and 360×740, mobile, touch), `?server=ws://127.0.0.1:8392` to a desktop copy (`--ws-port 8392 --auto-answer`); idle, then call `vtB`, light and dark | Idle: no sideways scroll (393 px wide before); the header fits with the gear (it was cut off), the address field full width (before: squeezed to an empty box) with the short hint, Audio ◯━ Video and a wide Call under it; the control bar icons only, End red, all 6 within 348 px at 360. Connected: the call header, the bars, the control bar at the bottom. |
+| Phone, the rest: a call at 375 px; the privacy switch armed, then on; then Diagnostics (F12) on Call quality | Before: the page 496 px wide armed, 470 on, and 467 with Diagnostics open (its bar's tabs wrapping to two lines, pushing the charts off the right). After: 375 px each time. Armed or on, "SIPSorcery" goes and the chip reads "Mic and Cameras Bloc…" with Settings still on screen; Diagnostics' bar the icon, SIP log, Call details, Call quality, Network and ×, on one line; the charts 351 px, the screen less its margins. |
+| Screen on and the background note: the same, with `backgroundNoteSeen` cleared; *Got it*; the page faked hidden for 3 s (`visibilityState`, `visibilitychange`) mid-call; End | Log "keeping the screen on for the call" as it rang; once connected the note over the bottom of the stage, above the control bar. *Got it* hides it and sets `backgroundNoteSeen`. Back after 3 s: "the page went to the background during a call", "the page is back from the background (3 s)", and the note's "This page was in the background for 3 s…" with a red edge. End: the note goes, "the screen can turn off again". Not tested on a real phone: what iOS and Android actually do to the call in the background. |
 | Active calls, `?server=ws://127.0.0.1:8092` to a desktop copy with `--auto-answer` (Claude's browser pane, mic blocked) | "B · Audio call" with the timer; collapsed to the rail it keeps ticking, and after hanging up and a hard reload it's still the rail. At 375 px it's the rail, with no sideways scroll; expanding lays it over the stage and Esc folds it back. |
 | Web `dial=desktop&call=video`, desktop `--auto-answer` | Registered, INVITE with the page's offer, ICE and DTLS connected in 0.2 s. Video both ways (the desktop receives 20 fps, then 1280×720; the web 30 fps), audio 50 pkt/s each way with no loss. Web's Call quality ↓ 4.4. |
 | Desktop dials `web` (video), web `auto=1`, with the desktop's old test registrar (since removed) | The desktop's offer goes to the page; answered, media both ways. Desktop End: BYE, 200; desktop "You hung up", web "They hung up". |

@@ -190,7 +190,77 @@ function restoreHistory(ids) {
   saveHistory();
 }
 
-function sendState() { if (pageReady) toPage(stateMessage()); }
+function sendState() { if (pageReady) toPage(stateMessage()); keepAwake(); }
+
+// ---- During a call: the screen stays on, and on a phone, what the background does ----
+// A phone's browser stops a page's microphone, and soon the page, when you switch apps or lock
+// the screen, so the call goes one way or drops; nothing in a web page can prevent that. So while
+// a call is calling, ringing or connected the screen is kept on (the Screen Wake Lock API, which
+// the browser drops while the page is hidden; it's asked for again on coming back), and on a
+// phone (a touch screen, no mouse) a note says to keep the page open, once a call connects, until
+// "Got it". Back from the background mid-call, the note says how long it was away.
+const onPhone = matchMedia("(pointer: coarse)").matches && !matchMedia("(hover: hover)").matches;
+const BG_NOTE_KEY = "backgroundNoteSeen";
+let wakeLock = null, wakeAsking = false, hiddenAt = 0;
+async function keepAwake() {
+  const want = liveCalls().length > 0 && document.visibilityState === "visible";
+  if (want && !wakeLock && !wakeAsking && navigator.wakeLock) {
+    wakeAsking = true;
+    try {
+      const lock = await navigator.wakeLock.request("screen");
+      lock.addEventListener("release", () => { if (wakeLock === lock) wakeLock = null; });
+      wakeLock = lock;
+      log("keeping the screen on for the call");
+      if (!liveCalls().length) keepAwake();   // the call ended while we asked
+    } catch (err) {
+      log(`can't keep the screen on: ${err.message}`);
+    } finally {
+      wakeAsking = false;
+    }
+  } else if (!liveCalls().length && wakeLock) {
+    const lock = wakeLock;
+    wakeLock = null;
+    lock.release().catch(() => {});
+    log("the screen can turn off again");
+  }
+  if (onPhone && !bgNoteSeen() && (!bgNote || bgNote.hidden) && [...calls.values()].some((c) => c.call === "connected")) showBgNote();
+  if (!liveCalls().length) hideBgNote();
+}
+function bgNoteSeen() { try { return localStorage.getItem(BG_NOTE_KEY) === "1"; } catch { return false; } }
+let bgNote = null;
+function showBgNote(away = 0) {
+  if (!bgNote) {
+    bgNote = document.createElement("div");
+    bgNote.className = "bg-note";
+    bgNote.setAttribute("role", "status");
+    bgNote.innerHTML = '<p class="bg-note-text"></p><button type="button" class="btn bg-note-ok">Got it</button>';
+    bgNote.querySelector("button").onclick = () => {
+      try { localStorage.setItem(BG_NOTE_KEY, "1"); } catch { /* this visit only */ }
+      hideBgNote();
+    };
+    document.body.append(bgNote);
+  }
+  bgNote.classList.toggle("away", away > 0);
+  bgNote.querySelector("p").textContent = away > 0
+    ? `This page was in the background for ${away} s, so they may not have heard you then. Keep it open during calls.`
+    : "Keep this page open during the call: switching apps or locking the phone can cut off your audio or end the call.";
+  bgNote.hidden = false;
+}
+function hideBgNote() { if (bgNote) bgNote.hidden = true; }
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    hiddenAt = liveCalls().length ? Date.now() : 0;
+    if (hiddenAt) log("the page went to the background during a call");
+    return;
+  }
+  const away = hiddenAt ? Math.round((Date.now() - hiddenAt) / 1000) : 0;
+  hiddenAt = 0;
+  if (away > 0 && liveCalls().length) {
+    log(`the page is back from the background (${away} s)`);
+    if (onPhone) showBgNote(away);
+  }
+  keepAwake();
+});
 
 function nameOf(identity) {
   const uri = identity.uri.toString();
@@ -1082,6 +1152,8 @@ const doc = new DOMParser().parseFromString(await (await fetch(new URL("index.ht
 for (const link of doc.head.querySelectorAll("link[rel=stylesheet]")) document.head.append(link);
 for (const node of [...doc.body.childNodes]) if (node.nodeName !== "SCRIPT") document.body.append(document.adoptNode(node));
 document.title = "SIPSorcery Softphone (web)";
+// A phone's address field has room for the start of the hint only.
+if (onPhone) document.getElementById("address")?.setAttribute("placeholder", "Name, number or SIP address");
 // For the page's Settings: what's the desktop's (its account management) and what's ours.
 document.documentElement.dataset.host = "web";
 
