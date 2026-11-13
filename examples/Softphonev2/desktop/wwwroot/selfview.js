@@ -7,6 +7,9 @@
 // keeps its corner or its place across window sizes. The default is the bottom-right corner.
 //
 // The box (#selfBox) holds #self and #selfOff; app.js shows and hides those as before.
+//
+// On a connected call the stage's call header takes its top (--head-h): the box keeps below it,
+// in the area the video has, and moves with it as the header comes and goes.
 
 const KEY = "selfViewBox";
 const MARGIN = 12;          // from the stage's edges, as the default position
@@ -29,17 +32,20 @@ export function initSelfView(stage, box, grip) {
   };
 
   // The default width is the stage's --side-w (shared with Call quality), at most 45% of the stage.
+  // T: the call header's height; H is the height below it, and tops are in stage pixels.
   function metrics() {
-    const W = stage.clientWidth, H = stage.clientHeight;
-    const side = parseFloat(getComputedStyle(stage).getPropertyValue("--side-w")) || 260;
+    const css = getComputedStyle(stage);
+    const T = parseFloat(css.getPropertyValue("--head-h")) || 0;
+    const W = stage.clientWidth, H = Math.max(0, stage.clientHeight - T);
+    const side = parseFloat(css.getPropertyValue("--side-w")) || 260;
     const d = Math.min(side, W * 0.45);
     const fit = Math.max(0, Math.min(W - 2 * MARGIN, (H - 2 * MARGIN) * RATIO));
-    return { W, H, d, fit };
+    return { W, H, T, d, fit };
   }
   // Where it is now, in stage pixels.
   function rect(m = metrics()) {
     const w = Math.min(m.d * pos.s, m.fit), h = w / RATIO;
-    return { w, h, left: MARGIN + pos.x * (m.W - 2 * MARGIN - w), top: MARGIN + pos.y * (m.H - 2 * MARGIN - h) };
+    return { w, h, left: MARGIN + pos.x * (m.W - 2 * MARGIN - w), top: m.T + MARGIN + pos.y * (m.H - 2 * MARGIN - h) };
   }
   // Takes a place and size in pixels, kept inside the stage, as the new position.
   function place(left, top, w, m = metrics()) {
@@ -47,7 +53,7 @@ export function initSelfView(stage, box, grip) {
     const spanX = m.W - 2 * MARGIN - w, spanY = m.H - 2 * MARGIN - h;
     pos = {
       x: spanX > 0 ? clamp((left - MARGIN) / spanX, 0, 1) : pos.x,
-      y: spanY > 0 ? clamp((top - MARGIN) / spanY, 0, 1) : pos.y,
+      y: spanY > 0 ? clamp((top - m.T - MARGIN) / spanY, 0, 1) : pos.y,
       s: w >= m.fit && m.fit < m.d * pos.s ? pos.s : clamp(w / m.d, 1, MAX_SCALE),
     };
     layout(m);
@@ -60,7 +66,7 @@ export function initSelfView(stage, box, grip) {
     const r = rect(m);
     Object.assign(box.style, { left: `${r.left}px`, top: `${r.top}px`, right: "auto", bottom: "auto", width: `${r.w}px`, maxWidth: "none" });
     if (drag?.mode !== "resize") {   // the handle stays put while it's held
-      gripCorner = (r.top + r.h / 2 < m.H / 2 ? "b" : "t") + (r.left + r.w / 2 < m.W / 2 ? "r" : "l");
+      gripCorner = (r.top - m.T + r.h / 2 < m.H / 2 ? "b" : "t") + (r.left + r.w / 2 < m.W / 2 ? "r" : "l");
       box.dataset.grip = gripCorner;
     }
   }
@@ -70,7 +76,7 @@ export function initSelfView(stage, box, grip) {
     const anchorX = gripCorner.includes("l") ? start.left + start.w : start.left;
     const anchorY = gripCorner.includes("t") ? start.top + start.h : start.top;
     const roomX = gripCorner.includes("l") ? anchorX - MARGIN : m.W - MARGIN - anchorX;
-    const roomY = (gripCorner.includes("t") ? anchorY - MARGIN : m.H - MARGIN - anchorY) * RATIO;
+    const roomY = (gripCorner.includes("t") ? anchorY - m.T - MARGIN : m.T + m.H - MARGIN - anchorY) * RATIO;
     const lo = Math.min(m.d, m.fit);
     w = clamp(w, lo, Math.max(lo, Math.min(m.d * MAX_SCALE, m.fit, roomX, roomY)));
     const h = w / RATIO;
@@ -94,7 +100,7 @@ export function initSelfView(stage, box, grip) {
     if (!drag.moved && Math.hypot(dx, dy) < 3) return;
     drag.moved = true;
     if (drag.mode === "move") {
-      place(clamp(start.left + dx, MARGIN, m.W - MARGIN - start.w), clamp(start.top + dy, MARGIN, m.H - MARGIN - start.h), start.w, m);
+      place(clamp(start.left + dx, MARGIN, m.W - MARGIN - start.w), clamp(start.top + dy, m.T + MARGIN, m.T + m.H - MARGIN - start.h), start.w, m);
     } else {
       const sx = gripCorner.includes("l") ? -1 : 1, sy = gripCorner.includes("t") ? -1 : 1;
       resizeTo(start.w + Math.max(sx * dx, sy * dy * RATIO), start, m);
@@ -131,12 +137,14 @@ export function initSelfView(stage, box, grip) {
       resizeTo(r.w + grow * m.d * 0.1, r, m);
     } else {
       const step = 16;
-      place(clamp(r.left + dir[0] * step, MARGIN, m.W - MARGIN - r.w), clamp(r.top + dir[1] * step, MARGIN, m.H - MARGIN - r.h), r.w, m);
+      place(clamp(r.left + dir[0] * step, MARGIN, m.W - MARGIN - r.w), clamp(r.top + dir[1] * step, m.T + MARGIN, m.T + m.H - MARGIN - r.h), r.w, m);
     }
     save();
   });
 
   new ResizeObserver(() => { if (!drag) layout(); }).observe(stage);
+  // The call header comes and goes with the stage's class, without the stage changing size.
+  new MutationObserver(() => { if (!drag) layout(); }).observe(stage, { attributes: true, attributeFilter: ["class"] });
   layout();
   return { reset };
 }

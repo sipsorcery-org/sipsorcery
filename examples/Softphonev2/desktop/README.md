@@ -17,6 +17,15 @@ the desktop app, using the media design the video spike
   - keyframe requests (PLI/FIR) in both directions, plus one request each way when the relay
     comes up, so video starts at once.
 
+## The app icon
+
+The SIPSorcery sorcerer on the phone, in the logo's lime on black: the same mark in the window's title bar,
+the taskbar and Explorer (`softphone.ico`, the `ApplicationIcon`, and embedded for `MainForm`'s `Icon`) and at the
+top left of the page (inline in `wwwroot/index.html`). `softphone.svg` is its source, on a 48-unit grid. Each size
+in the `.ico` (16, 20, 24, 32, 40, 48, 64 and 256 px) is drawn on its own, with the gaps between the hat, brim,
+face, robe and handset about a pixel wide at that size, so the parts stay apart at 16 px. The header copy is
+drawn for 28 px. The tile is the same in light and dark.
+
 ## The control bar
 
 Under the stage, from the UX prototype (`prototype/web`), and there the whole time, not just
@@ -241,7 +250,9 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
 - **New call.** **Call** is enabled once there's something in the address field (greyed, with
   "Type a number or address to call", while it's empty or only spaces), kept in step as you
   type, clear it with ×, pick a suggestion or paste. On a call, the button says what it will do:
-  *Call & hold Alice*; pressing it holds that call, which stays on the stage, and the new one
+  *Call & hold current*, the same words as a ringing call's *Answer & hold current* (its
+  tooltip names who: "Call, and put Alice on hold"; under 760 px it's just *Call*, so the
+  address field keeps its room); pressing it holds that call, which stays on the stage, and the new one
   isn't a call in the list yet: a banner over the stage says "Dave · Calling… · Cancel". Only
   once Dave answers does it join the list and take the stage (in Focus). Not answered (busy,
   declined, no such number), the banner says why until the call goes (or *Close*), and the call
@@ -258,8 +269,20 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
 - **Incoming calls** ring alongside the others (only a ninth gets 486 Busy Here). While you're
   on a call, a banner over the stage says who, with *Answer & hold current* and *Decline*, and
   the call you're on carries on untouched (not held, still on the stage) unless you answer; the
-  name opens the full answer view. With several ringing,
-  the one waiting longest is on the banner, with "+N more waiting". `A` answers it.
+  name opens the full answer view. With several ringing, the one waiting longest is on the
+  banner, with how long each has waited and a **+N more** button that drops the others down
+  inside the banner: a row each (name, "Calling · 00:14", *Decline*, *Answer & hold current*,
+  the same as the top one, as they all do the same), scrolling past
+  three, so you pick which to answer. Answering from it folds the list away; declining leaves
+  it open for the next; the button again or `Esc` folds it. Two with the same name from
+  different addresses say the address too. `A` answers the one on the banner.
+  With no call going it's the same: one ringing call has the stage to itself (the full answer
+  view), but several are all in the banner, with the same list, and the stage says "3 calls
+  ringing". A name (in the banner, or its row in Active calls) gives that call the answer view,
+  and the banner keeps all of them as you switch between them, the one in the answer view
+  with its name in the accent colour: the banner is every call waiting, the stage the one
+  you're looking at. Declining or losing the call on the stage moves it to the ones still
+  ringing (the banner, or the answer view once there's one), not the ended call's card.
   `--auto-answer` answers each call alongside the others, keeping the audio where it is.
 - **When a call ends** it stays in the list for a few seconds with how it ended. If it was on
   the stage, the stage keeps saying so, with *Back to …* (or `Esc`) to another call.
@@ -330,8 +353,7 @@ few seconds after it ends. Clicking a row puts that call on the stage. The list 
 - **Folding it**: the chevron at the top right of the panel folds it to a 48 px rail of
   initials, the mic and camera chips, and timers (a click on one selects that call), and the
   chevron at the top of the rail opens it again. The choice is remembered (`localStorage`,
-  `callsPanel`). Open in full, the panel hides the call info beside Mute, as each row has the
-  name and time and the buttons need the room; folded, the call info is back.
+  `callsPanel`). The call header stays on the stage either way, for the selected call.
 - **Narrow windows** (under 700 px): always the rail, with no chevron, to leave the stage its
   room. (There used to be a way to open it over the stage on a narrow one; showing the panel
   only with two calls made that unnecessary.)
@@ -387,32 +409,70 @@ has the account's address.
 
 ## Call details
 
-The call info is at the left of the control bar, beside Mute, so nothing sits over their video:
-their address with the call's duration under it, and a small red mic while you're muted. The
-address leaves out its URI parameters and headers (`;transport=tcp`, `?X-Foo=1`), which say
-nothing to a person; the *Address* row in Call details has the full one. A long address is cut
-short with "…", and hovering over it shows all of it. Before them, a
-padlock says how the call is protected: **green** with SIP and the media both encrypted (TLS
-and SRTP), **yellow** with only one of them, and **grey and open** with neither. Its tooltip says which, and
-a click opens Diagnostics on the *Call details* tab. With the Active calls panel open in full (two calls or more) it's
-hidden, as each call's row has its name and time and the buttons need the room; fold the panel
-to its rail (its chevron) to see it. It's hidden in the grid too.
+The call info is a **call header** across the top of the stage on a connected call, where
+people look for who a call is with: a phone's call screen has the name at the top, as an
+email has its From line and a web page its address. The video, the frequency bars and the
+self view start below it, so it never covers their picture, and the control bar holds only
+buttons. The header is one line (40 px), read left to right:
+
+- **Who**, in bold: their address, or for a saved contact the contact's name (with the
+  contact mark) and then, in grey, the address. The address leaves out its URI parameters and
+  headers (`;transport=tcp`, `?X-Foo=1`), which say nothing to a person; the *Address* row in
+  Call details has the full one. Short of room, the address is cut short with "…" first, then
+  the name, never the timer; hovering shows all of it.
+- **How long**, after a "·", and a small red mic after it while you're muted.
+- **The padlock**, before them, says how the call is protected: **green** with SIP and the
+  media both encrypted (TLS and SRTP), **yellow** with only one of them, and **grey and open**
+  with neither. It comes first, and its tooltip says which. A click shows **the call's
+  security** in a small card under it, for anyone, not just the technical: a headline ("This
+  call is encrypted", "This call is only partly protected", "This call isn't encrypted"), then
+  *Your conversation* (voice and video) and *Call setup* (who's calling whom), each Encrypted or
+  Not encrypted with the technical name small beside it (DTLS + SRTP, SRTP, plain RTP; SIP over
+  TLS, WSS or UDP) so it can be recognised, a sentence on what that means (who on the network
+  could listen in, or see who you're calling). The rest is in Call details (Diagnostics,
+  F12), for those who want it. SRTP with its keys
+  in unencrypted SIP is "only partly protected": anyone who can read the SIP can read the keys.
+  Esc, a click away or the padlock again closes it, and it goes with the call. (The padlock
+  used to open Diagnostics straight away, too much for someone who only wants to know whether
+  the call's private.)
+- **The call's status** at its right, while there is one: how a transfer's going, in a few
+  words in a tinted pill (under way in the accent colour, done green, failed red), with what you
+  can do (see [Transfer](#transfer)); the full sentence is its tooltip. It's passing news, so it
+  comes first: short of room the address and then the name give way to it, and in a narrow
+  header (under ~560 px, a container query) it goes over the top of the whole line, as it's
+  gone in a few seconds and who the call's with is back.
+
+**One place for each kind of news.** The header line is this call's: its status, one at a time
+(there's only ever one transfer on a call). Other calls' news has its own place below the
+header: a call ringing in (*Answer* / *Decline*, the one waiting longest first, "+N more"
+dropping down the rest) and a call you're placing over this one have their banners just under
+it, so a call ringing in while a transfer's going covers neither. Another call's transfer shows
+on its row in Active calls ("Carol is ringing…", "Transfer failed · on hold"). Text they type
+has its toast at the bottom of the stage.
+
+On hold, the *On hold · Resume* note stays over the middle of the stage (below the header).
+Calling, ringing and ended calls have the stage's card, which already names the call, so the
+header shows once the call's connected. In Grid view there's no header: each tile has its own
+name and time.
 
 The call's details are technical, so they're a tab in Diagnostics (F12), **Call details**,
 for the selected call; with no call it says they show here during one. They follow the call
 you pick, and the codecs fill in once the media flows.
 
 The call info used to be a pill at the top left of the stage, with a `‹` arrow to tuck it off
-the edge, then (briefly) a strip across the top of video calls. Both took the picture's room or
-covered it, so it moved down to the control bar, and its chevron for the details became the
-tab.
+the edge, then (briefly) a strip across the top of video calls, then the left of the control
+bar, beside Mute. The pill covered the picture; beside Mute it was where nobody looks for who
+a call is with, and it was squeezed on narrow windows. The header keeps the strip's idea (above
+the picture, not over it) for every call, audio too. Its chevron for the details became the
+tab. The header first had the timer on a second line; one line is 12 px shorter and keeps
+everything about the call where you read it, as video-call apps do.
 
 | Row | What it says | From |
 |---|---|---|
 | Call | Outgoing or incoming, and the account (or "no account") | the host |
 | Address | Their full address, as the call has it, URI parameters and headers included (`sip:bob@host;transport=tcp`) | the page |
 | Their phone | their `User-Agent` (or `Server` on the 200 OK we got), or "Didn't say" | the host |
-| Security | Encrypted or not: the media is when every stream has SRTP keys (see [SRTP](#srtp)) or is WebRTC's DTLS-SRTP, SIP when it's over TLS (or WSS). "Media encrypted (SRTP); SIP not (UDP)" between two of these softphones, "Not encrypted: plain RTP, SIP over UDP", in amber, with a phone without SRTP | the host |
+| Security | Encrypted or not, and how: the media is when every stream has SRTP keys (see [SRTP](#srtp)) or is WebRTC's DTLS-SRTP, SIP when it's over TLS (or WSS). The media's kind is named: "DTLS + SRTP" when the keys came from a DTLS handshake on the media path (a browser phone, WebRTC), "SRTP" when they were in the SDP (SDES), so only as private as the SIP. "Media encrypted (SRTP); SIP unencrypted (UDP)" between two of these softphones, "Media encrypted (DTLS + SRTP); SIP unencrypted (WS)" with a browser phone, "Not encrypted: plain RTP, SIP over UDP", in amber, with a phone without SRTP | the host |
 | Audio, Video | The codec each way, "↑ Opus 48 kHz ↓ G722 16 kHz", or one name when both match. Each end can send a different codec, and this is the only place that shows it. G.722 is labelled 16 kHz, its sample rate, not its 8 kHz RTP clock. Video has its frame size, "VP8 1280×720", refreshed every second while the panel is open | the page's WebRTC stats, which are the SIP leg's, since the relay doesn't re-encode |
 | SIP | transport and their SIP address and port, `UDP 127.0.0.1:5080` | the dialog |
 | Media | where their audio goes, the RTP address from their SDP | the SIP session |
@@ -550,23 +610,43 @@ popover above it (beside the dock if the keypad or text is open, so it never cov
   account's transport goes in the `Refer-To` too (`;transport=tls`, say), so their phone reaches
   it the way we would. A full address goes as typed.
 
-The call goes on hold as the transfer starts (both calls, attended), and a note says how it's
-going, in place of the held note. It's a quiet pill at the top right of the stage, dark and
-translucent, in small type, fading in, so it doesn't sit over the middle of their video; in a
-narrow window it runs across the top. Done reads in light green, failed in soft red. It says how it's going from the far end's NOTIFYs
-(the `sipfrag`): "Asking VtN's phone to call Dave…", "Transferring to Dave…", "Dave is
-ringing…". The call's row says "Transferring to Dave…" too.
+The call goes on hold as the transfer starts (both calls, attended), and the call header's
+status says how it's going, in a few words on the header's line ("Transferring to Dave…",
+"Dave is ringing…", "Transferred to Dave", "Transfer failed: Dave is busy (486 Busy Here)"),
+from the far end's NOTIFYs (the `sipfrag`). The host's full sentence ("Couldn't transfer: Dave
+is busy (486 Busy Here). The call is still on hold.") is its tooltip; the host sends a short
+`reason` for the line and `rang` once the target's ringing. The call's row says the same. A
+`100 Trying` that arrives after a `180 Ringing` (NOTIFYs can cross) doesn't take it back from
+ringing. While it's under way the *On hold* note in the middle of the stage is hidden (Resume
+there would be Cancel by another name); once it's over, it's back.
+
+While it's under way the status has what you can do:
+
+- **Cancel** (asking or calling, blind or attended): you take the call back. SIP has no way to
+  call off a REFER once the far end has accepted it (RFC 3515), so this is the most that can be
+  done: the transfer is forgotten, the call (both, attended) comes off hold, and the status says
+  "Transfer cancelled" for a few seconds, with × (the tooltip: "If VtN's phone still goes ahead
+  with it, it will leave this call."). If it does go ahead, their phone hangs up on you and the call
+  ends *Transferred to Dave (their phone went ahead after you cancelled)*, not *They hung up*.
+  The person being transferred can stop it for real (below), and then you see "Transfer failed:
+  VtN stopped it" (their `487`).
+- **Hang up** (blind, accepted): you hang up now and leave it to their phone, as a blind
+  transfer usually goes (RFC 5589 lets the transferor leave once it has the 202). The call ends
+  *Transferred to Dave (you left it to their phone)*; their phone carries on calling Dave.
 
 - **Done** (NOTIFY `200 OK`): they hang up on us (if they haven't 3 s later, we do), and the call
   ends with *Transferred to Dave*. Attended, both legs end: *Transferred to Carol* on Bob's,
   *Transferred to Bob* on Carol's. A far end that sends no NOTIFYs still counts as done when it
   hangs up on us after accepting.
-- **Failed**: the note says why in words, with the response, e.g. "Couldn't transfer: Dave is
-  busy (486 Busy Here)", "nothing answered at Dave's address (408 Request Timeout)", or "VtN's
-  phone turned the transfer down". The call stays on hold, with **Resume** and **Try again** on
-  the note: what happens next is your choice, never a silent resume. Resuming clears the note.
-- **No word**: accepted, but no outcome in 60 s, it's marked failed ("No word from …'s phone on
-  how the transfer went"), still on hold.
+- **Failed**: the status says why, with the response: "Transfer failed: Dave is busy (486 Busy
+  Here)", "… nothing answered at Dave's address (408 Request Timeout)", "… VtN's phone turned it
+  down". The call stays on hold: **Try again** and **×** on the status, and the *On hold* note's
+  **Resume** in the middle of the stage. What happens next is your choice, never a silent
+  resume. Resuming clears the status; × just drops it, the call staying on hold.
+- **No word**: accepted, but no outcome in 60 s, it's marked failed ("Transfer failed: no word
+  from VtN's phone"), still on hold, with the same. (A web softphone used to cause
+  this: SIP.js accepts a REFER it has no handler for and sends no NOTIFYs. It now turns them
+  down; see the web README.)
 
 **Being transferred.** A REFER on one of your calls (`OnTransferRequested`) is **taken without
 asking**, and the stage says so: "Alice is transferring you to Dave…". Asking would be the safer
@@ -583,7 +663,14 @@ through by a receptionist), so it's taken, within limits:
   account's own server (`OnTransferCallDescriptorCreated`), so a transfer can't use your account
   to reach a number outside it. With no account it goes from the address the transferor reached
   you at. It carries `Referred-By`, naming the transferor.
-- while it rings you can see it and hang up.
+- while it's under way you can see it ("Transferring you to Dave · ringing…", on the call
+  header beside Alice's name) and **Cancel** it (its tooltip: *Stay with Alice*): the call
+  to the target is cancelled (`CANCEL`, on the client user agent the transfer call's first
+  response hands us; asked for before any response, it goes with the first one), which the
+  user agent takes as the transfer failing: it takes Alice off hold and the call carries on,
+  "Transfer cancelled · still with Alice", and Alice's phone gets a final
+  NOTIFY `487 Request Terminated`. Not once Alice has hung up (there's no one to go back to:
+  End is the way out then). Or hang up altogether.
 - the call to the target is routed as if you'd dialled it: to your account's server on the
   account's transport (TLS to sipsorcery.com, say), or on the transport the `Refer-To` names.
   (The user agent drops the address's parameters, so without this it went over UDP, and a
@@ -599,7 +686,10 @@ timer restarted, and "Alice transferred you to Dave" on the note for a few secon
 (`OnTransferToTargetFailed`), the user agent takes the transferor off hold and the call carries
 on: "Alice tried to transfer you to Dave, but Dave is busy (486 Busy Here). You're still with
 Alice." The user agent sends the transferor no NOTIFYs, so the host does, in the old dialog:
-`100 Trying`, `180 Ringing`, then the final response (`Subscription-State: terminated`).
+`100 Trying`, `180 Ringing`, then the final response (`Subscription-State: terminated`). The
+first `100 Trying` goes 200 ms after the 202, and not at all if the target has already rung by
+then (a quick target used to get `180` then `100`, and the transferor's note went back from
+"ringing" to "Transferring…").
 
 The media session carries on, but each stream's RTCP keeps reporting on the first source it
 heard, the transferor's, so the new far end would get reports that never mention its audio and
@@ -712,6 +802,10 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
 
 ## Video and no video
 
+- **Codecs**: H264 (packetization-mode 1, Constrained Baseline `42e01f`) first, then VP8. More
+  SIP phones and PBXs take H264, and it's usually decoded in hardware. A phone that answers
+  with VP8, or offers it first, gets VP8: the answer follows the offer's order. The relay
+  doesn't re-encode, so the page's WebRTC connection uses whichever was agreed.
 - **The Audio | Video switch beside Call** picks the kind of call. *Audio* leaves video out of
   the INVITE; *Video* offers it, and the button reads "Video call". It always starts on
   Audio: most SIP calls go to phones, an audio offer never trips anything up, and the camera
@@ -783,7 +877,7 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   default size up to three times it, as far as the stage allows. Double-click it to put it
   back in the bottom-right at the default size. It can take keyboard focus (Tab): the arrow
   keys move it, Shift with the arrows resizes it (Up or Right larger, Down or Left smaller)
-  and Home puts it back. The on-hold note, the transfer note and the
+  and Home puts it back. The on-hold note, the call header and the
   answer buttons stay above it, so it never blocks them and a drag can't start from them.
   Where it sits is kept in the page's `localStorage` (`selfViewBox`) as a fraction of the way
   across and down the stage, with its size as a multiple of the default, so it keeps its
@@ -822,9 +916,12 @@ stopped), your row turns red with "X isn't getting your audio".
 **Call quality** is a tab in Diagnostics (F12), after Call details, for the selected call;
 with no call it says it shows here during one. It used to sit over the stage's top right,
 folded to one line with a chevron, but it covered their video, so it moved here, where there's
-room to show it all. It's a dark card, in either theme: the table and PLIs at the left, a graph
-for each direction beside them, and under the graphs the legend and what each measure means
-(under 900 px the graphs go below the table). The table has a column for each direction, so there's no "they"
+room to show it all. It's in the theme's colours, like the other tabs; only the graphs and the
+PLI strip are dark, in either theme, because their lines are drawn for that. The table and PLIs
+are at the left, a graph for each direction beside them, each with a line on where it comes from
+(↑ Sent from their RTCP, ↓ Received measured here), and under the graphs the legend and RTT
+(under 900 px the graphs go below the table). What MOS, loss, jitter and PLIs mean is left to the
+tooltips for now (see Later). The table has a column for each direction, so there's no "they"
 or "you" to work out:
 
 | | | ↑ Sent | ↓ Received |
@@ -1129,7 +1226,9 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Self view, then `V` | The self view hides and comes back; the far end still gets 30 fps throughout. |
 | Video call between two copies (`--profile sdA`/`sdB`, `--fake-media --test-pattern`, B `--auto-answer`); A's self view dragged past the stage's top-left, its handle dragged far out, then moved and the page reloaded | It stops 12 px from the stage's edges; the call's name and timer stay on top and clickable. It grows to 780 px (3 × 260) and no further, inside the stage. After the reload it's in the same place at the same size. `V` hides and shows it, `G` (two calls) hides it in the grid and Focus brings it back. No console errors. |
 | Call info and diagnostics tabs: video call between two copies (`--profile stA`/`stB`, `--fake-media --test-pattern`, A `--video --diagnostics --loss-video 3 --dial`, B `--auto-answer`) at 1100×720; Mute; *Call quality*, then *Call details*; then a second call (Active calls open) | Nothing over the picture. Left of Mute: "sip:stB@127.0.0.1:5462 00:27" and a red mic. *Call quality*: the table (↑ Sent video loss 2.7% in red) and PLIs, then ↑ Sent and ↓ Received graphs side by side, the legend, "RTT 0.3 ms" and the key. *Call details*: Outgoing · no account, `sipsorcery_v10.0.18.0`, Media encrypted (SRTP), the codecs each way, SIP, media, Call-ID with Copy; a stats tick doesn't redraw it. Two calls: Active calls opens and the call info goes, so *Stop video* reads in full; the panel's chevron folds it to the rail and the call info is back beside Mute, and after a reload it's still the rail; the rail's chevron opens it again. |
-| Padlock and two-line call info: the same two copies (SRTP, SIP over UDP); hover the address and the padlock, click the padlock; then again with A `--no-srtp` | A yellow padlock, "sip:stB@127.0.0.1:5462" with "00:12" under it, the address's tooltip the full address; the padlock's "Media encrypted (SRTP), but not SIP (UDP). Click for the call details." The click opens Diagnostics on *Call details*. With `--no-srtp`, a grey open padlock, "Not encrypted: plain RTP, SIP over UDP", which opens Call details too. (Green, with TLS too, isn't tested here: no TLS between the copies.) |
+| Call quality tab, light and dark: video call between two copies (`--profile vtA`/`vtB`, `--fake-media --test-pattern`, A `--video --diagnostics --loss-audio 3`, B `--auto-answer --loss-video 3`) at 1100×720; the tab before the call, then during it, in each theme | Before: "Call quality shows here during a call." in muted text on the panel. During: the tab is the panel's own white (or dark grey), dark (or light) text, no card; the table's MOS green 4.4 and amber 3.8, loss over 1% in red; the ↑ Sent and ↓ Received graphs and the PLI strip near-black with an edge, their lines and the legend (Frozen's white swatch edged) clear in both themes; "Reported by them…" and "Measured by us…" over the graphs, "RTT 0.5 ms" under them, and no list of what each measure means. |
+| Padlock and call info: the same two copies (SRTP, SIP over UDP); hover the address and the padlock, click the padlock, Esc; click it, click the control bar; then again with A `--no-srtp`, at 420 px dark, and *End* with the card open | A yellow padlock, "sip:stB@127.0.0.1:5462 · 00:12", the address's tooltip the full address; the padlock's "Media encrypted (SRTP); SIP unencrypted (UDP). Click for more." The click shows the card under it, its point at the padlock: "This call is only partly protected", *Your conversation* Encrypted (Voice and video · SRTP), *Call setup* Not encrypted (Who's calling whom · SIP over UDP), "…the key to it is sent in the unencrypted call setup…". Esc closes it, focus back on the padlock; a click away closes it. With `--no-srtp`, a grey open padlock and "This call isn't encrypted", both rows Not encrypted (plain RTP; SIP over UDP); at 420 px dark it fits, in the dark colours. *End*: the card goes with the header. No errors. (Green, with TLS too, isn't tested here: no TLS between the copies.) |
+| Call header: vtA calls vtB (`--fake-media`, B `--auto-answer`), audio, then video, Mute, Hold, dark theme; at 420×760 on B; then a second call (to `dave`) and `G` | Audio: the bars below the header. Bob is a saved contact on A, so one line, 40 px: "Bob B" in bold with the mark, then "sip:bob@127.0.0.1:5192 · 00:10" in grey and, muted, the red mic; on B, Alice isn't, so "Alice <sip:alice@127.0.0.1:5192> · 00:10". Video: the picture and the self view start below the header; the control bar is only buttons. Hold: *On hold · Resume* in the middle of the picture. Dark: the header in the dark surface colour. 420 px (dark, muted): A's whole line still fits, "Bob B · sip:bob@127.0.0.1:5192 · 00:24" and the mic (beside Mute the name was cut to "Alice …"; the control bar and dial bar's squeeze at that width is as before). Two calls: Active calls open, the header names the selected call (Dave); Grid: no header (`--head-h` 0), each tile's own name. No errors in either log. |
 | Address without parameters: A `--dial "sip:stB@127.0.0.1:5462;transport=udp?X-Test=1"` | The call info reads "sip:stB@127.0.0.1:5462" (its tooltip the same); Call details' *Address* row has the full `sip:stB@127.0.0.1:5462;transport=udp?X-Test=1`. |
 | Direct contact: a profile with one account (`stC`, seeded `accounts-stC.json`); Add contact *Bee Direct* `sip:stB@127.0.0.1:5462` with *Call from: No account (direct)*, then its call button | The form's *Call from* lists *Any*, the account and *No account (direct)*; `contacts-stC.json` has `"account": "direct"`, and the details say *Call from: No account (direct)*. The call switches Call from to no account ("call from no account (direct) (Bee Direct's)" in the log), and Call details say "Outgoing · no account". |
 | Camera ▾ after a call: one copy with two fake cameras (`--use-fake-device-for-media-stream=device-count=2`), Video; a video call ended ("You hung up" still on the stage); Camera ▾, the other camera; again with Start video showing | The tick moves to the camera picked, and it's the one that opens. Before, the tick stayed on the ended call's camera (the camera did switch). |
@@ -1141,6 +1240,8 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Video call answered (`--video`, `--auto-answer`) | Each stage goes card, then their initial, then video; never the audio-only bars (the page logs each `stage:` change). |
 | Manage accounts on B, click the note by Close, then dial what was copied from A | The clipboard held `sip:192.168.1.123:5080`; the note showed "Copied"; A's call to it connected. |
 | Softphone to softphone, audio call | Both stages show the audio-only bars and Add video. |
+| Video call vtA → vtB (`--video --fake-media`, B `--auto-answer`), H264 first | H264 both ways, 1280×720 at 30 fps, encoded by OpenH264 and decoded by `D3D11VideoDecoder`. |
+| Web page dials the desktop, video, before and after the web host put H264 first | Before: the browser's offer had VP8 first and the desktop answered VP8 (640×360, libvpx). After: H264 both ways (960×540 to 1280×720 at 20 fps). |
 | Softphone to softphone, video call (`--video`) | Audio at 50 pkt/s each way; video at 30 fps each way, VP8. The first stats sample, at 5 s, already shows video. |
 | Video call with `--camera-off` on the caller | The caller sees the callee's video at 30 fps and its self view says "Camera off". The callee gets the caller's placeholder at 5 fps (640×360 at first, 1280×720 once the encoder ramps up): the initial with an account, the icon without. |
 | Same, then Camera on, then Camera off | The callee's video goes 5 fps placeholder, then 30 fps camera, then 5 fps placeholder, without a gap. The caller's camera opens and closes with it. |
@@ -1153,7 +1254,8 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Same, but the callee has `--no-video` | The callee answers `m=video 0`; the caller logs "they didn't take video", shows *No video*, and both stay on the audio bars. |
 | Browser (SIP.js 0.16 in Edge, fake media) registers as `web`, dials `sip:desktop@localhost`; desktop `--auto-answer` | INVITE over `ws`, answered with an `RTCPeerConnection`; "WebRTC media (ICE, DTLS) connected" 0.2 s later. Each side shows the other's video; the browser receives 30 fps (640×360, then 1280×720) and audio with no loss. ↑ MOS 4.4. |
 | Desktop dials `web` (with the old test registrar, since removed) | INVITE to the browser's `.invalid;transport=ws` Contact down its WebSocket; 200, ACK, media both ways. |
-| Browser call, info bar's chevron (diagnostics) | "Media encrypted (SRTP); SIP not (WS)", their phone `SIP.js/0.16.0`. |
+| Kind of SRTP named: vtA calls vtB (`--fake-media`, SDES best effort over UDP); then the web page (`server=ws://127.0.0.1:8392`) calls vtB (`--ws-port 8392 --auto-answer`) | vtA and vtB's padlock: "Media encrypted (SRTP); SIP unencrypted (UDP)". The browser call, on vtB and on the web page: "Media encrypted (DTLS + SRTP); SIP unencrypted (WS)"; vtB's Call details Security row "Media encrypted (DTLS + SRTP); SIP unencrypted (WS)". |
+| Browser call, info bar's chevron (diagnostics) | "Media encrypted (SRTP); SIP unencrypted (WS)", their phone `SIP.js/0.16.0`. |
 | Browser call, Text icon | Before the T.140 data channel: the popover said text isn't available on calls with browser phones. Now text is on there (rows above). |
 | Two copies over UDP, caller `--webrtc --video`, callee `--auto-answer` | The offer is `UDP/TLS/RTP/SAVP`; the callee answers with an `RTCPeerConnection` too. ICE and DTLS connected in 0.3 s, video both ways (640×360), BYE: "You hung up" / "They hung up". The same without `--webrtc`: RTP/AVP and real-time text as before. |
 | Local sipsorcery-servers2: desktop on a guest account (`Server: localhost`, UDP) and a browser on another, both ways | Browser → desktop: the INVITE arrives over UDP with a WebRTC offer and is answered with WebRTC media. Desktop `--webrtc` → browser: through the proxy to its WebSocket. Both connect in about 0.2 s with video both ways (see ../web for details). |
@@ -1223,10 +1325,20 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Web softphone (`web/index.html?server=ws://127.0.0.1:8431`) after this change | The address bar lists *Contacts…* (no contacts there), no Transfer, and no new console errors. |
 | Attended transfer, then hang up, video on all three: N calls M, M calls O, on O's call M *Join*s N (so N is taken over in a call it placed). Then O hangs up; again, and N hangs up; again with M placing both calls, and O hangs up | After the join, both ways: N and O each show video ~30 fps and *audio in 50 pkt/s*; N logs `relay: their audio is from a new source (…): carrying on…`. Before: N "no audio arriving", 0 pkt/s. O hangs up: N's call ends *They hung up* (before: BYE answered 200, the call stayed up). N hangs up: its BYE goes to O (`BYE sip:Anonymous@127.0.0.1:5433`), both end. M placing both: audio both ways, and O's hang-up ends N's call. `SIPUserAgent` unit (31) and integration (20) tests pass. |
 | Transfer note on a video call: M calls N (video), transfers to O; O answers. Again, and O declines | The note is a small dark pill at the top right, over the black bar above the video, not the middle of it: M "Olivia Vt is ringing…", N "VtM is transferring you to VtO…", then on N "VtM transferred you to VtO" in light green, with ×. Declined: M's "Couldn't transfer: Olivia Vt is busy (486 BusyHere). The call is still on hold." in soft red, wrapping within the pill, with Resume, Try again and ×, clear of the call info at the top left. |
+| Transfer status and Cancel: three copies (`--profile vtP --port 5471`, `vtQ` 5472 `--auto-answer`, `vtR` 5473, all `--fake-media --no-video --ws-port 0`); P calls Q; P: Transfer, `sip:carol@127.0.0.1:5473` | P's call header: "Carol is ringing…" in the accent pill at the right of the line, with **Cancel** and **Hang up** (it stays "ringing": Q's late `100 Trying` is no longer sent), no *On hold* note; Q: "Transferring you to Carol · ringing…" with **Cancel** (tooltip *Stay with Thisis*). |
+| Q: Cancel | R's ringing stops (a missed call on R); Q: "Transfer cancelled · still with Thisis" with ×, the call off hold; P: "Transfer failed: Bob stopped it" in red with Try again and ×, and *On hold · Resume* in the middle of the stage. × drops the status, the call stays on hold. |
+| P: Resume, transfer again; P: Cancel while Carol rings; then R answers | P: "Transfer cancelled" (grey) with ×, the call off hold. R answers: Q is with Carol; P's call ends *Transferred to Carol (their phone went ahead after you cancelled)*. |
+| Again; P: Hang up while it rings; R answers | P's call ends *Transferred to Carol (you left it to their phone)*; Q: "Thisis hung up. Still calling Carol…" (no Cancel), then "Transferred by Thisis" in green with Carol in the header. |
+| P transferring Q to R (ringing), and R calls P meanwhile | P's header keeps "Carol is ringing… Cancel Hang up"; the banner "Thisis Calling · Decline · Answer" sits just below the header, covering neither. |
+| P idle; R, S and T call P, 3 s apart | One banner: R, "Calling · 00:19", **+2 more**, Decline, *Answer*; the stage "3 calls ringing". S's name: S in the answer view, the banner still R, S and T ("+2 more", S's name in the accent colour); T's row in Active calls: T in the answer view, the banner the same three, T marked; S's row then the middle Answer: S connected, R and T in the banner with *Answer & hold current*. From the start again: Decline twice from the banner, "2 calls ringing", then T alone in the answer view; Answer: connected. Again, the list's first row *Answer*: S connected on the stage, R and T in the banner with *Answer & hold current*. |
+| P on a call with Q; R, S, T and U call P, 3 s apart | The banner: R's name, "Calling · 00:20", **+3 more**, Decline, *Answer & hold current*, all inside its background; every row's button says *Answer & hold current* too, and Call (an address typed) *Call & hold current*, tooltip "Call, and put Bob on hold" (at 544 px just *Call*). +3 more: three rows below it, oldest first, each with its waiting time going up. The middle row's Answer: that call connected and selected, Q on hold, the list folded, "+2 more". Again from the start, the first row's Decline: that caller's ringing stops, the list stays open with two rows. 420 px: each row's buttons go to a second line, inside the banner; dark theme the same. |
+| The same at 420 px, then Q cancels | The status goes over the top of the whole header line ("Carol is ringing… Cancel Hang up"), nothing half-cut; failed: "Transfer failed: Bob stopped it · Try again ×" across the line. Dark theme: the same pills, readable. |
+| P calls Q and R, *Join* Bob from Carol's call | "Bob is ringing… Carol is on hold." with Cancel; then both P's calls end and Q is with Carol (attended still works). |
+| Web softphone (`web/index.html?server=ws://127.0.0.1:8471`) calls vtP (`--ws-port 8471 --auto-answer`); P transfers it to `sip:carol@127.0.0.1:5473` | At once (no 60 s wait): P "Web's phone turned the transfer down. The call is still on hold." with Resume, Try again, Close; the web page's header "Transfer to carol failed: this phone can't take transfers" with × for 8 s (the full sentence its tooltip), and its log `turned down (603)`. |
 | Picking doesn't dial: vtM, address bar `vtn`, `Enter`; a click on *Olivia Vt*; then Call. On a call with N, Transfer: `oli`, `Enter`; ×, a click on the first row; then Transfer | Address bar: `Enter` puts `sip:vtN@127.0.0.1:5432` in the field, the list closes, focus stays, no call; a click puts Olivia's address in, no call; **Call** places it. Transfer: `Enter` puts `sip:vtO@127.0.0.1:5433` in the field, the popover stays open, nothing highlighted, no transfer; the click the same; **Transfer** sends it (`transfer to sip:vtO@…, blind`), and the call ends *Transferred to Olivia Vt*. |
 | Call's enabled state, vtA/vtB (`--port 5191`/`5192`, `--ws-port 0 --fake-media`): A's empty bar; then typing, ×, spaces, Esc Esc, paste, a suggestion picked | Empty: Call greyed, "Type a number or address to call". Typing enables it; ×, spaces only and Esc Esc grey it again; paste and a picked Recent entry enable it. |
 | One pending call: A calls `sip:bob@127.0.0.1:5192` with Enter, B leaves it ringing; A types `sip:carol@…` and presses Enter, then People's Call on a contact; B answers | While it rings, Call is greyed with another address typed ("Wait for Bob to answer, or cancel it, to place another call"); Enter and People's Call do nothing (People stays open, the bar keeps carol), A logs `not calling …` for each. Answered: the bar clears and Call is back (greyed only until something's typed). |
-| Over a connected call: A on with Bob, *Call & hold Bob* to `bob2`, `bob3`, `bob4` in turn; B leaves bob2 ringing (A *Cancel*s), answers bob3, declines bob4 | Each time the "… · Calling… · Cancel" banner shows, Call greyed even with another address typed. Cancel: Call back at once. bob3 answered: joins the list on the stage, Bob on hold, as before. bob4 declined: "486 BusyHere" on the banner and Call back with `bob4` still in the bar. |
+| Over a connected call: A on with Bob, *Call & hold current* to `bob2`, `bob3`, `bob4` in turn; B leaves bob2 ringing (A *Cancel*s), answers bob3, declines bob4 | Each time the "… · Calling… · Cancel" banner shows, Call greyed even with another address typed. Cancel: Call back at once. bob3 answered: joins the list on the stage, Bob on hold, as before. bob4 declined: "486 BusyHere" on the banner and Call back with `bob4` still in the bar. |
 | Web stub (`web/index.html?api=stub`) after this change | Loads with no console errors; Call greyed, "Type a number or address to call". |
 
 Not tested yet: the saved-contact mark on grid tiles (a second call wasn't answered in that

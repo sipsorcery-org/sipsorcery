@@ -103,6 +103,8 @@ function stateMessage() {
       text: c.call === "connected" ? c.text.state : "off",
       // Whether the keypad can send tones on it (see sendDtmf); left out while not known.
       dtmf: c.call === "connected" ? canDtmf(c) : undefined,
+      // A transfer they tried, turned down (see onRefer): the stage's transfer note, for a few seconds.
+      transfer: c.call === "connected" ? c.transfer ?? null : null,
     })),
     maxCalls: MAX_CALLS,
     // The page knows registered, registering and failed; connected without registering shows as registered.
@@ -401,6 +403,20 @@ function onInfo(c, info) {
 // finds the page's connection for each call (the page makes it with `new RTCPeerConnection({ callId })`,
 // wrapped below before app.js loads) and posts the same messages from those stats.
 
+// The browser's video codecs with H264 first (packetization-mode=1, Constrained Baseline 42e01f
+// ahead of the other H264 profiles), then the rest in its own order.
+function preferH264(pc) {
+  const caps = window.RTCRtpReceiver?.getCapabilities?.("video")?.codecs;
+  if (!caps) return;
+  const rank = (c) => !/^video\/H264$/i.test(c.mimeType) ? 2
+    : /packetization-mode=1/.test(c.sdpFmtpLine ?? "") && /profile-level-id=42e01f/i.test(c.sdpFmtpLine ?? "") ? 0 : 1;
+  const codecs = caps.map((c, i) => [c, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([c]) => c);
+  for (const t of pc.getTransceivers()) {
+    if (t.receiver.track?.kind !== "video" || t.stopped || !t.setCodecPreferences) continue;
+    try { t.setCodecPreferences(codecs); } catch (err) { log(`can't put H264 first: ${err.message}`); }
+  }
+}
+
 const NativeRTCPeerConnection = window.RTCPeerConnection;
 const pcByKey = new Map();   // the key each connection has for the worker (tones in) -> connection
 let pcSeq = 0;
@@ -426,8 +442,10 @@ window.RTCPeerConnection = class extends NativeRTCPeerConnection {
   }
 
   // Our offer: a T.140 channel goes in it, so the browser writes an m=application line.
+  // Video: H264 first, as the desktop offers it (the browser's own order has VP8 first).
   async createOffer(...args) {
     if (!this.t140) useT140(this, this.createDataChannel(T140, { negotiated: true, id: T140_OFFER_STREAM, protocol: T140 }));
+    preferH264(this);
     return super.createOffer(...args);
   }
 
@@ -780,10 +798,25 @@ function dialAtStart() {
   dial(q.get("dial"), q.get("call") === "video");
 }
 
+// A transfer done to us (a REFER: they ask us to call someone in their place). The web softphone
+// doesn't take them: its call's media can't move to another call. Without an onRefer, SIP.js
+// would accept (202) and quietly place a call of its own the page never sees, sending them no
+// NOTIFYs, so their phone would wait a minute not knowing. So it's turned down at once (603),
+// which their phone shows as the transfer refused, and the stage says so for a few seconds.
+function onRefer(c, referral) {
+  const short = (h) => h?.displayName || h?.uri?.user || String(h?.uri ?? "someone");
+  const to = short(referral.referTo), by = short(c.session?.remoteIdentity);
+  log(`call ${c.id}: ${by} asked to transfer us to ${referral.referTo?.uri ?? "?"}: turned down (603), the web softphone doesn't take transfers`);
+  referral.reject({ statusCode: 603, reasonPhrase: "Decline" }).catch(() => {});
+  const t = c.transfer = { role: "in", target: to, by, status: "failed", reason: "this phone can't take transfers", detail:`${by} tried to transfer you to ${to}, but the web softphone can't take transfers. You're still with ${by}.` };
+  sendState();
+  setTimeout(() => { if (c.transfer === t) { c.transfer = null; sendState(); } }, 8000);
+}
+
 function watch(c) {
   const s = c.session;
   s.callRec = c;
-  s.delegate = { ...(s.delegate ?? {}), onInfo: (info) => onInfo(c, info) };
+  s.delegate = { ...(s.delegate ?? {}), onInfo: (info) => onInfo(c, info), onRefer: (referral) => onRefer(c, referral) };
   s.stateChange.addListener((state) => {
     if (state === SIP.SessionState.Established) {
       setCall(c, "connected");
@@ -985,6 +1018,8 @@ function sendDetails(c) {
     callId: s.dialog?.callId ?? s.request?.callId ?? null,
     theirMedia: null,
     mediaEncrypted: true,
+    // WebRTC always: SRTP with keys from a DTLS handshake on the media path.
+    mediaSecurity: "DTLS + SRTP",
     signallingEncrypted: !!acct?.wsUri.startsWith("wss:"),
     audio: null,
     video: null,
@@ -1015,6 +1050,7 @@ async function onPageMessage(msg) {
     case "decline": decline(c); break;
     case "hangup": hangup(c); break;
     case "hold": await hold(c, msg.hold !== false); break;
+    case "transfer-dismiss": if (c?.transfer) { c.transfer = null; sendState(); } break;
     case "add-video":
       log("adding video isn't done in the web softphone yet");
       toPage({ type: "video-refused", id: msg.id });

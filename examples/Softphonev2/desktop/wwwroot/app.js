@@ -194,6 +194,7 @@ function setView(v) {
 function focusCall(id) {
   closeHistory(false);
   const fromGrid = inGrid();
+  if (entries.get(id)?.h.call === "ringing") answerPicked = id;   // picked: its full answer view
   selectCall(id);
   goLive(entries.get(id));
   if (fromGrid && entries.get(id)?.h.call !== "ringing") setView("focus");
@@ -1306,9 +1307,12 @@ function renderDetails() {
     if (kind !== "video" && c.tx === c.rx) return esc(c.tx);
     return `↑ ${esc(c.tx ?? "–")} &nbsp;↓ ${esc(c.rx ?? "–")}`;
   };
+  // How the media's encrypted (the host says): "DTLS + SRTP" (keys from a DTLS handshake,
+  // WebRTC) or "SRTP" (keys in the SDP).
+  const how = esc(d.mediaSecurity ?? "SRTP");
   const enc = d.mediaEncrypted && d.signallingEncrypted
-    ? `<span class="enc">${ICON.lock}Encrypted: SRTP media, SIP over TLS</span>`
-    : d.mediaEncrypted ? `<span class="enc">${ICON.lock}Media encrypted (SRTP); SIP not (${esc(d.signalling?.split(" ")[0] ?? "UDP")})</span>`
+    ? `<span class="enc">${ICON.lock}Encrypted: ${how} media, SIP over ${d.signalling?.startsWith("WSS") ? "WSS (TLS)" : "TLS"}</span>`
+    : d.mediaEncrypted ? `<span class="enc">${ICON.lock}Media encrypted (${how}); SIP unencrypted (${esc(d.signalling?.split(" ")[0] ?? "UDP")})</span>`
     : `<span class="enc off">${ICON.unlock}Not encrypted: plain RTP${d.signallingEncrypted ? "" : `, SIP over ${esc(d.signalling?.split(" ")[0] ?? "UDP")}`}</span>`;
   const contact = contactFor(sel()?.h.remote);
   const rows = [
@@ -1694,7 +1698,32 @@ function transferToAddress(it = null) {
   if (it) startTransfer({ address: it.uri, label: it.name });
   else if (typed) startTransfer({ address: typed, label: contactFor(typed)?.name ?? null });
 }
-// The note on the stage: the selected call's transfer, while it's going and for a moment after.
+// A transfer, in a few words, for the call header's one line and the call's row: what's
+// happening now. Who it's with is already in the header (whose call it is), so it names the other
+// party. The host's sentence in full (t.detail) goes in the tooltip. Failed: why, from t.reason.
+function transferShort(t) {
+  const busy = t.status === "asking" || t.status === "calling";
+  if (t.role === "out") {
+    if (busy) return t.rang ? `${t.target} is ringing…` : t.attended ? `Joining with ${t.target}…` : `Transferring to ${t.target}…`;
+    if (t.status === "done") return t.attended ? `Joined with ${t.target}` : `Transferred to ${t.target}`;
+    if (t.status === "cancelled") return "Transfer cancelled";
+    return t.reason ? `Transfer failed: ${t.reason}` : `Transfer to ${t.target} failed`;
+  }
+  if (t.role === "in") {
+    if (busy) return t.transferorGone ? `${t.by} hung up · calling ${t.target}…`
+      : `Transferring you to ${t.target}${t.rang ? " · ringing" : ""}…`;
+    if (t.status === "done") return `Transferred by ${t.by}`;
+    return t.reason === "you cancelled it" ? `Transfer cancelled · still with ${t.by}`
+      : `Transfer to ${t.target} failed${t.reason ? `: ${t.reason}` : ""}`;
+  }
+  // "replace": someone taking over the call from the person you were talking to.
+  return busy ? `${t.by} is handing you over…` : `Handed over by ${t.by}`;
+}
+// The call header's status (#xferNote): the selected call's transfer while it's going and for a
+// few seconds after, with what you can do. Under way: Cancel (ours: take the call back; theirs:
+// stay with who's transferring you; the host says when it can), and on our blind one, Hang up
+// (leave it to their phone). Ours failed: Try again and ×; the call's on hold, and the held note
+// in the middle of the stage has Resume. Done, cancelled, theirs failed: × (it goes by itself).
 function renderTransferNote() {
   const e = sel();
   const t = e?.h.call === "connected" ? e.h.transfer : null;
@@ -1702,22 +1731,28 @@ function renderTransferNote() {
   note.hidden = !t || inGrid();
   if (note.hidden) return;
   const ours = t.role === "out";
-  $("xferText").textContent = t.detail || (ours ? `Transferring to ${t.target}…` : `Being transferred to ${t.target}…`);
-  note.classList.toggle("bad", t.status === "failed");
-  note.classList.toggle("done", t.status === "done");
-  // Ours failed: the call's still on hold, and what next is yours to choose.
-  const failedOurs = ours && t.status === "failed";
-  $("xferResume").hidden = !(failedOurs && holdState(e));
-  $("xferRetry").hidden = !failedOurs;
-  $("xferDismiss").hidden = !(t.status === "failed" || (t.status === "done" && !ours));
+  const busy = t.status === "asking" || t.status === "calling";
+  $("xferText").textContent = transferShort(t);
+  note.title = t.detail || "";
+  note.dataset.state = busy ? "busy" : t.status === "failed" ? "bad" : t.status === "done" ? "done" : "info";
+  if (!$("xferIcon").innerHTML) $("xferIcon").innerHTML = ICON.transfer;
+  const cancel = $("xferCancel");
+  cancel.hidden = !t.canCancel;
+  cancel.title = ours ? "Take the call back (SIP can't stop their phone once it's accepted: if it still goes ahead, it will leave the call)"
+    : `Stay with ${t.by}: cancels the call to ${t.target}`;
+  $("xferLeave").hidden = !t.canLeave;
+  $("xferLeave").title = `Hang up now and leave the transfer to ${t.target} to their phone`;
+  $("xferRetry").hidden = !(ours && t.status === "failed");
+  $("xferRetry").title = `Transfer ${nameOf(e)} again`;
+  $("xferDismiss").hidden = busy;
 }
 $("transferBtn").onclick = () => setTransferOpen(!xferOpen);
 $("xferClose").innerHTML = ICON.close;
 $("xferClose").onclick = () => setTransferOpen(false);
 $("xferDismiss").innerHTML = ICON.close;
 $("xferDismiss").onclick = () => post({ type: "transfer-dismiss", id: selectedId });
-$("xferResume").innerHTML = `${ICON.play}<span>Resume</span>`;
-$("xferResume").onclick = () => goLive(sel());
+$("xferCancel").onclick = () => { log(`call ${selectedId}: transfer cancelled`); post({ type: "transfer-cancel", id: selectedId }); };
+$("xferLeave").onclick = () => { log(`call ${selectedId}: hanging up, leaving the transfer to them`); post({ type: "transfer-leave", id: selectedId }); };
 $("xferRetry").onclick = () => { post({ type: "transfer-dismiss", id: selectedId }); setTransferOpen(true); };
 $("xferCalls").onclick = (ev) => { const b = ev.target.closest("[data-call]"); if (b) startTransfer({ target: b.dataset.call }); };
 $("xferPop").onsubmit = (ev) => {
@@ -1767,7 +1802,8 @@ function mos({ lossPct = 0, jitterMs = 0, rttMs = null }) {
   const r = Math.max(0, Math.min(100, 93.2 - id - ie));
   return 1 + 0.035 * r + 7e-6 * r * (r - 60) * (100 - r);
 }
-const mosColour = (m) => (m == null ? "#677670" : m >= 4 ? "#4cc29b" : m >= 3.6 ? "#e6b86a" : "#e0718a");
+// The table's MOS colour, from the theme so it reads on light or dark.
+const mosColour = (m) => (m == null ? "var(--muted)" : m >= 4 ? "var(--ok)" : m >= 3.6 ? "var(--warn-ink)" : "var(--danger)");
 
 // A strip chart series, the newest at the right: a line, or bars from the bottom. Gaps (null) break the line.
 function drawSeries(g, x, y, w, h, { values, min = 0, max, colour, bars = false }) {
@@ -2012,18 +2048,23 @@ function render() {
   const full = callsFull();
   $("address").disabled = full;
   $("info").hidden = phase !== "connected";
+  $("stage").classList.toggle("head", phase === "connected");
   const shown = plainAddress(remote);
-  $("infoName").textContent = shown;
-  $("infoName").title = shown;
   renderInfoLock();
-  // A saved contact: the mark and their name beside the address, outside its ellipsis so it
-  // always shows.
+  // The call header: a saved contact's name on top (with the mark), the address under it with
+  // the timer, as a phone's call screen has it; otherwise the address on top.
   const headContact = remote ? contactFor(remote) : null;
+  $("infoName").textContent = headContact ? headContact.name : shown;
+  $("infoName").title = headContact ? `${headContact.name} (saved contact): ${shown}` : shown;
   $("infoContact").hidden = !headContact;
-  if (headContact) {
-    $("infoContact").replaceChildren(contactMarkEl(headContact.name), headContact.name);
-    $("infoContact").title = `Saved contact: ${headContact.name}`;
+  if (headContact && $("infoContact").dataset.name !== headContact.name) {
+    $("infoContact").replaceChildren(contactMarkEl(headContact.name));
+    $("infoContact").dataset.name = headContact.name;
+    $("infoContact").title = "Saved contact";
   }
+  $("infoAddr").hidden = !headContact;
+  $("infoAddr").textContent = headContact ? shown : "";
+  $("infoAddr").title = shown;
   for (const x of entries.values()) x.el.classList.toggle("sel", x.id === selectedId);
 
   // The Audio | Video switch beside Call. Locked to Audio if video is off (--no-video).
@@ -2043,11 +2084,10 @@ function render() {
   $("callType").title = !videoAllowed ? "Video is turned off"
     : type === "video" ? "Video call: you'll see each other. You can turn your camera off once it connects."
     : "Audio call. You can add video once it connects.";
-  // On a call, Call says what happens to it: "Call & hold Alice". Both labels are always there
+  // On a call, Call says what happens to it: "Call & hold current", in the same words as a
+  // ringing call's "Answer & hold current" (its tooltip names who). Both labels are always there
   // (one hidden), so the Audio/Video switch never resizes it.
-  const kept = liveCall();
-  const keptName = kept ? escHtml(nameOf(kept)) : "";
-  const tail = kept ? ` &amp; hold <span class="hold-name">${keptName}</span>` : "";
+  const tail = liveCall() ? '<span class="hold-tail"> &amp; hold current</span>' : "";
   const callHtml = `${type === "video" ? ICON.video : ICON.phone}<span class="label-stack"><span class="${type === "video" ? "off" : ""}">Call${tail}</span><span class="${type === "video" ? "" : "off"}">Video call${tail}</span></span>`;
   if ($("callBtn").innerHTML !== callHtml) $("callBtn").innerHTML = callHtml;
   syncCallBtn();
@@ -2116,7 +2156,7 @@ function render() {
     : call ? (muted ? "Unmute: they'll hear you (M)" : "Mute: they won't hear you (M)")
     : muted ? "Calls start muted" : "Calls start unmuted";
   setBtn(mute, muted || !hasMic ? ICON.micOff : ICON.mic, !hasMic ? "No mic" : muted ? "Unmute" : "Mute");
-  // While muted on a call, a red mic by the timer says so.
+  // While muted on a call, a red mic by the timer (in the call header) says so.
   const pill = $("mutedPill");
   pill.hidden = !(live && hasMic && muted);
   if (!pill.hidden && !pill.innerHTML) { pill.innerHTML = `${ICON.micOff}<span>You're muted</span>`; pill.title = "You're muted"; }
@@ -2162,7 +2202,7 @@ function render() {
   setBtn(hold, state.held ? ICON.play : ICON.pause, state.held ? "Resume" : "Hold");
   hold.title = !connected ? "Hold, during a call" : state.held ? "Take the call off hold (H)" : "Put the call on hold (H)";
   const heldNote = $("heldNote");
-  heldNote.hidden = !(connected && (state.held || state.heldByThem)) || !$("xferNote").hidden;
+  heldNote.hidden = !(connected && (state.held || state.heldByThem)) || xferBusy(e);
   if (!heldNote.hidden) {
     $("heldText").textContent = state.held ? `On hold · ${fmtElapsed(Date.now() - e.heldAt)}` : `${name} put you on hold`;
     heldNote.classList.toggle("long", state.held && Date.now() - e.heldAt > 60000);
@@ -2192,6 +2232,12 @@ function render() {
       sub.textContent = "Calling…";
       break;
     case "ringing": {
+      if (ringingUnpicked()) {
+        // Several ringing and none picked: they're in the banner above, all alike.
+        title.textContent = `${allRinging().length} calls ringing`;
+        sub.textContent = "Answer one above, or pick a name to see that call.";
+        break;
+      }
       title.textContent = remote;
       markContact(title, remote);
       sub.textContent = state.incomingVideo ? "Incoming video call" : "Incoming call";
@@ -2260,6 +2306,7 @@ function tick() {
   }
   if (inGrid() || [...entries.values()].some((x) => x.h.held)) render();
   else renderCallTimes();
+  if (!$("incomingMore").hidden) renderIncoming();   // how long each ringing call has waited
 }
 setInterval(tick, 1000);
 
@@ -2277,6 +2324,7 @@ function onState(msg) {
     if (isNew) { e = newEntry(h.id); entries.set(h.id, e); }
     const was = e.h.call, wasHeld = !!e.h.held, wasWith = e.h.remote;
     e.h = h;
+    if (h.call === "ringing") e.ringAt ||= Date.now();   // how long it's waited, in the ringing banner's list
     // Transferred, by them or to us: the same call, with someone else now. Its timer starts again.
     if (was === "connected" && h.call === "connected" && wasWith && h.remote !== wasWith) {
       log(`call ${e.id}: now with ${h.remote} (was ${wasWith})`);
@@ -2299,6 +2347,14 @@ function onState(msg) {
     if (e.h.call !== "ended") { e.h = { ...e.h, call: "ended", reason: e.h.reason ?? "Call ended" }; onPhase(e); }
     if (e.id === selectedId) e.gone = true;
     else dropEntry(e);
+  }
+  // The call on the stage ended (declined, or they gave up) with no call going but others still
+  // ringing: the stage goes to them, as it would have had it been empty when they rang (the
+  // banner's list if several, the answer view if one), not the ended call's card.
+  const s = sel(), ringingNow = allRinging();
+  if (ringingNow.length && (!s || s.gone || s.h.call === "ended") && liveEntries().every((x) => x.h.call === "ringing")) {
+    answerPicked = null;
+    selectCall(ringingNow[0].id);
   }
   // The microphone closes when the last call ends (it opens with Call or Answer).
   if (!liveEntries().length) closeMic();
@@ -2412,21 +2468,96 @@ function renderOutgoing() {
 
 // Calls ringing while you're on another: a banner over the stage, the caller who has waited
 // longest first, with Answer & hold current and Decline. Clicking the name shows the full answer view.
+// More than one: "+N more" drops down a list of the others inside the banner (scrolling past a
+// few), each with how long it's waited and its own Decline and Answer, so you pick which.
+let incomingOpen = false;
+let answerPicked = null;   // a ringing call you picked (its name, row or tile): it gets the full answer view
+const allRinging = () => [...entries.values()].filter((e) => e.h.call === "ringing").sort((a, b) => Number(a.id) - Number(b.id));
+// One ringing call on the stage has it to itself (the full answer view). Several ringing, with
+// one of them on the stage, they're all in the banner, the same list as over a call, and stay
+// there as you switch between them: the banner is every call waiting, the stage the one you're
+// looking at. Until you pick one (its name, its row) the stage just says how many.
+const ringingInBanner = () => sel()?.h.call === "ringing" && allRinging().length > 1;
+const ringingUnpicked = () => ringingInBanner() && selectedId !== answerPicked;
+// The one in the answer view, picked, is marked in the banner (its name in the accent colour).
+const markShown = (who, id) => {
+  const shown = id === selectedId && !ringingUnpicked();
+  who.classList.toggle("shown", shown);
+  if (shown) who.setAttribute("aria-current", "true"); else who.removeAttribute("aria-current");
+};
+const pickRinging = (id) => { answerPicked = id; closeHistory(false); selectCall(id); render(); };
+const incomingRows = new Map();   // call id -> { li, who, what, decline, answer }
+const ringingWait = (e) => fmtElapsed(Date.now() - (e.ringAt ||= Date.now()));
+const ringingWhat = (e, many) => `${e.h.incomingVideo ? "Video call" : "Calling"}${many ? ` · ${ringingWait(e)}` : ""}`;
+// Two ringing with the same name but from different addresses: each says its address too, so
+// you can tell which is which (the same both ways, the waiting time is what tells them apart).
+const ringingAddr = (e) => (e.h.remote ?? "").replace(/^.*</, "").replace(/>.*$/, "").replace(/^sips?:/i, "");
+const ringingWho = (e, ringing) => {
+  const n = nameOf(e), same = ringing.filter((r) => nameOf(r) === n);
+  return new Set(same.map(ringingAddr)).size > 1 ? `${n} · ${ringingAddr(e)}` : n;
+};
+
 function renderIncoming() {
-  const ringing = [...entries.values()].filter((e) => e.h.call === "ringing" && e.id !== selectedId)
-    .sort((a, b) => Number(a.id) - Number(b.id));
+  const all = ringingInBanner();
+  const ringing = allRinging().filter((e) => all || e.id !== selectedId);
   const el = $("incoming");
   el.hidden = !ringing.length;
-  if (!ringing.length) return;
-  const e = ringing[0];
-  $("incomingWho").textContent = nameOf(e);
-  $("incomingWho").title = `${e.h.remote}: show the answer view`;
-  $("incomingWhat").textContent = `${e.h.incomingVideo ? "Video call" : "Calling"}${ringing.length > 1 ? ` · +${ringing.length - 1} more waiting` : ""}`;
-  $("incomingWho").onclick = () => { closeHistory(false); selectCall(e.id); };
-  $("incomingDecline").onclick = () => declineCall(e.id);
-  $("incomingAnswer").textContent = liveCall() ? "Answer & hold current" : "Answer";
-  $("incomingAnswer").onclick = () => answerCall(e.id);
+  const e = ringing[0], rest = ringing.slice(1), many = rest.length > 0;
+  if (!many) incomingOpen = false;
+  el.classList.toggle("open", incomingOpen);
+  const answerLabel = liveCall() ? "Answer & hold current" : "Answer";
+  if (e) {
+    $("incomingWho").textContent = ringingWho(e, ringing);
+    $("incomingWho").title = `${e.h.remote}: show the answer view`;
+    $("incomingWhat").textContent = ringingWhat(e, many);
+    $("incomingWho").onclick = () => pickRinging(e.id);
+    markShown($("incomingWho"), e.id);
+    $("incomingDecline").onclick = () => declineCall(e.id);
+    $("incomingAnswer").textContent = answerLabel;
+    $("incomingAnswer").onclick = () => { incomingOpen = false; answerCall(e.id); };
+  }
+
+  const more = $("incomingMore");
+  more.hidden = !many;
+  more.textContent = `+${rest.length} more`;
+  more.setAttribute("aria-expanded", String(incomingOpen));
+  more.title = incomingOpen ? "Hide the other calls" : `${rest.length} more ${rest.length > 1 ? "calls" : "call"} waiting: pick one`;
+
+  // The list's rows are kept from one render to the next (they're redrawn every second while
+  // it's open, for the waiting times), so a row under the pointer or with focus stays put.
+  const list = $("incomingList");
+  list.hidden = !incomingOpen;
+  const ids = new Set(rest.map((r) => r.id));
+  for (const [id, row] of incomingRows) if (!ids.has(id)) { row.li.remove(); incomingRows.delete(id); }
+  for (const r of rest) {
+    let row = incomingRows.get(r.id);
+    if (!row) {
+      const mk = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls, textContent: text ?? "" });
+      row = { li: mk("li", "incoming-row"), who: mk("button", "incoming-who"), what: mk("span", "incoming-what"),
+        decline: mk("button", "btn btn-danger", "Decline"), answer: mk("button", "btn btn-primary") };
+      row.who.type = row.decline.type = row.answer.type = "button";
+      const acts = mk("span", "incoming-actions");
+      acts.append(row.decline, row.answer);
+      row.li.append(row.who, row.what, acts);
+      row.who.onclick = () => pickRinging(r.id);
+      row.decline.onclick = () => declineCall(r.id);
+      // Answered, you're talking to them: the list folds away (the rest still wait in the banner).
+      // Declined, it stays open, for the next.
+      row.answer.onclick = () => { incomingOpen = false; answerCall(r.id); };
+      incomingRows.set(r.id, row);
+      list.append(row.li);   // ids only go up, so a new one belongs at the bottom
+    }
+    row.who.textContent = ringingWho(r, ringing);
+    row.who.title = `${r.h.remote}: show the answer view`;
+    row.what.textContent = ringingWhat(r, true);
+    markShown(row.who, r.id);
+    row.answer.textContent = answerLabel;
+  }
 }
+$("incomingMore").onclick = () => { incomingOpen = !incomingOpen; renderIncoming(); };
+$("incoming").addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape" && incomingOpen) { ev.stopPropagation(); incomingOpen = false; renderIncoming(); $("incomingMore").focus(); }
+});
 
 // The grid's tiles, kept from one render to the next (each holds its call's <video>, which
 // mustn't be pulled out and put back every second), and the Focus | Grid switch.
@@ -2569,9 +2700,7 @@ function callStatus(e) {
     const pending = e.holdWanted !== undefined && e.holdWanted !== c.held;
     const xt = h.transfer;
     // A transfer under way says so first: it's what's happening to the call.
-    if (xt && (xt.status === "asking" || xt.status === "calling"))
-      c.statusText = xt.role === "out" ? (xt.attended ? `Joining with ${xt.target}…` : `Transferring to ${xt.target}…`)
-        : xt.role === "in" ? `Transferring you to ${xt.target}…` : `Handing over to ${xt.target}…`;
+    if (xt && (xt.status === "asking" || xt.status === "calling")) c.statusText = transferShort(xt);
     else if (xt?.status === "failed" && xt.role === "out") c.statusText = "Transfer failed · on hold";
     else if (pending) c.statusText = e.holdWanted ? "Holding…" : "Resuming…";
     else if (c.held) {
@@ -3466,7 +3595,7 @@ $("devClose").innerHTML = ICON.close;
 $("devClose").onclick = () => setDiagnostics(false);
 
 // The padlock in the call info: green with SIP and the media both encrypted, yellow with one of
-// them, and grey and open with neither. A click opens Diagnostics on Call details.
+// them, and grey and open with neither. A click shows the call's security under it.
 function renderInfoLock() {
   const d = sel()?.details;
   const b = $("infoLock");
@@ -3478,16 +3607,66 @@ function renderInfoLock() {
   b.classList.toggle("partial", n === 1);
   b.classList.toggle("none", n === 0);
   const sip = (d.signalling ?? "UDP").split(" ")[0];
-  const what = n === 2 ? "Encrypted: SRTP media, SIP over TLS"
+  const how = d.mediaSecurity ?? "SRTP";
+  const what = n === 2 ? `Encrypted: ${how} media, SIP over ${sip === "WSS" ? "WSS (TLS)" : "TLS"}`
     : n === 0 ? `Not encrypted: plain RTP, SIP over ${sip}`
-    : d.mediaEncrypted ? `Media encrypted (SRTP), but not SIP (${sip})` : "SIP encrypted (TLS), but not the media (plain RTP)";
-  b.title = `${what}. Click for the call details.`;
+    : d.mediaEncrypted ? `Media encrypted (${how}); SIP unencrypted (${sip})` : "SIP encrypted (TLS); media unencrypted (plain RTP)";
+  b.title = `${what}. Click for more.`;
   b.setAttribute("aria-label", b.title);
+  renderSecurity();
 }
-$("infoLock").onclick = () => {
-  if ($("devPanel").hidden) setDiagnostics(true);
-  setDevTab("details");
-};
+
+// The call's security, for anyone, under the padlock: is the conversation (voice and video)
+// encrypted, and the call setup (SIP: who's calling whom)? Each with the technical name small
+// (DTLS + SRTP, SIP over TLS), so it can be recognised, then what that means in a sentence.
+// (The rest is Call details, in Diagnostics.) Media encrypted with plain SRTP but SIP not is only partly
+// protected: its keys travel in the SIP, in the clear. Esc, a click away or the padlock closes it.
+let secHtml = "";
+function renderSecurity() {
+  const pop = $("secPop");
+  if (pop.hidden) return;
+  const d = sel()?.details;
+  if (!d || $("info").hidden) { setSecurityOpen(false); return; }
+  const esc = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+  const media = !!d.mediaEncrypted, sip = !!d.signallingEncrypted;
+  const how = d.mediaSecurity ?? "SRTP";
+  const keysInSip = media && !sip && how !== "DTLS + SRTP";   // SDES: the keys are in the SIP
+  const transport = (d.signalling ?? "UDP").split(" ")[0];
+  const [title, cls, means] =
+    media && sip ? ["This call is encrypted", "ok", "Others on the network can't listen in or see who you're calling."]
+    : keysInSip ? ["This call is only partly protected", "part", "Your conversation is encrypted, but the key to it is sent in the unencrypted call setup, so someone watching the network could still listen in."]
+    : media ? ["Your conversation is encrypted", "part", "Others on the network can't listen in, but could see who you're calling."]
+    : sip ? ["Your conversation isn't encrypted", "part", "Others on the network can't see who you're calling, but could listen in."]
+    : ["This call isn't encrypted", "off", "Someone on the network between you could listen in and see who you're calling."];
+  const row = (on, what, sub, tech) => `<li class="sec-row"><span class="${on ? "ok" : "off"}">${on ? ICON.lock : ICON.unlock}</span>`
+    + `<span class="sec-what">${what}</span><span class="sec-state${on ? "" : " no"}">${on ? "Encrypted" : "Not encrypted"}</span>`
+    + `<span class="sec-sub">${sub} · ${esc(tech)}</span></li>`;
+  const html = `<div class="sec-title" id="secTitle"><span class="${cls}">${media || sip ? ICON.lock : ICON.unlock}</span>${title}</div>`
+    + `<ul class="sec-rows">`
+    + row(media, "Your conversation", "Voice and video", media ? how : "plain RTP")
+    + row(sip, "Call setup", "Who's calling whom", sip ? (transport === "WSS" ? "SIP over WSS (TLS)" : "SIP over TLS") : `SIP over ${transport}`)
+    + `</ul><p class="sec-means">${means}</p>`;
+  if (html === secHtml) return;
+  pop.innerHTML = secHtml = html;
+}
+function setSecurityOpen(on) {
+  $("secPop").hidden = !on;
+  $("infoLock").setAttribute("aria-expanded", String(on));
+  secHtml = "";
+  if (on) renderSecurity();
+}
+$("infoLock").setAttribute("aria-haspopup", "dialog");
+$("infoLock").onclick = () => setSecurityOpen($("secPop").hidden);
+document.addEventListener("keydown", (ev) => {
+  if ($("secPop").hidden || ev.key !== "Escape") return;
+  ev.preventDefault();
+  ev.stopImmediatePropagation();
+  setSecurityOpen(false);
+  $("infoLock").focus();
+}, true);
+document.addEventListener("click", (ev) => {
+  if (!$("secPop").hidden && !$("secPop").contains(ev.target) && !$("infoLock").contains(ev.target)) setSecurityOpen(false);
+}, true);
 
 function setDevTab(tab) {
   for (const b of document.querySelectorAll(".dev-tab")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));

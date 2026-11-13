@@ -9,7 +9,7 @@ namespace SIPSorcery.Softphone;
 /// The window: a WebView2 showing <c>wwwroot/index.html</c>, and the message bridge between that
 /// page and <see cref="Phone"/>. Page → host: ready, dial, answer, decline, hangup, hold,
 /// add-video, text, add-text, loss, media-answer, transfer {id, target} or {id, address, label},
-/// transfer-dismiss, for accounts account-select, account-save,
+/// transfer-dismiss, transfer-cancel, transfer-leave, for accounts account-select, account-save,
 /// account-enable, account-remove, account-register, and for the call history history-remove
 /// {ids} and history-restore {ids} (Undo). Host → page: state (every call, with the accounts and
 /// their registrations), history (every past call, newest first: on ready and whenever it
@@ -49,6 +49,11 @@ internal sealed class MainForm : Form
         Directory.CreateDirectory(logDir);
         _logFile = new StreamWriter(Path.Combine(logDir, $"softphone-{settings.Profile}.log"), append: false) { AutoFlush = true };
         Text = "SIPSorcery Softphone";
+        // softphone.ico, embedded: every size, so the title bar gets the 16 px drawing, not a shrunken 32.
+        using (var ico = typeof(MainForm).Assembly.GetManifestResourceStream("SIPSorcery.Softphone.softphone.ico"))
+        {
+            if (ico != null) Icon = new Icon(ico);
+        }
         ClientSize = new Size(1100, 720);
         MinimumSize = new Size(560, 480);
         WindowPlacement.Restore(this, settings.Profile);   // where and how big it was when last closed
@@ -103,7 +108,7 @@ internal sealed class MainForm : Form
         _phone.Details += (c, d) => Post(new
         {
             type = "details", id = c.Id, d.Direction, d.Account, d.Signalling, d.TheirPhone, d.CallId, d.TheirMedia,
-            d.MediaEncrypted, d.SignallingEncrypted, d.Audio, d.Video,
+            d.MediaEncrypted, d.SignallingEncrypted, d.Audio, d.Video, d.MediaSecurity,
         });
         _phone.VideoRefused += c => Post(new { type = "video-refused", id = c.Id });
         _phone.MediaOffer += (c, sdp) =>
@@ -127,6 +132,18 @@ internal sealed class MainForm : Form
         };
     }
 
+    // "10.0.18-pre+aacda38…": the version before the +, the commit (SourceLink's) after it, cut to 7.
+    private static object VersionInfo()
+    {
+        static string Informational(System.Reflection.Assembly a) =>
+            a.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+             .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "";
+        var lib = Informational(typeof(SIPSorcery.SIP.SIPTransport).Assembly).Split('+');
+        var app = Informational(typeof(MainForm).Assembly).Split('+');
+        var commit = app.Length > 1 ? app[1] : lib.Length > 1 ? lib[1] : "";
+        return new { app = app[0], sipsorcery = lib[0], commit = commit.Length > 7 ? commit[..7] : commit };
+    }
+
     private async Task StartAsync()
     {
         var args = "--disable-features=WebRtcHideLocalIpsWithMdns --autoplay-policy=no-user-gesture-required";
@@ -147,6 +164,8 @@ internal sealed class MainForm : Form
         };
         core.WebMessageReceived += async (_, e) => await OnPageMessage(e.WebMessageAsJson);
         core.Settings.AreDevToolsEnabled = true;
+        // The version, for the foot of Settings: the app's (the .csproj's), the SIPSorcery library's, and the commit this was built from.
+        await core.AddScriptToExecuteOnDocumentCreatedAsync($"window.softphoneVersion = {JsonSerializer.Serialize(VersionInfo())};");
         var query = new List<string>();
         if (_settings.CameraOff) query.Add("camera=off");
         if (_settings.Diagnostics) query.Add("diag=1");
@@ -260,6 +279,14 @@ internal sealed class MainForm : Form
                     break;
                 case "transfer-dismiss":
                     _phone.DismissTransfer(Id(msg));
+                    break;
+                case "transfer-cancel":
+                    // Ours: stop and take the call back. Being transferred: stay with the transferor.
+                    _phone.CancelTransfer(Id(msg));
+                    break;
+                case "transfer-leave":
+                    // Our blind transfer, ringing: hang up and leave it to their phone.
+                    _phone.LeaveTransfer(Id(msg));
                     break;
                 case "copy":
                     // The host's clipboard rather than the page's, which needs permissions the
@@ -400,7 +427,7 @@ internal sealed class MainForm : Form
                 text = c.TextState,
                 // A transfer on the call, ours or theirs: { role: out | in | replace, target, by,
                 // attended, partner, status: asking | calling | done | failed, detail (in words) }.
-                transfer = c.Transfer is { } t ? new { t.Role, t.Target, t.By, t.Attended, partner = t.PartnerId, t.Status, t.Detail } : null,
+                transfer = c.Transfer is { } t ? new { t.Role, t.Target, t.By, t.Attended, partner = t.PartnerId, t.Status, t.Detail, t.Reason, t.Rang, t.TransferorGone, t.CanCancel, t.CanLeave } : null,
             }).ToList(),
             maxCalls = Phone.MaxCalls,
             // This host can transfer calls (the web softphone's doesn't, and the page hides Transfer).

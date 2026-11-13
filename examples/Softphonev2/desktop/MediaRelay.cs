@@ -202,8 +202,9 @@ public sealed class MediaRelay : IDisposable
         if (rtp.HasVideo) return;
         rtp.addTrack(new MediaStreamTrack(new List<VideoFormat>
         {
-            new(VideoCodecsEnum.VP8, 96),
+            // H264 first: more SIP phones and PBXs take it (and many have hardware for it).
             new(VideoCodecsEnum.H264, 102, 90000, "packetization-mode=1;profile-level-id=42e01f;level-asymmetry-allowed=1"),
+            new(VideoCodecsEnum.VP8, 96),
         }));
         rtp.MaxReconstructedVideoFrameSize = 4 * 1024 * 1024;
     }

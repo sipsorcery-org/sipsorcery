@@ -11,6 +11,10 @@
     <AssemblyName>Softphone</AssemblyName>
     <RootNamespace>SIPSorcery.Softphone</RootNamespace>
     <PlatformTarget>x64</PlatformTarget>
+    <!-- The app's version, shown at the foot of Settings and in the exe's properties. -->
+    <Version>2.0.0-preview</Version>
+    <!-- The app icon: the exe's in Explorer and the taskbar. softphone.svg is its source. -->
+    <ApplicationIcon>softphone.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +28,8 @@
   <ItemGroup>
     <Content Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="softphone.sample.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- And the window's, read by MainForm. -->
+    <EmbeddedResource Include="softphone.ico" LogicalName="SIPSorcery.Softphone.softphone.ico" />
   </ItemGroup>
 
   <!-- The WebView2 package always references its WPF control on .NET 5+, and that assembly is built

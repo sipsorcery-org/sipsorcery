@@ -92,6 +92,8 @@ public sealed class Phone : IDisposable
         public TransferInfo? Transfer { get; internal set; }
         /// <summary>How a transferred call ended, for the history: "Transferred to Dave".</summary>
         public string? TransferNote { get; internal set; }
+        /// <summary>Our transfer you cancelled, to whom: if their phone goes ahead anyway and hangs up on us, that's why.</summary>
+        internal string? CancelledTransferTo;
     }
 
     /// <summary>
@@ -112,7 +114,10 @@ public sealed class Phone : IDisposable
         /// <summary>Attended, ours: the other call, which ends with this one.</summary>
         public string? PartnerId { get; init; }
         public string Status { get; internal set; } = "asking";
+        /// <summary>In full, for the tooltip and the log: "Couldn't transfer: Dave is busy (486 Busy Here). The call is still on hold."</summary>
         public string? Detail { get; internal set; }
+        /// <summary>Failed: why, in a few words, for the call header's one line ("Dave is busy (486 Busy Here)").</summary>
+        public string? Reason { get; internal set; }
         /// <summary>"in": the call with the transferor, for the NOTIFYs that tell them how it went.</summary>
         internal SIPDialogue? Dialogue;
         /// <summary>"in": why the call to the target failed, if it did (its response, or the error).</summary>
@@ -123,8 +128,23 @@ public sealed class Phone : IDisposable
         internal string? NewPhone;
         /// <summary>"in", "replace": the sources arriving on the call as it began, i.e. the transferor's (see <see cref="ForgetOldSources"/>).</summary>
         internal Dictionary<SDPMediaTypesEnum, uint>? OldSources;
+        /// <summary>"in": the call to the target, once it's under way (its first response), for Cancel.</summary>
+        internal ISIPClientUserAgent? TargetCall;
+        /// <summary>"in": you cancelled the transfer (see <see cref="CancelTransfer"/>); set before the call to the target has answered anything, it's cancelled when it does.</summary>
+        internal bool Cancelled;
+        /// <summary>"out": their phone has said the target is ringing (a 100 Trying arriving after doesn't undo it). "in": we've sent NOTIFYs (the first 100 Trying is then late, and left out).</summary>
+        internal bool Notified;
+        /// <summary>The target has rung (ours: their phone said so; theirs: our call to it).</summary>
+        public bool Rang { get; internal set; }
         /// <summary>"in": the transferor hung up on us while we were calling the target.</summary>
-        internal bool TransferorGone;
+        public bool TransferorGone { get; internal set; }
+        /// <summary>
+        /// Whether the page can offer Cancel: ours while it's under way (asking or calling), or
+        /// being transferred while the target hasn't answered and the transferor's still there.
+        /// </summary>
+        public bool CanCancel => Status is "asking" or "calling" && !Cancelled && (Role == "out" || (Role == "in" && Status == "calling" && !TransferorGone));
+        /// <summary>Whether the page can offer to hang up and leave it to them: our blind transfer, accepted, under way on their phone.</summary>
+        public bool CanLeave => Role == "out" && Status == "calling" && !Attended;
     }
 
     private readonly Settings _settings;
@@ -197,7 +217,8 @@ public sealed class Phone : IDisposable
     /// </summary>
     public sealed record CallDetails(
         string Direction, string? Account, string? Signalling, string? TheirPhone, string? CallId,
-        string? TheirMedia, bool MediaEncrypted, bool SignallingEncrypted, string? Audio, string? Video);
+        string? TheirMedia, bool MediaEncrypted, bool SignallingEncrypted, string? Audio, string? Video,
+        string? MediaSecurity = null);
     public event Action<Call, CallDetails>? Details;
 
     // ---- Real-time text, handled here in C# ----
@@ -681,6 +702,7 @@ public sealed class Phone : IDisposable
             if (c.State != CallState.Connected || c.Ua == null) return;
             // Resuming after a failed transfer is the answer to it: the note goes.
             bool cleared = !hold && c.Transfer is { Role: "out", Status: "failed" } && ClearTransfer(c);
+            // (A cancelled one's note stays its few seconds: it's saying what may still happen.)
             if (c.HoldMode != "sip")
             {
                 if (c.Held == hold) { if (cleared) Changed?.Invoke(); return; }
@@ -768,7 +790,7 @@ public sealed class Phone : IDisposable
             var target = string.IsNullOrWhiteSpace(label) ? ShortName(address) : label.Trim();
             if (string.IsNullOrWhiteSpace(typed) || !SIPURI.TryParse(address, out uri) || uri == null)
             {
-                c.Transfer = new TransferInfo { Role = "out", Target = target, Status = "failed", Detail = $"\"{typed}\" isn't an address to transfer to" };
+                c.Transfer = new TransferInfo { Role = "out", Target = target, Status = "failed", Detail = $"\"{typed}\" isn't an address to transfer to", Reason = $"\"{typed}\" isn't an address" };
                 Changed?.Invoke();
                 return;
             }
@@ -814,13 +836,90 @@ public sealed class Phone : IDisposable
         ReferAnswered(c, ua, ok, DateTime.Now - asked);
     }
 
+    /// <summary>
+    /// Cancel on a transfer under way. Ours: SIP has no way to call off a REFER they've accepted
+    /// (RFC 3515), so this is the most we can do: forget the transfer, take the call (both,
+    /// attended) off hold and carry on. If their phone still gets through, it hangs up on us as
+    /// a transferee does, and the call ends "They hung up"; the note says so for a few seconds.
+    /// Theirs (being transferred): see below.
+    /// </summary>
+    public void CancelTransfer(string id)
+    {
+        var c = Find(id);
+        if (c == null) return;
+        if (c.Transfer?.Role == "in") { CancelTransferToUs(c); return; }
+        Call? partner;
+        lock (_lock)
+        {
+            if (c.Transfer is not { CanCancel: true, Role: "out" } t) return;
+            var them = ShortName(c.Remote);
+            t.Cancelled = true;
+            c.CancelledTransferTo = t.Target;
+            partner = t.PartnerId == null ? null : _calls.FirstOrDefault(x => x.Id == t.PartnerId);
+            if (partner != null) partner.CancelledTransferTo = ShortName(c.Remote);
+            SetTransfer(c, "cancelled", $"Transfer to {t.Target} cancelled. If {them}'s phone still goes ahead with it, it will leave this call.");
+            Log?.Invoke($"call {c.Id}: you cancelled the transfer to {t.Target}: back on the call (their phone may still go ahead: SIP can't call back a REFER)");
+            _ = ClearTransferLater(c, t);
+            if (partner?.Transfer is { } pt) _ = ClearTransferLater(partner, pt);
+        }
+        Hold(id, false);
+        if (partner != null) Hold(partner.Id, false);
+        Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// Being transferred: you'd rather stay with the transferor. The call to the target is
+    /// cancelled (CANCEL), which the user agent takes as the transfer failing: it takes the
+    /// transferor off hold and the call carries on with them, who hear "487 Request Terminated".
+    /// Before the target's phone has answered anything there's nothing to CANCEL yet: it goes
+    /// when the first response comes (see NewUserAgent). Not once the transferor has hung up
+    /// (there's no one to go back to: Hang up is the way out then).
+    /// </summary>
+    private void CancelTransferToUs(Call c)
+    {
+        ISIPClientUserAgent? uac;
+        lock (_lock)
+        {
+            if (c.Transfer is not { CanCancel: true, Role: "in" } t) return;
+            t.Cancelled = true;
+            t.Detail = $"Cancelling the transfer to {t.Target}, back to {t.By}…";
+            uac = t.TargetCall;
+            Log?.Invoke($"call {c.Id}: you cancelled {t.By}'s transfer to {t.Target}{(uac == null ? " (the CANCEL goes once it's answered anything)" : "")}");
+        }
+        Changed?.Invoke();
+        try { uac?.Cancel(); } catch (Exception ex) { Log?.Invoke($"call {c.Id}: cancelling the call to the transfer's target: {ex.Message}"); }
+    }
+
+    /// <summary>
+    /// Our blind transfer, accepted and under way on their phone: you hang up and leave it to
+    /// them, as a blind transfer usually goes (RFC 5589 lets the transferor hang up once it has
+    /// its 202). SIP has no way to call the transfer off once it's accepted, so this is the only
+    /// choice besides waiting for how it goes, with the call on hold.
+    /// </summary>
+    public void LeaveTransfer(string id)
+    {
+        var c = Find(id);
+        if (c == null) return;
+        string target;
+        lock (_lock)
+        {
+            if (c.State != CallState.Connected || c.Ua == null || c.Transfer is not { CanLeave: true } t) return;
+            target = t.Target;
+            Log?.Invoke($"call {c.Id}: hanging up, leaving the transfer to {target} to {c.Remote}'s phone");
+            c.HangingUp = true;
+            c.Ua.Hangup();
+        }
+        c.TransferNote = $"Transferred to {target} (you left it to their phone)";
+        End(c, c.TransferNote);
+    }
+
     /// <summary>Drops a transfer's note (a failed one, once you've seen it).</summary>
     public void DismissTransfer(string id)
     {
         var c = Find(id);
         if (c == null) return;
         bool cleared;
-        lock (_lock) cleared = c.Transfer is { Status: "failed" or "done" } && ClearTransfer(c);
+        lock (_lock) cleared = c.Transfer is { Status: "failed" or "done" or "cancelled" } && ClearTransfer(c);
         if (cleared) Changed?.Invoke();
     }
 
@@ -837,15 +936,18 @@ public sealed class Phone : IDisposable
     }
 
     /// <summary>Sets our transfer's status on the call, and on the other call of an attended one. Under the lock.</summary>
-    private void SetTransfer(Call c, string status, string? detail)
+    private void SetTransfer(Call c, string status, string? detail, string? reason = null)
     {
         if (c.Transfer is not { } t) return;
         t.Status = status;
         t.Detail = detail;
+        t.Reason = reason;
         if (t.PartnerId != null && _calls.FirstOrDefault(x => x.Id == t.PartnerId) is { Transfer: { } pt } partner && pt.PartnerId == c.Id)
         {
             pt.Status = status;
             pt.Detail = detail;
+            pt.Reason = reason;
+            pt.Rang = t.Rang;
         }
     }
 
@@ -867,7 +969,7 @@ public sealed class Phone : IDisposable
                     lock (_lock)
                     {
                         if (c.Ua != ua || c.Transfer != t || t.Status != "calling") return;
-                        SetTransfer(c, "failed", $"No word from {them}'s phone on how the transfer went. The call is still on hold.");
+                        SetTransfer(c, "failed", $"No word from {them}'s phone on how the transfer went. The call is still on hold.", $"no word from {them}'s phone");
                     }
                     Changed?.Invoke();
                 });
@@ -877,7 +979,8 @@ public sealed class Phone : IDisposable
                 bool quick = took.TotalMilliseconds < ReferAnswerMs - 500;
                 Log?.Invoke($"call {c.Id}: transfer {(quick ? "turned down" : "not answered")} by {them}");
                 SetTransfer(c, "failed", quick ? $"{them}'s phone turned the transfer down. The call is still on hold."
-                    : $"{them}'s phone didn't answer the transfer request. The call is still on hold.");
+                    : $"{them}'s phone didn't answer the transfer request. The call is still on hold.",
+                    quick ? $"{them}'s phone turned it down" : $"no answer from {them}'s phone");
             }
         }
         Changed?.Invoke();
@@ -893,13 +996,15 @@ public sealed class Phone : IDisposable
         lock (_lock)
         {
             // An outcome after a failure we'd already given (the timeout, say) still counts.
-            if (c.Ua != ua || c.State != CallState.Connected || c.Transfer is not { Role: "out", Status: "asking" or "calling" or "failed" } t) return;
+            if (c.Ua != ua || c.State != CallState.Connected || c.Transfer is not { Role: "out", Status: "asking" or "calling" or "failed", Cancelled: false } t) return;
             Log?.Invoke($"call {c.Id}: transfer NOTIFY {code} {reason}");
             var them = ShortName(c.Remote);
             if (code < 200)
             {
-                if (t.Status == "failed") return;
-                SetTransfer(c, "calling", code is 180 or 183 ? $"{t.Target} is ringing…" : t.Attended ? $"Joining {them} with {t.Target}…" : $"Transferring to {t.Target}…");
+                // NOTIFYs can arrive out of order (a phone that sends 100 Trying late): ringing stays.
+                if (t.Status == "failed" || (t.Rang && code is not (180 or 183))) return;
+                if (code is 180 or 183) t.Rang = true;
+                SetTransfer(c, "calling", code is 180 or 183 ? $"{t.Target} is ringing… {them} is on hold." : t.Attended ? $"Joining {them} with {t.Target}…" : $"Transferring to {t.Target}…");
             }
             else if (code < 300)
             {
@@ -922,7 +1027,9 @@ public sealed class Phone : IDisposable
                     });
                 }
             }
-            else SetTransfer(c, "failed", $"Couldn't transfer: {TransferFailure(code, reason, t.Target)}. The call is still on hold.");
+            else SetTransfer(c, "failed", code == 487 ? $"{them} stopped the transfer before {t.Target} answered. The call is still on hold."
+                : $"Couldn't transfer: {TransferFailure(code, reason, t.Target)}. The call is still on hold.",
+                code == 487 ? $"{them} stopped it" : TransferFailure(code, reason, t.Target));
         }
         Changed?.Invoke();
     }
@@ -976,7 +1083,7 @@ public sealed class Phone : IDisposable
             if (why != null)
             {
                 Log?.Invoke($"call {c.Id}: {by} asked to transfer us to {referTo.URI}: turned down (603), {why}");
-                c.Transfer = new TransferInfo { Role = "in", Target = to, By = by, Attended = attended, Status = "failed", Detail = $"{by} tried to transfer you to {to}, but {why}." };
+                c.Transfer = new TransferInfo { Role = "in", Target = to, By = by, Attended = attended, Status = "failed", Detail = $"{by} tried to transfer you to {to}, but {why}.", Reason = why };
                 _ = ClearTransferLater(c, c.Transfer);
                 Changed?.Invoke();
                 return false;
@@ -990,7 +1097,8 @@ public sealed class Phone : IDisposable
         }
         Changed?.Invoke();
         // The first NOTIFY once the 202 is out (the user agent sends it when this returns).
-        _ = Task.Delay(200).ContinueWith(_ => NotifyTransferor(c, t, "100 Trying", false));
+        // Not if the target's already ringing (NotifyTransferor has sent 180): it'd go after it.
+        _ = Task.Delay(200).ContinueWith(_ => { if (!t.Notified) NotifyTransferor(c, t, "100 Trying", false); });
         return true;
     }
 
@@ -1084,9 +1192,12 @@ public sealed class Phone : IDisposable
                     _ = Task.Run(() => End(c, why));
                     return;
                 }
+                if (t.Cancelled) (code, reason) = (487, "Request Terminated");
                 NotifyTransferor(c, t, $"{code} {reason}", true);
                 t.Status = "failed";
-                t.Detail = $"{t.By} tried to transfer you to {t.Target}, but {TransferFailure(code, reason, t.Target)}. You're still with {t.By}.";
+                t.Detail = t.Cancelled ? $"You cancelled the transfer to {t.Target}. You're back with {t.By}."
+                    : $"{t.By} tried to transfer you to {t.Target}, but {TransferFailure(code, reason, t.Target)}. You're still with {t.By}.";
+                t.Reason = t.Cancelled ? "you cancelled it" : TransferFailure(code, reason, t.Target);
                 Log?.Invoke($"call {c.Id}: transfer to {t.Target} failed ({code} {reason}{(t.FailureError != null ? $", {t.FailureError}" : "")}); back with {t.By}");
             }
             _ = ClearTransferLater(c, t);
@@ -1192,6 +1303,19 @@ public sealed class Phone : IDisposable
     }
 
     /// <summary>A transfer done to us, or a failed one, stays on the call's note for a few seconds.</summary>
+    /// <summary>The call to a transfer's target has answered something: kept for Cancel, and cancelled now if you already have.</summary>
+    private void TargetCallStarted(Call c, TransferInfo t, ISIPClientUserAgent uac)
+    {
+        bool cancelNow;
+        lock (_lock)
+        {
+            if (t.TargetCall == uac) return;
+            t.TargetCall = uac;
+            cancelNow = t.Cancelled;
+        }
+        if (cancelNow) try { uac.Cancel(); } catch (Exception ex) { Log?.Invoke($"call {c.Id}: cancelling the call to the transfer's target: {ex.Message}"); }
+    }
+
     private async Task ClearTransferLater(Call c, TransferInfo t)
     {
         await Task.Delay(TransferNoteMs);
@@ -1225,6 +1349,7 @@ public sealed class Phone : IDisposable
     private void NotifyTransferor(Call c, TransferInfo t, string status, bool final)
     {
         if (t.Dialogue is not { } dialogue || t.TransferorGone) return;
+        t.Notified = true;
         try
         {
             var notify = dialogue.GetInDialogRequest(SIPMethodsEnum.NOTIFY);
@@ -1649,6 +1774,8 @@ public sealed class Phone : IDisposable
         var ep = dialogue?.RemoteSIPEndPoint;
         var a = c.Account;
         var media = rtp.RemoteDescription?.Media.Where(m => m.Port != 0).ToList() ?? new();
+        bool mediaEncrypted = media.Count > 0 && media.All(m => m.Transport.Contains("TLS", StringComparison.OrdinalIgnoreCase)
+            || StreamFor(rtp, m.Media)?.IsSecurityContextReady() == true);
         static string? Codec(SDPAudioVideoMediaFormat? f) =>
             f is { } x ? $"{x.Name()} {(x.ClockRate() % 1000 == 0 ? $"{x.ClockRate() / 1000} kHz" : $"{x.ClockRate()} Hz")}" : null;
         return new CallDetails(
@@ -1661,11 +1788,15 @@ public sealed class Phone : IDisposable
             // Every stream encrypted: WebRTC's DTLS (UDP/TLS/RTP/SAVP, and the data channel's
             // DTLS/SCTP), or SRTP with keys agreed in the SDP, which best effort does on RTP/AVP
             // lines too, so it's the stream that says. SIP over TLS shows as tls.
-            MediaEncrypted: media.Count > 0 && media.All(m => m.Transport.Contains("TLS", StringComparison.OrdinalIgnoreCase)
-                || StreamFor(rtp, m.Media)?.IsSecurityContextReady() == true),
+            MediaEncrypted: mediaEncrypted,
             SignallingEncrypted: ep?.Protocol is SIPProtocolsEnum.tls or SIPProtocolsEnum.wss,
             Audio: Codec(relay.Audio),
-            Video: relay.Video is { } v ? v.Name() : null);
+            Video: relay.Video is { } v ? v.Name() : null,
+            // How: "DTLS + SRTP" when the keys came from a DTLS handshake on the media path
+            // (WebRTC, a browser phone), "SRTP" when they were in the SDP (SDES), which is only as
+            // private as the SIP.
+            MediaSecurity: !mediaEncrypted ? null
+                : media.All(m => m.Transport.Contains("TLS", StringComparison.OrdinalIgnoreCase)) ? "DTLS + SRTP" : "SRTP");
     }
 
     private async Task OnRequest(SIPEndPoint local, SIPEndPoint remote, SIPRequest req)
@@ -1756,6 +1887,12 @@ public sealed class Phone : IDisposable
             // Hanging up on us while our transfer's going (and hasn't failed) is it done: the
             // transferee does when the target answers, and so does the target of an attended one.
             if (c.Transfer is { Role: "out", Status: "calling" or "done" } t) EndTransferred(c, t.Target);
+            // A transfer you'd cancelled that their phone went ahead with (SIP can't call one back).
+            else if (c.CancelledTransferTo is { } to)
+            {
+                c.TransferNote = $"Transferred to {to} (their phone went ahead after you cancelled)";
+                End(c, c.TransferNote);
+            }
             else End(c, "They hung up");
         };
         // Transfer (see BlindTransfer and TransferRequested).
@@ -1764,7 +1901,17 @@ public sealed class Phone : IDisposable
         ua.OnTransferCallDescriptorCreated += (d, refer) => TransferCallDescriptor(c, d, refer);
         ua.OnTransferToTargetSuccessful += _ => TransferOutcome(c, ua, true);
         ua.OnTransferToTargetFailed += _ => TransferOutcome(c, ua, false);
-        ua.ClientCallRinging += (_, _) => { if (c.Transfer is { Role: "in", Status: "calling" } t && c.Ua == ua) NotifyTransferor(c, t, "180 Ringing", false); };
+        ua.ClientCallTrying += (uac, _) => { if (c.Transfer is { Role: "in", Status: "calling" } t && c.Ua == ua) TargetCallStarted(c, t, uac); };
+        ua.ClientCallRinging += (uac, _) =>
+        {
+            if (c.Transfer is not { Role: "in", Status: "calling" } t || c.Ua != ua) return;
+            TargetCallStarted(c, t, uac);
+            if (t.Cancelled) return;
+            t.Rang = true;
+            NotifyTransferor(c, t, "180 Ringing", false);
+            t.Detail = t.TransferorGone ? $"{t.By} hung up. {t.Target} is ringing…" : $"{t.By} is transferring you to {t.Target}: ringing…";
+            Changed?.Invoke();
+        };
         ua.ClientCallFailed += (_, err, resp) => { if (c.Transfer is { Role: "in", Status: "calling" } t && c.Ua == ua) (t.Failure, t.FailureError) = (resp, err); };
         ua.OnAttendedTransferRequested += invite => ReplacementArriving(c, ua, invite);
         ua.OnAttendedTransferAccepted += _ => ReplacementDone(c, ua);
