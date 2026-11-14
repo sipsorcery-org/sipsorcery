@@ -2409,6 +2409,17 @@ namespace SIPSorcery.Net
                             else
                             {
                                 announcement.SecurityDescriptions.Add(srtpHandler.LocalSecurityDescription);
+
+                                // The offer's keys changed (setRemoteDescription's SetupRemote then left
+                                // the negotiation open): a far end that rekeyed, or another one taking the
+                                // call over (an INVITE with Replaces, after an attended transfer). Build
+                                // the contexts again with their new key, or what they send can't be
+                                // decrypted. An offer with the same keys (hold, say) keeps the contexts,
+                                // and with them the rollover counters.
+                                if (!srtpHandler.IsNegotiationComplete)
+                                {
+                                    srtpHandler.SetupLocal(announcement.SecurityDescriptions, sdpType);
+                                }
                             }
                         }
                         else

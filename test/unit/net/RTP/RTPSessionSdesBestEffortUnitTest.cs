@@ -9,6 +9,7 @@
 //
 // History:
 // 12 Nov 2026	Claude Code - Opus 5.5	Created.
+// 14 Nov 2026	Claude Code - Opus 5.5	A new far end's keys on a session's next offer, and video on one side only.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -348,6 +349,134 @@ a=rtpmap:0 PCMU/8000
 
                 tx.Close("done");
                 rx.Close("done");
+            }
+        }
+
+        /// <summary>
+        /// Another far end taking over an SRTP call (the INVITE with Replaces after an attended
+        /// transfer, answered on the replaced call's session) brings new keys: media gets through
+        /// both ways with them. Before, the answer reused our key without building the contexts
+        /// again, so what the new far end sent failed to decrypt ("SRTP unprotect failed").
+        /// </summary>
+        [Theory]
+        [InlineData(RtpSecureMediaOptionEnum.SdpCryptoBestEffort)]
+        [InlineData(RtpSecureMediaOptionEnum.SdpCryptoNegotiation)]
+        public async Task Answerer_NewFarEndTakesOver_MediaGetsThroughBothWays(RtpSecureMediaOptionEnum option)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            using (var bob = Session(option))
+            using (var dave = Session(option))
+            using (var alice = Session(option))
+            {
+                // Dave's call with Bob.
+                Assert.Equal(SetDescriptionResultEnum.OK, dave.SetRemoteDescription(SdpType.offer, bob.CreateOffer(IPAddress.Loopback)));
+                Assert.Equal(SetDescriptionResultEnum.OK, bob.SetRemoteDescription(SdpType.answer, dave.CreateAnswer(IPAddress.Loopback)));
+
+                // Alice takes it over, with keys of her own.
+                Assert.Equal(SetDescriptionResultEnum.OK, dave.SetRemoteDescription(SdpType.offer, alice.CreateOffer(IPAddress.Loopback)));
+                Assert.Equal(SetDescriptionResultEnum.OK, alice.SetRemoteDescription(SdpType.answer, dave.CreateAnswer(IPAddress.Loopback)));
+                Assert.True(dave.AudioStream.IsSecurityContextReady());
+
+                var atDave = new ConcurrentQueue<byte[]>();
+                var atAlice = new ConcurrentQueue<byte[]>();
+                dave.OnRtpPacketReceived += (ep, kind, pkt) => atDave.Enqueue(pkt.Payload.ToArray());
+                alice.OnRtpPacketReceived += (ep, kind, pkt) => atAlice.Enqueue(pkt.Payload.ToArray());
+                await dave.Start();
+                await alice.Start();
+
+                var payload = Enumerable.Range(0, 160).Select(i => (byte)i).ToArray();
+                var deadline = DateTime.UtcNow.AddSeconds(3);
+                while ((atDave.IsEmpty || atAlice.IsEmpty) && DateTime.UtcNow < deadline)
+                {
+                    alice.SendAudio(160, payload);
+                    dave.SendAudio(160, payload);
+                    await Task.Delay(20);
+                }
+
+                Assert.True(atDave.TryPeek(out var fromAlice), "Nothing from Alice decrypted at Dave.");
+                Assert.Equal(payload, fromAlice);
+                Assert.True(atAlice.TryPeek(out var fromDave), "Nothing from Dave decrypted at Alice.");
+                Assert.Equal(payload, fromDave);
+
+                alice.Close("done");
+                dave.Close("done");
+            }
+        }
+
+        /// <summary>
+        /// A re-offer with the same keys (hold, say) keeps the SRTP contexts as they are, rollover
+        /// counters and all, rather than starting them again.
+        /// </summary>
+        [Fact]
+        public void Answerer_ReofferWithSameKeys_KeepsTheContexts()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            using (var session = BestEffort())
+            {
+                session.SetRemoteDescription(SdpType.offer, Audio("RTP/AVP", true));
+                session.CreateAnswer(IPAddress.Loopback);
+                var context = session.AudioStream.GetOrCreateSrtpHandler().Context;
+                Assert.NotNull(context);
+
+                Assert.Equal(SetDescriptionResultEnum.OK, session.SetRemoteDescription(SdpType.offer, Audio("RTP/AVP", true, "sendonly", sessionVersion: 1)));
+                session.CreateAnswer(IPAddress.Loopback);
+
+                Assert.Same(context, session.AudioStream.GetOrCreateSrtpHandler().Context);
+            }
+        }
+
+        /// <summary>
+        /// Video on one side only, with best-effort and mandatory SDES: audio gets through both
+        /// ways. The stream without a local track (answered with port 0) or with one the far end
+        /// never offered mustn't hold back the session's media waiting for keys that never come.
+        /// Before, an audio-only session answering an audio and video offer (an INVITE with
+        /// Replaces from a video phone, after an attended transfer) received no audio at all.
+        /// </summary>
+        [Theory]
+        [InlineData(RtpSecureMediaOptionEnum.SdpCryptoBestEffort, true)]
+        [InlineData(RtpSecureMediaOptionEnum.SdpCryptoBestEffort, false)]
+        [InlineData(RtpSecureMediaOptionEnum.SdpCryptoNegotiation, true)]
+        [InlineData(RtpSecureMediaOptionEnum.SdpCryptoNegotiation, false)]
+        public async Task VideoOnOneSideOnly_AudioGetsThroughBothWays(RtpSecureMediaOptionEnum option, bool videoAtOfferer)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            RtpSessionBuilder Builder(bool video)
+            {
+                var b = new RtpSessionBuilder().WithBindAddress(IPAddress.Loopback).WithAudioTrack();
+                b = option == RtpSecureMediaOptionEnum.SdpCryptoBestEffort ? b.WithSdpCryptoBestEffort() : b.WithSdpCryptoNegotiation();
+                return video ? b.WithVideoTrack() : b;
+            }
+
+            using (var offerer = Builder(videoAtOfferer).Build())
+            using (var answerer = Builder(!videoAtOfferer).Build())
+            {
+                Assert.Equal(SetDescriptionResultEnum.OK, answerer.SetRemoteDescription(SdpType.offer, offerer.CreateOffer(IPAddress.Loopback)));
+                Assert.Equal(SetDescriptionResultEnum.OK, offerer.SetRemoteDescription(SdpType.answer, answerer.CreateAnswer(IPAddress.Loopback)));
+
+                var atAnswerer = new ConcurrentQueue<byte[]>();
+                var atOfferer = new ConcurrentQueue<byte[]>();
+                answerer.OnRtpPacketReceived += (ep, kind, pkt) => { if (kind == SDPMediaTypesEnum.audio) { atAnswerer.Enqueue(pkt.Payload.ToArray()); } };
+                offerer.OnRtpPacketReceived += (ep, kind, pkt) => { if (kind == SDPMediaTypesEnum.audio) { atOfferer.Enqueue(pkt.Payload.ToArray()); } };
+                await offerer.Start();
+                await answerer.Start();
+
+                var payload = Enumerable.Range(0, 160).Select(i => (byte)i).ToArray();
+                var deadline = DateTime.UtcNow.AddSeconds(3);
+                while ((atAnswerer.IsEmpty || atOfferer.IsEmpty) && DateTime.UtcNow < deadline)
+                {
+                    offerer.SendAudio(160, payload);
+                    answerer.SendAudio(160, payload);
+                    await Task.Delay(20);
+                }
+
+                Assert.False(atAnswerer.IsEmpty, "No audio at the answerer.");
+                Assert.False(atOfferer.IsEmpty, "No audio at the offerer.");
+
+                offerer.Close("done");
+                answerer.Close("done");
             }
         }
 
