@@ -48,6 +48,9 @@
 .acct-form { display: grid; gap: 12px; }
 .acct-lead, .acct-note { margin: 0; color: var(--muted); font-size: 13px; }
 .acct-wide { width: 100%; justify-content: center; }
+/* Sign in with GitHub: under Create a test account, plainer, with GitHub's mark. */
+.acct-github { display: inline-flex; align-items: center; gap: 8px; }
+.acct-gh-mark { width: 18px; height: 18px; flex: none; }
 .acct-error { margin: 0; color: var(--danger); font-size: 13px; }
 .acct-error[hidden], .acct-captcha[hidden] { display: none; }
 .acct-captcha { display: flex; justify-content: center; min-height: 65px; }

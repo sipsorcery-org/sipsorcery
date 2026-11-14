@@ -21,7 +21,7 @@
 // and account.js's api=, captcha=, stubws= and wsdefault=.
 
 import * as SIP from "https://cdn.jsdelivr.net/npm/sip.js@0.21.2/+esm";
-import { loadAccount, saveAccount, forgetAccount, accountUi, addressOf } from "./account.js";
+import { loadAccount, saveAccount, forgetAccount, accountUi, addressOf, githubGoneNote } from "./account.js";
 
 const q = new URLSearchParams(location.search);
 const localServer = q.get("server");
@@ -747,10 +747,12 @@ function setLoss(audio, video) {
 let ua = null;
 let registerer = null;
 
-function setReg(state, detail = null) {
+// auth: a failure because the registrar turned the password down (the chip's menu then offers a
+// GitHub guest "Sign in with GitHub again").
+function setReg(state, detail = null, auth = false) {
   regState.state = state;
   regState.detail = detail;
-  ui?.set(acct, { state, detail });
+  ui?.set(acct, { state, detail, auth });
   sendState();
 }
 
@@ -815,15 +817,20 @@ async function startSip(a) {
     throw new Error(msg);
   }
   return new Promise((resolve, reject) => {
-    const fail = (msg) => { clearTimeout(timer); if (ua === myUa) setReg("failed", msg); reject(new Error(msg)); };
+    // auth: the registrar turned the user name and password down (401, 403, 407).
+    const fail = (msg, auth = false) => {
+      clearTimeout(timer);
+      if (ua === myUa) setReg("failed", msg, auth);
+      reject(Object.assign(new Error(msg), { auth }));
+    };
     const timer = setTimeout(() => fail("The server didn't answer."), 10000);
     reg.stateChange.addListener((s) => { if (s === SIP.RegistererState.Registered) { clearTimeout(timer); resolve(); } });
     reg.register({
       requestDelegate: {
         onReject: (resp) => {
           const m = resp.message;
-          fail(m.statusCode === 401 || m.statusCode === 403 || m.statusCode === 407 ? "Wrong user name or password."
-            : `The server said ${m.statusCode} ${m.reasonPhrase}.`);
+          const auth = m.statusCode === 401 || m.statusCode === 403 || m.statusCode === 407;
+          fail(auth ? "Wrong user name or password." : `The server said ${m.statusCode} ${m.reasonPhrase}.`, auth);
         },
       },
     }).catch((err) => fail(err.message));
@@ -1183,6 +1190,12 @@ window.addEventListener("beforeunload", () => {
 await import(new URL("app.js", base).href);
 
 // A kept account registers straight away; with none, the sign-in dialog.
-if (acct) startSip(acct).catch((err) => log(`registration failed: ${err.message}`));
+// A saved GitHub guest the server turns down was most likely replaced: renaming on GitHub and
+// signing in with GitHub elsewhere deletes the old account and makes one under the new login.
+// So the sign-in dialog opens, saying so, with Sign in with GitHub to get the new one.
+if (acct) startSip(acct).catch((err) => {
+  log(`registration failed: ${err.message}`);
+  if (err.auth && acct?.github) ui.showSignIn("", githubGoneNote(acct));
+});
 else ui.showSignIn();
 capabilities().catch(() => {});   // made now, ready for the first 488

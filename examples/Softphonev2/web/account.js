@@ -1,5 +1,5 @@
 // The web softphone's SIP account: kept in this browser, created as a guest account on the
-// server (behind a captcha), or typed in to sign in. Also the account chip in the header and the
+// server (behind a captcha, or by signing in with GitHub), or typed in to sign in. Also the account chip in the header and the
 // sign-in dialog. host.js decides when to show them and does the registering.
 
 const q = new URLSearchParams(location.search);
@@ -67,6 +67,61 @@ async function createGuest(captchaToken) {
   return WS_OVERRIDE ? { ...body, wsUri: WS_OVERRIDE } : body;
 }
 
+// A guest account from signing in with GitHub, named after the GitHub login (octocat ->
+// sips:octocat@sipsorcery.com) and tied to the GitHub user: signing in again, from any browser,
+// returns the same account and password. No captcha. The server's page does GitHub in a popup
+// and posts the account (or an error sentence) back to this page; there's no cookie or CORS, as
+// this page is on another origin. Must be called straight from the click, or the popup's blocked.
+//   GET <api>/api/guest-accounts/github?origin=<this page's origin>   (the popup)
+//   -> postMessage { type: "sipsorcery-guest-account", account: { username, password, domain,
+//      wsUri, expiresAfterDays, github } } or { type: "sipsorcery-guest-account", error }
+// The origin must be one of the server's GuestAccounts:AllowedOrigins, or the popup shows a 400.
+// Rejects with .cancelled set when the popup is closed with nothing posted.
+const GITHUB_MESSAGE = "sipsorcery-guest-account";
+function githubGuest() {
+  if (!API) {
+    // The stub: no popup, a made-up account named after a made-up login (github=<login> to pick).
+    const login = (q.get("github") || "octocat").toLowerCase();
+    const pw = [...crypto.getRandomValues(new Uint8Array(18))].map((b) => b.toString(36).padStart(2, "0")).join("").slice(0, 24);
+    return new Promise((r) => setTimeout(() => r({ username: login, password: pw, domain: "localhost", wsUri: STUB_WS,
+      expiresAfterDays: 30, github: login, noRegister: true }), 400));
+  }
+  const url = new URL(`/api/guest-accounts/github?origin=${encodeURIComponent(location.origin)}`, API);
+  const popup = window.open(url, "sipsorcery-github", "popup,width=600,height=720");
+  if (!popup) return Promise.reject(new Error("Allow pop-ups for this page to sign in with GitHub."));
+  const origin = new URL(API).origin;
+  return new Promise((resolve, reject) => {
+    let done = false, timer = 0;
+    const finish = (fn, value) => {
+      if (done) return;
+      done = true;
+      clearInterval(timer);
+      window.removeEventListener("message", onMessage);
+      fn(value);
+    };
+    // Only the server's page, in our popup, saying what we expect.
+    function onMessage(e) {
+      if (e.origin !== origin || e.source !== popup || e.data?.type !== GITHUB_MESSAGE) return;
+      const a = e.data.account;
+      if (e.data.error) finish(reject, new Error(String(e.data.error)));
+      else if (a?.username && a?.password && a?.domain && a?.wsUri) finish(resolve, WS_OVERRIDE ? { ...a, wsUri: WS_OVERRIDE } : a);
+      else finish(reject, new Error("GitHub sign-in didn't come back with an account. Try again."));
+    }
+    window.addEventListener("message", onMessage);
+    // Closed with nothing posted: cancelled. (A moment's grace, as the page posts and then closes.)
+    timer = setInterval(() => {
+      if (!popup.closed) return;
+      clearInterval(timer);
+      setTimeout(() => finish(reject, Object.assign(new Error("GitHub sign-in was cancelled."), { cancelled: true })), 300);
+    }, 500);
+  });
+}
+
+// What the sign-in dialog says when a saved GitHub guest is turned down by the server.
+export function githubGoneNote(a) {
+  return `The server didn't take ${a.username}'s password. If you've renamed on GitHub, signing in with GitHub replaced this account with one under your new login: sign in with GitHub again to get it.`;
+}
+
 // ---- Turnstile ----
 
 let turnstileLoading = null;
@@ -85,6 +140,7 @@ function loadTurnstile() {
 // ---- UI ----
 
 const ICON = {
+  github: `<svg viewBox="0 0 16 16" aria-hidden="true" class="acct-gh-mark"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.88.87 2.34.66.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>`,
   copy: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>`,
   user: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>`,
   eye: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`,
@@ -139,6 +195,7 @@ export function accountUi(on) {
     menu.innerHTML = `
       <div class="acct-menu-head"><div class="acct-menu-addr">${esc(addr)}</div><div class="acct-menu-state ${status.state}">${esc(line)}</div></div>
       <button type="button" role="menuitem" data-act="copy">Copy my address</button>
+      ${account.github && status.state === "failed" && status.auth ? `<button type="button" role="menuitem" data-act="github">Sign in with GitHub again</button>` : ""}
       <button type="button" role="menuitem" data-act="details">Show account details</button>
       <button type="button" role="menuitem" data-act="out">Sign out</button>`;
   }
@@ -161,22 +218,28 @@ export function accountUi(on) {
     closeMenu();
     if (act === "copy") navigator.clipboard?.writeText(addressOf(account)).catch(() => {});
     else if (act === "details") showDetails(account, false);
+    else if (act === "github") showSignIn("", githubGoneNote(account));
     else if (act === "out") {
-      if (account.guest && !confirm("Sign out? Keep your user name and password if you want to use this test account again.")) return;
+      // A GitHub guest gets the account back by signing in with GitHub again: no need to ask.
+      if (account.guest && !account.github && !confirm("Sign out? Keep your user name and password if you want to use this test account again.")) return;
       on.signOut();
     }
   };
 
   // ---- The dialog: sign in, or create a test account ----
 
-  function showSignIn(error = "") {
+  // error: under the sign-in form (registering the typed account failed). note: under the test
+  // account buttons (a saved GitHub guest the server turned down).
+  function showSignIn(error = "", note = "") {
     dlg.innerHTML = `
       <form method="dialog" class="acct-form" id="acctCreate">
         <h2>Sign in to make calls</h2>
         <p class="acct-lead">A test account is free and takes a moment. It can call other SIPSorcery users and SIP addresses, but not phone numbers.</p>
         <button type="submit" class="btn btn-primary acct-wide" id="acctCreateBtn">Create a test account</button>
+        <button type="button" class="btn acct-wide acct-github" id="acctGitHubBtn">${ICON.github}<span>Sign in with GitHub</span></button>
+        <p class="acct-note">With GitHub, the account is named after you (your GitHub login), and signing in with GitHub again, in any browser, gets it back. No captcha.</p>
         <div class="acct-captcha" id="acctCaptcha" hidden></div>
-        <p class="acct-error" id="acctCreateErr" hidden></p>
+        <p class="acct-error" id="acctCreateErr" ${note ? "" : "hidden"}>${esc(note)}</p>
       </form>
       <div class="acct-or"><span>or sign in</span></div>
       <form class="acct-form" id="acctSignIn" autocomplete="on">
@@ -192,27 +255,48 @@ export function accountUi(on) {
     const createForm = dlg.querySelector("#acctCreate");
     const signInForm = dlg.querySelector("#acctSignIn");
 
+    // A guest account, from either way: shown to keep, and signed in with. It's kept even if
+    // registering fails; the header shows why.
+    const useGuest = (created) => {
+      const a = { username: created.username, password: created.password, domain: created.domain,
+        wsUri: created.wsUri, guest: true, expiresAfterDays: created.expiresAfterDays ?? 30, api: API,
+        ...(created.github ? { github: created.github } : {}), ...(created.noRegister ? { noRegister: true } : {}) };
+      showDetails(a, true);
+      on.signIn(a).catch(() => {});
+    };
+    const createBtn = dlg.querySelector("#acctCreateBtn");
+    const githubBtn = dlg.querySelector("#acctGitHubBtn");
+    const createErr = dlg.querySelector("#acctCreateErr");
+    const showError = (message) => { createErr.textContent = message; createErr.hidden = !message; };
+
     createForm.onsubmit = async (e) => {
       e.preventDefault();
-      const btn = dlg.querySelector("#acctCreateBtn");
-      const err = dlg.querySelector("#acctCreateErr");
-      err.hidden = true;
-      btn.disabled = true;
-      btn.textContent = "Checking you're not a robot…";
+      showError("");
+      createBtn.disabled = githubBtn.disabled = true;
+      createBtn.textContent = "Checking you're not a robot…";
       try {
         const token = await captcha(dlg.querySelector("#acctCaptcha"));
-        btn.textContent = "Creating your account…";
-        const created = await createGuest(token);
-        const a = { username: created.username, password: created.password, domain: created.domain,
-          wsUri: created.wsUri, guest: true, expiresAfterDays: created.expiresAfterDays ?? 30, api: API };
-        showDetails(a, true);
-        // It's kept even if registering fails; the header shows why.
-        on.signIn(a).catch(() => {});
+        createBtn.textContent = "Creating your account…";
+        useGuest(await createGuest(token));
       } catch (ex) {
-        err.textContent = ex.message;
-        err.hidden = false;
-        btn.disabled = false;
-        btn.textContent = "Create a test account";
+        showError(ex.message);
+        createBtn.disabled = githubBtn.disabled = false;
+        createBtn.textContent = "Create a test account";
+      }
+    };
+
+    // The popup opens in this click (githubGuest's window.open), so it isn't blocked.
+    githubBtn.onclick = async () => {
+      showError("");
+      const pending = githubGuest();
+      createBtn.disabled = githubBtn.disabled = true;
+      githubBtn.querySelector("span").textContent = API ? "Waiting for GitHub…" : "Signing in…";
+      try {
+        useGuest(await pending);
+      } catch (ex) {
+        if (!ex.cancelled) showError(ex.message);
+        createBtn.disabled = githubBtn.disabled = false;
+        githubBtn.querySelector("span").textContent = "Sign in with GitHub";
       }
     };
 
@@ -238,7 +322,7 @@ export function accountUi(on) {
     };
 
     if (!dlg.open) dlg.showModal();
-    dlg.querySelector("#acctCreateBtn").focus();
+    dlg.querySelector(note ? "#acctGitHubBtn" : "#acctCreateBtn").focus();
   }
 
   // The captcha, in the dialog; resolves to its token.
@@ -271,13 +355,14 @@ export function accountUi(on) {
           <button type="button" class="acct-copy" data-copy="${esc(value)}" aria-label="Copy ${label.toLowerCase()}">${ICON.copy}</button></span></div>`;
     dlg.innerHTML = `
       <div class="acct-form">
-        <h2>${fresh ? "Your test account" : "Account details"}</h2>
-        ${fresh ? `<p class="acct-lead">Save these somewhere. This browser remembers them, but you'll need them to sign in anywhere else, or here after signing out.</p>` : ""}
+        <h2>${fresh && a.github ? "Your GitHub test account" : fresh ? "Your test account" : "Account details"}</h2>
+        ${fresh && a.github ? `<p class="acct-lead">Signed in with GitHub as ${esc(a.github)}. This browser remembers the account, and signing in with GitHub again, here or in any other browser, gets it back. The user name and password below also work in any SIP phone.</p>`
+          : fresh ? `<p class="acct-lead">Save these somewhere. This browser remembers them, but you'll need them to sign in anywhere else, or here after signing out.</p>` : ""}
         ${row("User name", a.username)}
         ${row("Password", a.password, true)}
         ${row("Address", addr)}
-        <p class="acct-note">${a.guest ? `Others call you on ${esc(a.username)} or ${esc(addr)}. A test account that isn't used for ${a.expiresAfterDays ?? 30} days is deleted.` : `Others call you on ${esc(addr)}.`}</p>
-        <button type="button" class="btn btn-primary acct-wide" id="acctDone">${fresh ? "I've saved them" : "Close"}</button>
+        <p class="acct-note">${a.guest ? `Others call you on ${esc(a.username)} or ${esc(addr)}. A test account that isn't used for ${a.expiresAfterDays ?? 30} days is deleted${a.github ? "; signing in with GitHub makes it again, if the name's still free" : ""}.` : `Others call you on ${esc(addr)}.`}</p>
+        <button type="button" class="btn btn-primary acct-wide" id="acctDone">${fresh && !a.github ? "I've saved them" : fresh ? "Done" : "Close"}</button>
       </div>`;
     const reveal = dlg.querySelector(".acct-reveal");
     reveal.onclick = () => {

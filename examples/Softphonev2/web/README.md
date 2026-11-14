@@ -32,6 +32,35 @@ The web softphone registers with a SIP account, normally on sipsorcery.com over 
   ("Save these somewhere…"; the password is dots until its eye button shows it), keeps them in
   this browser and registers. A new account is kept
   even if registering fails, since its password exists nowhere else.
+- **Sign in with GitHub**, under it: a guest account named after your GitHub login, lower-cased
+  (`sips:octocat@sipsorcery.com`), with no captcha. The server ties it to your GitHub user, so
+  signing in with GitHub again, in any browser, gets the same account and password back. Someone
+  who renames on GitHub and signs in again gets a new account under the new login, with a new
+  password, and the old one is deleted (even when the new name can't be had). The server refuses (the dialog shows its sentence)
+  when the name is taken (a customer's user name or GitHub login, any account on the domain,
+  another guest). Every GitHub login fits: SIP user names take up to 39 characters, GitHub's
+  longest, and the chip cuts a long one short with "…" on a phone. The flow is a popup and `postMessage`, since this page
+  is on another origin (no cookies or CORS):
+  1. In the click itself (or the browser blocks it: "Allow pop-ups for this page to sign in with
+     GitHub."), a popup opens `<api>/api/guest-accounts/github?origin=<this page's origin>`. The
+     origin must be one of the server's `GuestAccounts:AllowedOrigins`, or the popup shows a 400.
+  2. After GitHub, the server's page posts `{ type: "sipsorcery-guest-account", account: { username,
+     password, domain, wsUri, expiresAfterDays, github } }`, or `{ type, error }`, and closes.
+  3. A message counts only from the server's origin, from that popup, with that `type`. The popup
+     closed with nothing posted (checked every 0.5 s) is a cancel: the dialog goes back as it was,
+     with no error.
+
+  The account is then shown as "Your GitHub test account" ("Signed in with GitHub as octocat…
+  signing in with GitHub again, here or in any other browser, gets it back"), kept with `github`
+  set, and registered, as a captcha one is; a different one (renamed) replaces the saved one.
+  Signing out of it doesn't ask first. A saved GitHub account the server turns down (401, 403 or
+  407 to REGISTER: most likely replaced after a rename, signed in elsewhere) opens the sign-in
+  dialog at start-up, saying "The server didn't take octocat's password. If you've renamed on
+  GitHub, signing in with GitHub replaced this account…: sign in with GitHub again to get it.",
+  with the GitHub button focused; the chip's menu has *Sign in with GitHub again* while it's like
+  that. (A captcha account turned down just shows the failure, as before.) The server's
+  side, and setting up its GitHub OAuth app, are in sipsorcery-servers2's
+  `src/SIPSorcery.Web/README.md`, "GitHub guest accounts".
 - **Sign in**: user name and password (and, under Server, the domain and WebSocket address) for
   an account you already have, such as a test account saved earlier. SIP.js answers the
   registrar's digest challenge. It's kept only once registering works; otherwise the dialog says
@@ -52,7 +81,8 @@ Guest accounts are created and limited on the server (sipsorcery-servers2): all 
 `guest` owner with no providers or dial plans, so they can call SIPSorcery users and SIP
 addresses but nothing that costs money, a few per IP per hour, deleted after 30 days unused.
 The page creates them on sipsorcery.com (`https://www.sipsorcery.com/api/guest-accounts`).
-`api=stub` uses a stub instead, which makes the account up in the browser and connects it to
+`api=stub` uses a stub instead (Sign in with GitHub too: no popup, the login `octocat`, or
+`github=<login>`), which makes the account up in the browser and connects it to
 the desktop app's WebSocket (`ws://localhost:8081`) without registering: the desktop isn't a
 registrar, so it can call the desktop but nothing can call it ("Calls out only" in the chip's
 menu). A test account kept in the browser is only used with the `api=` that created it, so one
@@ -238,6 +268,8 @@ microphone, both on one PC.
 
 | Test | Result |
 |---|---|
+| A saved GitHub guest turned down: a fake registrar (`ws://127.0.0.1:8395`, every REGISTER 403) for a saved account with `github` set; then the same without `github`; then Sign in with GitHub from that dialog (the fake portal posting `octocat` with a new password) over a saved `oldname` | GitHub guest: the chip "failed", the sign-in dialog open with "The server didn't take octocat's password. If you've renamed on GitHub…", focus on Sign in with GitHub; the chip's menu: Copy my address, *Sign in with GitHub again*, Show account details, Sign out; the item opens the same dialog. Captcha guest: no dialog, no item. Signing in with GitHub: "Your GitHub test account", the chip "octocat", the saved account now `octocat` with the new password and WebSocket. |
+| Sign in with GitHub against a fake portal (a page on another origin, `127.0.0.1:5190`, standing in for the server's completion page: posts to `window.opener` and closes), `api=http://127.0.0.1:5190`, Edge headless; the click with and without a user gesture; the portal posting an account, an error, a message of another `type`, nothing; with the popup open, a forged message from the page itself; Sign out; then `api=stub&github=Hubot` | No gesture: no popup, "Allow pop-ups for this page to sign in with GitHub." With one: the popup at `…/api/guest-accounts/github/?origin=http%3A%2F%2F127.0.0.1%3A5181`, the button "Waiting for GitHub…" and both disabled. An account: "Your GitHub test account", "Signed in with GitHub as octocat…", saved with `github: "octocat"`, `guest`, `api`. An error: its sentence under the buttons, the buttons back. Another `type`, or nothing: once the popup closes, the dialog as before with no error. The forged message: ignored (still waiting, nothing saved). Sign out: no confirm, account forgotten. Stub: no popup, "hubot", connected (calls out only). Not tested against the real server, which isn't deployed. |
 | Phone layout: Edge headless emulating a touch phone (375×812 and 360×740, mobile, touch), `?server=ws://127.0.0.1:8392` to a desktop copy (`--ws-port 8392 --auto-answer`); idle, then call `vtB`, light and dark | Idle: no sideways scroll (393 px wide before); the header fits with the gear (it was cut off), the address field full width (before: squeezed to an empty box) with the short hint, Audio ◯━ Video and a wide Call under it; the control bar icons only, End red, all 6 within 348 px at 360. Connected: the call header, the bars, the control bar at the bottom. |
 | Phone, the rest: a call at 375 px; the privacy switch armed, then on; then Diagnostics (F12) on Call quality | Before: the page 496 px wide armed, 470 on, and 467 with Diagnostics open (its bar's tabs wrapping to two lines, pushing the charts off the right). After: 375 px each time. Armed or on, "SIPSorcery" goes and the chip reads "Mic and Cameras Bloc…" with Settings still on screen; Diagnostics' bar the icon, SIP log, Call details, Call quality, Network and ×, on one line; the charts 351 px, the screen less its margins. |
 | Screen on and the background note: the same, with `backgroundNoteSeen` cleared; *Got it*; the page faked hidden for 3 s (`visibilityState`, `visibilitychange`) mid-call; End | Log "keeping the screen on for the call" as it rang; once connected the note over the bottom of the stage, above the control bar. *Got it* hides it and sets `backgroundNoteSeen`. Back after 3 s: "the page went to the background during a call", "the page is back from the background (3 s)", and the note's "This page was in the background for 3 s…" with a red edge. End: the note goes, "the screen can turn off again". Not tested on a real phone: what iOS and Android actually do to the call in the background. |
