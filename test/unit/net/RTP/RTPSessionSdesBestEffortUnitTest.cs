@@ -9,7 +9,7 @@
 //
 // History:
 // 12 Nov 2026	Claude Code - Opus 5.5	Created.
-// 14 Nov 2026	Claude Code - Opus 5.5	A new far end's keys on a session's next offer.
+// 14 Nov 2026	Claude Code - Opus 5.5	A new far end's keys on a session's next offer, and video on one side only.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -424,6 +424,59 @@ a=rtpmap:0 PCMU/8000
                 session.CreateAnswer(IPAddress.Loopback);
 
                 Assert.Same(context, session.AudioStream.GetOrCreateSrtpHandler().Context);
+            }
+        }
+
+        /// <summary>
+        /// Video on one side only, with best-effort and mandatory SDES: audio gets through both
+        /// ways. The stream without a local track (answered with port 0) or with one the far end
+        /// never offered mustn't hold back the session's media waiting for keys that never come.
+        /// Before, an audio-only session answering an audio and video offer (an INVITE with
+        /// Replaces from a video phone, after an attended transfer) received no audio at all.
+        /// </summary>
+        [Theory]
+        [InlineData(RtpSecureMediaOptionEnum.SdpCryptoBestEffort, true)]
+        [InlineData(RtpSecureMediaOptionEnum.SdpCryptoBestEffort, false)]
+        [InlineData(RtpSecureMediaOptionEnum.SdpCryptoNegotiation, true)]
+        [InlineData(RtpSecureMediaOptionEnum.SdpCryptoNegotiation, false)]
+        public async Task VideoOnOneSideOnly_AudioGetsThroughBothWays(RtpSecureMediaOptionEnum option, bool videoAtOfferer)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            RtpSessionBuilder Builder(bool video)
+            {
+                var b = new RtpSessionBuilder().WithBindAddress(IPAddress.Loopback).WithAudioTrack();
+                b = option == RtpSecureMediaOptionEnum.SdpCryptoBestEffort ? b.WithSdpCryptoBestEffort() : b.WithSdpCryptoNegotiation();
+                return video ? b.WithVideoTrack() : b;
+            }
+
+            using (var offerer = Builder(videoAtOfferer).Build())
+            using (var answerer = Builder(!videoAtOfferer).Build())
+            {
+                Assert.Equal(SetDescriptionResultEnum.OK, answerer.SetRemoteDescription(SdpType.offer, offerer.CreateOffer(IPAddress.Loopback)));
+                Assert.Equal(SetDescriptionResultEnum.OK, offerer.SetRemoteDescription(SdpType.answer, answerer.CreateAnswer(IPAddress.Loopback)));
+
+                var atAnswerer = new ConcurrentQueue<byte[]>();
+                var atOfferer = new ConcurrentQueue<byte[]>();
+                answerer.OnRtpPacketReceived += (ep, kind, pkt) => { if (kind == SDPMediaTypesEnum.audio) { atAnswerer.Enqueue(pkt.Payload.ToArray()); } };
+                offerer.OnRtpPacketReceived += (ep, kind, pkt) => { if (kind == SDPMediaTypesEnum.audio) { atOfferer.Enqueue(pkt.Payload.ToArray()); } };
+                await offerer.Start();
+                await answerer.Start();
+
+                var payload = Enumerable.Range(0, 160).Select(i => (byte)i).ToArray();
+                var deadline = DateTime.UtcNow.AddSeconds(3);
+                while ((atAnswerer.IsEmpty || atOfferer.IsEmpty) && DateTime.UtcNow < deadline)
+                {
+                    offerer.SendAudio(160, payload);
+                    answerer.SendAudio(160, payload);
+                    await Task.Delay(20);
+                }
+
+                Assert.False(atAnswerer.IsEmpty, "No audio at the answerer.");
+                Assert.False(atOfferer.IsEmpty, "No audio at the offerer.");
+
+                offerer.Close("done");
+                answerer.Close("done");
             }
         }
 
