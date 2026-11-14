@@ -106,6 +106,19 @@ namespace SIPSorceryMedia.FFmpeg
         }
 
         /// <summary>
+        /// Encodes a raw image as <see cref="EncodeVideoFaster(RawImage, VideoCodecsEnum)"/> does, and writes the encoded
+        /// frame to <paramref name="output"/> as
+        /// <see cref="EncodeVideo(int, int, ReadOnlySpan{byte}, VideoPixelFormatsEnum, VideoCodecsEnum, IBufferWriter{byte})"/>
+        /// does. Used by <see cref="FFmpegVideoEndPoint"/>.
+        /// </summary>
+        /// <returns>The number of bytes written to <paramref name="output"/>, or 0 when the encoder produced no frame.</returns>
+        internal int EncodeVideoFaster(RawImage rawImage, VideoCodecsEnum codec, IBufferWriter<byte> output)
+        {
+            var sink = new BufferWriterPacketSink(output);
+            return EncodeVideoCore(rawImage.Width, rawImage.Height, (byte*)rawImage.Sample, rawImage.PixelFormat, codec, ref sink, out int bytesWritten) ? bytesWritten : 0;
+        }
+
+        /// <summary>
         /// Encodes a raw frame and writes the encoded frame to a buffer writer, straight from FFmpeg's packet, without
         /// the new array per frame that <see cref="EncodeVideo(int, int, byte[], VideoPixelFormatsEnum, VideoCodecsEnum)"/>
         /// returns.
