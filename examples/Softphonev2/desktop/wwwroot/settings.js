@@ -37,10 +37,15 @@ const CLOSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6
 
 // The foot of Settings: which build this is. The desktop host sets window.softphoneVersion
 // (MainForm): the app's version (the .csproj's <Version>), the SIPSorcery library's and the
-// commit it was built from. The browser build has no SIPSorcery in it, so it just says what it is.
+// commit it was built from. The browser build has no SIPSorcery in it, so it says what it is, and
+// the commit when the page that serves it sets window.softphoneVersion = { commit } (the
+// sipsorcery.com portal does, from the commit its image was built with).
 function versionText(web) {
   const v = window.softphoneVersion;
-  if (!v?.sipsorcery) return web ? "Softphone v2, browser build" : "Softphone v2";
+  if (!v?.sipsorcery) {
+    const what = web ? "Softphone v2, browser build" : "Softphone v2";
+    return /^[0-9a-f]{7,40}$/.test(v?.commit ?? "") ? `${what} · build ${v.commit}` : what;
+  }
   return `Softphone ${v.app || "v2"} · SIPSorcery ${v.sipsorcery}${v.commit ? ` · build ${v.commit}` : ""}`;
 }
 
