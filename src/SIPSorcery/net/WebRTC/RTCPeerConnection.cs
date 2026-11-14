@@ -980,11 +980,22 @@ namespace SIPSorcery.Net
 
                 // All browsers seem to have gone to trickling ICE candidates now but just
                 // in case one or more are given we can start the STUN dance immediately.
+                // The same candidate can be on more than one m= section (all of them bundled on the
+                // one transport, as SIPSorcery's own offers have it), so each is added once.
+                var remoteCandidatesAdded = new HashSet<string>(StringComparer.Ordinal);
+                void addRemoteSdpCandidate(string iceCandidate)
+                {
+                    if (remoteCandidatesAdded.Add(iceCandidate?.Trim() ?? string.Empty))
+                    {
+                        addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
+                    }
+                }
+
                 if (remoteSdp.IceCandidates != null)
                 {
                     foreach (var iceCandidate in remoteSdp.IceCandidates)
                     {
-                        addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
+                        addRemoteSdpCandidate(iceCandidate);
                     }
                 }
 
@@ -995,7 +1006,7 @@ namespace SIPSorcery.Net
                     {
                         foreach (var iceCandidate in media.IceCandidates)
                         {
-                            addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
+                            addRemoteSdpCandidate(iceCandidate);
                         }
                     }
 
@@ -1661,9 +1672,26 @@ namespace SIPSorcery.Net
                 // stream list is always ordered audio, video, text) so the candidates have to be
                 // placed on the BUNDLE-tag announcement rather than the first announcement that
                 // happens to get generated (issue #1763).
+                //
+                // An answer to a BUNDLE offer has them there only. An offer, or an answer to an
+                // offer without BUNDLE, has them on every m= section: they all share the one
+                // transport, and a peer that doesn't do BUNDLE (pjsip) reads each m= section on
+                // its own. With no candidates, the section's default (its c= and a=rtcp, the
+                // same transport) matches nothing, and pjsip, seeing a=rtcp, expects a second
+                // (RTCP) component and fails the call with "406 Failed creating media transport".
+                // A BUNDLE peer ignores the copies (RFC 8843 7.1.3), and setRemoteDescription
+                // drops the repeated candidates when SIPSorcery gets them.
                 if (!excludeIceCandidates)
                 {
-                    AddIceCandidates(bundledAnnouncements[0]);
+                    bool remoteBundled = RemoteDescription?.Group?.StartsWith(BUNDLE_ATTRIBUTE) == true;
+                    if (RemoteDescription == null || !remoteBundled)
+                    {
+                        bundledAnnouncements.ForEach(AddIceCandidates);
+                    }
+                    else
+                    {
+                        AddIceCandidates(bundledAnnouncements[0]);
+                    }
                 }
             }
 

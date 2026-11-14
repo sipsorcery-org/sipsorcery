@@ -11,7 +11,9 @@
 // with "406 Failed creating media transport": the 0.0.0.0:9 default matched
 // none of the candidates, so with "a=rtcp:9 IN IP4 0.0.0.0" pjsip expected a
 // second (RTCP) ICE component, which it had already dropped for rtcp-mux, and
-// asserted while encoding its answer.
+// asserted while encoding its answer. pjsip doesn't do BUNDLE, so it reads each
+// m= section on its own, and a bundled video section with no candidates of its
+// own failed the same way: every section in an offer carries the candidates.
 //
 // History:
 // 14 Nov 2026	Claude Code - Opus 5.5	Created.
@@ -20,7 +22,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Collections.Concurrent;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net.UnitTests.Helpers;
@@ -138,6 +142,98 @@ namespace SIPSorcery.Net.UnitTests
                 Assert.Matches(new Regex(@"^m=audio 9 ", RegexOptions.Multiline), audio);
                 Assert.Matches(new Regex(@"^c=IN IP4 0\.0\.0\.0\r?$", RegexOptions.Multiline), audio);
                 Assert.Matches(new Regex(@"^a=rtcp:9 IN IP4 0\.0\.0\.0\r?$", RegexOptions.Multiline), audio);
+            }
+        }
+
+        /// <summary>
+        /// Every m= section of an offer carries the same candidates, as a peer that doesn't do
+        /// BUNDLE (pjsip) reads each section on its own.
+        /// </summary>
+        [Fact]
+        public void Offer_EveryMediaLineCarriesTheCandidates()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            using (var pc = new PeerConnectionBuilder().WithAudioTrack().WithVideoTrack().Build())
+            {
+                var parsed = SdpAssert.Parse(pc.createOffer(new RTCOfferOptions()).sdp);
+
+                Assert.Equal(2, parsed.Media.Count);
+                Assert.NotEmpty(parsed.Media[0].IceCandidates);
+                foreach (var media in parsed.Media)
+                {
+                    Assert.Equal(parsed.Media[0].IceCandidates, media.IceCandidates);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A remote offer without BUNDLE (pjsip's): the answer has the candidates on every m= section.
+        /// </summary>
+        [Fact]
+        public void NonBundleRemoteOffer_AnswerCarriesCandidatesOnEveryMediaLine()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            const string offer =
+@"v=0
+o=- 4000 0 IN IP4 192.168.1.20
+s=-
+t=0 0
+m=audio 4000 UDP/TLS/RTP/SAVPF 0
+c=IN IP4 192.168.1.20
+a=rtcp-mux
+a=ice-ufrag:abcd
+a=ice-pwd:abcdefghijklmnopqrstuvwx
+a=fingerprint:sha-256 00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF
+a=setup:actpass
+a=candidate:1 1 UDP 2130706431 192.168.1.20 4000 typ host
+a=mid:0
+a=sendrecv
+a=rtpmap:0 PCMU/8000
+m=video 4002 UDP/TLS/RTP/SAVPF 96
+c=IN IP4 192.168.1.20
+a=rtcp-mux
+a=ice-ufrag:efgh
+a=ice-pwd:abcdefghijklmnopqrstuvwy
+a=fingerprint:sha-256 00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF
+a=setup:actpass
+a=candidate:1 1 UDP 2130706431 192.168.1.20 4002 typ host
+a=mid:1
+a=sendrecv
+a=rtpmap:96 VP8/90000";
+
+            using (var answerer = new PeerConnectionBuilder().WithAudioTrack().WithVideoTrack().Build())
+            {
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    answerer.setRemoteDescription(new RTCSessionDescriptionInit { type = RTCSdpType.offer, sdp = offer }));
+
+                var parsed = SdpAssert.Parse(answerer.createAnswer().sdp);
+
+                Assert.Equal(2, parsed.Media.Count);
+                Assert.All(parsed.Media, media => Assert.NotEmpty(media.IceCandidates));
+            }
+        }
+
+        /// <summary>
+        /// An offer with the same candidates on each m= section: the answerer adds each remote
+        /// candidate once, not once per section.
+        /// </summary>
+        [Fact]
+        public void RemoteOfferWithRepeatedCandidates_AddsEachOnce()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            using (var offerer = new PeerConnectionBuilder().WithAudioTrack().WithVideoTrack().Build())
+            using (var answerer = new PeerConnectionBuilder().WithAudioTrack().WithVideoTrack().Build())
+            {
+                Assert.Equal(SetDescriptionResultEnum.OK, answerer.setRemoteDescription(offerer.createOffer(new RTCOfferOptions())));
+
+                var iceChannel = typeof(RTCPeerConnection).GetField("_rtpIceChannel", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(answerer);
+                var remote = (ConcurrentBag<RTCIceCandidate>)iceChannel.GetType().GetField("_remoteCandidates", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(iceChannel);
+
+                Assert.NotEmpty(remote);
+                Assert.Equal(remote.Count, remote.Select(c => c.ToString()).Distinct().Count());
             }
         }
 
