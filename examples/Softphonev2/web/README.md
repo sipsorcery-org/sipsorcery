@@ -145,14 +145,14 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   ringing, answer, decline, cancel, hang up, the SIP log (F12).
 - **The privacy switch**, *Block Audio and Video Devices* (the block sign, top right, just left of Settings: click to arm, click again; or `Shift+M`): every call muted with its
   camera off, new calls too, until you press it again, unmute a call or turn a camera on. Never
-  remembered. See the [desktop README](../desktop/README.md#the-privacy-switch).
+  remembered. See the [desktop design notes](../desktop/DESIGN.md#the-privacy-switch).
 - **Settings** (the gear, top right): the desktop page's own (see the desktop README), kept in
   this browser's `localStorage` (`softphonev2.settings`, and `devices` and `selfView` as before;
   `selfViewBox` is where you've dragged the self view and how large, as in the desktop README).
   Devices, theme, Gravatar pictures and a button for diagnostics, handy since a browser may keep
   F12 for its own tools. (Who you are is the account button's, at the top.) The speaker list is hidden where the browser can't pick one
   (no `setSinkId`). Device names show once the page has had the microphone or camera.
-- **Several calls at once**, as on the desktop (see the [desktop README](../desktop/README.md#several-calls)):
+- **Several calls at once**, as on the desktop (see the [desktop design notes](../desktop/DESIGN.md#several-calls)):
   each call is a SIP.js session with its own record in `host.js` and its own connection on the
   page (`new RTCPeerConnection({ callId })`, which the wrapper uses to tell them apart), and
   messages about a call carry its id. An incoming call rings alongside the others (486 only
@@ -163,9 +163,9 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   sends re-INVITEs instead, one at a time per call, as on the desktop. When the far end holds
   us with a re-INVITE, the browser's connection is recvonly, so unlike the desktop nothing is
   sent until they resume.
-- The **Active calls** panel down the left (see the [desktop README](../desktop/README.md#active-calls)):
+- The **Active calls** panel down the left (see the [desktop design notes](../desktop/DESIGN.md#active-calls)):
   every call, shown with two or more calls (a rail on narrow windows).
-- **Focus and grid views**, the desktop page's (see the [desktop README](../desktop/README.md#focus-and-grid-views)):
+- **Focus and grid views**, the desktop page's (see the [desktop design notes](../desktop/DESIGN.md#focus-and-grid-views)):
   the Grid button under the calls, or G, remembered.
 - **A call it can't take doesn't ring.** A browser can only answer a WebRTC offer, so an
   incoming offer with no DTLS-SRTP m-line (an ordinary SIP phone's RTP/AVP) is turned down
@@ -197,7 +197,7 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   the same `RTCPeerConnection` wrapper as Call quality. Every 5 s with loss on, the log says how
   many frames were dropped. In a browser without `RTCRtpScriptTransform` the sliders are off.
 - **The call info** is the desktop's (the page is shared): a header across the top of the stage
-  on a connected call (see the [desktop README](../desktop/README.md#call-details)), and the
+  on a connected call (see the [desktop design notes](../desktop/DESIGN.md#call-details)), and the
   call's details are a Diagnostics tab, *Call details*.
 - **Call quality** works as on the desktop, in its own Diagnostics tab, with both directions' graphs. There the host reads the far end's RTCP on the SIP
   leg; here the page's own `RTCPeerConnection` is the media leg and the browser reads their

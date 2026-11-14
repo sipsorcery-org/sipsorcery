@@ -557,7 +557,11 @@ public sealed class Phone : IDisposable
 
     private async Task DialAsync(Call c, bool video)
     {
-        for (int attempt = 1; ; attempt++)
+        // Turned down for its media, the call is placed again with other media, each change at most
+        // once: on to RTP/SAVP (after a bare 488 to plain RTP), and over to the other kind of media
+        // (WebRTC or plain RTP). So at most three INVITEs. A contact's media (MediaSet) never changes.
+        bool switchedKind = false;
+        while (true)
         {
             var (ua, rtp) = (c.Ua!, c.Rtp!);
             var (ok, failure, response) = await CallOnceAsync(c, ua, rtp);
@@ -565,15 +569,14 @@ public sealed class Phone : IDisposable
 
             lock (_lock)
             {
-                // Still ours to retry: nobody hung up meanwhile. At most once to RTP/SAVP, and once
-                // to the other kind of media after the first offer or the RTP/SAVP one.
+                bool stillOurs = c.Ua == ua && c.State == CallState.Calling;   // nobody hung up meanwhile
                 bool toSavp = !c.WebRtc && !c.RequireSrtp && _settings.OfferSrtp && IsBare488(response);
-                if (!c.MediaSet && (toSavp || attempt == 1 || (attempt == 2 && c.RequireSrtp)) &&
-                    c.Ua == ua && c.State == CallState.Calling && WantsOtherMedia(response, c.WebRtc))
+                bool changeLeft = toSavp || !switchedKind;
+                if (!c.MediaSet && stillOurs && changeLeft && WantsOtherMedia(response, c.WebRtc))
                 {
                     string tried = MediaKind(c);
                     if (toSavp) c.RequireSrtp = true;
-                    else c.WebRtc = !c.WebRtc;
+                    else { c.WebRtc = !c.WebRtc; switchedKind = true; }
                     var why = response!.StatusCode == 406 ? response.ReasonPhrase
                         : response.Header.Warning ?? (string.IsNullOrWhiteSpace(response.Body) ? "no reason given" : "their SDP");
                     Log?.Invoke($"they can't take {tried} media ({response.StatusCode}, {why}); calling again with {MediaKind(c)}");

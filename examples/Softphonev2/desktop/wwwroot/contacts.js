@@ -1,5 +1,5 @@
-// Contacts: names for SIP addresses, for the address field's suggestions (app.js, "Address field
-// suggestions"), and the People view's Contacts tab that edits them.
+// Contacts: names for SIP addresses, for the address field's suggestions (address.js), and the
+// People view's Contacts tab that edits them.
 //
 // The desktop host keeps them per profile (contacts-{profile}.json beside the accounts) and sends
 //   contacts {contacts: [{name, uri, account?, media?}]}
