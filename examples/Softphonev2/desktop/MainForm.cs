@@ -16,8 +16,9 @@ namespace SIPSorcery.Softphone;
 /// changes), media-offer (again when video is added), media-health, quality (RTCP reception
 /// reports, for diagnostics), details, text, video-refused, account-saved, account-error, log.
 /// Messages about one call carry its <c>id</c>. Contacts (the address field's
-/// suggestions): contact-save {name, uri, account?} and contact-remove from the page, contacts
-/// {contacts: [{name, uri, account?}]} to it.
+/// suggestions): contact-save {name, uri, account?, media?} and contact-remove from the page, contacts
+/// {contacts: [{name, uri, account?, media?}]} to it. dial {address, video, account?, media?}: media
+/// is the contact's (Contacts.cs ContactMedia), when it has one.
 /// </summary>
 internal sealed class MainForm : Form
 {
@@ -215,7 +216,7 @@ internal sealed class MainForm : Form
                     // Call back from History says which account the call was on, if it's still
                     // there and enabled; otherwise the call goes from Call from's account.
                     var from = _accounts.Find((string?)msg["account"]) is { Enabled: true } back ? back.Id : _accounts.SelectedId;
-                    _phone.Dial((string)msg["address"]!, (bool?)msg["video"] ?? false, from);
+                    _phone.Dial((string)msg["address"]!, (bool?)msg["video"] ?? false, from, ContactMedia.Parse((string?)msg["media"]));
                     break;
                 case "history-remove":
                     WriteLog($"history: removed {_history.Remove(Ids(msg))} call(s)");
@@ -298,8 +299,9 @@ internal sealed class MainForm : Form
                     _phone.SetLoss((int?)msg["audio"] ?? 0, (int?)msg["video"] ?? 0);
                     break;
                 case "contact-save":
-                    // account: the SIP account to call them from (its id), or none for Call from's.
-                    _contacts.Save((string?)msg["name"] ?? "", (string)msg["uri"]!, (string?)msg["account"]);
+                    // account: the SIP account to call them from (its id), or none for Call from's;
+                    // media: what to offer them (ContactMedia), or none to work it out.
+                    _contacts.Save((string?)msg["name"] ?? "", (string)msg["uri"]!, (string?)msg["account"], (string?)msg["media"]);
                     PostContacts();
                     break;
                 case "contact-remove":
@@ -412,6 +414,9 @@ internal sealed class MainForm : Form
                 id = c.Id,
                 call = c.State.ToString().ToLowerInvariant(),
                 remote = c.Remote,
+                // The call's account, or null for a direct call: the page shows the address short
+                // with an account (the user part on its domain) and in full without.
+                account = c.Account?.Aor,
                 reason = c.EndReason,
                 outgoing = c.Outgoing,
                 incomingVideo = c.IncomingVideo,

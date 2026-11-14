@@ -55,6 +55,13 @@ public sealed class Phone : IDisposable
         public string TextState { get; internal set; } = "off";
         /// <summary>The call is with a browser phone (SIP over WebSocket), so its media is WebRTC.</summary>
         public bool WebRtc { get; internal set; }
+        /// <summary>
+        /// Our plain RTP offer requires SRTP (RTP/SAVP with SDES keys), rather than offering the keys
+        /// on RTP/AVP: tried when a phone that requires SRTP turns the RTP/AVP offer down.
+        /// </summary>
+        internal bool RequireSrtp { get; set; }
+        /// <summary>The media was set for the call (a contact's), so a refusal isn't retried with another kind.</summary>
+        internal bool MediaSet { get; set; }
         /// <summary>When it was placed, or started ringing (or, after a transfer, joined to whoever it's with now).</summary>
         public DateTime StartedAt { get; internal set; } = DateTime.Now;
         /// <summary>When it was answered; null if it never was.</summary>
@@ -509,9 +516,16 @@ public sealed class Phone : IDisposable
     /// leaves video out (it can be added later). Returns the new call at once, or null if there
     /// are already <see cref="MaxCalls"/>; the INVITE goes on in the background. If they turn the
     /// offer down because of its media profile (see <see cref="WantsOtherMedia"/>), it's placed
-    /// once more straight away with the other kind: WebRTC instead of plain RTP, or the other way round.
+    /// again straight away with the other kind: WebRTC instead of plain RTP, or the other way round.
+    /// A bare 488 to plain RTP with SDES keys on RTP/AVP is first tried once more with them on
+    /// RTP/SAVP: a phone that requires SRTP (MicroSIP, pjsip, with SRTP mandatory) turns down
+    /// RTP/AVP whatever keys it carries. That has to come before WebRTC for such a phone, as
+    /// pjsip doesn't do BUNDLE: it answers a WebRTC offer with an ICE and DTLS session per m-line,
+    /// of which our one bundled transport only ever completes the first, so there's no video.
+    /// <paramref name="media"/> (a contact's, <see cref="ContactMedia"/>) skips all that: the
+    /// first INVITE offers it, and a refusal ends the call.
     /// </summary>
-    public Call? Dial(string typed, bool video, string? accountId)
+    public Call? Dial(string typed, bool video, string? accountId, string? media = null)
     {
         Call c;
         lock (_lock)
@@ -526,6 +540,13 @@ public sealed class Phone : IDisposable
             // call with --webrtc. Otherwise plain RTP, and a browser behind a server says so with
             // a 488 (see WantsOtherMedia).
             c.WebRtc = IsWebSocketUri(c.Remote) || _settings.WebRtcCalls;
+            if (media != null)
+            {
+                c.MediaSet = true;
+                c.WebRtc = media == ContactMedia.WebRtc;
+                c.RequireSrtp = media == ContactMedia.Srtp;
+                Log?.Invoke($"calling with {MediaKind(c)} media, as set for the contact");
+            }
             c.Ua = NewUserAgent(c);
             c.Rtp = NewSession(c, video && _settings.OfferVideo);
             SetState(c, CallState.Calling);
@@ -544,11 +565,18 @@ public sealed class Phone : IDisposable
 
             lock (_lock)
             {
-                // Still ours to retry: nobody hung up meanwhile.
-                if (attempt == 1 && c.Ua == ua && c.State == CallState.Calling && WantsOtherMedia(response, c.WebRtc))
+                // Still ours to retry: nobody hung up meanwhile. At most once to RTP/SAVP, and once
+                // to the other kind of media after the first offer or the RTP/SAVP one.
+                bool toSavp = !c.WebRtc && !c.RequireSrtp && _settings.OfferSrtp && IsBare488(response);
+                if (!c.MediaSet && (toSavp || attempt == 1 || (attempt == 2 && c.RequireSrtp)) &&
+                    c.Ua == ua && c.State == CallState.Calling && WantsOtherMedia(response, c.WebRtc))
                 {
-                    c.WebRtc = !c.WebRtc;
-                    Log?.Invoke($"they can't take {(c.WebRtc ? "plain RTP" : "WebRTC")} media (488, {response!.Header.Warning ?? (string.IsNullOrWhiteSpace(response.Body) ? "no reason given" : "their SDP")}); calling again with {(c.WebRtc ? "WebRTC" : "plain RTP")}");
+                    string tried = MediaKind(c);
+                    if (toSavp) c.RequireSrtp = true;
+                    else c.WebRtc = !c.WebRtc;
+                    var why = response!.StatusCode == 406 ? response.ReasonPhrase
+                        : response.Header.Warning ?? (string.IsNullOrWhiteSpace(response.Body) ? "no reason given" : "their SDP");
+                    Log?.Invoke($"they can't take {tried} media ({response.StatusCode}, {why}); calling again with {MediaKind(c)}");
                     rtp.Close("retrying with other media");
                     c.Ua = NewUserAgent(c);
                     c.Rtp = NewSession(c, video && _settings.OfferVideo);
@@ -581,6 +609,8 @@ public sealed class Phone : IDisposable
             string said = resp != null ? $"{resp.StatusCode} {resp.ReasonPhrase}" : "";
             failure = resp is { StatusCode: >= 200 and < 300 } ? "Their answer's media doesn't match ours"
                 : resp is { Status: SIPResponseStatusCodesEnum.NotAcceptableHere } ? "They can't take this call's media (488)"
+                : resp is { StatusCode: 406 } && string.Equals(resp.ReasonPhrase?.Trim(), FailedMediaTransport, StringComparison.OrdinalIgnoreCase)
+                    ? "They can't take this call's media (406)"
                 : resp != null && ringing is { } r && resp.StatusCode is 408 or 480 or 487
                     ? $"Not answered: rang for {(DateTime.Now - r).TotalSeconds:0} s, then the far end said {said}"
                 : resp != null ? $"The far end said {said}" : err;
@@ -611,9 +641,23 @@ public sealed class Phone : IDisposable
     /// web softphone sends both when it gets a plain RTP offer. A bare 488, with neither (a server
     /// on the way may drop them), is retried too: one more INVITE is all it costs if it was the
     /// codecs. Any other 488 isn't retried.
+    /// Also <c>406 Failed creating media transport</c>: what sipsorcery.com's server says when it
+    /// can't set up the media our offer asked for (a browser's DTLS-SRTP, or plain RTP to one), so
+    /// the other kind might work. Any other 406 isn't retried.
     /// </summary>
+    private const string FailedMediaTransport = "Failed creating media transport";
+
+    /// <summary>The kind of media a call offers, for the log.</summary>
+    private static string MediaKind(Call c) => c.WebRtc ? "WebRTC" : c.RequireSrtp ? "SRTP (RTP/SAVP)" : "plain RTP";
+
+    /// <summary>A 488 with no Warning and no SDP: no say in what was wrong with our offer.</summary>
+    private static bool IsBare488(SIPResponse? resp) =>
+        resp is { Status: SIPResponseStatusCodesEnum.NotAcceptableHere } &&
+        string.IsNullOrWhiteSpace(resp.Header.Warning) && string.IsNullOrWhiteSpace(resp.Body);
+
     private static bool WantsOtherMedia(SIPResponse? resp, bool offeredWebRtc)
     {
+        if (resp is { StatusCode: 406 } && string.Equals(resp.ReasonPhrase?.Trim(), FailedMediaTransport, StringComparison.OrdinalIgnoreCase)) return true;
         if (resp is not { Status: SIPResponseStatusCodesEnum.NotAcceptableHere }) return false;
         var warning = resp.Header.Warning;
         if (warning is { } w && System.Text.RegularExpressions.Regex.IsMatch(w, @"(^|,)\s*302\s")) return true;
@@ -1413,7 +1457,7 @@ public sealed class Phone : IDisposable
         // SRTP whenever we can: a phone that requires it offers RTP/SAVP, which plain RTP can't
         // answer, so take it even with --no-srtp.
         bool srtp = _settings.OfferSrtp || (theirOffer != null && OffersSavp(theirOffer));
-        var rtp = MediaRelay.CreateSipSession(video, c.WebRtc, srtp);
+        var rtp = MediaRelay.CreateSipSession(video, c.WebRtc, srtp, requireSrtp: theirOffer == null && c.RequireSrtp);
         // Who's sending, per kind: a transfer needs the old far end's sources (ForgetOldSources).
         rtp.OnRtpPacketReceived += (_, kind, pkt) => { if (c.Rtp == rtp) c.Sources[kind] = pkt.Header.SyncSource; };
         if (rtp is TextPeerConnection pc)

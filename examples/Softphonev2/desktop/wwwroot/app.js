@@ -25,7 +25,7 @@
 // nothing. When a call ends, nothing resumes on its own: a held call stays held, with Resume.
 // An incoming call while you're on one shows as a banner, with Answer & hold current or Decline.
 
-import { initAccounts, onAccountsState, onAccountMessage, closeAccounts, useAccount, accountName } from "./accounts.js";
+import { initAccounts, onAccountsState, onAccountMessage, closeAccounts, useAccount, accountName, accountList } from "./accounts.js";
 import { initHistory, onHistoryMessage, onHistoryState, closeHistory, historyEntries, openPeople } from "./history.js";
 import { prefs, savePref, initSettings } from "./settings.js";
 import { initSelfView } from "./selfview.js";
@@ -403,6 +403,51 @@ function plainAddress(remote) {
   const m = /^(.*<)([^>]*)>/.exec(remote);
   return m ? `${m[1]}${strip(m[2])}>` : strip(remote.trim());
 }
+// Addresses with an account and without. With an account a call goes to its server, which works
+// out where it goes from the name or number, so a sip: scheme and a domain say nothing: the
+// address bar takes just the name or number (no ":" or "@"), and an address on the account's
+// domain shows as its user part. Full SIP addresses are for calling another phone directly: the
+// desktop's no-account mode (Call from: none), the only time there's no server to go through.
+// The web softphone sends no account list, and always has its account.
+const directMode = () => Array.isArray(state.accounts) && !state.account;
+// "alice@sipsorcery.com" (an account's address of record) -> "sipsorcery.com".
+const domainOf = (aor) => (aor ? aor.slice(aor.lastIndexOf("@") + 1).replace(/:\d+$/, "").toLowerCase() : null);
+// "sip:alice@sipsorcery.com" (or "Alice <sip:alice@sipsorcery.com:5060;transport=tcp>") -> "alice",
+// when it's on the domain of aor (by default the account calls go out from); otherwise null.
+function userOnDomain(uri, aor = state.account) {
+  const domain = domainOf(aor);
+  const m = /^(?:[^<]*<)?\s*(?:sips?:)?([^@:;<>\s]+)@([^;?>\s]+)/i.exec(uri ?? "");
+  return m && domain && m[2].replace(/:\d+$/, "").toLowerCase() === domain ? m[1] : null;
+}
+// An address as a call shows it (the stage's card, the call header, the suggestions). With an
+// account: the user part on the account's domain, user@host on another, never "sip:".
+// aor: the call's account; null for a direct call (the address as it is, less its parameters).
+function shownAddress(remote, aor = state.account) {
+  const plain = plainAddress(remote);
+  if (!aor) return plain;
+  const m = /^(.*<)([^>]*)(>.*)$/.exec(plain);
+  const uri = m ? m[2] : plain;
+  const short = userOnDomain(uri, aor) ?? uri.replace(/^sips?:/i, "");
+  return m ? `${m[1]}${short}${m[3]}` : short;
+}
+// What goes in an address field for a saved or recent address: its user part when that's all
+// the account needs (an address elsewhere goes in whole: you saved it, so it's still callable).
+const fieldText = (uri) => (directMode() ? uri : userOnDomain(uri) ?? uri);
+// What's in an address field as an address, to match against contacts and calls: a bare name or
+// number, with an account, is that user at the account's domain (as the host dials it).
+function fieldUri(text) {
+  text = (text ?? "").trim();
+  const domain = domainOf(state.account);
+  return !text || directMode() || !domain || /[:@]/.test(text) ? text : `sip:${text}@${domain}`;
+}
+// The address fields' hint (placeholder), by mode. Short enough for a phone's field.
+const addressHint = () => (directMode() ? "Name, number or SIP address, e.g. sip:alice@192.168.0.20" : "Name or number");
+// Where full SIP addresses are, with an account: the desktop's No account (direct) in Call from.
+// The web softphone has no such mode (no account list), so it says nothing more.
+const directNote = () => (Array.isArray(state.accounts) ? "For a full SIP address, set Call from to No account (direct)." : "");
+// The address fields' tooltip: the hint, and with an account on the desktop, where full addresses are.
+const addressTip = () => (directMode() ? "" : [`Just a name or number: calls go through ${domainOf(state.account) ?? "the account's server"}.`, directNote()].filter(Boolean).join(" "));
+
 // The saved-contact mark (contactmark.js) after a call's name or address, if it's a contact.
 function markContact(node, remote) {
   const c = remote ? contactFor(remote) : null;
@@ -1694,9 +1739,9 @@ function startTransfer(how) {
 function transferToAddress(it = null) {
   const typed = $("xferAddr").value.trim();
   // A row picked into the field (and not edited since) goes with its name.
-  if (!it && xferField.pick && sameUri(xferField.pick.uri, typed)) it = xferField.pick;
+  if (!it && xferField.pick && (sameUri(xferField.pick.uri, typed) || fieldText(xferField.pick.uri) === typed)) it = xferField.pick;
   if (it) startTransfer({ address: it.uri, label: it.name });
-  else if (typed) startTransfer({ address: typed, label: contactFor(typed)?.name ?? null });
+  else if (typed) startTransfer({ address: typed, label: contactFor(fieldUri(typed))?.name ?? null });
 }
 // A transfer, in a few words, for the call header's one line and the call's row: what's
 // happening now. Who it's with is already in the header (whose call it is), so it names the other
@@ -2047,9 +2092,11 @@ function render() {
   // New calls go alongside the others, up to the host's limit.
   const full = callsFull();
   $("address").disabled = full;
+  $("address").placeholder = $("xferAddr").placeholder = addressHint();
+  $("address").title = $("xferAddr").title = addressTip();
   $("info").hidden = phase !== "connected";
   $("stage").classList.toggle("head", phase === "connected");
-  const shown = plainAddress(remote);
+  const shown = shownAddress(remote, e ? e.h.account ?? null : state.account);
   renderInfoLock();
   // The call header: a saved contact's name on top (with the mark), the address under it with
   // the timer, as a phone's call screen has it; otherwise the address on top.
@@ -2208,9 +2255,11 @@ function render() {
     heldNote.classList.toggle("long", state.held && Date.now() - e.heldAt > 60000);
     $("heldResume").hidden = !state.held;
   }
+  // End is for a connected call. A call you're placing is cancelled from its card, beside who
+  // you're calling, as a call ringing in is declined from its card.
   const hang = $("hangupBtn");
-  hang.disabled = phase !== "calling" && phase !== "connected";
-  setBtn(hang, ICON.hangup, phase === "calling" ? "Cancel" : "End");
+  hang.disabled = phase !== "connected";
+  setBtn(hang, ICON.hangup, "End");
   for (const b of [$("micMenuBtn"), $("camMenuBtn")]) if (!b.innerHTML) b.innerHTML = ICON.chevronDown;
 
   // The card: everything but a connected call.
@@ -2227,9 +2276,10 @@ function render() {
         sub.textContent = `${state.account} isn't registered: ${state.registrationDetail || "no reason given"}.`;
       break;
     case "calling":
-      title.textContent = remote;
+      title.textContent = shown;
       markContact(title, remote);
       sub.textContent = "Calling…";
+      actions.append(button("btn-danger", "Cancel", () => post({ type: "hangup", id: selectedId })));
       break;
     case "ringing": {
       if (ringingUnpicked()) {
@@ -2238,7 +2288,7 @@ function render() {
         sub.textContent = "Answer one above, or pick a name to see that call.";
         break;
       }
-      title.textContent = remote;
+      title.textContent = shown;
       markContact(title, remote);
       sub.textContent = state.incomingVideo ? "Incoming video call" : "Incoming call";
       actions.append(button("btn-danger", "Decline", () => post({ type: "decline", id: selectedId })));
@@ -2249,12 +2299,12 @@ function render() {
       break;
     }
     case "connected":
-      title.textContent = remote;
+      title.textContent = shown;
       markContact(title, remote);
       sub.textContent = "Connecting media…";
       break;
     case "ended": {
-      title.textContent = remote || "Call ended";
+      title.textContent = shown || "Call ended";
       sub.textContent = reason || "Call ended";
       const back = otherLive();
       if (back) actions.append(button("", `Back to ${nameOf(back)}`, () => selectCall(back.id)));
@@ -2867,12 +2917,14 @@ $("callsToggle").onclick = () => {
 
 $("dialForm").addEventListener("submit", (e) => {
   e.preventDefault();
-  const address = $("address").value.trim();
+  const typed = $("address").value.trim();
   // A contact's address (typed, pasted, or picked from the list or the Contacts tab) calls from
   // the contact's account; a recent call picked from the list, from the account that call used.
-  const pick = dial.pick && sameUri(dial.pick.uri, address) ? dial.pick : null;
+  // A row picked (and not edited since) shows in the field as its user part: it calls its address.
+  const pick = dial.pick && (sameUri(dial.pick.uri, typed) || fieldText(dial.pick.uri) === typed) ? dial.pick : null;
   dial.pick = null;
-  const c = contactFor(address);
+  const address = pick ? pick.uri : typed;
+  const c = contactFor(pick ? pick.uri : fieldUri(typed));
   placeCall(address, c ? c.account : pick?.account, c?.name);
 });
 // A call answered (ours, or theirs to one we placed) empties the address bar, so it's ready for
@@ -2882,7 +2934,7 @@ function clearAddressOnAnswer(e) {
   const input = $("address");
   const text = input.value.trim();
   if (!text) return;
-  if (document.activeElement === input && text !== lastDialled && !sameUri(text, e.h.remote)) return;
+  if (document.activeElement === input && text !== lastDialled && !sameUri(text, lastDialled) && !sameUri(fieldUri(text), e.h.remote)) return;
   input.value = "";
   dial.pick = null;
   dial.close();
@@ -2892,7 +2944,8 @@ function clearAddressOnAnswer(e) {
 
 // Call, or Call back from History. account: the one to call from (a contact's, or the one that
 // call was on): Call from switches to it first, so it shows what's used, unless it's been removed
-// or disabled, when the call goes from Call from's account and a note says so. People closes, so
+// or disabled, when the call goes from Call from's account and a note says so. A contact's media
+// (desktop only: contacts.js) goes with the call, so the host offers just that. People closes, so
 // the stage shows how the call's going.
 function placeCall(address, account = null, who = null) {
   if (!address) return;
@@ -2905,7 +2958,8 @@ function placeCall(address, account = null, who = null) {
   // A new call holds the one you're on, now that you've pressed Call (the new one goes on the
   // stage when the host reports it).
   holdOthers(null);
-  post({ type: "dial", address, video: state.videoAllowed !== false && callType === "video", ...(account ? { account } : {}) });
+  const media = (contactFor(address) ?? contactFor(fieldUri(address)))?.media;
+  post({ type: "dial", address, video: state.videoAllowed !== false && callType === "video", ...(account ? { account } : {}), ...(media ? { media } : {}) });
   // If the call never starts (a bad address, say), don't leave the microphone open.
   setTimeout(() => { if (!liveEntries().length) closeMic(); }, 5000);
 }
@@ -3036,7 +3090,7 @@ function suggestions(typed, { skip = null, foot = true } = {}) {
     // The way to the Contacts tab; not while filtering by name, so a name that matches nothing
     // closes the list, as in the prototype.
     if (!typed) items.push({ group: "", action: "manage" });
-    else if (looksLikeAddress(typed) && !contactFor(typed)) items.push({ group: "", action: "add", uri: typed });
+    else if (looksLikeAddress(typed) && !contactFor(fieldUri(typed))) items.push({ group: "", action: "add", uri: fieldUri(typed) });
   }
   return items;
 }
@@ -3085,7 +3139,7 @@ function addressField({ input, list, clear, badge, idPrefix, popup, foot, goIcon
   // the clear (×) button, shown while there's any text.
   f.renderBadge = () => {
     const value = input.value;
-    const c = contactFor(value.trim());
+    const c = contactFor(fieldUri(value));
     badge.hidden = !c;
     clear.hidden = !value;
     wrap.classList.toggle("has-text", !!value);
@@ -3107,7 +3161,7 @@ function addressField({ input, list, clear, badge, idPrefix, popup, foot, goIcon
       const cls = `suggest-item${i === active ? " active" : ""}`;
       const attrs = `role="option" id="${idPrefix}-${i}" aria-selected="${i === active}" data-idx="${i}"`;
       if (it.action) {
-        const text = it.action === "add" ? `Add <b>${escHtml(it.uri)}</b> to contacts…` : "Contacts…";
+        const text = it.action === "add" ? `Add <b>${escHtml(shownAddress(it.uri))}</b> to contacts…` : "Contacts…";
         return `<div class="${cls} suggest-foot" ${attrs}>${SUGGEST_ICON.addContact}<span class="suggest-foot-text">${text}</span></div>`;
       }
       const head = it.group !== group
@@ -3119,7 +3173,7 @@ function addressField({ input, list, clear, badge, idPrefix, popup, foot, goIcon
       const label = it.contact ? `Remove ${it.name} from contacts` : `Add ${it.name} to contacts`;
       return `${head}<div class="${cls}${it.contact ? " is-contact" : ""}" ${attrs}>
         <span class="suggest-avatar" aria-hidden="true"${avatarAttr(it.uri)}>${escHtml(initial(it.name))}</span>
-        <span class="suggest-main"><span class="suggest-name">${escHtml(it.name)}${it.contact ? contactMark(it.name) : ""}</span><span class="suggest-uri">${escHtml(it.uri)}${fromLabel(it)}</span></span>
+        <span class="suggest-main"><span class="suggest-name">${escHtml(it.name)}${it.contact ? contactMark(it.name) : ""}</span><span class="suggest-uri" title="${escHtml(plainAddress(it.uri))}">${escHtml(shownAddress(it.uri))}${fromLabel(it)}</span></span>
         ${meta}
         <button type="button" class="suggest-contact" tabindex="-1" data-contact="${it.contact ? "remove" : "add"}" data-idx="${i}"
           title="${escHtml(label)}" aria-label="${escHtml(label)}">${it.contact ? SUGGEST_ICON.removeContact : SUGGEST_ICON.addContact}</button>
@@ -3139,7 +3193,7 @@ function addressField({ input, list, clear, badge, idPrefix, popup, foot, goIcon
       openContacts(it.action === "add" ? { name: "", uri: it.uri } : null);
       return;
     }
-    input.value = it.uri;
+    input.value = fieldText(it.uri);
     f.pick = it;
     if (popup) f.close(); else f.refresh();
     input.focus();
@@ -3150,7 +3204,29 @@ function addressField({ input, list, clear, badge, idPrefix, popup, foot, goIcon
     input.addEventListener("focus", () => f.refresh());
     input.addEventListener("blur", () => setTimeout(f.close, 0));
   }
-  input.addEventListener("input", () => f.refresh());
+  // With an account, just a name or number (see directMode). A ":" or "@" typed is refused, with
+  // the field's validation bubble saying why; a pasted or dropped address on the account's domain
+  // goes in as its user part, and one elsewhere is refused too.
+  let hintTimer = 0;
+  const clearHint = () => { clearTimeout(hintTimer); input.setCustomValidity(""); };
+  // (The forms are novalidate: the bubble explains, and never stops Call or Transfer.)
+  input.addEventListener("beforeinput", (e) => {
+    if (!e.data || !/[:@]/.test(e.data) || directMode()) return;
+    e.preventDefault();
+    const user = e.inputType !== "insertText" ? userOnDomain(e.data.trim()) : null;
+    if (user) {
+      input.setRangeText(user, input.selectionStart ?? input.value.length, input.selectionEnd ?? input.value.length, "end");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      return;
+    }
+    const domain = domainOf(state.account);
+    input.setCustomValidity([domain ? `Just the name or number: calls go through ${domain}.` : "Just the name or number.", directNote()].filter(Boolean).join(" "));
+    input.reportValidity();
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(clearHint, 4000);
+  });
+  input.addEventListener("blur", clearHint);
+  input.addEventListener("input", () => { clearHint(); f.refresh(); });
   input.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
@@ -3235,12 +3311,18 @@ initContacts({
   call(uri) {
     const blocked = callBlocked();
     if (blocked) { log(`not calling ${uri}: ${blocked}`); return; }
-    $("address").value = uri;
+    $("address").value = fieldText(uri);
+    dial.pick = { uri, name: contactFor(uri)?.name ?? null, account: contactFor(uri)?.account ?? null };
     syncCallBtn();
     $("dialForm").requestSubmit();
   },
   changed() { refreshAddressFields(); render(); },
   openPeople,
+  // The contact form's address follows the same rules as the address bar (see directMode).
+  addressMode: () => ({ direct: directMode(), aor: state.account ?? null,
+    name: accountList()?.find((a) => a.id === state.accountId)?.name ?? null }),
+  userOnDomain,
+  shownAddress,
 });
 // / anywhere but a text field goes to the address field, which opens the list.
 document.addEventListener("keydown", (e) => {

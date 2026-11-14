@@ -2,18 +2,20 @@
 :root {
   --page: #e9edeb; --surface: #ffffff; --surface-2: #f4f6f5; --surface-3: #eef2f0; --border: #dde4e1; --border-strong: #c9d3cf;
   --text: #1b2925; --muted: #677670; --accent: #1f6f5c; --accent-hover: #185a4a; --accent-ink: #ffffff;
-  --ok: #2f8a6c; --warn-ink: #8a5a12; --warn-bg: #fbf1df; --danger: #b3354e; --danger-soft: #fbe8ec; --danger-border: #f3cbd4; --tile: #dcebe3; --tile-ink: #5b7268;
+  --ok: #2f8a6c; --warn-ink: #8a5a12; --warn-bg: #fbf1df; --danger: #b3354e; --danger-soft: #fbe8ec; --danger-border: #f3cbd4; --danger-fill: #b3354e; --tile: #dcebe3; --tile-ink: #5b7268;
   --seg-on: #ffffff;   /* a segmented control's chosen option: raised, not coloured */
   --thumb: #ffffff;    /* a slide switch's thumb */
   --radius: 12px; --radius-sm: 8px;
   color-scheme: light;
 }
+/* --danger is red text and lines; --danger-fill is a red to put white text on (End, Decline,
+   badges). In the dark theme they differ: the text red is a lighter pink, too pale to fill with. */
 /* Dark: the system's choice, unless Settings picks a theme (data-theme on <html>). */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --page: #0f1513; --surface: #171f1c; --surface-2: #1c2622; --surface-3: #212c28; --border: #2a3632; --border-strong: #37453f;
     --text: #e4ece8; --muted: #9aa9a3; --accent: #3ea486; --accent-hover: #4bb594; --accent-ink: #06130f;
-    --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --danger-border: #5a2c37; --tile: #1f3a31; --tile-ink: #a9c2b8;
+    --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --danger-border: #5a2c37; --danger-fill: #cf3a55; --tile: #1f3a31; --tile-ink: #a9c2b8;
     --seg-on: #33423c;
     --thumb: #c9d6d0;
     color-scheme: dark;
@@ -22,7 +24,7 @@
 :root[data-theme="dark"] {
   --page: #0f1513; --surface: #171f1c; --surface-2: #1c2622; --surface-3: #212c28; --border: #2a3632; --border-strong: #37453f;
   --text: #e4ece8; --muted: #9aa9a3; --accent: #3ea486; --accent-hover: #4bb594; --accent-ink: #06130f;
-  --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --danger-border: #5a2c37; --tile: #1f3a31; --tile-ink: #a9c2b8;
+  --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --danger-border: #5a2c37; --danger-fill: #cf3a55; --tile: #1f3a31; --tile-ink: #a9c2b8;
   --seg-on: #33423c;
   --thumb: #c9d6d0;
   color-scheme: dark;
@@ -151,9 +153,9 @@ body:not(.diag) .diag-only { display: none; }
 .contact-form[hidden] { display: none; }
 .contact-form h3 { margin: 0; font-size: 13px; font-weight: 600; }
 .contact-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px 14px; }
-.contact-account { min-width: 0; }
-.contact-account select { width: 100%; min-width: 0; }
-.contact-account[hidden] { display: none; }
+.contact-account, .contact-media { min-width: 0; }
+.contact-account select, .contact-media select { width: 100%; min-width: 0; }
+.contact-account[hidden], .contact-media[hidden] { display: none; }
 .contact-error { margin: 0; font-size: 13px; color: var(--danger); }
 .contact-error[hidden] { display: none; }
 .contact-form-btns { display: flex; justify-content: flex-end; gap: 8px; }
@@ -220,8 +222,8 @@ body:not(.diag) .diag-only { display: none; }
 #callBtn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .btn-primary:hover { background: var(--accent-hover); }
-.btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
-.btn-danger:hover { background: var(--danger); filter: brightness(1.08); }
+.btn-danger { background: var(--danger-fill); border-color: var(--danger-fill); color: #fff; }
+.btn-danger:hover { background: var(--danger-fill); filter: brightness(1.08); }
 
 /* The self view's default width (selfview.js). */
 .stage { --side-w: 260px; position: relative; min-height: 0; border-radius: var(--radius); overflow: hidden; background: var(--tile); }
@@ -421,7 +423,7 @@ body:not(.diag) .diag-only { display: none; }
 .info-contact .contact-mark { margin: 0; color: inherit; }
 .timer { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
 /* Muted on a call: a small red mic by the timer. */
-.muted-pill { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--danger); color: #fff; }
+.muted-pill { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--danger-fill); color: #fff; }
 .muted-pill[hidden] { display: none; }
 .muted-pill > span { display: none; }
 .muted-pill svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -785,7 +787,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .am-foot { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); padding-top: 14px; flex-wrap: wrap; }
 .am-remove { color: var(--danger); border-color: transparent; background: none; }
 .am-remove:hover { background: var(--danger-soft); }
-.am-remove.confirm { background: var(--danger); border-color: var(--danger); color: #fff; }
+.am-remove.confirm { background: var(--danger-fill); border-color: var(--danger-fill); color: #fff; }
 @media (max-width: 700px) {
   .from-pick select { max-width: 140px; }
   .am-table th:nth-child(2), .am-table td:nth-child(2) { display: none; }
@@ -796,8 +798,8 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .privacy-btn:hover { background: var(--surface-2); color: var(--danger); }
 .privacy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .privacy-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.privacy-btn.on { background: var(--danger); border-color: var(--danger); color: #fff; font-weight: 500; }
-.privacy-btn.on:hover { background: var(--danger); color: #fff; filter: brightness(1.08); }
+.privacy-btn.on { background: var(--danger-fill); border-color: var(--danger-fill); color: #fff; font-weight: 500; }
+.privacy-btn.on:hover { background: var(--danger-fill); color: #fff; filter: brightness(1.08); }
 .privacy-btn.armed, .privacy-btn.armed:hover { border-color: var(--danger); color: var(--danger); }
 .privacy-icons { display: inline-flex; gap: 6px; }
 /* The words slide out from the icon when it's armed or on, and fold away again. */
@@ -1138,7 +1140,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .people-btn.on { color: var(--accent); border-color: var(--accent); }
 /* Pressed here means "the view is open", not .btn[aria-pressed]'s red (Mute and the like). */
 .btn.people-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); border-color: var(--accent); }
-.people-btn .missed-count { position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--danger); color: #fff; }
+.people-btn .missed-count { position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--danger-fill); color: #fff; }
 .hv-outcome svg { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .hv-icon svg, .hv-actions svg, .hv-clear svg, .hv-confirm svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 

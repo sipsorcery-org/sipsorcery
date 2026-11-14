@@ -98,6 +98,8 @@ function stateMessage() {
     type: "state",
     calls: [...calls.values()].map((c) => ({
       id: c.id, call: c.call, remote: c.remote, reason: c.reason, outgoing: c.outgoing,
+      // The call's account (there's one), for how the page shows its address.
+      account: acct ? `${acct.username}@${acct.domain}` : null,
       incomingVideo: c.incomingVideo, held: c.held, heldByThem: c.heldByThem, holdBusy: !!c.holdBusy, holdMode: HOLD_MODE,
       // Real-time text on a T.140 data channel (see below): off, adding (opening), on or refused.
       text: c.call === "connected" ? c.text.state : "off",
@@ -310,11 +312,11 @@ class PageMedia {
       this.theirOffer = null;
       const reply = fromPage("media-answer", c.id);
       toPage({ type: "media-offer", id: c.id, sdp: offer, renegotiate: c.mediaUp });
-      sdp = withDcmap(c, await reply);
+      sdp = forSip(c, await reply);
     } else {
       const reply = fromPage("media-offer-made", c.id);
       toPage({ type: "media-request", id: c.id, video: c.wantVideo, renegotiate: c.mediaUp });
-      sdp = withDcmap(c, await reply);
+      sdp = forSip(c, await reply);
       this.ourOffer = true;
     }
     return { body: sdp, contentType: "application/sdp" };
@@ -349,6 +351,17 @@ function findT140(sdp) {
   }
   return null;
 }
+
+// The page's SDP as it goes to the far end: with the T.140 dcmap (withDcmap), and without the
+// browser's active TCP candidates. Those are port 9 placeholders that only make outbound
+// connections, which SIP phones don't do (SIPSorcery ignores them too), and at about 100 bytes a
+// line, one per network per m= line, they make the INVITE too big for pjsip (MicroSIP), which
+// drops one over its receive buffer without a reply. The page's own connection keeps its SDP.
+const ACTIVE_TCP_CANDIDATE = /^a=candidate:\S+ \d+ tcp \d+ \S+ \d+ typ \S+(?: .*)? tcptype active(?: .*)?\r?\n?$/i;
+const forSip = (c, sdp) => {
+  const out = withDcmap(c, sdp);
+  return out ? out.split(/(?<=\n)/).filter((l) => !ACTIVE_TCP_CANDIDATE.test(l)).join("") : out;
+};
 
 // The page's SDP with the call's T.140 channel's dcmap on its m=application line (if it has one).
 function withDcmap(c, sdp) {
@@ -473,14 +486,22 @@ function onInfo(c, info) {
 // finds the page's connection for each call (the page makes it with `new RTCPeerConnection({ callId })`,
 // wrapped below before app.js loads) and posts the same messages from those stats.
 
-// The browser's video codecs with H264 first (packetization-mode=1, Constrained Baseline 42e01f
-// ahead of the other H264 profiles), then the rest in its own order.
+// The video codecs our offers have: H264 first (packetization-mode=1, Constrained Baseline 42e01f
+// then Baseline 42001f), then VP8, with rtx for them. The desktop offers those, and SIP phones
+// have no more. Not the browser's whole list (VP9, AV1, H265, the other H264 profiles, red,
+// ulpfec): that's over 2 KB of SDP, and pjsip (MicroSIP) drops an INVITE bigger than its receive
+// buffer ("Rx buffer overflow") without a reply.
 function preferH264(pc) {
   const caps = window.RTCRtpReceiver?.getCapabilities?.("video")?.codecs;
   if (!caps) return;
-  const rank = (c) => !/^video\/H264$/i.test(c.mimeType) ? 2
-    : /packetization-mode=1/.test(c.sdpFmtpLine ?? "") && /profile-level-id=42e01f/i.test(c.sdpFmtpLine ?? "") ? 0 : 1;
-  const codecs = caps.map((c, i) => [c, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([c]) => c);
+  const fmtp = (c) => c.sdpFmtpLine ?? "";
+  const rank = (c) => /^video\/H264$/i.test(c.mimeType)
+    ? (!/packetization-mode=1/.test(fmtp(c)) ? -1 : /profile-level-id=42e01f/i.test(fmtp(c)) ? 0 : /profile-level-id=42001f/i.test(fmtp(c)) ? 1 : -1)
+    : /^video\/VP8$/i.test(c.mimeType) ? 2 : /^video\/rtx$/i.test(c.mimeType) ? 3 : -1;
+  let codecs = caps.map((c, i) => [c, i]).filter(([c]) => rank(c) >= 0)
+    .sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([c]) => c);
+  // A browser with none of them (unlikely) keeps its own list.
+  if (!codecs.some((c) => !/^video\/rtx$/i.test(c.mimeType))) codecs = caps;
   for (const t of pc.getTransceivers()) {
     if (t.receiver.track?.kind !== "video" || t.stopped || !t.setCodecPreferences) continue;
     try { t.setCodecPreferences(codecs); } catch (err) { log(`can't put H264 first: ${err.message}`); }
@@ -512,7 +533,7 @@ window.RTCPeerConnection = class extends NativeRTCPeerConnection {
   }
 
   // Our offer: a T.140 channel goes in it, so the browser writes an m=application line.
-  // Video: H264 first, as the desktop offers it (the browser's own order has VP8 first).
+  // Video: H264 first, then VP8, as the desktop offers them (see preferH264).
   async createOffer(...args) {
     if (!this.t140) useT140(this, this.createDataChannel(T140, { negotiated: true, id: T140_OFFER_STREAM, protocol: T140 }));
     preferH264(this);
@@ -1159,8 +1180,6 @@ const doc = new DOMParser().parseFromString(await (await fetch(new URL("index.ht
 for (const link of doc.head.querySelectorAll("link[rel=stylesheet]")) document.head.append(link);
 for (const node of [...doc.body.childNodes]) if (node.nodeName !== "SCRIPT") document.body.append(document.adoptNode(node));
 document.title = "SIPSorcery Softphone (web)";
-// A phone's address field has room for the start of the hint only.
-if (onPhone) document.getElementById("address")?.setAttribute("placeholder", "Name, number or SIP address");
 // For the page's Settings: what's the desktop's (its account management) and what's ours.
 document.documentElement.dataset.host = "web";
 

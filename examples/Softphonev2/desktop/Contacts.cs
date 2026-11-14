@@ -5,9 +5,34 @@ namespace SIPSorcery.Softphone;
 /// <summary>
 /// A name you've given a SIP address, for the address field's suggestions. Account: the SIP
 /// account (its id) to call them from, "direct" for no account, or null for whichever Call from
-/// has. Older files have none.
+/// has. Media: the media to offer them, when it's known what their phone takes (see
+/// <see cref="ContactMedia"/>), or null to work it out from their answers. Older files have neither.
 /// </summary>
-public sealed record Contact(string Name, string Uri, string? Account = null);
+public sealed record Contact(string Name, string Uri, string? Account = null, string? Media = null);
+
+/// <summary>
+/// A contact's media: what our first INVITE offers them, with no falling back to another kind if
+/// they turn it down (Phone.Dial). Without one a call starts with plain RTP, SDES keys on RTP/AVP,
+/// and on a 488 tries RTP/SAVP and then WebRTC, an INVITE each.
+/// </summary>
+public static class ContactMedia
+{
+    /// <summary>Plain RTP, with SDES keys on RTP/AVP that a phone with SRTP takes up.</summary>
+    public const string Rtp = "rtp";
+    /// <summary>SRTP required: RTP/SAVP with SDES keys, for a phone with SRTP mandatory (MicroSIP's).</summary>
+    public const string Srtp = "srtp";
+    /// <summary>WebRTC: ICE and DTLS-SRTP, for a browser phone.</summary>
+    public const string WebRtc = "webrtc";
+
+    /// <summary>One of the above, or null for anything else (none set, or one this build doesn't know).</summary>
+    public static string? Parse(string? media) => media?.Trim().ToLowerInvariant() switch
+    {
+        Rtp => Rtp,
+        Srtp => Srtp,
+        WebRtc => WebRtc,
+        _ => null,
+    };
+}
 
 /// <summary>
 /// The contacts, kept per profile in <c>%LOCALAPPDATA%\SIPSorcery\Softphonev2\contacts-{profile}.json</c>
@@ -43,9 +68,9 @@ public sealed class ContactStore
 
     /// <summary>
     /// Adds a contact, or renames the one with that address and sets the account to call it
-    /// from (null or empty: Call from's). Sorted by name.
+    /// from (null or empty: Call from's) and its media (null: worked out on each call). Sorted by name.
     /// </summary>
-    public void Save(string name, string uri, string? account = null)
+    public void Save(string name, string uri, string? account = null, string? media = null)
     {
         name = name.Trim();
         uri = uri.Trim();
@@ -54,7 +79,7 @@ public sealed class ContactStore
         if (name.Length == 0) name = uri;
         lock (_lock)
         {
-            var contact = new Contact(name, uri, account);
+            var contact = new Contact(name, uri, account, ContactMedia.Parse(media));
             var i = _contacts.FindIndex(c => SameUri(c.Uri, uri));
             if (i >= 0) _contacts[i] = contact;
             else if (_contacts.Count < MaxContacts) _contacts.Add(contact);

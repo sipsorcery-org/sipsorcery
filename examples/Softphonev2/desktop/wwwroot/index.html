@@ -30,7 +30,7 @@
       </div>
     </header>
 
-    <form class="dialbar" id="dialForm" autocomplete="off">
+    <form class="dialbar" id="dialForm" autocomplete="off" novalidate>
       <!-- People (history.js): the one way into the Recent and Contacts view, with the missed-call
            badge. Hidden until the host sends call history. -->
       <button type="button" class="btn icon-btn people-btn" id="peopleBtn" aria-label="People" title="People: recent calls and contacts" hidden><span class="missed-count" id="peopleCount"></span></button>
@@ -46,7 +46,7 @@
       <!-- Focusing the address (or /) lists contacts and recent calls; typing filters them (app.js,
            "Address fields"). -->
       <div class="dest-wrap">
-        <input id="address" type="text" placeholder="Name, number or SIP address, e.g. sip:alice@example.com" spellcheck="false" aria-label="Number or SIP address"
+        <input id="address" type="text" placeholder="Name or number" spellcheck="false" aria-label="Name or number to call"
           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="dialSuggest">
         <div class="dial-suggest" id="dialSuggest" role="listbox" aria-label="Contacts and recent calls" hidden></div>
         <!-- The address is a saved contact's: the mark and their name, inside the field (app.js). -->
@@ -233,7 +233,7 @@
     <!-- Transfer (app.js, "Transfer"): a popover over the stage, above the Transfer button. Join
          the call with another of yours (attended), or send it to an address (blind), in a field
          that is the address bar's (addressField). Esc or a click away closes it. -->
-    <form class="xfer-pop" id="xferPop" hidden aria-label="Transfer" autocomplete="off">
+    <form class="xfer-pop" id="xferPop" hidden aria-label="Transfer" autocomplete="off" novalidate>
       <div class="rtt-head">
         <span class="rtt-title" id="xferTitle">Transfer</span>
         <button type="button" class="rtt-close" id="xferClose" aria-label="Close transfer" title="Close (Esc)"></button>
@@ -243,7 +243,7 @@
         <label class="xfer-label" for="xferAddr" id="xferAddrLabel">To an address</label>
         <div class="xfer-entry">
           <div class="dest-wrap">
-            <input type="text" class="xfer-input" id="xferAddr" spellcheck="false" placeholder="Name, number or SIP address"
+            <input type="text" class="xfer-input" id="xferAddr" spellcheck="false" placeholder="Name or number"
               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="xferSug">
             <span class="dest-contact" id="xferContact" role="status" hidden></span>
             <button type="button" class="dest-clear" id="xferClear" aria-label="Clear" title="Clear" hidden></button>

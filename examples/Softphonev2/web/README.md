@@ -235,7 +235,8 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   call surviving a locked screen, needs a native app.
   - **The layout** (500 px and under, in the desktop's `styles.css`; the desktop window is never
     that narrow): the header is the mark, "SIPSorcery" and its buttons; the dial bar is two rows,
-    People and the address (its hint shortened to "Name, number or SIP address"), then Audio ◯━
+    People and the address ("Name or number": just a name or number with an account, see the
+    desktop README's "Names, numbers and SIP addresses"), then Audio ◯━
     Video and a wide Call; the control bar's buttons are icons only (their words kept for screen
     readers), 44 px tall for a finger. Text fields are 16 px, so iOS doesn't zoom in on them, and
     the page is the height that's really visible (`100dvh`), so the address bar can't push the

@@ -51,7 +51,8 @@ during a call, so the microphone and camera can be set up first:
   [Keypad](#keypad-dtmf)). During a call only, in Focus view.
 - **Hold** (H): puts the selected call on hold, or Resume takes it off (see
   [Several calls](#several-calls)). During a call only.
-- **End**: Cancel while calling, End once connected.
+- **End**: ends a connected call. A call you're placing is cancelled with **Cancel** on its card,
+  under *Calling…*, as a call ringing in is declined from its card.
 
 A device you pick takes effect at once, mid-call too, by swapping the track on the page's
 connection (no renegotiation), and is remembered between runs (per profile). A remembered
@@ -76,6 +77,39 @@ off. Before a call, Unmute or Start video turns it off, and with no call to keep
 the microphone and camera both come back. It's never remembered, so
 the app always starts with it off, and it doesn't change the saved camera choice for new calls.
 It's always there, with or without a call, so you can switch it on before answering.
+
+## Names, numbers and SIP addresses
+
+With an account, a call goes to the account's server, which works out where it goes from the name
+or number: `alice` is dialled as `sip:alice@<the account's domain>`. So a scheme and a domain say
+nothing, and the address bar (and Transfer's field) takes **just a name or number**: its hint is
+*Name or number*, and a `:` or `@` typed is refused, the field's bubble saying *Just the name or
+number: calls go through sipsorcery.com.*, and on the desktop *For a full SIP address, set Call
+from to No account (direct).* (the field's tooltip says the same). A pasted or dropped address on the account's domain
+goes in as its user part (`sip:alice@sipsorcery.com` → `alice`); one on another domain is refused
+too. Addresses on the account's domain show as their user part everywhere a call or suggestion
+shows its address (the stage, the call header, the suggestions' second line, its full address in
+the tooltip); one elsewhere shows as `bob@example.com`, without `sip:`. A saved contact or recent
+call elsewhere still goes into the field whole when it's picked: it was saved, so it stays
+callable. Contacts and history keep full addresses, and Copy address and Call details give them.
+
+**No account (direct)** is the one mode for full SIP addresses: there's no server, so the address
+says where the call goes (`sip:alice@192.168.0.20`, or `192.168.0.20:5060`). The hint says so
+(*Name, number or SIP address, e.g. sip:alice@192.168.0.20*), anything can be typed, and addresses
+show in full. The mode follows *Call from*. The web softphone always has its account.
+
+**Contacts follow the same rule, by the contact's own *Call from*** (or, for *Any*, the one in Call
+from now). With an account the form's field is *Name or number* (`:` and `@` refused with the same
+bubble; a pasted address on that server goes in as its user part), and the contact is saved as
+that user at the account's server (`bob` → `sip:bob@sipsorcery.com`), so calls and history still
+match it. A line under the fields says where its calls go: *Calls go to bob@sipsorcery.com
+through Office's server* (with *Any*, that it's whichever account Call from has when you call).
+With *No account (direct)* the field is *Number or SIP address* and takes a full one, as typed.
+Editing shows the address as its user part on the contact's server; changing Call from re-reads
+it. One left from before on another server can't be saved unchanged with an account: the error
+asks for a name or number, or No account (direct). The list shows each contact's address as
+calls do (`bob`); its details keep the full address. The address bar, Transfer and the contact
+form are `novalidate`, so the bubble only explains a refused key and never blocks Call or Save.
 
 ## Recent calls and contacts
 
@@ -782,7 +816,24 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
     too: sipsorcery.com's app server is a B2BUA and doesn't always pass them on (only when the
     call had a single destination), and if it was the codecs the retry costs one more INVITE.
     A 488 with any other Warning (305: the codecs) or an SDP on our own profile isn't retried:
-    "They can't take this call's media (488)". The SIP log says when it retries.
+    "They can't take this call's media (488)". `406 Failed creating media transport` is retried
+    too, alongside those: it's what sipsorcery.com's server says when it can't set up the media
+    the offer asked for. Any other 406 isn't. The SIP log says when it retries, and why
+    ("they can't take plain RTP media (406, Failed creating media transport); calling again with
+    WebRTC").
+  - **A bare 488 to plain RTP tries SRTP required first.** Our plain RTP offer puts SDES keys
+    on `RTP/AVP`, which a phone with SRTP mandatory turns down whatever keys it carries (MicroSIP
+    with SRTP set, a bare 488). So a bare 488 to it is retried with `RTP/SAVP` and the same keys,
+    and only a 488 to that goes on to WebRTC: up to three INVITEs. That has to come before
+    WebRTC for such a phone, as pjsip (MicroSIP's stack) doesn't do BUNDLE: it answers a WebRTC
+    offer with an ICE and DTLS session per m-line, of which our one bundled transport only ever
+    completes the first, so the call has audio but no video.
+  - **A contact's *Media*** skips the guessing when you know what their phone takes: the
+    contact form's *Media* is *Automatic* (all of the above), *Plain RTP* (`RTP/AVP` with SDES
+    keys), *SRTP required* (`RTP/SAVP`) or *WebRTC*. A call to the contact offers just that in
+    its first INVITE, and a refusal ends the call rather than trying another kind. The page
+    sends it with the call (`dial {…, media}`), and it's kept in the contacts file. Desktop only:
+    the web softphone's calls are always WebRTC, so its contact form doesn't have it.
   - A plain SIP phone that answers a WebRTC offer with RTP/AVP instead of a 488 ends the call
     with "Their answer's media doesn't match ours".
  `RTCPeerConnection` is an `RTPSession`, so
@@ -1290,6 +1341,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Local sipsorcery-servers2: desktop on a guest account (`Server: localhost`, UDP) and a browser on another, both ways | Browser → desktop: the INVITE arrives over UDP with a WebRTC offer and is answered with WebRTC media. Desktop `--webrtc` → browser: through the proxy to its WebSocket. Both connect in about 0.2 s with video both ways (see ../web for details). |
 | Calling a stand-in callee that answers `488` + `Warning: 302 … "Incompatible transport protocol"`, then 486 | The first INVITE offers RTP/AVP; 0.2 s after the 488, a second offers `UDP/TLS/RTP/SAVP`. Ends with "486 Busy Here". |
 | The same with `Warning: 305 … "Incompatible media format"` | One INVITE, no retry: "They can't take this call's media (488)". |
+| A stand-in callee (UDP, 127.0.0.1:5399) that answers `406 Failed creating media transport`, then 486; then one that answers `406 Not Acceptable`; then a bare `488` again | 406 Failed creating media transport: the first INVITE offers RTP/AVP, 0.5 s later a second offers `UDP/TLS/RTP/SAVP`, logged "they can't take plain RTP media (406, Failed creating media transport); calling again with WebRTC", and it ends "The far end said 486 Busy Here". `406 Not Acceptable`: one INVITE, no retry, "The far end said 406 Not Acceptable". The bare 488: still retried. |
 | A stand-in callee that answers a bare `488` (no Warning, no SDP) | The first INVITE offers RTP/AVP, the second `UDP/TLS/RTP/SAVP`: "they can't take plain RTP media (488, no reason given); calling again with WebRTC". |
 | Calling the web softphone's guest account through the local sipsorcery-servers2, no `--webrtc` | The browser turns the RTP/AVP offer down with 488 in 60 ms, without ringing. The app server doesn't pass the Warning on yet, so no retry: "They can't take this call's media (488)". With `--webrtc`: connected, and the browser's BYE ends it "They hung up". |
 | Browser call, Text panel open, then one click on End | The call ends ("You hung up", BYE, 200). |

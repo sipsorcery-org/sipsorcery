@@ -178,12 +178,15 @@ public sealed class MediaRelay : IDisposable
     /// with SRTP offered best effort (<paramref name="srtp"/>): SDES keys on RTP/AVP media lines,
     /// which a phone without SRTP ignores and answers plain RTP, and one with SRTP takes up. An
     /// offer of RTP/SAVP (SRTP required) is answered with SRTP, and one without keys plain RTP.
+    /// With <paramref name="requireSrtp"/> our offer is RTP/SAVP, for a phone that requires SRTP
+    /// and so turns down keys on RTP/AVP.
     /// </summary>
-    public static RTPSession CreateSipSession(bool offerVideo = true, bool webRtc = false, bool srtp = true)
+    public static RTPSession CreateSipSession(bool offerVideo = true, bool webRtc = false, bool srtp = true, bool requireSrtp = false)
     {
         RTPSession rtp = webRtc ? new TextPeerConnection() : new RTPSession(new RtpSessionConfig
         {
-            RtpSecureMediaOption = srtp ? RtpSecureMediaOptionEnum.SdpCryptoBestEffort : RtpSecureMediaOptionEnum.None,
+            RtpSecureMediaOption = requireSrtp ? RtpSecureMediaOptionEnum.SdpCryptoNegotiation
+                : srtp ? RtpSecureMediaOptionEnum.SdpCryptoBestEffort : RtpSecureMediaOptionEnum.None,
         });
         rtp.addTrack(new MediaStreamTrack(new List<AudioFormat>
         {
