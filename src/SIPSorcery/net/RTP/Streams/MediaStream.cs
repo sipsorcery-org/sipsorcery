@@ -567,14 +567,20 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Whether received media has to wait for this stream's SRTP keys. With best-effort SDES
-        /// only once there's something to wait for: our offer with crypto, or the far end's
-        /// description of the stream, not a local track the far end never offered.
+        /// Whether received media has to wait for this stream's SRTP keys. The session holds back
+        /// everything it receives while any stream waits, so with SDES only a stream that can
+        /// carry media does: one with a local track that isn't inactive (without one we answer the
+        /// far end's m-line with port 0, and a far end that declines ours makes it inactive), and
+        /// something to wait for, our offer with crypto or the far end's description of the stream
+        /// (not a local track the far end never offered). Otherwise, say, an audio-only session
+        /// answering an audio and video offer never received any audio. With DTLS-SRTP the keys
+        /// come from the handshake, so a stream waits as soon as it's secure.
         /// </summary>
         internal bool IsAwaitingSecureContext
         {
             get => RequiresSecureContext && !IsSecurityContextReady() &&
-                (!RtpSessionConfig.UseSdpCryptoBestEffort || RemoteTrack != null || SrtpHandler != null);
+                (!RtpSessionConfig.UsesSdpCrypto ||
+                    (LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive && (RemoteTrack != null || SrtpHandler != null)));
         }
 
         /// <summary>
