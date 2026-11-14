@@ -124,9 +124,8 @@ export function onAccountMessage(msg) {
 }
 
 // Call from: the picker, its status dot, and Manage accounts turning red when one fails. The
-// picker shows only when there's a choice to make: two or more enabled accounts, or calls going
-// direct while there is one. With a single account (or none) every call goes from it, so it's
-// left out, and Manage accounts' tooltip says which account calls go from.
+// picker is always there, even with a single account (or none): No account (direct) is always a
+// choice, and the only way to call another phone straight from here.
 function renderFrom() {
   const sel = $("fromSelect");
   const opts = accounts.filter((a) => a.enabled).map((a) => `<option value="${esc(a.id)}">${esc(a.name)}</option>`);
@@ -143,8 +142,6 @@ function renderFrom() {
   $("fromDot").className = `from-dot ${st.tone}`;
   sel.title = cur?.enabled ? `Call from ${aor(cur)}. ${st.long}` : st.long;
   const enabled = accounts.filter((a) => a.enabled);
-  const pick = sel.parentElement;
-  pick.hidden = enabled.length < 2 && (enabled.length === 0 || cur?.enabled === true);
 
   const failed = enabled.filter((a) => a.reg === "failed");
   const btn = $("manageAccounts");
@@ -152,7 +149,7 @@ function renderFrom() {
   btn.classList.toggle("on", view.open && !$("accounts").hidden);
   btn.innerHTML = failed.length ? ICON.alert : ICON.users;
   btn.title = failed.length ? `Manage accounts: ${failed.map((a) => `${a.name} isn't registered (${a.regDetail || "failed"})`).join("; ")}`
-    : pick.hidden && cur?.enabled ? `Manage accounts · calls go from ${aor(cur)} (${st.short})` : "Manage accounts";
+    : "Manage accounts";
 }
 
 // The accounts, for the contacts' "Call from" picker (null in the web softphone, which has none).

@@ -1045,10 +1045,8 @@ prototype's *Call from* and *Manage accounts* (`prototype/web`). Every enabled a
 at once; *Call from* picks the one calls go out from.
 
 - **Call from**, at the left of the dial bar: the enabled accounts, plus *No account (direct)*
-  for calls straight to an IP address or host. It shows only with a choice to make: two or more
-  enabled accounts, or calls set to go direct while there's one. With a single account every
-  call goes from it, so the picker is left out and *Manage accounts*' tooltip says which account
-  calls go from and its registration. The dot is the chosen account's registration:
+  for calls straight to an IP address or host. It's always there, with a single account or
+  none too, as *No account (direct)* is always a choice. The dot is the chosen account's registration:
   green registered, amber registering, red failed, grey not registering. Its tooltip says why
   it failed, and so does the Ready card ("alice@… isn't registered: Wrong username or
   password (401 Unauthorised)"). The choice is remembered, *No account* included.
@@ -1253,7 +1251,7 @@ Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 | Grid, then restart both copies | `view: "grid"` stored; after restarting the copies, A's two calls open in the grid. |
 | Accounts, against a stand-in SIPSorcery registrar with digest auth on 127.0.0.1:5070 (`--profile accttest --fake-media --diagnostics --auto-answer`, a config with alice) | First start: alice seeded from the config, stored with a DPAPI password, registered. Bob added in the form with a wrong password: "Not registered: Wrong username or password (401 Unauthorised)", Manage accounts red. Password fixed: registered. An account with auth username carol registered as dave. `nosuch.invalid`: "Can't find the server nosuch.invalid (DNS lookup failed)". |
 | Calls from accounts, same set-up | Call from Bob to `echo`: the server saw From `"Bob B" <sip:bob@127.0.0.1:5070>`, authenticated as bob. Call from alice to `callback`: the server called alice's contact back (To alice), auto-answered, Call details "Incoming · alice@127.0.0.1:5070". |
-| Call from with one account (vtA with only Alice), and two (vtB: Bob, Dave) | vtA: no picker; *Manage accounts*' tooltip "calls go from alice@127.0.0.1:5192 (Calls out only)". vtB: the picker with Bob, Dave and *No account (direct)*. vtA set to direct: the picker shows (so you see it and can go back); back on Alice, it hides again. |
+| Call from with one account (vtA with only Alice), and two (vtB: Bob, Dave) | vtA: the picker with Alice and *No account (direct)*, and it stays on either. vtB: the picker with Bob, Dave and *No account (direct)*. |
 | Account changes and restarts | Restart: all three accounts back, registered, the seed not added twice. Rename: no REGISTER. Disable Bob, remove Dave: each unregistered (Expires: 0). Re-register: one new REGISTER, no unregister racing it. *No account (direct)* still chosen after a restart. Closing the app unregisters every account. |
 | Web softphone (`web/index.html?api=stub`) with the same page | No Call from or Accounts view; its own sign-in as before; no console errors. |
 | Settings, two copies (`--profile setA` / `setB`, `--fake-media --diagnostics`) | The gear opens Settings with the fake devices named, and *System default (Fake Default Audio Input)*. Focus starts on Microphone. |
