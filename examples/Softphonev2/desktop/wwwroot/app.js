@@ -30,7 +30,7 @@ import { initHistory, onHistoryMessage, onHistoryState, closeHistory, historyEnt
 import { prefs, savePref, initSettings } from "./settings.js";
 import { initSelfView } from "./selfview.js";
 import { normAddress, contactMark, contactMarkEl } from "./contactmark.js";
-import { avatarAttr, setAvatar } from "./avatar.js";
+import { avatarAttr, avatarImage, setAvatar } from "./avatar.js";
 import { initContacts, openContacts, onContacts, allContacts, contactFor, saveContact, removeContact, sameUri, mountContacts, contactCount } from "./contacts.js";
 
 const $ = (id) => document.getElementById(id);
@@ -362,7 +362,10 @@ const params = new URLSearchParams(location.search);
 if (params.get("call") === "video") callType = "video";          // --video (testing)
 // Whether calls start with your camera on: the Camera button before a call, and Settings.
 // Remembered (see setCamPref); --camera-off starts it off. The Answer button's ▾ can override it
-// for one call.
+// for one call. That choice, and turning the camera on or off on a video call, also set it for
+// this run, so the next video call (placed or answered) starts the way the last one was left
+// (camera off stays off); the camera and source picked on a call carry over likewise
+// (devices.camera, videoSource).
 let camPref = params.get("camera") === "off" ? false : prefs.camOn !== false;
 // A choice you made (the Camera button, a camera picked, Settings) is kept for next time.
 function setCamPref(on) {
@@ -440,13 +443,17 @@ function fieldUri(text) {
   const domain = domainOf(state.account);
   return !text || directMode() || !domain || /[:@]/.test(text) ? text : `sip:${text}@${domain}`;
 }
-// The address fields' hint (placeholder), by mode. Short enough for a phone's field.
-const addressHint = () => (directMode() ? "Name, number or SIP address, e.g. sip:alice@192.168.0.20" : "Name or number");
+// The address fields' hint (placeholder), by mode. Short enough for a phone's field: in the phone
+// layout (500 px and under: the web softphone on a phone, or the desktop window made that narrow)
+// the direct one leaves out its example, which the field's tooltip still gives.
+const phoneWidth = matchMedia("(max-width: 500px)");
+const addressHint = () => (directMode() ? (phoneWidth.matches ? "Number or SIP address" : "Name, number or SIP address, e.g. sip:alice@192.168.0.20") : "Name or number");
+phoneWidth.addEventListener("change", () => render());
 // Where full SIP addresses are, with an account: the desktop's No account (direct) in Call from.
 // The web softphone has no such mode (no account list), so it says nothing more.
 const directNote = () => (Array.isArray(state.accounts) ? "For a full SIP address, set Call from to No account (direct)." : "");
 // The address fields' tooltip: the hint, and with an account on the desktop, where full addresses are.
-const addressTip = () => (directMode() ? "" : [`Just a name or number: calls go through ${domainOf(state.account) ?? "the account's server"}.`, directNote()].filter(Boolean).join(" "));
+const addressTip = () => (directMode() ? (phoneWidth.matches ? "Number or SIP address, e.g. sip:alice@192.168.0.20" : "") : [`Just a name or number: calls go through ${domainOf(state.account) ?? "the account's server"}.`, directNote()].filter(Boolean).join(" "));
 
 // The saved-contact mark (contactmark.js) after a call's name or address, if it's a contact.
 function markContact(node, remote) {
@@ -584,28 +591,44 @@ const sameSources = (a, b) => a.size === b.size && [...a].every((k) => b.has(k))
 // NAT bindings and media timers stay alive, and turning the camera on is a track swap with the
 // encoder already running. It's drawn on a canvas and sent at the camera's size, so the far
 // end doesn't see the picture change shape. The initial is the call's account's (e.h.me): with
-// two accounts, Bob's call shows B and Dave's D. One placeholder per name, shared by its calls.
+// two accounts, Bob's call shows B and Dave's D. With Settings' "Show Gravatar pictures" on, the
+// account's Gravatar picture (or identicon) fills the circle instead, with the account's address
+// under it, once it has loaded; the
+// card is redrawn every frame, so it appears, or goes when the setting is turned off, within one.
+// One placeholder per name and account, shared by their calls.
 const PLACEHOLDER_FPS = 5;   // a still picture costs a few kbps; much sparser upsets some decoders
-const placeholders = new Map();   // name -> { name, canvas, track, timer }
+const placeholders = new Map();   // placeholderKey -> { name, aor, canvas, track, timer }
 
 // The name we go by on a call: its account's (none when the desktop can't tell which account
 // it's on: no name then, never another call's), else (before a call, or the web softphone) ours.
 const meOf = (e) => (e?.h && e.h.me !== undefined ? e.h.me : state.me) ?? "";
+// The address of the account a call is on (none for a direct call), else the selected account's.
+const aorOf = (e) => (e?.h ? e.h.account : state.account) ?? "";
+const placeholderKey = (e) => `${meOf(e)}
+${aorOf(e)}`;
 
 function placeholderTrack(e = null) {
-  const name = meOf(e);
-  let p = placeholders.get(name);
+  const name = meOf(e), aor = aorOf(e), key = placeholderKey(e);
+  let p = placeholders.get(key);
   if (!p) {
     const canvas = Object.assign(document.createElement("canvas"), { width: 1280, height: 720 });
     // Frame rate 0 and requestFrame: a frame goes out each time one is drawn and asked for. A
     // canvas only produces a frame after a draw, so the picture is redrawn every time.
     const track = canvas.captureStream(0).getVideoTracks()[0];
-    p = { name, canvas, track, timer: 0 };
+    p = { name, aor, canvas, track, timer: 0 };
     p.timer = setInterval(() => placeholderFrame(p), 1000 / PLACEHOLDER_FPS);
-    placeholders.set(name, p);
+    placeholders.set(key, p);
     placeholderFrame(p);
   }
   return p.track;
+}
+
+// The text, cut short with an ellipsis if it's wider than max on g's font.
+function fitText(g, text, max) {
+  if (g.measureText(text).width <= max) return text;
+  let n = text.length;
+  while (n > 1 && g.measureText(`${text.slice(0, n)}…`).width > max) n--;
+  return `${text.slice(0, n)}…`;
 }
 
 function placeholderFrame(p) {
@@ -620,7 +643,20 @@ function placeholderFrame(p) {
   g.beginPath();
   g.arc(w / 2, h / 2, 120, 0, 2 * Math.PI);
   g.stroke();
-  if (label) {
+  const pic = p.aor ? avatarImage(p.aor) : null;
+  if (pic) {
+    g.save();
+    g.beginPath();
+    g.arc(w / 2, h / 2, 118, 0, 2 * Math.PI);
+    g.clip();
+    g.drawImage(pic, w / 2 - 118, h / 2 - 118, 236, 236);
+    g.restore();
+    // The account's address under the picture, as the picture alone doesn't say who it is.
+    g.font = '400 34px "Segoe UI", system-ui, sans-serif';
+    g.textAlign = "center";
+    g.textBaseline = "top";
+    g.fillText(fitText(g, p.aor, w - 160), w / 2, h / 2 + 150);
+  } else if (label) {
     g.font = '300 120px "Segoe UI", system-ui, sans-serif';
     g.textAlign = "center";
     g.textBaseline = "middle";
@@ -637,14 +673,14 @@ function placeholderFrame(p) {
   track.requestFrame();
 }
 
-// Stops the placeholders no call with video could be sending (by name, so one that's just being
+// Stops the placeholders no call with video could be sending (by name and account, so one being
 // put on a call stays) and that aren't showing (keep: the self view's track).
 function stopPlaceholders(keep = null) {
-  for (const [name, p] of placeholders) {
-    if (p.track === keep || [...entries.values()].some((e) => e.m?.videoSender && meOf(e) === name)) continue;
+  for (const [key, p] of placeholders) {
+    if (p.track === keep || [...entries.values()].some((e) => e.m?.videoSender && placeholderKey(e) === key)) continue;
     clearInterval(p.timer);
     p.track.stop();
-    placeholders.delete(name);
+    placeholders.delete(key);
   }
 }
 
@@ -1029,6 +1065,8 @@ async function onMediaOffer(id, sdp, video = false, renegotiate = false) {
     remoteAnalyser: null, localAnalyser: null,
   };
   e.m = m;
+  // Answer ▾'s camera choice carries on to the next video call, as the Camera button's does.
+  if (answerCamera != null && m.hasVideo && camPref !== answerCamera) { camPref = answerCamera; log(`next video call starts with camera ${camPref ? "on" : "off"}`); }
   answerCamera = null;
 
   // { callId } is for the web softphone's host.js, which watches the page's connections; the
@@ -1151,10 +1189,12 @@ function closeMedia(e) {
 }
 
 // Camera on or off during a video call. Off swaps in the placeholder, then closes the camera
-// (unless another call is still sending it).
-async function setCamera(on, e = sel()) {
+// (unless another call is still sending it). chosen: you did it (the Camera button, or a camera
+// picked), so the next video call starts the same way; not privacy mode or diagnostics closing.
+async function setCamera(on, e = sel(), chosen = false) {
   if (!e?.m?.videoSender || !(hasCamera || sourceOf(e) !== "camera")) return;
   e.m.camOn = on;
+  if (chosen && camPref !== on) { camPref = on; log(`next video call starts with camera ${on ? "on" : "off"}`); }
   if (on) { cameraInUse = false; privacyRelease(); }   // try again, because you asked
   if (!on && !holdState(e)) await e.m.videoSender.replaceTrack(placeholderTrack(e));
   log(`call ${e.id}: camera ${on ? "on" : "off"}`);
@@ -3540,7 +3580,7 @@ async function pickDevice(key, id, forAnswer = false) {
 // comes on, on a video call or (before one) for the next video call. Not on an audio call,
 // where it's only the choice for Add video.
 async function cameraOnForPick() {
-  if (call?.hasVideo) { if (!call.camOn) await setCamera(true); }
+  if (call?.hasVideo) { if (!call.camOn) await setCamera(true, sel(), true); }
   else if (!call && !camStart()) setCamPref(true);
 }
 
@@ -3942,7 +3982,7 @@ document.addEventListener("keydown", (ev) => {
   }
 });
 $("camBtn").onclick = () => {
-  if (call?.hasVideo) { setCamera(!call.camOn); return; }
+  if (call?.hasVideo) { setCamera(!call.camOn, sel(), true); return; }
   if (!call && callType === "audio") {
     // On Audio, the camera means you want a video call: switch to one, camera on.
     if (!camStart()) setCamPref(true);

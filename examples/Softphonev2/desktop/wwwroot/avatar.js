@@ -11,11 +11,12 @@
 // it sends gravatar.com a hash of each address shown.
 //
 // Renders just set data-av (avatarAttr in HTML, setAvatar on an element); a MutationObserver
-// adds the <img> whenever such an element appears or its text is redrawn.
+// adds the <img> whenever such an element appears or its text is redrawn. The camera-off card,
+// drawn on a canvas, takes the loaded picture from avatarImage instead.
 
 import { prefs } from "./settings.js";
 
-const cache = new Map();   // email -> { state: "loading" | "ok" | "none", url }
+const cache = new Map();   // email -> { state: "loading" | "ok" | "none", url, img }
 
 export function emailOf(address) {
   let s = String(address ?? "").trim();
@@ -54,17 +55,29 @@ async function lookup(email) {
     const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email));
     const hash = [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
     const url = `https://www.gravatar.com/avatar/${hash}?s=160&d=identicon`;
+    // Loaded for cross-origin use (gravatar.com allows any origin), so it can also be drawn on a
+    // canvas that's sent as video without tainting it.
+    const img = new Image();
+    img.crossOrigin = "anonymous";
     await new Promise((resolve, reject) => {
-      const img = new Image();
       img.onload = resolve;
       img.onerror = reject;
       img.src = url;
     });
-    cache.set(email, { state: "ok", url });
+    cache.set(email, { state: "ok", url, img });
   } catch {
     cache.set(email, { state: "none" });
   }
   for (const el of document.querySelectorAll(`[data-av="${CSS.escape(email)}"]`)) hydrate(el);
+}
+
+// For a canvas: the address's picture as a loaded image, or null while it's being looked up, when
+// there's none (or no lookup for that address), or with the setting off.
+export function avatarImage(address) {
+  const email = prefs.gravatar === false ? null : emailOf(address);
+  const got = email ? cache.get(email) : null;
+  if (email && !got) lookup(email);
+  return got?.state === "ok" ? got.img : null;
 }
 
 function hydrate(el) {

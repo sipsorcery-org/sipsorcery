@@ -665,6 +665,7 @@ body:not(.diag) .diag-only { display: none; }
 /* ---- Diagnostics panel (F12), docked at the bottom ---- */
 .devpanel {
   position: relative; flex: none; height: var(--dev-h, 240px); display: grid; grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);   /* never wider than the window: the tab bar scrolls instead (narrow) */
   background: var(--surface); border-top: 1px solid var(--border-strong);
 }
 .devpanel[hidden] { display: none; }
@@ -788,9 +789,28 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .am-remove { color: var(--danger); border-color: transparent; background: none; }
 .am-remove:hover { background: var(--danger-soft); }
 .am-remove.confirm { background: var(--danger-fill); border-color: var(--danger-fill); color: #fff; }
+/* The dial bar in rows when one would leave the address too little room (under ~250 px, with
+   Call from and a call's "Call & hold current"): People, Manage accounts, Call from and the
+   address, then Audio ◯━ Video and a wide Call. At 500 px and under (a phone) the address gets a
+   row of its own too. */
+@media (max-width: 960px) {
+  .dialbar { flex-wrap: wrap; }
+  .dialbar .dest-wrap { flex: 1 1 260px; }
+  .dialbar .call-type { flex: none; }
+  .dialbar #callBtn { flex: 1 1 auto; }
+  /* Call from (desktop): the whole of its account's name, as far as the row allows. */
+  .dialbar .from-pick { min-width: 0; }
+  .dialbar .from-pick select { max-width: 100%; }
+}
 @media (max-width: 700px) {
-  .from-pick select { max-width: 140px; }
   .am-table th:nth-child(2), .am-table td:nth-child(2) { display: none; }
+  /* The header: the title and the close button, then this PC's direct address on a row of its own
+     (and wrapping, if it must), rather than squeezing the title into a column beside it. */
+  .am-top { flex-wrap: wrap; }
+  .am-top > div:first-child { flex: 1 1 0; min-width: 0; }
+  .am-top-right { display: contents; }
+  .am-top-right .am-close { order: 1; }
+  .am-top-right .am-local { order: 2; flex: 1 1 100%; flex-wrap: wrap; margin-left: -6px; text-align: left; }
 }
 /* Settings (settings.js): the gear in the top bar, and the dialog it opens, as in the prototype. */
 /* The privacy switch, just left of Settings: the block sign and a label, and a red chip with the icons while it's on. */
@@ -839,7 +859,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .settings-section { border-top: 1px solid var(--border); padding: 14px 0 6px; }
 .settings-section:first-child { border-top: 0; }
 .settings-section h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; }
-.settings-field { display: grid; gap: 4px; margin-bottom: 10px; font-size: 12.5px; color: var(--muted); }
+.settings-field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin-bottom: 10px; font-size: 12.5px; color: var(--muted); }
 .settings-field[hidden] { display: none; }
 .settings-field select {
   height: 36px; padding: 0 8px; font: inherit; font-size: 14px; color: var(--text);
@@ -1273,25 +1293,12 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .controls .btn.xfer-btn[hidden] { display: none; }
 .controls .btn.xfer-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-/* ---- A phone (the web softphone in a phone's browser; the desktop window is never under 540 px) ----
-   The header is the mark, the name and its buttons. The dial bar takes two rows: People and the
-   address, then Audio ◯━ Video and a wide Call. The control bar's buttons are icons, their words
-   kept for screen readers (and in their tooltips), and taller, for a finger. Text fields are
-   16 px, so iOS doesn't zoom in when one's tapped. */
-@media (max-width: 500px) {
-  .shell { padding: 10px 12px; gap: 10px; }
-  .brand { gap: 8px; }
-  .brand-divider, .brand-sub { display: none; }
-  .topbar-right { gap: 8px; }
-  .dialbar { flex-wrap: wrap; }
-  .dialbar .dest-wrap { flex: 1 1 200px; }
-  .dialbar .call-type { flex: none; }
-  .dialbar #callBtn { flex: 1 1 auto; height: 44px; }
-  .dialbar input, .xfer-input, .rtt-input, .hv-search input { font-size: 16px; }
-  .dialbar input { height: 44px; }
+/* The control bar's buttons as icons once their words would be cut short (860 px and under, with
+   a call's Stop video and Self view): the words kept for screen readers (and in the tooltips). */
+@media (max-width: 860px) {
   .controls { display: flex; justify-content: space-between; gap: 6px; }
   .controls-right { gap: 6px; }
-  .controls .btn { height: 44px; padding: 0 12px; }
+  .controls .btn { padding: 0 12px; }
   .controls .btn > span:not(.split-caret) {
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
   }
@@ -1299,6 +1306,23 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
   .controls .split-caret { width: 24px; }
   .controls .btn.icon-btn { width: 40px; }
   .controls #hangupBtn { padding: 0 16px; }
+}
+
+/* ---- A phone (the web softphone in a phone's browser, or the desktop window made that narrow:
+   it goes down to 360 px, MainForm.MinPageSize) ----
+   The header is the mark, the name and its buttons. The dial bar takes three rows: People (and on
+   the desktop Manage accounts and Call from), the address, then Audio ◯━ Video and a wide Call.
+   The control bar's buttons (icons from 860 px, above) are taller, for a finger. Text fields are
+   16 px, so iOS doesn't zoom in when one's tapped. */
+@media (max-width: 500px) {
+  .shell { padding: 10px 12px; gap: 10px; }
+  .brand { gap: 8px; }
+  .brand-divider, .brand-sub { display: none; }
+  .topbar-right { gap: 8px; }
+  .dialbar #callBtn { height: 44px; }
+  .dialbar input, .xfer-input, .rtt-input, .hv-search input { font-size: 16px; }
+  .dialbar input { height: 44px; }
+  .controls .btn { height: 44px; }
   /* The privacy switch's words (armed or on) need the name's room: the name goes, and the
      words are cut short with "…" before they'd push Settings off the screen. */
   .topbar:has(.privacy-btn.armed, .privacy-btn.on) .brand-name { display: none; }
@@ -1316,5 +1340,6 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
   .dev-tab { flex: none; padding: 0 8px; white-space: nowrap; }
   .dev-spacer { flex: 0 0 0; }
   .dev-act { flex: none; padding: 0 7px; }
+  .dev-close { flex: none; }
   .dev-details, .dev-quality, .dev-net { padding: 10px 12px; }
 }

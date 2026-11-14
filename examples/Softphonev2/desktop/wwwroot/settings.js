@@ -76,7 +76,7 @@ export function initSettings(app) {
           ${["system", "light", "dark"].map((t) => `<label><input type="radio" name="theme" value="${t}">${t === "system" ? "System" : t === "light" ? "Light" : "Dark"}</label>`).join("")}
         </div>
         <label class="check-row"><input type="checkbox" data-pref="gravatar">Show Gravatar pictures for people</label>
-        <p class="settings-note">In place of their initial: their picture, or a pattern made from their address if they have none. It asks gravatar.com, sending a hash of each address shown.</p>
+        <p class="settings-note">In place of their initial: their picture, or a pattern made from their address if they have none. Yours too, on the card sent while your camera is off. It asks gravatar.com, sending a hash of each address shown.</p>
       </section>
       <section class="settings-section" aria-labelledby="setDiagHead">
         <h3 id="setDiagHead">Diagnostics</h3>

@@ -30,6 +30,24 @@ internal sealed class MainForm : Form
     private readonly CallHistory _history;
     private readonly ContactStore _contacts;
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
+
+    /// <summary>
+    /// The smallest the page gets, in CSS pixels: the narrowest phone the web softphone's layout is
+    /// made for. The page reacts to the window's size as the web softphone does to the browser's,
+    /// down to its phone layout at 500 px and under (styles.css), so this is the only limit.
+    /// </summary>
+    private static readonly Size MinPageSize = new(360, 560);
+
+    /// <summary>
+    /// The window's minimum size: <see cref="MinPageSize"/> at the monitor's scaling, plus the frame.
+    /// Window sizes are device pixels, so a fixed one would let the page get narrower on a scaled
+    /// display than on an unscaled one. Again whenever the window moves to a monitor with other scaling.
+    /// </summary>
+    private void ApplyMinimumSize()
+    {
+        float scale = DeviceDpi / 96f;
+        MinimumSize = SizeFromClientSize(new Size((int)Math.Ceiling(MinPageSize.Width * scale), (int)Math.Ceiling(MinPageSize.Height * scale)));
+    }
     private readonly List<object> _pendingOffers = new();   // media offers made before the page was ready
     private bool _pageReady;
     private readonly Dictionary<string, Phone.CallState> _lastStates = new();   // each call's state at the last Changed
@@ -56,7 +74,8 @@ internal sealed class MainForm : Form
             if (ico != null) Icon = new Icon(ico);
         }
         ClientSize = new Size(1100, 720);
-        MinimumSize = new Size(560, 480);
+        ApplyMinimumSize();
+        DpiChanged += (_, _) => ApplyMinimumSize();
         WindowPlacement.Restore(this, settings.Profile);   // where and how big it was when last closed
         Controls.Add(_web);
 

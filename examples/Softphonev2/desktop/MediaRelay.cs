@@ -528,11 +528,6 @@ public sealed class MediaRelay : IDisposable
     }
 
     /// <summary>
-    /// The call's far end has changed (a transfer, or a call taken over in place): our video
-    /// reaches someone new mid-stream, so the page sends a keyframe now, and theirs is asked
-    /// for one too (and again when their video's first packet arrives, see the SIP RTP handler).
-    /// </summary>
-    /// <summary>
     /// SIP audio to the page, its sequence numbers and timestamps carried on across a change of
     /// far end (see _sipAudioSsrc). Called on the SIP receive thread only.
     /// </summary>
@@ -564,11 +559,32 @@ public sealed class MediaRelay : IDisposable
         pc.SendRtpRaw(SDPMediaTypesEnum.audio, pkt.Payload, ts, marker ? 1 : 0, h.PayloadType, seq);
     }
 
+    /// <summary>
+    /// The call's far end has changed (a transfer, or a call taken over in place): our video
+    /// reaches someone new mid-stream, so the page sends a keyframe now, and theirs is asked
+    /// for one too (and again when their video's first packet arrives, see the SIP RTP handler).
+    /// Ours is asked for again a second and two and a half seconds on. The first can reach them
+    /// before they can decrypt it (with SDES they get our keys in our answer, which can follow
+    /// our media), and their own request for one then often comes within the ~300 ms in which
+    /// the browser's encoder ignores another. Without a keyframe a decoder that shows what it
+    /// can paints our picture over the last one it had (the transferor's "On hold" card).
+    /// </summary>
     public void FarEndChanged()
     {
         if (!_up || _pc is not { } pc) return;
         RequestKeyframe(pc, _pageVideoSsrc);
         RequestKeyframe(_sip, _sipVideoSsrc);
+        _ = KeyframesAgain(pc);
+    }
+
+    private async Task KeyframesAgain(RTCPeerConnection pc)
+    {
+        foreach (var wait in new[] { 1000, 1500 })
+        {
+            await Task.Delay(wait);
+            if (!_up || _pc != pc) return;
+            RequestKeyframe(pc, _pageVideoSsrc);
+        }
     }
 
     public void Dispose()

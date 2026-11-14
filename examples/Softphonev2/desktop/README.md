@@ -17,6 +17,20 @@ the desktop app, using the media design the video spike
   - keyframe requests (PLI/FIR) in both directions, plus one request each way when the relay
     comes up, so video starts at once.
 
+## Window size
+
+The page reacts to the window's size as the web softphone does to the browser's. At 960 px and
+under the dial bar goes into rows (People, Manage accounts, Call from and the address, then
+Audio ◯━ Video and a wide Call), so the address keeps room to type in; at 860 px and under the
+control bar's buttons are icons, before a call's Mute and Stop video would be cut short; the
+calls list goes to a rail under 700 px; and at 500 px and under it's the web softphone's phone
+layout (see the web README's "On a phone"): the address on a row of its own, and taller buttons. The window can't get smaller
+than a 360 × 560 page, the narrowest phone that layout is made for. That's in CSS pixels, so the
+minimum is the same page at any display scaling, and it's set again when the window moves to a
+monitor with other scaling (`MainForm.MinPageSize`). Narrow, the Accounts view puts this PC's
+direct address under its title, the Diagnostics tabs scroll sideways, and the address field's
+direct-mode hint drops its example (it's in the tooltip).
+
 ## The app icon
 
 The SIPSorcery sorcerer on the phone, in the logo's lime on black: the same mark in the window's title bar,
@@ -162,14 +176,14 @@ calls are red.
   from other addresses show nothing extra. Addresses match as the list's dedupe does: the URI out
   of `Name <sip:…>`, without parameters, case aside and `sip:` optional.
 - **Gravatar pictures** replace the initials (`avatar.js`): in this list, People's Recent and
-  Contacts rows, Active calls rows, grid tiles and the stage.
+  Contacts rows, Active calls rows, grid tiles and the stage, and your own on the camera-off card.
   `sip:alice@example.com` is looked up as `alice@example.com` (SHA-256, at
   `gravatar.com/avatar/<hash>?d=identicon`), once per run: their picture, or without one
   Gravatar's identicon for that address (the same pattern each time); the initial stays only if
   gravatar.com can't be reached. Addresses
   with no user part, an IP address or dotless host (`localhost`) and `tel:` numbers aren't
   looked up. Settings > Appearance > *Show Gravatar pictures for people* (on by default) turns it
-  off, since it sends gravatar.com a hash of each address shown.
+  off, since it sends gravatar.com a hash of each address shown (and of your account's).
 - **Clear (×)**: a button at the field's far right while it has text (the contact pill sits just
   left of it) empties the field and keeps focus there, so the list shows Contacts and Recent as
   if you'd deleted the text. `Esc` still closes the list first; a second `Esc`, with the list
@@ -230,7 +244,10 @@ away:
   Whether video calls start with your camera on is the Camera button's choice before a call,
   remembered between runs (`camOn`; `--camera-off` still starts with it off, without changing
   what's kept), and the self view is the Self view button's (V), remembered too. Both used to be
-  settings as well.
+  settings as well. A video call's own camera choice carries to the next one: answer with the
+  camera off (Answer ▾) or turn it off on a call and the next video call (placed or answered)
+  starts with it off; on, and it starts with it on, opening the camera (and source) last
+  picked. That lasts for the run; only the choice before a call is kept between runs.
   The grid is the Grid button's (and G's) choice, remembered (see
   [Focus and grid views](#focus-and-grid-views)); it used to be a setting as well. *Answer calls
   automatically* was one too, and went unused; `--auto-answer` is still the testing switch,
@@ -940,10 +957,12 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   camera at all, sends a placeholder: your initial (from the display name or user name of the
   call's account, so with two accounts each call has its own, or a head-and-shoulders icon with
   no account) in a circle, drawn on a canvas at
-  1280×720 and sent at 5 fps. A still picture costs a few kbps. So any SIP phone just shows a
-  picture, not a frozen last frame or a stream that looks broken. NAT bindings and media timers
-  on the video port stay alive, and turning the camera on is a track swap with the encoder
-  already running.
+  1280×720 and sent at 5 fps. With *Show Gravatar pictures for people* on, the account's
+  Gravatar picture (or identicon) fills the circle in place of the initial, with the account's
+  address under it, once it has loaded; a direct call (no account) keeps the icon. A still
+  picture costs a few kbps. So any SIP phone just shows a picture, not a frozen last frame or
+  a stream that looks broken. NAT bindings and media timers on the video port stay alive, and
+  turning the camera on is a track swap with the encoder already running.
 - **The self view shows what they see.** During a video call that's your camera (mirrored) or the
   placeholder (not mirrored, so the initial reads right). A note along the bottom says why the
   camera isn't showing: "Camera off", "Camera in use" or "No camera". Before a call, with the

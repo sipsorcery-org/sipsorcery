@@ -233,8 +233,8 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   the From SIPSorcery sends by default.
 - **On a phone** (360–430 px): making calls works from a page kept open; receiving calls, or a
   call surviving a locked screen, needs a native app.
-  - **The layout** (500 px and under, in the desktop's `styles.css`; the desktop window is never
-    that narrow): the header is the mark, "SIPSorcery" and its buttons; the dial bar is two rows,
+  - **The layout** (500 px and under, in the desktop's `styles.css`, so the desktop window gets
+    it too when it's made that narrow): the header is the mark, "SIPSorcery" and its buttons; the dial bar is two rows,
     People and the address ("Name or number": just a name or number with an account, see the
     desktop README's "Names, numbers and SIP addresses"), then Audio ◯━
     Video and a wide Call; the control bar's buttons are icons only (their words kept for screen
