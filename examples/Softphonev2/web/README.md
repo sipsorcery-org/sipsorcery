@@ -143,9 +143,10 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   button switching an Audio call to Video before dialling, the device menus, self view (which
   you can drag, resize from its corner and double-click to reset),
   ringing, answer, decline, cancel, hang up, the SIP log (F12).
-- **The privacy switch**, *Block Audio and Video Devices* (the block sign, top right, just left of Settings: click to arm, click again; or `Shift+M`): every call muted with its
-  camera off, new calls too, until you press it again, unmute a call or turn a camera on. Never
-  remembered. See the [desktop design notes](../desktop/DESIGN.md#the-privacy-switch).
+- **Privacy mode** (the incognito sign, top right, just left of Settings; or `Shift+M`): one
+  click and every call is muted with its camera off, new calls too, until you click it again,
+  unmute a call or turn a camera on. Never remembered. See the
+  [desktop design notes](../desktop/DESIGN.md#privacy-mode).
 - **Settings** (the gear, top right): the desktop page's own (see the desktop README), kept in
   this browser's `localStorage` (`softphonev2.settings`, and `devices` and `selfView` as before;
   `selfViewBox` is where you've dragged the self view and how large, as in the desktop README).
@@ -240,9 +241,8 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
     Video and a wide Call; the control bar's buttons are icons only (their words kept for screen
     readers), 44 px tall for a finger. Text fields are 16 px, so iOS doesn't zoom in on them, and
     the page is the height that's really visible (`100dvh`), so the address bar can't push the
-    control bar off the bottom. With the privacy switch armed or on, the name goes to make room
-    for its words, which are cut short with "…" if they still don't fit ("Mic and Cameras
-    Bloc…"). Diagnostics' bar is the icon (no "Diagnostics"), the four tabs and ×, without the F12
+    control bar off the bottom. With privacy mode on, the name goes to make room for its
+    words, which are cut short with "…" if they still don't fit. Diagnostics' bar is the icon (no "Diagnostics"), the four tabs and ×, without the F12
     key (a phone has none); the tabs scroll sideways if they must. Call quality's charts are the
     screen's width, one above the other.
   - **The screen stays on** while a call is calling, ringing or connected (the Screen Wake Lock

@@ -813,28 +813,20 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
   .am-top-right .am-local { order: 2; flex: 1 1 100%; flex-wrap: wrap; margin-left: -6px; text-align: left; }
 }
 /* Settings (settings.js): the gear in the top bar, and the dialog it opens, as in the prototype. */
-/* The privacy switch, just left of Settings: the block sign and a label, and a red chip with the icons while it's on. */
-.privacy-btn { display: inline-flex; align-items: center; height: 34px; min-width: 34px; padding: 0 8px; border-radius: 17px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
-.privacy-btn:hover { background: var(--surface-2); color: var(--danger); }
+/* Privacy mode, just left of Settings: off, the incognito icon in a round button like Settings;
+   on, a chip in the text colour (dark in the light theme, light in the dark) with the icon and
+   "Privacy mode", as a browser marks a private window. */
+.privacy { display: inline-flex; }
+.privacy-btn { display: inline-flex; align-items: center; height: 34px; min-width: 34px; padding: 0 7px; border-radius: 17px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; transition: padding 0.3s ease; }
+.privacy-btn:hover { background: var(--surface-2); }
 .privacy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.privacy-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.privacy-btn.on { background: var(--danger-fill); border-color: var(--danger-fill); color: #fff; font-weight: 500; }
-.privacy-btn.on:hover { background: var(--danger-fill); color: #fff; filter: brightness(1.08); }
-.privacy-btn.armed, .privacy-btn.armed:hover { border-color: var(--danger); color: var(--danger); }
-.privacy-icons { display: inline-flex; gap: 6px; }
-/* The words slide out from the icon when it's armed or on, and fold away again. */
+.privacy-btn svg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.privacy-btn.on { background: var(--text); border-color: var(--text); color: var(--surface); font-weight: 500; padding: 0 12px 0 9px; }
+.privacy-btn.on:hover { background: var(--text); filter: brightness(1.2); }
+/* The words slide out from the icon when it goes on, and fold away again; folded, they're still
+   the button's name. */
 .privacy-text { display: inline-block; max-width: 0; margin-left: 0; opacity: 0; overflow: hidden; white-space: nowrap; transition: max-width 0.3s ease, margin-left 0.3s ease, opacity 0.2s ease; }
-.privacy-btn.armed .privacy-text, .privacy-btn.on .privacy-text { max-width: 260px; margin-left: 6px; opacity: 1; }
-.privacy-btn.armed, .privacy-btn.on { padding: 0 11px; }
-/* The × sits inside the armed pill's right end, over the room the padding leaves for it. */
-.privacy { position: relative; display: inline-flex; }
-.privacy-btn.armed { padding-right: 34px; }
-.privacy-cancel { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; padding: 0; }
-.privacy-cancel[hidden] { display: none; }
-.privacy-cancel:hover { background: var(--surface-2); color: var(--text); }
-.privacy-cancel:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
-.privacy-cancel svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-.privacy-btn { transition: padding 0.3s ease; }
+.privacy-btn.on .privacy-text { max-width: 160px; margin-left: 7px; opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .privacy-btn, .privacy-text { transition: none; } }
 .settings-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); cursor: pointer; }
 .settings-btn:hover { background: var(--surface-2); }
@@ -1323,13 +1315,12 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
   .dialbar input, .xfer-input, .rtt-input, .hv-search input { font-size: 16px; }
   .dialbar input { height: 44px; }
   .controls .btn { height: 44px; }
-  /* The privacy switch's words (armed or on) need the name's room: the name goes, and the
-     words are cut short with "…" before they'd push Settings off the screen. */
-  .topbar:has(.privacy-btn.armed, .privacy-btn.on) .brand-name { display: none; }
+  /* Privacy mode's words, while it's on, need the name's room: the name goes, and the words are
+     cut short with "…" before they'd push Settings off the screen. */
+  .topbar:has(.privacy-btn.on) .brand-name { display: none; }
   .topbar-right { min-width: 0; }
   .privacy { min-width: 0; }
   .privacy-btn { min-width: 34px; max-width: 100%; }
-  .privacy-icons { flex: none; }
   .privacy-text { flex: 0 1 auto; min-width: 0; text-overflow: ellipsis; }
   /* Diagnostics: the tabs, the panel's close and, on the SIP log, Copy and Clear; the title is
      its icon and F12 (no key for it on a phone) goes. The tabs scroll sideways if they must. */

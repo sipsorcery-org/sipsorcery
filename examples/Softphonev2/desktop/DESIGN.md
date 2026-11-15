@@ -59,18 +59,18 @@ A device you pick takes effect at once, mid-call too, by swapping the track on t
 connection (no renegotiation), and is remembered between runs (per profile). A remembered
 device that's gone falls back to the default.
 
-## The privacy switch
+## Privacy mode
 
-At the top right, just left of Settings: the block sign (a circle with a line through it; red
-while the pointer's on it), like
-the mute key on a desk phone, with a cover like a safety switch's. The first click only arms it:
-*Block Audio and Video Devices* slides out of the sign and the button's edge turns red, with a × at its end that folds it back at once. Left alone
-(the pointer moved off, or focus gone) for 3 s, it folds back to the sign. Clicked again (or
-`Shift+M`, which needs no arming), every call is muted and every video call sends your
-placeholder card instead of the camera, which closes; calls you place or answer while it's on
-start the same way. It turns into a red chip, the struck-out mic and camera and *Mic and Cameras Blocked*. Pressed again, each call goes
-back to how it was before (a call that started meanwhile, to how a new call starts), so a call
-you'd muted stays muted and a camera you'd turned off stays off.
+At the top right, just left of Settings: the incognito sign (a hat over round glasses), as a
+browser marks a private window, so it reads as a mode the whole app goes into. One click (or
+`Shift+M`) turns it on: every call is muted and every video call sends your placeholder card
+instead of the camera, which closes; calls you place or answer while it's on start the same
+way. The button becomes a chip in the text colour (dark in the light theme, light in the dark)
+with the sign and *Privacy mode*, and its tooltip says your audio and video capture devices are
+disabled on every call (microphone muted, cameras off), new calls too. One click again turns it
+off, and each call goes back to how it was before (a call that started meanwhile, to how a new
+call starts), so a call you'd muted stays muted and a camera you'd turned off stays off. There's
+no second click to confirm: turning it on only protects you, and turning it off loses nothing.
 
 Unmuting a call, or turning a camera on (Start video, Add video, a camera picked from a ▾),
 turns it off by itself, and only that call changes: the others stay muted with their cameras
@@ -321,16 +321,15 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   `--auto-answer` answers each call alongside the others, keeping the audio where it is.
 - **When a call ends** it stays in the list for a few seconds with how it ended. If it was on
   the stage, the stage keeps saying so, with *Back to …* (or `Esc`) to another call.
-- **Mute** is the selected call's; `M` too. For every call at once, mic and camera, there's the
-  [privacy switch](#the-privacy-switch) at the top (`Shift+M`).
+- **Mute** is the selected call's; `M` too. For every call at once, mic and camera, there's
+  [privacy mode](#privacy-mode) at the top (`Shift+M`).
 - **Grid and ⋯**, under the Active calls list (icons only on the rail). *Grid*: see
   [Focus and grid views](#focus-and-grid-views). *⋯*, with two calls you can end, opens *End all
   N calls*, in red, which is rarely needed: it asks once more ("End 3 calls? Click again", for
   4 s, the menu staying open) and then hangs up every call you've placed or are on; a call
-  that's only ringing is left to Answer or Decline. (Mute all and Cameras off were here too; the
-  privacy switch does both.)
+  that's only ringing is left to Answer or Decline.
 - **Keys**: `1`–`8` put that call in the list on the stage (`1` is the top, the oldest), `A` answers,
-  `M` mutes, `Shift+M` is the privacy switch, `H` holds or resumes, `G`
+  `M` mutes, `Shift+M` turns privacy mode on or off, `H` holds or resumes, `G`
   switches between Focus and Grid.
 
 ## Focus and grid views
@@ -360,7 +359,7 @@ the audio, and the view stays Grid.
   holds the call you're on and opens the new one in Focus. Its own answer view (the banner's
   name) leaves the choice alone.
 - **`T`** in the grid switches to Focus with the text panel open, as does *Reply* on a text
-  toast. `M`, `H` and `V` do nothing in the grid; `Shift+M` (the privacy switch) still works.
+  toast. `M`, `H` and `V` do nothing in the grid; `Shift+M` (privacy mode) still works.
 - The choice is remembered (`view` in the page's settings) and only applies with two or more
   calls: with one, it's Focus.
 - Each call's `<video>` moves into its tile and back (`renderGrid` in `app.js` keeps the tiles

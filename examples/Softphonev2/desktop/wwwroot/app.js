@@ -277,7 +277,7 @@ export const MIC_CONSTRAINTS = { echoCancellation: true, noiseSuppression: true,
 // before a call too: it's remembered, and the call's microphone opens muted.
 export let hasMic = false;        // a microphone exists
 let micMuted = false;
-// The privacy switch at the top (Shift+M): while it's on, every call is muted with its camera
+// Privacy mode, the button at the top (Shift+M): while it's on, every call is muted with its camera
 // off, and so is each new one. It holds what each call had before, for turning it off again.
 // It's never remembered: the app always starts with it off. Unmuting a call or turning a camera
 // on turns it off without putting the other calls back (see privacyRelease).
@@ -1265,7 +1265,7 @@ $("holdBtn").onclick = () => { const e = sel(); if (e && holdState(e)) goLive(e)
 $("heldResume").onclick = () => goLive(sel());
 $("heldResume").innerHTML = `${ICON.play}<span>Resume</span>`;
 // Mute: the selected call's microphone. Before a call, whether calls start muted. Unmuting turns
-// the privacy switch off (the other calls stay muted).
+// privacy mode off (the other calls stay muted).
 function toggleMute() {
   const e = sel();
   if (e?.m) {
@@ -1282,8 +1282,8 @@ function toggleMute() {
 }
 $("muteBtn").onclick = toggleMute;
 
-// The privacy switch (Shift+M), like a desk phone's mute key or a safety switch: on, every call
-// is muted and every video call sends your placeholder instead of the camera, which closes, and
+// Privacy mode (Shift+M), like a browser's private window: on, every call is muted and every
+// video call sends your placeholder instead of the camera, which closes, and
 // calls you place or answer start that way too. Off again, each call goes back to how it was
 // (a call that started while it was on, to how a new call would). Unmuting a call or turning a
 // camera on turns it off by itself, changing only that call. Never remembered.
@@ -1317,60 +1317,26 @@ export function privacyRelease() {
   privacy = null;
   log("privacy off");
 }
-// The button is the block sign alone. Like a safety switch's cover, the first click only arms it:
-// "Block Audio and Video Devices" slides out and the button turns red-edged, and a second click
-// blocks. Armed, a × at the end of the words folds it back at once; left alone (the pointer gone,
-// or focus elsewhere) for 3 s, it folds back by itself. While blocked it's the red chip, and one click unblocks. Shift+M needs no arming.
-let privacyArmed = false, privacyFold = 0;
-const PRIVACY_FOLD_MS = 3000;
-function privacyDisarm() {
-  clearTimeout(privacyFold);
-  if (!privacyArmed) return;
-  privacyArmed = false;
-  renderPrivacy();
-}
-function privacyFoldLater() {
-  clearTimeout(privacyFold);
-  if (privacyArmed) privacyFold = setTimeout(privacyDisarm, PRIVACY_FOLD_MS);
-}
+// The button: the incognito icon alone while it's off; on, a dark chip with the icon and
+// "Privacy mode", as a browser marks a private window. One click turns it on or off: nothing is
+// lost either way, since off puts every call back as it was.
 {
   const btn = $("privacyBtn");
-  btn.innerHTML = `<span class="privacy-icons"></span><span class="privacy-text"><span></span></span>`;
-  btn.onclick = () => {
-    if (privacy || privacyArmed) { privacyDisarm(); togglePrivacy(); return; }
-    privacyArmed = true;
-    renderPrivacy();
-  };
-  const cancel = $("privacyCancel");
-  cancel.innerHTML = ICON.close;
-  cancel.onclick = () => { privacyDisarm(); btn.focus(); };
-  // The button and its × count as one: on either, it stays out; off both, it folds later.
-  const wrap = $("privacy");
-  wrap.addEventListener("pointerenter", () => clearTimeout(privacyFold));
-  wrap.addEventListener("pointerleave", privacyFoldLater);
-  wrap.addEventListener("focusin", () => clearTimeout(privacyFold));
-  wrap.addEventListener("focusout", (e) => { if (!wrap.contains(e.relatedTarget)) privacyFoldLater(); });
+  btn.innerHTML = `${ICON.incognito}<span class="privacy-text">Privacy mode</span>`;
+  btn.onclick = togglePrivacy;
 }
 function renderPrivacy() {
   const btn = $("privacyBtn"), on = !!privacy;
-  if (on) privacyArmed = false;
   btn.classList.toggle("on", on);
-  btn.classList.toggle("armed", privacyArmed);
-  $("privacyCancel").hidden = !privacyArmed;
   btn.setAttribute("aria-pressed", String(on));
-  // Off, the block sign (its words folded away, still its name); on, the red chip with the icons.
-  const icons = on ? ICON.micOff + ICON.videoOff : ICON.block;
-  const box = btn.querySelector(".privacy-icons");
-  if (box.innerHTML !== icons) box.innerHTML = icons;
-  btn.querySelector(".privacy-text > span").textContent = on ? "Mic and Cameras Blocked" : "Block Audio and Video Devices";
-  btn.title = on ? "No call hears or sees you, new calls too. Click to unblock (Shift+M)"
-    : privacyArmed ? "Click again to mute every call and turn every camera off, new calls too"
-    : "Block audio and video devices: click, then click again (Shift+M)";
+  btn.title = on
+    ? "Privacy mode is on: your audio and video capture devices are disabled on every call, and new calls start that way (microphone muted, cameras off). Click to turn it off (Shift+M)"
+    : "Privacy mode: disable your audio and video capture devices on every call, new calls too (microphone muted, cameras off) (Shift+M)";
 }
 
 // Keys for calls (not while typing, or with a menu or dialog open): 1–8 put that call in the
 // list on the stage (1 is the top, the oldest; from the grid, in Focus), A answers the caller who has
-// waited longest, M mutes the selected call, Shift+M is the privacy switch (every call muted, cameras off),
+// waited longest, M mutes the selected call, Shift+M is privacy mode (every call muted, cameras off),
 // H holds or resumes (M and H not in the grid), G switches Focus and Grid, and Esc leaves an
 // ended call for another.
 document.addEventListener("keydown", (ev) => {
