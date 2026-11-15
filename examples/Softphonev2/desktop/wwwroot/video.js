@@ -1,11 +1,11 @@
 // What each call sends as video: your camera, a diagnostic source (test pattern, audio bars), the
 // camera-off placeholder or the "On hold" card. Opens and closes the camera to match.
 
-import { call, callType, camStart, devices, entries, holdState, local, localTrack, nextVideo, render, sel, selectedId, state, tick } from "./app.js";
+import { call, devices, entries, holdState, local, localTrack, nextVideo, render, sel, selectedId, state } from "./app.js";
 import { avatarImage } from "./avatar.js";
 import { BANDS, FALL_MS, analyserFor, bands } from "./levels.js";
-import { selfViewOn } from "./menus.js";
 import { $, fitText, initial, log } from "./util.js";
+import { previewOn } from "./yourdevices.js";
 
 // On a video call held with music on hold, they see this card instead of your camera: a pause
 // sign and "On hold", a few frames a second, like the camera-off placeholder.
@@ -46,8 +46,8 @@ export function setHasCamera(has) { hasCamera = has; }
 let cameraBusy = null;     // the open or close in progress, so they never overlap
 
 // Which video sources should be open ("camera", "test", "bars"): each call's own, while it's
-// sending video with your camera on, and before a call, while the switch is on Video, the
-// source new calls start with (a preview of what they'll see).
+// sending video with your camera on, and while Your devices' preview is on (yourdevices.js), the
+// source new calls start with. Nothing opens before a call without that click.
 export function wantedSources() {
   const want = new Set();
   if (!local) return want;   // not before the microphone's open (local is set)
@@ -60,9 +60,7 @@ export function wantedSources() {
       // call's preview carries straight on into the call.
       for (const kind of openSources()) want.add(kind);
     } else {
-      const before = state.call === "idle" || state.call === "ended" || state.call === "calling";
-      // The preview is only for you, so with Self view off nothing opens until the call.
-      if (before && state.videoAllowed !== false && callType === "video" && camStart() && selfViewOn) want.add(nextVideo.source);
+      if (previewOn() && nextVideo.camOn) want.add(nextVideo.source);   // Camera off: the card, no camera
     }
   }
   if (!sourceAvailable("camera")) want.delete("camera");
@@ -165,6 +163,7 @@ function drawPlaceholder(g, w, h, name, aor) {
 export function stopPlaceholders(keep = null) {
   for (const [key, p] of placeholders) {
     if (p.track === keep || [...entries.values()].some((e) => e.m?.videoSender && placeholderKey(e) === key)) continue;
+    if (previewOn() && !nextVideo.camOn && key === placeholderKey(null)) continue;   // Your devices' preview of it
     p.stop();
     placeholders.delete(key);
   }
@@ -211,6 +210,9 @@ export const sourceAvailable = (kind) => kind !== "camera" || (hasCamera && !cam
 export const videoAvailable = () => sourceAvailable(nextVideo.source);
 export const isTestTrack = (track) => !!track && [...sources.values()].some((tp) => tp.track === track);
 const sourceTrack = (kind) => (kind === "camera" ? localTrack("video") : sources.get(kind)?.track ?? null);
+// What Your devices' preview shows: the source new calls start with, once it's open, or with the
+// camera list's Camera off, the camera-off card they'll see (the selected account's).
+export const previewTrack = () => (nextVideo.camOn ? sourceTrack(nextVideo.source) : placeholderTrack(null));
 
 function openTestPattern(kind) {
   const tp = { kind, frame: 0, analyser: null, micTrack: null, levels: new Float32Array(BANDS), target: new Float32Array(BANDS), last: performance.now() };

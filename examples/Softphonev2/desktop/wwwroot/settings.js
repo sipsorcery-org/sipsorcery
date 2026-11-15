@@ -1,12 +1,14 @@
 // Settings: the gear in the top bar opens them, as in the UX prototype (prototype/web). Only
 // the options with something behind them in these apps:
-//  - Audio & video: the microphone, speaker and camera calls use (the same choice as the ▾ menus
-//    on Mute and Camera).
+//  - Audio & video: your default devices, the microphone, speaker and camera every call you place
+//    or answer starts with. A change for one call is made on demand, from Your devices or the ▾
+//    menus on Mute and Camera, and lasts until the last call ends. Nothing else carries from one
+//    call to the next: Call or Video call, Answer or Answer with video say whether your camera
+//    opens, and Mute and the camera button change only the call they're on.
 //  - Appearance: the theme, system, light or dark, and Gravatar pictures for people (avatar.js).
-// Nothing here repeats a button you already have: whether video calls start with your camera on
-// (the Camera button before a call), the self view (Self view, V) and the grid (Grid, G) are each
-// kept by their own button, so they used to be settings too and aren't any more. Gravatar stays,
-// though it has no button, because it's a choice about what's sent to someone else's server.
+// The self view (Self view, V) and the grid (Grid, G) are kept by their own buttons, so they aren't
+// settings. Gravatar is, though it has no button, because it's a choice about what's sent to
+// someone else's server.
 //  - Diagnostics: opens the panel F12 opens, handy where a browser keeps F12 for itself.
 // Every change applies straight away. They're kept in the page's storage: on the desktop that's
 // the WebView2 profile's (--profile), so each profile has its own; on the web, this browser's.
@@ -14,12 +16,13 @@
 // they're left out.
 
 const KEY = "softphonev2.settings";
-// theme: "system", "light" or "dark". camOn: video calls start with the camera on. view: "focus"
+// theme: "system", "light" or "dark". view: "focus"
 // shows only the selected call; "grid" shows every active call side by side, with two or more.
 // gravatar: show Gravatar pictures in place of initials (avatar.js).
-export const prefs = { theme: "system", camOn: true, view: "focus", gravatar: true };
+export const prefs = { theme: "system", view: "focus", gravatar: true };
 try { Object.assign(prefs, JSON.parse(localStorage.getItem(KEY) ?? "{}")); } catch { /* storage unavailable */ }
 delete prefs.autoAnswer;   // "Answer calls automatically" was a setting once; --auto-answer is the testing switch
+delete prefs.camOn;        // so was "Video call starts with my camera": the button you press says it now
 
 export function savePref(name, value) {
   prefs[name] = value;
@@ -32,7 +35,26 @@ function applyTheme() {
 }
 applyTheme();
 
-const GEAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>';
+// The device lists (Settings and Your devices): "System default" first, then what's plugged in. A
+// remembered device that's unplugged stays listed, so you can see it's chosen but gone. Returns
+// { opts: [[id, label]], current (the id chosen, "" for the default), named (the browser gave
+// names; it doesn't until the page has used a microphone or camera), label (the chosen one's) }.
+export const DEVICE_KINDS = { mic: "audioinput", speaker: "audiooutput", camera: "videoinput" };
+const DEVICE_WORD = { mic: "Microphone", speaker: "Speaker", camera: "Camera" };
+export function deviceOptions(list, key, chosen) {
+  const all = list.filter((d) => d.kind === DEVICE_KINDS[key]);
+  const sys = all.find((d) => d.deviceId === "default");
+  const named = all.filter((d) => d.deviceId && d.deviceId !== "default" && d.deviceId !== "communications");
+  const sysName = sys?.label ? sys.label.replace(/^Default\s*-\s*/i, "") : named.length === 1 && named[0].label ? named[0].label : "";
+  const opts = [["", sysName ? `System default (${sysName})` : "System default"],
+    ...named.map((d, i) => [d.deviceId, d.label || `${DEVICE_WORD[key]} ${i + 1}`])];
+  const current = chosen === "default" ? "" : chosen ?? "";
+  if (current && !opts.some(([id]) => id === current)) opts.push([current, "Chosen device (not connected)"]);
+  const label = current ? opts.find(([id]) => id === current)[1] : sysName || "System default";
+  return { opts, current, named: !all.length || named.some((d) => d.label), label, none: !all.length };
+}
+
+const GEAR ='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>';
 const CLOSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
 
 // The foot of Settings: which build this is. The desktop host sets window.softphoneVersion
@@ -64,11 +86,14 @@ export function initSettings(app) {
     </div>
     <div class="settings-body">
       <section class="settings-section" aria-labelledby="setAvHead">
-        <h3 id="setAvHead">Audio &amp; video</h3>
-        <label class="settings-field"><span>Microphone</span><select data-device="mic"></select></label>
-        <label class="settings-field" ${canPickSpeaker ? "" : "hidden"}><span>Speaker</span><select data-device="speaker"></select></label>
-        <label class="settings-field"><span>Camera</span><select data-device="camera"></select></label>
+        <h3 id="setAvHead">Audio &amp; video: default devices</h3>
+        <p class="settings-note settings-lead">Every call you place or answer starts with these.</p>
+        <label class="settings-field"><span>Default microphone</span><select data-device="mic"></select></label>
+        <label class="settings-field" ${canPickSpeaker ? "" : "hidden"}><span>Default speaker</span><select data-device="speaker"></select></label>
+        <label class="settings-field"><span>Default camera</span><select data-device="camera"></select></label>
         <p class="settings-note" id="setDevNote" hidden></p>
+        <p class="settings-note" id="setDevCall" hidden>The call you're on keeps the devices it has.</p>
+        <p class="settings-note">To use another device for one call, change it from Your devices, or the ▾ on Mute and Camera during the call. That lasts until the call ends; the next one starts with these again.</p>
       </section>
       <section class="settings-section" aria-labelledby="setThemeHead">
         <h3 id="setThemeHead">Appearance</h3>
@@ -88,31 +113,31 @@ export function initSettings(app) {
 
   const q = (sel) => dlg.querySelector(sel);
 
-  // The device lists: "System default" first, then what's plugged in. A remembered device
-  // that's unplugged stays listed, so you can see it's chosen but gone.
   async function fillDevices() {
     let list = [];
     try { list = await navigator.mediaDevices.enumerateDevices(); } catch { /* none to show */ }
-    const kinds = { mic: "audioinput", speaker: "audiooutput", camera: "videoinput" };
     let unnamed = false;
-    for (const [key, kind] of Object.entries(kinds)) {
+    for (const key of Object.keys(DEVICE_KINDS)) {
       const sel = q(`select[data-device="${key}"]`);
-      const all = list.filter((d) => d.kind === kind);
-      const sys = all.find((d) => d.deviceId === "default");
-      const named = all.filter((d) => d.deviceId && d.deviceId !== "default" && d.deviceId !== "communications");
-      if (all.length && !named.some((d) => d.label)) unnamed = true;
-      const opts = [["", sys?.label ? `System default (${sys.label.replace(/^Default\s*-\s*/i, "")})` : "System default"],
-        ...named.map((d, i) => [d.deviceId, d.label || `${key === "mic" ? "Microphone" : key === "speaker" ? "Speaker" : "Camera"} ${i + 1}`])];
-      const current = app.devices[key] === "default" ? "" : app.devices[key];
-      if (current && !opts.some(([id]) => id === current)) opts.push([current, "Chosen device (not connected)"]);
+      const { opts: devs, current: dev, named } = deviceOptions(list, key, app.defaults[key]);
+      // The camera's ends with Camera off: video calls start with your camera-off card.
+      const camOff = key === "camera" && app.videoAllowed();
+      const opts = camOff ? [...devs, ["cam:off", "Camera off: send my camera-off card"]] : devs;
+      const current = camOff && prefs.cameraOff ? "cam:off" : dev;
+      if (!named) unnamed = true;
       if (sel.dataset.sig === JSON.stringify(opts) && sel.value === current) continue;   // don't disturb an open list
-      sel.replaceChildren(...opts.map(([id, label]) => Object.assign(document.createElement("option"), { value: id, textContent: label })));
+      const option = ([id, label]) => Object.assign(document.createElement("option"), { value: id, textContent: label });
+      if (camOff) {
+        const group = (label, items) => { const g = Object.assign(document.createElement("optgroup"), { label }); g.append(...items.map(option)); return g; };
+        sel.replaceChildren(group("Cameras", devs), group("Or", [["cam:off", "Camera off: send my camera-off card"]]));
+      } else sel.replaceChildren(...opts.map(option));
       sel.value = current;
       sel.dataset.sig = JSON.stringify(opts);
     }
     const note = q("#setDevNote");
     note.hidden = !unnamed;
     note.textContent = "Device names show once a call has used your microphone or camera.";
+    q("#setDevCall").hidden = !app.inCall();
   }
 
   function fill() {
@@ -142,7 +167,7 @@ export function initSettings(app) {
   dlg.addEventListener("change", async (e) => {
     const t = e.target;
     if (t.dataset.device) {
-      await app.pickDevice(t.dataset.device, t.value);
+      await app.setDefaultDevice(t.dataset.device, t.value);
       fillDevices();
     } else if (t.dataset.pref === "gravatar") {
       savePref("gravatar", t.checked);

@@ -15,14 +15,14 @@ import { syncCamera } from "./video.js";
 // replacing your call with them, and both your calls end), then an address field that is the
 // address bar's (addressField, below: the same contacts and recent calls, keys, mark and ×).
 // Enter or a click puts a row in the field; Transfer, or Enter again, sends the call there. A
-// bare name or number goes to the call's account's server (the host resolves it). The
-// call goes on hold as the transfer starts, and a note on the stage says how it's going, from the
-// host's transfer state (see MainForm). Failed, the call stays on hold: Resume or Try again,
-// your choice. A transfer done to you (they send you elsewhere, or someone takes over from them)
+// bare name or number goes to the call's account's server (the host resolves it). A note on
+// the stage says how it's going, from the host's transfer state (see MainForm). Blind, the call
+// isn't held (they may be deciding): failed, you're still talking, with Try again. Attended, both
+// calls go on hold as it starts: failed, Resume or Try again, your choice. A transfer done to you (they send you elsewhere, or someone takes over from them)
 // shows in the same note, for a few seconds.
 export let xferOpen = false;
 let xferFor = null;        // the call it was opened on: it closes if another is selected
-export const xferBusy = (e) => ["asking", "calling"].includes(e?.h.transfer?.status);
+export const xferBusy = (e) => ["asking", "calling", "offered"].includes(e?.h.transfer?.status);
 // Why the selected call can't be transferred now, or null if it can.
 function transferBlocked() {
   const e = sel();
@@ -85,12 +85,13 @@ function renderXferEntry() {
   $("xferGo").disabled = !$("xferAddr").value.trim() && !xferField.items[xferField.active];
 }
 // Starts a transfer of the selected call: { target } another call's id, or { address, label }.
-// The host holds the call (both, attended) as it sends the REFER; here they count as held at
-// once, so the audio moves off them now.
+// Attended, the host holds both calls as it sends the REFER; here they count as held at once, so
+// the audio moves off them now. Blind, the call isn't held: they may be deciding, and can talk
+// to you meanwhile (Phone.cs).
 function startTransfer(how) {
   const e = sel();
   if (!e || transferBlocked()) return;
-  for (const x of [e, how.target ? entries.get(how.target) : null]) {
+  for (const x of how.target ? [e, entries.get(how.target)] : []) {
     if (!x || holdState(x)) continue;
     x.holdWanted = true;
     x.holdAskedAt = Date.now();
@@ -121,6 +122,9 @@ export function transferShort(t) {
     return t.reason ? `Transfer failed: ${t.reason}` : `Transfer to ${t.target} failed`;
   }
   if (t.role === "in") {
+    if (t.status === "offered") return `${t.by} wants to transfer you to ${t.target}`;
+    if (t.status === "declined") return t.reason === "you declined it" ? `Transfer declined · still with ${t.by}`
+      : t.reason === "you didn't answer it" ? `Transfer not answered · still with ${t.by}` : "Transfer declined";
     if (busy) return t.transferorGone ? `${t.by} hung up · calling ${t.target}…`
       : `Transferring you to ${t.target}${t.rang ? " · ringing" : ""}…`;
     if (t.status === "done") return `Transferred by ${t.by}`;
@@ -133,8 +137,10 @@ export function transferShort(t) {
 // The call header's status (#xferNote): the selected call's transfer while it's going and for a
 // few seconds after, with what you can do. Under way: Cancel (ours: take the call back; theirs:
 // stay with who's transferring you; the host says when it can), and on our blind one, Hang up
-// (leave it to their phone). Ours failed: Try again and ×; the call's on hold, and the held note
-// in the middle of the stage has Resume. Done, cancelled, theirs failed: × (it goes by itself).
+// (leave it to their phone). Ours failed: Try again and ×; attended, the call's on hold, and the
+// held note in the middle of the stage says why, with Try again and Resume. Done, cancelled, theirs failed: × (it goes by itself).
+// Theirs, offered (they've asked to transfer you): Accept and Decline, nothing else; no answer in
+// 20 s declines it (the host).
 function renderTransferNote() {
   const e = sel();
   const t = e?.h.call === "connected" ? e.h.transfer : null;
@@ -145,7 +151,11 @@ function renderTransferNote() {
   const busy = t.status === "asking" || t.status === "calling";
   $("xferText").textContent = transferShort(t);
   note.title = t.detail || "";
-  note.dataset.state = busy ? "busy" : t.status === "failed" ? "bad" : t.status === "done" ? "done" : "info";
+  const asking = !!t.canAnswer;
+  note.dataset.state = asking ? "ask" : busy ? "busy" : t.status === "failed" ? "bad" : t.status === "done" ? "done" : "info";
+  $("xferAccept").hidden = $("xferDecline").hidden = !asking;
+  $("xferAccept").title = `Go to ${t.target}: ${t.by} hangs up once ${t.target} answers`;
+  $("xferDecline").title = `Stay with ${t.by}`;
   if (!$("xferIcon").innerHTML) $("xferIcon").innerHTML = ICON.transfer;
   const cancel = $("xferCancel");
   cancel.hidden = !t.canCancel;
@@ -155,7 +165,7 @@ function renderTransferNote() {
   $("xferLeave").title = `Hang up now and leave the transfer to ${t.target} to their phone`;
   $("xferRetry").hidden = !(ours && t.status === "failed");
   $("xferRetry").title = `Transfer ${nameOf(e)} again`;
-  $("xferDismiss").hidden = busy;
+  $("xferDismiss").hidden = busy || asking;
 }
 
 // Run by app.js at this point in its start-up, in the order it always ran.
@@ -174,6 +184,9 @@ export function initTransfer() {
   $("xferClose").onclick = () => setTransferOpen(false);
   $("xferDismiss").innerHTML = ICON.close;
   $("xferDismiss").onclick = () => post({ type: "transfer-dismiss", id: selectedId });
+  const answer = (accept) => { log(`call ${selectedId}: transfer ${accept ? "accepted" : "declined"}`); post({ type: "transfer-answer", id: selectedId, accept }); };
+  $("xferAccept").onclick = () => answer(true);
+  $("xferDecline").onclick = () => answer(false);
   $("xferCancel").onclick = () => { log(`call ${selectedId}: transfer cancelled`); post({ type: "transfer-cancel", id: selectedId }); };
   $("xferLeave").onclick = () => { log(`call ${selectedId}: hanging up, leaving the transfer to them`); post({ type: "transfer-leave", id: selectedId }); };
   $("xferRetry").onclick = () => { post({ type: "transfer-dismiss", id: selectedId }); setTransferOpen(true); };
@@ -191,6 +204,6 @@ export function initTransfer() {
     setTransferOpen(false);
   }, true);
   document.addEventListener("click", (ev) => {
-    if (xferOpen && !$("xferPop").contains(ev.target) && !$("transferBtn").contains(ev.target)) setTransferOpen(false);
+    if (xferOpen && !$("xferPop").contains(ev.target) && !$("transferBtn").contains(ev.target) && !$("moreMenu").contains(ev.target)) setTransferOpen(false);
   }, true);
 }

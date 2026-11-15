@@ -139,13 +139,19 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
 ## What works, and what doesn't yet
 
 - Audio and video calls both ways, with the desktop's controls (the same page, so they change
-  together): Mute / Unmute with the *You're muted* pill, Stop video / Start video, the camera
-  button switching an Audio call to Video before dialling, the device menus, self view (which
-  you can drag, resize from its corner and double-click to reset),
-  ringing, answer, decline, cancel, hang up, the SIP log (F12).
-- **Privacy mode** (the incognito sign, top right, just left of Settings; or `Shift+M`): one
-  click and every call is muted with its camera off, new calls too, until you click it again,
-  unmute a call or turn a camera on. Never remembered. See the
+  together): Call and Video call, Answer and Answer with video, Mute / Unmute with the
+  *You're muted* pill, Stop video / Start video, the device menus, self view (which you can
+  drag, resize from its corner and double-click to reset), ringing, decline, cancel, hang up,
+  the SIP log (F12).
+- **Home** with no call: recent calls (Call and Video call on each), the account, Your devices
+  and privacy mode. Focusing the address opens the dial view: Your devices at the top, then your
+  contacts and recent addresses to pick from. **Your devices** picks the microphone, speaker and
+  camera, with Test mic, Play a sound (where the browser can pick a speaker) and Preview. The
+  **indicator** left of privacy mode shows only while your microphone or camera is open. See the
+  [desktop design notes](../desktop/DESIGN.md#home-and-the-dial-view).
+- **Privacy mode** (the incognito sign, top right, just left of Settings; or `Shift+M`): a hard
+  off. One click and the microphone and camera close on every call, new calls too; Mute, the
+  camera button and the tests are disabled until you click it again. Never remembered. See the
   [desktop design notes](../desktop/DESIGN.md#privacy-mode).
 - **Settings** (the gear, top right): the desktop page's own (see the desktop README), kept in
   this browser's `localStorage` (`softphonev2.settings`, and `devices` and `selfView` as before;

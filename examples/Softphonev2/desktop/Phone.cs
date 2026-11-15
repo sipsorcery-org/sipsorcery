@@ -121,7 +121,7 @@ public sealed class Phone : IDisposable
         /// <summary>Attended, ours: the other call, which ends with this one.</summary>
         public string? PartnerId { get; init; }
         public string Status { get; internal set; } = "asking";
-        /// <summary>In full, for the tooltip and the log: "Couldn't transfer: Dave is busy (486 Busy Here). The call is still on hold."</summary>
+        /// <summary>In full, for the tooltip and the log: "Couldn't transfer: Dave is busy (486 Busy Here). You're still on the call: Try again, if you like."</summary>
         public string? Detail { get; internal set; }
         /// <summary>Failed: why, in a few words, for the call header's one line ("Dave is busy (486 Busy Here)").</summary>
         public string? Reason { get; internal set; }
@@ -145,6 +145,10 @@ public sealed class Phone : IDisposable
         public bool Rang { get; internal set; }
         /// <summary>"in": the transferor hung up on us while we were calling the target.</summary>
         public bool TransferorGone { get; internal set; }
+        /// <summary>"in", offered: your Accept or Decline, which answers their REFER (202 or 603).</summary>
+        internal TaskCompletionSource<bool>? Decision;
+        /// <summary>Whether the page can offer Accept and Decline: being transferred, and not yet decided.</summary>
+        public bool CanAnswer => Role == "in" && Status == "offered";
         /// <summary>
         /// Whether the page can offer Cancel: ours while it's under way (asking or calling), or
         /// being transferred while the target hasn't answered and the transferor's still there.
@@ -802,15 +806,27 @@ public sealed class Phone : IDisposable
     // ---- Transfer (RFC 3515 REFER, RFC 5589) ----
     // Ours: blind sends a REFER asking them to call an address; attended sends one asking them to
     // call the party on another of our calls, with Replaces (RFC 3891) so that call is taken over.
-    // Either way the call is held first, and how it goes comes back in NOTIFYs with a sipfrag
-    // ("SIP/2.0 180 Ringing", then 200 OK or why not). Done, they hang up on us (we do, if they
-    // don't); failed, the call stays held, for you to resume or end. Theirs: a REFER on one of
-    // our calls is taken (see TransferRequested for why without asking), and the user agent
-    // calls the target on the same media, hanging up on the transferor once it's answered. An
-    // INVITE with Replaces for one of our calls is taken over in place by that call's user agent.
+    // How it goes comes back in NOTIFYs with a sipfrag ("SIP/2.0 180 Ringing", then 200 OK or why
+    // not). Done, they hang up on us (we do, if they don't). Blind, the call isn't held: they may
+    // be asked whether to go (a phone like this one asks), and can talk it over with you meanwhile;
+    // their phone holds us itself while it calls the target, and if it doesn't go ahead you're
+    // simply still talking. Attended, both calls are held (you've put them on hold to speak to the
+    // target), and a failed one stays held for you to resume or end. Theirs: a REFER on one of our
+    // calls is accepted and you're asked (see TransferRequested and TransferConfirm), and the user
+    // agent calls the target on the same media, hanging up on the transferor once it's answered.
+    // An INVITE with Replaces for one of our calls is taken over in place by that call's user agent.
 
-    /// <summary>How long our REFER waits for 202 Accepted.</summary>
+    /// <summary>How long our REFER waits for 202 Accepted. A phone that asks its user (as this one does) answers 202 first, and asks after.</summary>
     private const int ReferAnswerMs = 10000;
+    /// <summary>How long a transfer to us waits for your Accept or Decline before it's declined (see <see cref="TransferConfirm"/>).</summary>
+    private const int TransferDecideMs = 20000;
+    /// <summary>
+    /// The final NOTIFY when you decline a transfer, after its 202: our own transferor knows it by
+    /// its reason phrase, and says they declined it; to another phone it's the transfer failing.
+    /// </summary>
+    private const string TransferDeclinedFrag = "603 Transfer declined";
+    /// <summary>The same, when you didn't answer in time.</summary>
+    private const string TransferUnansweredFrag = "603 Transfer not answered";
     /// <summary>How long a transfer they accepted can go without an outcome before we say we don't know.</summary>
     private const int TransferOutcomeMs = 60000;
     /// <summary>How long after a 200 OK NOTIFY we wait for their BYE before hanging up ourselves.</summary>
@@ -848,7 +864,7 @@ public sealed class Phone : IDisposable
             (ua, a) = (c.Ua, c.Account);
             Log?.Invoke($"call {c.Id}: blind transfer of {c.Remote} to {uri}: REFER");
         }
-        Hold(id, true);
+        // Not held (see above): they may be deciding, and can talk to you while they do.
         Changed?.Invoke();
         var asked = DateTime.Now;
         bool ok = await ua.BlindTransfer(uri, TimeSpan.FromMilliseconds(ReferAnswerMs), CancellationToken.None, null, a?.AuthUser, a?.Password);
@@ -896,9 +912,11 @@ public sealed class Phone : IDisposable
         if (c == null) return;
         if (c.Transfer?.Role == "in") { CancelTransferToUs(c); return; }
         Call? partner;
+        bool attended = false;
         lock (_lock)
         {
             if (c.Transfer is not { CanCancel: true, Role: "out" } t) return;
+            attended = t.Attended;
             var them = ShortName(c.Remote);
             t.Cancelled = true;
             c.CancelledTransferTo = t.Target;
@@ -909,8 +927,12 @@ public sealed class Phone : IDisposable
             _ = ClearTransferLater(c, t);
             if (partner?.Transfer is { } pt) _ = ClearTransferLater(partner, pt);
         }
-        Hold(id, false);
-        if (partner != null) Hold(partner.Id, false);
+        // Attended, the transfer held both calls: back on this one. Blind held nothing.
+        if (attended)
+        {
+            Hold(id, false);
+            if (partner != null) Hold(partner.Id, false);
+        }
         Changed?.Invoke();
     }
 
@@ -960,18 +982,28 @@ public sealed class Phone : IDisposable
         End(c, c.TransferNote);
     }
 
+    /// <summary>Being transferred: your answer to their request (Accept or Decline). See <see cref="TransferRequested"/>.</summary>
+    public void AnswerTransfer(string id, bool accept)
+    {
+        var c = Find(id);
+        if (c == null) return;
+        TaskCompletionSource<bool>? decision;
+        lock (_lock) decision = c.Transfer is { CanAnswer: true } t ? t.Decision : null;
+        decision?.TrySetResult(accept);
+    }
+
     /// <summary>Drops a transfer's note (a failed one, once you've seen it).</summary>
     public void DismissTransfer(string id)
     {
         var c = Find(id);
         if (c == null) return;
         bool cleared;
-        lock (_lock) cleared = c.Transfer is { Status: "failed" or "done" or "cancelled" } && ClearTransfer(c);
+        lock (_lock) cleared = c.Transfer is { Status: "failed" or "done" or "cancelled" or "declined" } && ClearTransfer(c);
         if (cleared) Changed?.Invoke();
     }
 
     /// <summary>A transfer is under way on the call (ours or theirs). Under the lock.</summary>
-    private static bool TransferBusy(Call c) => c.Transfer is { Status: "asking" or "calling" };
+    private static bool TransferBusy(Call c) => c.Transfer is { Status: "asking" or "calling" or "offered" };
 
     /// <summary>Removes a call's transfer, and its partner's if it's the same one. Under the lock.</summary>
     private bool ClearTransfer(Call c)
@@ -1016,7 +1048,7 @@ public sealed class Phone : IDisposable
                     lock (_lock)
                     {
                         if (c.Ua != ua || c.Transfer != t || t.Status != "calling") return;
-                        SetTransfer(c, "failed", $"No word from {them}'s phone on how the transfer went. The call is still on hold.", $"no word from {them}'s phone");
+                        SetTransfer(c, "failed", $"No word from {them}'s phone on how the transfer went.{StillThere(t)}", $"no word from {them}'s phone");
                     }
                     Changed?.Invoke();
                 });
@@ -1024,14 +1056,20 @@ public sealed class Phone : IDisposable
             else
             {
                 bool quick = took.TotalMilliseconds < ReferAnswerMs - 500;
-                Log?.Invoke($"call {c.Id}: transfer {(quick ? "turned down" : "not answered")} by {them}");
-                SetTransfer(c, "failed", quick ? $"{them}'s phone turned the transfer down. The call is still on hold."
-                    : $"{them}'s phone didn't answer the transfer request. The call is still on hold.",
+                // Turned down at once: their phone won't take it (a browser phone, say), or a proxy
+                // answered for it (sipsorcery.com's 408 when the phone hasn't). A person declining
+                // comes later, in a NOTIFY (see OnTransferNotify).
+                Log?.Invoke($"call {c.Id}: transfer {(quick ? "turned down" : "not answered")} by {them}'s phone");
+                SetTransfer(c, "failed", quick ? $"{them}'s phone turned the transfer down.{StillThere(t)}"
+                    : $"{them}'s phone didn't answer the transfer request.{StillThere(t)}",
                     quick ? $"{them}'s phone turned it down" : $"no answer from {them}'s phone");
             }
         }
         Changed?.Invoke();
     }
+
+    /// <summary>After a transfer of ours fails: where the call is. Attended, on hold (the transfer held it); blind, still going.</summary>
+    private static string StillThere(TransferInfo t) => t.Attended ? " The call is still on hold: Resume, or Try again." : " You're still on the call: Try again, if you like.";
 
     /// <summary>A NOTIFY on our transfer: the sipfrag of their call to the target, e.g. "SIP/2.0 180 Ringing".</summary>
     private void OnTransferNotify(Call c, SIPUserAgent ua, string sipfrag)
@@ -1051,7 +1089,7 @@ public sealed class Phone : IDisposable
                 // NOTIFYs can arrive out of order (a phone that sends 100 Trying late): ringing stays.
                 if (t.Status == "failed" || (t.Rang && code is not (180 or 183))) return;
                 if (code is 180 or 183) t.Rang = true;
-                SetTransfer(c, "calling", code is 180 or 183 ? $"{t.Target} is ringing… {them} is on hold." : t.Attended ? $"Joining {them} with {t.Target}…" : $"Transferring to {t.Target}…");
+                SetTransfer(c, "calling", code is 180 or 183 ? $"{t.Target} is ringing…{(t.Attended ? $" {them} is on hold." : "")}" : t.Attended ? $"Joining {them} with {t.Target}…" : $"Transferring to {t.Target}…");
             }
             else if (code < 300)
             {
@@ -1074,8 +1112,13 @@ public sealed class Phone : IDisposable
                     });
                 }
             }
-            else SetTransfer(c, "failed", code == 487 ? $"{them} stopped the transfer before {t.Target} answered. The call is still on hold."
-                : $"Couldn't transfer: {TransferFailure(code, reason, t.Target)}. The call is still on hold.",
+            // They declined it (a phone like this one asks, after its 202: TransferDeclinedFrag).
+            else if (code == 603 && reason.Equals("Transfer declined", StringComparison.OrdinalIgnoreCase))
+                SetTransfer(c, "failed", $"{them} declined the transfer.{StillThere(t)}", $"{them} declined it");
+            else if (code == 603 && reason.Equals("Transfer not answered", StringComparison.OrdinalIgnoreCase))
+                SetTransfer(c, "failed", $"{them} didn't answer the transfer in time.{StillThere(t)}", $"{them} didn't answer it");
+            else SetTransfer(c, "failed", code == 487 ? $"{them} stopped the transfer before {t.Target} answered.{StillThere(t)}"
+                : $"Couldn't transfer: {TransferFailure(code, reason, t.Target)}.{StillThere(t)}",
                 code == 487 ? $"{them} stopped it" : TransferFailure(code, reason, t.Target));
         }
         Changed?.Invoke();
@@ -1104,15 +1147,13 @@ public sealed class Phone : IDisposable
     } + $" ({code} {reason})".Replace(" )", ")");
 
     /// <summary>
-    /// The far end asks us to call someone in their place (a REFER on our call with them). The
-    /// user agent asks this on its SIP receive thread and needs the answer straight away (202 or
-    /// 603), so there's no time to ask the user: it's taken, unless the call can't be moved.
-    /// That's the safer of the two defaults the user agent allows: refusing every transfer would
-    /// break the ordinary case (a receptionist putting you through), while what's taken is
-    /// narrow and shown. It must come inside a connected call, from the person you're talking to;
-    /// the call goes out with your account's password only to that account's own server (so a
-    /// transfer can't use your account to reach an outside number), and the stage says who's
-    /// transferring you to whom while it rings, so you can hang up.
+    /// The far end asks us to call someone in their place (a REFER on our call with them). One
+    /// that can't be taken (not a connected call, a browser phone's, one already under way, not a
+    /// SIP address) is turned down straight away (603). Otherwise it's answered 202 Accepted at
+    /// once, which only says we'll deal with it, and you decide (see <see cref="TransferConfirm"/>):
+    /// a proxy won't wait while you do (sipsorcery.com answers a REFER 408 itself after 8 s), and
+    /// neither will most transferors. The call header says who wants to transfer you to whom, with
+    /// Accept and Decline.
     /// </summary>
     private bool TransferRequested(Call c, SIPUserAgent ua, SIPUserField referTo, string? referredBy)
     {
@@ -1137,16 +1178,59 @@ public sealed class Phone : IDisposable
             }
             t = c.Transfer = new TransferInfo
             {
-                Role = "in", Target = to, By = by, Attended = attended, Status = "calling", Dialogue = ua.Dialogue, OldSources = new(c.Sources),
-                Detail = $"{by} is transferring you to {to}…",
+                Role = "in", Target = to, By = by, Attended = attended, Status = "offered", Dialogue = ua.Dialogue,
+                Detail = $"{by} wants to transfer you to {to}{(attended ? " (they've spoken to them)" : "")}. Accept to be put through; Decline to stay with {by}.",
+                Decision = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously),
             };
-            Log?.Invoke($"call {c.Id}: {by} is transferring us to {referTo.URI.ToParameterlessString()}{(attended ? " (attended: replacing their call with them)" : "")}{(referredBy != null ? $", referred by {referredBy}" : "")}: accepted (202)");
+            Log?.Invoke($"call {c.Id}: {by} wants to transfer us to {referTo.URI.ToParameterlessString()}{(attended ? " (attended: replacing their call with them)" : "")}{(referredBy != null ? $", referred by {referredBy}" : "")}: accepted (202), asking you");
         }
         Changed?.Invoke();
-        // The first NOTIFY once the 202 is out (the user agent sends it when this returns).
-        // Not if the target's already ringing (NotifyTransferor has sent 180): it'd go after it.
+        // The first NOTIFY once the 202 is out (the user agent sends it when this returns): we're
+        // on it. Not if the target's already ringing (NotifyTransferor has sent 180): it'd go after it.
         _ = Task.Delay(200).ContinueWith(_ => { if (!t.Notified) NotifyTransferor(c, t, "100 Trying", false); });
         return true;
+    }
+
+    /// <summary>
+    /// A transfer to us, accepted (202): your Accept or Decline, which the user agent waits for
+    /// before it does anything (OnTransferConfirmAsync). No answer in 20 s declines it. Declined,
+    /// the call carries on as it was and the transferor gets a final NOTIFY, 603 Transfer declined.
+    /// Accepted, the user agent holds them and calls the target: from your account, with its
+    /// password only to that account's own server (so a transfer can't use your account to reach an
+    /// outside number), and the stage says who's transferring you to whom while it rings, with Cancel.
+    /// </summary>
+    private async Task<bool> TransferConfirm(Call c, SIPUserAgent ua, SIPUserField referTo)
+    {
+        TransferInfo? t;
+        lock (_lock) t = c.Transfer is { Role: "in", Status: "offered", Decision: not null } x && c.Ua == ua ? x : null;
+        if (t == null) return false;
+        var decided = await Task.WhenAny(t.Decision!.Task, Task.Delay(TransferDecideMs)).ConfigureAwait(false);
+        bool accept = decided == t.Decision.Task && t.Decision.Task.Result;
+        string to = t.Target, by = t.By!;
+        lock (_lock)
+        {
+            if (c.Transfer != t) return false;
+            if (!accept || c.Ua != ua || c.State != CallState.Connected)
+            {
+                bool gone = c.Ua != ua || c.State != CallState.Connected;
+                string why = gone ? "the call ended" : decided == t.Decision.Task ? "you declined it" : "you didn't answer it";
+                Log?.Invoke($"call {c.Id}: {by}'s transfer to {referTo.URI.ToParameterlessString()}: not going ahead, {why}");
+                if (!gone) NotifyTransferor(c, t, decided == t.Decision.Task ? TransferDeclinedFrag : TransferUnansweredFrag, true);
+                t.Status = "declined";
+                t.Reason = why;
+                t.Detail = decided == t.Decision.Task ? $"You declined {by}'s transfer to {to}: still with {by}." : $"{by}'s transfer to {to} was declined: you didn't answer it in time. Still with {by}.";
+                _ = ClearTransferLater(c, t);
+            }
+            else
+            {
+                t.Status = "calling";
+                t.OldSources = new(c.Sources);
+                t.Detail = $"{by} is transferring you to {to}…";
+                Log?.Invoke($"call {c.Id}: you accepted {by}'s transfer to {referTo.URI.ToParameterlessString()}: calling {to}");
+            }
+        }
+        Changed?.Invoke();
+        return accept;
     }
 
     /// <summary>
@@ -1945,6 +2029,7 @@ public sealed class Phone : IDisposable
         // Transfer (see BlindTransfer and TransferRequested).
         ua.OnTransferNotify += sipfrag => OnTransferNotify(c, ua, sipfrag);
         ua.OnTransferRequested += (referTo, referredBy) => TransferRequested(c, ua, referTo, referredBy);
+        ua.OnTransferConfirmAsync += (referTo, _) => TransferConfirm(c, ua, referTo);
         ua.OnTransferCallDescriptorCreated += (d, refer) => TransferCallDescriptor(c, d, refer);
         ua.OnTransferToTargetSuccessful += _ => TransferOutcome(c, ua, true);
         ua.OnTransferToTargetFailed += _ => TransferOutcome(c, ua, false);
@@ -2000,6 +2085,16 @@ public sealed class Phone : IDisposable
             c.Incoming = null;
             c.Held = c.HeldByThem = c.HoldWanted = false;
             c.EndedAt = DateTime.Now;
+            // One call of an attended transfer ending any other way than by the transfer (you hung
+            // up on it before it went through, say) is the transfer over: the call left isn't
+            // being transferred any more, and can be again. (Before, it stayed "under way", with
+            // Transfer disabled on it until it ended.)
+            if (c.TransferNote == null && c.Transfer is { PartnerId: { } pid }
+                && _calls.FirstOrDefault(x => x.Id == pid) is { Transfer: { } pt } partner && pt.PartnerId == c.Id && partner.State != CallState.Ended)
+            {
+                partner.Transfer = null;
+                Log?.Invoke($"call {partner.Id}: the transfer with call {c.Id} is over: that call ended ({reason})");
+            }
             SetState(c, CallState.Ended);
         }
         try { Ended?.Invoke(c); } catch (Exception ex) { Log?.Invoke($"recording call {c.Id} in history failed: {ex.Message}"); }

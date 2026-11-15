@@ -9,7 +9,7 @@ namespace SIPSorcery.Softphone;
 /// The window: a WebView2 showing <c>wwwroot/index.html</c>, and the message bridge between that
 /// page and <see cref="Phone"/>. Page → host: ready, dial, answer, decline, hangup, hold,
 /// add-video, text, add-text, loss, media-answer, transfer {id, target} or {id, address, label},
-/// transfer-dismiss, transfer-cancel, transfer-leave, for accounts account-select, account-save,
+/// transfer-dismiss, transfer-answer, transfer-cancel, transfer-leave, for accounts account-select, account-save,
 /// account-enable, account-remove, account-register, and for the call history history-remove
 /// {ids} and history-restore {ids} (Undo). Host → page: state (every call, with the accounts and
 /// their registrations), history (every past call, newest first: on ready and whenever it
@@ -300,6 +300,10 @@ internal sealed class MainForm : Form
                 case "transfer-dismiss":
                     _phone.DismissTransfer(Id(msg));
                     break;
+                case "transfer-answer":
+                    // Being transferred: Accept ({accept: true}) or Decline.
+                    _phone.AnswerTransfer(Id(msg), (bool?)msg["accept"] ?? false);
+                    break;
                 case "transfer-cancel":
                     // Ours: stop and take the call back. Being transferred: stay with the transferor.
                     _phone.CancelTransfer(Id(msg));
@@ -451,7 +455,7 @@ internal sealed class MainForm : Form
                 text = c.TextState,
                 // A transfer on the call, ours or theirs: { role: out | in | replace, target, by,
                 // attended, partner, status: asking | calling | done | failed, detail (in words) }.
-                transfer = c.Transfer is { } t ? new { t.Role, t.Target, t.By, t.Attended, partner = t.PartnerId, t.Status, t.Detail, t.Reason, t.Rang, t.TransferorGone, t.CanCancel, t.CanLeave } : null,
+                transfer = c.Transfer is { } t ? new { t.Role, t.Target, t.By, t.Attended, partner = t.PartnerId, t.Status, t.Detail, t.Reason, t.Rang, t.TransferorGone, t.CanCancel, t.CanLeave, t.CanAnswer } : null,
             }).ToList(),
             maxCalls = Phone.MaxCalls,
             // This host can transfer calls (the web softphone's doesn't, and the page hides Transfer).

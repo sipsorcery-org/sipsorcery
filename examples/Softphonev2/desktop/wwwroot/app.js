@@ -9,8 +9,11 @@
 //    this means the video has stalled or the far end stopped sending);
 //  - an audio-only view, if the call has no video at all: two rows of frequency bars, theirs
 //    above the centre line and yours below, with notes when audio isn't flowing one way.
-// The Audio | Video switch beside Call picks the kind of call. An audio call has no video line;
-// "Add video" asks the far end for one (a SIP re-INVITE), and the host then sends a new offer.
+// Call and Video call beside the address place the kind of call; a call ringing in has Answer
+// (your camera stays closed, but you see them) and Answer with video. An audio call has no video
+// line; "Add video" asks the far end for one (a SIP re-INVITE), and the host then sends a new offer.
+// With no call, the stage is Home (home.js), and while you place one, the dial view; Your devices
+// (yourdevices.js) is on both and under a call ringing in.
 //
 // Several calls at once, as in the prototype: each call the host reports has an entry here (see
 // entries), with its own peer connection, <video> element, quality, details and text. The stage
@@ -25,8 +28,8 @@
 // nothing. When a call ends, nothing resumes on its own: a held call stays held, with Resume.
 // An incoming call while you're on one shows as a banner, with Answer & hold current or Decline.
 
-import { initAccounts, onAccountsState, onAccountMessage, closeAccounts, useAccount, accountName, accountList } from "./accounts.js";
-import { initHistory, onHistoryMessage, onHistoryState, closeHistory, historyEntries, openPeople } from "./history.js";
+import { initAccounts, onAccountsState, onAccountMessage, closeAccounts, useAccount, accountName, accountList, takeAccounts } from "./accounts.js";
+import { initHistory, onHistoryMessage, onHistoryState, closeHistory, historyEntries, markSeen, openPeople, renderSide } from "./history.js";
 import { prefs, savePref, initSettings } from "./settings.js";
 import { initSelfView } from "./selfview.js";
 import { normAddress, contactMark, contactMarkEl } from "./contactmark.js";
@@ -38,14 +41,17 @@ import { initDiagnostics, renderInfoLock, setDiagnostics } from "./diagnostics.j
 import { holdAudio, quietAudio, stopHoldMusic } from "./holdmusic.js";
 import { initKeypad, keypadOpen, onDtmfIn, renderKeypad, setKeypadOpen } from "./keypad.js";
 import { analyserFor, drawViz, initLevels, startTiles } from "./levels.js";
-import { answerSplit, closeMenu, initMenus, openMenu, pickDevice, pickMic, renderAnswer, selfViewOn, showLoss } from "./menus.js";
+import { closeMenu, initMenus, openMenu, pickDevice, pickMic, renderMore, selfViewOn, showLoss } from "./menus.js";
+import { closeDevices, initYourDevices, renderIndicator, renderYourDevices, stopTests } from "./yourdevices.js";
+import { dialDone, homeShown, initHome, renderHome } from "./home.js";
 import { initQuality, newQuality, onQuality, renderDetails, renderDock, renderQuality } from "./quality.js";
 import { closeTextForGrid, hideToast, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen, toastCallId } from "./rtt.js";
-import { initTransfer, renderTransfer, xferBusy } from "./transfer.js";
+import { initTransfer, renderTransfer, transferShort, xferBusy } from "./transfer.js";
 import { $, ICON, initial, log, post, shortName } from "./util.js";
 import { cameraInUse, hasCamera, isTestTrack, openSources, placeholderTrack, retryCamera, sameSources, setHasCamera, showSelfVideo, sourceAvailable, sourceOf, stopPlaceholders, syncCamera, videoToSend, wantedSources } from "./video.js";
 
 const CAMERA_KBPS = 1500;
+const ENDED_CARD_MS = 3000;   // how long a call's "Call ended" card stays before Home, with no other call
 const NO_FRAMES_MS = 2000;   // how long without video frames before saying their camera is off
 export const NO_AUDIO_MS = 2000;    // how long without audio packets before saying none is arriving
 
@@ -56,8 +62,9 @@ export let hostState = { calls: [] };   // the host's last state message
 export let state = { call: "idle" };
 export let pc = null;             // the selected call's peer connection
 export let call = null;           // the selected call's media state, see onMediaOffer
-export let answerCamera = null;   // the Answer button's menu: camera on (true) or off (false) for the call being answered; null follows nextVideo
-export const setAnswerCamera = (on) => { answerCamera = on; };
+// Answer (false) or Answer with video (true), for the call being answered; null: a call you
+// placed, which starts as nextVideo says.
+export let answerCamera = null;
 
 // ---- The calls ----
 // Every call the host reports, by id: { id, h (the host's view of it), m (its media state, once
@@ -90,7 +97,12 @@ function newEntry(id) {
   };
 }
 
+// Ended calls dropped here while the host still lists them (it keeps an ended call a little while):
+// not new calls, so they don't come back as one, with their "Call ended" card over Home. Each id
+// is forgotten once the host stops listing it.
+const dropped = new Set();
 function dropEntry(e) {
+  if (e.h.call === "ended") dropped.add(e.id);
   closeMedia(e);
   e.el.remove();
   entries.delete(e.id);
@@ -197,42 +209,37 @@ function syncAudio() {
     if (e.el.srcObject && e.el.paused) e.el.play().catch(() => {});
     const sender = e.m?.audioSender;
     // Held by them, even the live call sends silence rather than you, until they resume.
-    const want = on && !e.h.heldByThem ? mic : sender ? quietAudio(e) : null;
+    // No microphone (privacy mode closed it): silence, never nothing.
+    const want = on && mic && !e.h.heldByThem ? mic : sender ? quietAudio(e) : null;
     if (sender && sender.track !== want) sender.replaceTrack(want).catch((err) => log(`audio switch failed: ${err.message}`));
   }
   // The music plays only while a call is sending it.
   if (holdAudio && ![...entries.values()].some((e) => e.m?.audioSender?.track === holdAudio.music.stream.getAudioTracks()[0])) stopHoldMusic();
 }
 
-// ---- The Audio | Video switch, and what new calls start with ----
-
-// The Audio | Video switch: always Audio at start (most SIP calls go to phones, and the camera
-// stays off until you ask for video).
-export let callType = "audio";
+// ---- What new calls start with ----
+// The kind of call is the button you press: Call or Video call, Answer or Answer with video.
+// There's no switch, and nothing carries over from one call to the next.
 export const params = new URLSearchParams(location.search);
-if (params.get("call") === "video") callType = "video";          // --video (testing)
-// What the next video call starts with, and what the preview before a call shows. Each call
-// takes its own copy when its media is set up (e.m.camOn, e.source, e.cameraId), so a change on
-// one call doesn't touch another's, and each change you make on a call is copied back here, so
-// the next call (placed or answered) starts the way the last one was left.
-//  - camOn: your camera on or off. The Camera button before a call and Settings set it and it's
-//    remembered between runs (setCamPref; --camera-off starts it off). Answering with the camera
-//    off (Answer ▾), or turning it on or off on a call, sets it for this run only (carryCamera).
+const enterVideo = params.get("call") === "video";   // --video (testing): Enter places a video call
+// What a video call you place starts with. Each call takes its own copy when its media is set up
+// (e.m.camOn, e.source, e.cameraId), so a change on one call touches neither another nor the next.
+//  - camOn: a video call starts with your camera on (it's a video call: that's what the button
+//    says), unless the camera list's "Camera off" was picked: then they see your camera-off card
+//    until Start video. Settings' Default camera can be Camera off (prefs.cameraOff), kept between
+//    runs; Your devices picks it on demand (setStartCamera), back to the default when the last
+//    call ends. --camera-off (testing) starts them off too.
 //  - source: "camera", or in diagnostics "test" or "bars" (setVideoSource).
-// The camera device is devices.camera, remembered with the microphone and speaker.
-export const nextVideo = { camOn: params.get("camera") === "off" ? false : prefs.camOn !== false, source: "camera" };
-// A choice you made before a call (the Camera button, a camera picked, Settings): kept for next time.
-export function setCamPref(on) {
-  nextVideo.camOn = on;
-  if (on) { retryCamera(); privacyRelease(); }   // a fresh try, because you asked
-  savePref("camOn", on);
-  log(`calls start with camera ${on ? "on" : "off"}`);
-}
-// A choice you made on a call (or answering one): the next video call starts the same way.
-function carryCamera(on) {
+// The camera device is devices.camera, with the microphone and speaker.
+export const camOnDefault = () => params.get("camera") !== "off" && !prefs.cameraOff;
+export const nextVideo = { camOn: camOnDefault(), source: "camera" };
+/** The camera list's "Camera off" (false), or a camera picked (true): how the next call starts. */
+export function setStartCamera(on) {
   if (nextVideo.camOn === on) return;
   nextVideo.camOn = on;
-  log(`next video call starts with camera ${on ? "on" : "off"}`);
+  log(on ? "camera: on for the next video call" : "camera: off for the next call (your camera-off card)");
+  syncCallBtn();
+  render();
 }
 const testAddVideo = Number(params.get("addvideo")) || 0;        // --add-video <s> (testing)
 export const testSay = params.get("say") ?? "";                           // --say <text> (testing)
@@ -257,32 +264,37 @@ function setInitial(el, name, address) {
   setAvatar(el, address);
 }
 
-// The microphone is only open during a call (see openMic). The camera is only opened while it's wanted (see
-// wantedSources), so on an audio call, or with the switch on Audio, it's off: no self view, and
-// the camera's light stays off.
+// The microphone is only open during a call (see openMic), or Your devices' mic test. The camera is
+// only opened while it's wanted (see wantedSources): a video call with your camera on, or Your
+// devices' preview. Otherwise it's off, and the camera's light with it.
 // A camera another app (or another copy of this one) is using can't be opened on Windows. That
 // isn't "no camera", so it says "Camera in use", and the call sends the placeholder. It is NOT
-// retried by itself: the camera is only ever opened because of something you did (switching to
-// Video, placing or answering a video call, Add video, Camera on). Otherwise it would start
+// retried by itself: the camera is only ever opened because of something you did (Preview,
+// placing or answering a video call, Add video, Start video). Otherwise it would start
 // streaming on its own the moment the other app let go.
-// The microphone, speaker and camera you picked from the menus on Mute and Camera, remembered
-// between runs. Empty means the system default.
-export let devices = { mic: "", speaker: "", camera: "" };
-try { Object.assign(devices, JSON.parse(localStorage.getItem("devices") ?? "{}")); } catch { /* storage unavailable */ }
-export const saveDevices = () => { try { localStorage.setItem("devices", JSON.stringify(devices)); } catch { /* storage unavailable */ } };
+// The microphone, speaker and camera. Empty means the system default.
+//  - defaults: Settings' picks, kept between runs. Every call you place or answer starts with them.
+//  - devices: what's in use now, and for the call about to start. Your devices and the ▾ menus on
+//    Mute and Camera change it, on demand, and only until the last call ends: then it's the
+//    defaults again (resetDevices), so a change for one call never becomes the next call's.
+export const defaults = { mic: "", speaker: "", camera: "" };
+try { Object.assign(defaults, JSON.parse(localStorage.getItem("devices") ?? "{}")); } catch { /* storage unavailable */ }
+export const devices = { ...defaults };
+const saveDefaults = () => { try { localStorage.setItem("devices", JSON.stringify(defaults)); } catch { /* storage unavailable */ } };
 export const MIC_CONSTRAINTS = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
 
 // Like the camera, the microphone is only open while it's needed: from placing or answering a
-// call until it ends. So the mic light (on a webcam, say) is off between calls. Mute works
-// before a call too: it's remembered, and the call's microphone opens muted.
+// call until it ends. So the mic light (on a webcam, say) is off between calls. Mute is the
+// call's: every call starts unmuted.
 export let hasMic = false;        // a microphone exists
-let micMuted = false;
-// Privacy mode, the button at the top (Shift+M): while it's on, every call is muted with its camera
-// off, and so is each new one. It holds what each call had before, for turning it off again.
-// It's never remembered: the app always starts with it off. Unmuting a call or turning a camera
-// on turns it off without putting the other calls back (see privacyRelease).
+// Privacy mode, the button at the top (Shift+M), is a hard off: while it's on, the microphone and
+// camera are closed, every call gets silence and (on video) your camera-off card, and so does each
+// new one. Mute, the camera button and Your devices' tests are disabled, so nothing turns it off
+// behind your back: only its button (or Shift+M) does. It holds what each call had before, for
+// turning it off again. It's never remembered: the app always starts with it off.
 let privacy = null;        // null, or { calls: Map(id -> { muted, camOn }) }
-const startMuted = () => micMuted || !!privacy;     // a new call's microphone
+export const privacyOn = () => !!privacy;
+const startMuted = () => !!privacy;     // a new call's microphone
 export const camStart = () => nextVideo.camOn && !privacy;   // a new video call's camera
 let micOpening = null;    // the open in progress, so placing a call and its media share one
 
@@ -298,6 +310,7 @@ async function openDevices() {
 // Opens the microphone (the remembered one, or the default if it's gone) unless it's open.
 // Resolves to the track, or null if there's no microphone to be had.
 function openMic() {
+  if (privacy) return Promise.resolve(null);   // privacy mode: closed, the call gets silence
   if (localTrack("audio")) return Promise.resolve(localTrack("audio"));
   micOpening ??= (async () => {
     const open = (id) => navigator.mediaDevices.getUserMedia({ audio: { ...MIC_CONSTRAINTS, ...(id ? { deviceId: { exact: id } } : {}) } });
@@ -309,6 +322,7 @@ function openMic() {
         return open("");
       });
       const track = stream.getAudioTracks()[0];
+      if (privacy) { track.stop(); return null; }   // turned on while it was opening
       track.enabled = !startMuted();
       local.addTrack(track);
       log(`microphone opened: ${track.label}`);
@@ -351,8 +365,12 @@ async function onMediaOffer(id, sdp, video = false, renegotiate = false) {
   closeMedia(e);
   if (!midCall) e.quality = newQuality();
   else if (e.quality) e.quality.prev = e.quality.audioWindow = null;   // a new peer connection: its counters start again
-  await openMic();   // usually already opening, from Call or Answer
-  const wantCamera = e.addingVideo ? true : midCall ? false : (answerCamera ?? camStart());
+  // The microphone opens once they answer (onPhase), not while a call you placed rings: the web
+  // softphone sets its media up before then, and sends silence until the microphone's open.
+  if (e.h.call !== "calling") await openMic();   // usually already opening, from Answer
+  // Privacy mode keeps it closed, whatever was pressed.
+  // Answer with video, or Video call, opens it unless the camera list says Camera off.
+  const wantCamera = !privacy && (e.addingVideo ? true : midCall ? false : (answerCamera ?? true) && camStart());
   e.addingVideo = false;
   if (wantCamera) retryCamera();   // you placed, answered or added video: try the camera again
   // A new call starts with the source and camera last picked; a call that's renegotiating keeps its own.
@@ -372,9 +390,7 @@ async function onMediaOffer(id, sdp, video = false, renegotiate = false) {
     remoteAnalyser: null, localAnalyser: null,
   };
   e.m = m;
-  // Answer ▾'s camera choice carries on to the next video call, as the Camera button's does.
-  if (answerCamera != null && m.hasVideo) carryCamera(answerCamera);
-  answerCamera = null;
+  answerCamera = null;   // Answer or Answer with video was for this call only
 
   // { callId } is for the web softphone's host.js, which watches the page's connections; the
   // browser ignores what it doesn't know.
@@ -438,7 +454,9 @@ async function setUpTransceivers(e) {
       await tr.sender.replaceTrack(videoToSend(e));
     } else if (kind === "audio" && !m.audioSender) {
       m.audioSender = tr.sender;
-      tr.direction = localTrack("audio") ? "sendrecv" : "recvonly";
+      // With a microphone, sendrecv even while privacy mode has it closed (silence goes out),
+      // so turning privacy mode off needs no renegotiation.
+      tr.direction = localTrack("audio") || hasMic ? "sendrecv" : "recvonly";
     }
   }
 }
@@ -495,14 +513,13 @@ function closeMedia(e) {
   stopPlaceholders();
 }
 
-// Camera on or off during a video call. Off swaps in the placeholder, then closes the camera
-// (unless another call is still sending it). chosen: you did it (the Camera button, or a camera
-// picked), so the next video call starts the same way; not privacy mode or diagnostics closing.
-export async function setCamera(on, e = sel(), chosen = false) {
+// Camera on or off during a video call, for that call only. Off swaps in the placeholder, then
+// closes the camera (unless another call is still sending it). Not on in privacy mode.
+export async function setCamera(on, e = sel()) {
   if (!e?.m?.videoSender || !(hasCamera || sourceOf(e) !== "camera")) return;
+  if (on && privacy) return;
   e.m.camOn = on;
-  if (chosen) carryCamera(on);
-  if (on) { retryCamera(); privacyRelease(); }   // try again, because you asked
+  if (on) retryCamera();   // try again, because you asked
   if (!on && !holdState(e)) await e.m.videoSender.replaceTrack(placeholderTrack(e));
   log(`call ${e.id}: camera ${on ? "on" : "off"}`);
   render();
@@ -534,17 +551,21 @@ export function callBlocked() {
   const out = [...entries.values()].find((e) => e.h.outgoing && e.h.call === "calling" && !e.cancelled);
   return out ? `Wait for ${nameOf(out)} to answer, or cancel it, to place another call` : null;
 }
-// Call's enabled state and tooltip: off while callBlocked says so, or there's nothing to call.
-// On every change to the address field (typing, ×, a suggestion, paste) as well as in render.
+// Call's and Video call's enabled state and tooltips: off while callBlocked says so, or there's
+// nothing to call. On every change to the address field (typing, ×, a suggestion, paste) as well
+// as in render.
 export function syncCallBtn() {
-  const btn = $("callBtn");
   const blocked = callBlocked();
   const empty = !$("address").value.trim();
-  btn.disabled = !!blocked || empty;
   const kept = liveCall();
-  const video = state.videoAllowed !== false && callType === "video";
-  btn.title = blocked ?? (empty ? "Type a number or address to call"
-    : kept ? `${video ? "Video call" : "Call"}, and put ${nameOf(kept)} on hold` : "");
+  for (const [btn, video] of [[$("callBtn"), false], [$("videoCallBtn"), true]]) {
+    btn.disabled = !!blocked || empty;
+    btn.title = blocked ?? (empty ? "Type a number or address to call"
+      : kept ? `${video ? "Video call" : "Call"}, and put ${nameOf(kept)} on hold`
+      : !video ? "Call: your camera stays closed (Enter)"
+      : privacy ? "Video call: privacy mode is on, so they'll see your camera-off card (Ctrl+Enter)"
+      : `Video call: your camera ${nextVideo.camOn ? "on" : "off at the start: they'll see your camera-off card"} (Ctrl+Enter)`);
+  }
 }
 
 export function render() {
@@ -582,29 +603,17 @@ export function render() {
   $("infoAddr").title = shown;
   for (const x of entries.values()) x.el.classList.toggle("sel", x.id === selectedId);
 
-  // The Audio | Video switch beside Call. Locked to Audio if video is off (--no-video).
+  // Call and Video call beside the address. No Video call if video is off (--no-video).
   // The selected call's source, or before a call the one it'll start with.
   const camAvailable = hasCamera || sourceOf(e) !== "camera";
   const videoAllowed = state.videoAllowed !== false;
-  const type = videoAllowed ? callType : "audio";
-  $("callType").dataset.side = type === "video" ? "right" : "left";
-  $("callType").classList.toggle("disabled", full || !videoAllowed);
-  for (const el of document.querySelectorAll("#callType [data-type]")) {
-    el.classList.toggle("on", el.dataset.type === type);
-    el.disabled = full || (!videoAllowed && el.dataset.type === "video");
-  }
-  const track = $("callType").querySelector(".slide-track");
-  track.setAttribute("aria-checked", String(type === "video"));
-  track.disabled = full || !videoAllowed;
-  $("callType").title = !videoAllowed ? "Video is turned off"
-    : type === "video" ? "Video call: you'll see each other. You can turn your camera off once it connects."
-    : "Audio call. You can add video once it connects.";
-  // On a call, Call says what happens to it: "Call & hold current", in the same words as a
-  // ringing call's "Answer & hold current" (its tooltip names who). Both labels are always there
-  // (one hidden), so the Audio/Video switch never resizes it.
+  // On a call, each says what happens to it: "Call & hold current", in the same words as a
+  // ringing call's "Answer & hold current" (its tooltip names who).
   const tail = liveCall() ? '<span class="hold-tail"> &amp; hold current</span>' : "";
-  const callHtml = `${type === "video" ? ICON.video : ICON.phone}<span class="label-stack"><span class="${type === "video" ? "off" : ""}">Call${tail}</span><span class="${type === "video" ? "" : "off"}">Video call${tail}</span></span>`;
+  const callHtml = `${ICON.phone}<span>Call${tail}</span>`, videoHtml = `${ICON.video}<span>Video call${tail}</span>`;
   if ($("callBtn").innerHTML !== callHtml) $("callBtn").innerHTML = callHtml;
+  if ($("videoCallBtn").innerHTML !== videoHtml) $("videoCallBtn").innerHTML = videoHtml;
+  $("videoCallBtn").hidden = !videoAllowed;
   syncCallBtn();
 
   // The stage.
@@ -634,81 +643,82 @@ export function render() {
   note("noteThem", connected && !onHold && call.rxDead ? `No audio arriving from ${name}` : "", true);
   note("noteMe", !connected ? "" : call.txLost && !onHold ? `${name} isn't getting your audio` : call.muted ? "You're muted" : "", connected && call.txLost && !onHold);
 
-  // Self view: only for video, and always what they see (or will see). On a video call that's
-  // your camera, or the placeholder while it's off; before a call it's a preview while the
-  // switch is on Video. A note on top says why the camera isn't showing. Audio shows none.
-  const before = phase === "idle" || phase === "ended" || phase === "calling";
-  // Self view hides it, before a call (the preview with the switch on Video) or during a video
-  // call; on a call what's sent doesn't change. The button is there whenever there's a self view.
-  const selfViewApplies = connected ? call.hasVideo : before && type === "video";
+  // Self view: only on a video call, and always what they see: your camera, or the placeholder
+  // while it's off. A note on top says why the camera isn't showing. Before a call there's none:
+  // Your devices has the preview.
+  const selfViewApplies = connected && call.hasVideo;
   const showSelf = !!local && selfViewApplies && selfViewOn;
   const sv = $("selfViewBtn");
   sv.hidden = !selfViewApplies;
   sv.setAttribute("aria-pressed", String(selfViewOn));
-  sv.title = connected ? `${selfViewOn ? "Hide" : "Show"} your self view (V). They still see you.`
-    : `${selfViewOn ? "Hide" : "Show"} your camera preview (V)`;
+  sv.title = `${selfViewOn ? "Hide" : "Show"} your self view (V). They still see you.`;
   if (!sv.innerHTML) sv.innerHTML = `${ICON.selfView}<span>Self view</span>`;
-  const camOn = connected ? call.camOn : camStart();
-  const selfText = !showSelf ? null : !camAvailable ? "No camera" : cameraInUse && sourceOf(e) === "camera" ? "Camera in use"
+  const camOn = connected && call.camOn;
+  const selfText = !showSelf ? null : privacy ? "Privacy mode" : !camAvailable ? "No camera" : cameraInUse && sourceOf(e) === "camera" ? "Camera in use"
     : !camOn ? "Camera off" : null;
   showSelfVideo(showSelf);
   $("selfOff").hidden = !selfText;
   $("selfOffText").textContent = selfText ?? "";
   if (!sameSources(wantedSources(), openSources())) syncCamera();
 
-  // The control bar, under the stage the whole time, so you can set up your microphone and
-  // camera before a call. Mute and Camera are split buttons: the ▾ picks the device.
+  // The control bar, under the stage once a call's been answered (connected, or on hold), and
+  // until the last one ends: before that there's nothing for it to do. Home and a call ringing
+  // in have Your devices instead. Mute and Camera are split buttons: the ▾ picks the device; the
+  // button itself is for the call you're on, and only that call.
+  const answered = [...entries.values()].some((x) => x.h.call === "connected");
+  if ($("controls").hidden === answered) {
+    $("controls").hidden = !answered;
+    if (!answered && (openMenu === "mic" || openMenu === "cam" || openMenu === "more")) closeMenu();
+  }
   const setBtn = (el, icon, text) => {
     const html = `${icon}<span>${text}</span>`;
     if (el.innerHTML !== html) el.innerHTML = html;
   };
-  const muted = call ? call.muted : startMuted();
+  const muted = !!call && call.muted;
   const mute = $("muteBtn");
-  mute.disabled = !hasMic;
+  mute.disabled = !hasMic || !call || !!privacy;
   mute.setAttribute("aria-pressed", String(hasMic && muted));
   // What pressing it does, as on the camera button; red while you're muted.
   mute.title = !hasMic ? "No mic found"
-    : call ? (muted ? "Unmute: they'll hear you (M)" : "Mute: they won't hear you (M)")
-    : muted ? "Calls start muted" : "Calls start unmuted";
+    : privacy ? "Privacy mode is on: your microphone stays closed until you turn it off (Shift+M)"
+    : !call ? "Mute, for the call you're on (the ▾ picks the microphone and speaker)"
+    : muted ? "Unmute: they'll hear you (M)" : "Mute: they won't hear you (M)";
   setBtn(mute, muted || !hasMic ? ICON.micOff : ICON.mic, !hasMic ? "No mic" : muted ? "Unmute" : "Mute");
   // While muted on a call, a red mic by the timer (in the call header) says so.
   const pill = $("mutedPill");
   pill.hidden = !(live && hasMic && muted);
   if (!pill.hidden && !pill.innerHTML) { pill.innerHTML = `${ICON.micOff}<span>You're muted</span>`; pill.title = "You're muted"; }
 
-  // Camera: during a video call it turns your camera on and off; on an audio call it's Add video,
-  // unless video can't be had. Before a call it decides whether a video call starts with your
-  // camera on (and the preview shows it).
+  // Camera: during a video call it turns your camera on and off, for that call; on an audio call
+  // it's Add video, unless video can't be had. Before a call it's disabled: the ▾ picks the camera,
+  // and Your devices has the preview. Privacy mode disables it.
   const cam = $("camBtn");
   const canAdd = connected && !call.hasVideo && videoAllowed && !e.videoRefused;
-  const ringing = phase === "ringing";
+  const lockedTitle = "Privacy mode is on: your camera stays closed until you turn it off (Shift+M)";
   if (connected && !call.hasVideo) {
-    cam.disabled = !canAdd || e.addingVideo;
+    cam.disabled = !canAdd || e.addingVideo || !!privacy;
     cam.setAttribute("aria-pressed", "false");
     setBtn(cam, canAdd ? ICON.video : ICON.videoOff, e.addingVideo ? "Adding video…" : canAdd ? "Add video" : "No video");
-    cam.title = canAdd ? "Add video to this call. They'll be asked; some phones can't."
+    cam.title = privacy && canAdd ? lockedTitle : canAdd ? "Add video to this call. They'll be asked; some phones can't."
       : e.videoRefused ? "Their phone doesn't do video" : "Video is turned off";
   } else {
-    // Before a call on Audio it isn't disabled: pressing the camera means you want video, so it
-    // switches the call to Video with the camera on (see its onclick).
-    const audioBefore = !connected && type === "audio";
-    const on = connected ? call.camOn : camStart() && !audioBefore;
-    cam.disabled = !camAvailable || !videoAllowed || (phase === "connected" && !connected) || ringing;
-    cam.setAttribute("aria-pressed", String(camAvailable && videoAllowed && !on && !audioBefore));
+    const on = connected && call.camOn;
+    cam.disabled = !connected || !camAvailable || !videoAllowed || !!privacy;
+    cam.setAttribute("aria-pressed", String(connected && camAvailable && videoAllowed && !on));
     setBtn(cam, camAvailable && on ? ICON.video : ICON.videoOff,
       // What pressing it does, as on the mic button: the video, whatever its source.
       !videoAllowed ? "No video" : !camAvailable ? "No camera" : on ? "Stop video" : "Start video");
     cam.title = !videoAllowed ? "Video is turned off" : !camAvailable ? "No camera found"
-      : ringing ? "Choose the camera with the Answer button"
-      : audioBefore ? "Make it a video call, with your camera on"
-      : connected ? (on ? "Stop video: they'll see your initial" : "Start video: turn your camera on")
-      : on ? "Video calls start with your camera on" : "Video calls start with your camera off";
+      : privacy ? lockedTitle
+      : !connected ? "Your camera, for a video call you're on (the ▾ picks it; Your devices has a preview)"
+      : on ? "Stop video: they'll see your camera-off card" : "Start video: turn your camera on";
   }
-  $("camMenuBtn").disabled = !videoAllowed || ringing || (!connected && type === "audio");
+  $("camMenuBtn").disabled = !videoAllowed;
 
   renderTextControls(phase);
   renderKeypad();
   renderTransfer();
+  renderMore();   // the ⋯ at phone width, from the four above
   renderDock();
   // Hold: a re-INVITE. On hold the stage says so, with Resume.
   const hold = $("holdBtn");
@@ -722,6 +732,14 @@ export function render() {
     $("heldText").textContent = state.held ? `On hold · ${fmtElapsed(Date.now() - e.heldAt)}` : `${name} put you on hold`;
     heldNote.classList.toggle("long", state.held && Date.now() - e.heldAt > 60000);
     $("heldResume").hidden = !state.held;
+    // Why it's on hold, when a transfer of yours failed (they declined it, say): the same words as
+    // the call header's note, where it's easy to miss, with Try again beside Resume.
+    const xt = e?.h.transfer;
+    const failed = state.held && xt?.role === "out" && xt.status === "failed" ? xt : null;
+    $("heldWhy").hidden = !failed;
+    if (failed) { $("heldWhy").textContent = transferShort(failed); $("heldWhy").title = failed.detail || ""; }
+    $("heldRetry").hidden = !failed;
+    if (failed) $("heldRetry").title = `Transfer ${name} again`;
   }
   // End is for a connected call. A call you're placing is cancelled from its card, beside who
   // you're calling, as a call ringing in is declined from its card.
@@ -760,10 +778,19 @@ export function render() {
       markContact(title, remote);
       sub.textContent = state.incomingVideo ? "Incoming video call" : "Incoming call";
       actions.append(button("btn-danger", "Decline", () => post({ type: "decline", id: selectedId })));
-      // With another call going, Answer holds it.
-      actions.append(answerSplit);
-      renderAnswer(liveCall());
-      if (lastPhase !== "ringing" || lastSelected !== selectedId) $("answerBtn").focus();
+      // Answer: you see them (on a video call), your camera stays closed. Answer with video, only
+      // when they offered it, opens it too. With another call going, either holds it.
+      const holdTail = liveCall() ? " & hold current" : "";
+      const offered = state.incomingVideo && state.videoAllowed !== false;
+      setBtn(answerBtn, ICON.phone, `Answer${holdTail}`);
+      answerBtn.title = offered ? "Answer: you'll see them; your camera stays closed (A)" : "Answer (A)";
+      actions.append(answerBtn);
+      if (offered) {
+        setBtn(answerVideoBtn, ICON.video, `Answer with video${holdTail}`);
+        answerVideoBtn.title = privacy ? "Answer with video: privacy mode is on, so they'll see your camera-off card" : "Answer with your camera on";
+        actions.append(answerVideoBtn);
+      }
+      if (lastPhase !== "ringing" || lastSelected !== selectedId) answerBtn.focus();
       break;
     }
     case "connected":
@@ -774,18 +801,37 @@ export function render() {
     case "ended": {
       title.textContent = shown || "Call ended";
       sub.textContent = reason || "Call ended";
+      // Back to the call you're on, or with none, Close: Home now, rather than in a few seconds.
       const back = otherLive();
       if (back) actions.append(button("", `Back to ${nameOf(back)}`, () => selectCall(back.id)));
+      else {
+        const close = button("", "Close", () => closeEnded(e));
+        close.title = "Back to Home (Esc)";
+        actions.append(close);
+      }
       break;
     }
   }
+  // Your devices under a call ringing on the stage: what the call will use, and a quick change.
+  // Under a call you're placing: what it's using, read-only (the ▾ menus change it once answered).
+  const ringDevices = phase === "ringing" && !ringingUnpicked();
+  const callingDevices = phase === "calling";
+  $("cardDevices").hidden = !ringDevices && !callingDevices;
+  $("card").classList.toggle("with-devices", ringDevices || callingDevices);
+  if (ringDevices) renderYourDevices($("cardDevices"), "ring");
+  else if (callingDevices) renderYourDevices($("cardDevices"), "calling", e);
+  // No call: Home (or the dial view) in the card's place.
+  $("card").hidden = homeShown();
+  // Privacy mode on a call: a note says what they get, with Turn off.
+  const pn = $("privacyNote");
+  pn.hidden = !(connected && privacy) || grid;
+  if (!pn.hidden) $("privacyNoteText").textContent = `Privacy mode: ${name} hears silence${call.hasVideo ? " and sees your camera-off card" : ""}`;
   renderIncoming();
   renderOutgoing();
   renderGrid(grid);
 
-  if (phase !== "ringing" && openMenu === "answer") closeMenu();
-  // A choice from the Answer menu is for that call only (onMediaOffer uses it, then clears it);
-  // one that wasn't answered mustn't carry over to the next.
+  // Answer or Answer with video is for that call only (onMediaOffer uses it, then clears it); one
+  // that wasn't answered mustn't carry over to the next.
   if (phase !== "ringing" && phase !== "connected") answerCamera = null;
   lastPhase = phase;
   lastSelected = selectedId;
@@ -793,6 +839,8 @@ export function render() {
 
   renderCalls();
   renderPrivacy();
+  renderHome();
+  renderIndicator();
 }
 
 // Every 5 s during a call: what's arriving and leaving on the selected call, for the log (and for testing).
@@ -835,7 +883,10 @@ setInterval(tick, 1000);
 function onState(msg) {
   hostState = msg;
   const seen = new Set();
+  const listed = new Set((msg.calls ?? []).map((h) => h.id));
+  for (const id of dropped) if (!listed.has(id)) dropped.delete(id);
   for (const h of msg.calls ?? []) {
+    if (dropped.has(h.id)) continue;
     seen.add(h.id);
     let e = entries.get(h.id);
     const isNew = !e;
@@ -874,12 +925,39 @@ function onState(msg) {
     answerPicked = null;
     selectCall(ringingNow[0].id);
   }
-  // The microphone closes when the last call ends (it opens with Call or Answer).
-  if (!liveEntries().length) closeMic();
+  // The microphone closes when the last call ends (it opens with Call or Answer), and the devices
+  // go back to Settings' defaults for the next one.
+  const live = liveEntries().length > 0;
+  if (!live) closeMic();
+  if (hadLive && !live) resetDevices();
+  hadLive = live;
+}
+let hadLive = false;   // a call was going at the last state message
+
+// The last call's over: what's in use goes back to Settings' defaults, so the next call you place
+// or answer starts with them, whatever was changed on demand for this one.
+function resetDevices() {
+  const changed = Object.keys(defaults).filter((k) => devices[k] !== defaults[k]);
+  if (nextVideo.camOn !== camOnDefault()) { nextVideo.camOn = camOnDefault(); changed.push("camera off"); }
+  if (!changed.length) return;
+  Object.assign(devices, defaults);
+  log(`devices back to the defaults: ${changed.join(", ")}`);
+  syncCamera();
+  render();
+}
+
+// An ended call's card, closed (Close, or Esc) with nothing else going: Home straight away.
+function closeEnded(e) {
+  if (selectedId !== e?.id || e.h.call !== "ended" || liveEntries().length) return false;
+  dropEntry(e);
+  selectedId = null;
+  render();
+  return true;
 }
 
 function onNewCall(e) {
   const s = sel();
+  if (e.h.outgoing) e.placedVideo = placedVideo;
   // A call you place while on another (now on hold) leaves the stage and the list alone: it shows
   // as a "Calling…" banner, and only once it's answered does it join the list and take the stage.
   // Unanswered, the banner says why, and the call you were on stays on hold: you may want to
@@ -913,6 +991,12 @@ function onPhase(e) {
   }
   if (e.h.call === "connected" && !e.connectedAt) {
     e.connectedAt = Date.now();
+    // Answered: now the microphone opens (a call you placed rang with it closed) and goes on the call.
+    openMic().then((track) => {
+      if (track && e.m && !e.m.localAnalyser) e.m.localAnalyser = analyserFor(track);
+      syncAudio();
+      render();
+    });
     if (e.id === selectedId) {
       renderText();
     }
@@ -923,6 +1007,8 @@ function onPhase(e) {
     closeMedia(e);
     if (audioId === e.id) audioId = null;
     if (toastCallId === e.id) hideToast();
+    // With nothing else going, its "Call ended" card gives way to Home after a few seconds.
+    setTimeout(() => closeEnded(e), ENDED_CARD_MS);
     // The call on the stage ended: its keypad and text panels close (docked or not), so the
     // stage is back to its full width for the ended call's card.
     if (e.id === selectedId && (keypadOpen || textOpen)) {
@@ -934,11 +1020,13 @@ function onPhase(e) {
 }
 
 // Answers a ringing call, holding the call you're on, and opens it in Focus (as picking a call
-// from the grid does).
-export function answerCall(id) {
+// from the grid does). video: Answer with video, your camera on; otherwise it stays closed.
+export function answerCall(id, video = false) {
   const e = entries.get(id);
   if (e?.h.call !== "ringing") return;
   closeMenu();
+  answerCamera = !!video && !!e.h.incomingVideo;
+  closeDevices();   // the call takes the devices over
   holdOthers(e);
   openMic();
   post({ type: "answer", id });
@@ -1033,6 +1121,12 @@ function renderIncoming() {
     $("incomingDecline").onclick = () => declineCall(e.id);
     $("incomingAnswer").textContent = answerLabel;
     $("incomingAnswer").onclick = () => { incomingOpen = false; answerCall(e.id); };
+    // A video call: Answer with video too, as an icon (the banner's short of room).
+    const iv = $("incomingVideoAnswer");
+    iv.hidden = !(e.h.incomingVideo && state.videoAllowed !== false);
+    iv.title = `${answerLabel} with video`;
+    iv.setAttribute("aria-label", iv.title);
+    iv.onclick = () => { incomingOpen = false; answerCall(e.id, true); };
   }
 
   const more = $("incomingMore");
@@ -1174,8 +1268,19 @@ initCallList();
 
 // ---- Controls ----
 
+// Call (and Enter) places an audio call, Video call (and Ctrl+Enter) a video call.
 $("dialForm").addEventListener("submit", (e) => {
   e.preventDefault();
+  callFromField(enterVideo);
+});
+$("videoCallBtn").onclick = () => callFromField(true);
+$("address").addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+  e.preventDefault();
+  if (!$("videoCallBtn").disabled && !$("videoCallBtn").hidden) callFromField(true);
+});
+function callFromField(video) {
+  dial.close();
   const typed = $("address").value.trim();
   // A contact's address (typed, pasted, or picked from the list or the Contacts tab) calls from
   // the contact's account; a recent call picked from the list, from the account that call used.
@@ -1184,8 +1289,8 @@ $("dialForm").addEventListener("submit", (e) => {
   dial.pick = null;
   const address = pick ? pick.uri : typed;
   const c = contactFor(pick ? pick.uri : fieldUri(typed));
-  placeCall(address, c ? c.account : pick?.account, c?.name);
-});
+  placeCall(address, c ? c.account : pick?.account, c?.name, video);
+}
 // A call answered (ours, or theirs to one we placed) empties the address bar, so it's ready for
 // the next one; not while you're in it typing something else (another address, say).
 let lastDialled = "";
@@ -1201,56 +1306,51 @@ function clearAddressOnAnswer(e) {
   render();
 }
 
-// Call, or Call back from History. account: the one to call from (a contact's, or the one that
+// Call or Video call (video), from the dial bar, Home or History. account: the one to call from (a contact's, or the one that
 // call was on): Call from switches to it first, so it shows what's used, unless it's been removed
 // or disabled, when the call goes from Call from's account and a note says so. A contact's media
 // (desktop only: contacts.js) goes with the call, so the host offers just that. People closes, so
 // the stage shows how the call's going.
-function placeCall(address, account = null, who = null) {
+let placedVideo = false;   // the last call you placed: Video call (the host doesn't say), for its card
+export function placeCall(address, account = null, who = null, video = false) {
   if (!address) return;
   const blocked = callBlocked();
   if (blocked) { log(`not calling ${address}: ${blocked}`); return; }
   closeHistory(false);
+  dialDone();   // the dial view's done, and Your devices' tests stop: the call takes the devices
+  markSeen();   // missed calls count as seen once you next place a call
+  renderSide();
   lastDialled = address;
   account = account ? useAccount(account, who) : null;
-  openMic();   // alongside the INVITE, so it's ready when the call connects
+  // The microphone isn't opened yet: only once they answer (onPhase), so nothing's open, and the
+  // indicator shows nothing, while it rings.
   // A new call holds the one you're on, now that you've pressed Call (the new one goes on the
   // stage when the host reports it).
   holdOthers(null);
   const media = (contactFor(address) ?? contactFor(fieldUri(address)))?.media;
-  post({ type: "dial", address, video: state.videoAllowed !== false && callType === "video", ...(account ? { account } : {}), ...(media ? { media } : {}) });
+  placedVideo = state.videoAllowed !== false && video;
+  post({ type: "dial", address, video: placedVideo, ...(account ? { account } : {}), ...(media ? { media } : {}) });
   // If the call never starts (a bad address, say), don't leave the microphone open.
   setTimeout(() => { if (!liveEntries().length) closeMic(); }, 5000);
 }
 initAddress2();
 
-$("callType").querySelector('[data-type="audio"]').innerHTML = `${ICON.phone}<span class="slide-word" data-text="Audio">Audio</span>`;
-$("callType").querySelector('[data-type="video"]').innerHTML = `${ICON.video}<span class="slide-word" data-text="Video">Video</span>`;
-function setCallType(type) {
-  callType = type;
-  if (type === "video") retryCamera();   // a fresh try for the preview, because you asked
-  render();
-}
-// The track flips the switch; a word either side picks that side.
-$("callType").addEventListener("click", (e) => {
-  const btn = e.target.closest("button");
-  if (!btn || btn.disabled) return;
-  setCallType(btn.dataset.type ?? (callType === "video" ? "audio" : "video"));
-});
-// The track takes focus: Space flips it, Left and Right push it to that side.
-$("callType").addEventListener("keydown", (e) => {
-  if ((e.key !== "ArrowLeft" && e.key !== "ArrowRight") || e.target.disabled) return;
-  e.preventDefault();
-  setCallType(e.key === "ArrowRight" ? "video" : "audio");
-});
-export let cameras = [];      // the video inputs, for the Answer button's label; refreshed when devices change
 let lastPhase = null;  // the call phase at the last render, to focus Answer once when ringing starts
 let lastSelected = null;   // and the call that was on the stage
+
+// The Answer buttons, kept from one render to the next.
+const answerBtn = Object.assign(document.createElement("button"), { type: "button", className: "btn btn-primary answer-btn" });
+const answerVideoBtn = Object.assign(document.createElement("button"), { type: "button", className: "btn btn-primary answer-btn" });
+answerBtn.onclick = () => answerCall(selectedId, false);
+answerVideoBtn.onclick = () => answerCall(selectedId, true);
+function setBtn(el, icon, text) {
+  const html = `${icon}<span>${text}</span>`;
+  if (el.innerHTML !== html) el.innerHTML = html;
+}
 
 async function refreshCameras() {
   try {
     const list = await navigator.mediaDevices.enumerateDevices();
-    cameras = list.filter((d) => d.kind === "videoinput" && d.deviceId);
     hasMic = list.some((d) => d.kind === "audioinput");
   } catch { /* keep the old list */ }
   render();
@@ -1263,39 +1363,41 @@ initDiagnostics();
 $("hangupBtn").onclick = () => post({ type: "hangup", id: selectedId });
 $("holdBtn").onclick = () => { const e = sel(); if (e && holdState(e)) goLive(e); else holdCall(e, true); };
 $("heldResume").onclick = () => goLive(sel());
+$("heldRetry").onclick = () => $("xferRetry").click();   // as the call header's Try again
 $("heldResume").innerHTML = `${ICON.play}<span>Resume</span>`;
-// Mute: the selected call's microphone. Before a call, whether calls start muted. Unmuting turns
-// privacy mode off (the other calls stay muted).
+// Mute: the selected call's microphone, for that call only. Not in privacy mode: only its own
+// button turns that off.
 function toggleMute() {
   const e = sel();
-  if (e?.m) {
-    e.m.muted = !e.m.muted;
-    if (!e.m.muted) privacyRelease();
-    log(`call ${e.id}: ${e.m.muted ? "muted" : "unmuted"}`);
-  } else {
-    const unmute = startMuted();
-    micMuted = !unmute;
-    if (unmute) privacyRelease();
-    log(micMuted ? "calls start muted" : "calls start unmuted");
-  }
+  if (!e?.m || privacy) return;
+  e.m.muted = !e.m.muted;
+  log(`call ${e.id}: ${e.m.muted ? "muted" : "unmuted"}`);
   render();
 }
 $("muteBtn").onclick = toggleMute;
 
-// Privacy mode (Shift+M), like a browser's private window: on, every call is muted and every
-// video call sends your placeholder instead of the camera, which closes, and
-// calls you place or answer start that way too. Off again, each call goes back to how it was
-// (a call that started while it was on, to how a new call would). Unmuting a call or turning a
-// camera on turns it off by itself, changing only that call. Never remembered.
-function togglePrivacy() {
+// Privacy mode (Shift+M), like a browser's private window, and a hard off: on, the microphone and
+// camera close, every call gets silence and on video your camera-off card, and calls you place or
+// answer start that way too. Mute, the camera button and Your devices' tests are disabled until
+// it's off, so nothing else can turn it off. Off again, each call goes back to how it was (one
+// that started while it was on, unmuted with its camera off: it never turns a camera on unasked)
+// and the microphone opens again for them. Never remembered.
+export function togglePrivacy() {
   if (privacy) {
     const was = privacy.calls;
     privacy = null;
     for (const e of entries.values()) {
       if (!e.m) continue;
-      const w = was.get(e.id) ?? { muted: micMuted, camOn: nextVideo.camOn };
+      const w = was.get(e.id) ?? { muted: false, camOn: false };
       e.m.muted = w.muted;
       if (w.camOn && !e.m.camOn && e.m.videoSender) setCamera(true, e);
+    }
+    if (liveEntries().length) {
+      openMic().then((track) => {
+        // The audio view's bars follow the new microphone (syncAudio puts it on the live call).
+        if (track) for (const e of entries.values()) if (e.m) { e.m.localAnalyser?.source.disconnect(); e.m.localAnalyser = analyserFor(track); }
+        render();
+      });
     }
     log("privacy off: calls back as they were");
   } else {
@@ -1306,16 +1408,12 @@ function togglePrivacy() {
       e.m.muted = true;
       if (e.m.camOn && e.m.videoSender) setCamera(false, e);
     }
-    log("privacy on: every call muted, cameras off");
+    stopTests();
+    closeMic();
+    log("privacy on: microphone and camera closed; calls get silence and your camera-off card");
   }
   syncCamera();
   render();
-}
-// You unmuted a call or turned a camera on: the switch is off, the rest stays as it is.
-export function privacyRelease() {
-  if (!privacy) return;
-  privacy = null;
-  log("privacy off");
 }
 // The button: the incognito icon alone while it's off; on, a dark chip with the icon and
 // "Privacy mode", as a browser marks a private window. One click turns it on or off: nothing is
@@ -1330,18 +1428,20 @@ function renderPrivacy() {
   btn.classList.toggle("on", on);
   btn.setAttribute("aria-pressed", String(on));
   btn.title = on
-    ? "Privacy mode is on: your audio and video capture devices are disabled on every call, and new calls start that way (microphone muted, cameras off). Click to turn it off (Shift+M)"
-    : "Privacy mode: disable your audio and video capture devices on every call, new calls too (microphone muted, cameras off) (Shift+M)";
+    ? "Privacy mode is on: your microphone and camera are closed on every call, new calls too (they get silence and your camera-off card). Click to turn it off (Shift+M)"
+    : "Privacy mode: close your microphone and camera on every call, new calls too, until you turn it off (Shift+M)";
 }
 
 // Keys for calls (not while typing, or with a menu or dialog open): 1–8 put that call in the
 // list on the stage (1 is the top, the oldest; from the grid, in Focus), A answers the caller who has
-// waited longest, M mutes the selected call, Shift+M is privacy mode (every call muted, cameras off),
+// waited longest, M mutes the selected call, Shift+M is privacy mode (microphone and camera closed),
 // H holds or resumes (M and H not in the grid), G switches Focus and Grid, and Esc leaves an
-// ended call for another.
+// ended call's card: for the call you're on, or with none, Home.
 document.addEventListener("keydown", (ev) => {
   if (ev.ctrlKey || ev.altKey || ev.metaKey || openMenu) return;
-  if (ev.target.closest?.("input, textarea, select, [contenteditable], dialog")) return;
+  // Typing doesn't count, except Esc in the empty address (where a call that ends leaves you).
+  const emptyAddress = ev.target.id === "address" && !ev.target.value && ev.key === "Escape";
+  if (ev.target.closest?.("input, textarea, select, [contenteditable], dialog") && !emptyAddress) return;
   if (!$("accounts").hidden || !$("historyView").hidden) return;
   const key = ev.key.toLowerCase();
   if (/^[1-8]$/.test(ev.key) && !ev.shiftKey) {
@@ -1365,32 +1465,25 @@ document.addEventListener("keydown", (ev) => {
   } else if (key === "g" && !ev.shiftKey) {
     ev.preventDefault();
     setView(view === "grid" ? "focus" : "grid");
-  } else if (ev.key === "Escape" && state.call === "ended" && otherLive() && !textOpen) {
+  } else if (ev.key === "Escape" && state.call === "ended" && !textOpen) {
     ev.preventDefault();
-    selectCall(otherLive().id);
+    if (otherLive()) selectCall(otherLive().id);
+    else closeEnded(sel());   // Close: Home
   }
 });
+// The camera button: on a video call, your camera on or off for that call; on an audio call, Add
+// video. Nothing before a call, nor in privacy mode.
 $("camBtn").onclick = () => {
-  if (call?.hasVideo) { setCamera(!call.camOn, sel(), true); return; }
-  if (!call && callType === "audio") {
-    // On Audio, the camera means you want a video call: switch to one, camera on.
-    if (!camStart()) setCamPref(true);
-    log("camera: switched to a video call, camera on");
-    setCallType("video");
-    return;
-  }
-  if (!call) {
-    // Before a call: whether a video call starts with your camera on.
-    setCamPref(!camStart());
-    render();
-    return;
-  }
+  if (!call || privacy) return;
+  if (call.hasVideo) { setCamera(!call.camOn, sel()); return; }
   sel().addingVideo = true;
-  privacyRelease();
   post({ type: "add-video", id: selectedId });
   log("adding video");
   render();
 };
+$("privacyNoteOff").onclick = togglePrivacy;
+$("privacyNote").insertAdjacentHTML("afterbegin", ICON.incognito);
+$("incomingVideoAnswer").innerHTML = ICON.video;
 
 chrome.webview.addEventListener("message", async (e) => {
   const msg = e.data;
@@ -1398,6 +1491,7 @@ chrome.webview.addEventListener("message", async (e) => {
     const e = msg.id != null ? entries.get(msg.id) : null;
     if (msg.type === "state") {
       onState(msg);
+      takeAccounts(msg);        // before render(): Home's accounts and registrations are this message's
       if (!lossLoaded) {
         lossLoaded = true;
         $("lossAudio").value = msg.lossAudio ?? 0;
@@ -1430,7 +1524,8 @@ initAccounts({ post, log });
 // Call history (history.js). It and Accounts take turns over the stage; picking a call closes it.
 initHistory({
   post, log, shortName,
-  call: (uri, account) => placeCall(uri, account),
+  call: (uri, account, video = false) => placeCall(uri, account, null, video),
+  videoAllowed: () => state.videoAllowed !== false,
   // "Back to …": the call on the stage under the view, if it's still going.
   backTo: () => (isLive(sel()) && !sel().gone ? nameOf(sel()) : null),
   closeAccounts,
@@ -1438,33 +1533,56 @@ initHistory({
   contactCount,
   mountContacts,
   // Add to contacts / Edit contact on a call: the Contacts tab's form, then back to Recent.
-  // A new one's Call from is the account that call used.
-  editContact: (e) => openContacts(contactFor(e.uri) ?? { name: e.name ?? "", uri: e.uri, account: e.account ?? null }, "recent"),
+  // A new one's name is the one the row shows (the call's, else one from the address), and its
+  // Call from the account that call used.
+  editContact: (e) => openContacts(contactFor(e.uri) ?? { name: e.name || shortName(e.uri), uri: e.uri, account: e.account ?? null }, "recent"),
 });
 $("manageAccounts").addEventListener("click", () => closeHistory(false));
 
 // ---- Settings (settings.js), from the gear in the top bar ----
+// A device picked in Your devices: the same as picking from the ▾ menus, except a camera picked
+// here never turns the camera on: if it's open (a call, or the preview) it switches, otherwise
+// it's the one the call about to start opens. On demand: until the last call ends.
+export async function chooseDevice(key, id) {
+  if (key === "mic") await pickMic(id);
+  else if (key === "speaker") await pickDevice("speaker", id);
+  else if (key === "camera") {
+    devices.camera = id;
+    // The selected call, and any call started while it's on; other calls keep theirs.
+    if (sel()?.m) sel().cameraId = id;
+    log(`camera: ${id || "system default"}`);
+    syncCamera();   // switches if the open camera is now the wrong one
+  }
+  render();
+}
+// A default picked in Settings: kept, for every call from now on. With no call going it's what's
+// in use too; a call that's on keeps what it has.
+async function setDefaultDevice(key, id) {
+  // The Default camera list's Camera off: video calls start with your camera-off card.
+  const camOff = key === "camera" && id === "cam:off";
+  if (key === "camera" && !!prefs.cameraOff !== camOff) {
+    savePref("cameraOff", camOff);
+    log(`default camera: ${camOff ? "off (your camera-off card)" : "on"}`);
+    if (!liveEntries().length) setStartCamera(!camOff && params.get("camera") !== "off");
+  }
+  if (camOff) { render(); return; }
+  defaults[key] = id;
+  saveDefaults();
+  log(`default ${key}: ${id || "system default"}`);
+  if (!liveEntries().length) await chooseDevice(key, id);
+  else render();
+}
 export const settings = initSettings({
   log,
-  devices,
-  // The same as picking from the ▾ menus, except a camera picked here doesn't turn the camera
-  // on: if it's open it switches, otherwise it's the one the next video call opens.
-  async pickDevice(key, id) {
-    if (key === "mic") await pickMic(id);
-    else if (key === "speaker") await pickDevice("speaker", id);
-    else if (key === "camera") {
-      devices.camera = id;
-      saveDevices();
-      // For new calls, and the selected call; other calls keep theirs.
-      if (sel()?.m) sel().cameraId = id;
-      log(`camera for calls: ${id || "system default"}`);
-      syncCamera();   // switches if the open camera is now the wrong one
-    }
-    render();
-  },
+  defaults,
+  setDefaultDevice,
+  inCall: () => liveEntries().length > 0,
+  videoAllowed: () => state.videoAllowed !== false,
   diagnostics: () => !$("devPanel").hidden,
   setDiagnostics,
 });
+initYourDevices();
+initHome();
 
 render();            // the UI straight away, before the microphone is open
 await openDevices();

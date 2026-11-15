@@ -1,7 +1,7 @@
 // Diagnostics (F12): the panel with the log, call quality and test sources, and the security popover.
 
 import { entries, nextVideo, params, render, sel, setCamera } from "./app.js";
-import { closeMenu, showLoss } from "./menus.js";
+import { closeMenu, openMenu, showLoss } from "./menus.js";
 import { renderDetails, renderQuality } from "./quality.js";
 import { $, ICON, post } from "./util.js";
 import { SOURCE_LABEL, setVideoSource, sourceOf } from "./video.js";
@@ -14,6 +14,7 @@ import { SOURCE_LABEL, setVideoSource, sourceOf } from "./video.js";
 export function setDiagnostics(on) {
   document.body.classList.toggle("diag", on);
   $("devPanel").hidden = !on;
+  fitDevTabs();
   if (on) { const el = $("log"); el.scrollTop = el.scrollHeight; }
   // The test pattern and audio bars are diagnostics things, so the camera takes over again.
   // But it isn't sent until you turn it on: the camera never starts by itself. (With no camera
@@ -23,7 +24,6 @@ export function setDiagnostics(on) {
     const sending = onTest.filter((e) => e.m.hasVideo && e.m.camOn);
     for (const e of sending) setCamera(false, e);
     for (const e of onTest) e.source = "camera";
-    if (nextVideo.source !== "camera" && !sending.length) nextVideo.camOn = false;
     if (onTest.length || nextVideo.source !== "camera") setVideoSource("camera");
   }
   // Simulated loss is a diagnostics thing too: leaving diagnostics turns it off, so it can't
@@ -108,9 +108,59 @@ function setDevTab(tab) {
   $("paneQuality").hidden = tab !== "quality";
   $("paneNet").hidden = tab !== "net";
   $("logCopy").hidden = $("logClear").hidden = tab !== "log";
+  fitDevTabs();
   if (tab === "log") $("log").scrollTop = $("log").scrollHeight;
   if (tab === "details") renderDetails();
   if (tab === "quality") renderQuality();
+}
+
+// ---- The bar at phone width: a ⋯ for what doesn't fit ----
+// The open tab always shows; the others from the left as fit, the rest (from the right) go into
+// the ⋯ menu, with Copy log and Clear while the SIP log is open. Wider, everything's on the bar.
+const compactBar = () => matchMedia("(max-width: 500px)").matches;
+export function fitDevTabs() {
+  const tabs = [...document.querySelectorAll(".dev-tab")];
+  for (const t of tabs) t.hidden = false;
+  const compact = compactBar() && !$("devPanel").hidden;
+  if (compact) {
+    const box = document.querySelector(".dev-tabs");
+    for (const t of [...tabs].reverse()) {
+      if (box.scrollWidth <= box.clientWidth) break;
+      if (t.getAttribute("aria-selected") !== "true") t.hidden = true;
+    }
+  }
+  const hidden = tabs.filter((t) => t.hidden);
+  $("devMore").hidden = !compact || (!hidden.length && $("logCopy").hidden);
+  const dot = hidden.some((t) => t.querySelector(".dev-dot"));
+  if (!!$("devMoreBtn").querySelector(".dev-dot") !== dot) {
+    if (dot) $("devMoreBtn").append(Object.assign(document.createElement("span"), { className: "dev-dot" }));
+    else $("devMoreBtn").querySelector(".dev-dot").remove();
+  }
+  if ($("devMore").hidden && openMenu === "dev") closeMenu();
+}
+// The ⋯ menu (opened by menus.js, showMenu("dev")): each item does what its tab or button does.
+export function fillDevMenu() {
+  const menu = $("devMenu");
+  menu.replaceChildren();
+  const item = (label, onclick, dot) => {
+    const opt = Object.assign(document.createElement("button"), { type: "button", className: "device-option", onclick });
+    opt.setAttribute("role", "menuitem");
+    opt.append(Object.assign(document.createElement("span"), { textContent: label }));
+    if (dot) opt.append(Object.assign(document.createElement("span"), { className: "dev-dot", title: "Loss is on" }));
+    menu.append(opt);
+    return opt;
+  };
+  const hiddenTabs = [...document.querySelectorAll(".dev-tab")].filter((t) => t.hidden);
+  for (const t of hiddenTabs) item(t.textContent, () => { closeMenu(); setDevTab(t.dataset.tab); $("devMoreBtn").focus(); }, !!t.querySelector(".dev-dot"));
+  if ($("logCopy").hidden) return;
+  if (hiddenTabs.length) menu.append(Object.assign(document.createElement("div"), { className: "device-menu-sep" }));
+  // Copy log says it's done in the menu, as the button would, then the menu closes.
+  const copy = item("Copy log", () => {
+    $("logCopy").click();
+    copy.firstChild.textContent = "Copied";
+    setTimeout(closeMenu, 700);
+  });
+  item("Clear log", () => { closeMenu(); $("logClear").click(); $("devMoreBtn").focus(); });
 }
 
 // Dragging the panel's top edge resizes it, between 120 px and 70% of the window. The height you
@@ -150,6 +200,8 @@ export function initDiagnostics() {
     setTimeout(() => { $("logCopy").textContent = "Copy log"; }, 1500);
   };
   $("logClear").onclick = () => { $("log").textContent = ""; };
+  addEventListener("resize", fitDevTabs);
+  fitDevTabs();
   try {
     const saved = Number(localStorage.getItem("devPanelHeight"));
     if (saved > 0) $("devPanel").style.setProperty("--dev-h", `${devHeight(saved)}px`);

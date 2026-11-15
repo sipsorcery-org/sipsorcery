@@ -6,16 +6,18 @@ import { callBlocked, render, state, syncCallBtn } from "./app.js";
 import { avatarAttr } from "./avatar.js";
 import { contactMark, normAddress } from "./contactmark.js";
 import { allContacts, contactFor, initContacts, openContacts, removeContact, sameUri, saveContact } from "./contacts.js";
-import { historyEntries, openPeople } from "./history.js";
+import { closeHistory, historyEntries, openPeople } from "./history.js";
+import { fill, followTyped, homeShown, leaveDial, renderHome, restoreFrom } from "./home.js";
 import { openMenu } from "./menus.js";
 import { xferField, xferOpen } from "./transfer.js";
 import { $, ICON, escHtml, initial, log, plainAddress, post, shortName } from "./util.js";
 // Addresses with an account and without. With an account a call goes to its server, which works
-// out where it goes from the name or number, so a sip: scheme and a domain say nothing: the
-// address bar takes just the name or number (no ":" or "@"), and an address on the account's
-// domain shows as its user part. Full SIP addresses are for calling another phone directly: the
-// desktop's no-account mode (Call from: none), the only time there's no server to go through.
-// The web softphone sends no account list, and always has its account.
+// out where it goes from the name or number, and an address on the account's domain shows as its
+// user part. Nothing typed is refused: a full SIP address on another domain (user@host, or
+// sip:...) is called directly, so on the desktop Call from switches to No account (direct) as you
+// type it, and back if you take it out again (home.js, followTyped), as a contact set to call
+// directly switches it. The web softphone sends no account list and always has its account, so it
+// can't call directly: it takes the address, says the call goes through its server, and sends it.
 const directMode = () => Array.isArray(state.accounts) && !state.account;
 // "alice@sipsorcery.com" (an account's address of record) -> "sipsorcery.com".
 const domainOf = (aor) => (aor ? aor.slice(aor.lastIndexOf("@") + 1).replace(/:\d+$/, "").toLowerCase() : null);
@@ -51,17 +53,25 @@ export function fieldUri(text) {
 // layout (500 px and under: the web softphone on a phone, or the desktop window made that narrow)
 // the direct one leaves out its example, which the field's tooltip still gives.
 const phoneWidth = matchMedia("(max-width: 500px)");
-export const addressHint = () => (directMode() ? (phoneWidth.matches ? "Number or SIP address" : "Name, number or SIP address, e.g. sip:alice@192.168.0.20") : "Name or number");
+export const addressHint = () => (directMode() ? (phoneWidth.matches ? "Number or SIP address" : "Name, number or SIP address, e.g. sip:alice@192.168.0.20") : phoneWidth.matches ? "Name or number" : "Name, number or SIP address");
+/** A full SIP address, not just a name or number: user@host, or sip:/sips: something. */
+export const looksFull = (text) => /^sips?:\S/i.test(text ?? "") || /^[^@\s]+@[^@\s]+$/.test((text ?? "").replace(/^sips?:/i, ""));
+/** A full address that isn't on the account's domain (so an account's server isn't its home). */
+export const offDomain = (text) => looksFull(text) && !userOnDomain(text);
+/** The web softphone's note for a full address elsewhere: it can't call directly. Null otherwise. */
+export const webDirectNote = (text) => (!Array.isArray(state.accounts) && state.account && offDomain(text)
+  ? `The web softphone can't call an address directly: this call goes through ${domainOf(state.account) ?? "your account's server"}, which may not reach it.` : null);
 
 // Run by app.js at this point in its start-up, in the order it always ran.
 export function initAddress() {
   phoneWidth.addEventListener("change", () => render());
 }
-// Where full SIP addresses are, with an account: the desktop's No account (direct) in Call from.
-// The web softphone has no such mode (no account list), so it says nothing more.
-const directNote = () => (Array.isArray(state.accounts) ? "For a full SIP address, set Call from to No account (direct)." : "");
-// The address fields' tooltip: the hint, and with an account on the desktop, where full addresses are.
-export const addressTip = () => (directMode() ? (phoneWidth.matches ? "Number or SIP address, e.g. sip:alice@192.168.0.20" : "") : [`Just a name or number: calls go through ${domainOf(state.account) ?? "the account's server"}.`, directNote()].filter(Boolean).join(" "));
+// What a full SIP address does, with an account: on the desktop it's called directly (Call from
+// switches to No account); the web softphone sends it through its account.
+const directNote = () => (Array.isArray(state.accounts) ? "A full SIP address elsewhere is called directly: Call from switches to No account (direct)."
+  : "A full SIP address goes through it too: the web softphone can't call directly.");
+// The address fields' tooltip: the hint, and with an account, what a full address does.
+export const addressTip = () => (directMode() ? (phoneWidth.matches ? "Number or SIP address, e.g. sip:alice@192.168.0.20" : "") : [`A name or number goes through ${domainOf(state.account) ?? "the account's server"}.`, directNote()].filter(Boolean).join(" "));
 
 // ---- Address fields: the address bar's, and Transfer's ----
 // As in the prototype: focusing the address (or /) lists contacts and recent calls; typing
@@ -202,10 +212,18 @@ const looksLikeAddress = (q) => /[@:]/.test(q) || /^[+\d*#\s]+$/.test(q.trim());
  * the saved-contact pill inside the field; clear: its × button (both inside a .dest-wrap). foot:
  * the Contacts… and Add to contacts rows. goIcon: the icon on the highlighted row (what Enter
  * does). skip(): an address to leave out. pick(entry): a row was chosen: its address is in the
- * field (f.pick is the entry, for its name and account), and nothing is dialled or sent. changed(): after every refresh. Returns its state: { open, items, active, pick,
+ * field (f.pick is the entry, for its name and account), and nothing is dialled or sent. changed(): after every refresh.
+ * listEmpty(): whether an empty field lists Contacts and Recent (the dial view has its own list).
+ * cleared(): Esc or × emptied the field. escEmpty(): Esc with the field already empty; true if it
+ * dealt with it. Returns its state: { open, items, active, pick,
  * refresh(keepActive), close(), renderBadge() }.
  */
-export function addressField({ input, list, clear, badge, idPrefix, popup, foot, goIcon, goLabel, skip = () => null, pick, changed = () => {} }) {
+// rowButtons: each row's Add/Remove contact button and its Call (or Transfer) icon. The address
+// bar's list has neither: a row fills the field, and the bar's own buttons call.
+// warn(text): a note on what's typed (the web softphone's, for an address it can't call directly),
+// shown in the field's bubble when you pause; the text is kept either way.
+export function addressField({ input, list, clear, badge, idPrefix, popup, foot, goIcon, goLabel, skip = () => null, pick, changed = () => {},
+  listEmpty = () => true, cleared = () => {}, escEmpty = () => false, rowButtons = true, warn = () => null }) {
   const wrap = input.closest(".dest-wrap");
   const f = { open: false, items: [], active: -1, pick: null };
 
@@ -213,6 +231,11 @@ export function addressField({ input, list, clear, badge, idPrefix, popup, foot,
   f.refresh = (keepActive = false) => {
     if (input.disabled) return;
     const q = input.value;
+    if (popup && !q.trim() && !listEmpty()) {
+      f.close();
+      changed();
+      return;
+    }
     const items = suggestions(q, { skip: skip(), foot });
     let active = q.trim() && !looksLikeAddress(q) && items.length && !items[0].action ? 0 : -1;
     if (keepActive && f.active >= 0) {
@@ -270,13 +293,13 @@ export function addressField({ input, list, clear, badge, idPrefix, popup, foot,
         : `<span class="suggest-meta ${missed ? "bad" : ""}" ${it.sip ? `title="${escHtml(it.sip)}"` : ""}>${SUGGEST_ICON[missed ? "missed" : it.dir === "in" ? "inbound" : "outgoing"]}
             ${missed ? "Missed · " : it.note ? `${escHtml(it.note)} · ` : ""}${relTime(it.at)}</span>`;
       const label = it.contact ? `Remove ${it.name} from contacts` : `Add ${it.name} to contacts`;
-      return `${head}<div class="${cls}${it.contact ? " is-contact" : ""}" ${attrs}>
+      return `${head}<div class="${cls}${it.contact ? " is-contact" : ""}${rowButtons ? "" : " plain"}" ${attrs}>
         <span class="suggest-avatar" aria-hidden="true"${avatarAttr(it.uri)}>${escHtml(initial(it.name))}</span>
         <span class="suggest-main"><span class="suggest-name">${escHtml(it.name)}${it.contact ? contactMark(it.name) : ""}</span><span class="suggest-uri" title="${escHtml(plainAddress(it.uri))}">${escHtml(shownAddress(it.uri))}${fromLabel(it)}</span></span>
         ${meta}
-        <button type="button" class="suggest-contact" tabindex="-1" data-contact="${it.contact ? "remove" : "add"}" data-idx="${i}"
+        ${rowButtons ? `<button type="button" class="suggest-contact" tabindex="-1" data-contact="${it.contact ? "remove" : "add"}" data-idx="${i}"
           title="${escHtml(label)}" aria-label="${escHtml(label)}">${it.contact ? SUGGEST_ICON.removeContact : SUGGEST_ICON.addContact}</button>
-        <span class="suggest-call" title="${escHtml(goLabel)}" aria-hidden="true">${goIcon()}</span>
+        <span class="suggest-call" title="${escHtml(goLabel)}" aria-hidden="true">${goIcon()}</span>` : ""}
       </div>`;
     }).join("");
     list.querySelector(".suggest-item.active")?.scrollIntoView({ block: "nearest" });
@@ -303,29 +326,28 @@ export function addressField({ input, list, clear, badge, idPrefix, popup, foot,
     input.addEventListener("focus", () => f.refresh());
     input.addEventListener("blur", () => setTimeout(f.close, 0));
   }
-  // With an account, just a name or number (see directMode). A ":" or "@" typed is refused, with
-  // the field's validation bubble saying why; a pasted or dropped address on the account's domain
-  // goes in as its user part, and one elsewhere is refused too.
+  // Nothing typed is refused (see directMode). A pasted or dropped address on the account's domain
+  // goes in as its user part, which is all the account needs.
   let hintTimer = 0;
   const clearHint = () => { clearTimeout(hintTimer); input.setCustomValidity(""); };
   // (The forms are novalidate: the bubble explains, and never stops Call or Transfer.)
   input.addEventListener("beforeinput", (e) => {
-    if (!e.data || !/[:@]/.test(e.data) || directMode()) return;
+    if (!e.data || e.inputType === "insertText" || directMode() || !state.account) return;
+    const user = userOnDomain(e.data.trim());
+    if (!user) return;
     e.preventDefault();
-    const user = e.inputType !== "insertText" ? userOnDomain(e.data.trim()) : null;
-    if (user) {
-      input.setRangeText(user, input.selectionStart ?? input.value.length, input.selectionEnd ?? input.value.length, "end");
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      return;
-    }
-    const domain = domainOf(state.account);
-    input.setCustomValidity([domain ? `Just the name or number: calls go through ${domain}.` : "Just the name or number.", directNote()].filter(Boolean).join(" "));
-    input.reportValidity();
-    clearTimeout(hintTimer);
-    hintTimer = setTimeout(clearHint, 4000);
+    input.setRangeText(user, input.selectionStart ?? input.value.length, input.selectionEnd ?? input.value.length, "end");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
   });
+  // warn's note: set on the field while it applies, and its bubble shown once you pause typing.
+  function checkWarn() {
+    const msg = warn(input.value.trim()) ?? "";
+    input.setCustomValidity(msg);
+    if (!msg) return;
+    hintTimer = setTimeout(() => { if (input.validationMessage === msg && document.activeElement === input) input.reportValidity(); }, 600);
+  }
   input.addEventListener("blur", clearHint);
-  input.addEventListener("input", () => { clearHint(); f.refresh(); });
+  input.addEventListener("input", () => { clearHint(); checkWarn(); f.refresh(); });
   input.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
@@ -335,7 +357,7 @@ export function addressField({ input, list, clear, badge, idPrefix, popup, foot,
       f.active = e.key === "ArrowDown" ? (f.active + 1) % n : (f.active <= 0 ? n - 1 : f.active - 1);
       render();
       changed();
-    } else if (e.key === "Enter" && f.open && f.active >= 0) {
+    } else if (e.key === "Enter" && f.open && f.active >= 0 && !e.ctrlKey && !e.metaKey) {   // Ctrl+Enter: Video call
       e.preventDefault();
       choose(f.active);
     } else if (e.key === "Escape" && popup && f.open) {
@@ -347,8 +369,12 @@ export function addressField({ input, list, clear, badge, idPrefix, popup, foot,
       e.preventDefault();
       e.stopPropagation();
       input.value = "";
+      f.pick = null;
       f.renderBadge();
+      cleared();
       changed();
+    } else if (e.key === "Escape" && popup && escEmpty()) {
+      e.stopPropagation();   // it was the dial view's Esc: back to Home, and nothing else
     }
   });
   // The clear (×) button: empties the field and lists Contacts and Recent, as deleting the text
@@ -358,7 +384,9 @@ export function addressField({ input, list, clear, badge, idPrefix, popup, foot,
   clear.addEventListener("click", () => {
     if (input.disabled) return;
     input.value = "";
+    f.pick = null;
     input.focus();
+    cleared();
     f.refresh();
   });
   list.addEventListener("mousedown", (e) => e.preventDefault());   // keep focus in the field
@@ -398,8 +426,19 @@ export function initAddress2() {
   // The address bar's. dial.pick: the entry last picked from the list, so Call knows its account.
   dial = addressField({
     input: $("address"), list: $("dialSuggest"), clear: $("destClear"), badge: $("destContact"),
-    idPrefix: "sug", popup: true, foot: true, goIcon: () => ICON.phone, goLabel: "Call",
-    pick: syncCallBtn, changed: syncCallBtn,
+    idPrefix: "sug", popup: true, foot: true, goIcon: () => ICON.phone, goLabel: "Call", rowButtons: false,
+    // A pick goes in as New call's do: its account becomes Call from (Esc or × puts it back).
+    pick: fill, changed() { followTyped(); syncCallBtn(); renderHome(); },
+    warn: webDirectNote,
+    // With no call on the stage, the dial view lists your contacts and recent calls itself, so the
+    // drop-down only opens once you type.
+    listEmpty: () => !homeShown(), cleared: restoreFrom,
+    escEmpty() {
+      if (!homeShown()) return false;
+      leaveDial();
+      $("address").blur();
+      return true;
+    },
   });
   $("dialForm").addEventListener("submit", () => dial.close());
   document.addEventListener("history-changed", () => { if (dial.open) dial.refresh(true); if (xferOpen) xferField.refresh(true); });
@@ -412,16 +451,19 @@ export function initAddress2() {
     // Call, from the tab: the way Call does, with the contact's address in the field, which closes
     // the view (placeCall) so the stage shows how the call's going. Not while a call can't be
     // placed (callBlocked): then nothing happens, and the address bar keeps what's in it.
-    call(uri) {
+    call(uri, video = false) {
       const blocked = callBlocked();
       if (blocked) { log(`not calling ${uri}: ${blocked}`); return; }
       $("address").value = fieldText(uri);
       dial.pick = { uri, name: contactFor(uri)?.name ?? null, account: contactFor(uri)?.account ?? null };
       syncCallBtn();
-      $("dialForm").requestSubmit();
+      if (video) $("videoCallBtn").click();   // Video call, as its button
+      else $("dialForm").requestSubmit();
     },
+    videoAllowed: () => state.videoAllowed !== false,
     changed() { refreshAddressFields(); render(); },
     openPeople,
+    closePeople: () => closeHistory(),
     // The contact form's address follows the same rules as the address bar (see directMode).
     addressMode: () => ({ direct: directMode(), aor: state.account ?? null,
       name: accountList()?.find((a) => a.id === state.accountId)?.name ?? null }),

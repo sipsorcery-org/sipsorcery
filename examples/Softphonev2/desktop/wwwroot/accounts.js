@@ -92,13 +92,21 @@ export function initAccounts(api) {
   });
 }
 
-// Every state message. Returns at once in the web softphone, which sends no accounts.
+// Every state message, before the page draws anything: the accounts as the host has them now
+// (their registrations, too), so Home and the rest draw from this message's, not the last one's.
+let firstAccounts = true;
+export function takeAccounts(msg) {
+  if (!Array.isArray(msg.accounts)) return;
+  accounts = msg.accounts;
+  selectedId = msg.accountId ?? null;
+  localAddress = msg.localAddress || "";
+}
+// Every state message, after it's drawn (takeAccounts first). Returns at once in the web
+// softphone, which sends no accounts.
 export function onAccountsState(state) {
   if (!Array.isArray(state.accounts)) return;
-  const first = accounts === null;
-  accounts = state.accounts;
-  selectedId = state.accountId ?? null;
-  localAddress = state.localAddress || "";
+  const first = firstAccounts;
+  firstAccounts = false;
   const live = ["calling", "ringing", "connected"].includes(state.call);
   // A ringing call takes over the stage; Manage accounts brings the view (and your edits) back.
   if (state.call === "ringing" && !callLive && view.open) $("accounts").hidden = true;
@@ -154,6 +162,13 @@ function renderFrom() {
 
 // The accounts, for the contacts' "Call from" picker (null in the web softphone, which has none).
 export const accountList = () => accounts;
+// For Home's Accounts card (home.js): how an account's registration reads, its address, Manage
+// accounts on a page ("new", or an account's form), and Re-register.
+export const accountStatus = (a) => status(a);
+export const accountAor = (a) => aor(a);
+export const accountUri = (a) => uri(a);   // sip: (or sips: on TLS), for Copy address
+export const openAccounts = (page = null) => open(page);
+export function reRegister(id) { post({ type: "account-register", id }); log(`${byId(id)?.name}: re-register`); }
 export const accountName = (id) => (id === DIRECT ? "no account (direct)" : byId(id)?.name ?? null);
 
 let noteTimer = 0;

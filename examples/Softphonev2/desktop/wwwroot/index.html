@@ -17,13 +17,18 @@
         <span class="brand-sub">Softphone</span>
       </div>
       <div class="topbar-right">
-        <!-- Privacy mode (Shift+M), just left of Settings: every call muted with its camera off,
-             new ones too, until it's pressed again or you unmute a call or turn a camera on.
-             Never remembered. -->
+        <!-- Your microphone and camera, only while one is open (yourdevices.js): a green dot is
+             live, amber is open but muted. Nothing shows while both are closed. A click says
+             why each is open, and when each opened and closed. -->
+        <button type="button" class="dev-ind" id="devInd" aria-haspopup="dialog" aria-expanded="false" hidden></button>
+        <div class="dev-pop" id="devPop" role="dialog" aria-label="Your microphone and camera" hidden></div>
+        <!-- Privacy mode (Shift+M), just left of Settings: a hard off. The microphone and camera
+             close on every call, new ones too, and nothing else turns it off but pressing it
+             again. Never remembered. -->
         <span class="privacy" id="privacy">
           <button type="button" class="privacy-btn" id="privacyBtn" aria-pressed="false"></button>
         </span>
-        <!-- Settings (settings.js): devices, camera, answering, theme, diagnostics. -->
+        <!-- Settings (settings.js): your default devices, theme, diagnostics. -->
         <button type="button" class="icon-btn settings-btn" id="settingsBtn" aria-label="Settings" title="Settings" aria-haspopup="dialog"></button>
       </div>
     </header>
@@ -41,8 +46,8 @@
         <!-- Why a call to a contact didn't use its account (accounts.js useAccount). -->
         <span class="from-note" id="fromNote" role="status" hidden></span>
       </div>
-      <!-- Focusing the address (or /) lists contacts and recent calls; typing filters them (app.js,
-           "Address fields"). -->
+      <!-- Focusing the address (or /) with no call on the stage opens the dial view (home.js);
+           during a call it lists contacts and recent calls. Typing filters them (address.js). -->
       <div class="dest-wrap">
         <input id="address" type="text" placeholder="Name or number" spellcheck="false" aria-label="Name or number to call"
           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="dialSuggest">
@@ -52,14 +57,13 @@
         <!-- Empties the field, at its far right while it has text (app.js renderDestContact). -->
         <button type="button" class="dest-clear" id="destClear" aria-label="Clear" title="Clear" hidden></button>
       </div>
-      <!-- What kind of call Call places. Audio leaves video out of the offer; it can be added later. -->
-      <!-- A slide switch, not two buttons: the words either side say what it chooses between. -->
-      <div class="slide call-type" id="callType">
-        <button type="button" class="slide-opt" data-type="audio" tabindex="-1"></button>
-        <button type="button" class="slide-track" role="switch" aria-label="Video call"><span class="slide-thumb"></span></button>
-        <button type="button" class="slide-opt" data-type="video" tabindex="-1"></button>
+      <!-- The kind of call is the button: Call (Enter) leaves video out of the offer, and video can
+           be added later; Video call (Ctrl+Enter) offers it. Kept together: when the bar wraps,
+           both go to the next row. -->
+      <div class="call-btns">
+        <button type="submit" class="btn btn-primary call-btn" id="callBtn">Call</button>
+        <button type="button" class="btn btn-primary call-btn" id="videoCallBtn">Video call</button>
       </div>
-      <button type="submit" class="btn btn-primary" id="callBtn">Call</button>
     </form>
 
     <!-- Active calls, down the left beside the stage and controls, only while there are two or
@@ -103,6 +107,9 @@
         <div class="head-status" id="xferNote" role="status" hidden>
           <span class="head-status-icon" id="xferIcon" aria-hidden="true"></span>
           <span class="head-status-text" id="xferText"></span>
+          <!-- Being transferred: you decide (the host waits for it to answer their REFER). -->
+          <button type="button" class="head-btn head-btn-go" id="xferAccept">Accept</button>
+          <button type="button" class="head-btn" id="xferDecline">Decline</button>
           <button type="button" class="head-btn" id="xferCancel">Cancel</button>
           <button type="button" class="head-btn" id="xferLeave">Hang up</button>
           <button type="button" class="head-btn" id="xferRetry">Try again</button>
@@ -119,10 +126,26 @@
            call's <video> into its tile). Clicking a tile opens that call in Focus view. -->
       <div class="tiles" id="tiles" role="list" aria-label="Active calls" hidden></div>
 
+      <!-- No call on the stage: Home (home.js). Recent calls on the left; your accounts, Your
+           devices and privacy mode on the right. Focusing the address turns it into the dial
+           view: one column, Your devices at the top, then your contacts and recent addresses. -->
+      <section class="home" id="home" aria-label="Home" hidden>
+        <div class="home-wrap">
+          <div class="home-left home-card" id="homeLeft"></div>
+          <div class="home-right" id="homeRight">
+            <div id="homeAccounts"></div>
+            <section class="scard yd-host" id="ydHome" aria-label="Your devices"></section>
+            <div id="homePrivacy"></div>
+          </div>
+        </div>
+      </section>
+
       <div class="card" id="card">
         <div class="card-title" id="cardTitle">Ready</div>
         <div class="card-sub" id="cardSub">Type an address above to start a call.</div>
         <div class="card-actions" id="cardActions"></div>
+        <!-- A call ringing: Your devices, what it'll use, with a quick change (yourdevices.js). -->
+        <section class="scard yd-host card-devices" id="cardDevices" aria-label="Your devices" hidden></section>
       </div>
 
       <!-- Video agreed, but nothing arriving: their initial, and after 2 s a note. -->
@@ -153,9 +176,16 @@
         </div>
         <span class="self-grip" id="selfGrip" aria-hidden="true"></span>
       </div>
-      <!-- On hold: how long, with Resume; or that they've put you on hold. -->
+      <!-- Privacy mode on a connected call: what they get, with Turn off. -->
+      <div class="privacy-note" id="privacyNote" role="status" hidden>
+        <span id="privacyNoteText"></span>
+        <button type="button" class="link-btn" id="privacyNoteOff">Turn off</button>
+      </div>
+      <!-- On hold: how long, with Resume; or that they've put you on hold. After a transfer of
+           yours that failed (declined, say), why, above, with Try again. -->
       <div class="held-note" id="heldNote" hidden>
-        <span id="heldText"></span>
+        <span class="held-lines"><span class="held-why" id="heldWhy" hidden></span><span id="heldText"></span></span>
+        <button type="button" class="btn" id="heldRetry" hidden>Try again</button>
         <button type="button" class="btn" id="heldResume"></button>
       </div>
     </main>
@@ -193,8 +223,6 @@
       </aside>
     </div>
 
-    <!-- A call ringing while you're on another: who, and Answer & hold current or Decline. The
-         name opens the full answer view. -->
     <!-- A call you're placing while on another: Calling… until it's answered (then it's in the
          list and on the stage), or why it wasn't. -->
     <div class="incoming outgoing" id="outgoing" role="status" hidden>
@@ -204,7 +232,9 @@
         <button type="button" class="btn btn-danger" id="outgoingCancel">Cancel</button>
       </span>
     </div>
-    <!-- More than one ringing: "+N more" drops a list of the others down inside the banner, each
+    <!-- A call ringing while you're on another: who, and Decline, Answer & hold current and, on a
+         video call, Answer with video (the camera icon). The name opens the full answer view.
+         More than one ringing: "+N more" drops a list of the others down inside the banner, each
          with its own Decline and Answer, scrolling past a few. -->
     <div class="incoming" id="incoming" role="alert" hidden>
       <button type="button" class="incoming-who" id="incomingWho"></button>
@@ -213,6 +243,7 @@
       <span class="incoming-actions">
         <button type="button" class="btn btn-danger" id="incomingDecline">Decline</button>
         <button type="button" class="btn btn-primary" id="incomingAnswer">Answer</button>
+        <button type="button" class="btn btn-primary icon-btn" id="incomingVideoAnswer" hidden></button>
       </span>
       <ul class="incoming-list" id="incomingList" hidden></ul>
     </div>
@@ -261,10 +292,11 @@
     </div>
     </div>
 
-    <!-- The control bar, shown before calls too. Mute and Camera are split buttons: the ▾ opens
+    <!-- The control bar, only once a call's been answered (app.js render), until the last one
+         ends. Mute and Camera are split buttons: the ▾ opens
          a menu to pick the microphone and speaker, or the camera (and, in diagnostics mode, the
          test pattern). -->
-    <div class="controls" id="controls">
+    <div class="controls" id="controls" hidden>
       <div class="split">
         <button type="button" class="btn" id="muteBtn" aria-pressed="false"></button>
         <button type="button" class="btn split-caret" id="micMenuBtn" aria-haspopup="menu" aria-expanded="false"
@@ -290,6 +322,13 @@
         <button type="button" class="btn icon-btn text-btn" id="textBtn" aria-pressed="false" aria-label="Text" disabled></button>
         <!-- On a video call: hides or shows your self view (V too). At the right, under it. -->
         <button type="button" class="btn self-toggle" id="selfViewBtn" aria-pressed="true" hidden></button>
+        <!-- At phone width (500 px and under) the four above don't fit beside the call's buttons:
+             they're hidden, and this ⋯ menu has them instead (menus.js, fillMoreMenu). -->
+        <div class="split more-wrap">
+          <button type="button" class="btn icon-btn more-btn" id="moreBtn" aria-haspopup="menu" aria-expanded="false"
+            aria-label="More" title="More: transfer, keypad, text, self view"></button>
+          <div class="device-menu more-menu" id="moreMenu" role="menu" aria-label="More" hidden></div>
+        </div>
       </div>
     </div>
 
@@ -310,6 +349,13 @@
       <span class="dev-spacer"></span>
       <button type="button" class="dev-act" id="logCopy" title="Copy the whole SIP log">Copy log</button>
       <button type="button" class="dev-act" id="logClear" title="Clear the SIP log">Clear</button>
+      <!-- At phone width (500 px and under): Copy log and Clear, and the tabs that don't fit,
+           go into this ⋯ menu (diagnostics.js, fitDevTabs and fillDevMenu). -->
+      <div class="dev-more" id="devMore">
+        <button type="button" class="dev-more-btn" id="devMoreBtn" aria-haspopup="menu" aria-expanded="false"
+          aria-label="More" title="More: other tabs, Copy log, Clear"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+        <div class="device-menu dev-menu" id="devMenu" role="menu" aria-label="Diagnostics" hidden></div>
+      </div>
       <span class="dev-key" title="F12 opens and closes diagnostics">F12</span>
       <button type="button" class="dev-close" id="devClose" aria-label="Close diagnostics" title="Close diagnostics (F12)"></button>
     </div>

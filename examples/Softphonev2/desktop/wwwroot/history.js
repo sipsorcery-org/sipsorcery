@@ -27,6 +27,7 @@ const svg = (p) => `<svg viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
 const PHONE = '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>';
 const ICON = {
   phone: svg(PHONE),
+  video: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>',
   missed: svg(`<path d="m16 2 6 6"/><path d="m22 2-6 6"/>${PHONE}`),
   outgoing: svg('<path d="M7 7h10v10"/><path d="M7 17 17 7"/>'),
   inbound: svg('<path d="M17 7 7 17"/><path d="M17 17H7V7"/>'),
@@ -65,7 +66,9 @@ const contactOf = (e) => api.contactFor?.(e.uri);
 const markOf = (e) => { const c = contactOf(e); return c ? contactMark(c.name) : ""; };
 const nameOf = (e) => contactOf(e)?.name || e.name || api.shortName(e.uri);
 const initial = (name) => (name ?? "?").replace(/^\+/, "").charAt(0).toUpperCase() || "#";
-const unseenMissed = () => (entries ?? []).filter((e) => e.dir === "missed" && e.at > seenAt).length;
+export const unseenMissed = () => (entries ?? []).filter((e) => e.dir === "missed" && e.at > seenAt).length;
+/** A missed call you haven't seen yet: bold in Home's Recent until you open People or place a call. */
+export const isUnseen = (e) => e.dir === "missed" && e.at > seenAt;
 
 function fmtDuration(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -183,7 +186,7 @@ export function onHistoryState(state) {
 
 const byId = (id) => entries?.find((e) => e.id === id);
 
-function markSeen() {
+export function markSeen() {
   const newest = Math.max(Date.now(), ...(entries ?? []).map((e) => e.at));
   if (newest <= seenAt) return;
   seenAt = newest;
@@ -227,9 +230,25 @@ export function closeHistory(focus = true) {
 }
 
 // Placing the call closes the view (app.js placeCall), so the stage shows how it's going.
-function callBack(e) {
+function callBack(e, video = false) {
   if (!e) return;
-  api.call(e.uri, e.account);
+  api.call(e.uri, e.account, video);
+}
+
+/** Copy address (every list of people: Home, New call, People's Recent and Contacts): the address
+ * on the clipboard, to paste into the address bar (or anywhere), say to call it another way. */
+export function copyAddress(uri) {
+  if (!uri) return;
+  api.post({ type: "copy", text: uri });
+  showToast(`Copied <b>${esc(uri)}</b>`, false, 2500);
+}
+
+/** A row's own buttons, rightmost last: Copy address, Call, Video call (unless video's off).
+ * attrs: what each button carries for its click handler (data-id, say). */
+export function rowCallBtns(name, attrs, videoAllowed) {
+  const b = (act, cls, label, icon) => `<button type="button" class="hv-icon ${cls}" data-act="${act}" ${attrs} aria-label="${label}" title="${label}">${icon}</button>`;
+  return b("copy", "hv-copy", `Copy ${name}'s address`, ICON.copy) + b("call", "hv-call", `Call ${name}`, ICON.phone)
+    + (videoAllowed ? b("video", "hv-video", `Video call ${name}`, ICON.video) : "");
 }
 
 // ---- The People button ----
@@ -333,6 +352,7 @@ function renderResults() {
         </dl>
         <div class="hv-actions">
           <button type="button" class="btn btn-primary am-small" data-act="call" data-id="${esc(e.id)}">${ICON.phone}Call back</button>
+          ${api.videoAllowed() ? `<button type="button" class="btn am-small" data-act="video" data-id="${esc(e.id)}">${ICON.video}Video call</button>` : ""}
           <button type="button" class="btn am-small" data-act="copy" data-id="${esc(e.id)}">${ICON.copy}Copy address</button>
           <button type="button" class="btn am-small" data-act="contact" data-id="${esc(e.id)}">${contactOf(e) ? `${ICON.contact}Edit contact` : `${ICON.addContact}Add to contacts`}</button>
           <span class="am-spacer"></span>
@@ -340,19 +360,20 @@ function renderResults() {
           ${same > 1 ? `<button type="button" class="btn am-small" data-act="remove-uri" data-id="${esc(e.id)}">${ICON.trash}Remove all ${same} from this address</button>` : ""}
         </div>
       </div>` : "";
-    return `${head}<li class="hv-row${sel ? " selected" : ""}" data-id="${esc(e.id)}">
+    const video = api.videoAllowed();
+    return `${head}<li class="hv-row${sel ? " selected" : ""}" data-id="${esc(e.id)}" style="--hv-btns: ${video ? 5 : 4}">
         <button type="button" class="hv-main" data-act="select" data-id="${esc(e.id)}" aria-expanded="${sel}"${sel ? ` aria-controls="hv-detail-${esc(e.id)}"` : ""}>
           <span class="call-avatar" aria-hidden="true"${avatarAttr(e.uri)}>${esc(initial(name))}</span>
           <span class="hv-who"><span class="hv-name">${esc(name)}${markOf(e)}</span><span class="hv-uri">${esc(e.uri)}</span></span>
           <span class="hv-outcome ${o.tone}">${o.ico}<span>${esc(o.text)}</span></span>
           <span class="hv-time">${esc(clockTime(e.at))}</span>
         </button>
-        <button type="button" class="hv-icon hv-toggle" data-act="select" data-id="${esc(e.id)}" aria-expanded="${sel}"
-          aria-label="${sel ? "Hide" : "Show"} details for ${esc(name)}" title="${sel ? "Hide details" : "Show details"}">${ICON.chevronDown}</button>
-        ${contactOf(e)
+        <span class="hv-btns">${contactOf(e)
           ? `<button type="button" class="hv-icon hv-contact is-contact" data-act="contact" data-id="${esc(e.id)}" aria-label="Edit contact ${esc(name)}" title="Edit contact">${ICON.contact}</button>`
           : `<button type="button" class="hv-icon hv-contact" data-act="contact" data-id="${esc(e.id)}" aria-label="Add ${esc(name)} to contacts" title="Add to contacts">${ICON.addContact}</button>`}
-        <button type="button" class="hv-icon hv-call" data-act="call" data-id="${esc(e.id)}" aria-label="Call ${esc(name)}" title="Call ${esc(name)}">${ICON.phone}</button>
+        <button type="button" class="hv-icon hv-toggle" data-act="select" data-id="${esc(e.id)}" aria-expanded="${sel}"
+          aria-label="${sel ? "Hide" : "Show"} details for ${esc(name)}" title="${sel ? "Hide details" : "Show details"}">${ICON.chevronDown}</button>
+        ${rowCallBtns(esc(name), `data-id="${esc(e.id)}"`, video)}</span>
         ${detail}
       </li>`;
   }).join("") + "</ol>";
@@ -373,12 +394,9 @@ function onViewClick(ev) {
       $("historyView").querySelector(`.hv-row[data-id="${CSS.escape(el.dataset.id)}"] .hv-main`)?.focus({ preventScroll: true });
       break;
     case "call": callBack(e); break;
+    case "video": callBack(e, true); break;
     case "contact": if (e) api.editContact(e); break;
-    case "copy":
-      if (!e) break;
-      api.post({ type: "copy", text: e.uri });
-      showToast(`Copied <b>${esc(e.uri)}</b>`, false, 2500);
-      break;
+    case "copy": if (e) copyAddress(e.uri); break;
     case "remove": if (e) remove([e.id], `Removed <b>${esc(nameOf(e))}</b> from history`); break;
     case "remove-uri": {
       if (!e) break;

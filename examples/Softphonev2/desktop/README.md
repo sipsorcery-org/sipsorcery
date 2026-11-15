@@ -44,12 +44,14 @@ The page (`wwwroot`, shared with the web softphone in [../web](../web/README.md)
 
 | Module | What it is |
 |---|---|
-| `app.js` | The calls: their state, the stage, the controls, the dial bar, privacy, the keys, and the messages to and from the host. It starts the rest. |
+| `app.js` | The calls: their state, the stage, the controls, the dial bar (Call and Video call), answering, privacy mode, the keys, and the messages to and from the host. It starts the rest. |
 | `util.js` | Small helpers the others share: elements by id, escaping, messages to the host, the log, names from addresses, the icons. |
 | `address.js` | Addresses as typed and shown, and the address fields (the dial bar's and Transfer's) with their suggestions. |
+| `home.js` | Home, the stage with no call on it (recent calls, accounts, Your devices, privacy mode), and the dial view the address field opens. |
+| `yourdevices.js` | Your devices (the microphone, speaker and camera, with Test mic, Play a sound and Preview), and the indicator that shows only while the microphone or camera is open. |
 | `video.js` | What each call sends as video: the camera, the test sources, the camera-off placeholder and the "On hold" card. |
 | `holdmusic.js` | Music on hold, and the silence a call sends when it isn't the live one. |
-| `menus.js` | The ▾ device menus on Mute and Camera, Answer ▾, and the self view's button. |
+| `menus.js` | The ▾ device menus on Mute and Camera, and the self view's button. |
 | `calllist.js` | The Active calls panel, the grid, and End all. |
 | `levels.js` | Audio levels: the bars of the audio-only view and of the grid's tiles. |
 | `keypad.js`, `rtt.js`, `transfer.js` | The keypad (DTMF), real-time text, and transfer. |
@@ -101,7 +103,7 @@ Switches, mostly for testing:
 | `--fake-media` | Chromium's fake camera and microphone (a test pattern and a beep). |
 | `--dial <uri>` | Call this address as soon as the window is up. |
 | `--auto-answer` | Answer incoming calls after a second. |
-| `--video` | Start with the switch on Video, so `--dial` places a video call. |
+| `--video` | Enter places a video call (as Ctrl+Enter does), and so does `--dial`. |
 | `--test-pattern` | Send the test pattern instead of the camera. |
 | `--audio-bars` | Send the microphone's frequency bars instead of the camera. |
 | `--diagnostics` | Open the diagnostics panel (F12) at start. |
@@ -113,7 +115,7 @@ Switches, mostly for testing:
 | `--say <text>` | Once text is up on a call, send this message. |
 | `--dtmf <keys>` | Once a call's audio is up, open the keypad and press these keys (0–9, \*, #), as typed keys, 2 s in and one every 400 ms. |
 | `--no-video` | No video at all: the switch is locked to Audio, and video offers or Add video from the other side are turned down. (Will be the per-account "Video calls" setting.) |
-| `--camera-off` | Start with the Camera button off, so calls and answers start with the camera off. |
+| `--camera-off` | Video calls you place start with your camera off (your camera-off card until Start video). |
 | `--add-video <s>` | Press Add video this many seconds into an audio call. |
 | `--hangup-after <s>` | Hang up a call this many seconds after it connects. |
 | `--dial-count <n>` | With `--dial`, place `n` calls one after another, each 2 s after the last one ends. |

@@ -1,54 +1,23 @@
-// The device menus (the ▾ on Mute and Camera), Answer ▾, and the self view's button.
+// The device menus (the ▾ on Mute and Camera), and the self view's button.
 
-import { MIC_CONSTRAINTS, answerCall, answerCamera, call, camStart, cameras, devices, entries, inGrid, local, localTrack, nextVideo, privacyRelease, render, saveDevices, sel, selectedId, setAnswerCamera, setCamPref, setCamera, settings, state } from "./app.js";
+import { MIC_CONSTRAINTS, call, devices, entries, inGrid, local, localTrack, render, sel, setCamera, settings } from "./app.js";
 import { disarmEndAll, fillAllMenu } from "./calllist.js";
+import { fillDevMenu, fitDevTabs } from "./diagnostics.js";
 import { analyserFor } from "./levels.js";
 import { initSelfView } from "./selfview.js";
 import { $, ICON, log, post } from "./util.js";
-import { SOURCE_LABEL, cameraIdOf, cameraInUse, cameraOpenedFor, hasCamera, retryCamera, setVideoSource, sourceOf, syncCamera, videoAvailable } from "./video.js";
+import { SOURCE_LABEL, cameraIdOf, cameraOpenedFor, retryCamera, setVideoSource, sourceOf, syncCamera } from "./video.js";
 // ---- Device menus (the ▾ on Mute and Camera) ----
-// Mute's lists microphones and speakers; Camera's lists cameras, and in diagnostics mode the
-// test pattern. A pick takes effect straight away, mid-call too (a track swap, no renegotiation),
-// and is remembered for next time.
+// Mute's lists microphones and speakers; Camera's lists cameras, in diagnostics mode the test
+// pattern, and on a video call Camera off (your camera-off card, as Stop video). A pick takes effect straight away, mid-call too (a track swap, no renegotiation),
+// and is on demand: it lasts until the last call ends, then the next call starts with Settings'
+// defaults (app.js, resetDevices).
 
-export let openMenu = null;   // "mic", "cam", "answer", "all" (the calls panel's ⋯) or null
-const MENUS = { mic: ["micMenu", "micMenuBtn"], cam: ["camMenu", "camMenuBtn"], answer: ["answerMenu", "answerMenuBtn"], all: ["allMenu", "allMenuBtn"] };
-
-// ---- Answering a video call: Answer ▾ ----
-// The ▾ picks what your video will be: a camera, the test pattern (diagnostics mode), or camera
-// off. Under "Answer" the button says which, so you know before you answer. It starts from the
-// Camera button's choice (nextVideo.camOn), so camera off there means camera off here.
-export const answerSplit = document.createElement("div");
-
-const answerCamOn = () => (answerCamera ?? camStart()) && videoAvailable();
-function answerSourceLabel() {
-  if (!answerCamOn()) {
-    return nextVideo.source === "camera" && !hasCamera ? "No camera"
-      : nextVideo.source === "camera" && cameraInUse ? "Camera in use" : "Camera off";
-  }
-  if (nextVideo.source !== "camera") return SOURCE_LABEL[nextVideo.source];
-  // The camera the answered call will open (devices.camera, as the ▾ ticks), not the first one.
-  return cameras.find((d) => d.deviceId === currentCameraId(cameras, devices.camera))?.label || "Camera";
-}
-
-// current: the call you're on, which answering holds.
-export function renderAnswer(current) {
-  const video = !!state.incomingVideo && state.videoAllowed !== false;
-  const on = video && answerCamOn();
-  const main = `${video ? (on ? ICON.video : ICON.videoOff) : ICON.phone}<span>${current ? "Answer & hold current" : "Answer"}</span>`;
-  const el = answerSplit.querySelector(".answer-main");
-  if (el.innerHTML !== main) el.innerHTML = main;
-  const src = answerSplit.querySelector(".answer-src");
-  src.hidden = !video;
-  src.textContent = video ? answerSourceLabel() : "";
-  answerSplit.querySelector("#answerBtn").title = !video ? "Answer"
-    : on ? `Answer with ${src.textContent}` : "Answer with your camera off. You'll still see them.";
-  answerSplit.querySelector("#answerMenuBtn").hidden = !video;
-  answerSplit.classList.toggle("single", !video);
-}
+export let openMenu = null;   // "mic", "cam", "all" (the calls panel's ⋯), "more" (the control bar's ⋯), "dev" (Diagnostics' ⋯) or null
+const MENUS = { mic: ["micMenu", "micMenuBtn"], cam: ["camMenu", "camMenuBtn"], all: ["allMenu", "allMenuBtn"], more: ["moreMenu", "moreBtn"], dev: ["devMenu", "devMoreBtn"] };
 
 const currentMicId = () => localTrack("audio")?.getSettings().deviceId ?? (devices.mic || "default");
-// The camera ticked: the call's (or for Answer, the next call's), as opened if it's the open one.
+// The camera ticked: the call's (or with none, the next call's), as opened if it's the open one.
 function currentCameraId(cameras, want) {
   const track = localTrack("video");
   if (track && want === cameraOpenedFor) return track.getSettings().deviceId;
@@ -67,26 +36,40 @@ export async function showMenu(kind) {
     $("allMenu").querySelector(".device-option:not(:disabled)")?.focus();
     return;
   }
+  // Diagnostics' ⋯, at the top of the panel: positioned as the calls panel's is (the panel can
+  // be shorter than the menu), below the button if it fits.
+  if (kind === "dev") {
+    fillDevMenu();
+    $("devMenu").hidden = false;
+    fitInStage($("devMenu"));
+    $("devMoreBtn").setAttribute("aria-expanded", "true");
+    $("devMenu").querySelector(".device-option")?.focus();
+    return;
+  }
+  if (kind === "more") {
+    fillMoreMenu();
+    $("moreMenu").hidden = false;
+    $("moreBtn").setAttribute("aria-expanded", "true");
+    $("moreMenu").querySelector(".device-option:not(:disabled)")?.focus();
+    return;
+  }
   let list = [];
   try { list = await navigator.mediaDevices.enumerateDevices(); } catch { /* none to show */ }
   if (openMenu !== kind) return;
   const of = (k) => list.filter((d) => d.kind === k && d.deviceId);
-  // The Camera ▾ ticks the selected call's source; Answer's, the one the new call will start with.
-  const source = kind === "answer" ? nextVideo.source : sourceOf(sel());
+  // The Camera ▾ ticks the selected call's source (with none, the one the next call starts with),
+  // or on a video call with your camera off, Camera off.
+  const source = sourceOf(sel());
+  const camOff = !!call?.hasVideo && !call.camOn;
   const groups = kind === "mic"
     ? [["mic", "Microphone", of("audioinput"), currentMicId()],
        ["speaker", "Speaker", of("audiooutput"), devices.speaker || "default"]]
-    : [["camera", "Camera", of("videoinput"), source !== "camera" ? null : currentCameraId(of("videoinput"), kind === "answer" ? devices.camera : cameraIdOf(sel()))]];
+    : [["camera", "Camera", of("videoinput"), camOff || source !== "camera" ? null : currentCameraId(of("videoinput"), cameraIdOf(sel()))]];
   if (kind !== "mic" && document.body.classList.contains("diag")) {
     groups.push(["test", "Diagnostics", Object.entries(SOURCE_LABEL).map(([deviceId, label]) => ({ deviceId, label })),
-      source !== "camera" ? source : null]);
+      !camOff && source !== "camera" ? source : null]);
   }
-  if (kind === "answer") {
-    // While the camera's off nothing above is ticked; "Camera off" is instead.
-    const on = answerCamOn();
-    if (!on) for (const g of groups) g[3] = null;
-    groups.push(["off", "", [{ deviceId: "off", label: "Camera off (you'll still see them)" }], on ? null : "off"]);
-  }
+  if (kind !== "mic" && call?.hasVideo) groups.push(["off", "", [{ deviceId: "off", label: "Camera off: send my camera-off card" }], camOff ? "off" : null]);
   const menu = $(MENUS[kind][0]);
   menu.replaceChildren();
   groups.forEach(([key, label, items, current], gi) => {
@@ -100,18 +83,17 @@ export async function showMenu(kind) {
       opt.setAttribute("aria-checked", String(on));
       opt.innerHTML = `<span class="device-check">${on ? ICON.check : ""}</span><span></span>`;
       opt.lastChild.textContent = d.label || `${label} ${i + 1}`;
-      opt.onclick = () => pickDevice(key, d.deviceId, kind === "answer");
+      opt.onclick = () => pickDevice(key, d.deviceId);
       menu.append(opt);
     });
   });
   menu.hidden = false;
-  if (kind === "answer") fitInStage(menu);
   $(MENUS[kind][1]).setAttribute("aria-expanded", "true");
   (menu.querySelector('[aria-checked="true"]') ?? menu.querySelector(".device-option"))?.focus();
 }
 
-// The Answer menu is inside the stage, which clips (overflow: hidden), so a z-index can't lift
-// it out (the ⋯ menu likewise, in the calls panel). It's positioned against the window instead (position: fixed isn't clipped by the
+// The ⋯ menu is inside the calls panel, which clips (overflow: hidden), so a z-index can't lift
+// it out. It's positioned against the window instead (position: fixed isn't clipped by the
 // stage), below the button if it fits, else above, else on the roomier side, scrolling.
 function fitInStage(menu) {
   const btn = menu.parentElement.getBoundingClientRect();
@@ -137,52 +119,47 @@ export function closeMenu() {
   $(MENUS[kind][1]).setAttribute("aria-expanded", "false");
 }
 
-// From the Answer menu (forAnswer), a camera or the test pattern also means camera on for the
-// call being answered, and "off" means camera off. A source picked from the Camera ▾ is for the
-// selected call (and the next ones); from Answer's, for the call being answered (and the next).
-export async function pickDevice(key, id, forAnswer = false) {
-  const target = forAnswer ? null : sel();
+// A source picked from the Camera ▾ is for the selected call (and any started while it's on).
+// The default device is Settings'; whether it's on is the call's.
+export async function pickDevice(key, id) {
+  const target = sel();
   closeMenu();
-  if (forAnswer) { setAnswerCamera(key !== "off"); if (answerCamera) privacyRelease(); }
-  if (key === "off") log("answering with camera off");
-  else if (key === "mic") await pickMic(id);
+  if (key === "mic") await pickMic(id);
   else if (key === "speaker") {
     devices.speaker = id;
-    saveDevices();
     try {
       for (const e of entries.values()) await e.el.setSinkId(id);
       log(`speaker: ${id}`);
     } catch (err) { log(`speaker unavailable: ${err.name} ${err.message}`); }
   } else if (key === "camera") {
     devices.camera = id;
-    saveDevices();
     if (target?.m) target.cameraId = id;
     log(`camera${target?.m ? ` for call ${target.id}` : ""}: ${id}`);
     retryCamera();   // a fresh try, because you asked
     setVideoSource("camera", target);
     await syncCamera();   // switches to it, if something is sending the camera
-    if (!forAnswer) await cameraOnForPick();
+    await cameraOnForPick();
   } else if (key === "test") {
     setVideoSource(id, target);   // the test pattern or audio bars
-    if (!forAnswer) await cameraOnForPick();
+    await cameraOnForPick();
+  } else if (key === "off") {
+    if (call?.hasVideo && call.camOn) await setCamera(false, target);   // as Stop video
   }
   render();
 }
 
-// Picking a source from the Camera menu means you want to send it: if the camera was off, it
-// comes on, on a video call or (before one) for the next video call. Not on an audio call,
-// where it's only the choice for Add video.
+// Picking a source from the Camera menu on a video call means you want to send it: if the camera
+// was off, it comes on (not in privacy mode: setCamera won't). Before a call, or on an audio call,
+// it's only the choice: picking a camera never turns it on by itself.
 async function cameraOnForPick() {
-  if (call?.hasVideo) { if (!call.camOn) await setCamera(true, sel(), true); }
-  else if (!call && !camStart()) setCamPref(true);
+  if (call?.hasVideo && !call.camOn) await setCamera(true, sel(), true);
 }
 
 // A new microphone replaces the old one in place: same mute state, and on a call the audio
 // sender just swaps tracks.
 export async function pickMic(id) {
   devices.mic = id;
-  saveDevices();
-  if (!localTrack("audio")) { log(`microphone for calls: ${id}`); return; }   // opens with the next call
+  if (!localTrack("audio")) { log(`microphone for the next call: ${id || "system default"}`); return; }   // opens with it
   let fresh;
   try {
     fresh = (await navigator.mediaDevices.getUserMedia({ audio: { ...MIC_CONSTRAINTS, ...(id ? { deviceId: { exact: id } } : {}) } })).getAudioTracks()[0];
@@ -207,6 +184,51 @@ export async function pickMic(id) {
   log(`microphone: ${fresh.label}`);
 }
 
+// ---- The control bar's ⋯ More (phone width only: styles.css) ----
+// Transfer, Keypad, Text and Self view, which are hidden there. Each item stands for its button
+// and does what pressing it does, so all their rules (disabled, hidden, the panels they open)
+// stay in one place; the menu only shows their state: disabled, open or on (ticked), new text.
+const MORE = [["transferBtn", "transfer", "Transfer…"], ["keypadBtn", "keypad", "Keypad"], ["textBtn", "text", "Text"], ["selfViewBtn", "selfView", "Self view"]];
+const DOTS = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
+let moreShown = "";   // what the open menu was drawn from, so a render only redraws it on a change
+const moreItems = () => MORE.map(([id, icon, label]) => {
+  const b = $(id);
+  return { b, icon, label, hidden: b.hidden, disabled: b.disabled, on: b.getAttribute("aria-pressed") === "true",
+    toggle: id !== "transferBtn", unread: !!b.querySelector(".btn-dot") };
+});
+function fillMoreMenu() {
+  const items = moreItems();
+  moreShown = JSON.stringify(items.map(({ b, ...rest }) => rest));
+  const menu = $("moreMenu");
+  menu.replaceChildren();
+  for (const it of items) {
+    if (it.hidden) continue;
+    const opt = Object.assign(document.createElement("button"), { type: "button", className: "device-option more-option", disabled: it.disabled, title: it.b.title });
+    opt.setAttribute("role", it.toggle ? "menuitemcheckbox" : "menuitem");
+    if (it.toggle) opt.setAttribute("aria-checked", String(it.on));
+    opt.innerHTML = `<span class="more-icon">${ICON[it.icon]}</span><span></span><span class="device-check">${it.toggle && it.on ? ICON.check : ""}</span>`;
+    opt.children[1].textContent = it.label;
+    if (it.unread) opt.children[1].append(Object.assign(document.createElement("span"), { className: "more-new", textContent: " · new" }));
+    opt.onclick = () => { closeMenu(); it.b.click(); };
+    menu.append(opt);
+  }
+}
+// From render(), after the four buttons are drawn: the dot, the accent edge, and an open menu.
+export function renderMore() {
+  const items = moreItems();
+  const unread = items.some((it) => it.unread);
+  const btn = $("moreBtn");
+  const html = `${DOTS}${unread ? '<span class="btn-dot" aria-hidden="true"></span>' : ""}`;
+  if (btn.innerHTML !== html) btn.innerHTML = html;
+  btn.setAttribute("aria-label", unread ? "More, new text message" : "More");
+  btn.classList.toggle("active", items.some((it) => it.b.id !== "selfViewBtn" && it.on && !it.hidden));
+  if (openMenu === "more" && JSON.stringify(items.map(({ b, ...rest }) => rest)) !== moreShown) {
+    const had = document.activeElement && $("moreMenu").contains(document.activeElement);
+    fillMoreMenu();
+    if (had) $("moreMenu").querySelector(".device-option:not(:disabled)")?.focus();
+  }
+}
+
 // Self view: shows or hides your own picture during a video call (what's sent doesn't change).
 // Remembered between runs. V does the same, unless you're typing.
 export let selfViewOn = true;
@@ -228,23 +250,21 @@ export function showLoss() {
   }
   const on = Number($("lossAudio").value) > 0 || Number($("lossVideo").value) > 0;
   $("tabNet").innerHTML = `Network${on ? `<span class="dev-dot" title="Loss is on"></span>` : ""}`;
+  fitDevTabs();   // the ⋯ carries the dot if Network's in its menu
 }
 
 // Run by app.js at this point in its start-up, in the order it always ran.
 export function initMenus() {
-  answerSplit.className = "split answer-split";
-  answerSplit.innerHTML = `<button type="button" class="btn btn-primary" id="answerBtn"><span class="answer-main"></span><span class="answer-src"></span></button>
-  <button type="button" class="btn btn-primary split-caret" id="answerMenuBtn" aria-haspopup="menu" aria-expanded="false"
-    aria-label="Choose your camera for this call" title="Choose your camera for this call">${ICON.chevronDown}</button>
-  <div class="device-menu down" id="answerMenu" role="menu" aria-label="Your camera" hidden></div>`;
-  answerSplit.querySelector("#answerBtn").onclick = () => answerCall(selectedId);
-  answerSplit.querySelector("#answerMenuBtn").onclick = () => showMenu("answer");
-  addEventListener("resize", () => { if (openMenu === "answer" || openMenu === "all") closeMenu(); });
+  addEventListener("resize", () => { if (openMenu === "all" || openMenu === "dev") closeMenu(); });
 
   $("micMenuBtn").onclick = () => showMenu("mic");
   $("camMenuBtn").onclick = () => showMenu("cam");
+  $("moreBtn").onclick = () => showMenu("more");
+  $("devMoreBtn").onclick = () => showMenu("dev");
+  // The ⋯ goes when the window's widened past phone width: its four buttons are back.
+  addEventListener("resize", () => { if (openMenu === "more" && !$("moreBtn").offsetParent) closeMenu(); });
   document.addEventListener("pointerdown", (e) => {
-    if (openMenu && !e.target.closest(".device-menu, .split-caret, .calls-more")) closeMenu();
+    if (openMenu && !e.target.closest(".device-menu, .split-caret, .calls-more, .more-btn, .dev-more-btn")) closeMenu();
   });
   document.addEventListener("keydown", (e) => {
     if (!openMenu) return;

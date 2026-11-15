@@ -7,15 +7,25 @@ been checked.
 ## Window size
 
 The page reacts to the window's size as the web softphone does to the browser's. At 960 px and
-under the dial bar goes into rows (People, Manage accounts, Call from and the address, then
-Audio ◯━ Video and a wide Call), so the address keeps room to type in; at 860 px and under the
-control bar's buttons are icons, before a call's Mute and Stop video would be cut short; the
+under the dial bar can go into rows (People, Manage accounts, Call from and the address, then
+Call and Video call together on the next row, sharing it: they always move as a pair, never one
+left beside the address), so the address keeps room to type in; at 860 px and under the
+control bar's buttons are icons, before a call's Mute and Stop video would be cut short, laid
+out as with their words (the call's buttons together in the middle, the rest at the right end,
+not spread across the bar); the
 calls list goes to a rail under 700 px; and at 500 px and under it's the web softphone's phone
-layout (see the web README's "On a phone"): the address on a row of its own, and taller buttons. The window can't get smaller
+layout (see the web README's "On a phone"): the address on a row of its own, and taller buttons.
+There the control bar is Mute ▾, Camera ▾, Hold, End and a **⋯ More**, centred together: eight
+buttons won't fit in 360 px without being squashed, so Transfer, Keypad, Text and Self view move
+into More's menu. Each item does what its button does (and shows its state: greyed when the
+button's disabled, ticked when on); More is accent-edged while a panel it opened is open, and has
+Text's red dot for a new message. The window can't get smaller
 than a 360 × 560 page, the narrowest phone that layout is made for. That's in CSS pixels, so the
 minimum is the same page at any display scaling, and it's set again when the window moves to a
 monitor with other scaling (`MainForm.MinPageSize`). Narrow, the Accounts view puts this PC's
-direct address under its title, the Diagnostics tabs scroll sideways, and the address field's
+direct address under its title, the Diagnostics bar has a ⋯ too (the open tab always on the
+bar, the others as fit, the rest in its menu, with Copy log and Clear log on the SIP log; a tab's
+red dot, Network's with loss on, shows on the ⋯ while it's in there), and the address field's
 direct-mode hint drops its example (it's in the tooltip).
 
 ## The app icon
@@ -27,25 +37,105 @@ in the `.ico` (16, 20, 24, 32, 40, 48, 64 and 256 px) is drawn on its own, with 
 face, robe and handset about a pixel wide at that size, so the parts stay apart at 16 px. The header copy is
 drawn for 28 px. The tile is the same in light and dark.
 
+## Call and Video call
+
+Beside the address, two buttons, so the kind of call is the button you press, as on a phone's
+contact card: **Call** (Enter) leaves video out of the offer, and video can be added once it
+connects; **Video call** (Ctrl+Enter) offers it, with your camera on from the start (privacy
+mode sends your camera-off card instead). There's no setting for it: the button you press says
+it, and nothing carries from one call to the next. On a call, both say
+*& hold current*. A call ringing in has **Answer** (you see them, your camera stays closed) and,
+when they offered video, **Answer with video**; the banner for a call ringing while you're on
+another has Answer and a camera icon for Answer with video.
+
+Every list of people has the same three buttons on each row: Home's Recent, the dial view's New
+call, and People's Recent and Contacts. **Copy address** puts the address on the clipboard (with a
+*Copied* notice), to paste into the address bar or elsewhere and call it some other way, with
+another account say; **Call** and **Video call** place the call straight away. In People the
+details also have Call (or Call back), Video call and Copy address.
+
+While a call you placed is ringing, its card shows [Your devices](#your-devices) read-only: the
+microphone and speaker it's using, and the camera (its name and *opens when they answer*, *Off:
+your camera-off card*, or *Not used: it's an audio call*). They can't be changed there; once it's
+answered the ▾ on Mute and Camera change them.
+
+## Home and the dial view
+
+With no call on the stage, it's **Home**: your recent calls on the left (missed ones red, the
+unseen ones bold, a call that's just ended highlighted for a moment), each with Copy address,
+**Edit contact** (or **Add to contacts**, as in History: the Contacts form, its name the one the
+row shows, the call's or else one from the address, and Save or Cancel comes back to Home), Call and Video call (at phone width Copy address goes, for the name's room;
+People has it); on the right your accounts (each with its registration, Retry when it
+failed, and two icons: Copy address, its `sip:` address on the clipboard, and Edit, straight to
+its form in Accounts; then the address direct calls reach you at, with its own Copy; the web
+softphone's one account has Copy only), [Your devices](#your-devices) and, while it's on, privacy
+mode with Turn off. A call that ends with no other call going (hung up, declined, busy) shows
+how it ended for 3 s, then Home; its **Close** button (or Esc) goes to Home straight away. Esc
+from the address, where a call that's ended leaves you, empties it first if it still has the
+address you called (kept for a retry), then closes.
+
+Focusing the address (or `/`) turns Home into the **dial view**: one column, Your devices at the
+top, then *New call*, your contacts and the addresses of recent calls. Picking one fills the
+address bar and Call from (the field flashes) and calls no one: Call or Video call places it.
+Each row also has its own Copy address, **Call** and **Video call**, as Recent's rows do; the
+calls go straight away (from the contact's account, or the one it was last called from). Esc
+empties the field and puts Call from back; Esc again, Back to Home, or (with the field empty)
+clicking or tabbing to anything outside the dial bar and the dial view, leaves. Your devices'
+buttons and pickers are part of the dial view, so using them keeps it. The drop-down under
+the address only opens once you type, since the dial view is already the list. During a call,
+focusing the address opens the drop-down as before.
+
+## Your devices
+
+On Home, the dial view and under a call ringing on the stage (and read-only under one you're
+placing): three lines, the microphone, speaker
+and camera the next call (or the one ringing) will use, each with a hint when it's not plain
+(*on only if you answer with video*, *off (privacy mode)*, and *for now* on one changed from
+your default). Clicking a line opens the panel with that
+device's test going: the camera's line starts a preview (only you see it), the microphone's a
+level meter; the speaker's, and *Change or test*, start nothing. Open, each device has its picker,
+what the call will do with it, and a test: Test mic, Play a sound (on the speaker picked) and
+Preview. In diagnostics mode the camera's list has the test pattern and audio bars too, as the
+Camera ▾ does: picked, the preview shows it and the next video call sends it. Picking another
+camera or source switches the preview straight away. *Done* folds it and stops the tests; so does placing or answering a call, which takes the
+devices over. The camera's list ends with **Camera off: send my camera-off card**: the next
+video call (Video call or Answer with video) starts as if you'd pressed Stop video, so they see
+your camera-off card until you press Start video. Preview then shows that card, as they'll see
+it (the selected account's picture or initial), and the camera stays closed. It's on
+demand like a device: once the last call ends, video calls open the camera again. Settings has
+your **default devices**, kept between runs; every call you place or
+answer starts with them. A device picked here, or from the ▾ on Mute and Camera, is on demand:
+it's used from then on, for the call that's coming and the calls going, until the last call
+ends, and then it's your defaults again. Nothing picked here is remembered. Open, with a device
+changed, the panel says so, with *Use my defaults* to go back now. Whether the camera is on is
+the call's.
+
+## The indicator
+
+Left of privacy mode, only while your microphone or camera is open: nothing shows while both are
+closed, so there's nothing to work out. A microphone icon with a green dot is live (they hear you,
+or it's your mic test), amber is open but muted or on hold; a camera icon is open (they see you,
+or it's your preview). A click says why each is open, the device, and when each opened and closed
+(the last eight).
+
 ## The control bar
 
-Under the stage, from the UX prototype (`prototype/web`), and there the whole time, not just
-during a call, so the microphone and camera can be set up first:
+Under the stage, from the UX prototype (`prototype/web`), once a call's been answered (connected,
+or on hold) and until the last one ends. Before that, while Home shows, a call is being placed
+or one is ringing in, there's no bar and the stage has its room: Your devices is there instead.
+Mute and the camera button are for the call you're on, and only that call; their ▾ menus pick
+the device:
 
 - **Mic ▾**: Mute or Unmute (the label says what pressing it does, as on the camera button;
-  soft red while muted, with a red *You're muted* pill by the call timer). Before a call too:
-  the call then starts muted, and the tooltip says so. The ▾ lists microphones and
-  speakers; one picked between calls is used from the next call.
+  soft red while muted, with a red *You're muted* pill by the call timer). Every call starts
+  unmuted. The ▾ lists microphones and speakers.
 - **Camera ▾**: on a video call, Stop video or Start video (what pressing it does, whatever
   the source: the camera, or in diagnostics the test pattern; soft red while stopped, when
-  the placeholder is sent); on an audio call, Add video. Before a call, whether a video call
-  starts with your camera on, with the preview following. On Audio it isn't disabled:
-  pressing it switches to Video with the camera on, since that's what pressing a camera
-  means. Disabled only when video can't be had (No camera, No video, said on the button)
-  and while a call is ringing (the Answer button has its own choice). The ▾ lists cameras
-  and, in diagnostics mode, the test pattern.
-- **Audio ◯━ Video**: a slide switch, with the chosen word bold beside the thumb. The track is
-  neutral, so the green is only on Call.
+  the placeholder is sent); on an audio call, Add video. Disabled before a call (Your devices
+  has the preview) and when video can't be had (No camera, No video, said on the button). The
+  ▾ lists cameras, in diagnostics mode the test pattern, and on a video call *Camera off: send
+  my camera-off card* (ticked while your camera's off: picking it is Stop video, picking a camera
+  is Start video with that camera).
 - **Text** (an icon, at the right beside Self view, since it's rarely used): opens the
   real-time text panel in the dock (T does too). During a call only.
 - **Keypad** (an icon, beside Text): opens the DTMF keypad for the selected call (see
@@ -56,68 +146,87 @@ during a call, so the microphone and camera can be set up first:
   under *Calling…*, as a call ringing in is declined from its card.
 
 A device you pick takes effect at once, mid-call too, by swapping the track on the page's
-connection (no renegotiation), and is remembered between runs (per profile). A remembered
-device that's gone falls back to the default.
+connection (no renegotiation). It's for now: once the last call ends, the next starts with
+Settings' default devices again (kept between runs, per profile). A default that's gone falls
+back to the system default.
 
 ## Privacy mode
 
 At the top right, just left of Settings: the incognito sign (a hat over round glasses), as a
-browser marks a private window, so it reads as a mode the whole app goes into. One click (or
-`Shift+M`) turns it on: every call is muted and every video call sends your placeholder card
-instead of the camera, which closes; calls you place or answer while it's on start the same
-way. The button becomes a chip in the text colour (dark in the light theme, light in the dark)
-with the sign and *Privacy mode*, and its tooltip says your audio and video capture devices are
-disabled on every call (microphone muted, cameras off), new calls too. One click again turns it
-off, and each call goes back to how it was before (a call that started meanwhile, to how a new
-call starts), so a call you'd muted stays muted and a camera you'd turned off stays off. There's
-no second click to confirm: turning it on only protects you, and turning it off loses nothing.
+browser marks a private window, so it reads as a mode the whole app goes into. It's a hard off.
+One click (or `Shift+M`) turns it on: the microphone and camera close, every call gets silence
+and on video your camera-off card, and calls you place or answer while it's on start the same
+way (still `sendrecv`, sending silence, so turning it off needs no renegotiation). The button
+becomes a chip in the text colour (dark in the light theme, light in the dark) with the sign and
+*Privacy mode*; on a connected call a note under the header says what they get (*Bob hears
+silence and sees your camera-off card*) with Turn off, and Home has a card saying so.
 
-Unmuting a call, or turning a camera on (Start video, Add video, a camera picked from a ▾),
-turns it off by itself, and only that call changes: the others stay muted with their cameras
-off. Before a call, Unmute or Start video turns it off, and with no call to keep muted
-the microphone and camera both come back. It's never remembered, so
-the app always starts with it off, and it doesn't change the saved camera choice for new calls.
-It's always there, with or without a call, so you can switch it on before answering.
+While it's on, Mute, the camera button and Your devices' Test mic and Preview are disabled, and
+Video call or Answer with video send your camera-off card, so nothing turns it off behind your
+back: only its own button (or
+`Shift+M`, or Turn off) does. Off again, the microphone opens for the calls, and each call goes
+back to how it was before (a call that started meanwhile, unmuted with its camera off: it never
+turns a camera on unasked), so a call you'd muted stays muted. There's no second click to
+confirm: turning it on only protects you, and turning it off loses nothing. It's never
+remembered, so the app always starts with it off. It's always there, with or without a call, so
+you can switch it on before answering.
 
 ## Names, numbers and SIP addresses
 
 With an account, a call goes to the account's server, which works out where it goes from the name
-or number: `alice` is dialled as `sip:alice@<the account's domain>`. So a scheme and a domain say
-nothing, and the address bar (and Transfer's field) takes **just a name or number**: its hint is
-*Name or number*, and a `:` or `@` typed is refused, the field's bubble saying *Just the name or
-number: calls go through sipsorcery.com.*, and on the desktop *For a full SIP address, set Call
-from to No account (direct).* (the field's tooltip says the same). A pasted or dropped address on the account's domain
-goes in as its user part (`sip:alice@sipsorcery.com` → `alice`); one on another domain is refused
-too. Addresses on the account's domain show as their user part everywhere a call or suggestion
+or number: `alice` is dialled as `sip:alice@<the account's domain>`. The address bar's hint is
+*Name, number or SIP address* (*Name or number* at phone width), and **nothing typed is
+refused**. A pasted or dropped address on the account's domain goes in as its user part
+(`sip:alice@sipsorcery.com` → `alice`), and one typed there stays with the account (the domain is
+compared without its port). A **full SIP address on another domain** (`bob@example.com`, or
+anything starting `sip:`) is a direct call: on the desktop, *Call from* switches to **No account
+(direct)** as the address becomes full, with the picker's flash and a log line, as a contact set to
+call directly switches it, and back to the account if you take the `@…` out again (or Esc or ×
+empties the field). It only follows the change: picking an account in Call from afterwards is
+yours to keep, and a row picked from a list keeps the account it came with. After the call, Call
+from stays direct, as after a direct contact. The web softphone has no direct calls (no account
+list, always its account), so it takes the address, keeps Call enabled, and after a pause the
+field's bubble says *The web softphone can't call an address directly: this call goes through
+sipsorcery.com, which may not reach it.*; the call goes to its server as typed. The field's
+tooltip says which happens. Transfer's field takes anything too (the transfer goes through the
+call's account). Addresses on the account's domain show as their user part everywhere a call or suggestion
 shows its address (the stage, the call header, the suggestions' second line, its full address in
 the tooltip); one elsewhere shows as `bob@example.com`, without `sip:`. A saved contact or recent
 call elsewhere still goes into the field whole when it's picked: it was saved, so it stays
 callable. Contacts and history keep full addresses, and Copy address and Call details give them.
 
-**No account (direct)** is the one mode for full SIP addresses: there's no server, so the address
+**No account (direct)** is the mode for full SIP addresses: there's no server, so the address
 says where the call goes (`sip:alice@192.168.0.20`, or `192.168.0.20:5060`). The hint says so
 (*Name, number or SIP address, e.g. sip:alice@192.168.0.20*), anything can be typed, and addresses
 show in full. The mode follows *Call from*. The web softphone always has its account.
 
 **Contacts follow the same rule, by the contact's own *Call from*** (or, for *Any*, the one in Call
-from now). With an account the form's field is *Name or number* (`:` and `@` refused with the same
-bubble; a pasted address on that server goes in as its user part), and the contact is saved as
-that user at the account's server (`bob` → `sip:bob@sipsorcery.com`), so calls and history still
-match it. A line under the fields says where its calls go: *Calls go to bob@sipsorcery.com
+from now). With an account the form's field is *Name or number*, and nothing typed is refused
+(a pasted address on that server goes in as its user part). A name or number is saved as that
+user at the account's server (`bob` → `sip:bob@sipsorcery.com`), so calls and history still match
+it. A full address on another server switches the form's Call from to *No account (direct)* as
+it's typed (the picker flashes), and back if the `@…` comes out, as the address bar does; pick an
+account again afterwards and the contact is saved with it, the full address as typed (`sip:`
+added), for the account's server to reach. The web softphone (no Call from) keeps it too, with
+the field's bubble saying *The web softphone can't call an address directly: this contact's calls
+go through sipsorcery.com, which may not reach it.*, and saves it. Something that's neither a name
+nor a full address (`bob@`) gets *That isn't a SIP address* on Save. A line under the fields says where its calls go: *Calls go to bob@sipsorcery.com
 through Office's server* (with *Any*, that it's whichever account Call from has when you call).
 With *No account (direct)* the field is *Number or SIP address* and takes a full one, as typed.
 Editing shows the address as its user part on the contact's server; changing Call from re-reads
-it. One left from before on another server can't be saved unchanged with an account: the error
-asks for a name or number, or No account (direct). The list shows each contact's address as
+it. One on another server opens as it is, and doesn't switch Call from unless you retype it. The list shows each contact's address as
 calls do (`bob`); its details keep the full address. The address bar, Transfer and the contact
-form are `novalidate`, so the bubble only explains a refused key and never blocks Call or Save.
+form are `novalidate`, so a bubble only explains (the web's note) and never blocks Call or Save.
 
 ## Recent calls and contacts
 
 The address field's suggestions, from the UX prototype (its *New call*): focusing the field (or
 `/` anywhere outside a text field) lists contacts and recent calls, and typing filters and ranks
 them (below). Transfer's *To an address* field is the same component (`addressField` in
-`address.js`: the same lists, rows, keys, mark and ×; see Transfer). Typing part of a name highlights the first match. ↑/↓ move through the list (and open it),
+`address.js`: the same lists, rows, keys, mark and ×; see Transfer). The address bar's rows are
+just who and when: no Add/Remove contact button or Call icon (a row fills the field; the bar's
+Call and Video call place it, and People and the dial view's rows have their own buttons).
+Transfer's keep theirs. Typing part of a name highlights the first match. ↑/↓ move through the list (and open it),
 and `Esc` closes it. **Picking never dials**: Enter or a click puts the highlighted entry's
 address in the field (the list closes, focus stays), and only **Call**, or Enter again with
 nothing highlighted, places the call, from the picked entry's account as below. A full address
@@ -223,21 +332,23 @@ UX prototype. Esc, its ×, or a click outside closes it. Only options with somet
 in this app are there, and none that repeats a button you already have; each applies straight
 away:
 
-- **Audio & video.** Microphone, speaker and camera: the same choice as the ▾ menus on Mute and
-  Camera, so either changes the other. *System default* follows Windows. A microphone or
-  speaker picked mid-call swaps in at once. A camera picked here never turns the camera on: if
-  it's open it switches, otherwise the next video call uses it. Device names show once the
-  microphone or camera has been used.
-  Whether video calls start with your camera on is the Camera button's choice before a call,
-  remembered between runs (`camOn`; `--camera-off` still starts with it off, without changing
-  what's kept), and the self view is the Self view button's (V), remembered too. A video call's own camera choice carries to the next one: answer with the
-  camera off (Answer ▾) or turn it off on a call and the next video call (placed or answered)
-  starts with it off; on, and it starts with it on, opening the camera (and source) last
-  picked. That lasts for the run; only the choice before a call is kept between runs.
-  The grid is the Grid button's (and G's) choice, remembered (see
+- **Audio & video: default devices.** Default microphone, speaker and camera: what every call
+  you place or answer starts with, kept between runs. *System default* follows Windows. With no
+  call going, a default picked here is what's in use too; during a call it's for the calls after
+  (*The call you're on keeps the devices it has*). A device for one call is picked on demand,
+  from Your devices or the ▾ menus, and lasts until the last call ends (see
+  [Your devices](#your-devices)). Device names show once the microphone or camera has been used
+  (Your devices' Test mic or Preview does it). *Default camera* can also be **Camera off: send
+  my camera-off card** (`cameraOff` in the page's settings): video calls you place or answer with
+  video then start with your camera-off card until Start video, every time, and Your devices
+  shows *Off · your camera-off card* (with no *for now*: it's the default). Otherwise Call or
+  Video call, Answer or Answer with video say it, and privacy mode is the hard off.
+  `--camera-off` (testing) still starts video calls with the camera off. Nothing else carries from one call to the next: Mute and the
+  camera button change only the call they're on. The self view is the
+  Self view button's (V), remembered. The grid is the Grid button's (and G's) choice, remembered (see
   [Focus and grid views](#focus-and-grid-views)). Accounts are the dial bar's Call from and
   accounts (server) button (see [SIP accounts](#sip-accounts)). Calls are answered automatically
-  only with `--auto-answer`, a testing switch, with the Camera button's choice.
+  only with `--auto-answer`, a testing switch, as Video call would start.
 - **Appearance.** Theme: System, Light or Dark. System follows Windows' light or dark mode.
   *Show Gravatar pictures for people*: kept, though it has no button, since it decides whether
   hashes of addresses go to gravatar.com.
@@ -286,8 +397,8 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   "Type a number or address to call", while it's empty or only spaces), kept in step as you
   type, clear it with ×, pick a suggestion or paste. On a call, the button says what it will do:
   *Call & hold current*, the same words as a ringing call's *Answer & hold current* (its
-  tooltip names who: "Call, and put Alice on hold"; under 760 px it's just *Call*, so the
-  address field keeps its room); pressing it holds that call, which stays on the stage, and the new one
+  tooltip names who: "Call, and put Alice on hold"; under 1000 px it's just *Call* and
+  *Video call*, so both fit beside the address before they move to a row of their own); pressing it holds that call, which stays on the stage, and the new one
   isn't a call in the list yet: a banner over the stage says "Dave · Calling… · Cancel". Only
   once Dave answers does it join the list and take the stage (in Focus). Not answered (busy,
   declined, no such number), the banner says why until the call goes (or *Close*), and the call
@@ -320,7 +431,11 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   ringing (the banner, or the answer view once there's one), not the ended call's card.
   `--auto-answer` answers each call alongside the others, keeping the audio where it is.
 - **When a call ends** it stays in the list for a few seconds with how it ended. If it was on
-  the stage, the stage keeps saying so, with *Back to …* (or `Esc`) to another call.
+  the stage, the stage keeps saying so, with *Back to …* (or `Esc`) to another call, or with
+  none, *Close* (or `Esc`) for Home, after 3 s by itself. The host keeps listing an ended call a
+  little longer (about a second more, after an attended transfer), so a call the page has closed
+  is remembered until the host lets it go: before, it came back as a new call, its card over
+  Home again (Home, then a second *Transferred to Carol*).
 - **Mute** is the selected call's; `M` too. For every call at once, mic and camera, there's
   [privacy mode](#privacy-mode) at the top (`Shift+M`).
 - **Grid and ⋯**, under the Active calls list (icons only on the rail). *Grid*: see
@@ -408,7 +523,8 @@ way to the same calls.)
   Yesterday, the weekday, then the date). A row, or its chevron, opens its details: direction,
   when it started, duration (or "Didn't connect"), the account, the outcome with the SIP
   response, and the address, with **Call back** (from the call's account, if it's still enabled;
-  otherwise from *Call from*'s) and **Copy address**.
+  otherwise from *Call from*'s), **Video call** and **Copy address**. Each row also has Add or
+  Edit contact, the details chevron, Copy address, Call and Video call.
 - **Removing**: only the **Remove** button in a row's details, or *Remove all N from this
   address* beside it, for a flood of spam calls. *Clear history* in the toolbar asks first; with
   a search or filter on it's *Clear N shown* and only removes those. Each removal shows an
@@ -637,11 +753,16 @@ popover above it (beside the dock if the keypad or text is open, so it never cov
   account's transport goes in the `Refer-To` too (`;transport=tls`, say), so their phone reaches
   it the way we would. A full address goes as typed.
 
-The call goes on hold as the transfer starts (both calls, attended), and the call header's
-status says how it's going, in a few words on the header's line ("Transferring to Dave…",
+**Blind, the call isn't held.** The person you're transferring may be asked whether to go (this
+phone asks), and can talk it over with you while they decide; once they accept, their phone holds
+you itself while it calls Dave (the user agent does), and if it doesn't go ahead you're simply
+still talking. (It used to hold them first, as RFC 5589's example does, so they decided to your
+hold music and a decline left you to Resume.) **Attended, both calls go on hold** as it starts:
+you've put them on hold to speak to Dave. Either way the call header's status says how it's going, in a few words on the header's line ("Transferring to Dave…",
 "Dave is ringing…", "Transferred to Dave", "Transfer failed: Dave is busy (486 Busy Here)"),
 from the far end's NOTIFYs (the `sipfrag`). The host's full sentence ("Couldn't transfer: Dave
-is busy (486 Busy Here). The call is still on hold.") is its tooltip; the host sends a short
+is busy (486 Busy Here). You're still on the call: Try again, if you like.", or attended, "The
+call is still on hold: Resume, or Try again.") is its tooltip; the host sends a short
 `reason` for the line and `rang` once the target's ringing. The call's row says the same. A
 `100 Trying` that arrives after a `180 Ringing` (NOTIFYs can cross) doesn't take it back from
 ringing. While it's under way the *On hold* note in the middle of the stage is hidden (Resume
@@ -651,12 +772,18 @@ While it's under way the status has what you can do:
 
 - **Cancel** (asking or calling, blind or attended): you take the call back. SIP has no way to
   call off a REFER once the far end has accepted it (RFC 3515), so this is the most that can be
-  done: the transfer is forgotten, the call (both, attended) comes off hold, and the status says
+  done: the transfer is forgotten, attended the calls come off hold (blind, it was never held),
+  and the status says
   "Transfer cancelled" for a few seconds, with × (the tooltip: "If VtN's phone still goes ahead
   with it, it will leave this call."). If it does go ahead, their phone hangs up on you and the call
   ends *Transferred to Dave (their phone went ahead after you cancelled)*, not *They hung up*.
   The person being transferred can stop it for real (below), and then you see "Transfer failed:
-  VtN stopped it" (their `487`).
+  VtN stopped it" (their `487`). If they're still being asked (this phone), their question stays:
+  Decline (or no answer) leaves things as they are, but Accept still transfers them.
+- **Ending one of an attended transfer's calls** before it's gone through (End on it, or they
+  hang up) is the transfer over: the other call isn't being transferred any more, and can be
+  again. (Before, it stayed "under way", Transfer disabled on it, until it ended too: seen with a
+  MicroSIP call as the target, which rang and never answered.)
 - **Hang up** (blind, accepted): you hang up now and leave it to their phone, as a blind
   transfer usually goes (RFC 5589 lets the transferor leave once it has the 202). The call ends
   *Transferred to Dave (you left it to their phone)*; their phone carries on calling Dave.
@@ -667,23 +794,44 @@ While it's under way the status has what you can do:
   hangs up on us after accepting.
 - **Failed**: the status says why, with the response: "Transfer failed: Dave is busy (486 Busy
   Here)", "… nothing answered at Dave's address (408 Request Timeout)", "… VtN's phone turned it
-  down". The call stays on hold: **Try again** and **×** on the status, and the *On hold* note's
-  **Resume** in the middle of the stage. What happens next is your choice, never a silent
-  resume. Resuming clears the status; × just drops it, the call staying on hold.
+  down". **Try again** and **×** on the status. Blind, you're still talking. Attended, the call
+  stays on hold, and the *On hold* note in the middle of the stage says why too, with Try again
+  and **Resume**: what happens next is your choice, never a silent resume. Resuming clears the
+  status; × just drops it, the call staying on hold.
 - **No word**: accepted, but no outcome in 60 s, it's marked failed ("Transfer failed: no word
-  from VtN's phone"), still on hold, with the same.
+  from VtN's phone"), with the same.
 
-**Being transferred.** A REFER on one of your calls (`OnTransferRequested`) is **taken without
-asking**, and the stage says so: "Alice is transferring you to Dave…". Asking would be the safer
-default, but the user agent raises `OnTransferRequested` on its SIP receive thread and must
-answer the REFER (202 or 603) when the handler returns, so there's no way to wait for a click
-without stalling all SIP. Refusing every transfer would break the common case (being put
-through by a receptionist), so it's taken, within limits:
+**Being transferred.** A REFER on one of your calls is **yours to accept or decline**. The call
+header says "Alice wants to transfer you to Dave" (accent-coloured; the tooltip has the full
+sentence) with **Accept** and **Decline**, and nothing else to do there; the call goes on as it
+was meanwhile (no hold). The REFER itself is answered **202 Accepted at once**, with a NOTIFY
+`100 Trying`: 202 only says the phone will deal with it, and a proxy won't wait while you decide
+(sipsorcery.com answers a REFER `408 The far party did not answer the transfer` itself after
+about 8 s, and Alice's phone then took the transfer as failed while you were still being asked).
+Your choice decides what happens next, through the user agent's `OnTransferConfirmAsync` (added
+to `SIPUserAgent` for this: after the 202 it waits for the task before it holds Alice or calls
+anyone; false drops the transfer):
+
+- **Accept**: the call to Dave starts (below), and Alice's phone hears how it goes in NOTIFYs.
+  If Dave answers, you're with Dave and Alice's call ends ("Transferred to Dave"); if not (say
+  `480 dave@sipsorcery.com is not registered`), you're back with Alice.
+- **Decline**: "Transfer declined · still with Alice", and a final NOTIFY `603 Transfer
+  declined`. Alice's phone (this one) knows it by its reason phrase and says *Transfer failed: Bob
+  declined it* in the call header, with Try again; blind, Alice and Bob are still talking (an
+  attended one stays on hold, and its *On hold* card says it too). Another phone sees the
+  transfer fail.
+- **No answer in 20 s** declines it: "Transfer not answered · still with Alice", and the NOTIFY
+  says `603 Transfer not answered` (*Bob didn't answer it*, on Alice's phone).
+
+While you decide, Alice's phone shows *Transferring to Dave…* with Cancel and, on a blind
+transfer, Hang up (leave it to their phone: the call then ends, and so does the question). An
+immediate refusal of her REFER (a browser phone's, or a proxy's 408) reads *Bob's phone turned it
+down*, not *declined*. Our own REFER waits 10 s for its answer. Within limits, still:
 
 - only inside a connected call, from the person you're talking to; not on a browser phone's
   (WebRTC) call, whose media can't move to another call; not while a transfer is already under
-  way on it; only to a `sip:` or `sips:` address. Otherwise it's answered 603 and the note says
-  "Alice tried to transfer you to Dave, but …".
+  way (or being asked) on it; only to a `sip:` or `sips:` address. Otherwise it's answered 603 at
+  once (`OnTransferRequested`), without asking, and the note says "Alice tried to transfer you to Dave, but …".
 - the call to the target goes out with your account's password only if the target is on that
   account's own server (`OnTransferCallDescriptorCreated`), so a transfer can't use your account
   to reach a number outside it. With no account it goes from the address the transferor reached
@@ -838,11 +986,10 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   SIP phones and PBXs take H264, and it's usually decoded in hardware. A phone that answers
   with VP8, or offers it first, gets VP8: the answer follows the offer's order. The relay
   doesn't re-encode, so the page's WebRTC connection uses whichever was agreed.
-- **The Audio | Video switch beside Call** picks the kind of call. *Audio* leaves video out of
-  the INVITE; *Video* offers it, and the button reads "Video call". It always starts on
-  Audio: most SIP calls go to phones, an audio offer never trips anything up, and the camera
-  stays off (and the self view hidden) until you ask for video. With `--no-video` it's locked to
-  Audio.
+- **Call and Video call** beside the address place the kind of call (see
+  [Call and Video call](#call-and-video-call)). Call leaves video out of the INVITE: most SIP
+  calls go to phones, and an audio offer never trips anything up. Video call offers it. With
+  `--no-video` there's no Video call (nor Answer with video).
 - **Add video**, on an audio call, is where the Camera button would be. It adds our video codecs
   to the SIP session and sends a re-INVITE with `m=video`. If they accept, the relay is rebuilt
   on the same SIP session and the page gets a new offer with video. If they refuse (`m=video 0`,
@@ -852,19 +999,19 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   we placed, whose SIP session was made without video: our video codecs go on it as their
   re-INVITE is answered (`SIPUserAgent.OnRemoteMediaStreamAdded`), so the answer isn't
   `m=video 0`.
-- **The camera is only open when it's needed:** before a call while the switch is on Video (as
-  a preview in the self view), and during a video call with your camera on. With the switch on
-  Audio, on an audio call, or with your camera turned off, it's closed: no self view and no
-  camera light.
-- **So is the microphone.** It opens when you press Call (alongside the INVITE, so it's ready
-  when the call connects) or Answer, or when the call's media arrives (auto-answer, `--dial`),
-  and closes when the call ends, so a webcam's mic light is off between calls. Not while a
-  call is only ringing. If a call you placed never starts (a bad address), it closes after 5 s.
+- **The camera is only open when it's needed:** during a video call with your camera on, and
+  while Your devices' Preview is on. Otherwise (no call, an audio call, your camera turned off)
+  it's closed: no camera light, and the indicator shows no camera.
+- **So is the microphone.** It opens when you press Answer, or when a call you placed is
+  answered, or when the call's media arrives on a connected call (auto-answer), and closes when
+  the call ends, so a webcam's mic light is off between calls. Not while a call is ringing,
+  either way (the indicator shows nothing then): the web softphone sets up a placed call's
+  media before the answer, and sends silence until the microphone opens. Not in privacy mode. Your devices' Test mic opens it separately, for the meter only.
 - **A camera in use elsewhere says so, and waits for you.** Windows lets one app have a camera
   at a time, so a second softphone (or Teams, say) gets `NotReadableError`. That shows as
   "Camera in use" (not "No camera"), and on a call your camera goes off and the placeholder is
   sent. It's never retried by itself: the camera only opens because of something you did
-  (switching to Video, placing or answering a video call, Add video, Camera on). Otherwise the
+  (Preview, placing or answering a video call, Add video, Start video). Otherwise the
   softphone would start streaming your camera on its own the moment the other app let go.
   A missing camera or a refused permission is "No camera".
 - **Test pattern** (diagnostics mode): picked from the Camera button's ▾, it sends a test
@@ -874,8 +1021,7 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   for the selected call only, so one call can send the test pattern while another sends the
   camera. So is the camera itself: a camera picked for one call (even an audio call, as the
   one for Add video) doesn't change another's, and going to a call that wants another camera
-  switches to it. The source and camera picked last are what the preview and new calls start
-  with.
+  switches to it. The source and camera picked last are what new calls start with.
   It has colour bars and a grey ramp (colour and banding), a dial
   whose hand steps once per frame drawn (a dropped frame is a skipped tick), a clock to the
   millisecond (compare the far end's picture with this screen for the delay), the sender's
@@ -886,23 +1032,18 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   microphone's frequency bars as video, drawn like the audio-only view, with the microphone's
   name (or "Muted"), a level meter and the same clock and frame counter. The far end sees what
   you're sending as audio: sound or silence, a muted or dead microphone, and lip sync (a bar
-  should jump as they hear the sound). The microphone only opens with a call, so before one
-  the preview says "Microphone opens with the call".
-- **Picking a source turns the camera on.** With the camera off, choosing a
-  camera, the test pattern or audio bars from its ▾ sends it straight away (on a video call),
-  or makes video calls start with it on (before one). On an audio call the ▾ only sets what
-  Add video will send.
-- **Answer ▾** on a ringing video call: under "Answer" the button names what you'll send (the
-  camera's name, "Test pattern" or "Camera off"), starting from the Camera button's choice.
-  The ▾ picks a camera, the test pattern (diagnostics mode) or camera off, for this call. An
-  audio call gets a plain Answer. The menu is positioned against the window, not the stage
-  (which clips its contents), so in a short window it opens upward over the stage or past it.
+  should jump as they hear the sound).
+- **Picking a source on a video call turns the camera on.** With the camera off, choosing a
+  camera, the test pattern or audio bars from its ▾ sends it straight away. Before a call, or
+  on an audio call, the ▾ only sets what the next video call (or Add video) will use.
+- **Answer and Answer with video** on a ringing video call: Answer opens no camera (you see
+  them; they get your camera-off card until you press Start video); Answer with video opens the
+  camera picked. Your devices under the card shows which, with a quick change. An audio call
+  gets Answer alone.
 - **Self view**, at the right end of the control bar (under the self view it controls; the
   prototype has it in the info bar), or `V`, hides or shows your own picture. It's there
-  whenever there's a self view: from the moment the switch goes to Video, and during a video
-  call. On a call what's sent doesn't change. Before a call, with it off, the camera stays
-  closed (the preview is only for you) and opens when the call connects. It's remembered
-  between runs.
+  during a video call. What's sent doesn't change. It's remembered between runs. Before a call
+  there's no self view: Your devices has the preview.
 - **Moving and resizing the self view.** Drag it anywhere on the stage (mouse, pen or touch);
   it stays inside the stage, also when the window resizes. Its corner handle, on the corner
   facing the middle of the stage (top-left at first), resizes it, keeping 16:9, from the
@@ -929,8 +1070,7 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
   turning the camera on is a track swap with the encoder already running.
 - **The self view shows what they see.** During a video call that's your camera (mirrored) or the
   placeholder (not mirrored, so the initial reads right). A note along the bottom says why the
-  camera isn't showing: "Camera off", "Camera in use" or "No camera". Before a call, with the
-  switch on Video, it's the same preview.
+  camera isn't showing: "Camera off", "Privacy mode", "Camera in use" or "No camera".
 
 The stage then shows one of three things:
 

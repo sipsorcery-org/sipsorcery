@@ -56,7 +56,7 @@ export function callStatus(e) {
     const pending = e.holdWanted !== undefined && e.holdWanted !== c.held;
     const xt = h.transfer;
     // A transfer under way says so first: it's what's happening to the call.
-    if (xt && (xt.status === "asking" || xt.status === "calling")) c.statusText = transferShort(xt);
+    if (xt && (xt.status === "asking" || xt.status === "calling" || xt.status === "offered")) c.statusText = transferShort(xt);
     else if (xt?.status === "failed" && xt.role === "out") c.statusText = "Transfer failed · on hold";
     else if (pending) c.statusText = e.holdWanted ? "Holding…" : "Resuming…";
     else if (c.held) {

@@ -17,13 +17,16 @@
 // from, and (desktop) the media. Add to contacts / Edit contact from a call on Recent comes here, and goes back to Recent
 // when the form is done with.
 //
-// The address follows the contact's Call from, as the address bar follows Call from (app.js,
-// directMode): with an account it's just a name or number (no ":" or "@"), saved as that user at
-// the account's server (sip:alice@sipsorcery.com), and a line under the fields says where calls
-// go; with No account (direct) it's a full SIP address, as typed. Contacts are always kept as
-// full addresses, so calls and history still find them.
+// The address follows the contact's Call from, as the address bar follows Call from (address.js,
+// directMode): with an account a name or number is saved as that user at the account's server
+// (sip:alice@sipsorcery.com), and a line under the fields says where calls go; with No account
+// (direct) it's a full SIP address, as typed. Nothing typed is refused: a full address on another
+// domain switches the form's Call from to No account (direct) on the desktop (and back if it's
+// taken out), as the address bar does; the web softphone keeps it, with a note that its calls
+// still go through its server. Contacts are always kept as full addresses, so calls and history
+// still find them.
 
-import { historyEntries, describeCall } from "./history.js";
+import { copyAddress, historyEntries, describeCall, rowCallBtns } from "./history.js";
 import { accountList, DIRECT } from "./accounts.js";
 import { normAddress, contactMark } from "./contactmark.js";
 import { avatarAttr } from "./avatar.js";
@@ -36,6 +39,8 @@ const ICON = {
   close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
   add: svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>'),
   phone: svg('<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>'),
+  video: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
   edit: svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>'),
   trash: svg('<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>'),
   search: svg('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'),
@@ -157,6 +162,8 @@ export function mountContacts(panel) {
         rowEl(c.uri)?.querySelector(".hv-main")?.focus({ preventScroll: true });
         break;
       case "call": if (c) app.call(c.uri); break;
+      case "video": if (c) app.call(c.uri, true); break;
+      case "copy": if (c) copyAddress(c.uri); break;
       case "edit": if (c) editContact(c, false); break;
       case "recent": if (c) app.openPeople("recent", { q: c.uri }); break;
       case "delete":
@@ -190,27 +197,29 @@ export function mountContacts(panel) {
     ui.draft = draftOf(e.target.form);
     renderVia();
   });
-  // The address field, with an account: no ":" or "@" typed (the field's bubble says why); a
-  // pasted address on the account's server goes in as its name or number. As the address bar.
+  // The address field, as the address bar: nothing typed is refused, and a pasted or dropped
+  // address on the account's server goes in as its name or number.
   const uriField = $("contactForm").uri;
   let hintTimer = 0;
   const clearHint = () => { clearTimeout(hintTimer); uriField.setCustomValidity(""); };
   uriField.addEventListener("beforeinput", (e) => {
     const via = viaOf($("contactForm").account.value || null);
-    if (!e.data || !/[:@]/.test(e.data) || via.direct) return;
+    if (!e.data || e.inputType === "insertText" || via.direct) return;
+    const user = app.userOnDomain(e.data.trim(), via.aor);
+    if (!user) return;
     e.preventDefault();
-    const user = e.inputType !== "insertText" ? app.userOnDomain(e.data.trim(), via.aor) : null;
-    if (user) {
-      uriField.setRangeText(user, uriField.selectionStart ?? uriField.value.length, uriField.selectionEnd ?? uriField.value.length, "end");
-      uriField.dispatchEvent(new Event("input", { bubbles: true }));
-      return;
-    }
-    uriField.setCustomValidity(notJustName(via));
-    uriField.reportValidity();
-    clearTimeout(hintTimer);
-    hintTimer = setTimeout(clearHint, 4000);
+    uriField.setRangeText(user, uriField.selectionStart ?? uriField.value.length, uriField.selectionEnd ?? uriField.value.length, "end");
+    uriField.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  uriField.addEventListener("input", () => { clearHint(); renderVia(); });
+  uriField.addEventListener("input", () => {
+    clearHint();
+    followTyped();
+    renderVia();
+    // The web softphone's note, for a full address elsewhere (it can't call directly), once you pause.
+    const msg = webNote();
+    uriField.setCustomValidity(msg);
+    if (msg) hintTimer = setTimeout(() => { if (uriField.validationMessage === msg && document.activeElement === uriField) uriField.reportValidity(); }, 600);
+  });
   uriField.addEventListener("blur", clearHint);
   $("contactForm").addEventListener("submit", (e) => { e.preventDefault(); submitForm(); });
   // Esc closes the form, then clears the search; only then does it reach the view (which closes).
@@ -247,8 +256,47 @@ function viaOf(account) {
 }
 // The address field's text for a saved address: its name or number when it's on via's server.
 const shortFor = (uri, via) => (via.direct ? uri : app.userOnDomain(uri, via.aor) ?? uri);
-// Why a full address isn't taken here, and (on the desktop) where it is.
-const notJustName = (via) => `Just the name or number: calls go through ${via.host ?? "the account's server"}.${accountList()?.length ? " For a full SIP address, set Call from to No account (direct)." : ""}`;
+// A full SIP address, not just a name or number (as address.js's looksFull): user@host, or sip:...
+const looksFull = (text) => /^sips?:\S/i.test(text ?? "") || /^[^@\s]+@[^@\s]+$/.test((text ?? "").replace(/^sips?:/i, ""));
+// A full address that isn't on via's server: a direct call, where there are direct calls.
+const offServer = (text, via) => looksFull(text) && !app.userOnDomain(text, via.aor);
+
+// The form's Call from follows what's typed (desktop): a full address on another server switches
+// it to No account (direct) as it becomes one, and back to what it was if that's taken out. Only
+// as it changes: picking a Call from afterwards is yours to keep. (showForm sets wasFull from the
+// address it opens with, so editing one doesn't switch anything.)
+let autoDirect = null;    // the Call from it had before followTyped switched it, or null
+let wasFull = false;
+function followTyped() {
+  const form = $("contactForm");
+  if (!accountList()?.length) return;
+  const typed = form.uri.value.trim();
+  const full = looksFull(typed);
+  const via = viaOf(form.account.value || null);
+  if (full && !wasFull && !via.direct && offServer(typed, via)) {
+    autoDirect = form.account.value;
+    form.account.value = DIRECT;
+    const pick = form.account;
+    pick.classList.remove("switched");
+    void pick.offsetWidth;
+    pick.classList.add("switched");
+    ui.draft = draftOf(form);
+  } else if (!full && wasFull && autoDirect !== null) {
+    form.account.value = autoDirect;
+    autoDirect = null;
+    ui.draft = draftOf(form);
+  }
+  wasFull = full;
+}
+// The web softphone (no account list): a full address elsewhere is kept, and its calls still go
+// through the account's server, which may not reach it.
+function webNote() {
+  const form = $("contactForm");
+  if (accountList()?.length) return "";
+  const via = viaOf(form.account.value || null);
+  return !via.direct && via.host && offServer(form.uri.value.trim(), via)
+    ? `The web softphone can't call an address directly: this contact's calls go through ${via.host}, which may not reach it.` : "";
+}
 
 // The line under the fields: where the contact's calls will go, from what's typed and Call from.
 function renderVia() {
@@ -316,6 +364,8 @@ function showForm() {
   form.media.value = ui.draft?.media ?? "";
   // The address as its name or number, when it's on the server the contact calls through.
   form.uri.value = shortFor(ui.draft?.uri ?? "", viaOf(ui.draft?.account ?? null));
+  wasFull = looksFull(form.uri.value.trim());
+  autoDirect = null;
   const c = ui.editing ? contactFor(ui.editing) : null;
   $("contactFormTitle").textContent = c ? `Edit ${c.name}` : "New contact";
   $("contactError").hidden = true;
@@ -326,6 +376,8 @@ function showForm() {
 function closeForm() {
   const back = ui.back;
   Object.assign(ui, { editing: null, draft: null, back: null });
+  // From Home's Edit contact: People closes, and Home's there again.
+  if (back === "home") { app.closePeople?.(); return; }
   if (back && app.openPeople(back)) return;
   if (!$("contactForm")) return;
   $("contactForm").hidden = true;
@@ -341,14 +393,17 @@ function submitForm() {
   const err = (text, field) => { $("contactError").textContent = text; $("contactError").hidden = false; field.focus(); };
   if (!typed) return err(via.direct ? "Type a number or SIP address." : "Type a name or number.", form.uri);
   if (/\s/.test(typed) && !/^(tel:)?[+\d\s()-]+$/i.test(typed)) return err(via.direct ? "A SIP address can't have spaces in it." : "A name can't have spaces in it.", form.uri);
-  // With an account, a name or number, kept as that user at the account's server. A full address
-  // left from before (an edited contact, or one added from Recent) goes if it's on that server.
+  // With an account, a name or number, kept as that user at the account's server, as is a full
+  // address on that server. A full address elsewhere is kept as it is (with sip: added): the
+  // account's server is asked to reach it.
   let uri = typed;
   if (!via.direct) {
     const user = /[:@]/.test(typed) ? app.userOnDomain(typed, via.aor) : typed;
-    if (!user) return err(notJustName(via), form.uri);
-    if (!via.host) return err("Sign in first: a contact's address is on your account's server.", form.uri);
-    uri = `sip:${user.replace(/\s+/g, "")}@${via.host}`;
+    if (user) {
+      if (!via.host) return err("Sign in first: a contact's address is on your account's server.", form.uri);
+      uri = `sip:${user.replace(/\s+/g, "")}@${via.host}`;
+    } else if (looksFull(typed)) uri = /^sips?:/i.test(typed) ? typed : `sip:${typed}`;
+    else return err("That isn't a SIP address: type a name or number, or a full one (alice@example.com).", form.uri);
   }
   const clash = contactFor(uri);
   if (clash && !sameUri(clash.uri, ui.editing)) return err(`${clash.name} already has that address.`, form.uri);
@@ -403,6 +458,8 @@ function renderList() {
         </dl>
         <div class="hv-actions">
           <button type="button" class="btn btn-primary am-small" data-act="call">${ICON.phone}Call</button>
+          ${app.videoAllowed() ? `<button type="button" class="btn am-small" data-act="video">${ICON.video}Video call</button>` : ""}
+          <button type="button" class="btn am-small" data-act="copy">${ICON.copy}Copy address</button>
           <button type="button" class="btn am-small" data-act="edit">${ICON.edit}Edit</button>
           ${mine.length ? `<button type="button" class="btn am-small" data-act="recent">${mine.length === 1 ? "Show the call in Recent" : `Show all ${mine.length} calls in Recent`}</button>` : ""}
           <span class="am-spacer"></span>
@@ -410,16 +467,16 @@ function renderList() {
             aria-label="${armed ? `Delete ${n}? Click again` : `Delete ${n}`}">${ICON.trash}${armed ? "Delete? Click again" : "Delete"}</button>
         </div>
       </div>` : "";
-    return `<li class="hv-row${sel ? " selected" : ""}${editing ? " editing" : ""}" data-uri="${u}">
+    return `<li class="hv-row${sel ? " selected" : ""}${editing ? " editing" : ""}" data-uri="${u}" style="--hv-btns: ${app.videoAllowed() ? 4 : 3}">
         <button type="button" class="hv-main" data-act="select" aria-expanded="${sel}" title="${u} · details">
           <span class="call-avatar" aria-hidden="true"${avatarAttr(c.uri)}>${esc((c.name.replace(/^\+/, "").charAt(0) || "#").toUpperCase())}</span>
           <span class="hv-who"><span class="hv-name">${n}${contactMark(c.name)}</span><span class="hv-uri">${short}</span></span>
           <span class="hv-outcome ${last?.tone ?? ""}">${last ? `${last.ico}<span>${esc(last.text)}</span>` : ""}</span>
           <span class="hv-time">${last ? esc(last.when) : ""}</span>
         </button>
-        <button type="button" class="hv-icon hv-toggle" data-act="select" aria-expanded="${sel}"
+        <span class="hv-btns"><button type="button" class="hv-icon hv-toggle" data-act="select" aria-expanded="${sel}"
           aria-label="${sel ? "Hide" : "Show"} details for ${n}" title="${sel ? "Hide details" : "Show details"}">${ICON.chevronDown}</button>
-        <button type="button" class="hv-icon hv-call" data-act="call" aria-label="Call ${n}" title="Call ${n}">${ICON.phone}</button>
+        ${rowCallBtns(n, "", app.videoAllowed())}</span>
         ${detail}
       </li>`;
   }).join("");
