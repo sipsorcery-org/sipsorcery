@@ -133,34 +133,6 @@ The window opens where it was last closed, at the same size (maximised if it was
 `%LOCALAPPDATA%\SIPSorcery\Softphonev2\window-<profile>.json`, so each profile keeps its own. If
 that place is no longer on a screen, it opens at the default size instead.
 
-### As a .NET tool
-
-Like the CLI (`sipsorcery`), the softphone can be installed from NuGet, as the prerelease tool
-`SIPSorcery.Softphone`:
-
-```bash
-dotnet tool install -g SIPSorcery.Softphone --prerelease
-```
-
-```bash
-sipsorcery-softphone
-```
-
-Options are passed on (`sipsorcery-softphone --profile b --fake-media`), and the terminal comes
-straight back. It needs Windows and the .NET 10 SDK (which on Windows includes the desktop runtime
-WinForms needs), so it's for developers and testers. Being a NuGet download, there's no
-SmartScreen warning and nothing to sign.
-
-A .NET tool can't be a WinForms app: the SDK refuses to pack a `net10.0-windows` or
-`UseWindowsForms` project as one (NETSDK1146). So the tool is a small console launcher,
-[`../tool`](../tool) (`net10.0`, `RollForward` Major, like the CLI), whose package carries this
-app's published build in `tools/net10.0/any/app/` and starts `app\Softphone.exe` from there.
-`dotnet pack -c Release` in `tool/` publishes this project (framework-dependent, no `.pdb` or
-`.xml` docs) and packs it, about 7.5 MB. The package's page is `tool/README.md`, its icon
-`tool/softphone.png` (`softphone.ico`'s drawing at 128 px). The tool's `<Version>` is kept in
-step with this `.csproj`'s by hand; with a suffix (`2.0.0-preview`) it's a prerelease. On a Mac
-or Linux it installs but says it runs on Windows only.
-
 ### Two softphones calling each other
 
 ```bash
