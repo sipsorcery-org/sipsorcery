@@ -1260,7 +1260,16 @@ namespace SIPSorcery.Net
                     {
                         logger.LogDebug("Remote party declined the {MediaType} stream (port 0).", currentMediaStream.MediaType);
                         remoteTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
-                        currentMediaStream.LocalTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                        if (sdpType == SdpType.offer)
+                        {
+                            // Remembered, so an offer that brings the stream back is answered as before.
+                            currentMediaStream.LocalTrack.RestoreStreamStatusBeforeAnswer();
+                            currentMediaStream.LocalTrack.NarrowStreamStatusForAnswer(MediaStreamStatusEnum.Inactive);
+                        }
+                        else
+                        {
+                            currentMediaStream.LocalTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                        }
                         declinedStreams.Add(currentMediaStream);
 
                         if (currentMediaStream.RtcpSession != null && !currentMediaStream.RtcpSession.IsClosed)
@@ -1429,7 +1438,7 @@ namespace SIPSorcery.Net
                         }
 
                         IPEndPoint remoteRtpEP = GetAnnouncementRTPDestination(announcement, connectionAddress);
-                        SetLocalTrackStreamStatus(currentMediaStream.LocalTrack, remoteTrack.StreamStatus, remoteRtpEP);
+                        SetLocalTrackStreamStatus(currentMediaStream.LocalTrack, remoteTrack.StreamStatus, remoteRtpEP, sdpType);
 
                         // RFC 3264 Section 8.2: "Removal of a media stream implies that media is
                         // no longer sent for that stream [...] In the case of RTP, RTCP transmission
@@ -1582,19 +1591,24 @@ namespace SIPSorcery.Net
         /// <param name="status">The stream status for the media track.</param>
         public void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status)
         {
+            // The application's choice replaces whatever an earlier answer narrowed the track from,
+            // so it's what the next offer is answered from.
             if (kind == SDPMediaTypesEnum.audio && AudioStream.LocalTrack != null)
             {
                 AudioStream.LocalTrack.StreamStatus = status;
+                AudioStream.LocalTrack.StreamStatusBeforeAnswer = null;
                 m_sdpAnnouncementVersion++;
             }
             else if (kind == SDPMediaTypesEnum.video && VideoStream?.LocalTrack != null)
             {
                 VideoStream.LocalTrack.StreamStatus = status;
+                VideoStream.LocalTrack.StreamStatusBeforeAnswer = null;
                 m_sdpAnnouncementVersion++;
             }
             else if (kind == SDPMediaTypesEnum.text && TextStream?.LocalTrack != null)
             {
                 TextStream.LocalTrack.StreamStatus = status;
+                TextStream.LocalTrack.StreamStatusBeforeAnswer = null;
                 m_sdpAnnouncementVersion++;
             }
         }
@@ -2125,19 +2139,35 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Adjust the stream status of the local media tracks based on the remote tracks.
         /// </summary>
-        private void SetLocalTrackStreamStatus(MediaStreamTrack localTrack, MediaStreamStatusEnum remoteTrackStatus, IPEndPoint remoteRTPEndPoint)
+        /// <remarks>
+        /// For an offer the local track takes the direction of the answer, RFC 3264 section 6.1: a
+        /// sendonly offer is answered recvonly, a recvonly offer sendonly and an inactive offer
+        /// inactive, and never more than the track had (a recvonly track answers a sendrecv offer
+        /// recvonly). What it had is kept on the track, so the next offer, a re-INVITE taking a call
+        /// off hold say, is answered from that and not from the narrowed direction.
+        /// </remarks>
+        private void SetLocalTrackStreamStatus(MediaStreamTrack localTrack, MediaStreamStatusEnum remoteTrackStatus, IPEndPoint remoteRTPEndPoint, SdpType sdpType)
         {
             if (localTrack != null)
             {
+                if (sdpType == SdpType.offer)
+                {
+                    localTrack.RestoreStreamStatusBeforeAnswer();
+                }
+
                 if (localTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
                 {
                     localTrack.StreamStatus = localTrack.DefaultStreamStatus;
                 }
 
+                var status = sdpType == SdpType.offer ?
+                    MediaStreamStatusType.GetAnswerMediaStreamStatus(remoteTrackStatus, localTrack.StreamStatus) :
+                    localTrack.StreamStatus;
+
                 if (remoteTrackStatus == MediaStreamStatusEnum.Inactive)
                 {
                     // The remote party does not support this media type. Set the local stream status to inactive.
-                    localTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                    status = MediaStreamStatusEnum.Inactive;
                 }
                 else if (remoteRTPEndPoint != null)
                 {
@@ -2149,13 +2179,22 @@ namespace SIPSorcery.Net
                         // using ICE.
                         if (remoteRTPEndPoint.Port != SDP.IGNORE_RTP_PORT_NUMBER)
                         {
-                            localTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                            status = MediaStreamStatusEnum.Inactive;
                         }
                     }
                     else if (remoteRTPEndPoint.Port == 0)
                     {
-                        localTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                        status = MediaStreamStatusEnum.Inactive;
                     }
+                }
+
+                if (sdpType == SdpType.offer)
+                {
+                    localTrack.NarrowStreamStatusForAnswer(status);
+                }
+                else
+                {
+                    localTrack.StreamStatus = status;
                 }
             }
         }

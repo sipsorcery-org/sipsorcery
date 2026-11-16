@@ -1338,19 +1338,27 @@ namespace SIPSorcery.SIP.App
                         {
                             CheckRemotePartyHoldCondition(MediaSession.RemoteDescription);
 
+                            // The hold state says what we'd send and receive, but the answer can't
+                            // allow more than the offer does (RFC 3264 section 6.1): a recvonly
+                            // offer is answered sendonly at most, an inactive one inactive.
+                            var holdStatus = GetStreamStatusForOnHoldState();
+
                             if (MediaSession.HasAudio)
                             {
-                                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, GetStreamStatusForOnHoldState());
+                                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio,
+                                    MediaStreamStatusType.GetAnswerMediaStreamStatus(offer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0), holdStatus));
                             }
 
                             if (MediaSession.HasVideo)
                             {
-                                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, GetStreamStatusForOnHoldState());
+                                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video,
+                                    MediaStreamStatusType.GetAnswerMediaStreamStatus(offer.GetMediaStreamStatus(SDPMediaTypesEnum.video, 0), holdStatus));
                             }
 
                             if (MediaSession.HasText)
                             {
-                                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.text, GetStreamStatusForOnHoldState());
+                                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.text,
+                                    MediaStreamStatusType.GetAnswerMediaStreamStatus(offer.GetMediaStreamStatus(SDPMediaTypesEnum.text, 0), holdStatus));
                             }
 
                             var answerSdp = MediaSession.CreateAnswer(null);

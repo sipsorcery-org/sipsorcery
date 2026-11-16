@@ -107,6 +107,7 @@ namespace SIPSorcery.Net
         private long _closedAtTicks = 0;                 // When the stream closed, 0 while it is open.
         private long _sendsAfterClose = 0;               // Sends dropped since the stream closed.
         private long _lastClosedSendWarningTicks = 0;    // When the last of those was reported, 0 if none has been.
+        private int _reportedUnsendableStatus = -1;      // The recvonly or inactive status a dropped send was last reported for, -1 if none.
         /// <summary>
         /// Used for keeping track of TWCC packets
         /// </summary>
@@ -689,10 +690,23 @@ namespace SIPSorcery.Net
                 return false;
             }
 
-            if ((LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly) || (LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive))
+            var streamStatus = LocalTrack.StreamStatus;
+            if ((streamStatus == MediaStreamStatusEnum.RecvOnly) || (streamStatus == MediaStreamStatusEnum.Inactive))
             {
-                logger.LogWarning("SendRtpRaw was called for a {MediaType} packet on an RTP session with a Stream Status set to {StreamStatus}", MediaType, LocalTrack.StreamStatus);
+                // Reported once for each time the track stops sending, not for every frame: an
+                // application that goes on sending to a call answered recvonly, or a call on hold,
+                // would otherwise fill the log at the media frame rate.
+                if (_reportedUnsendableStatus != (int)streamStatus)
+                {
+                    _reportedUnsendableStatus = (int)streamStatus;
+                    logger.LogWarning("SendRtpRaw was called for a {MediaType} packet on an RTP session with a Stream Status set to {StreamStatus}. Sends are dropped, without logging again, until it changes.", MediaType, streamStatus);
+                }
                 return false;
+            }
+
+            if (_reportedUnsendableStatus != -1)
+            {
+                _reportedUnsendableStatus = -1;
             }
 
             if (RequiresSecureContext && SecureContext?.ProtectRtpPacket == null)
