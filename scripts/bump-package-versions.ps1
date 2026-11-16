@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Bumps the NuGet package version on the six SIPSorcery library projects
+    Bumps the NuGet package version on the five SIPSorcery library projects
     in this monorepo and prepends a TODO release-notes line to each.
 
 .DESCRIPTION
@@ -40,7 +40,7 @@
 
 .EXAMPLE
     .\bump-package-versions.ps1 10.0.7
-    Bump all six projects to 10.0.7.
+    Bump all five projects to 10.0.7.
 
 .EXAMPLE
     .\bump-package-versions.ps1 -DryRun 10.0.7
@@ -89,9 +89,8 @@ Options:
                    writing anything.
   -Help            Show this help and exit.
 
-The six packages this script targets are:
+The five packages this script targets are:
   src/SIPSorcery
-  src/SIPSorcery.OpenAI.Realtime
   src/SIPSorcery.VP8
   src/SIPSorceryMedia.Abstractions
   src/SIPSorceryMedia.FFmpeg
@@ -105,7 +104,7 @@ script runs, edit each TODO with the actual release note text before
 tagging.
 
 Examples:
-  $ProgName 10.0.7             # bump all six to 10.0.7
+  $ProgName 10.0.7             # bump all five to 10.0.7
   $ProgName 10.0.8-pre         # Version 10.0.8-pre, Assembly/FileVersion 10.0.8
   $ProgName -DryRun 10.0.7     # preview the changes
 "@
@@ -133,7 +132,7 @@ if ([string]::IsNullOrWhiteSpace($NewVersion)) {
 
 # Permissive SemVer validation: MAJOR.MINOR.PATCH with optional
 # pre-release tail. Reject anything else so a typo doesn't get
-# committed across all six projects.
+# committed across all five projects.
 if ($NewVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$') {
     Write-Err "version '$NewVersion' is not in MAJOR.MINOR.PATCH[-prerelease] form"
     exit 2
@@ -162,7 +161,6 @@ if (-not (Test-Path (Join-Path $RepoRoot 'SIPSorcery.slnx')) -and
 
 $Projects = @(
     'src/SIPSorcery/SIPSorcery.csproj'
-    'src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj'
     'src/SIPSorcery.VP8/SIPSorcery.VP8.csproj'
     'src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj'
     'src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj'

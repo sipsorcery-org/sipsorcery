@@ -70,8 +70,10 @@
     <ProjectReference Include="..\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
     <!-- VP8 encoder for the test pattern video published via LibraryVideoPublisher (webrtc verbs). -->
     <ProjectReference Include="..\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
-    <!-- WebRTC client for the OpenAI Realtime API, used by the "bridge web openai" agent endpoint. -->
-    <ProjectReference Include="..\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
+    <!-- WebRTC client for the OpenAI Realtime API, used by the "bridge web openai" agent endpoint.
+         No longer published as its own NuGet package; the source lives with the OpenAI examples
+         and is bundled into the CLI tool package. -->
+    <ProjectReference Include="..\..\examples\OpenAIExamples\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>

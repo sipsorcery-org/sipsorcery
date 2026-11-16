@@ -39,9 +39,6 @@ jobs:
       - name: Pack SIPSorceryMedia.Windows
         run: dotnet pack src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj -c Release --no-build -o ./artifacts
 
-      - name: Pack SIPSorcery.OpenAI.Realtime
-        run: dotnet pack src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj -c Release --no-build -o ./artifacts
-        
       - name: Pack SIPSorcery.VP8
         run: dotnet pack src/SIPSorcery.VP8/SIPSorcery.VP8.csproj -c Release --no-build -o ./artifacts
         
