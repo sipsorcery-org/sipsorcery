@@ -1,8 +1,10 @@
 # Softphone v2 – desktop prototype
 
 A minimal Windows softphone that makes and takes **SIP video calls, several at once**. It is the first build of
-the desktop app, using the media design the video spike
-([../spikes/VideoPipeline](../spikes/VideoPipeline/RESULTS.md)) picked: the **relay**.
+the desktop app, using the **relay** media design. An earlier spike measured three ways of
+showing 8 incoming 720p30 calls plus the camera (WebView2 with a local WebRTC connection, WebView2
+with shared buffers and C# decoding, native WPF); the relay cost least, because the browser engine
+decodes and encodes, in hardware where it can, and C# never touches pixels.
 
 - **C# (this project)** does SIP with SIPSorcery: the transport, a registration for each SIP
   account (see [SIP accounts](DESIGN.md#sip-accounts)), and up to 8 calls at once (dial, answer, decline,
@@ -167,17 +169,4 @@ Softphone.exe --port 5080 --profile b --fake-media --auto-answer
 
 ```bash
 Softphone.exe --port 5070 --profile a --fake-media --dial sip:b@127.0.0.1:5080
-```
-
-### Against the spike's far end
-
-The far end streams a pre-encoded clip and has no audio. Start it with `--any`, because the
-softphone offers its LAN address:
-
-```bash
-..\spikes\VideoPipeline\artifacts\bin\FarEnd\Release\FarEnd.exe --media ..\spikes\VideoPipeline\media --any
-```
-
-```bash
-Softphone.exe --fake-media --port 5070 --dial sip:h264-720p30@127.0.0.1:5090
 ```

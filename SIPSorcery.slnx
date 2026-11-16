@@ -98,7 +98,7 @@
     <Project Path="examples/SIPScenarios/OnHoldScenario/Caller/Caller.csproj" />
   </Folder>
   <Folder Name="/examples/Softphone/">
-    <Project Path="examples/Softphone/SIPSorcery.SoftPhone.csproj" />
+    <Project Path="examples/Softphonev2/desktop/Softphonev2.Desktop.csproj" />
   </Folder>
   <Folder Name="/examples/WebRTCExamples/">
     <Project Path="examples/WebRTCExamples/AvatarPipeline/AvatarPipeline.csproj" />
