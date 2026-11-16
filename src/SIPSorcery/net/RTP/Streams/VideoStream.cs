@@ -75,7 +75,6 @@ namespace SIPSorcery.Net
         public VideoStream(RtpSessionConfig config, int index) : base(config, index)
         {
             MediaType = SDPMediaTypesEnum.video;
-            NegotiatedRtpEventPayloadID = 0;
         }
 
         /// <summary>

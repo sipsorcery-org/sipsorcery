@@ -336,8 +336,49 @@ namespace SIPSorcery.Net
         /// be used to cancel the send.</param>
         public virtual Task SendDtmf(byte key, CancellationToken ct)
         {
-            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, NegotiatedRtpEventPayloadID);
+            var capability = RemoteTrack?.Capabilities?
+                .Where(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase))
+                .DefaultIfEmpty(SDPAudioVideoMediaFormat.Empty)
+                .First()
+                ?? SDPAudioVideoMediaFormat.Empty;
+
+            if (capability.IsEmpty()) {
+                logger.LogWarning("Trying to send a DTMF event without a remote telephone-event capability.");
+                return Task.CompletedTask;
+            }
+
+            if (!IsDtmfEventSupported(capability.Fmtp, key)) {
+                logger.LogWarning("Trying to send an unsupported DTMF event {key} (supported fmtp: {fmtp}).", key, capability.Fmtp);
+            }
+
+            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, capability.ID);
             return SendDtmfEvent(dtmfEvent, ct);
+        }
+
+        private static bool IsDtmfEventSupported(string fmtp, byte key)
+        {
+            // According to RFC 4733 Section 2.4, if fmtp is omitted, events 0-15 are supported by default.
+            if (string.IsNullOrWhiteSpace(fmtp)) {
+                return key <= 15;
+            }
+
+            // Parse comma-separated values or ranges (e.g., "0-16" or "0-11,16").
+            foreach (var part in fmtp.Split(',')) {
+                var trimmed = part.Trim();
+                var dashIndex = trimmed.IndexOf('-');
+
+                if (dashIndex > 0) {
+                    if (byte.TryParse(trimmed.Substring(0, dashIndex), out byte start) &&
+                        byte.TryParse(trimmed.Substring(dashIndex + 1), out byte end) &&
+                        key >= start && key <= end) {
+                        return true;
+                    }
+                } else if (byte.TryParse(trimmed, out byte single) && single == key) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void CheckAudioFormatsNegotiation()

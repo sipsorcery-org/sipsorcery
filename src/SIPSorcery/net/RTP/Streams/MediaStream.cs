@@ -376,10 +376,21 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// In order to detect RTP events from the remote party this property needs to 
-        /// be negotiated to a common payload ID. RTP events are typically DTMF tones.
+        /// In order to handle RTP events from the remote party this property needs to 
+        /// be set with our requested payload ID. RTP events are typically DTMF tones.
         /// </summary>
-        public int NegotiatedRtpEventPayloadID { get; set; } = RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID;
+        public int LocalRtpEventPayloadID { get; set; } = 0;
+
+        /// <summary>
+        /// Replaced by <see cref="LocalRtpEventPayloadID"/> for incoming RTP events, 
+        /// or use <see cref="AudioStream.SendDtmf(byte, CancellationToken)"/> / <see cref="RemoteTrack"/> capabilities for outgoing DTMF events.
+        /// </summary>
+        [Obsolete("Use LocalRtpEventPayloadID for incoming RTP events, or AudioStream.SendDtmf / RemoteTrack.Capabilities for outgoing DTMF events.")]
+        public int NegotiatedRtpEventPayloadID
+        {
+            get => LocalRtpEventPayloadID;
+            set => LocalRtpEventPayloadID = value;
+        }
 
         /// <summary>
         /// To type of this media
@@ -1352,7 +1363,7 @@ namespace SIPSorcery.Net
         public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
             RTPPacket rtpPacket;
-            if (MediaType == SDPMediaTypesEnum.audio && NegotiatedRtpEventPayloadID != 0 && hdr.PayloadType == NegotiatedRtpEventPayloadID)
+            if (MediaType == SDPMediaTypesEnum.audio && LocalRtpEventPayloadID != 0 && hdr.PayloadType == LocalRtpEventPayloadID)
             {
                 if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
                 {
@@ -1880,7 +1891,7 @@ namespace SIPSorcery.Net
             }
             else if (MediaType == SDPMediaTypesEnum.audio && LocalTrack != null && RemoteTrack != null)
             {
-                formats = formats?.Where(x => x.ID != NegotiatedRtpEventPayloadID);
+                formats = formats?.Where(x => !string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
             }
 
             var format = formats == null

@@ -56,7 +56,7 @@ public class EchoMediaSession : RTPSession, IMediaSession
 
         if (AudioStream != null && AudioStream.LocalTrack.NoDtmfSupport == false)
         {
-            logger.LogDebug("Audio track negotiated DTMF payload ID {AudioStreamNegotiatedRtpEventPayloadID}.", AudioStream.NegotiatedRtpEventPayloadID);
+            logger.LogDebug("Audio track local DTMF payload ID {AudioStreamLocalRtpEventPayloadID}.", AudioStream.LocalRtpEventPayloadID);
         }
 
         if(AudioStream != null && AudioStream.RemoteTrack != null && AudioStream.LocalTrack != null)

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTPSessionCodecMatchingUnitTest.cs
 //
 // Description: Integration-level characterization tests for codec /
@@ -23,7 +23,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net.UnitTests.Helpers;
 using SIPSorcery.SIP.App;
@@ -179,28 +183,27 @@ a=sendrecv");
         }
 
         /// <summary>
-        /// When local has telephone-event at PT 101 but the remote
-        /// announces telephone-event at PT 100, after SetRemoteDescription
-        /// the local track's telephone-event capability is at PT 100 to
-        /// match the remote. The session's NegotiatedRtpEventPayloadID is
-        /// also set to 100.
+        /// Per RFC 3264, when local has telephone-event at PT 101 and the remote
+        /// announces telephone-event at PT 100, after SetRemoteDescription:
+        /// - The local track keeps PT 101 (and LocalRtpEventPayloadID is 101) for incoming DTMF and SDP answers.
+        /// - The remote track records PT 100 for outgoing DTMF.
         /// </summary>
         [Fact]
-        public void TelephoneEventPayloadIdAdjustsToMatchRemote()
+        public void TelephoneEventPayloadIdPreservesLocalAndRecordsRemote()
         {
             var localTrack = new MediaStreamTrack(
                 SDPMediaTypesEnum.audio, false,
                 new List<SDPAudioVideoMediaFormat>
                 {
-                    new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-                    new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 101, "telephone-event", 8000),
+            new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+            new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 101, "telephone-event", 8000),
                 });
 
             using (var session = new RtpSessionBuilder().WithTrack(localTrack).Build())
             {
                 // Remote: PCMU + telephone-event at PT 100 (different from local's 101).
                 SDP offer = SDP.ParseSDPDescription(
-@"v=0
+        @"v=0
 o=- 1000 0 IN IP4 192.0.2.10
 s=-
 c=IN IP4 192.0.2.10
@@ -214,21 +217,25 @@ a=sendrecv");
                 Assert.Equal(SetDescriptionResultEnum.OK,
                     session.SetRemoteDescription(SdpType.offer, offer));
 
-                // The local track's telephone-event should now use PT 100.
-                var teCap = session.AudioStream.LocalTrack.Capabilities
+                // The local track's telephone-event must remain at PT 101 for incoming DTMF and SDP answer generation.
+                var localTeCap = session.AudioStream.LocalTrack.Capabilities
                     .FirstOrDefault(c => string.Equals(c.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
-                Assert.False(teCap.IsEmpty());
-                Assert.Equal(100, teCap.ID);
+                Assert.False(localTeCap.IsEmpty());
+                Assert.Equal(101, localTeCap.ID);
+                Assert.Equal(101, session.AudioStream.LocalRtpEventPayloadID);
 
-                Assert.Equal(100, session.AudioStream.NegotiatedRtpEventPayloadID);
+                // The remote track's telephone-event must use PT 100 for outgoing DTMF.
+                var remoteTeCap = session.AudioStream.RemoteTrack.Capabilities
+                    .FirstOrDefault(c => string.Equals(c.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
+                Assert.False(remoteTeCap.IsEmpty());
+                Assert.Equal(100, remoteTeCap.ID);
             }
         }
 
         /// <summary>
         /// When local has telephone-event at PT 101 and remote announces
-        /// telephone-event at the same PT 101, the local capability stays
-        /// at 101 (no adjustment needed) and NegotiatedRtpEventPayloadID
-        /// is 101.
+        /// telephone-event at the same PT 101, both tracks preserve PT 101 and
+        /// LocalRtpEventPayloadID is 101.
         /// </summary>
         [Fact]
         public void TelephoneEventSamePayloadId_IsPreserved()
@@ -237,8 +244,8 @@ a=sendrecv");
                 SDPMediaTypesEnum.audio, false,
                 new List<SDPAudioVideoMediaFormat>
                 {
-                    new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-                    new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 101, "telephone-event", 8000),
+            new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+            new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 101, "telephone-event", 8000),
                 });
 
             using (var session = new RtpSessionBuilder().WithTrack(localTrack).Build())
@@ -248,11 +255,16 @@ a=sendrecv");
                 Assert.Equal(SetDescriptionResultEnum.OK,
                     session.SetRemoteDescription(SdpType.offer, offer));
 
-                var teCap = session.AudioStream.LocalTrack.Capabilities
+                var localTeCap = session.AudioStream.LocalTrack.Capabilities
                     .FirstOrDefault(c => string.Equals(c.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
-                Assert.False(teCap.IsEmpty());
-                Assert.Equal(101, teCap.ID);
-                Assert.Equal(101, session.AudioStream.NegotiatedRtpEventPayloadID);
+                Assert.False(localTeCap.IsEmpty());
+                Assert.Equal(101, localTeCap.ID);
+                Assert.Equal(101, session.AudioStream.LocalRtpEventPayloadID);
+
+                var remoteTeCap = session.AudioStream.RemoteTrack.Capabilities
+                    .FirstOrDefault(c => string.Equals(c.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
+                Assert.False(remoteTeCap.IsEmpty());
+                Assert.Equal(101, remoteTeCap.ID);
             }
         }
 
@@ -357,6 +369,84 @@ a=sendrecv");
                 var result = session.SetRemoteDescription(SdpType.offer, offer);
 
                 Assert.Equal(SetDescriptionResultEnum.OK, result);
+            }
+        }
+
+        /// <summary>
+        /// Verifies bidirectional RFC 3264 DTMF negotiation and transmission when local (PT 101)
+        /// and remote (PT 100) advertise different telephone-event payload IDs:
+        /// - Outgoing DTMF from local to remote uses remote's PT 100.
+        /// - Incoming DTMF from remote to local uses local's PT 101.
+        /// </summary>
+        [Fact]
+        public async Task BidirectionalDtmf_UsesRespectiveRemotePayloadIds_WhenPayloadIdsDiffer()
+        {
+            var localTrack = new MediaStreamTrack(
+                SDPMediaTypesEnum.audio, false,
+                new List<SDPAudioVideoMediaFormat>
+                {
+            new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+            new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 101, "telephone-event", 8000),
+                });
+
+            var remoteTrack = new MediaStreamTrack(
+                SDPMediaTypesEnum.audio, false,
+                new List<SDPAudioVideoMediaFormat>
+                {
+            new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+            new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 100, "telephone-event", 8000),
+                });
+
+            using (var localSession = new RTPSession(false, false, false, IPAddress.Loopback))
+            using (var remoteSession = new RTPSession(false, false, false, IPAddress.Loopback)) {
+                localSession.addTrack(localTrack);
+                remoteSession.addTrack(remoteTrack);
+
+                int remoteReceivedPt = 0;
+                RTPEvent remoteReceivedEvent = null;
+                var remoteReceivedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                remoteSession.OnRtpEvent += (ep, ev, hdr) =>
+                {
+                    remoteReceivedPt = hdr.PayloadType;
+                    remoteReceivedEvent = ev;
+                    remoteReceivedTcs.TrySetResult(true);
+                };
+
+                int localReceivedPt = 0;
+                RTPEvent localReceivedEvent = null;
+                var localReceivedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                localSession.OnRtpEvent += (ep, ev, hdr) =>
+                {
+                    localReceivedPt = hdr.PayloadType;
+                    localReceivedEvent = ev;
+                    localReceivedTcs.TrySetResult(true);
+                };
+
+                // Exchange SDP offer (local PT 101) and answer (remote PT 100).
+                var offerSdp = localSession.CreateOffer(IPAddress.Loopback);
+                Assert.Equal(SetDescriptionResultEnum.OK, remoteSession.SetRemoteDescription(SdpType.offer, offerSdp));
+
+                var answerSdp = remoteSession.CreateAnswer(IPAddress.Loopback);
+                Assert.Equal(SetDescriptionResultEnum.OK, localSession.SetRemoteDescription(SdpType.answer, answerSdp));
+
+                await localSession.Start();
+                await remoteSession.Start();
+
+                // 1. Outgoing: local sends digit '7' -> remote must receive it on PT 100.
+                await localSession.SendDtmf(7, CancellationToken.None);
+                Assert.Same(remoteReceivedTcs.Task, await Task.WhenAny(remoteReceivedTcs.Task, Task.Delay(2000)));
+                Assert.Equal(100, remoteReceivedPt);
+                Assert.NotNull(remoteReceivedEvent);
+                Assert.Equal(7, remoteReceivedEvent.EventID);
+
+                // 2. Incoming: remote sends digit '5' -> local must receive it on PT 101.
+                await remoteSession.SendDtmf(5, CancellationToken.None);
+                Assert.Same(localReceivedTcs.Task, await Task.WhenAny(localReceivedTcs.Task, Task.Delay(2000)));
+                Assert.Equal(101, localReceivedPt);
+                Assert.NotNull(localReceivedEvent);
+                Assert.Equal(5, localReceivedEvent.EventID);
             }
         }
     }

@@ -205,7 +205,7 @@ namespace SIPSorcery.Media
 
             if (AudioStream != null && AudioStream.LocalTrack.NoDtmfSupport == false)
             {
-                logger.LogDebug("Audio track negotiated DTMF payload ID {AudioStreamNegotiatedRtpEventPayloadID}.", AudioStream.NegotiatedRtpEventPayloadID);
+                logger.LogDebug("Audio track local DTMF payload ID {AudioStreamLocalRtpEventPayloadID}.", AudioStream.LocalRtpEventPayloadID);
             }
         }
 

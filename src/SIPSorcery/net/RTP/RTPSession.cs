@@ -1390,43 +1390,55 @@ namespace SIPSorcery.Net
                             // capability list or changing an existing stream's runtime state.
                             _fecPayloadTypes.RecordNegotiatedFormats(currentMediaStream, capabilities, rtpSessionConfig.IsMediaMultiplexed);
                         }
-                        currentMediaStream.LocalTrack.Capabilities = capabilities;
+
+                        // Preserve the local track's existing RTP event capability before updating the negotiated capabilities.
+                        SDPAudioVideoMediaFormat? localRTPEventCapability = null;
+                        if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
+                        {
+                            var existingEvent = currentMediaStream.LocalTrack.Capabilities
+                                .Where(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase))
+                                .DefaultIfEmpty(SDPAudioVideoMediaFormat.Empty)
+                                .First();
+
+                            if (!existingEvent.IsEmpty())
+                            {
+                                localRTPEventCapability = existingEvent;
+                            }
+                        }
+
+                        // Assign separate list instances so local and remote DTMF payload adjustments do not affect each other.
+                        currentMediaStream.LocalTrack.Capabilities = capabilities.ToList();
                         currentMediaStream.RemoteTrack.Capabilities = capabilities;
+
+                        if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
+                        {
+                            // Remove any existing telephone-event entries before setting each track's specific format.
+                            currentMediaStream.LocalTrack.Capabilities.RemoveAll(x =>
+                                string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
+                            currentMediaStream.RemoteTrack.Capabilities.RemoveAll(x =>
+                                string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
+
+                            // Always restore/apply our local RTP event format (for receiving incoming DTMF and generating SDP answers).
+                            var localEventFormat = localRTPEventCapability ?? MediaStream.DefaultRTPEventFormat;
+                            currentMediaStream.LocalRtpEventPayloadID = localEventFormat.ID;
+                            currentMediaStream.LocalTrack.Capabilities.Add(localEventFormat);
+
+                            // Check if the remote party advertised a telephone-event format and add it to RemoteTrack (for sending DTMF).
+                            var remoteEventFormat = announcement.MediaFormats.Values
+                                .Where(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase))
+                                .DefaultIfEmpty(SDPAudioVideoMediaFormat.Empty)
+                                .First();
+
+                            if (!remoteEventFormat.IsEmpty())
+                            {
+                                currentMediaStream.RemoteTrack.Capabilities.Add(remoteEventFormat);
+                            }
+                        }
 
                         // The reporting session needs the RTP clock rate to pair the NTP and RTP
                         // timestamps in its sender reports and to measure jitter in RTP units.
                         currentMediaStream.SetRtcpRtpClockRate(capabilities);
                         currentMediaStream.ConfigureResendBuffer(capabilities);
-
-                        if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
-                        {
-                            // Adjust the local track's RTP event capability if the remote party has specified a different payload ID.
-                            var currentLocalTrackCapabilities = currentMediaStream.LocalTrack.Capabilities;
-                            SDPAudioVideoMediaFormat? localRTPEventCapabilities = null;
-                            if (currentLocalTrackCapabilities.Any(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase)))
-                            {
-                                localRTPEventCapabilities = currentLocalTrackCapabilities.First(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
-                            }
-                            else
-                            {
-                                localRTPEventCapabilities = MediaStream.DefaultRTPEventFormat;
-                            }
-
-                            currentMediaStream.LocalTrack.Capabilities = capabilities.Where(x => !string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase)).ToList();
-                            if (localRTPEventCapabilities != null)
-                            {
-                                currentMediaStream.LocalTrack.Capabilities.Add(localRTPEventCapabilities.Value);
-                            }
-
-                            // Check whether RTP events can be supported and adjust our parameters to match the remote party if we can.
-                            SDPAudioVideoMediaFormat commonEventFormat = SDPAudioVideoMediaFormat.GetCommonRtpEventFormat(announcement.MediaFormats.Values.ToList(), currentMediaStream.LocalTrack.Capabilities);
-                            if (!commonEventFormat.IsEmpty())
-                            {
-                                currentMediaStream.NegotiatedRtpEventPayloadID = commonEventFormat.ID;
-                                currentMediaStream.LocalTrack.Capabilities.RemoveAll(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
-                                currentMediaStream.LocalTrack.Capabilities.Add(commonEventFormat);
-                            }
-                        }
 
                         IPEndPoint remoteRtpEP = GetAnnouncementRTPDestination(announcement, connectionAddress);
                         SetLocalTrackStreamStatus(currentMediaStream.LocalTrack, remoteTrack.StreamStatus, remoteRtpEP);

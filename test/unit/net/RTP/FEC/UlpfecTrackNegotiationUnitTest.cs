@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -124,7 +124,7 @@ namespace SIPSorcery.Net.UnitTests
             stream.SetFecReceiveTiming(() => clock.Now, clock.CreateTimer);
             stream.EnableUlpfec(101, 102, 96);
             // The public RTP-event field must never reserve an otherwise valid video PT.
-            stream.NegotiatedRtpEventPayloadID = RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID;
+            stream.LocalRtpEventPayloadID = RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID;
             stream.OnRtpEventByIndex += (index, endpoint, rtpEvent, header) => rtpEvents++;
             stream.OnVideoFrameReceivedByIndex += (index, endpoint, timestamp, frame, format) => frames.Add(frame);
             stream.OnRtpPacketReceivedByIndex += (index, endpoint, mediaType, packet) =>
