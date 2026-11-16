@@ -22,6 +22,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
@@ -70,6 +71,24 @@ public class FFmpegVideoEndPoint : IVideoEndPoint, IDisposable
     /// <see cref="ExternalVideoSourceRawSampleFaster"/> has been encoded and is ready to transmit.
     /// </summary>
     public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
+
+    /// <summary>
+    /// Fired, like <see cref="OnVideoSourceEncodedSample"/>, for every encoded frame, but with the frame written by the
+    /// encoder straight from FFmpeg's packet into a buffer this end point re-uses, rather than copied into a new array.
+    /// The sample is only valid for the duration of the handler. Subscribing an RTP session's span based send,
+    /// <c>OnVideoSourceEncodedSampleFaster += rtpSession.SendVideo</c>, sends each frame without copying it into an
+    /// array first. If both events have subscribers, each frame is encoded once and raised on both.
+    /// </summary>
+    public event EncodedSampleFasterDelegate? OnVideoSourceEncodedSampleFaster;
+
+    // The re-used destination for frames raised on OnVideoSourceEncodedSampleFaster, and the lock that keeps each
+    // frame in it until its handlers have returned.
+    private readonly ReusedBufferWriter _encodedFrame = new ReusedBufferWriter();
+    private readonly object _encodedFrameLock = new object();
+
+    // Set while a frame is being raised on the events, so a handler that pushes another frame meanwhile is noticed.
+    // Only used under _encodedFrameLock.
+    private bool _raisingEncodedFrame;
 
 #pragma warning disable CS0067
     // This endpoint only produces ENCODED video samples (it encodes raw input supplied via the
@@ -120,7 +139,7 @@ public class FFmpegVideoEndPoint : IVideoEndPoint, IDisposable
     public List<VideoFormat> GetVideoSourceFormats() => _videoFormatManager.GetSourceFormats();
     public void SetVideoSourceFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
     public void ForceKeyFrame() => _ffmpegEncoder.ForceKeyFrame();
-    public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
+    public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null || OnVideoSourceEncodedSampleFaster != null;
     public bool IsVideoSourcePaused() => _isPaused;
     public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
         throw new ApplicationException("The FFmpeg Video End Point requires full video frames rather than individual RTP packets.");
@@ -226,12 +245,20 @@ public class FFmpegVideoEndPoint : IVideoEndPoint, IDisposable
     }
 
     /// <summary>
-    /// Encodes a raw video frame supplied by the application and raises <see cref="OnVideoSourceEncodedSample"/>
-    /// with the result, ready for the RTP transport.
+    /// Encodes a raw video frame supplied by the application and raises <see cref="OnVideoSourceEncodedSampleFaster"/>
+    /// and <see cref="OnVideoSourceEncodedSample"/> with the result, ready for the RTP transport.
     /// </summary>
     public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
     {
-        if (!_isClosed && !_isPaused && OnVideoSourceEncodedSample != null)
+        if (!_isClosed && !_isPaused && OnVideoSourceEncodedSampleFaster != null)
+        {
+            // The span overload would read a null sample as an empty one, so it is refused here, as the array overload
+            // refuses it.
+            EncodeAndRaise(durationMilliseconds, (Width: width, Height: height, Sample: sample, PixelFormat: pixelFormat),
+                static (encoder, frame, codec, output) => encoder.EncodeVideo(frame.Width, frame.Height,
+                    frame.Sample ?? throw new ArgumentNullException(nameof(sample)), frame.PixelFormat, codec, output));
+        }
+        else if (!_isClosed && !_isPaused && OnVideoSourceEncodedSample != null)
         {
             byte[]? encodedBuffer;
 
@@ -251,11 +278,16 @@ public class FFmpegVideoEndPoint : IVideoEndPoint, IDisposable
 
     /// <summary>
     /// Encodes a raw video frame supplied by the application (zero-copy RawImage variant) and raises
-    /// <see cref="OnVideoSourceEncodedSample"/> with the result.
+    /// <see cref="OnVideoSourceEncodedSampleFaster"/> and <see cref="OnVideoSourceEncodedSample"/> with the result.
     /// </summary>
     public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage)
     {
-        if (!_isClosed && !_isPaused && OnVideoSourceEncodedSample != null)
+        if (!_isClosed && !_isPaused && OnVideoSourceEncodedSampleFaster != null)
+        {
+            EncodeAndRaise(durationMilliseconds, rawImage,
+                static (encoder, image, codec, output) => encoder.EncodeVideoFaster(image, codec, output));
+        }
+        else if (!_isClosed && !_isPaused && OnVideoSourceEncodedSample != null)
         {
             byte[]? encodedBuffer;
 
@@ -296,17 +328,142 @@ public class FFmpegVideoEndPoint : IVideoEndPoint, IDisposable
     {
         if (encodedBuffer != null)
         {
-            uint clockRate = (uint)_videoFormatManager.SelectedFormat.ClockRate;
-
-            // Scale the duration straight to RTP clock units rather than going via an integer frame rate, which
-            // truncates twice, e.g. a 17ms frame would come out as 1551 ticks at 90kHz instead of 1530.
-            uint durationRtpTS = (durationMilliseconds > 0) ?
-                (uint)((ulong)clockRate * durationMilliseconds / 1000) :
-                clockRate / (uint)Helper.DEFAULT_VIDEO_FRAME_RATE;
-
             // Note the event handler can be removed while the encoding is in progress.
-            OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encodedBuffer);
+            OnVideoSourceEncodedSample?.Invoke(GetDurationRtpUnits(durationMilliseconds), encodedBuffer);
         }
+    }
+
+    /// <summary>
+    /// Encodes a frame and raises it on <see cref="OnVideoSourceEncodedSampleFaster"/> and
+    /// <see cref="OnVideoSourceEncodedSample"/>. A failed encode is reported on <see cref="OnVideoSourceError"/>, and a
+    /// frame the encoder holds back raises nothing.
+    /// </summary>
+    /// <param name="encode">Encodes <paramref name="frame"/> to the writer it is given and returns the number of bytes
+    /// written, or 0 if the encoder produced no frame. A static lambda, so passing it does not allocate.</param>
+    private void EncodeAndRaise<TFrame>(uint durationMilliseconds, TFrame frame, Func<FFmpegVideoEncoder, TFrame, VideoCodecsEnum, IBufferWriter<byte>, int> encode)
+    {
+        lock (_encodedFrameLock)
+        {
+            // While a frame is raised the lock is held, so a frame pushed meanwhile comes from one of its handlers, on
+            // this thread. It gets a buffer of its own, as the handlers still to run must get the frame they are
+            // raised with.
+            var output = _raisingEncodedFrame ? new ReusedBufferWriter() : _encodedFrame;
+            int length;
+
+            try
+            {
+                output.Reset();
+                length = encode(_ffmpegEncoder, frame, _videoFormatManager.SelectedFormat.Codec, output);
+            }
+            catch (Exception excp)
+            {
+                RaiseEncodeError(excp);
+                return;
+            }
+
+            if (length > 0)
+            {
+                bool wasRaising = _raisingEncodedFrame;
+                _raisingEncodedFrame = true;
+
+                try
+                {
+                    RaiseEncodedSample(durationMilliseconds, output.WrittenSpan);
+                }
+                finally
+                {
+                    _raisingEncodedFrame = wasRaising;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Raises an encoded frame: in place on <see cref="OnVideoSourceEncodedSampleFaster"/>, and as a copy, which its
+    /// subscribers then own, on <see cref="OnVideoSourceEncodedSample"/>.
+    /// </summary>
+    private void RaiseEncodedSample(uint durationMilliseconds, ReadOnlySpan<byte> encoded)
+    {
+        uint durationRtpTS = GetDurationRtpUnits(durationMilliseconds);
+
+        // Note the event handlers can be removed while the encoding is in progress.
+        OnVideoSourceEncodedSampleFaster?.Invoke(durationRtpTS, encoded);
+        OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encoded.ToArray());
+    }
+
+    private uint GetDurationRtpUnits(uint durationMilliseconds)
+    {
+        uint clockRate = (uint)_videoFormatManager.SelectedFormat.ClockRate;
+
+        // Scale the duration straight to RTP clock units rather than going via an integer frame rate, which
+        // truncates twice, e.g. a 17ms frame would come out as 1551 ticks at 90kHz instead of 1530.
+        return (durationMilliseconds > 0) ?
+            (uint)((ulong)clockRate * durationMilliseconds / 1000) :
+            clockRate / (uint)Helper.DEFAULT_VIDEO_FRAME_RATE;
+    }
+
+    /// <summary>
+    /// A buffer writer that keeps what is written in one array, re-used from frame to frame. ArrayBufferWriter is not
+    /// available on every target framework of this library, and where it is, resetting it without clearing the
+    /// memory is only possible from .NET 8.
+    /// </summary>
+    private sealed class ReusedBufferWriter : IBufferWriter<byte>
+    {
+        private byte[] _buffer = Array.Empty<byte>();
+        private int _written;
+
+        /// <summary>The data written since the last <see cref="Reset"/>.</summary>
+        public ReadOnlySpan<byte> WrittenSpan => new ReadOnlySpan<byte>(_buffer, 0, _written);
+
+        /// <summary>Discards what has been written, keeping the array for the next frame.</summary>
+        public void Reset() => _written = 0;
+
+        public void Advance(int count)
+        {
+            if (count < 0 || count > _buffer.Length - _written)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count));
+            }
+
+            _written += count;
+        }
+
+        public Memory<byte> GetMemory(int sizeHint = 0)
+        {
+            Grow(sizeHint);
+            return _buffer.AsMemory(_written);
+        }
+
+        public Span<byte> GetSpan(int sizeHint = 0)
+        {
+            Grow(sizeHint);
+            return _buffer.AsSpan(_written);
+        }
+
+        // Makes room after what has been written for at least sizeHint bytes, or one byte when no size is given. It
+        // can replace _buffer, so callers read _buffer only after it returns.
+        private void Grow(int sizeHint)
+        {
+            if (sizeHint < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sizeHint));
+            }
+
+            int needed = Math.Max(sizeHint, 1);
+            if (_buffer.Length - _written < needed)
+            {
+                long required = (long)_written + needed;
+                if (required > MAX_ARRAY_LENGTH)
+                {
+                    throw new OutOfMemoryException($"An encoded frame of {required} bytes would not fit in an array.");
+                }
+
+                Array.Resize(ref _buffer, (int)Math.Min(Math.Max(required, 2L * _buffer.Length), MAX_ARRAY_LENGTH));
+            }
+        }
+
+        // The largest length of a byte array, Array.MaxLength, which not every target framework of this library has.
+        private const int MAX_ARRAY_LENGTH = 0x7FFFFFC7;
     }
 
     public void Dispose()
