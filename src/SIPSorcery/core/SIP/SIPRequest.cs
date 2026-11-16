@@ -251,17 +251,27 @@ namespace SIPSorcery.SIP
 
         public bool IsValid(out SIPValidationFieldsEnum errorField, out string errorMessage)
         {
-            errorField = SIPValidationFieldsEnum.Unknown;
-            errorMessage = null;
-
-            if (Header.Vias.Length == 0)
+            (errorField, errorMessage) = Header switch
             {
-                errorField = SIPValidationFieldsEnum.ViaHeader;
-                errorMessage = "No Via headers";
-                return false;
-            }
+                { Vias: null or { Length: 0 } } =>
+                    (SIPValidationFieldsEnum.ViaHeader, "No Via headers"),
 
-            return true;
+                { To: null } =>
+                    (SIPValidationFieldsEnum.ToHeader, "No To header"),
+
+                { From: null } =>
+                    (SIPValidationFieldsEnum.FromHeader, "No From header"),
+
+                { CallId: var callId } when string.IsNullOrWhiteSpace(callId) =>
+                    (SIPValidationFieldsEnum.CallIdHeader, "No Call-ID header"),
+
+                { CSeq: < 0 } =>
+                    (SIPValidationFieldsEnum.CSeqHeader, "Missing or invalid CSeq header"),
+
+                _ => (SIPValidationFieldsEnum.Unknown, null)
+            };
+
+            return errorField == SIPValidationFieldsEnum.Unknown;
         }
 
         /// <summary>
