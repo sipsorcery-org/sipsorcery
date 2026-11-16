@@ -1333,12 +1333,31 @@ namespace SIPSorcery.Net
             else
             {
                 List<MediaStream> mediaStreamList = GetMediaStreams();
-                //Revert to DefaultStreamStatus
                 foreach (var mediaStream in mediaStreamList)
                 {
-                    if (mediaStream.LocalTrack != null && mediaStream.LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
+                    var localTrack = mediaStream.LocalTrack;
+                    if (localTrack == null)
                     {
-                        mediaStream.LocalTrack.StreamStatus = mediaStream.LocalTrack.DefaultStreamStatus;
+                        continue;
+                    }
+
+                    // An m-line bundled onto another one's transport can have port 0 (bundle-only) or
+                    // no address of its own, which leaves the track inactive: put it back.
+                    if (localTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
+                    {
+                        localTrack.RestoreStreamStatusBeforeAnswer();
+                        if (localTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
+                        {
+                            localTrack.StreamStatus = localTrack.DefaultStreamStatus;
+                        }
+                    }
+
+                    // Then the offer's direction: a sendonly offer is answered recvonly, a recvonly
+                    // offer sendonly and an inactive one inactive (RFC 3264 section 6.1, JSEP 5.3.1).
+                    if (mediaStream.RemoteTrack != null && remoteDescription.type == RTCSdpType.offer)
+                    {
+                        localTrack.NarrowStreamStatusForAnswer(
+                            MediaStreamStatusType.GetAnswerMediaStreamStatus(mediaStream.RemoteTrack.StreamStatus, localTrack.StreamStatus));
                     }
                 }
 

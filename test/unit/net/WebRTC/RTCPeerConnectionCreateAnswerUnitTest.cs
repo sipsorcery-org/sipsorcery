@@ -24,6 +24,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net.UnitTests.Helpers;
 using SIPSorceryMedia.Abstractions;
@@ -295,6 +296,92 @@ namespace SIPSorcery.Net.UnitTests
                 SdpAssert.HasMediaLines(answerSdp, "audio", "video");
                 SdpAssert.HasDirection(SdpAssert.Audio(answerSdp), MediaStreamStatusEnum.SendRecv);
                 SdpAssert.HasDirection(SdpAssert.Video(answerSdp), MediaStreamStatusEnum.Inactive);
+            }
+        }
+
+        /// <summary>
+        /// The answer honours the direction of the offer the way a browser's does (RFC 3264
+        /// section 6.1, JSEP 5.3.1): a sendrecv answerer answers a sendonly offer recvonly, a
+        /// recvonly offer sendonly and an inactive offer inactive. The local track, which decides
+        /// whether the peer connection sends, takes the same direction.
+        /// </summary>
+        [Theory]
+        [InlineData(MediaStreamStatusEnum.SendOnly, MediaStreamStatusEnum.RecvOnly)]
+        [InlineData(MediaStreamStatusEnum.RecvOnly, MediaStreamStatusEnum.SendOnly)]
+        [InlineData(MediaStreamStatusEnum.Inactive, MediaStreamStatusEnum.Inactive)]
+        [InlineData(MediaStreamStatusEnum.SendRecv, MediaStreamStatusEnum.SendRecv)]
+        public void OfferDirection_AnswerHonoursIt(MediaStreamStatusEnum offered, MediaStreamStatusEnum expected)
+        {
+            using (var offerer = new PeerConnectionBuilder()
+                .WithAudioTrack(direction: offered)
+                .WithVideoTrack(direction: offered)
+                .Build())
+            using (var answerer = new PeerConnectionBuilder()
+                .WithAudioTrack()
+                .WithVideoTrack()
+                .Build())
+            {
+                var offer = offerer.createOffer(new RTCOfferOptions());
+                SdpAssert.HasDirection(SdpAssert.Audio(SdpAssert.Parse(offer.sdp)), offered);
+                Assert.Equal(SetDescriptionResultEnum.OK, answerer.setRemoteDescription(offer));
+
+                var answerInit = answerer.createAnswer();
+                logger.LogDebug("Answer SDP:\n{Sdp}", answerInit.sdp);
+                SDP answerSdp = SdpAssert.Parse(answerInit.sdp);
+
+                SdpAssert.HasDirection(SdpAssert.Audio(answerSdp), expected);
+                SdpAssert.HasDirection(SdpAssert.Video(answerSdp), expected);
+                Assert.Equal(expected, answerer.AudioStream.LocalTrack.StreamStatus);
+                Assert.Equal(expected, answerer.VideoStream.LocalTrack.StreamStatus);
+            }
+        }
+
+        /// <summary>
+        /// A recvonly answerer (a WHIP ingest, say) answers a sendrecv offer recvonly, and a
+        /// sendonly one (WHEP egress) answers a recvonly offer sendonly.
+        /// </summary>
+        [Theory]
+        [InlineData(MediaStreamStatusEnum.SendRecv, MediaStreamStatusEnum.RecvOnly, MediaStreamStatusEnum.RecvOnly)]
+        [InlineData(MediaStreamStatusEnum.RecvOnly, MediaStreamStatusEnum.SendOnly, MediaStreamStatusEnum.SendOnly)]
+        [InlineData(MediaStreamStatusEnum.RecvOnly, MediaStreamStatusEnum.RecvOnly, MediaStreamStatusEnum.Inactive)]
+        public void LocalTrackDirection_AnswerIsNoMoreThanItAllows(MediaStreamStatusEnum offered, MediaStreamStatusEnum local, MediaStreamStatusEnum expected)
+        {
+            using (var offerer = new PeerConnectionBuilder().WithAudioTrack(direction: offered).Build())
+            using (var answerer = new PeerConnectionBuilder().WithAudioTrack(direction: local).Build())
+            {
+                answerer.setRemoteDescription(offerer.createOffer(new RTCOfferOptions()));
+
+                SDP answerSdp = SdpAssert.Parse(answerer.createAnswer().sdp);
+
+                SdpAssert.HasDirection(SdpAssert.Audio(answerSdp), expected);
+            }
+        }
+
+        /// <summary>
+        /// Renegotiation: an inactive re-offer is answered inactive, and a sendrecv one after it
+        /// sendrecv again.
+        /// </summary>
+        [Fact]
+        public async Task InactiveThenSendRecvReoffer_AnswerFollows()
+        {
+            using (var offerer = new PeerConnectionBuilder().WithAudioTrack().Build())
+            using (var answerer = new PeerConnectionBuilder().WithAudioTrack().Build())
+            {
+                answerer.setRemoteDescription(offerer.createOffer(new RTCOfferOptions()));
+                var first = answerer.createAnswer();
+                SdpAssert.HasDirection(SdpAssert.Audio(SdpAssert.Parse(first.sdp)), MediaStreamStatusEnum.SendRecv);
+                await answerer.setLocalDescription(first);
+
+                var inactiveOffer = SdpAssert.Parse(offerer.createOffer(new RTCOfferOptions()).sdp);
+                SdpAssert.Audio(inactiveOffer).MediaStreamStatus = MediaStreamStatusEnum.Inactive;
+                Assert.Equal(SetDescriptionResultEnum.OK, answerer.setRemoteDescription(
+                    new RTCSessionDescriptionInit { type = RTCSdpType.offer, sdp = inactiveOffer.ToString() }));
+                var inactiveAnswer = answerer.createAnswer();
+                SdpAssert.HasDirection(SdpAssert.Audio(SdpAssert.Parse(inactiveAnswer.sdp)), MediaStreamStatusEnum.Inactive);
+                await answerer.setLocalDescription(inactiveAnswer);
+
+                Assert.Equal(SetDescriptionResultEnum.OK, answerer.setRemoteDescription(offerer.createOffer(new RTCOfferOptions())));
+                SdpAssert.HasDirection(SdpAssert.Audio(SdpAssert.Parse(answerer.createAnswer().sdp)), MediaStreamStatusEnum.SendRecv);
             }
         }
     }

@@ -166,6 +166,41 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// The stream status the track had before answering an offer narrowed it (RFC 3264
+        /// section 6.1), for example sendrecv for a track that answered a sendonly offer recvonly.
+        /// The next offer is answered from this rather than from the narrowed status, so a call the
+        /// far end takes off hold goes back to sending. Null when no answer has narrowed the track
+        /// since the application last set its status.
+        /// </summary>
+        internal MediaStreamStatusEnum? StreamStatusBeforeAnswer { get; set; }
+
+        /// <summary>
+        /// Narrows the stream status for an answer to an offer, keeping what it was before in
+        /// <see cref="StreamStatusBeforeAnswer"/> (the first time, if it's narrowed more than once).
+        /// </summary>
+        /// <param name="status">The status for the answer.</param>
+        internal void NarrowStreamStatusForAnswer(MediaStreamStatusEnum status)
+        {
+            if (status != StreamStatus)
+            {
+                StreamStatusBeforeAnswer ??= StreamStatus;
+                StreamStatus = status;
+            }
+        }
+
+        /// <summary>
+        /// Puts back the stream status an earlier answer narrowed, ready to answer a new offer.
+        /// </summary>
+        internal void RestoreStreamStatusBeforeAnswer()
+        {
+            if (StreamStatusBeforeAnswer.HasValue)
+            {
+                StreamStatus = StreamStatusBeforeAnswer.Value;
+                StreamStatusBeforeAnswer = null;
+            }
+        }
+
+        /// <summary>
         /// If the SDP remote the remote party provides "a=ssrc" attributes, as specified
         /// in RFC5576, this property will hold the values. The list can be used when
         /// an RTP/RTCP packet is received and needs to be matched against a media type or 
