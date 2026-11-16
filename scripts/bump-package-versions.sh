@@ -2,7 +2,7 @@
 #
 # bump-package-versions.sh
 #
-# Bumps the NuGet package version on the six SIPSorcery library projects
+# Bumps the NuGet package version on the five SIPSorcery library projects
 # in this monorepo and prepends a TODO release-notes line to each.
 #
 # What it edits in every csproj:
@@ -50,9 +50,8 @@ Options:
                    writing anything.
   -h, --help       Show this help and exit.
 
-The six packages this script targets are:
+The five packages this script targets are:
   src/SIPSorcery
-  src/SIPSorcery.OpenAI.Realtime
   src/SIPSorcery.VP8
   src/SIPSorceryMedia.Abstractions
   src/SIPSorceryMedia.FFmpeg
@@ -66,7 +65,7 @@ script runs, edit each TODO with the actual release note text before
 tagging.
 
 Examples:
-  $PROGNAME 10.0.7              # bump all six to 10.0.7
+  $PROGNAME 10.0.7              # bump all five to 10.0.7
   $PROGNAME 10.0.8-pre          # Version 10.0.8-pre, Assembly/FileVersion 10.0.8
   $PROGNAME --dry-run 10.0.7    # preview the changes
 EOF
@@ -106,7 +105,7 @@ fi
 
 # Permissive SemVer validation: MAJOR.MINOR.PATCH with optional
 # pre-release tail. Reject anything else so a typo doesn't get
-# committed across all six projects.
+# committed across all five projects.
 if ! printf '%s' "$NEW_VERSION" \
    | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$'; then
   err "version '$NEW_VERSION' is not in MAJOR.MINOR.PATCH[-prerelease] form"
@@ -135,7 +134,6 @@ fi
 
 PROJECTS=(
   "src/SIPSorcery/SIPSorcery.csproj"
-  "src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj"
   "src/SIPSorcery.VP8/SIPSorcery.VP8.csproj"
   "src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj"
   "src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj"
