@@ -100,6 +100,88 @@ namespace Vpx.Net.UnitTest
         }
 
         /// <summary>
+        /// A handler that pushes frames into the end point while another frame is being raised, as a relay or a
+        /// loopback source might, does not overwrite the frame the handlers after it are given. The pushed frames are
+        /// raised in full first, then the handlers after it get the frame they were raised with.
+        /// </summary>
+        [Fact]
+        public void HandlerPushesFrames_LaterHandlersStillGetTheirFrame()
+        {
+            var expected = EncodeWithArrayEventOnly(3);
+
+            var endPoint = CreateEndPoint();
+            bool pushed = false;
+            endPoint.OnVideoSourceEncodedSampleFaster += (duration, sample) =>
+            {
+                if (!pushed)
+                {
+                    pushed = true;
+                    endPoint.ExternalVideoSourceRawSample(33, Scenario.Width, Scenario.Height, Scenario.CreateFrame(1), VideoPixelFormatsEnum.I420);
+                    endPoint.ExternalVideoSourceRawSample(33, Scenario.Width, Scenario.Height, Scenario.CreateFrame(2), VideoPixelFormatsEnum.I420);
+                }
+            };
+            var fromSpan = new List<(uint Duration, byte[] Frame)>();
+            var fromArray = new List<(uint Duration, byte[] Frame)>();
+            endPoint.OnVideoSourceEncodedSampleFaster += (duration, sample) => fromSpan.Add((duration, sample.ToArray()));
+            endPoint.OnVideoSourceEncodedSample += (duration, sample) => fromArray.Add((duration, sample));
+
+            endPoint.ExternalVideoSourceRawSample(33, Scenario.Width, Scenario.Height, Scenario.CreateFrame(0), VideoPixelFormatsEnum.I420);
+
+            var raisedOrder = new List<(uint Duration, byte[] Frame)> { expected[1], expected[2], expected[0] };
+            AssertSameFrames(raisedOrder, fromSpan);
+            AssertSameFrames(raisedOrder, fromArray);
+        }
+
+        /// <summary>
+        /// Both events get the duration scaled straight to 90 kHz RTP units: 17 ms is 1530 units, not the 1551 an
+        /// integer frame rate gave, and a frame longer than a second no longer divides by zero.
+        /// </summary>
+        [Theory]
+        [InlineData(17u, 1530u)]
+        [InlineData(33u, 2970u)]
+        [InlineData(1500u, 135000u)]
+        [InlineData(0u, 3000u)]
+        public void Duration_ScaledStraightToRtpUnits(uint durationMilliseconds, uint expectedRtpUnits)
+        {
+            var fromSpan = new List<uint>();
+            var spanEndPoint = CreateEndPoint();
+            spanEndPoint.OnVideoSourceEncodedSampleFaster += (duration, sample) => fromSpan.Add(duration);
+            spanEndPoint.ExternalVideoSourceRawSample(durationMilliseconds, Scenario.Width, Scenario.Height, Scenario.CreateFrame(0), VideoPixelFormatsEnum.I420);
+
+            var fromArray = new List<uint>();
+            var arrayEndPoint = CreateEndPoint();
+            arrayEndPoint.OnVideoSourceEncodedSample += (duration, sample) => fromArray.Add(duration);
+            arrayEndPoint.ExternalVideoSourceRawSample(durationMilliseconds, Scenario.Width, Scenario.Height, Scenario.CreateFrame(0), VideoPixelFormatsEnum.I420);
+
+            Assert.Equal(new[] { expectedRtpUnits }, fromSpan);
+            Assert.Equal(new[] { expectedRtpUnits }, fromArray);
+        }
+
+        /// <summary>
+        /// A null sample is refused with ArgumentNullException whichever event is subscribed, rather than read as an
+        /// empty sample on the span path.
+        /// </summary>
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void NullSample_RefusedWithArgumentNullException(bool spanEvent)
+        {
+            var endPoint = CreateEndPoint();
+            if (spanEvent)
+            {
+                endPoint.OnVideoSourceEncodedSampleFaster += (duration, sample) => { };
+            }
+            else
+            {
+                endPoint.OnVideoSourceEncodedSample += (duration, sample) => { };
+            }
+
+            var excp = Assert.Throws<ArgumentNullException>(() =>
+                endPoint.ExternalVideoSourceRawSample(33, Scenario.Width, Scenario.Height, null, VideoPixelFormatsEnum.I420));
+            Assert.Equal("sample", excp.ParamName);
+        }
+
+        /// <summary>
         /// Raising frames on the span event does not allocate an array per frame.
         /// </summary>
         [Fact]

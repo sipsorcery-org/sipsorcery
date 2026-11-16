@@ -228,6 +228,70 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
         }
 
         /// <summary>
+        /// A null sample is refused with ArgumentNullException whichever event is subscribed, rather than read as an
+        /// empty sample on the span path. With nothing subscribed to OnVideoSourceError the exception reaches the caller.
+        /// </summary>
+        [FFmpegTheory("libx264")]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void NullSample_RefusedWithArgumentNullException(bool spanEvent)
+        {
+            using (var endPoint = CreateEndPoint(VideoCodecsEnum.H264))
+            {
+                if (spanEvent)
+                {
+                    endPoint.OnVideoSourceEncodedSampleFaster += (duration, sample) => { };
+                }
+                else
+                {
+                    endPoint.OnVideoSourceEncodedSample += (duration, sample) => { };
+                }
+
+                var excp = Assert.Throws<ArgumentNullException>(() =>
+                    endPoint.ExternalVideoSourceRawSample(DURATION_MILLISECONDS, WIDTH, HEIGHT, null, VideoPixelFormatsEnum.I420));
+                Assert.Equal("sample", excp.ParamName);
+            }
+        }
+
+        /// <summary>
+        /// A handler that pushes frames into the end point while another frame is being raised, as a relay or a
+        /// loopback source might, does not overwrite the frame the handlers after it are given. The pushed frames are
+        /// raised in full first, then the handlers after it get the frame they were raised with.
+        /// </summary>
+        [FFmpegTheory("libx264")]
+        [InlineData(Input.Array)]
+        [InlineData(Input.RawImage)]
+        public void HandlerPushesFrames_LaterHandlersStillGetTheirFrame(Input input)
+        {
+            var frames = CreateFrames(3);
+            var expected = EncodeWithArrayEventOnly(frames);
+
+            using (var endPoint = CreateEndPoint(VideoCodecsEnum.H264))
+            {
+                bool pushed = false;
+                endPoint.OnVideoSourceEncodedSampleFaster += (duration, sample) =>
+                {
+                    if (!pushed)
+                    {
+                        pushed = true;
+                        Push(endPoint, frames[1], input);
+                        Push(endPoint, frames[2], input);
+                    }
+                };
+                var fromSpan = new List<(uint Duration, byte[] Frame)>();
+                var fromArray = new List<(uint Duration, byte[] Frame)>();
+                endPoint.OnVideoSourceEncodedSampleFaster += (duration, sample) => fromSpan.Add((duration, sample.ToArray()));
+                endPoint.OnVideoSourceEncodedSample += (duration, sample) => fromArray.Add((duration, sample));
+
+                Push(endPoint, frames[0], input);
+
+                var raisedOrder = new List<(uint Duration, byte[] Frame)> { expected[1], expected[2], expected[0] };
+                AssertSameFrames(raisedOrder, fromSpan);
+                AssertSameFrames(raisedOrder, fromArray);
+            }
+        }
+
+        /// <summary>
         /// With only the span event subscribed, encoding and raising a frame allocates nothing per frame, whether the
         /// encoder reads the frame directly (I420) or converts it first (BGR).
         /// </summary>

@@ -86,6 +86,10 @@ public class FFmpegVideoEndPoint : IVideoEndPoint, IDisposable
     private readonly ReusedBufferWriter _encodedFrame = new ReusedBufferWriter();
     private readonly object _encodedFrameLock = new object();
 
+    // Set while a frame is being raised on the events, so a handler that pushes another frame meanwhile is noticed.
+    // Only used under _encodedFrameLock.
+    private bool _raisingEncodedFrame;
+
 #pragma warning disable CS0067
     // This endpoint only produces ENCODED video samples (it encodes raw input supplied via the
     // ExternalVideoSourceRawSample* methods). It never emits raw source samples.
@@ -248,26 +252,11 @@ public class FFmpegVideoEndPoint : IVideoEndPoint, IDisposable
     {
         if (!_isClosed && !_isPaused && OnVideoSourceEncodedSampleFaster != null)
         {
-            lock (_encodedFrameLock)
-            {
-                int length;
-
-                try
-                {
-                    _encodedFrame.Reset();
-                    length = _ffmpegEncoder.EncodeVideo(width, height, sample, pixelFormat, _videoFormatManager.SelectedFormat.Codec, _encodedFrame);
-                }
-                catch (Exception excp)
-                {
-                    RaiseEncodeError(excp);
-                    return;
-                }
-
-                if (length > 0)
-                {
-                    RaiseEncodedSample(durationMilliseconds, _encodedFrame.WrittenSpan);
-                }
-            }
+            // The span overload would read a null sample as an empty one, so it is refused here, as the array overload
+            // refuses it.
+            EncodeAndRaise(durationMilliseconds, (Width: width, Height: height, Sample: sample, PixelFormat: pixelFormat),
+                static (encoder, frame, codec, output) => encoder.EncodeVideo(frame.Width, frame.Height,
+                    frame.Sample ?? throw new ArgumentNullException(nameof(sample)), frame.PixelFormat, codec, output));
         }
         else if (!_isClosed && !_isPaused && OnVideoSourceEncodedSample != null)
         {
@@ -295,26 +284,8 @@ public class FFmpegVideoEndPoint : IVideoEndPoint, IDisposable
     {
         if (!_isClosed && !_isPaused && OnVideoSourceEncodedSampleFaster != null)
         {
-            lock (_encodedFrameLock)
-            {
-                int length;
-
-                try
-                {
-                    _encodedFrame.Reset();
-                    length = _ffmpegEncoder.EncodeVideoFaster(rawImage, _videoFormatManager.SelectedFormat.Codec, _encodedFrame);
-                }
-                catch (Exception excp)
-                {
-                    RaiseEncodeError(excp);
-                    return;
-                }
-
-                if (length > 0)
-                {
-                    RaiseEncodedSample(durationMilliseconds, _encodedFrame.WrittenSpan);
-                }
-            }
+            EncodeAndRaise(durationMilliseconds, rawImage,
+                static (encoder, image, codec, output) => encoder.EncodeVideoFaster(image, codec, output));
         }
         else if (!_isClosed && !_isPaused && OnVideoSourceEncodedSample != null)
         {
@@ -363,8 +334,53 @@ public class FFmpegVideoEndPoint : IVideoEndPoint, IDisposable
     }
 
     /// <summary>
-    /// Raises a frame held in the re-used encode buffer: in place on <see cref="OnVideoSourceEncodedSampleFaster"/>, and
-    /// as a copy, which its subscribers then own, on <see cref="OnVideoSourceEncodedSample"/>.
+    /// Encodes a frame and raises it on <see cref="OnVideoSourceEncodedSampleFaster"/> and
+    /// <see cref="OnVideoSourceEncodedSample"/>. A failed encode is reported on <see cref="OnVideoSourceError"/>, and a
+    /// frame the encoder holds back raises nothing.
+    /// </summary>
+    /// <param name="encode">Encodes <paramref name="frame"/> to the writer it is given and returns the number of bytes
+    /// written, or 0 if the encoder produced no frame. A static lambda, so passing it does not allocate.</param>
+    private void EncodeAndRaise<TFrame>(uint durationMilliseconds, TFrame frame, Func<FFmpegVideoEncoder, TFrame, VideoCodecsEnum, IBufferWriter<byte>, int> encode)
+    {
+        lock (_encodedFrameLock)
+        {
+            // While a frame is raised the lock is held, so a frame pushed meanwhile comes from one of its handlers, on
+            // this thread. It gets a buffer of its own, as the handlers still to run must get the frame they are
+            // raised with.
+            var output = _raisingEncodedFrame ? new ReusedBufferWriter() : _encodedFrame;
+            int length;
+
+            try
+            {
+                output.Reset();
+                length = encode(_ffmpegEncoder, frame, _videoFormatManager.SelectedFormat.Codec, output);
+            }
+            catch (Exception excp)
+            {
+                RaiseEncodeError(excp);
+                return;
+            }
+
+            if (length > 0)
+            {
+                bool wasRaising = _raisingEncodedFrame;
+                _raisingEncodedFrame = true;
+
+                try
+                {
+                    RaiseEncodedSample(durationMilliseconds, output.WrittenSpan);
+                }
+                finally
+                {
+                    _raisingEncodedFrame = wasRaising;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Raises an encoded frame: in place on <see cref="OnVideoSourceEncodedSampleFaster"/>, and as a copy, which its
+    /// subscribers then own, on <see cref="OnVideoSourceEncodedSample"/>.
     /// </summary>
     private void RaiseEncodedSample(uint durationMilliseconds, ReadOnlySpan<byte> encoded)
     {
@@ -436,10 +452,18 @@ public class FFmpegVideoEndPoint : IVideoEndPoint, IDisposable
             int needed = Math.Max(sizeHint, 1);
             if (_buffer.Length - _written < needed)
             {
-                long size = Math.Max((long)_written + needed, 2L * _buffer.Length);
-                Array.Resize(ref _buffer, (int)Math.Min(size, int.MaxValue));
+                long required = (long)_written + needed;
+                if (required > MAX_ARRAY_LENGTH)
+                {
+                    throw new OutOfMemoryException($"An encoded frame of {required} bytes would not fit in an array.");
+                }
+
+                Array.Resize(ref _buffer, (int)Math.Min(Math.Max(required, 2L * _buffer.Length), MAX_ARRAY_LENGTH));
             }
         }
+
+        // The largest length of a byte array, Array.MaxLength, which not every target framework of this library has.
+        private const int MAX_ARRAY_LENGTH = 0x7FFFFFC7;
     }
 
     public void Dispose()

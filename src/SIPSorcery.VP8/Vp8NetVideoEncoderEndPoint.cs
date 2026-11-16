@@ -66,6 +66,10 @@ namespace Vpx.Net
         private readonly ArrayBufferWriter<byte> _encodedFrame = new ArrayBufferWriter<byte>();
         private readonly object _encodedFrameLock = new object();
 
+        // Set while a frame is being raised on the events, so a handler that pushes another frame meanwhile is
+        // noticed. Only used under _encodedFrameLock.
+        private bool _raisingEncodedFrame;
+
         /// <summary>
         /// This event is fired after the sink decodes a video frame from the remote party.
         /// </summary>
@@ -160,18 +164,38 @@ namespace Vpx.Net
             {
                 if (OnVideoSourceEncodedSampleFaster != null)
                 {
+                    // The span overload would read a null sample as an empty one, so it is refused here, as the array
+                    // overload refuses it.
+                    if (sample == null)
+                    {
+                        throw new ArgumentNullException(nameof(sample));
+                    }
+
                     lock (_encodedFrameLock)
                     {
-                        _encodedFrame.ResetWrittenCount();
-                        _vp8Codec.EncodeVideo(width, height, sample, pixelFormat, VideoCodecsEnum.VP8, _encodedFrame);
+                        // While a frame is raised the lock is held, so a frame pushed meanwhile comes from one of its
+                        // handlers, on this thread. It gets a buffer of its own, as the handlers still to run must get
+                        // the frame they are raised with.
+                        var output = _raisingEncodedFrame ? new ArrayBufferWriter<byte>() : _encodedFrame;
+                        output.ResetWrittenCount();
+                        _vp8Codec.EncodeVideo(width, height, sample, pixelFormat, VideoCodecsEnum.VP8, output);
 
                         uint durationRtpTS = GetDurationRtpUnits(durationMilliseconds);
+                        bool wasRaising = _raisingEncodedFrame;
+                        _raisingEncodedFrame = true;
 
-                        // Note the event handlers can be removed while the encoding is in progress.
-                        OnVideoSourceEncodedSampleFaster?.Invoke(durationRtpTS, _encodedFrame.WrittenSpan);
+                        try
+                        {
+                            // Note the event handlers can be removed while the encoding is in progress.
+                            OnVideoSourceEncodedSampleFaster?.Invoke(durationRtpTS, output.WrittenSpan);
 
-                        // Subscribers to the array event own what they are given, so they get a copy.
-                        OnVideoSourceEncodedSample?.Invoke(durationRtpTS, _encodedFrame.WrittenSpan.ToArray());
+                            // Subscribers to the array event own what they are given, so they get a copy.
+                            OnVideoSourceEncodedSample?.Invoke(durationRtpTS, output.WrittenSpan.ToArray());
+                        }
+                        finally
+                        {
+                            _raisingEncodedFrame = wasRaising;
+                        }
                     }
                 }
                 else if (OnVideoSourceEncodedSample != null)
@@ -188,8 +212,12 @@ namespace Vpx.Net
 
         private static uint GetDurationRtpUnits(uint durationMilliseconds)
         {
-            uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : DEFAULT_FRAMES_PER_SECOND;
-            return VIDEO_SAMPLING_RATE / fps;
+            // Scale the duration straight to RTP clock units, as FFmpegVideoEndPoint does. Going via an integer frame
+            // rate truncates twice (a 17 ms frame came out as 1551 units rather than 1530) and divides by zero for a
+            // frame longer than a second.
+            return (durationMilliseconds > 0) ?
+                (uint)((ulong)VIDEO_SAMPLING_RATE * durationMilliseconds / 1000) :
+                VIDEO_SAMPLING_RATE / DEFAULT_FRAMES_PER_SECOND;
         }
 
         public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] frame, VideoFormat format)
