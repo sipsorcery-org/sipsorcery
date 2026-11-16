@@ -12,10 +12,7 @@
  <ItemGroup>
     <PackageReference Include="LanguageExt.Core" />
     <PackageReference Include="Serilog.AspNetCore" />
+    <ProjectReference Include="..\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
   </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\..\src\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
-    </ItemGroup>
 
 </Project>

@@ -23,10 +23,7 @@
     <PackageReference Include="LanguageExt.Core" />
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Sinks.Console" />
+    <ProjectReference Include="..\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
   </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\..\src\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
-    </ItemGroup>
 
 </Project>
