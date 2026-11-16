@@ -1,0 +1,146 @@
+using System.Text.Json;
+
+namespace SIPSorcery.Softphone;
+
+public sealed class AccountSettings
+{
+    public string Server { get; set; } = "";
+    public string Username { get; set; } = "";
+    public string Password { get; set; } = "";
+    public string? DisplayName { get; set; }
+}
+
+/// <summary>
+/// The prototype's configuration: the SIP port, testing switches, and optionally an account.
+/// Read from <c>softphone.json</c> (path given with <c>--config</c>, otherwise next to the exe).
+/// Accounts are managed in the app and kept in <see cref="AccountStore"/> with their passwords
+/// protected by DPAPI; the account here only seeds that store, once per profile.
+/// </summary>
+public sealed class Settings
+{
+    public int SipPort { get; set; } = 5060;
+
+    /// <summary>
+    /// SIP over WebSocket, for browser phones (sip.js, JsSIP): they connect here to call us,
+    /// and calls with them use WebRTC media. 0 turns it off.
+    /// </summary>
+    public int WsPort { get; set; } = 8081;
+    public AccountSettings? Account { get; set; }
+
+    /// <summary>A separate WebView2 profile, so two copies can run side by side for testing.</summary>
+    public string Profile { get; set; } = "default";
+
+    /// <summary>Chromium's fake camera and microphone (a test pattern and a beep), for testing.</summary>
+    public bool FakeMedia { get; set; }
+
+    /// <summary>Testing: call this address as soon as the page is up.</summary>
+    public string? Dial { get; set; }
+
+    /// <summary>Testing: answer incoming calls after a second.</summary>
+    public bool AutoAnswer { get; set; }
+
+    /// <summary>
+    /// Offer video on calls. Off leaves video out of every offer and answer, for servers that
+    /// reject calls with video. (The real app will have this per account.)
+    /// </summary>
+    public bool OfferVideo { get; set; } = true;
+
+    /// <summary>
+    /// Offer real-time text (RFC 4103) on calls. Off leaves it out of every offer and answer, and
+    /// turns down the other side adding it. (The real app will have this per account.)
+    /// </summary>
+    public bool OfferText { get; set; } = true;
+
+    /// <summary>
+    /// Offer SRTP on plain SIP calls, best effort (SDES keys on RTP/AVP): used if the other phone
+    /// takes it up, plain RTP if not. Off (--no-srtp) offers none, and takes it only from a phone
+    /// that requires it (RTP/SAVP).
+    /// </summary>
+    public bool OfferSrtp { get; set; } = true;
+
+    /// <summary>
+    /// Calls we place use WebRTC media (ICE, DTLS-SRTP) whatever the transport, for calling browser
+    /// phones registered with a server. A plain SIP phone won't take them. Incoming calls don't
+    /// need it: a WebRTC offer is answered in kind. (The real app will have this per account.)
+    /// </summary>
+    public bool WebRtcCalls { get; set; }
+
+    /// <summary>Testing: open the diagnostics panel (F12) at start.</summary>
+    public bool Diagnostics { get; set; }
+
+    /// <summary>Testing: once text is up on a call, type this into it, then Enter.</summary>
+    public string? Say { get; set; }
+
+    /// <summary>Testing: once a call is connected, open the keypad and press these keys (0–9, *, #), one every 400 ms.</summary>
+    public string? Dtmf { get; set; }
+
+    /// <summary>Testing: calls and answers start with the camera off.</summary>
+    public bool CameraOff { get; set; }
+
+    /// <summary>Testing: send the test pattern instead of the camera.</summary>
+    public bool TestPattern { get; set; }
+
+    /// <summary>Testing: send the microphone's frequency bars as video instead of the camera.</summary>
+    public bool AudioBars { get; set; }
+
+    /// <summary>Testing: start with the Audio | Video switch on Video (so --dial places a video call).</summary>
+    public bool VideoCall { get; set; }
+
+    /// <summary>Testing: press Add video this many seconds into an audio call.</summary>
+    public int? AddVideoAfter { get; set; }
+
+    /// <summary>Testing: hang up a connected call after this many seconds.</summary>
+    public int? HangupAfter { get; set; }
+
+    /// <summary>Testing: start with simulated loss on the audio and video we send, in percent (the diagnostics sliders).</summary>
+    public int AudioLossPercent { get; set; }
+    public int VideoLossPercent { get; set; }
+
+    /// <summary>Testing: how many calls --dial places, one after another (default 1).</summary>
+    public int DialCount { get; set; } = 1;
+
+    public bool HasAccount => !string.IsNullOrWhiteSpace(Account?.Server) && !string.IsNullOrWhiteSpace(Account?.Username);
+
+    public static Settings Load(string[] args)
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "softphone.json");
+        for (int i = 0; i + 1 < args.Length; i++)
+        {
+            if (args[i] == "--config") path = args[i + 1];
+        }
+
+        var settings = File.Exists(path)
+            ? JsonSerializer.Deserialize<Settings>(File.ReadAllText(path), new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new()
+            : new Settings();
+
+        for (int i = 0; i < args.Length; i++)
+        {
+            switch (args[i])
+            {
+                case "--port" when i + 1 < args.Length: settings.SipPort = int.Parse(args[++i]); break;
+                case "--ws-port" when i + 1 < args.Length: settings.WsPort = int.Parse(args[++i]); break;
+                case "--profile" when i + 1 < args.Length: settings.Profile = args[++i]; break;
+                case "--fake-media": settings.FakeMedia = true; break;
+                case "--dial" when i + 1 < args.Length: settings.Dial = args[++i]; break;
+                case "--auto-answer": settings.AutoAnswer = true; break;
+                case "--no-video": settings.OfferVideo = false; break;
+                case "--no-text": settings.OfferText = false; break;
+                case "--no-srtp": settings.OfferSrtp = false; break;
+                case "--webrtc": settings.WebRtcCalls = true; break;
+                case "--diagnostics": settings.Diagnostics = true; break;
+                case "--say" when i + 1 < args.Length: settings.Say = args[++i]; break;
+                case "--dtmf" when i + 1 < args.Length: settings.Dtmf = args[++i]; break;
+                case "--camera-off": settings.CameraOff = true; break;
+                case "--video": settings.VideoCall = true; break;
+                case "--test-pattern": settings.TestPattern = true; break;
+                case "--audio-bars": settings.AudioBars = true; break;
+                case "--add-video" when i + 1 < args.Length: settings.AddVideoAfter = int.Parse(args[++i]); break;
+                case "--hangup-after" when i + 1 < args.Length: settings.HangupAfter = int.Parse(args[++i]); break;
+                case "--loss-audio" when i + 1 < args.Length: settings.AudioLossPercent = int.Parse(args[++i]); break;
+                case "--loss-video" when i + 1 < args.Length: settings.VideoLossPercent = int.Parse(args[++i]); break;
+                case "--dial-count" when i + 1 < args.Length: settings.DialCount = int.Parse(args[++i]); break;
+            }
+        }
+        return settings;
+    }
+}

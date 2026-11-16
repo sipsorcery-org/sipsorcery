@@ -1,0 +1,9 @@
+{
+  "sipPort": 5060,
+  "account": {
+    "server": "sip.example.com",
+    "username": "alice",
+    "password": "change-me",
+    "displayName": "Alice"
+  }
+}

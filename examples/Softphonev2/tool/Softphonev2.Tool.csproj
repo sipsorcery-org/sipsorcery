@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The softphone as a .NET tool, like the CLI. A tool can't be a WinForms app (NETSDK1146: no
+       net10.0-windows, no UseWindowsForms), so this is a small console launcher that carries the
+       desktop app's published build in its package (tools/net10.0/any/app) and starts it.
+
+         dotnet pack -c Release                                  (publishes the app, then packs)
+         dotnet tool install -g SIPSorcery.Softphone (prerelease)  ->  sipsorcery-softphone
+
+       A prerelease package while the version has a suffix. Keep it in step with the desktop
+       .csproj's <Version>, which the app shows at the foot of Settings. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Runs on newer installed runtimes without a reinstall, as the CLI does. -->
+    <RollForward>Major</RollForward>
+    <AssemblyName>sipsorcery-softphone</AssemblyName>
+    <RootNamespace>SIPSorcery.Softphone.Tool</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>sipsorcery-softphone</ToolCommandName>
+    <PackageId>SIPSorcery.Softphone</PackageId>
+    <Version>2.0.0-preview</Version>
+    <Authors>Aaron Clauson</Authors>
+    <Description>SIPSorcery Softphone for Windows, built on the SIPSorcery library: audio and video SIP calls, several at once, with hold, transfer, keypad tones, real-time text, call history and contacts, SRTP and TLS. A desktop app (WinForms and WebView2), installed and started as a .NET tool.</Description>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>SIP;VoIP;WebRTC;softphone;phone;video;calls;Windows</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>softphone.png</PackageIcon>
+    <!-- Pack adds the app's files below; packing it from a build that has them. -->
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackSoftphoneApp</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\..\LICENSE.md" Pack="true" PackagePath="\" Visible="false" />
+    <!-- The desktop app's icon (softphone.ico's drawing) at 128 px, for nuget.org. -->
+    <None Include="softphone.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <!-- The desktop app, published (framework-dependent: the .NET SDK on Windows includes the
+       desktop runtime it needs) into obj, then packed beside the launcher under app/. -->
+  <PropertyGroup>
+    <SoftphoneProject>..\desktop\Softphonev2.Desktop.csproj</SoftphoneProject>
+    <SoftphonePublishDir>$(MSBuildProjectDirectory)\$(BaseIntermediateOutputPath)app\$(Configuration)\</SoftphonePublishDir>
+  </PropertyGroup>
+  <Target Name="PackSoftphoneApp">
+    <RemoveDir Directories="$(SoftphonePublishDir)" />
+    <MSBuild Projects="$(SoftphoneProject)" Targets="Publish"
+             Properties="Configuration=$(Configuration);PublishDir=$(SoftphonePublishDir);SelfContained=false"
+             RemoveProperties="TargetFramework;RuntimeIdentifier" />
+    <ItemGroup>
+      <SoftphoneAppFile Include="$(SoftphonePublishDir)**\*" Exclude="$(SoftphonePublishDir)**\*.pdb;$(SoftphonePublishDir)**\*.xml" />
+      <TfmSpecificPackageFile Include="@(SoftphoneAppFile)" PackagePath="tools/$(TargetFramework)/any/app/%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+  </Target>
+
+</Project>
