@@ -19,6 +19,8 @@
 // 18 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
 // 23 Jun 2026	Aaron Clauson	MediaFrame carries audio as well as video, and sinks gained an
 //                              async start, so a sip: source can be forwarded to a whip: sink.
+// 16 Nov 2026	Aaron Clauson	A sink can end on its own (IEndableSink: a sip: call hung up), and the
+//                              run stops once every sink has.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -26,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorceryMedia.Abstractions;
@@ -115,6 +118,17 @@ public interface ISinkNode : IStreamNode
 }
 
 /// <summary>
+/// A sink that can end on its own, as a call does when the far end hangs up. A file or a player never
+/// does, so those don't implement it. Once every sink of a run has ended there is nothing left to
+/// route to, and the run stops.
+/// </summary>
+public interface IEndableSink
+{
+    /// <summary>Completes when the sink has ended on its own (e.g. the far end hung up).</summary>
+    Task Completion { get; }
+}
+
+/// <summary>
 /// Wires a single source to one or more sinks and pumps it. The fan-out to multiple sinks is the
 /// graph's one transform in v0.1 (a tee), and it is free: every sink simply subscribes to the source.
 /// </summary>
@@ -138,8 +152,9 @@ public sealed class StreamGraph
     public long FramesRouted => VideoFramesRouted + AudioFramesRouted;
 
     /// <summary>
-    /// Brings the sinks up, starts the source, and runs until it ends, the duration elapses (0 = run
-    /// until the source ends or cancellation), or cancellation. Returns the reason the run stopped.
+    /// Brings the sinks up, starts the source, and runs until it ends, every sink has ended on its own
+    /// (see <see cref="IEndableSink"/>), the duration elapses (0 = no limit), or cancellation. Returns
+    /// the reason the run stopped.
     /// Sinks are started before the source so a transport sink (whip:) is connected before the first
     /// frame is written. Does not dispose the nodes; the caller disposes them (sinks first, to
     /// finalise files) and then reads the stats.
@@ -160,10 +175,17 @@ public sealed class StreamGraph
             using var timer = new CancellationTokenSource(window);
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, timer.Token);
 
+            // A run whose every sink can end (each one a call) also stops once they all have: with no one
+            // left to send to there's no point carrying on. A file or a player never ends, so with one
+            // of those in the tee the run goes on until the source ends, the duration, or ctrl-c.
+            Task sinksEnded = _sinks.Count > 0 && _sinks.All(s => s is IEndableSink)
+                ? Task.WhenAll(_sinks.Select(s => ((IEndableSink)s).Completion))
+                : new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously).Task;
+
             try
             {
-                await _source.Completion.WaitAsync(linked.Token).ConfigureAwait(false);
-                return "source ended";
+                var ended = await Task.WhenAny(_source.Completion, sinksEnded).WaitAsync(linked.Token).ConfigureAwait(false);
+                return ended == _source.Completion ? "source ended" : "sink ended";
             }
             catch (OperationCanceledException)
             {

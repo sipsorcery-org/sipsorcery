@@ -313,6 +313,7 @@ sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip
 sipsorcery route --from testpattern --to whip:https://b.siobud.com/api/whip --token key  # publish to Broadcast Box (H264 + opus, both now the default)
 sipsorcery route --from testpattern --to web                   # watch in a browser: self-hosts a WHEP server + player on http://localhost:8080
 sipsorcery route --from sip:music@iptel.org --to web:9000 --scope          # bridge a SIP call (opus if the peer supports it, else G.711 auto-transcoded) to a browser page with an audio-scope video
+sipsorcery route --from testpattern --to sip:view@127.0.0.1:5080           # call a SIP phone and send it the stream, e.g. the Softphone v2 example started with --auto-answer
 sipsorcery route --from testpattern --to livekit:demo-room                 # publish into a LiveKit room (creds via --url/--api-key/--api-secret or LIVEKIT_* env)
 sipsorcery route --from livekit:demo-room --to web                         # ...and in a SEPARATE process, subscribe to that room and watch it in a browser
 sipsorcery route --from testpattern --to cloudflare                        # publish into a Cloudflare Realtime SFU session (creds via --app-id/--token or CLOUDFLARE_APPID/CLOUDFLARE_API_TOKEN)
@@ -372,6 +373,7 @@ Edges:
 | `--to`    | `web[:port]` | Self-host a **WHEP server + player page** on `http://localhost:<port>` (default 8080) and stream to any browser that opens it. Many tabs can watch at once — each gets its own peer connection fanned from the one graph tee. `--video-codec` video (h264 by default) + `--audio-codec` audio (opus is the most broadly supported). `--token` gates the WHEP endpoint; `--no-open` suppresses the browser auto-launch (also never opened with `--json`). |
 | `--to`    | `livekit[:room]` | Publish into a LiveKit **room** (default a random name) as a send-only H264 + OPUS participant. Needs `--url`/`--api-key`/`--api-secret` (or `LIVEKIT_WEBSOCKET_URL`/`LIVEKIT_API_KEY`/`LIVEKIT_API_SECRET`); requires opus, which is the default. The CLI mints its own publisher token locally, so a separate subscriber only needs the same room name + creds. |
 | `--to`    | `cloudflare` | Publish into a **Cloudflare Realtime SFU** session as a send-only H264 + `--audio-codec` peer (opus recommended). Needs `--app-id`/`--token` (or `CLOUDFLARE_APPID`/`CLOUDFLARE_API_TOKEN`). Cloudflare allocates the session id, so the sink prints it plus the track names; a subscriber pulls the media by (session id, track name). |
+| `--to`    | `sip:<uri>` | **Call a SIP phone** and send it the stream: send-only audio + video, offered in the graph's codecs so the frames relay unchanged. With an opus graph it offers opus, then PCMU/PCMA, and if the phone picks G.711 the sink transcodes to it. Video is the `--video-codec` (h264 by default); a phone with no video gets an audio-only call, unless `--video-codec` was given, which then fails the run. `-u`/`--password` authenticate if challenged. The route ends when the call is hung up (once every sink has ended). Needs the `sip:`/`sips:` scheme: unlike `--from`, a bare `user@host` here is a file name. |
 
 #### Forcing one codec (`--audio-codec` / `--video-codec`)
 
@@ -438,6 +440,29 @@ sipsorcery route --from testpattern --to web                 # open http://local
 sipsorcery route --from sip:music@iptel.org --to web --scope
 ```
 
+#### The `sip:` sink (watch on a SIP phone)
+
+`--to sip:<uri>` places a SIP call and sends the stream down it, so any SIP phone can be the viewer. The
+[Softphone v2 example](../../examples/Softphonev2/desktop/README.md) suits it: started with `--auto-answer`
+it takes the call, shows the video and plays the audio, and its diagnostics panel (F12) adds what the
+browser page doesn't have: *Call details* (the codecs, resolution and encryption the call agreed),
+*Call quality* (the loss, jitter and frame rate of what it receives) and *Network*, whose sliders drop a
+share of the packets to see how the stream copes.
+
+```bash
+Softphone.exe --port 5080 --profile view --auto-answer      # in examples/Softphonev2/desktop: dotnet run -- --port 5080 ...
+sipsorcery route --from testpattern --to sip:view@127.0.0.1:5080
+sipsorcery route --from testpattern --to sip:view@127.0.0.1:5080 --to sip:view@127.0.0.1:5080   # two calls at once: it takes both
+sipsorcery route --from whep:https://b.siobud.com/api/whep --token key --to sip:view@127.0.0.1:5080 --video-codec h264
+sipsorcery route --from testpattern --to sip:1001@pbx.example.com -u 1000 --password secret   # through a PBX
+```
+
+The call is offered send-only, in the graph's codecs, so nothing is transcoded unless the phone only takes
+G.711 audio. The softphone takes H264 and VP8 video. A receiving source (`whep:`, `livekit:`, `cloudflare:`)
+that was free to take any codec may get one the call didn't agree; the sink then says so and sends only
+audio, and pinning the codec with `--video-codec` fixes it. The route runs until ctrl-c or `--duration`,
+or until the phone hangs up (with several `sip:` sinks, until they all have). Media is plain RTP: no SRTP.
+
 #### The `browser` source (Chrome as the publisher)
 
 `--from browser` is the mirror of the `web` sink: instead of the CLI streaming *to* a browser, a
@@ -479,9 +504,9 @@ the previous tab went away takes over cleanly.
 The `livekit:` and `cloudflare:` **source and sink** are both wired — publish into a room / SFU session,
 and subscribe to (pull) one — so running the two in separate processes is a full round trip
 (`route --from testpattern --to cloudflare` in one, `route --from cloudflare:<id> --to web` in another).
-`sip:` as a sink is recognised but reports it is not wired into `route` yet; it becomes a `route` edge in
-a later version, at which point `route --from sip:… --to livekit:room` bridges a call into a room with no
-bespoke command.
+`sip:` is a sink as well as a source, so a call can be fed from any source as well as forwarded to any
+sink: `route --from livekit:demo-room --to sip:bob@pbx.example.com` puts a LiveKit room on a phone, and
+`route --from sip:music@iptel.org --to sip:bob@pbx.example.com` relays one call's audio into another.
 
 ### Two-way routes
 
@@ -586,7 +611,7 @@ and STUN/TURN/ICE
 connectivity checks, including Cloudflare TURN. SIP DNS resolution and further verbs are planned.
 
 Early. The `route` engine carries audio and video over a single source → N sinks (a free tee), with
-`whep:`/`browser`/`sip:`/`livekit:`/`cloudflare:` sources, `whip:`/`web`/`livekit:`/`cloudflare` sinks and an
+`whep:`/`browser`/`sip:`/`livekit:`/`cloudflare:` sources, `whip:`/`web`/`livekit:`/`cloudflare`/`sip:` sinks and an
 ffmpeg-backed audio-scope transform wired in. Two-way routes (`--duplex`, automatic with an agent) add the duplex
 case, with `web`, `term`, a local Azure voice `agent`, an `openai` Realtime agent and a `sip:` phone peer (transcoded G.711 ↔ Opus)
 as the endpoints, the agents each with an optional lip-synced `--avatar`. Streaming verbs default to
