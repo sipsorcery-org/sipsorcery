@@ -1201,6 +1201,7 @@ namespace SIPSorcery.Net
 
                 foreach (var announcement in sdp.Media)
                 {
+                    announcement.ApplyParsedFormatOrder();
                     announcement.ApplyParsedRtcpFeedback();
                 }
 

@@ -263,6 +263,12 @@ namespace SIPSorcery.Net
                 return;
             }
 
+            if (Media is not (SDPMediaTypesEnum.application or SDPMediaTypesEnum.message))
+            {
+                // Every format takes at least one character and a separator, which bounds how many there can be.
+                ReserveParsedFormatOrder((formatList.Length + 1) / 2);
+            }
+
             foreach (var formatIDRange in formatList.SplitAny())
             {
                 var formatIDSpan = formatList[formatIDRange];
@@ -278,10 +284,16 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
+                    if (!int.TryParse(formatIDSpan, out var id))
+                    {
+                        continue;
+                    }
+
+                    _parsedFormatOrder[_parsedFormatOrderCount++] = id;
+
                     // The range check is cheaper than the lookup and rejects every dynamic payload type, which is
                     // most of the formats a WebRTC offer lists, so it runs first.
-                    if (int.TryParse(formatIDSpan, out var id)
-                        && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN
+                    if (id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN
                         && !MediaFormats.ContainsKey(id))
                     {
                         if (SDPAudioVideoMediaFormat.IsWellKnownFormat(id))
@@ -790,6 +802,120 @@ namespace SIPSorcery.Net
                 {
                     AddExtra(line);
                 }
+            }
+        }
+
+        /// <summary>
+        /// The payload types the media line lists, in its order, collected while parsing. Static payload types are
+        /// added to the media formats when the media line is parsed but dynamic ones only when their rtpmap attribute
+        /// is, so the formats are put back in the media line's order once the whole SDP has been parsed. Rented from
+        /// the shared pool and returned by <see cref="ApplyParsedFormatOrder"/>.
+        /// </summary>
+        private int[] _parsedFormatOrder;
+        private int _parsedFormatOrderCount;
+
+        /// <summary>
+        /// Makes room to record another <paramref name="additional"/> payload types from a media line.
+        /// </summary>
+        private void ReserveParsedFormatOrder(int additional)
+        {
+            var required = _parsedFormatOrderCount + additional;
+            if (_parsedFormatOrder is { } current && current.Length >= required)
+            {
+                return;
+            }
+
+            var order = ArrayPool<int>.Shared.Rent(required);
+            if (_parsedFormatOrder is { } previous)
+            {
+                Array.Copy(previous, order, _parsedFormatOrderCount);
+                ArrayPool<int>.Shared.Return(previous);
+            }
+
+            _parsedFormatOrder = order;
+        }
+
+        /// <summary>
+        /// Called at the end of parsing to put the media formats in the order the media line lists them, which is
+        /// the order of preference (RFC 3264 section 5.1). Formats the media line does not list but that have an
+        /// rtpmap attribute come after the listed ones, in the order they were parsed.
+        /// </summary>
+        internal void ApplyParsedFormatOrder()
+        {
+            var order = _parsedFormatOrder;
+            if (order is null)
+            {
+                return;
+            }
+
+            var orderCount = _parsedFormatOrderCount;
+            _parsedFormatOrder = null;
+            _parsedFormatOrderCount = 0;
+
+            try
+            {
+                if (MediaFormats.Count > 1)
+                {
+                    SortMediaFormats(order.AsSpan(0, orderCount));
+                }
+            }
+            finally
+            {
+                ArrayPool<int>.Shared.Return(order);
+            }
+        }
+
+        /// <summary>
+        /// Puts the media formats in the order of <paramref name="order"/>, with any it does not list last in
+        /// their current order. Does nothing if they are already in that order.
+        /// </summary>
+        private void SortMediaFormats(ReadOnlySpan<int> order)
+        {
+            var count = MediaFormats.Count;
+            var keys = ArrayPool<long>.Shared.Rent(count);
+            var formats = ArrayPool<KeyValuePair<int, SDPAudioVideoMediaFormat>>.Shared.Rent(count);
+            try
+            {
+                // Each format is ranked by where the order first lists it or, if it is not listed, after all the
+                // listed ones by its current position. Ranks are unique, so the current position is packed in the
+                // low half only to find the format again after sorting.
+                var position = 0;
+                var previousRank = -1;
+                var inOrder = true;
+                foreach (var entry in MediaFormats)
+                {
+                    var rank = order.IndexOf(entry.Key);
+                    if (rank < 0)
+                    {
+                        rank = order.Length + position;
+                    }
+
+                    inOrder &= rank > previousRank;
+                    previousRank = rank;
+                    keys[position] = ((long)rank << 32) | (uint)position;
+                    formats[position] = entry;
+                    position++;
+                }
+
+                if (inOrder)
+                {
+                    return;
+                }
+
+                Array.Sort(keys, 0, count);
+
+                // A dictionary with nothing removed since it was cleared enumerates in the order its entries were added.
+                MediaFormats.Clear();
+                for (var i = 0; i < count; i++)
+                {
+                    var entry = formats[(int)keys[i]];
+                    MediaFormats.Add(entry.Key, entry.Value);
+                }
+            }
+            finally
+            {
+                ArrayPool<long>.Shared.Return(keys);
+                ArrayPool<KeyValuePair<int, SDPAudioVideoMediaFormat>>.Shared.Return(formats, clearArray: true);
             }
         }
 

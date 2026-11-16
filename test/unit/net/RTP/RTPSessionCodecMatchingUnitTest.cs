@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net.UnitTests.Helpers;
 using SIPSorcery.SIP.App;
@@ -300,6 +301,63 @@ a=sendrecv");
                 Assert.Equal(2, caps.Count);
                 Assert.Equal("PCMA", caps[0].Name());
                 Assert.Equal("PCMU", caps[1].Name());
+            }
+        }
+
+        /// <summary>
+        /// An offer that lists a dynamic payload type (Opus) before static
+        /// ones (PCMU, PCMA) keeps that order through the answerer's parse:
+        /// the answerer's first negotiated format and the first format in
+        /// its answer are the offerer's first, even though the answerer's
+        /// own track lists PCMU first.
+        /// </summary>
+        [Fact]
+        public void OnOffer_DynamicPayloadTypeListedFirstLeadsNegotiation()
+        {
+            var offererTrack = new MediaStreamTrack(
+                SDPMediaTypesEnum.audio, false,
+                new List<SDPAudioVideoMediaFormat>
+                {
+                    new SDPAudioVideoMediaFormat(AudioCommonlyUsedFormats.OpusWebRTC),
+                    new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+                    new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMA),
+                });
+            var answererTrack = new MediaStreamTrack(
+                SDPMediaTypesEnum.audio, false,
+                new List<SDPAudioVideoMediaFormat>
+                {
+                    new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+                    new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMA),
+                    new SDPAudioVideoMediaFormat(AudioCommonlyUsedFormats.OpusWebRTC),
+                });
+
+            using (var offerer = new RtpSessionBuilder().WithTrack(offererTrack).Build())
+            using (var answerer = new RtpSessionBuilder().WithTrack(answererTrack).Build())
+            {
+                List<AudioFormat> answererNegotiated = null;
+                answerer.OnAudioFormatsNegotiated += formats => answererNegotiated = formats;
+
+                SDP offer = SDP.ParseSDPDescription(offerer.CreateOffer(IPAddress.Loopback).ToString());
+                Assert.Equal("111 0 8 101", offer.Media[0].GetFormatListToString());
+
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    answerer.SetRemoteDescription(SdpType.offer, offer));
+
+                Assert.NotNull(answererNegotiated);
+                Assert.Equal(new[] { 111, 0, 8 }, answererNegotiated.Select(f => f.FormatID));
+                Assert.Equal("OPUS", answererNegotiated[0].FormatName);
+
+                SDP answer = SDP.ParseSDPDescription(answerer.CreateAnswer(IPAddress.Loopback).ToString());
+                Assert.Equal(111, answer.Media[0].MediaFormats.Keys.First());
+
+                List<AudioFormat> offererNegotiated = null;
+                offerer.OnAudioFormatsNegotiated += formats => offererNegotiated = formats;
+
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    offerer.SetRemoteDescription(SdpType.answer, answer));
+
+                Assert.NotNull(offererNegotiated);
+                Assert.Equal(111, offererNegotiated[0].FormatID);
             }
         }
 
