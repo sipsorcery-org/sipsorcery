@@ -36,7 +36,7 @@ This repository includes **[70+ example projects](examples/)** demonstrating var
 - **[WebRTC Examples](examples/WebRTCExamples/)** - Video streaming, data channels, signaling patterns ([README](examples/WebRTCExamples/README.md))
 - **[SIP Scenarios](examples/SIPScenarios/)** - Call transfers, load testing, complex call flows ([README](examples/SIPScenarios/README.md))
 - **[WebRTC Scenarios](examples/WebRTCScenarios/)** - Advanced WebRTC use cases ([README](examples/WebRTCScenarios/README.md))
-- **[Softphone](examples/Softphonev2/desktop)** - Full-featured Windows Forms softphone application ([README](examples/Softphone/README.md))
+- **[Softphone](examples/Softphonev2)** - Full-featured Windows Forms softphone application ([README](examples/Softphonev2/desktop/README.md))
 - **[OpenAI](examples/OpenAIExamples/)** - Example applications for interacting with OpenAI's Realtime WebRTC and SIP end points ([README](examples/OpenAIExamples/GetStarted/README.md))
 
 ---
