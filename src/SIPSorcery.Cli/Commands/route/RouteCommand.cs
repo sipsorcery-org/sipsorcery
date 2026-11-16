@@ -143,8 +143,9 @@ public sealed class RouteCommand : CommandBase
                           "in Matroska), \"play\" (ffplay), \"null\" (discard), \"-\" (video bitstream on stdout), \"-:mkv\" or \"term\" " +
                           "(video + audio as Matroska on stdout, e.g. | mpv -), whip:<url> (publish to a WebRTC endpoint), " +
                           "web[:port] (self-host a WHEP server + player page on localhost, default port 8080, to watch in a browser), " +
-                          "livekit[:room] (publish into a LiveKit room; needs --url/--api-key/--api-secret) or " +
-                          "cloudflare (publish to a Cloudflare Realtime SFU session; needs --app-id/--token). " +
+                          "livekit[:room] (publish into a LiveKit room; needs --url/--api-key/--api-secret), " +
+                          "cloudflare (publish to a Cloudflare Realtime SFU session; needs --app-id/--token) or " +
+                          "sip:<uri> (call a SIP phone and send it the stream; -u/--password if challenged). " +
                           "Repeat --to to fan out to several sinks at once. In a two-way route, one of: web[:port] (a browser as " +
                           "microphone + speaker), term (the terminal: microphone via ffmpeg in, Matroska on stdout out), agent, " +
                           "openai or sip:<uri>.",
