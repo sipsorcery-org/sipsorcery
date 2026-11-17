@@ -1526,7 +1526,7 @@ chrome.webview.addEventListener("message", async (e) => {
     else if (msg.type === "text") onTextReceived(msg.id, msg.text);
     else if (msg.type === "dtmf-in") onDtmfIn(msg.id, msg.digit);
     else if (msg.type === "video-refused") { if (e) { e.addingVideo = false; e.videoRefused = true; } log("they didn't take video"); render(); }
-    else if (msg.type === "log") log(msg.text, true);
+    else if (msg.type === "log") log(msg.text, true, !!msg.full);
     else if (msg.type === "contacts") onContacts(msg.contacts);
   } catch (err) {
     log(`${msg.type} failed: ${err.message}`);

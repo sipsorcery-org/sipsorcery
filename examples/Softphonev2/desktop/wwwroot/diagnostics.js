@@ -3,6 +3,7 @@
 import { entries, nextVideo, params, render, sel, setCamera } from "./app.js";
 import { closeMenu, openMenu, showLoss } from "./menus.js";
 import { renderDetails, renderQuality } from "./quality.js";
+import { clearLog, copyLog, initLogView } from "./logview.js";
 import { closeSnapshot, renderSnap } from "./snapshots.js";
 import { renderStreams } from "./streams.js";
 import { $, ICON, post } from "./util.js";
@@ -110,7 +111,7 @@ export const currentDevTab = () => devTab;
 export function setDevTab(tab) {
   devTab = tab;
   for (const b of document.querySelectorAll(".dev-tab")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
-  $("log").hidden = tab !== "log";
+  $("paneLog").hidden = tab !== "log";
   $("paneDetails").hidden = tab !== "details";
   if ($("paneStreams")) $("paneStreams").hidden = tab !== "streams";
   $("paneQuality").hidden = tab !== "quality";
@@ -208,12 +209,13 @@ export function initDiagnostics() {
     if (!$("secPop").hidden && !$("secPop").contains(ev.target) && !$("infoLock").contains(ev.target)) setSecurityOpen(false);
   }, true);
   for (const b of document.querySelectorAll(".dev-tab")) b.onclick = () => setDevTab(b.dataset.tab);
+  initLogView();
   $("logCopy").onclick = () => {
-    post({ type: "copy", text: $("log").textContent });
+    copyLog();
     $("logCopy").textContent = "Copied";
     setTimeout(() => { $("logCopy").textContent = "Copy log"; }, 1500);
   };
-  $("logClear").onclick = () => { $("log").textContent = ""; };
+  $("logClear").onclick = clearLog;
   addEventListener("resize", fitDevTabs);
   fitDevTabs();
   try {

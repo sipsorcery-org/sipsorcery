@@ -119,7 +119,9 @@ internal sealed class MainForm : Form
             Post(HistoryMessage());
         };
         LibraryLog.Line += WriteLog;
-        _phone.Trace += LogLine;
+        // Whole SIP messages: to the log file, and to the page, whose debug log shows them under
+        // each message's line when "Full SIP messages" is on.
+        _phone.Trace += t => { LogLine(t); Post(new { type = "log", text = t, full = true }); };
         _phone.TxLostChanged += (c, lost) => Post(new { type = "media-health", id = c.Id, txLost = lost });
         _phone.Quality += (c, q) => Post(new { type = "quality", id = c.Id, q.Dir, q.Kind, q.LossPct, q.Lost, q.JitterMs, q.RttMs });
         _phone.DtmfReceived += (c, digit, via) => Post(new { type = "dtmf-in", id = c.Id, digit, via });
@@ -352,7 +354,9 @@ internal sealed class MainForm : Form
                     // The host's clipboard rather than the page's, which needs permissions the
                     // page may not have.
                     Clipboard.SetText((string)msg["text"]!);
-                    WriteLog($"copied {msg["text"]}");
+                    // An address says what it was; the debug log or an SDP, how much.
+                    var copied = (string)msg["text"]!;
+                    WriteLog(copied.Contains('\n') || copied.Length > 200 ? $"copied {copied.Split('\n').Length} lines" : $"copied {copied}");
                     break;
                 case "loss":
                     _phone.SetLoss((int?)msg["audio"] ?? 0, (int?)msg["video"] ?? 0);

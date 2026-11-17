@@ -4,6 +4,8 @@
   --text: #1b2925; --muted: #677670; --accent: #1f6f5c; --accent-hover: #185a4a; --accent-ink: #ffffff;
   --ok: #2f8a6c; --warn-ink: #8a5a12; --warn-bg: #fbf1df; --danger: #b3354e; --danger-soft: #fbe8ec; --danger-border: #f3cbd4; --danger-fill: #b3354e; --tile: #dcebe3; --tile-ink: #5b7268;
   --held: #c48a2c;     /* on hold, in Diagnostics' Streams */
+  /* The debug log's tags (logview.js). */
+  --tag-sip: #1f6f5c; --tag-ice: #6a4fb3; --tag-dtls: #1d6fa5; --tag-rtp: #8a5a12; --tag-call: #a1446b; --tag-app: #6b7a74;
   --seg-on: #ffffff;   /* a segmented control's chosen option: raised, not coloured */
   --thumb: #ffffff;    /* a slide switch's thumb */
   --radius: 12px; --radius-sm: 8px;
@@ -18,6 +20,7 @@
     --text: #e4ece8; --muted: #9aa9a3; --accent: #3ea486; --accent-hover: #4bb594; --accent-ink: #06130f;
     --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --danger-border: #5a2c37; --danger-fill: #cf3a55; --tile: #1f3a31; --tile-ink: #a9c2b8;
     --held: #d9a54a;
+    --tag-sip: #4cc29b; --tag-ice: #b29cf0; --tag-dtls: #7cc0ee; --tag-rtp: #e6b86a; --tag-call: #e98fb6; --tag-app: #9aaba4;
     --seg-on: #33423c;
     --thumb: #c9d6d0;
     color-scheme: dark;
@@ -28,6 +31,7 @@
   --text: #e4ece8; --muted: #9aa9a3; --accent: #3ea486; --accent-hover: #4bb594; --accent-ink: #06130f;
   --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --danger-border: #5a2c37; --danger-fill: #cf3a55; --tile: #1f3a31; --tile-ink: #a9c2b8;
   --held: #d9a54a;
+  --tag-sip: #4cc29b; --tag-ice: #b29cf0; --tag-dtls: #7cc0ee; --tag-rtp: #e6b86a; --tag-call: #e98fb6; --tag-app: #9aaba4;
   --seg-on: #33423c;
   --thumb: #c9d6d0;
   color-scheme: dark;
@@ -811,7 +815,31 @@ button.sx-ev:hover b { text-decoration: underline; }
 }
 .dev-snap-back:hover { background: var(--surface-2); }
 .dev-pane[hidden] { display: none; }
-#log { margin: 0; padding: 8px 14px; font: 12px/1.45 Consolas, monospace; white-space: pre-wrap; outline: none; }
+/* The debug log: its tag chips, then the lines, each with its time and tag. */
+.dev-log { display: flex; flex-direction: column; overflow: hidden; }
+.dev-log[hidden] { display: none; }
+.lg-chips { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 7px 14px 6px; border-bottom: 1px solid var(--border); }
+.lg-chip {
+  display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: 11px;
+  background: none; font: 12px var(--font, inherit); color: var(--muted); cursor: pointer;
+}
+.lg-chip[aria-pressed="true"] { color: var(--text); border-color: var(--c, var(--accent)); background: color-mix(in srgb, var(--c, var(--accent)) 12%, transparent); font-weight: 600; }
+.lg-chip:disabled { opacity: .45; cursor: default; }
+.lg-chip:focus-visible, .lg-all:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.lg-chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+.lg-chip[aria-pressed="false"] i { background: none; box-shadow: inset 0 0 0 1.5px var(--c); }
+.lg-chip em { font-style: normal; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lg-full-btn { margin-left: 6px; }
+.lg-all { border: 0; background: none; padding: 0 4px; font: 12px inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
+#log { flex: 1 1 auto; min-height: 0; overflow: auto; margin: 0; padding: 8px 14px; font: 12px/1.45 Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; outline: none; }
+#log .lg-l { display: block; padding-left: 19ch; text-indent: -19ch; }   /* wrapped lines hang under the text */
+#log .lg-t { color: var(--muted); }
+#log .lg-g { display: inline-block; width: 6ch; text-indent: 0; font-weight: 700; color: var(--c); }
+#log .lg-l.warn { background: var(--warn-bg); }
+#log .lg-full { display: block; margin: 0 0 4px 19ch; padding-left: 8px; border-left: 2px solid color-mix(in srgb, var(--tag-sip) 50%, transparent); color: var(--muted); }
+#log .lg-none { color: var(--muted); font-family: inherit; }
+.g-sip { --c: var(--tag-sip); } .g-ice { --c: var(--tag-ice); } .g-dtls { --c: var(--tag-dtls); }
+.g-rtp { --c: var(--tag-rtp); } .g-call { --c: var(--tag-call); } .g-app { --c: var(--tag-app); }
 .dev-net { padding: 12px 16px; }
 body.dev-resizing { cursor: ns-resize; user-select: none; }
 

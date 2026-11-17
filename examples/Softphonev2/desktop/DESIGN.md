@@ -1087,6 +1087,35 @@ The bars also show **one-way audio**, the classic SIP/NAT fault. If no audio pac
 reports show our audio isn't reaching them (our source isn't listed, or its sequence number has
 stopped), your row turns red with "X isn't getting your audio".
 
+## Debug log (diagnostics mode)
+
+The first tab in Diagnostics (F12): everything the host and the page log, newest at the bottom,
+following the newest line unless you've scrolled up (`logview.js`). Each line has its time and a
+coloured tag for what it's about:
+
+| Tag | Its lines |
+|---|---|
+| SIP | Each SIP message, one line (`-> udp:… INVITE …`, `<- … 200 Ok`); registration; the WebSocket server connection (web) |
+| ICE | A WebRTC call's SIP leg: our candidates, checking (controlling or controlled), the pair it connected on (`host UDP [::]:64116 ⇄ host UDP [fdec:…]:64288`), failed or disconnected |
+| DTLS | The handshake after ICE: starting, as client or server (`a=setup`), done (the certificate matched the SDP's fingerprint, so the SRTP keys are set), failed |
+| RTP / RTCP | The media: the codecs agreed, the first packet of each kind from them (and from where), RTCP reports, RTP timeouts, SRTP errors, real-time text, simulated loss |
+| Calls | Calls starting and ending, hold, transfers, DTMF, the history |
+| App | The rest: devices, the page's view, accounts, and the relay to the page (known to work, so not the media) |
+
+Lines are tagged by what they say (`tagOf`), so the host, the page and the web softphone's host
+log as they always have. The host adds the ICE, DTLS and first-packet lines (`Phone.cs`,
+`LogIceAndDtls`), each as `call N: ICE: …`, so the tag is the word after the call's number. The
+library's warnings are tagged by their class and text (`sipsorcery warning: RTPSession: DTLS …`
+is DTLS). Lines saying something failed, and the library's warnings, are shaded.
+
+Above the lines, a chip per tag with how many lines it has: a click shows or hides them, and
+*Show all* brings back any hidden. *Full SIP messages* (off by default, and only with SIP shown)
+shows each SIP message's whole text under its line; the host sends them as `log {text, full:
+true}` after the line (they always go to the log file). The chips you leave off are remembered
+(`localStorage`). *Copy log* copies the lines shown, as shown; the host logs that as *copied N
+lines* rather than the whole text again. The log keeps the last 5,000 lines (the oldest go a
+thousand at a time).
+
 ## Saved diagnostics
 
 Call details, Streams and Call quality show the calls that are going, and clear as a call ends.

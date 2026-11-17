@@ -1697,7 +1697,9 @@ public sealed class Phone : IDisposable
             if (c.Rtp != rtp) return;
             c.Sources[kind] = pkt.Header.SyncSource;
             c.LastFrom[kind] = from;
-            c.RxPackets.AddOrUpdate(kind, 1, (_, n) => n + 1);
+            // The debug log's RTP line: when each kind first arrives on this session, and from where.
+            if (c.RxPackets.TryAdd(kind, 1)) Log?.Invoke($"call {c.Id}: RTP: first {kind} from them, from {Ep(from)} (SSRC {pkt.Header.SyncSource}, pt {pkt.Header.PayloadType})");
+            else c.RxPackets.AddOrUpdate(kind, 1, (_, n) => n + 1);
             c.LastRx[kind] = DateTime.Now;
             if (kind == SDPMediaTypesEnum.audio) c.TimedOut = null;
         };
@@ -1723,9 +1725,9 @@ public sealed class Phone : IDisposable
             c.Rtt?.Dispose();
             c.Rtt = null;
             AttachDataChannelText(c, pc, theirOffer);
+            LogIceAndDtls(c, pc);
             pc.onconnectionstatechange += state =>
             {
-                Log?.Invoke($"WebRTC media (ICE, DTLS) {state}");
                 if (state == RTCPeerConnectionState.failed && c.Rtp == pc) { c.Ua?.Hangup(); End(c, "Media connection failed"); }
                 // The far end closed its media without a BYE: a browser phone's page reloaded or
                 // closed, say (DTLS close_notify, with no BYE sent). The call would otherwise stay
@@ -1748,6 +1750,48 @@ public sealed class Phone : IDisposable
         }
         else AttachText(c, rtp);
         return rtp;
+    }
+
+    // The debug log's ICE and DTLS lines for a WebRTC call's SIP leg: candidates gathered, the
+    // checks and the pair they settled on, and the DTLS handshake that follows (which sets the
+    // SRTP keys). The page tags them by their first word after "call N: ".
+    private void LogIceAndDtls(Call c, RTCPeerConnection pc)
+    {
+        var ice = pc.GetRtpChannel();
+        bool iceUp = false;
+        string Cand(RTCIceCandidate? x) => x == null ? "?" : $"{x.type} {x.protocol.ToString().ToUpperInvariant()} {(x.address.Contains(':') ? $"[{x.address}]" : x.address)}:{x.port}";
+        string Kinds() => string.Join(", ", ice.Candidates.GroupBy(x => x.type).Select(g => $"{g.Count()} {g.Key}"));
+        pc.onicegatheringstatechange += s =>
+        {
+            if (c.Rtp != pc) return;
+            if (s == RTCIceGatheringState.complete) Log?.Invoke($"call {c.Id}: ICE: gathered our candidates: {Kinds()}");
+        };
+        pc.onicecandidateerror += (x, err) => { if (c.Rtp == pc) Log?.Invoke($"call {c.Id}: ICE: candidate {Cand(x)}: {err}"); };
+        pc.oniceconnectionstatechange += s =>
+        {
+            if (c.Rtp != pc) return;
+            var line = s switch
+            {
+                RTCIceConnectionState.checking => $"checking, with {Kinds()} of ours; we're {(ice.IsController ? "controlling" : "controlled")}",
+                RTCIceConnectionState.connected => $"connected: {Cand(ice.NominatedEntry?.LocalCandidate)} ⇄ {Cand(ice.NominatedEntry?.RemoteCandidate)}",
+                RTCIceConnectionState.failed => "failed: no candidate pair got an answer to its checks",
+                RTCIceConnectionState.disconnected => "disconnected: checks to them stopped getting answers",
+                _ => s.ToString(),
+            };
+            Log?.Invoke($"call {c.Id}: ICE: {line}");
+            if (s == RTCIceConnectionState.connected && !iceUp)
+            {
+                iceUp = true;
+                Log?.Invoke($"call {c.Id}: DTLS: handshake starting, we're the {(pc.IceRole == IceRolesEnum.active ? "client (a=setup:active)" : "server (a=setup:passive)")}");
+            }
+        };
+        pc.onconnectionstatechange += s =>
+        {
+            if (c.Rtp != pc) return;
+            if (s == RTCPeerConnectionState.connected && iceUp) Log?.Invoke($"call {c.Id}: DTLS: handshake done, their certificate matches their SDP's fingerprint: SRTP keys set");
+            else if (s == RTCPeerConnectionState.failed && iceUp) Log?.Invoke($"call {c.Id}: DTLS: failed (the handshake, or the connection after it)");
+            else if (s is RTCPeerConnectionState.failed or RTCPeerConnectionState.closed) Log?.Invoke($"call {c.Id}: media connection {s}");
+        };
     }
 
     private static bool OffersSavp(string sdp)

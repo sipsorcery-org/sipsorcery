@@ -1,6 +1,8 @@
 // Small helpers the page's modules share: elements by id, HTML escaping, messages to the host, the
 // log, names from addresses, and the icons.
 
+import { addLog } from "./logview.js";
+
 export const $ = (id) => document.getElementById(id);
 export const escHtml = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
 export const post = (msg) => chrome.webview.postMessage(msg);
@@ -36,14 +38,11 @@ export const ICON = {
   hangup: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7a2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91"/><path d="M22 2 2 22"/></svg>',
 };
 
-export function log(text, fromHost = false) {
+// A line for the debug log (logview.js, which tags it): the page's own, which also goes to the
+// host's log file, or one from the host (full: a whole SIP message).
+export function log(text, fromHost = false, full = false) {
   if (!fromHost) post({ type: "log", text });
-  const el = $("log");
-  // Follows the newest line, unless you've scrolled up to read something.
-  const atEnd = el.hidden || el.scrollHeight - el.scrollTop - el.clientHeight < 24;
-  el.textContent += text + "\n";
-  if (el.textContent.length > 60000) el.textContent = el.textContent.slice(-40000);
-  if (atEnd) el.scrollTop = el.scrollHeight;
+  addLog(text, full);
 }
 
 // "Alice <sip:alice@example.com>" → "Alice"; "sip:bob@host" → "Bob".

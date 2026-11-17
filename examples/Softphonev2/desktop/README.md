@@ -60,6 +60,7 @@ The page (`wwwroot`, shared with the web softphone in [../web](../web/README.md)
 | `keypad.js`, `rtt.js`, `transfer.js` | The keypad (DTMF), real-time text, and transfer. |
 | `quality.js` | Call details and Call quality. |
 | `streams.js` | Streams: each call's media lines, as its offers and answers left them and as they're going. |
+| `logview.js` | The debug log: each line tagged (SIP, ICE, DTLS, RTP / RTCP, Calls, App), with a chip per tag to show or hide them, and full SIP messages on demand. |
 | `snapshots.js` | Saved diagnostics: a call's Call details, Streams and Call quality as it ended, kept with its history entry and opened from its row in Recent. |
 | `diagnostics.js` | The F12 panel, the test sources' menu items, and the security popover. |
 | `accounts.js`, `contacts.js`, `history.js` | Call from and Manage accounts; contacts and the People view; call history. |
@@ -84,8 +85,11 @@ bottom of the window, and F12 again (or its ×) closes it. It's closed at every 
 window. The height you leave it at is remembered per profile and used whenever it opens.
 It has five tabs:
 
-- **Debug log**: everything the host and page log (SIP, media, the relay, the page), following the newest line unless you've
-  scrolled up. *Copy log* puts the whole log on the clipboard; *Clear* empties it.
+- **Debug log**: everything the host and page log, each line with its time and a coloured tag (*SIP*, *ICE*,
+  *DTLS*, *RTP / RTCP*, *Calls*, *App*), following the newest line unless you've scrolled up. A chip per tag,
+  with its count, shows or hides its lines; *Full SIP messages* shows each SIP message's whole text under
+  its line (see [Debug log](DESIGN.md#debug-log-diagnostics-mode)). *Copy log* puts the lines shown on the
+  clipboard; *Clear* empties it.
 - **Call details**: how the selected call was set up (see [Call details](DESIGN.md#call-details)).
 - **Streams**: a call's audio, video and text lines: what its offers and answers agreed, what's
   going each way, a timeline of the call, and each offer and answer's SDP (see
