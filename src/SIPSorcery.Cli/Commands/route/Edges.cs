@@ -20,6 +20,7 @@
 // 18 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
 // 23 Jun 2026	Aaron Clauson	Wired the sip: source (with an optional ffmpeg audio-scope video)
 //                              and the whip: sink so a call can be bridged to a WebRTC endpoint.
+// 16 Nov 2026	Aaron Clauson	Wired the sip: sink, so a stream can be sent to a SIP phone.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -288,16 +289,7 @@ public static class EdgeFactory
         // Offer OPUS first then a G.711 fallback when the graph is OPUS, so the call is carried in OPUS
         // end to end whenever the far end supports it and only falls back to (and transcodes) G.711 when
         // that is all there is. When the user forced a G.711 graph (--audio-codec pcmu/pcma) offer just it.
-        List<AudioFormat> offered = graphFormat.Codec == AudioCodecsEnum.OPUS
-            ? new List<AudioFormat>
-              {
-                  AudioCommonlyUsedFormats.OpusWebRTC,
-                  new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-                  new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA)
-              }
-            : new List<AudioFormat> { graphFormat };
-
-        ISourceNode source = new SipSourceNode(uri, offered, options.SipUsername, options.SipPassword, options.TimeoutSeconds, logger);
+        ISourceNode source = new SipSourceNode(uri, SipAudioOffer(graphFormat), options.SipUsername, options.SipPassword, options.TimeoutSeconds, logger);
 
         // The scope decodes the call audio for its waveform; it sits inside the transcode so it sees the
         // negotiated codec directly (it decodes by the frame's format, so it handles G.711 or OPUS).
@@ -313,6 +305,38 @@ public static class EdgeFactory
 
         return source;
     }
+
+    /// <summary>
+    /// Builds a sip: sink: a SIP call that the graph's media is sent down, send-only. It offers the
+    /// graph's codecs so the frames relay unchanged. With an Opus graph a G.711 fallback follows, as
+    /// the sip: source offers, and the sink transcodes to it if that's what the phone takes. Video is
+    /// the graph's single send codec; when --video-codec pinned it, a call without it fails the run.
+    /// </summary>
+    private static ISinkNode CreateSipSink(string sipSpec, EdgeOptions options, ILogger logger)
+    {
+        if (!SipDestination.TryParse(sipSpec, out SIPURI uri, out string? error))
+        {
+            throw new EdgeException(error!);
+        }
+
+        return new SipSinkNode(uri, SipAudioOffer(ResolveAudioFormat(options)), ResolveSendVideoFormat(options),
+            videoRequired: ResolveVideoFormat(options) != null, options.SipUsername, options.SipPassword, options.TimeoutSeconds, logger);
+    }
+
+    /// <summary>
+    /// What a sip: edge offers for a graph codec: Opus first then a G.711 fallback when the graph is
+    /// Opus, so the call is carried in Opus whenever the far end supports it; just the codec when the
+    /// user forced a G.711 graph (--audio-codec pcmu/pcma).
+    /// </summary>
+    private static List<AudioFormat> SipAudioOffer(AudioFormat graphFormat) =>
+        graphFormat.Codec == AudioCodecsEnum.OPUS
+            ? new List<AudioFormat>
+              {
+                  AudioCommonlyUsedFormats.OpusWebRTC,
+                  new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+                  new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA)
+              }
+            : new List<AudioFormat> { graphFormat };
 
     /// <summary>
     /// Builds a livekit: sink: publish the graph's media into a LiveKit room. The room is the edge's
@@ -535,9 +559,12 @@ public static class EdgeFactory
 
             case "sip":
             case "sips":
-                throw new EdgeException(
-                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, -:mkv, term, whip:<url>, web[:port], livekit[:room], cloudflare). " +
-                    "A sip: call sink becomes a route sink in a later version.");
+                if (string.IsNullOrWhiteSpace(rest))
+                {
+                    throw new EdgeException("The sip sink needs a destination, e.g. --to sip:bob@192.168.0.10:5060.");
+                }
+                // Unlike a source, a sink needs the scheme: a bare user@host is too easily a file name.
+                return CreateSipSink(spec, options, logger);
 
             case "-:mkv":
             case "term":

@@ -52,6 +52,7 @@
     <Project Path="examples/OpenAIExamples/GetStartedSIP/GetStartedSIP.csproj" />
     <Project Path="examples/OpenAIExamples/GetStartedWebRTCAndSIP/GetStartedWebRTCAndSIP.csproj" />
     <Project Path="examples/OpenAIExamples/LocalFunctions/LocalFunctions.csproj" />
+    <Project Path="examples/OpenAIExamples/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj" />
   </Folder>
   <Folder Name="/examples/SIPExamples/">
     <Project Path="examples/SIPExamples/AsteriskIce/AsteriskIce.csproj" />
@@ -97,7 +98,7 @@
     <Project Path="examples/SIPScenarios/OnHoldScenario/Caller/Caller.csproj" />
   </Folder>
   <Folder Name="/examples/Softphone/">
-    <Project Path="examples/Softphone/SIPSorcery.SoftPhone.csproj" />
+    <Project Path="examples/Softphonev2/desktop/Softphonev2.Desktop.csproj" />
   </Folder>
   <Folder Name="/examples/WebRTCExamples/">
     <Project Path="examples/WebRTCExamples/AvatarPipeline/AvatarPipeline.csproj" />
@@ -147,7 +148,6 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/SIPSorcery.Cli/SIPSorcery.Cli.csproj" />
-    <Project Path="src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj" />
     <Project Path="src/SIPSOrcery.VP8/SIPSorcery.VP8.csproj" />
     <Project Path="src/SIPSorcery/SIPSorcery.csproj" />
     <Project Path="src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj" />

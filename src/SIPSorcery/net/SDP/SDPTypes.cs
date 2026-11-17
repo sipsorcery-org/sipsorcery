@@ -169,4 +169,30 @@ public class MediaStreamStatusType
                 return SEND_RECV_ATTRIBUTE;
         }
     }
+
+    /// <summary>
+    /// Gets the direction to answer a media stream with, as RFC 3264 section 6.1 has it: no more
+    /// than the answerer wants and no more than the offer allows. A sendonly offer is answered
+    /// recvonly or inactive, a recvonly offer sendonly or inactive and an inactive offer inactive.
+    /// </summary>
+    /// <param name="offered">The direction in the offer.</param>
+    /// <param name="local">The direction the answerer wants for the stream.</param>
+    /// <returns>The direction for the answer.</returns>
+    public static MediaStreamStatusEnum GetAnswerMediaStreamStatus(MediaStreamStatusEnum offered, MediaStreamStatusEnum local)
+    {
+        // We can send if we want to and they'll receive, and receive if we want to and they'll send.
+        bool send = IsSending(local) && IsReceiving(offered);
+        bool receive = IsReceiving(local) && IsSending(offered);
+
+        return send && receive ? MediaStreamStatusEnum.SendRecv :
+            send ? MediaStreamStatusEnum.SendOnly :
+            receive ? MediaStreamStatusEnum.RecvOnly :
+            MediaStreamStatusEnum.Inactive;
+    }
+
+    private static bool IsSending(MediaStreamStatusEnum status) =>
+        status == MediaStreamStatusEnum.SendRecv || status == MediaStreamStatusEnum.SendOnly;
+
+    private static bool IsReceiving(MediaStreamStatusEnum status) =>
+        status == MediaStreamStatusEnum.SendRecv || status == MediaStreamStatusEnum.RecvOnly;
 }

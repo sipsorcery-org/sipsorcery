@@ -34,11 +34,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Cli.Commands.Route;
+using SIPSorcery.Cli.Common;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
@@ -104,16 +104,9 @@ public sealed class SipBridgeParticipant : IBridgeParticipant, IConnectable
 
     public async Task StartAsync(CancellationToken ct)
     {
-        // Trace the full SIP messages (--verbose): the whole INVITE/answer/re-INVITE, headers and SDP body.
-        _sipTransport.SIPRequestOutTraceEvent += (local, remote, req) => LogSipMessage("sent to", remote, () => req.ToString());
-        _sipTransport.SIPRequestInTraceEvent += (local, remote, req) => LogSipMessage("received from", remote, () => req.ToString());
-        _sipTransport.SIPResponseInTraceEvent += (local, remote, resp) => LogSipMessage("received from", remote, () => resp.ToString());
-        _sipTransport.SIPResponseOutTraceEvent += (local, remote, resp) => LogSipMessage("sent to", remote, () => resp.ToString());
-
-        // Keep the call up: some softphones (e.g. MicroSIP) send in-dialog INFO/OPTIONS keepalives and hang
-        // up if they go unanswered. The user agent already answers in-dialog OPTIONS but never INFO, so we
-        // 200 OK the rest. See OnSipRequest for how double-responses are avoided.
-        _sipTransport.SIPTransportRequestReceived += OnSipRequest;
+        // Trace the full SIP messages (--verbose), and answer the keep-alives some softphones send mid-call.
+        SipCallSupport.TraceMessages(_sipTransport, _logger);
+        SipCallSupport.AnswerKeepalives(_sipTransport, () => _userAgent, _logger, "sip bridge");
 
         var mediaSession = new VoIPMediaSession();
         mediaSession.AcceptRtpFromAny = true;
@@ -176,58 +169,6 @@ public sealed class SipBridgeParticipant : IBridgeParticipant, IConnectable
             _negotiatedFormat.IsEmpty() ? "format pending" : _negotiatedFormat.Codec.ToString());
 
         Connected?.Invoke();
-    }
-
-    /// <summary>Answers in-call INFO/OPTIONS keepalives with 200 OK so the softphone doesn't tear the call
-    /// down. Runs alongside the user agent's own request handler (a shared, multicast transport event); the
-    /// agent already answers in-dialog OPTIONS, so to avoid a double response we only step in for INFO (never
-    /// handled) and OPTIONS the agent will not handle (e.g. an out-of-dialog keepalive).</summary>
-    private async Task OnSipRequest(SIPEndPoint local, SIPEndPoint remote, SIPRequest req)
-    {
-        if (req.Method != SIPMethodsEnum.INFO && req.Method != SIPMethodsEnum.OPTIONS)
-        {
-            return;
-        }
-
-        var dialogue = _userAgent?.Dialogue;
-        bool agentAnswersIt = req.Method == SIPMethodsEnum.OPTIONS
-            && dialogue != null
-            && req.Header.CallId == dialogue.CallId
-            && req.Header.From?.FromTag != null
-            && req.Header.To?.ToTag != null;
-        if (agentAnswersIt)
-        {
-            return;
-        }
-
-        try
-        {
-            var ok = SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.Ok, null);
-            await _sipTransport.SendResponseAsync(ok).ConfigureAwait(false);
-            _logger.LogDebug("sip bridge answered {Method} with 200 OK.", req.Method);
-        }
-        catch (Exception excp)
-        {
-            _logger.LogDebug("sip bridge failed to answer {Method}: {Error}", req.Method, excp.Message);
-        }
-    }
-
-    // Mask the credential-bearing authorization headers so --verbose SIP traces never leak the digest
-    // response/username. The challenge headers (WWW-Authenticate/Proxy-Authenticate) are left visible as
-    // they carry no secret and help diagnose auth.
-    private static readonly Regex AuthHeaderRegex =
-        new(@"^(Authorization|Proxy-Authorization)\s*:.*$", RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-    /// <summary>Logs a full traced SIP message (headers + SDP) for --verbose debugging, with the
-    /// authorization headers redacted. The message string is built lazily so nothing is serialised
-    /// when debug logging is off.</summary>
-    private void LogSipMessage(string direction, SIPEndPoint remote, Func<string> message)
-    {
-        if (_logger.IsEnabled(LogLevel.Debug))
-        {
-            string redacted = AuthHeaderRegex.Replace(message(), "$1: <redacted>");
-            _logger.LogDebug("SIP message {Direction} {Remote}:\n{Message}", direction, remote, redacted);
-        }
     }
 
     /// <summary>Inbound call audio (G.711): transcode up to 48 kHz OPUS and emit to the other side.</summary>

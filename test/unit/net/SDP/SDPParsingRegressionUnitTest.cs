@@ -788,5 +788,100 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(expectedFeedback, first.SupportedRtcpFeedbackMessages);
             Assert.Equal(expectedEquality, first.Equals(second));
         }
+
+        /// <summary>
+        /// The media formats are in the order the media line lists them, which is the offerer's order of preference,
+        /// whether a format is static or dynamic, has an rtpmap attribute or not, has its fmtp attribute before or
+        /// after its rtpmap, or has its rtpmap in a different place to the media line. Formats with an rtpmap that
+        /// the media line does not list come last, a payload type listed twice keeps its first place and a dynamic
+        /// payload type without an rtpmap is still dropped.
+        /// </summary>
+        [Theory]
+        [InlineData("audio 5000 RTP/AVP 111 0 8 101", "111 0 8 101",
+            "a=rtpmap:111 opus/48000/2", "a=rtpmap:101 telephone-event/8000")]
+        [InlineData("audio 5000 RTP/AVP 111 0 8 101", "111 0 8 101",
+            "a=fmtp:111 minptime=10;useinbandfec=1", "a=rtpmap:111 opus/48000/2", "a=rtpmap:0 PCMU/8000",
+            "a=rtpmap:8 PCMA/8000", "a=rtpmap:101 telephone-event/8000", "a=fmtp:101 0-16")]
+        [InlineData("audio 5000 RTP/AVP 8 101 111 0", "8 101 111 0",
+            "a=rtpmap:111 opus/48000/2", "a=rtpmap:101 telephone-event/8000", "a=rtpmap:0 PCMU/8000", "a=rtpmap:8 PCMA/8000")]
+        [InlineData("audio 5000 RTP/AVP 0 8 101", "0 8 101",
+            "a=rtpmap:101 telephone-event/8000")]
+        [InlineData("audio 5000 RTP/AVP 0 96", "0 96 97",
+            "a=rtpmap:97 PCMA/8000", "a=rtpmap:96 opus/48000/2")]
+        [InlineData("audio 5000 RTP/AVP 0 111 0", "0 111",
+            "a=rtpmap:111 opus/48000/2")]
+        [InlineData("audio 5000 RTP/AVP 96 0", "0")]
+        [InlineData("video 5000 UDP/TLS/RTP/SAVPF 98 96 34 97", "98 96 34 97",
+            "a=rtpmap:96 VP8/90000", "a=fmtp:97 packetization-mode=1", "a=rtpmap:97 H264/90000",
+            "a=rtcp-fb:98 nack", "a=rtpmap:98 VP9/90000", "a=rtpmap:34 H263/90000")]
+        public void MediaFormatsFollowMediaLineOrder(string mediaLine, string expectedOrder, params string[] attributes)
+        {
+            // Arrange
+
+            var sdpText = new StringBuilder(SessionHeader).Append("m=").Append(mediaLine).Append(CRLF);
+            foreach (var attribute in attributes)
+            {
+                sdpText.Append(attribute).Append(CRLF);
+            }
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText.ToString());
+
+            // Assert
+
+            var announcement = Assert.Single(sdp.Media);
+            Assert.Equal(expectedOrder, string.Join(" ", announcement.MediaFormats.Keys));
+            Assert.Equal(expectedOrder, announcement.GetFormatListToString());
+        }
+
+        /// <summary>
+        /// Putting the media formats in the media line's order keeps each format's attributes, and each media
+        /// announcement of a description is ordered by its own media line.
+        /// </summary>
+        [Fact]
+        public void MediaFormatsFollowMediaLineOrderInEachAnnouncement()
+        {
+            // Arrange
+
+            var sdpText = SessionHeader +
+                "m=audio 5000 RTP/AVP 111 0 101" + CRLF +
+                "a=fmtp:111 minptime=10;useinbandfec=1" + CRLF +
+                "a=rtpmap:111 opus/48000/2" + CRLF +
+                "a=rtpmap:101 telephone-event/8000" + CRLF +
+                "a=fmtp:101 0-16" + CRLF +
+                "m=video 5002 RTP/AVPF 97 96" + CRLF +
+                "a=rtpmap:96 VP8/90000" + CRLF +
+                "a=rtcp-fb:96 nack" + CRLF +
+                "a=rtpmap:97 H264/90000" + CRLF +
+                "a=fmtp:97 packetization-mode=1" + CRLF +
+                "a=rtcp-fb:97 nack pli" + CRLF;
+
+            // Act
+
+            var sdp = SDP.ParseSDPDescription(sdpText);
+            var reparsed = SDP.ParseSDPDescription(sdp.ToString());
+
+            // Assert
+
+            Assert.Equal(2, sdp.Media.Count);
+
+            var audio = sdp.Media[0];
+            Assert.Equal(new[] { 111, 0, 101 }, audio.MediaFormats.Keys);
+            Assert.Equal("opus/48000/2", audio.MediaFormats[111].Rtpmap);
+            Assert.Equal("minptime=10;useinbandfec=1", audio.MediaFormats[111].Fmtp);
+            Assert.Equal("PCMU", audio.MediaFormats[0].Name());
+            Assert.Equal("0-16", audio.MediaFormats[101].Fmtp);
+
+            var video = sdp.Media[1];
+            Assert.Equal(new[] { 97, 96 }, video.MediaFormats.Keys);
+            Assert.Equal("packetization-mode=1", video.MediaFormats[97].Fmtp);
+            Assert.Equal(new[] { "nack pli" }, video.MediaFormats[97].SupportedRtcpFeedbackMessages);
+            Assert.Equal(new[] { "nack" }, video.MediaFormats[96].SupportedRtcpFeedbackMessages);
+
+            Assert.Contains("m=audio 5000 RTP/AVP 111 0 101" + CRLF, sdp.ToString());
+            Assert.Contains("m=video 5002 RTP/AVPF 97 96" + CRLF, sdp.ToString());
+            Assert.Equal(sdp.ToString(), reparsed.ToString());
+        }
     }
 }

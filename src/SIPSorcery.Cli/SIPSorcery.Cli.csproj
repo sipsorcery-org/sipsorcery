@@ -18,7 +18,7 @@
          separate SIPSorcery.Diagnostics ("sipsorcery-diags") tool are now part of this one. -->
     <ToolCommandName>sipsorcery</ToolCommandName>
     <PackageId>SIPSorcery.Cli</PackageId>
-    <Version>0.8.0-beta</Version>
+    <Version>0.9.0-beta</Version>
     <Authors>Aaron Clauson</Authors>
     <Description>SIPSorcery CLI, built on the SIPSorcery library. Diagnostics and benchmarking for SIP and WebRTC: OPTIONS pings, test calls, registration and load, STUN/TURN/ICE connectivity probes, WHEP/WHIP and echo-test peers, and video pipeline benchmarks. Plus routing and bridging of live media streams between SIP, WebRTC, the major realtime fabrics (Cloudflare Realtime, LiveKit) and AI agents (OpenAI Realtime). Human and agent friendly with JSON output and meaningful exit codes.</Description>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
@@ -70,8 +70,10 @@
     <ProjectReference Include="..\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
     <!-- VP8 encoder for the test pattern video published via LibraryVideoPublisher (webrtc verbs). -->
     <ProjectReference Include="..\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
-    <!-- WebRTC client for the OpenAI Realtime API, used by the "bridge web openai" agent endpoint. -->
-    <ProjectReference Include="..\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
+    <!-- WebRTC client for the OpenAI Realtime API, used by the "bridge web openai" agent endpoint.
+         No longer published as its own NuGet package; the source lives with the OpenAI examples
+         and is bundled into the CLI tool package. -->
+    <ProjectReference Include="..\..\examples\OpenAIExamples\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>

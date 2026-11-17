@@ -261,6 +261,12 @@ namespace SIPSorcery.SIP
                     throw new ArgumentNullException("The SIP request must have a Via header when creating a SIPTransaction.");
                 }
 
+                // Double check the SIP request validation for cases it did not arrive through the SIPTransport class.
+                if (!transactionRequest.IsValid(out var sipRequestErrorField, out var sipRequestValidationError))
+                {
+                    throw new SIPValidationException(sipRequestErrorField, sipRequestValidationError);
+                }
+
                 m_sipTransport = sipTransport;
                 m_transactionId = GetRequestTransactionId(transactionRequest.Header.Vias.TopViaHeader.Branch, transactionRequest.Header.CSeqMethod);
                 HasTimedOut = false;

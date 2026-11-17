@@ -202,14 +202,13 @@ namespace SIPSorcery.Net.UnitTests
         /// <summary>
         /// When the remote announces sendonly direction (with a routable
         /// connection address and non-zero port), the receiver's
-        /// LocalTrack.StreamStatus does NOT mirror to recvonly — it
-        /// stays at the default SendRecv. This is the asymmetric
-        /// direction-handling behaviour: the local only flips to
-        /// Inactive in response to remote Inactive / Any-address / port-0,
-        /// not to other direction values.
+        /// LocalTrack.StreamStatus becomes recvonly, the answer RFC 3264
+        /// section 6.1 requires to a sendonly offer. (It used to stay at
+        /// the default SendRecv, so a call meant only to be watched or
+        /// listened to sent media back.)
         /// </summary>
         [Fact]
-        public void RemoteSendOnlyOffer_LocalDirectionStaysAtDefault()
+        public void RemoteSendOnlyOffer_LocalDirectionBecomesRecvOnly()
         {
             using (var session = new RtpSessionBuilder().WithAudioTrack().Build())
             {
@@ -218,8 +217,8 @@ namespace SIPSorcery.Net.UnitTests
                 Assert.Equal(SetDescriptionResultEnum.OK,
                     session.SetRemoteDescription(SdpType.offer, offer));
 
-                // Remote announced sendonly, but local stays SendRecv.
-                Assert.Equal(MediaStreamStatusEnum.SendRecv,
+                // Remote announced sendonly, so local only receives.
+                Assert.Equal(MediaStreamStatusEnum.RecvOnly,
                     session.AudioStream.LocalTrack.StreamStatus);
                 // The remote track still reflects what was announced.
                 Assert.Equal(MediaStreamStatusEnum.SendOnly,

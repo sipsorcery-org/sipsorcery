@@ -25,7 +25,6 @@ This repository is the home of the **SIPSorcery** project - a comprehensive real
 | **SIPSorceryMedia.Abstractions** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | Interfaces for audio/video encoders and device access | [README](src/SIPSorceryMedia.Abstractions/README.md) |
 | **SIPSorceryMedia.Windows** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | Windows-specific audio capture and playback and video capture | [README](src/SIPSorceryMedia.Windows/README.md) |
 | **SIPSorceryMedia.FFmpeg** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | Cross-platform media support using FFmpeg | [README](src/SIPSorceryMedia.FFmpeg/README.md) |
-| **SIPSorcery.OpenAI.Realtime** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.OpenAI.Realtime.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.Realtime) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.OpenAI.Realtime.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.Realtime) | Support for OpenAI's Realtime WebRTC and SIP end points | [README](src/SIPSorcery.OpenAI.Realtime/README.md) |
 | **SIPSorcery.VP8** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | Pure C# VP8 video codec implementation | [README](src/SIPSorcery.VP8/README.md) |
 
 
@@ -37,7 +36,7 @@ This repository includes **[70+ example projects](examples/)** demonstrating var
 - **[WebRTC Examples](examples/WebRTCExamples/)** - Video streaming, data channels, signaling patterns ([README](examples/WebRTCExamples/README.md))
 - **[SIP Scenarios](examples/SIPScenarios/)** - Call transfers, load testing, complex call flows ([README](examples/SIPScenarios/README.md))
 - **[WebRTC Scenarios](examples/WebRTCScenarios/)** - Advanced WebRTC use cases ([README](examples/WebRTCScenarios/README.md))
-- **[Softphone](examples/Softphone/)** - Full-featured Windows Forms softphone application ([README](examples/Softphone/README.md))
+- **[Softphone](examples/Softphonev2)** - Full-featured Windows Forms softphone application ([README](examples/Softphonev2/desktop/README.md))
 - **[OpenAI](examples/OpenAIExamples/)** - Example applications for interacting with OpenAI's Realtime WebRTC and SIP end points ([README](examples/OpenAIExamples/GetStarted/README.md))
 
 ---
@@ -93,32 +92,6 @@ For Windows the easiest option is:
 ````ps1
 winget install "FFmpeg (Shared)" --version 8.1
 ````
-
-## Video Pipeline Capacity
-
-Video processing — and encoding in particular — is generally the bottleneck in most real-time communications libraries. The original goal of the SIPSorcery library was to support 1080p video at 30 frames per second.
-
-In June 2026, the SIPSorcery command line tool (`dotnet tool install -g SIPSorcery.Cli`, the `sipsorcery` command) was conceived to test various SIP, ICE, WebRTC, and benchmarking scenarios. The benchmarking has revealed that, thanks to the capabilities of the [FFmpeg](https://ffmpeg.org/) project (and the various libraries it in turn wraps), the SIPSorcery library running on a typical Windows machine with the H264 video codec is capable of processing 4K video at over 30fps and 1080p at over 100fps.
-
-Sample test results are shown below.
-
-### Machine
-
-| CPU | Cores | Logical processors | Memory |
-| --- | --- | --- | --- |
-| Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz | 10 | 20 | 31.8 GB |
-
-### Results
-
-| Preset | Encode vp8.net | Encode ffmpeg H264 | Encode ffmpeg VP8 | Decode H264 (ffmpeg) | Decode VP8 (ffmpeg) | Decode VP8 (vp8.net) | Plumbing (no codec) |
-|---|---|---|---|---|---|---|---|
-| 480p | 74.9 | 500.1 | 361.5 | 120 | 120 | 60 | 6435.4 |
-| 720p | 23.3 | 341.1 | 132.4 | 120 | 120 | 30 | 1735.5 |
-| 1080p | 9 | 174.3 | 52.8 | 120 | 120 | 15 | 1084.9 |
-| 1440p | 5.1 | 95.1 | 37.7 | 90 | 90 | n/a | 525.3 |
-| 4k | 1.9 | 48.7 | 31.6 | 30 | 30 | n/a | 367.3 |
-
-_Generated 2026-06-16 09:31; duration 6s/run, 1 run(s)/point._
 
 ## Documentation
 
@@ -320,3 +293,30 @@ If successful the browser should display a test pattern image.
 
 The [examples folder](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples) contains sample code to demonstrate other common WebRTC cases.
 
+## Video Pipeline Capacity
+
+Video processing — and encoding in particular — is generally the bottleneck in most real-time communications libraries. The original goal of the SIPSorcery library was to support 1080p video at 30 frames per second.
+
+In June 2026, the SIPSorcery command line tool (`dotnet tool install -g SIPSorcery.Cli`, the `sipsorcery` command) was conceived to test various SIP, ICE, WebRTC, and benchmarking scenarios. The benchmarking has revealed that, thanks to the capabilities of the [FFmpeg](https://ffmpeg.org/) project (and the various libraries it in turn wraps), the SIPSorcery library running on a typical Windows machine with the H264 video codec is capable of processing 4K video at over 30fps and 1080p at over 100fps.
+
+Sample test results are shown below.
+
+### Machine
+
+| CPU | Cores | Logical processors | Memory |
+| --- | --- | --- | --- |
+| Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz | 10 | 20 | 31.8 GB |
+
+### Results
+
+_All measurements are frames per second (FPS). For real-time communications a frame rate of 30 FPS is suitable._
+
+| Preset | Encode vp8.net | Encode ffmpeg H264 | Encode ffmpeg VP8 | Decode H264 (ffmpeg) | Decode VP8 (ffmpeg) | Decode VP8 (vp8.net) | Plumbing (no codec) |
+|---|---|---|---|---|---|---|---|
+| 480p | 74.9 | 500.1 | 361.5 | 120 | 120 | 60 | 6435.4 |
+| 720p | 23.3 | 341.1 | 132.4 | 120 | 120 | 30 | 1735.5 |
+| 1080p | 9 | 174.3 | 52.8 | 120 | 120 | 15 | 1084.9 |
+| 1440p | 5.1 | 95.1 | 37.7 | 90 | 90 | n/a | 525.3 |
+| 4k | 1.9 | 48.7 | 31.6 | 30 | 30 | n/a | 367.3 |
+
+_Generated 2026-06-16 09:31; duration 6s/run, 1 run(s)/point._

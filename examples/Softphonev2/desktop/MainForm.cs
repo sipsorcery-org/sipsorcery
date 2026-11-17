@@ -1,0 +1,502 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
+
+namespace SIPSorcery.Softphone;
+
+/// <summary>
+/// The window: a WebView2 showing <c>wwwroot/index.html</c>, and the message bridge between that
+/// page and <see cref="Phone"/>. Page → host: ready, dial, answer, decline, hangup, hold,
+/// add-video, text, add-text, loss, media-answer, transfer {id, target} or {id, address, label},
+/// transfer-dismiss, transfer-answer, transfer-cancel, transfer-leave, for accounts account-select, account-save,
+/// account-enable, account-remove, account-register, and for the call history history-remove
+/// {ids} and history-restore {ids} (Undo). Host → page: state (every call, with the accounts and
+/// their registrations), history (every past call, newest first: on ready and whenever it
+/// changes), media-offer (again when video is added), media-health, quality (RTCP reception
+/// reports, for diagnostics), details, text, video-refused, account-saved, account-error, log.
+/// Messages about one call carry its <c>id</c>. Contacts (the address field's
+/// suggestions): contact-save {name, uri, account?, media?} and contact-remove from the page, contacts
+/// {contacts: [{name, uri, account?, media?}]} to it. dial {address, video, account?, media?}: media
+/// is the contact's (Contacts.cs ContactMedia), when it has one.
+/// </summary>
+internal sealed class MainForm : Form
+{
+    private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+    private readonly Settings _settings;
+    private readonly Phone _phone;
+    private readonly AccountStore _accounts;
+    private readonly CallHistory _history;
+    private readonly ContactStore _contacts;
+    private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
+
+    /// <summary>
+    /// The smallest the page gets, in CSS pixels: the narrowest phone the web softphone's layout is
+    /// made for. The page reacts to the window's size as the web softphone does to the browser's,
+    /// down to its phone layout at 500 px and under (styles.css), so this is the only limit.
+    /// </summary>
+    private static readonly Size MinPageSize = new(360, 560);
+
+    /// <summary>
+    /// The window's minimum size: <see cref="MinPageSize"/> at the monitor's scaling, plus the frame.
+    /// Window sizes are device pixels, so a fixed one would let the page get narrower on a scaled
+    /// display than on an unscaled one. Again whenever the window moves to a monitor with other scaling.
+    /// </summary>
+    private void ApplyMinimumSize()
+    {
+        float scale = DeviceDpi / 96f;
+        MinimumSize = SizeFromClientSize(new Size((int)Math.Ceiling(MinPageSize.Width * scale), (int)Math.Ceiling(MinPageSize.Height * scale)));
+    }
+    private readonly List<object> _pendingOffers = new();   // media offers made before the page was ready
+    private bool _pageReady;
+    private readonly Dictionary<string, Phone.CallState> _lastStates = new();   // each call's state at the last Changed
+    private int _dialsLeft;
+    private string? _dialCallId;   // the call --dial placed, to place it again when it ends (--dial-count)
+    private readonly StreamWriter _logFile;
+    private bool _logClosed;   // under lock (_logFile): set as the window closes, as the file is disposed
+
+    public MainForm(Settings settings)
+    {
+        _settings = settings;
+        _dialsLeft = settings.DialCount;
+        _phone = new Phone(settings);
+        _accounts = new AccountStore(settings.Profile, settings.Account);
+        _history = new CallHistory(settings.Profile);
+        _contacts = new ContactStore(settings.Profile);
+        var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SIPSorcery", "Softphonev2");
+        Directory.CreateDirectory(logDir);
+        _logFile = new StreamWriter(Path.Combine(logDir, $"softphone-{settings.Profile}.log"), append: false) { AutoFlush = true };
+        Text = "SIPSorcery Softphone";
+        // softphone.ico, embedded: every size, so the title bar gets the 16 px drawing, not a shrunken 32.
+        using (var ico = typeof(MainForm).Assembly.GetManifestResourceStream("SIPSorcery.Softphone.softphone.ico"))
+        {
+            if (ico != null) Icon = new Icon(ico);
+        }
+        ClientSize = new Size(1100, 720);
+        ApplyMinimumSize();
+        DpiChanged += (_, _) => ApplyMinimumSize();
+        WindowPlacement.Restore(this, settings.Profile);   // where and how big it was when last closed
+        Controls.Add(_web);
+
+        _phone.Changed += () =>
+        {
+            Post(StateMessage());
+            lock (_lastStates)
+            {
+                foreach (var c in _phone.Calls)
+                {
+                    var state = c.State;
+                    _lastStates.TryGetValue(c.Id, out var last);
+                    if (state == last) continue;
+                    _lastStates[c.Id] = state;
+                    var id = c.Id;
+                    // Once per call, on starting to ring: Changed comes again while it rings.
+                    // Answered alongside any other calls; holding them is the page's choice.
+                    if (_settings.AutoAnswer && state == Phone.CallState.Ringing)
+                        _ = Task.Delay(1000).ContinueWith(_ => _phone.AnswerAsync(id));
+                    // Testing switches: hang up after a while, and dial again once a call has ended.
+                    if (state == Phone.CallState.Connected && _settings.HangupAfter is { } secs)
+                        _ = Task.Delay(secs * 1000).ContinueWith(_ => _phone.Hangup(id));
+                    if (state == Phone.CallState.Ended && id == _dialCallId && --_dialsLeft > 0 && !string.IsNullOrWhiteSpace(_settings.Dial))
+                        _ = Task.Delay(2000).ContinueWith(_ => DialAtStart());
+                }
+                // Calls the phone has dropped from its list.
+                foreach (var gone in _lastStates.Keys.Where(k => _phone.Find(k) == null).ToList()) _lastStates.Remove(gone);
+            }
+        };
+        _phone.Log += WriteLog;
+        // Every call that ends goes into the history, which the page is sent again.
+        _phone.Ended += c =>
+        {
+            var e = HistoryEntry.From(c);
+            _history.Add(e);
+            LogLine($"{DateTime.Now:HH:mm:ss.fff} history: call {c.Id} {e.Dir} {e.Uri} {e.Note ?? (e.Duration > 0 ? $"{e.Duration / 1000} s" : "")}".TrimEnd());
+            Post(HistoryMessage());
+        };
+        LibraryLog.Line += WriteLog;
+        _phone.Trace += LogLine;
+        _phone.TxLostChanged += (c, lost) => Post(new { type = "media-health", id = c.Id, txLost = lost });
+        _phone.Quality += (c, q) => Post(new { type = "quality", id = c.Id, q.Dir, q.Kind, q.LossPct, q.Lost, q.JitterMs, q.RttMs });
+        _phone.DtmfReceived += (c, digit, via) => Post(new { type = "dtmf-in", id = c.Id, digit, via });
+        _phone.TextReceived += (c, text) =>
+        {
+            // The log file only, and only how much: what they type stays out of the log.
+            LogLine($"{DateTime.Now:HH:mm:ss.fff} real-time text in on call {c.Id}: {text.Length} characters");
+            Post(new { type = "text", id = c.Id, text });
+        };
+        _phone.Details += (c, d) => Post(new
+        {
+            type = "details", id = c.Id, d.Direction, d.Account, d.Signalling, d.TheirPhone, d.CallId, d.TheirMedia,
+            d.MediaEncrypted, d.SignallingEncrypted, d.Audio, d.Video, d.MediaSecurity,
+        });
+        _phone.VideoRefused += c => Post(new { type = "video-refused", id = c.Id });
+        _phone.MediaOffer += (c, sdp) =>
+        {
+            var msg = new { type = "media-offer", id = c.Id, sdp };
+            if (_pageReady) Post(msg);
+            else lock (_pendingOffers) _pendingOffers.Add(msg);
+        };
+
+        Load += async (_, _) => await StartAsync();
+        FormClosing += (_, _) =>
+        {
+            WindowPlacement.Save(this, _settings.Profile);
+            _phone.Dispose();
+            // The library goes on logging from its own threads after this (TCP and TLS connections
+            // dropping as the process ends), so stop listening and close the file under its lock;
+            // a write after that is dropped rather than throwing on one of those threads, which
+            // took the process down with the error box's sound and no box to see.
+            LibraryLog.Line -= WriteLog;
+            lock (_logFile) { _logClosed = true; _logFile.Dispose(); }
+        };
+    }
+
+    // "10.0.18-pre+aacda38…": the version before the +, the commit (SourceLink's) after it, cut to 7.
+    private static object VersionInfo()
+    {
+        static string Informational(System.Reflection.Assembly a) =>
+            a.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+             .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "";
+        var lib = Informational(typeof(SIPSorcery.SIP.SIPTransport).Assembly).Split('+');
+        var app = Informational(typeof(MainForm).Assembly).Split('+');
+        var commit = app.Length > 1 ? app[1] : lib.Length > 1 ? lib[1] : "";
+        return new { app = app[0], sipsorcery = lib[0], commit = commit.Length > 7 ? commit[..7] : commit };
+    }
+
+    private async Task StartAsync()
+    {
+        var args = "--disable-features=WebRtcHideLocalIpsWithMdns --autoplay-policy=no-user-gesture-required";
+        if (_settings.FakeMedia) args += " --use-fake-device-for-media-stream=fps=30 --use-fake-ui-for-media-stream";
+        var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "SIPSorcery", "Softphonev2", "WebView2", _settings.Profile);
+        var env = await CoreWebView2Environment.CreateAsync(null, dataDir, new CoreWebView2EnvironmentOptions(args));
+        await _web.EnsureCoreWebView2Async(env);
+
+        var core = _web.CoreWebView2;
+        core.SetVirtualHostNameToFolderMapping("softphone.app", Path.Combine(AppContext.BaseDirectory, "wwwroot"),
+            CoreWebView2HostResourceAccessKind.Deny);
+        // The page is ours, so camera and microphone are always allowed; there's no browser prompt in an app.
+        core.PermissionRequested += (_, e) =>
+        {
+            if (e.PermissionKind is CoreWebView2PermissionKind.Camera or CoreWebView2PermissionKind.Microphone)
+                e.State = CoreWebView2PermissionState.Allow;
+        };
+        core.WebMessageReceived += async (_, e) => await OnPageMessage(e.WebMessageAsJson);
+        core.Settings.AreDevToolsEnabled = true;
+        // The version, for the foot of Settings: the app's (the .csproj's), the SIPSorcery library's, and the commit this was built from.
+        await core.AddScriptToExecuteOnDocumentCreatedAsync($"window.softphoneVersion = {JsonSerializer.Serialize(VersionInfo())};");
+        var query = new List<string>();
+        if (_settings.CameraOff) query.Add("camera=off");
+        if (_settings.Diagnostics) query.Add("diag=1");
+        if (_settings.VideoCall) query.Add("call=video");
+        if (_settings.TestPattern) query.Add("video=test");
+        if (_settings.AudioBars) query.Add("video=bars");
+        if (_settings.AddVideoAfter is { } after) query.Add($"addvideo={after}");
+        if (!string.IsNullOrEmpty(_settings.Say)) query.Add("say=" + Uri.EscapeDataString(_settings.Say));
+        if (!string.IsNullOrEmpty(_settings.Dtmf)) query.Add("dtmf=" + Uri.EscapeDataString(_settings.Dtmf));
+        core.Navigate("https://softphone.app/index.html" + (query.Count > 0 ? "?" + string.Join("&", query) : ""));
+
+        try
+        {
+            if (_accounts.LoadNote != null) WriteLog(_accounts.LoadNote);
+            if (_history.LoadNote != null) WriteLog(_history.LoadNote);
+            _phone.SetAccounts(_accounts.All);
+        }
+        catch (Exception ex)
+        {
+            WriteLog($"SIP start failed: {ex.Message}");
+        }
+    }
+
+    private async Task OnPageMessage(string json)
+    {
+        var msg = JsonNode.Parse(json)!.AsObject();
+        try
+        {
+            switch ((string?)msg["type"])
+            {
+                case "ready":
+                    _pageReady = true;
+                    if (_phone.PortNote != null) WriteLog(_phone.PortNote);
+                    WriteLog($"SIP listening on {_phone.ListeningOn}");
+                    if (_phone.WebSocketAddress != null) WriteLog($"browser phones: connect to {_phone.WebSocketAddress} (from this PC, ws://localhost:{_settings.WsPort})");
+                    Post(HistoryMessage());
+                    Post(StateMessage());
+                    lock (_pendingOffers) { _pendingOffers.ForEach(Post); _pendingOffers.Clear(); }
+                    if (_contacts.LoadNote != null) WriteLog(_contacts.LoadNote);
+                    PostContacts();
+                    if (!string.IsNullOrWhiteSpace(_settings.Dial)) DialAtStart();
+                    break;
+                case "log":
+                    LogLine($"{DateTime.Now:HH:mm:ss.fff} page: {msg["text"]}");
+                    break;
+                case "dial":
+                    // Call back from History says which account the call was on, if it's still
+                    // there and enabled; otherwise the call goes from Call from's account.
+                    var from = _accounts.Find((string?)msg["account"]) is { Enabled: true } back ? back.Id : _accounts.SelectedId;
+                    _phone.Dial((string)msg["address"]!, (bool?)msg["video"] ?? false, from, ContactMedia.Parse((string?)msg["media"]));
+                    break;
+                case "history-remove":
+                    WriteLog($"history: removed {_history.Remove(Ids(msg))} call(s)");
+                    Post(HistoryMessage());
+                    break;
+                case "history-restore":
+                    WriteLog($"history: restored {_history.Restore(Ids(msg))} call(s)");
+                    Post(HistoryMessage());
+                    break;
+                case "account-select":
+                    _accounts.Select((string?)msg["id"]);
+                    Post(StateMessage());
+                    break;
+                case "account-save":
+                    SaveAccount(msg["account"]!.AsObject());
+                    break;
+                case "account-enable":
+                    if (_accounts.Find((string?)msg["id"]) is { } toggled)
+                    {
+                        toggled.Enabled = (bool?)msg["enabled"] ?? true;
+                        _accounts.Save(toggled);
+                        WriteLog($"{toggled.Label}: {(toggled.Enabled ? "enabled" : "disabled")}");
+                        _phone.SetAccounts(_accounts.All);
+                    }
+                    break;
+                case "account-remove":
+                    _accounts.Remove((string)msg["id"]!);
+                    _phone.SetAccounts(_accounts.All);
+                    break;
+                case "account-register":
+                    _phone.Reregister((string)msg["id"]!);
+                    break;
+                case "add-video":
+                    _phone.AddVideo(Id(msg));
+                    break;
+                case "text":
+                    _phone.SendText(Id(msg), (string)msg["text"]!);
+                    break;
+                case "dtmf":
+                    _ = _phone.SendDtmf(Id(msg), (string?)msg["digit"] ?? "");
+                    break;
+                case "add-text":
+                    _phone.AddText(Id(msg));
+                    break;
+                case "answer":
+                    await _phone.AnswerAsync(Id(msg));
+                    break;
+                case "decline":
+                    _phone.Decline(Id(msg));
+                    break;
+                case "hangup":
+                    _phone.Hangup(Id(msg));
+                    break;
+                case "hold":
+                    _phone.Hold(Id(msg), (bool?)msg["hold"] ?? true);
+                    break;
+                case "transfer":
+                    // To another of our calls (attended, {target}), or to an address (blind, {address, label?}).
+                    if ((string?)msg["target"] is { Length: > 0 } target) await _phone.AttendedTransfer(Id(msg), target);
+                    else await _phone.BlindTransfer(Id(msg), (string?)msg["address"] ?? "", (string?)msg["label"]);
+                    break;
+                case "transfer-dismiss":
+                    _phone.DismissTransfer(Id(msg));
+                    break;
+                case "transfer-answer":
+                    // Being transferred: Accept ({accept: true}) or Decline.
+                    _phone.AnswerTransfer(Id(msg), (bool?)msg["accept"] ?? false);
+                    break;
+                case "transfer-cancel":
+                    // Ours: stop and take the call back. Being transferred: stay with the transferor.
+                    _phone.CancelTransfer(Id(msg));
+                    break;
+                case "transfer-leave":
+                    // Our blind transfer, ringing: hang up and leave it to their phone.
+                    _phone.LeaveTransfer(Id(msg));
+                    break;
+                case "copy":
+                    // The host's clipboard rather than the page's, which needs permissions the
+                    // page may not have.
+                    Clipboard.SetText((string)msg["text"]!);
+                    WriteLog($"copied {msg["text"]}");
+                    break;
+                case "loss":
+                    _phone.SetLoss((int?)msg["audio"] ?? 0, (int?)msg["video"] ?? 0);
+                    break;
+                case "contact-save":
+                    // account: the SIP account to call them from (its id), or none for Call from's;
+                    // media: what to offer them (ContactMedia), or none to work it out.
+                    _contacts.Save((string?)msg["name"] ?? "", (string)msg["uri"]!, (string?)msg["account"], (string?)msg["media"]);
+                    PostContacts();
+                    break;
+                case "contact-remove":
+                    _contacts.Remove((string)msg["uri"]!);
+                    PostContacts();
+                    break;
+                case "media-answer":
+                    _phone.SetPageAnswer(Id(msg), (string)msg["sdp"]!);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            WriteLog($"{msg["type"]} failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Adds or updates an account from the Manage accounts form. An empty password keeps the
+    /// saved one. The page gets account-saved (with the id, for a new one) or account-error.
+    /// </summary>
+    private void SaveAccount(JsonObject a)
+    {
+        var id = (string?)a["id"];
+        var existing = string.IsNullOrEmpty(id) ? null : _accounts.Find(id);
+        var account = new SipAccount
+        {
+            Id = existing?.Id ?? "",
+            Name = ((string?)a["name"] ?? "").Trim(),
+            DisplayName = NullIfBlank((string?)a["displayName"]),
+            Username = ((string?)a["username"] ?? "").Trim(),
+            Server = ((string?)a["server"] ?? "").Trim(),
+            Transport = ((string?)a["transport"] ?? SipAccount.DefaultTransport).Trim().ToLowerInvariant(),
+            AuthUsername = NullIfBlank((string?)a["authUsername"]),
+            Password = (string?)a["password"] ?? "",
+            Register = (bool?)a["register"] ?? true,
+            Expiry = Math.Clamp((int?)a["expiry"] ?? 300, 60, 7200),
+            Hold = ((string?)a["hold"] ?? SipAccount.DefaultHold).Trim().ToLowerInvariant(),
+            Enabled = existing?.Enabled ?? true,
+        };
+        var missing = new[] { ("username", account.Username), ("server", account.Server) }.Where(f => f.Item2.Length == 0).Select(f => f.Item1).ToList();
+        if (missing.Count > 0)
+        {
+            Post(new { type = "account-error", text = $"Fill in the {string.Join(" and ", missing)}." });
+            return;
+        }
+        if (account.Server.Contains(' ') || account.Username.Contains(' '))
+        {
+            Post(new { type = "account-error", text = "The username and server can't contain spaces." });
+            return;
+        }
+        if (!SipAccount.Transports.Contains(account.Transport))
+        {
+            Post(new { type = "account-error", text = $"The transport has to be one of {string.Join(", ", SipAccount.Transports.Select(t => t.ToUpperInvariant()))}." });
+            return;
+        }
+        if (!SipAccount.HoldModes.Contains(account.Hold)) account.Hold = SipAccount.DefaultHold;
+        // A server typed as sip:host;transport=tcp says which transport it means.
+        account.TakeTransportFromServer();
+        var saved = _accounts.Save(account);
+        WriteLog($"{saved.Label}: account {(existing == null ? "added" : "saved")}");
+        _phone.SetAccounts(_accounts.All);
+        Post(new { type = "account-saved", id = saved.Id });
+        Post(StateMessage());
+    }
+
+    /// <summary>The call a page message is about.</summary>
+    private static string Id(JsonObject msg) => (string?)msg["id"] ?? "";
+
+    /// <summary>A history message's entry ids.</summary>
+    private static IEnumerable<string> Ids(JsonObject msg) =>
+        msg["ids"]?.AsArray().Select(n => (string?)n).OfType<string>().ToList() ?? new List<string>();
+
+    /// <summary>Every past call, newest first, with the cap so the page can say when old ones go.</summary>
+    private object HistoryMessage() => new { type = "history", entries = _history.All, max = CallHistory.MaxEntries };
+
+    /// <summary>--dial (testing): places its call, and remembers it for --dial-count.</summary>
+    private void DialAtStart() => _dialCallId = _phone.Dial(_settings.Dial!, _settings.VideoCall, _accounts.SelectedId)?.Id;
+
+    private static string? NullIfBlank(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+    private void WriteLog(string line)
+    {
+        var text = $"{DateTime.Now:HH:mm:ss.fff} {line}";
+        LogLine(text);
+        Post(new { type = "log", text });
+    }
+
+    /// <summary>A line to the log file, from any thread; dropped once the window has closed it.</summary>
+    private void LogLine(string text)
+    {
+        lock (_logFile) if (!_logClosed) _logFile.WriteLine(text);
+    }
+
+    private object StateMessage()
+    {
+        var selected = _accounts.Selected;
+        var (registration, registrationDetail) = _phone.RegistrationOf(selected?.Id);
+        // Our name, for the placeholder the page sends while the camera is off: the call's
+        // account's, else the one calls go out from.
+        var calls = _phone.Calls;
+        var me = calls.LastOrDefault(c => c.Live && c.Account != null)?.Account ?? selected;
+        var regs = _phone.Registrations.ToDictionary(r => r.Account.Id);
+        return new
+        {
+            type = "state",
+            // Every call, oldest first: calling, ringing, connected, or ended (for a few seconds).
+            calls = calls.Select(c => new
+            {
+                id = c.Id,
+                call = c.State.ToString().ToLowerInvariant(),
+                remote = c.Remote,
+                // The call's account, or null for a direct call: the page shows the address short
+                // with an account (the user part on its domain) and in full without.
+                account = c.Account?.Aor,
+                reason = c.EndReason,
+                outgoing = c.Outgoing,
+                incomingVideo = c.IncomingVideo,
+                held = c.Held,
+                heldByThem = c.HeldByThem,
+                // A hold or resume re-INVITE is out (the page shows "Holding…" or "Resuming…").
+                holdBusy = c.HoldBusy,
+                // How it's held: "music" (sent by the page, nothing signalled) or "sip" (a re-INVITE).
+                holdMode = c.HoldMode,
+                // Our name on this call (its account's), for the camera-off placeholder and hold card.
+                me = c.Account is { } ca ? (string.IsNullOrWhiteSpace(ca.DisplayName) ? ca.Username : ca.DisplayName) : null,
+                // Real-time text on the call: off, adding, on, refused or disabled.
+                text = c.TextState,
+                // A transfer on the call, ours or theirs: { role: out | in | replace, target, by,
+                // attended, partner, status: asking | calling | done | failed, detail (in words) }.
+                transfer = c.Transfer is { } t ? new { t.Role, t.Target, t.By, t.Attended, partner = t.PartnerId, t.Status, t.Detail, t.Reason, t.Rang, t.TransferorGone, t.CanCancel, t.CanLeave, t.CanAnswer } : null,
+            }).ToList(),
+            maxCalls = Phone.MaxCalls,
+            // This host can transfer calls (the web softphone's doesn't, and the page hides Transfer).
+            canTransfer = true,
+            // The account calls go out from (Call from), and its registration.
+            registration = selected == null ? "none" : registration,
+            registrationDetail,
+            account = selected?.Aor,
+            // What the header copies for others to call us on: the account's address, or with no
+            // account, this PC's address and SIP port.
+            address = selected != null ? $"sip:{selected.Aor}" : _phone.DirectAddress,
+            // This PC's own address and SIP port, for direct calls (the note on Manage accounts).
+            localAddress = _phone.DirectAddress,
+            me = me == null ? null : string.IsNullOrWhiteSpace(me.DisplayName) ? me.Username : me.DisplayName,
+            // Every account, for Call from and Manage accounts (the web softphone sends none, and
+            // shows neither). Passwords stay here: the page only learns whether there is one.
+            accountId = selected?.Id,
+            accounts = _accounts.All.Select(a => new
+            {
+                a.Id, name = a.Label, a.DisplayName, a.Username, a.Server, a.Transport, a.AuthUsername, hasPassword = a.Password.Length > 0,
+                a.Register, a.Expiry, a.Enabled, a.Hold,
+                reg = regs.TryGetValue(a.Id, out var r) ? r.State : "off",
+                regDetail = regs.TryGetValue(a.Id, out var rd) ? rd.Detail : null,
+            }).ToList(),
+            videoAllowed = _settings.OfferVideo,
+            lossAudio = _phone.AudioLossPercent,
+            lossVideo = _phone.VideoLossPercent,
+        };
+    }
+
+    private void PostContacts() => Post(new { type = "contacts", contacts = _contacts.All });
+
+    private void Post(object message)
+    {
+        if (IsDisposed || Disposing || !IsHandleCreated) return;
+        if (InvokeRequired)
+        {
+            // The window can go between the check and here, as it closes: then there's no one to tell.
+            try { BeginInvoke(() => Post(message)); } catch (InvalidOperationException) { }
+            return;
+        }
+        _web.CoreWebView2?.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOpts));
+    }
+}

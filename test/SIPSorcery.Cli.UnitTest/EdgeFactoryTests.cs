@@ -19,9 +19,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using SIPSorcery.Cli.Commands.Route;
+using SIPSorceryMedia.Abstractions;
 using Xunit;
 
 namespace SIPSorcery.Cli.UnitTest;
@@ -117,9 +119,66 @@ public class EdgeFactoryTests
     public void Sink_web_rejects_a_bad_port()
         => AssertEdgeError(() => EdgeFactory.CreateSink("web:99999", Options(), Log), "not a valid port number");
 
+    [Theory]
+    [InlineData("sip:bob@host")]
+    [InlineData("sips:bob@host:5061")]
+    public async Task Sink_sip_builds_a_call_sink_offering_opus_then_g711(string spec)
+    {
+        // Constructing the node places no call: StartAsync does that, so this touches no network.
+        var sink = Assert.IsType<SipSinkNode>(EdgeFactory.CreateSink(spec, Options(), Log));
+        try
+        {
+            Assert.Contains("bob@host", sink.Describe());
+            Assert.Equal(new[] { AudioCodecsEnum.OPUS, AudioCodecsEnum.PCMU, AudioCodecsEnum.PCMA },
+                sink.OfferedAudio.Select(f => f.Codec));
+            Assert.Equal(VideoCodecsEnum.H264, sink.OfferedVideo.Codec);
+        }
+        finally
+        {
+            await sink.DisposeAsync();
+        }
+    }
+
     [Fact]
-    public void Sink_sip_is_not_wired_yet()
-        => AssertEdgeError(() => EdgeFactory.CreateSink("sip:bob@host", Options(), Log), "not wired into route");
+    public async Task Sink_sip_with_a_g711_graph_offers_just_that_codec()
+    {
+        var sink = Assert.IsType<SipSinkNode>(EdgeFactory.CreateSink("sip:bob@host", Options() with { AudioCodec = "pcma" }, Log));
+        try
+        {
+            Assert.Equal(new[] { AudioCodecsEnum.PCMA }, sink.OfferedAudio.Select(f => f.Codec));
+        }
+        finally
+        {
+            await sink.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task Sink_sip_offers_the_pinned_video_codec()
+    {
+        var sink = Assert.IsType<SipSinkNode>(EdgeFactory.CreateSink("sip:bob@host", Options() with { VideoCodec = "vp8" }, Log));
+        try
+        {
+            Assert.Equal(VideoCodecsEnum.VP8, sink.OfferedVideo.Codec);
+        }
+        finally
+        {
+            await sink.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public void Sink_sip_requires_a_destination()
+        => AssertEdgeError(() => EdgeFactory.CreateSink("sip:", Options(), Log), "sip sink needs a destination");
+
+    [Fact]
+    public void Sink_bare_user_at_host_is_a_file_not_a_call()
+    {
+        // As a source a bare user@host is a SIP destination; as a sink it would be too easily a file name.
+        var sink = EdgeFactory.CreateSink("bob@host.h264", Options(), Log);
+
+        Assert.IsType<VideoSinkNode>(sink);
+    }
 
     [Fact]
     public void Sink_cloudflare_requires_credentials()

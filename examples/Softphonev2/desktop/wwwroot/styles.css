@@ -1,0 +1,1546 @@
+/* Tokens from the UX prototype (prototype/web/styles.css). */
+:root {
+  --page: #e9edeb; --surface: #ffffff; --surface-2: #f4f6f5; --surface-3: #eef2f0; --border: #dde4e1; --border-strong: #c9d3cf;
+  --text: #1b2925; --muted: #677670; --accent: #1f6f5c; --accent-hover: #185a4a; --accent-ink: #ffffff;
+  --ok: #2f8a6c; --warn-ink: #8a5a12; --warn-bg: #fbf1df; --danger: #b3354e; --danger-soft: #fbe8ec; --danger-border: #f3cbd4; --danger-fill: #b3354e; --tile: #dcebe3; --tile-ink: #5b7268;
+  --seg-on: #ffffff;   /* a segmented control's chosen option: raised, not coloured */
+  --thumb: #ffffff;    /* a slide switch's thumb */
+  --radius: 12px; --radius-sm: 8px;
+  color-scheme: light;
+}
+/* --danger is red text and lines; --danger-fill is a red to put white text on (End, Decline,
+   badges). In the dark theme they differ: the text red is a lighter pink, too pale to fill with. */
+/* Dark: the system's choice, unless Settings picks a theme (data-theme on <html>). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #0f1513; --surface: #171f1c; --surface-2: #1c2622; --surface-3: #212c28; --border: #2a3632; --border-strong: #37453f;
+    --text: #e4ece8; --muted: #9aa9a3; --accent: #3ea486; --accent-hover: #4bb594; --accent-ink: #06130f;
+    --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --danger-border: #5a2c37; --danger-fill: #cf3a55; --tile: #1f3a31; --tile-ink: #a9c2b8;
+    --seg-on: #33423c;
+    --thumb: #c9d6d0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #0f1513; --surface: #171f1c; --surface-2: #1c2622; --surface-3: #212c28; --border: #2a3632; --border-strong: #37453f;
+  --text: #e4ece8; --muted: #9aa9a3; --accent: #3ea486; --accent-hover: #4bb594; --accent-ink: #06130f;
+  --ok: #4cc29b; --warn-ink: #e6b86a; --warn-bg: #3a2e16; --danger: #e0718a; --danger-soft: #3a1f26; --danger-border: #5a2c37; --danger-fill: #cf3a55; --tile: #1f3a31; --tile-ink: #a9c2b8;
+  --seg-on: #33423c;
+  --thumb: #c9d6d0;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+/* A phone's browser: the height that's really visible, with its address bar showing. */
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
+/* The app above, and the diagnostics panel docked under it when open. */
+body { display: flex; flex-direction: column; background: var(--page); color: var(--text); font: 14px/1.4 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+.shell { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: auto auto 1fr auto; gap: 12px; padding: 12px 16px 12px; }
+/* The stage, with the dock beside it and the toast placed over it. */
+.stage-row { position: relative; display: grid; min-height: 0; }
+
+.topbar { position: relative; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark { width: 28px; height: 28px; flex: none; }   /* the app icon, the same in both themes */
+.brand-name { font-size: 18px; font-weight: 600; }
+.brand-divider { width: 1px; height: 18px; background: var(--border-strong); }
+.brand-sub { color: var(--muted); }
+.topbar-right { display: flex; align-items: center; gap: 14px; }
+body:not(.diag) .diag-only { display: none; }
+
+.dialbar { display: flex; gap: 8px; }
+.dialbar input {
+  flex: 1; min-width: 0; height: 40px; padding: 0 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit;
+}
+.dialbar input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+/* ---- Address field suggestions: recent calls and contacts, as in the prototype ---- */
+.dest-wrap { position: relative; flex: 1; min-width: 0; display: flex; }
+.dest-wrap input { width: 100%; }
+/* The address is a saved contact's: their name and the mark, at the field's right end. */
+/* The clear (×) button at the far right while there's text; the contact pill sits just left of it.
+   The padding keeps typed text out from under both. */
+.dest-wrap.has-text input { padding-right: 38px; }
+.dest-wrap.has-contact input { padding-right: 198px; }
+.dest-clear {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px;
+  background: transparent; color: var(--muted); cursor: pointer;
+}
+.dest-clear:hover { background: var(--surface-2); color: var(--text); }
+.dest-clear:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+.dest-clear svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.dest-clear[hidden], .dest-wrap input:disabled ~ .dest-clear { display: none; }
+.dest-contact {
+  position: absolute; right: 36px; top: 50%; transform: translateY(-50%); max-width: 156px;
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px 2px 6px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-size: 12.5px; pointer-events: none;
+}
+.dest-contact[hidden] { display: none; }
+.dest-contact .contact-mark { margin-left: 0; }
+.dest-contact-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The saved-contact mark (contactmark.js), the same everywhere: a small person with a tick in the accent colour. */
+.contact-mark { display: inline-flex; flex: none; vertical-align: -2px; margin-left: 5px; color: var(--accent); }
+.contact-mark svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.hv-contact-dd { display: flex; align-items: center; gap: 2px; }
+.hv-contact-dd .contact-mark { margin: 0 4px 0 0; }
+.dial-suggest {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 40;
+  max-height: min(380px, 60vh); overflow-y: auto; padding: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 28px rgb(0 0 0 / 0.16);
+}
+.dial-suggest[hidden] { display: none; }
+.suggest-group { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 10px 4px; }
+.suggest-item {
+  display: grid; grid-template-columns: 36px minmax(0, 1fr) auto 26px 18px; gap: 10px; align-items: center;
+  padding: 6px 10px; border-radius: 8px; cursor: pointer;
+}
+.suggest-item:hover, .suggest-item.active { background: var(--surface-3); }
+.suggest-avatar {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; justify-self: center;
+  background: var(--tile); color: var(--tile-ink); font-size: 13px; font-weight: 600;
+}
+.suggest-main { display: grid; min-width: 0; }
+.suggest-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Contacts stand out from recent calls: their own group first, with a header in the accent colour,
+   and bigger rows: a larger avatar (their picture, if they have one) and the name in bold. */
+.suggest-group.contacts { color: var(--accent); font-weight: 600; }
+.suggest-group.contacts ~ .suggest-group { margin-top: 4px; border-top: 1px solid var(--border); padding-top: 10px; }
+.suggest-item.is-contact { padding: 7px 10px; }
+.suggest-item.is-contact .suggest-avatar { width: 36px; height: 36px; font-size: 15px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+.suggest-item.is-contact .suggest-name { font-weight: 700; font-size: 15px; }
+.suggest-uri { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggest-meta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.suggest-meta svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.suggest-meta.bad { color: var(--danger); }
+/* Add to contacts / Remove contact: shows on the highlighted or hovered entry. */
+.suggest-contact {
+  width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--muted);
+  display: grid; place-items: center; cursor: pointer; opacity: 0;
+}
+.suggest-contact:hover { background: var(--surface-2); color: var(--text); }
+.suggest-contact svg, .suggest-call svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.suggest-call { color: var(--accent); opacity: 0; display: grid; place-items: center; }
+.suggest-item:hover .suggest-call, .suggest-item.active .suggest-call,
+.suggest-item:hover .suggest-contact, .suggest-item.active .suggest-contact { opacity: 1; }
+@media (max-width: 640px) {
+  .suggest-item { grid-template-columns: 36px minmax(0, 1fr) auto 26px; }
+  .suggest-call { display: none; }
+}
+/* The address bar's list: no contact or call buttons, just who and when. */
+.suggest-item.plain { grid-template-columns: 36px minmax(0, 1fr) auto; }
+/* The last row: Contacts…, or Add … to contacts. */
+.suggest-item.suggest-foot {
+  display: flex; gap: 10px; margin-top: 4px; padding: 9px 10px; border-top: 1px solid var(--border);
+  border-radius: 0 0 8px 8px; color: var(--accent); font-weight: 500;
+}
+.suggest-foot svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.suggest-foot-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggest-foot-text b { font-weight: 600; }
+
+/* ---- People view: Recent and Contacts tabs (history.js, contacts.js) ---- */
+.pv-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-top: -4px; }
+.pv-tabs button {
+  height: 36px; padding: 0 14px; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; background: none;
+  font: inherit; font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer;
+}
+.pv-tabs button:hover { color: var(--text); }
+.pv-tabs button.on { color: var(--text); border-bottom-color: var(--accent); }
+.pv-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px 6px 0 0; }
+.pv-panel { display: flex; flex-direction: column; gap: 12px; }
+.pv-add { margin-left: auto; }
+.contact-form { display: grid; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
+.contact-form[hidden] { display: none; }
+.contact-form h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.contact-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px 14px; }
+.contact-account, .contact-media { min-width: 0; }
+.contact-account select, .contact-media select { width: 100%; min-width: 0; }
+.contact-account[hidden], .contact-media[hidden] { display: none; }
+.contact-error { margin: 0; font-size: 13px; color: var(--danger); }
+.contact-error[hidden] { display: none; }
+.contact-form-btns { display: flex; justify-content: flex-end; gap: 8px; }
+.pv-contacts .hv-list[hidden] { display: none; }
+.pv-contacts .hv-main { grid-template-columns: 30px minmax(0, 1.4fr) minmax(0, 1fr) 84px; }
+.pv-contacts .hv-row.editing { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent); }
+.pv-calls { list-style: none; margin: 2px 0 0; padding: 0; display: grid; grid-template-columns: max-content max-content; gap: 4px 18px; align-items: center; }
+.pv-calls li { display: contents; }
+.pv-call-at { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 699px) {
+  .pv-contacts .hv-main { grid-template-columns: 30px minmax(0, 1fr); }
+}
+
+.btn {
+  height: 40px; padding: 0 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-strong);
+  background: var(--surface); color: var(--text); font: inherit; font-weight: 600; cursor: pointer;
+}
+.btn:hover { background: var(--surface-2); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn[aria-pressed="true"] { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+.icon-btn { width: 40px; padding: 0; display: grid; place-items: center; flex: none; }
+.icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* Call and Video call: two buttons, the kind of call each places. */
+.call-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none; white-space: nowrap; }
+.call-btn[hidden] { display: none; }
+/* Call and Video call, one item in the dial bar: they wrap to the next row together. */
+.call-btns { display: flex; gap: 8px; flex: none; }
+/* "& hold current" only while the bar has room for it beside the address (~990 px with Call
+   from); narrower, just Call and Video call (their tooltips still say who is held). */
+@media (max-width: 999px) { .hold-tail { display: none; } }
+.call-btn svg, .answer-btn svg, #incomingVideoAnswer svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-danger { background: var(--danger-fill); border-color: var(--danger-fill); color: #fff; }
+.btn-danger:hover { background: var(--danger-fill); filter: brightness(1.08); }
+
+/* The self view's default width (selfview.js). */
+.stage { --side-w: 260px; position: relative; min-height: 0; border-radius: var(--radius); overflow: hidden; background: var(--tile); }
+/* The stage shows one of: card (no call, or calling/ringing/ended), video, nocam (video agreed
+   but none arriving) or audio (no video on the call). */
+.remote { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: none; }
+/* Grid view: only the tiles; the stage's overlays are the selected call's, for Focus view. */
+.stage.grid > :not(.tiles) { display: none !important; }
+.stage[data-mode="video"] .remote.sel { display: block; }
+.card { position: absolute; inset: 0; display: none; place-content: center; text-align: center; gap: 6px; color: var(--tile-ink); padding: 16px; }
+.stage[data-mode="card"] .card { display: grid; }
+.card-title { font-size: 22px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.card-sub { overflow-wrap: anywhere; }
+.card-actions { position: relative; z-index: 2; display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+.card-actions:empty { display: none; }
+.card-actions .btn { height: auto; min-height: 46px; }
+/* Answer and Answer with video, when ringing. */
+.answer-btn { display: inline-flex; align-items: center; gap: 7px; }
+/* No call: the card gives way to Home. A call ringing on the stage: Your devices under its
+   card, so the card scrolls if the stage is short. */
+.card[hidden] { display: none !important; }
+.card.with-devices { overflow-y: auto; place-content: safe center; grid-template-columns: minmax(0, 560px); }
+.card-devices { width: 100%; justify-self: center; margin-top: 16px; text-align: left; color: var(--text); }
+.card-devices[hidden] { display: none; }
+.device-menu.down { bottom: auto; top: calc(100% + 6px); }
+/* The self view's box: bottom-right by default; selfview.js moves and sizes it (from the default
+   up to 3x) within the stage. Shown while either the video or the note in it is. Overlays with
+   buttons (call info, on hold, the answer buttons) sit above it. */
+.self-box {
+  position: absolute; right: 12px; bottom: 12px; width: var(--side-w); max-width: 45%; aspect-ratio: 16 / 9; z-index: 1;
+  border-radius: var(--radius-sm); box-shadow: 0 4px 16px rgba(0, 0, 0, .3);
+  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.self-box:not(:has(> .self:not([hidden]))) { display: none; }
+.self-box.dragging { cursor: grabbing; }
+.self-box:focus { outline: none; }
+.self-box:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.stage[data-mode="audio"] .self-box { display: none; }
+.self { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; background: #000; }
+.self.mirror { transform: scaleX(-1); }   /* your camera, like a mirror; not the placeholder */
+.self[hidden] { display: none; }
+/* Why the camera isn't showing, over the self view's placeholder: a label along the bottom. */
+.self-off {
+  display: flex; align-items: flex-end; justify-content: center; gap: 5px; padding-bottom: 7px;
+  background: linear-gradient(transparent 55%, rgba(0, 0, 0, .6));
+  color: #fff; font-size: 12px; pointer-events: none;
+}
+.self-off svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* The resize handle: a corner bracket on the corner facing the middle of the stage (data-grip),
+   shown on hover, while focused or resizing, and always on touch screens. */
+.self-grip { position: absolute; width: 22px; height: 22px; opacity: 0; transition: opacity .15s; }
+.self-grip::before {
+  content: ""; position: absolute; inset: 4px; border: 0 solid #fff; filter: drop-shadow(0 0 2px rgba(0, 0, 0, .8));
+}
+.self-box[data-grip="tl"] .self-grip { left: 0; top: 0; cursor: nwse-resize; }
+.self-box[data-grip="tl"] .self-grip::before { border-left-width: 3px; border-top-width: 3px; border-top-left-radius: 4px; }
+.self-box[data-grip="tr"] .self-grip { right: 0; top: 0; cursor: nesw-resize; }
+.self-box[data-grip="tr"] .self-grip::before { border-right-width: 3px; border-top-width: 3px; border-top-right-radius: 4px; }
+.self-box[data-grip="bl"] .self-grip { left: 0; bottom: 0; cursor: nesw-resize; }
+.self-box[data-grip="bl"] .self-grip::before { border-left-width: 3px; border-bottom-width: 3px; border-bottom-left-radius: 4px; }
+.self-box[data-grip="br"] .self-grip { right: 0; bottom: 0; cursor: nwse-resize; }
+.self-box[data-grip="br"] .self-grip::before { border-right-width: 3px; border-bottom-width: 3px; border-bottom-right-radius: 4px; }
+.self-box:hover .self-grip, .self-box:focus-visible .self-grip, .self-box.resizing .self-grip { opacity: .9; }
+@media (hover: none) { .self-grip { opacity: .9; } }
+
+.nocam { position: absolute; inset: 0; display: none; place-content: center; justify-items: center; gap: 12px; color: var(--tile-ink); }
+.stage[data-mode="nocam"] .nocam { display: grid; }
+/* A Gravatar (avatar.js) over an avatar's initial, filling its circle. */
+[data-av] { position: relative; overflow: hidden; }
+[data-av] > .av-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.avatar:has(> .av-img) { opacity: 1; }
+.avatar { width: 96px; height: 96px; border-radius: 50%; border: 1.5px solid currentColor; display: grid; place-items: center; font-size: 40px; font-weight: 300; opacity: .6; }
+.nocam-note { font-size: 14px; min-height: 1.4em; }
+
+/* An audio-only call: the conversation as two rows of frequency bars, theirs
+   growing up from the centre line and yours growing down. */
+.audio-view { position: absolute; inset: 0; display: none; }
+.stage[data-mode="audio"] .audio-view { display: block; }
+.viz-wrap { position: absolute; inset: 18% 6%; }
+.viz { position: absolute; left: 44px; top: 0; width: calc(100% - 44px); height: 100%; color: var(--tile-ink); --viz-me: var(--accent); --viz-warn: var(--danger); }
+.viz-who {
+  position: absolute; left: 0; width: 30px; height: 30px; transform: translateY(-50%); display: grid; place-items: center;
+  border-radius: 50%; border: 1.5px solid currentColor; color: var(--tile-ink); font-size: 13px; font-weight: 500;
+}
+.viz-who.them { top: 25%; }
+.viz-who.me { top: 75%; color: var(--accent); font-size: 10px; }
+.viz-note { position: absolute; left: 44px; right: 0; transform: translateY(-50%); text-align: center; pointer-events: none; }
+.viz-note[hidden] { display: none; }
+.viz-note.them { top: 22%; }
+.viz-note.me { top: 78%; }
+.viz-note > span { display: inline-block; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 85%, transparent); font-size: 13px; font-weight: 500; color: var(--muted); }
+.viz-note.bad > span { color: var(--danger); }
+/* The call header: the selected call's info across the top of the stage on a connected call,
+   where people look for who it's with (a phone's call screen, an email's From line). On one
+   line: who, how long, and a red mic while you're muted. The stage's layers start below it
+   (--head-h), so it never covers their video; in Grid view each tile has its own name instead. */
+.stage { --head-h: 0px; }
+.stage.head:not(.grid) { --head-h: 40px; }
+.call-head {
+  position: absolute; left: 0; right: 0; top: 0; height: var(--head-h); z-index: 4;
+  display: flex; align-items: center; gap: 10px; min-width: 0; padding: 0 12px 0 10px; overflow: hidden;
+  background: var(--surface); border-bottom: 1px solid var(--border); color: var(--text); white-space: nowrap;
+}
+.call-head[hidden] { display: none; }
+.stage.head .remote { top: var(--head-h); height: calc(100% - var(--head-h)); }
+.stage.head .nocam, .stage.head .audio-view { top: var(--head-h); }
+.stage.head .held-note { top: calc(50% + var(--head-h) / 2); }
+/* One line: a saved contact's mark and name (bold), the address (grey), the timer (grey), the
+   red mic. Short of room the address is cut short first, then the name; the timer never is. */
+.info-text { flex: 1 1 auto; min-width: 0; gap: 8px; line-height: 1.3; }
+.call-head .info-name { flex: 0 1 auto; font-size: 14.5px; }
+.call-head .info-contact { margin-right: -2px; }
+.call-head .info-contact .contact-mark { margin: 0; }
+.info-addr { flex: 0 1000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: var(--muted); }
+.info-addr[hidden] { display: none; }
+.info-addr::before, .call-head .timer::before { content: "·"; margin-right: 8px; color: var(--muted); }
+.call-head .timer { flex: none; font-size: 13px; }
+.call-head .muted-pill { width: 18px; height: 18px; }
+.call-head .muted-pill svg { width: 11px; height: 11px; }
+.info-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* The call's status, at the right of the header line (a transfer's progress): a tinted pill, in
+   a few words, with its buttons. It's passing and it's news, so it keeps its width (up to most of
+   the line) and the name and address give way; its own text is cut short last. The colour says
+   how it's going: under way (accent), done (green), failed (red), otherwise grey. */
+.head-status {
+  flex: 0 0 auto; max-width: 74%; min-width: 0; margin-left: auto; height: 28px;
+  display: flex; align-items: center; gap: 6px; padding: 0 3px 0 9px; border-radius: 999px;
+  font-size: 13px; font-weight: 500; color: var(--accent); background: color-mix(in srgb, var(--accent) 11%, var(--surface));
+  animation: head-status-in .2s ease-out;
+}
+.head-status[hidden] { display: none; }
+/* A narrow header (under ~560 px): it goes over the top of the whole line rather than leave the
+   name squeezed to nothing beside it. It's passing; who the call's with is back when it goes. */
+.call-head { container-type: inline-size; }
+@container (max-width: 560px) {
+  .head-status { position: absolute; left: 6px; right: 6px; top: 50%; transform: translateY(-50%); max-width: none; margin: 0; animation: none; }
+}
+.head-status[data-state="done"] { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, var(--surface)); }
+.head-status[data-state="bad"] { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
+.head-status[data-state="info"] { color: var(--muted); background: var(--surface-2); }
+/* Being asked to accept a transfer: the accent, and Accept filled. */
+.head-status[data-state="ask"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.head-btn.head-btn-go { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.head-btn.head-btn-go:hover { background: var(--accent-hover); }
+@keyframes head-status-in { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: none; } }
+.head-status-icon { display: grid; flex: none; }
+.head-status-icon svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.head-status-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-right: 3px; }
+.head-btn {
+  flex: none; height: 22px; padding: 0 9px; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); border-radius: 999px;
+  background: var(--surface); color: inherit; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.head-btn:hover { background: color-mix(in srgb, currentColor 10%, var(--surface)); }
+.head-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.head-btn[hidden], .head-x[hidden] { display: none; }
+.call-head .head-x { width: 22px; height: 22px; color: inherit; }
+.call-head .head-x:hover { background: color-mix(in srgb, currentColor 12%, transparent); color: inherit; }
+.call-head .head-x svg { width: 14px; height: 14px; }
+.info-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+/* The call's security, a small card under the padlock: a headline, the two things that can be
+   encrypted (each with its padlock and, small, the technical name), and what that means. */
+.sec-pop {
+  position: absolute; top: calc(var(--head-h) + 6px); left: 8px; z-index: 8; width: min(340px, calc(100% - 16px));
+  padding: 14px 16px; background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0, 0, 0, .25); font-size: 13px; line-height: 1.4;
+}
+.sec-pop[hidden] { display: none; }
+.sec-pop::before {   /* the point, up at the padlock */
+  content: ""; position: absolute; top: -6px; left: 11px; width: 10px; height: 10px; transform: rotate(45deg);
+  background: var(--surface); border-left: 1px solid var(--border); border-top: 1px solid var(--border);
+}
+.sec-title { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 14.5px; font-weight: 600; }
+.sec-title svg { width: 18px; height: 18px; flex: none; display: block; }
+.sec-pop svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sec-pop .ok { color: var(--ok); }
+.sec-pop .part { color: #d19b00; }
+.sec-pop .off { color: var(--muted); }
+.sec-rows { display: grid; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
+.sec-row { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: start; column-gap: 8px; }
+.sec-row svg { width: 15px; height: 15px; margin-top: 2px; display: block; }
+.sec-row .sec-what { font-weight: 500; }
+.sec-row .sec-sub { grid-column: 2 / 4; color: var(--muted); font-size: 12px; }
+.sec-row .sec-state { font-weight: 600; white-space: nowrap; color: var(--ok); }
+.sec-row .sec-state.no { color: var(--warn-ink); }
+.sec-means { margin: 0; }
+/* The padlock: green with SIP and the media encrypted, yellow with one, grey and open with
+   neither; opens Call details. */
+.info-lock { display: grid; place-items: center; flex: none; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ok); cursor: pointer; }
+.info-lock[hidden] { display: none; }
+.info-lock.partial { color: #d19b00; }
+.info-lock.none { color: var(--muted); }
+.info-lock:hover { background: var(--surface-2); }
+.info-lock:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.info-lock svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* A saved contact's mark and name. */
+.info-contact { display: inline-flex; align-items: center; gap: 4px; flex: none; white-space: nowrap; color: var(--accent); font-weight: 500; }
+.info-contact[hidden] { display: none; }
+.info-contact .contact-mark { margin: 0; color: inherit; }
+.timer { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
+/* Muted on a call: a small red mic by the timer. */
+.muted-pill { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--danger-fill); color: #fff; }
+.muted-pill[hidden] { display: none; }
+.muted-pill > span { display: none; }
+.muted-pill svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Diagnostics: Call details, its own tab: a label and a value per row; values that are
+   addresses or ids in monospace. */
+.dev-details { padding: 10px 16px; }
+.details { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 16px; margin: 0; max-width: 760px; font-size: 13px; }
+.details[hidden] { display: none; }
+.details dt { color: var(--muted); white-space: nowrap; }
+.details dd { margin: 0; overflow-wrap: anywhere; }
+.details .mono { font: 12.5px Consolas, monospace; }
+.details .enc { display: inline-flex; align-items: center; gap: 5px; }
+.details .enc svg { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.details .enc.off { color: var(--warn-ink); }
+.details .copy-id { margin-left: 8px; padding: 1px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface-2); color: inherit; font: 11.5px system-ui, sans-serif; cursor: pointer; }
+.details .copy-id:hover { background: var(--surface-3); }
+
+/* Diagnostics: Call quality, its own tab, in the theme's colours like the other tabs. Only the
+   graphs (and the PLI strip) are dark, in either theme, like an instrument: their colours are
+   drawn for it. The table and PLIs, then a graph for each direction side by side, and under them
+   the legend. Narrower, the graphs go under the table, then one above the other. */
+.dev-quality { padding: 10px 16px; }
+.q-empty { margin: 0; color: var(--muted); }
+.q-empty[hidden] { display: none; }
+.quality {
+  display: grid; grid-template-columns: minmax(220px, 260px) repeat(2, minmax(0, 1fr)); gap: 8px 24px; align-items: start;
+  max-width: 1240px; font-size: 12px;
+}
+.quality[hidden] { display: none; }
+.q-left, .q-graph { display: grid; gap: 4px; min-width: 0; }
+.q-left { grid-row: span 2; }
+.q-under { grid-column: 2 / -1; display: grid; gap: 6px; min-width: 0; }
+@media (max-width: 900px) {
+  .quality { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .q-left { grid-column: 1 / -1; grid-row: auto; max-width: 320px; }
+  .q-under { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) { .quality { grid-template-columns: minmax(0, 1fr); } }
+/* Darker than the dark theme's panel, with an edge, so they stand out from it too. */
+.q-chart, .q-pli-chart { box-sizing: border-box; background: #0b100e; border: 1px solid var(--border-strong); border-radius: 4px; }
+.q-chart { width: 100%; height: 88px; }
+.q-graph-title { font-weight: 600; font-size: 13px; }
+.q-graph-title span { font-weight: 400; color: var(--muted); }
+.q-graph-by { color: var(--muted); }
+.q-legend { display: flex; flex-wrap: wrap; gap: 2px 10px; color: var(--muted); }
+/* Swatches with an edge, so white Frozen shows on the light theme. */
+.q-legend span::before, .q-pli-keys span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
+/* PLIs: the legend in one half, the ticks in the other, a row each for received and sent. */
+.q-pli { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; margin-top: 4px; }
+.q-pli[hidden] { display: none; }
+.q-pli-legend { display: flex; align-items: center; gap: 10px; }
+.q-pli-head { font-weight: 600; }
+.q-pli-keys { display: grid; line-height: 12px; font-size: 11px; color: var(--muted); }
+.q-pli-chart { width: 100%; height: 24px; }
+/* The table: a row per measure, ↑ Sent and ↓ Received side by side. */
+.q-table { display: grid; grid-template-columns: auto auto minmax(max-content, 1fr) minmax(max-content, 1fr); gap: 1px 6px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.q-stream { font-weight: 600; }
+.q-stream.next { margin-top: 4px; }
+.q-metric { color: var(--muted); }
+.q-col, .q-v { text-align: right; padding: 1px 4px; border-radius: 3px; white-space: nowrap; }
+.q-col { color: var(--muted); }
+.q-v.mos { font-weight: 600; }
+.q-v.bad { color: var(--danger); }
+.q-foot { color: var(--muted); }
+.q-foot:empty { display: none; }
+
+/* The control bar, from the prototype: buttons with an icon and a label; Mute and Camera split,
+   the ▾ opening a device menu above. The three call buttons are centred; Self view sits at the
+   right end, under the self view it controls. */
+.controls {
+  display: grid; grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 168px)) repeat(2, minmax(0, 112px)) minmax(max-content, 1fr);
+  align-items: center; gap: 8px;
+}
+.controls > :first-child { grid-column: 2; }
+/* At the right: Text (an icon) and Self view. */
+.controls-right { grid-column: 6; justify-self: end; display: flex; gap: 8px; }
+.controls .self-toggle { color: var(--muted); font-weight: 500; }
+.controls .btn.icon-btn { width: 38px; padding: 0; color: var(--muted); }
+.controls .btn.icon-btn:hover:not(:disabled) { color: var(--text); }
+/* Open is the accent, not the amber of "off". */
+.controls .btn.text-btn[aria-pressed="true"] {
+  color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+.controls .btn.keypad-btn[aria-pressed="true"] {
+  color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+.text-btn { position: relative; }
+.text-btn .btn-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); border: 1.5px solid var(--surface); }
+.controls .self-toggle[hidden] { display: none; }
+.controls .btn.self-toggle[aria-pressed="true"] {
+  color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+.controls .btn {
+  height: 38px; padding: 0 10px; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-width: 0; white-space: nowrap;
+}
+.controls .btn > span { overflow: hidden; text-overflow: ellipsis; }
+.controls .btn svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* Mic or camera off: soft red (End is the solid red), its ▾ with it. */
+.controls .btn[aria-pressed="true"], .controls .btn[aria-pressed="true"] + .split-caret {
+  background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger);
+}
+.controls .btn-danger:disabled { background: var(--surface); border-color: var(--border-strong); color: var(--muted); opacity: .6; }
+.split { position: relative; display: flex; min-width: 0; }
+.split > .btn:first-child { flex: 1; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.controls .split-caret { flex: none; width: 28px; padding: 0; border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.controls .split-caret svg { width: 14px; height: 14px; }
+.split-caret[aria-expanded="true"] { background: var(--surface-2); }
+.device-menu {
+  position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 15; min-width: 280px; max-width: min(380px, calc(100vw - 32px));
+  padding: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.16);
+}
+.device-menu[hidden] { display: none; }
+.device-menu { overflow-y: auto; }
+.device-menu-label { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 8px 4px; }
+.device-option {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 8px; border: 0; border-radius: 6px;
+  background: none; color: var(--text); font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+}
+.device-option > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.device-option:hover, .device-option:focus-visible { background: var(--surface-2); outline: none; }
+.device-check { width: 16px; display: grid; place-items: center; color: var(--accent); flex: none; }
+.device-check svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.device-none { padding: 7px 8px 7px 32px; font-size: 13px; color: var(--muted); }
+.device-menu-sep { height: 1px; background: var(--border); margin: 6px 0; }
+
+/* Diagnostics, Network: the loss sliders. */
+.loss-sliders { display: grid; gap: 4px; max-width: 520px; }
+.loss-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) 44px; align-items: center; gap: 10px; font-size: 13px; }
+.loss-row input { width: 100%; accent-color: var(--accent); }
+.loss-row output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.loss-row output.on { color: var(--danger); font-weight: 600; }
+.loss-note { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+
+/* ---- Real-time text panel, in the dock ---- */
+.rtt {
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.rtt[hidden] { display: none; }
+/* The keypad, from the prototype: the tones sent so far, then 12 keys with their letters. */
+.keypad-pop {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding-bottom: 12px; display: flex; flex-direction: column;
+}
+.keypad-pop[hidden] { display: none; }
+.keypad-pop .rtt-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.dtmf-display {
+  flex: none; height: 36px; margin: 10px 12px 8px; border-radius: var(--radius-sm); background: var(--surface-2);
+  display: flex; align-items: center; justify-content: center;
+  font: 20px/1 "Cascadia Mono", Consolas, monospace; letter-spacing: .15em; overflow: hidden; white-space: nowrap;
+}
+.keypad {
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, minmax(28px, 50px));
+  gap: 8px; padding: 0 12px; flex: 0 1 auto; min-height: 0; overflow: hidden;
+}
+.keypad-pop .rtt-head { flex: none; }
+.key {
+  min-height: 0; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+  display: grid; place-items: center; line-height: 1.05; font: inherit; cursor: pointer;
+}
+.key:hover:not(:disabled) { background: var(--surface-3); }
+.key:active:not(:disabled), .key.hit { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); border-color: var(--accent); }
+.key > span { display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1; }
+.key br { display: none; }
+.key b { font-size: 19px; font-weight: 500; }
+.key small { font-size: 9.5px; letter-spacing: .15em; color: var(--muted); }
+.keypad-in { margin: 8px 12px 0; font-size: 12px; color: var(--muted); min-height: 1em; }
+.keypad-in:empty { display: none; }
+/* The dock (app.js renderDock): a column right of the stage, which narrows to make room, holding
+   the keypad and text panels; with both, the keypad keeps its size at the top and the text takes
+   the rest. */
+.stage-row { --dock-w: 300px; }
+.stage-row.docked { grid-template-columns: minmax(0, 1fr) var(--dock-w); column-gap: 12px; }
+.stage-row.docked > .stage { grid-column: 1; grid-row: 1; }
+.dock { grid-column: 2; grid-row: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+.dock[hidden] { display: none; }
+/* In a short window the keys get shorter (to 28 px) before the text gets squeezed. */
+/* (Its smallest: the header, the tones sent, and four rows of 28 px keys.) */
+.dock > .keypad-pop { flex: 0 1 auto; max-height: none; min-height: 256px; }
+.dock > .rtt { flex: 1 1 auto; height: auto; min-height: 140px; }
+.dock.both .keypad { grid-template-rows: repeat(4, minmax(28px, 42px)); }
+/* Transfer, opened beside the dock: over the stage, not the dock. */
+.stage-row.docked > .xfer-pop { right: calc(var(--dock-w) + 24px); }
+/* Narrow windows: no room for a column, so the dock floats over the stage's right edge, at the
+   bottom by the buttons, and the stage keeps its width. */
+@media (max-width: 959px) {
+  .stage-row.docked { grid-template-columns: minmax(0, 1fr); }
+  /* grid-column auto: an absolute grid item placed in a column takes that column as its box. */
+  .dock { grid-column: auto; grid-row: auto; position: absolute; right: 12px; top: 12px; bottom: 12px; z-index: 6; width: min(var(--dock-w), calc(100% - 24px)); justify-content: flex-end; overflow: visible; }
+  .dock > .rtt, .dock > .keypad-pop { box-shadow: 0 10px 30px rgba(0, 0, 0, .25); }
+  .dock > .rtt { flex: 0 1 400px; min-height: 160px; }
+  .stage-row.docked > .xfer-pop { right: 12px; }
+}
+.rtt-head { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.rtt-title { font-weight: 600; }
+.rtt-sub { font-size: 12px; color: var(--muted); margin-right: auto; }
+.rtt-close { align-self: center; width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
+.rtt-close:hover { background: var(--surface-2); color: var(--text); }
+.rtt-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rtt-log { overflow: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.rtt-empty { margin: auto; color: var(--muted); font-size: 13px; }
+.rtt-who { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+.rtt-who.me { align-self: flex-end; }
+.rtt-msg { max-width: 85%; padding: 6px 10px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13.5px; border: 1px solid transparent; }
+.rtt-msg.them { align-self: flex-start; background: var(--surface-2); border-color: var(--border); }
+.rtt-msg.me { align-self: flex-end; background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+/* A line still being typed, by either side: dashed, with a blinking caret. */
+.rtt-msg.live { border-style: dashed; border-color: var(--border-strong); }
+.rtt-caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 1px; vertical-align: text-bottom; background: currentColor; animation: rtt-blink 1s steps(1) infinite; }
+@keyframes rtt-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .rtt-caret { animation: none; } }
+.rtt-compose { padding: 10px 12px; border-top: 1px solid var(--border); display: grid; gap: 6px; }
+/* The entry box with its Send button inside, on the right. */
+.rtt-entry { display: flex; align-items: center; height: 36px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); }
+.rtt-entry:focus-within { outline: 2px solid var(--accent); outline-offset: -1px; }
+.rtt-input { flex: 1; min-width: 0; height: 100%; padding: 0 10px; border: 0; background: none; color: var(--text); font: inherit; outline: none; }
+.rtt-send { flex: none; width: 30px; height: 30px; margin-right: 3px; display: grid; place-items: center; border: 0; border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer; }
+.rtt-send:disabled { background: none; color: var(--muted); cursor: default; }
+.rtt-send svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rtt-entry[hidden], .rtt-add[hidden] { display: none; }
+.rtt-hint { font-size: 12px; color: var(--muted); }
+.rtt-add { height: 34px; font-size: 13px; }
+/* Text arriving with the text panel closed: a toast at the bottom of the stage. */
+.rtt-toast {
+  position: absolute; left: 50%; bottom: 16px; z-index: 6; transform: translateX(-50%); max-width: min(460px, calc(100% - 32px));
+  display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; border-radius: 999px;
+  background: rgba(20, 28, 25, .88); color: #fff; font-size: 13px; box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
+}
+.rtt-toast[hidden] { display: none; }
+.rtt-toast-icon svg { display: block; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+.rtt-toast-who { font-weight: 600; white-space: nowrap; }
+.rtt-toast-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .9; }
+.rtt-toast-reply { flex: none; height: 26px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--accent); color: #fff; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.rtt-toast-reply:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+
+/* ---- Diagnostics panel (F12), docked at the bottom ---- */
+.devpanel {
+  position: relative; flex: none; height: var(--dev-h, 240px); display: grid; grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);   /* never wider than the window: the tab bar scrolls instead (narrow) */
+  background: var(--surface); border-top: 1px solid var(--border-strong);
+}
+.devpanel[hidden] { display: none; }
+.dev-resize { position: absolute; left: 0; right: 0; top: -4px; height: 8px; cursor: ns-resize; z-index: 1; }
+.dev-bar { display: flex; align-items: stretch; gap: 6px; height: 34px; padding: 0 8px 0 14px; background: var(--surface-2); border-bottom: 1px solid var(--border); user-select: none; }
+/* The panel's title: bigger and bolder than the tabs, with an icon and a divider before them. */
+.dev-title {
+  align-self: center; display: flex; align-items: center; gap: 7px; margin: 0 6px 0 0; padding-right: 14px;
+  border-right: 1px solid var(--border-strong); font-size: 14px; font-weight: 700; letter-spacing: .01em; color: var(--text);
+}
+.dev-title svg { width: 16px; height: 16px; flex: none; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dev-tabs { display: flex; }
+.dev-tab { position: relative; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.dev-tab:hover { color: var(--text); }
+.dev-tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.dev-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* Loss is on: a dot on Network, so it isn't forgotten while the log is showing. */
+.dev-tab .dev-dot { position: absolute; top: 8px; right: 3px; width: 6px; height: 6px; border-radius: 50%; background: var(--danger); }
+.dev-spacer { flex: 1; }
+.dev-act { align-self: center; height: 24px; padding: 0 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); font: inherit; font-size: 12px; cursor: pointer; }
+.dev-act:hover { border-color: var(--border-strong); }
+.dev-act[hidden] { display: none; }
+.dev-key { align-self: center; padding: 1px 6px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font: 11px Consolas, monospace; }
+.dev-close { align-self: center; width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
+.dev-close:hover { background: var(--border); color: var(--text); }
+/* The ⋯ (phone width only, below), with a red dot when a tab in it has one (Network, loss on). */
+.dev-more { display: none; position: relative; align-self: center; }
+.dev-more-btn { position: relative; width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
+.dev-more-btn:hover, .dev-more-btn[aria-expanded="true"] { background: var(--border); color: var(--text); }
+.dev-more-btn svg { width: 16px; height: 16px; fill: currentColor; }
+.dev-more-btn .dev-dot { position: absolute; top: 3px; right: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--danger); }
+.dev-menu { min-width: 180px; }
+.dev-menu .dev-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--danger); flex: none; }
+.dev-tab[hidden] { display: none; }
+.dev-close svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.dev-pane { min-height: 0; overflow: auto; }
+.dev-pane[hidden] { display: none; }
+#log { margin: 0; padding: 8px 14px; font: 12px/1.45 Consolas, monospace; white-space: pre-wrap; outline: none; }
+.dev-net { padding: 12px 16px; }
+body.dev-resizing { cursor: ns-resize; user-select: none; }
+
+/* Call from (desktop only): the account's registration dot, the picker, and Manage accounts. */
+.from { display: flex; align-items: center; gap: 6px; flex: none; position: relative; }
+.from[hidden] { display: none; }
+.from-pick { position: relative; display: flex; }
+.from-pick[hidden] { display: none; }
+.from-pick select {
+  height: 40px; max-width: 220px; padding: 0 10px 0 26px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit;
+}
+.from-pick select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.from-pick select:disabled { opacity: .6; }
+/* Calling a contact switched Call from to its account: a brief ring. Or it couldn't: a note under it. */
+.from-pick.switched select { animation: from-switched 1.6s ease-out; }
+/* A contact form's Call from, switched by a full address typed (contacts.js, followTyped). */
+#contactForm select.switched { animation: from-switched 1.6s ease-out; }
+@keyframes from-switched { 0%, 40% { box-shadow: 0 0 0 3px var(--accent); border-color: var(--accent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+.from-note {
+  position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; width: max-content; max-width: min(420px, 90vw); padding: 6px 10px;
+  border-radius: var(--radius-sm); border: 1px solid var(--warn-ink); background: var(--surface); color: var(--text);
+  font-size: 12.5px; box-shadow: 0 4px 14px rgb(0 0 0 / .18); white-space: normal;
+}
+.from-note[hidden] { display: none; }
+.from-dot { position: absolute; left: 11px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: var(--border-strong); pointer-events: none; }
+.from-dot.ok, .am-dot.ok { background: var(--ok); }
+.from-dot.warn, .am-dot.warn { background: var(--warn-ink); }
+.from-dot.bad, .am-dot.bad { background: var(--danger); }
+.from-manage svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.from-manage.on { border-color: var(--accent); color: var(--accent); }
+.from-manage.error { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger); }
+
+/* Manage accounts: over the stage, from the prototype's Accounts view. */
+.am { position: absolute; inset: 0; z-index: 7; overflow: auto; background: var(--surface); border-radius: var(--radius); padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 14px; }
+.am[hidden] { display: none; }
+.am svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.am-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.am-title { margin: 0; font-size: 20px; font-weight: 600; }
+.am-sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.am-close { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); cursor: pointer; }
+.am-close:hover { background: var(--surface-2); }
+.am-top-right { display: flex; align-items: center; gap: 12px; flex: none; }
+/* This PC's address for direct calls, beside Close: a quiet note, a click copies it. */
+.am-local { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 4px 6px; border-radius: 6px; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.am-local:hover { background: var(--surface-2); color: var(--text); }
+.am-local:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.am-local svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.am-actions { display: flex; }
+.am .btn { display: inline-flex; align-items: center; gap: 6px; }
+.am-small { height: 34px; padding: 0 14px; font-size: 13px; }
+.am-empty { color: var(--muted); margin: 8px 0; max-width: 520px; }
+.am-table-wrap { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; flex: none; }
+.am-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.am-table th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); background: var(--surface-2); padding: 9px 14px; border-bottom: 1px solid var(--border); }
+.am-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.am-table tr:last-child td { border-bottom: 0; }
+.am-table tbody tr { cursor: pointer; }
+.am-table tbody tr:hover { background: var(--surface-2); }
+.am-table tr.disabled td { color: var(--muted); }
+.am-name { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: inherit; cursor: pointer; text-align: left; }
+.am-name:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+.am-tag { margin-left: 8px; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--surface-3); color: var(--muted); white-space: nowrap; }
+.am-mono { font-family: "Cascadia Mono", Consolas, monospace; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.am-chev { width: 1%; color: var(--muted); }
+.am-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.am-status.ok { color: var(--ok); }
+.am-status.bad { color: var(--danger); }
+.am-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--border-strong); }
+.am-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 2px 0; font: inherit; font-size: 13px; color: var(--accent); cursor: pointer; margin-top: -6px; }
+.am-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.am-spacer { flex: 1; }
+.am-switch { display: inline-flex; align-items: center; gap: 8px; height: 34px; border: 0; background: none; font: inherit; font-size: 13px; color: var(--text); cursor: pointer; }
+.am-track { position: relative; width: 32px; height: 18px; border-radius: 9px; background: var(--border-strong); transition: background .12s; }
+.am-knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: left .12s; }
+.am-switch.on .am-track { background: var(--accent); }
+.am-switch.on .am-knob { left: 16px; }
+.am-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.am-form { display: flex; flex-direction: column; gap: 14px; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+.am-section + .am-section { border-top: 1px solid var(--border); padding-top: 14px; }
+.am-section h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; }
+.am-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px 14px; }
+.am-grid .span-2 { grid-column: 1 / -1; }
+.am-field { display: grid; gap: 4px; align-content: start; }
+.am-label { font-size: 12.5px; color: var(--muted); }
+.am-hint { font-size: 11.5px; color: var(--muted); }
+.am-field input, .am-field select { height: 36px; padding: 0 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; }
+.am-field input:focus, .am-field select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.am-check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.am-check input { width: 16px; height: 16px; accent-color: var(--accent); }
+.am-error { margin: 0; color: var(--danger); font-size: 13px; }
+.am-error[hidden] { display: none; }
+.am-foot { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); padding-top: 14px; flex-wrap: wrap; }
+.am-remove { color: var(--danger); border-color: transparent; background: none; }
+.am-remove:hover { background: var(--danger-soft); }
+.am-remove.confirm { background: var(--danger-fill); border-color: var(--danger-fill); color: #fff; }
+/* The dial bar in rows when one would leave the address too little room (under 260 px):
+   People, Manage accounts, Call from and the address, then Call and Video call together on the
+   next row, sharing it. At 500 px and under (a phone) the address gets a row of its own too. */
+@media (max-width: 960px) {
+  .dialbar { flex-wrap: wrap; }
+  .dialbar .dest-wrap { flex: 1 1 260px; }
+  .dialbar .call-btns { flex: 1 1 auto; }
+  .dialbar .call-btn { flex: 1 1 0; }
+  /* Call from (desktop): the whole of its account's name, as far as the row allows. */
+  .dialbar .from-pick { min-width: 0; }
+  .dialbar .from-pick select { max-width: 100%; }
+}
+@media (max-width: 700px) {
+  .am-table th:nth-child(2), .am-table td:nth-child(2) { display: none; }
+  /* The header: the title and the close button, then this PC's direct address on a row of its own
+     (and wrapping, if it must), rather than squeezing the title into a column beside it. */
+  .am-top { flex-wrap: wrap; }
+  .am-top > div:first-child { flex: 1 1 0; min-width: 0; }
+  .am-top-right { display: contents; }
+  .am-top-right .am-close { order: 1; }
+  .am-top-right .am-local { order: 2; flex: 1 1 100%; flex-wrap: wrap; margin-left: -6px; text-align: left; }
+}
+/* Settings (settings.js): the gear in the top bar, and the dialog it opens, as in the prototype. */
+/* Privacy mode, just left of Settings: off, the incognito icon in a round button like Settings;
+   on, a chip in the text colour (dark in the light theme, light in the dark) with the icon and
+   "Privacy mode", as a browser marks a private window. */
+.privacy { display: inline-flex; }
+.privacy-btn { display: inline-flex; align-items: center; height: 34px; min-width: 34px; padding: 0 7px; border-radius: 17px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; transition: padding 0.3s ease; }
+.privacy-btn:hover { background: var(--surface-2); }
+.privacy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.privacy-btn svg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.privacy-btn.on { background: var(--text); border-color: var(--text); color: var(--surface); font-weight: 500; padding: 0 12px 0 9px; }
+.privacy-btn.on:hover { background: var(--text); filter: brightness(1.2); }
+/* The words slide out from the icon when it goes on, and fold away again; folded, they're still
+   the button's name. */
+.privacy-text { display: inline-block; max-width: 0; margin-left: 0; opacity: 0; overflow: hidden; white-space: nowrap; transition: max-width 0.3s ease, margin-left 0.3s ease, opacity 0.2s ease; }
+.privacy-btn.on .privacy-text { max-width: 160px; margin-left: 7px; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .privacy-btn, .privacy-text { transition: none; } }
+.settings-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); cursor: pointer; }
+.settings-btn:hover { background: var(--surface-2); }
+.settings-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.settings-btn svg { width: 17px; height: 17px; }
+.settings {
+  width: min(460px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; overflow: hidden;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.22);
+}
+.settings[open] { display: flex; flex-direction: column; }
+.settings::backdrop { background: rgb(15 21 19 / 0.45); }
+.settings-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 10px 20px; border-bottom: 1px solid var(--border); }
+.settings-head h2 { margin: 0; font-size: 17px; font-weight: 600; }
+.settings-close { height: 34px; width: 34px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--muted); cursor: pointer; }
+.settings-close:hover { background: var(--surface-2); color: var(--text); }
+.settings-close:focus { outline: none; }
+.settings-close:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.settings-body { overflow-y: auto; padding: 4px 20px 16px; }
+/* Which build, under everything and outside the scrolling, small and quiet; selectable to copy. */
+.settings-foot { margin: 0; padding: 10px 20px 12px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); user-select: text; }
+.settings-section { border-top: 1px solid var(--border); padding: 14px 0 6px; }
+.settings-section:first-child { border-top: 0; }
+.settings-section h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; }
+.settings-field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin-bottom: 10px; font-size: 12.5px; color: var(--muted); }
+.settings-field[hidden] { display: none; }
+.settings-field select {
+  height: 36px; padding: 0 8px; font: inherit; font-size: 14px; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+}
+.settings-field select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.settings .check-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; cursor: pointer; }
+.settings .check-row input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+.settings-note { margin: -2px 0 8px 26px; font-size: 12.5px; color: var(--muted); }
+.settings-field + .settings-note, .settings-seg + .settings-note, .settings .btn + .settings-note { margin-left: 0; }
+.settings-note[hidden] { display: none; }
+/* Audio & video's notes go under the device lists, not under a checkbox. */
+#setAvHead ~ .settings-note { margin-left: 0; }
+#setAvHead + .settings-lead { margin: -6px 0 10px; }
+.settings .btn + .settings-note { margin-top: 8px; }
+.settings .btn { height: 34px; padding: 0 14px; }
+/* System | Light | Dark: like Audio | Video, the chosen one raised. */
+.settings-seg { display: inline-flex; padding: 3px; gap: 2px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-3); }
+.settings-seg label { position: relative; padding: 5px 14px; border-radius: 7px; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; }
+.settings-seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.settings-seg label:has(input:checked) { background: var(--seg-on); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
+.settings-seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* ---------- Active calls, down the left ---------- */
+
+/* The panel spans the stage and the control bar; the header and dial bar stay full width. Without
+   it (fewer than two calls) the stage and controls take the whole width. */
+.shell { grid-template-columns: auto minmax(0, 1fr); }
+.shell:has(> .calls[hidden]) { grid-template-columns: minmax(0, 1fr); }
+.shell > .topbar, .shell > .dialbar { grid-column: 1 / -1; }
+.shell > .calls { grid-column: 1; grid-row: 3 / 5; }
+.calls[hidden] { display: none; }
+.shell > .stage-row, .shell > .controls { grid-column: -2 / -1; }
+/* No call answered yet: no control bar (app.js render), and the stage has its row. */
+.controls[hidden] { display: none !important; }
+.shell:has(> .controls[hidden]) { grid-template-rows: auto auto 1fr; }
+.shell:has(> .controls[hidden]) > .calls { grid-row: 3 / 4; }
+
+.calls {
+  --calls-w: 240px; --rail-w: 48px;
+  position: relative; z-index: 20; width: var(--calls-w); min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 8px; overflow: hidden;
+}
+.calls-head { display: flex; align-items: center; gap: 8px; padding: 0 2px 0 8px; margin-bottom: 10px; min-height: 28px; }
+.calls-title { font-weight: 600; font-size: 13.5px; white-space: nowrap; }
+.call-count {
+  min-width: 22px; height: 20px; padding: 0 7px; border-radius: 10px; display: grid; place-items: center;
+  background: var(--tile); color: var(--accent); font-size: 12px; font-weight: 500;
+}
+.call-count:empty { display: none; }
+/* The chevron that folds the panel to the rail and back. */
+.calls-toggle {
+  margin-left: auto; flex: none; width: 28px; height: 28px; display: grid; place-items: center;
+  border: 0; border-radius: var(--radius-sm); background: none; color: var(--muted); cursor: pointer;
+}
+.calls-toggle[hidden] { display: none; }
+.calls-toggle:hover { background: var(--surface-3); color: var(--text); }
+.calls-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+.calls-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.call-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; align-content: start; overflow-y: auto; min-height: 0; }
+.call-row {
+  position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  padding: 10px; border: 1px solid transparent; border-radius: 10px;
+}
+/* The call on the stage. */
+.call-row[aria-current="true"] { background: var(--surface); border-color: var(--border); box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
+.call-row[aria-current="true"]::before {
+  content: ""; position: absolute; left: -1px; top: 10px; bottom: 10px; width: 3px; background: var(--accent); border-radius: 0 3px 3px 0;
+}
+.call-avatar {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--tile); color: var(--tile-ink); font-size: 13px; font-weight: 600;
+}
+.call-row.connected .call-avatar { box-shadow: 0 0 0 2px var(--accent); }
+.call-row.ringing .call-avatar { box-shadow: 0 0 0 2px var(--warn-ink); animation: calls-pulse 1.4s ease-in-out infinite; }
+.call-row.calling .call-avatar { box-shadow: 0 0 0 2px var(--border-strong); animation: calls-pulse 1.4s ease-in-out infinite; }
+@keyframes calls-pulse { 50% { background: var(--warn-bg); } }
+.call-main { min-width: 0; }
+.call-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.call-name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.call-status { display: block; font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.call-row.ringing .call-status { color: var(--warn-ink); }
+.call-row.connected .call-status { color: var(--accent); }
+.call-row.connected.muted .call-status { color: var(--danger); }
+.call-time { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.call-time:empty { display: none; }
+
+/* Narrow windows: a rail, each call as its avatar and timer. */
+.call-row { cursor: pointer; }
+.calls.collapsed { width: var(--rail-w); padding: 10px 0; align-items: center; }
+/* Folded: just the chevron at the top (narrow windows have none, so no head at all). */
+.calls.collapsed .calls-head { justify-content: center; padding: 0; margin-bottom: 6px; }
+.calls.collapsed .calls-title, .calls.collapsed .call-count { display: none; }
+.calls.collapsed .calls-toggle { margin-left: 0; }
+.calls.collapsed .calls-head:not(:has(.calls-toggle:not([hidden]))) { display: none; }
+/* The list scrolls, so it clips: room around the avatar for its ring (up to 3px). */
+.calls.collapsed .call-list { justify-items: center; gap: 10px; padding: 4px 5px; }
+.calls.collapsed .call-avatar { width: 26px; height: 26px; font-size: 12px; }
+.calls.collapsed .call-row { grid-template-columns: 26px; gap: 4px; padding: 4px 0; justify-items: center; background: none; border-color: transparent; box-shadow: none; }
+.calls.collapsed .call-row::before { display: none; }
+.calls.collapsed .call-main { display: none; }
+.calls.collapsed .call-time { font-size: 11px; }
+.calls.collapsed .call-list { overflow-x: hidden; }
+.calls.collapsed .call-row { grid-template-columns: auto; }
+.calls.collapsed .call-sends { gap: 2px; margin-left: 0; }
+.calls.collapsed .send { width: 15px; height: 15px; padding: 2px; }
+
+/* Grid and ⋯, under the list; on the rail, icons only, stacked. */
+.calls-foot { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 34px; gap: 6px; padding: 10px 2px 0; margin-top: auto; border-top: 1px solid var(--border); }
+.calls-foot:has(> .calls-more[hidden]) { grid-template-columns: minmax(0, 1fr); }
+.calls-more { padding: 0; }
+.calls-more[aria-expanded="true"] { background: var(--surface-2); }
+.calls-more svg { stroke-width: 3; }
+.all-menu { min-width: 220px; }
+.all-menu .device-check { color: inherit; }
+.all-menu .danger { color: var(--danger); }
+.all-menu .device-option:disabled { opacity: .5; cursor: default; }
+.calls-foot[hidden] { display: none; }
+.calls-all {
+  height: 34px; padding: 0 8px; font-size: 12.5px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 0; white-space: nowrap;
+}
+.calls-all > span { overflow: hidden; text-overflow: ellipsis; }
+.calls-all svg { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* Grid: pressed while the grid is on. */
+.calls-grid { position: relative; }
+.calls-grid .count {
+  font-size: 11px; line-height: 16px; min-width: 16px; padding: 0 5px; border-radius: 8px; text-align: center;
+  background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent);
+}
+.calls-all[hidden] { display: none; }
+.calls-grid[aria-pressed="true"] {
+  color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+.calls.collapsed .calls-foot { grid-template-columns: 34px; padding: 10px 0 0; justify-content: center; }
+.calls.collapsed .calls-all { width: 34px; height: 34px; padding: 0; }
+.calls.collapsed .calls-all > span:not(.count) { display: none; }
+.calls.collapsed .calls-grid .count {
+  position: absolute; top: -5px; right: -5px; font-size: 10px; line-height: 14px; min-width: 14px; padding: 0 3px;
+  background: var(--accent); color: var(--surface);
+}
+
+/* What a call gets from you: a filled chip while it gets your mic (or camera), a struck-out
+   faint icon while it doesn't (muted, on hold, another call has it, camera off). */
+.call-sends { display: inline-flex; gap: 4px; margin-left: auto; flex: none; }
+.send { display: inline-flex; width: 20px; height: 20px; padding: 3px; border-radius: 50%; color: var(--muted); }
+.send svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.send.on { background: var(--accent); color: #fff; }
+.send.muted { color: var(--danger); }
+
+/* Narrow windows: the column is always the rail's width. Expanded, the panel lies over the
+   stage (its negative margin keeps the column narrow) until you collapse it or click away. */
+@media (max-width: 699px) {
+  .calls.peek { margin-right: calc(var(--rail-w) - var(--calls-w)); box-shadow: 0 8px 24px rgb(0 0 0 / .18); }
+}
+
+@media (prefers-reduced-motion: reduce) { .call-row .call-avatar { animation: none; } }
+
+/* ---------- Several calls ---------- */
+
+.call-row { cursor: pointer; }
+.call-row:not([aria-current="true"]):hover { background: var(--surface-3); }
+.call-row.held .call-avatar { box-shadow: 0 0 0 2px var(--border-strong); }
+/* The selected call, live: a bolder, darker ring than the other connected calls. */
+.call-row.connected[aria-current="true"]:not(.held) .call-avatar { box-shadow: 0 0 0 3px var(--accent-hover); }
+.call-row.connected.held .call-status, .call-row.connected.audio-off .call-status { color: var(--muted); }
+.call-row.connected.held.long .call-status { color: var(--warn-ink); }
+.call-row.ended { opacity: .6; }
+.call-row.ended .call-avatar { box-shadow: none; }
+
+/* On hold: a note over the middle of the stage, with Resume. Amber after a minute. */
+.held-note {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 3;
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--text); font-weight: 600;
+  box-shadow: 0 6px 24px rgb(0 0 0 / .18); font-variant-numeric: tabular-nums;
+}
+.held-note[hidden] { display: none; }
+.held-lines { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+/* A failed transfer of yours, above "On hold · 00:04": why. */
+.held-why { color: var(--danger); font-size: 13px; }
+.held-why[hidden] { display: none; }
+.held-note.long { color: var(--warn-ink); }
+.held-note .btn { height: 34px; display: inline-flex; align-items: center; gap: 6px; }
+.held-note .btn[hidden] { display: none; }
+.held-note .btn svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
+.controls #holdBtn svg { fill: currentColor; stroke: none; width: 14px; height: 14px; }
+.controls #holdBtn[aria-pressed="true"] { background: var(--warn-bg); border-color: var(--warn-ink); color: var(--warn-ink); }
+
+/* A call ringing while you're on another: a banner along the top of the stage. Centred with
+   left/right + auto margins, not left: 50% and a translate: that caps its width at half the
+   stage, and "Answer & hold current" with "+1 more waiting" pushed the buttons out of it. */
+.incoming {
+  position: absolute; left: 12px; right: 12px; top: 12px; z-index: 12;
+  width: fit-content; margin-inline: auto;
+  /* Short of room the buttons go to a second line rather than squeeze who's calling to "Silv…". */
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; max-width: calc(100% - 24px);
+  padding: 8px 8px 8px 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border);
+  box-shadow: 0 8px 28px rgb(0 0 0 / .2);
+}
+.incoming[hidden] { display: none; }
+.incoming-who { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--text); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.incoming-who:hover { text-decoration: underline; }
+/* The ringing call in the answer view, when it's in the banner's list too. */
+.incoming-who.shown { color: var(--accent); }
+.incoming-who { min-width: 3em; }
+.incoming-what { color: var(--warn-ink); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.incoming-actions { display: flex; gap: 6px; flex: none; margin-left: auto; }
+.incoming-actions .btn { height: 34px; }
+/* "+N more": drops the other ringing calls down inside the banner. Open, the banner takes a set
+   width (its rows are as wide as the top line) and the list scrolls past three. */
+.incoming-more {
+  flex: none; display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 8px 0 10px;
+  border: 1px solid var(--warn-ink); border-radius: 999px; background: var(--warn-bg); color: var(--warn-ink);
+  font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.incoming-more[hidden] { display: none; }
+.incoming-more::after {
+  content: ""; width: 6px; height: 6px; margin: -3px 0 0 2px;
+  border: solid currentColor; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); transition: transform .15s;
+}
+.incoming.open .incoming-more::after { transform: rotate(-135deg); margin-top: 3px; }
+.incoming.open { width: min(640px, calc(100% - 24px)); }
+.incoming-list {
+  flex: 1 0 100%; list-style: none; margin: 0 -8px -8px -14px; padding: 0;
+  max-height: calc(3 * 47px); overflow-y: auto; overscroll-behavior: contain;
+  border-top: 1px solid var(--border);
+}
+.incoming-list[hidden] { display: none; }
+.incoming-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-height: 46px; padding: 6px 8px 6px 14px; border-bottom: 1px solid var(--border); }
+.incoming-row:last-child { border-bottom: 0; }
+.incoming-row .incoming-what { font-variant-numeric: tabular-nums; }
+.incoming-row .btn { height: 30px; }
+/* Placing a call over another: the same banner, not a button to open (it isn't a call yet). */
+.outgoing .incoming-who { cursor: default; }
+.outgoing .incoming-who:hover { text-decoration: none; }
+.outgoing .incoming-what { color: var(--muted); }
+.outgoing.ended .incoming-what { color: var(--danger); }
+/* Both at once: the call you're placing goes below the one ringing in. */
+.incoming:not([hidden]) ~ .outgoing, .outgoing:not([hidden]) ~ .incoming { top: 64px; }
+/* With the call header showing, they start below it: the header is this call's, the banners
+   are other calls', and neither covers the other. */
+.shell:has(.stage.head:not(.grid)) .incoming { top: calc(var(--banner-top, 12px) + 40px); }
+.shell:has(.stage.head:not(.grid)) .incoming:not([hidden]) ~ .outgoing,
+.shell:has(.stage.head:not(.grid)) .outgoing:not([hidden]) ~ .incoming { top: calc(var(--banner-top, 12px) + 92px); }
+
+/* ---------- Focus and grid views ---------- */
+/* The Grid toggle is in the Active calls footer. In the grid the call buttons go: they'd act on
+   one call, and the grid shows them all. */
+.controls.grid > * { visibility: hidden; }
+
+/* The tiles fill the stage: two columns up to four calls, then three (app.js sets --cols; one on a
+   narrow stage), each with its name and status under it. Past what fits, the stage scrolls. */
+.tiles {
+  position: absolute; inset: 0; padding: 12px; overflow: auto; display: grid; gap: 12px;
+  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); grid-auto-rows: minmax(140px, 1fr);
+}
+.tiles[hidden] { display: none; }
+.tile {
+  position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; border-radius: var(--radius-sm);
+  background: var(--surface); border: 1px solid var(--border); cursor: pointer; overflow: hidden; text-align: left;
+  padding: 0; font: inherit; color: var(--text);
+}
+.tile:hover { border-color: var(--border-strong); }
+.tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* The selected call, which has the audio when it's connected. */
+.tile.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.tile-feed { position: relative; flex: 1; min-height: 0; background: var(--tile); color: var(--tile-ink); display: grid; place-items: center; overflow: hidden; }
+.tile-feed .remote { display: none; object-fit: cover; }
+.tile.video .tile-feed .remote { display: block; }
+.tile.video .tile-avatar { display: none; }
+.tile-avatar { width: 64px; height: 64px; font-size: 28px; }
+.tile-time {
+  position: absolute; top: 8px; right: 10px; padding: 1px 7px; border-radius: 6px; font-size: 12px; font-variant-numeric: tabular-nums;
+  background: rgba(0, 0, 0, .45); color: #fff;
+}
+.tile-time:empty { display: none; }
+.tile-meta { display: flex; align-items: center; gap: 8px; padding: 8px 10px; min-width: 0; }
+.tile-text { display: grid; min-width: 0; flex: 1; }
+.tile-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile-status { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile.muted .tile-status { color: var(--danger); }
+.tile.held .tile-status, .tile.ringing .tile-status { color: var(--warn-ink); }
+.tile.held .tile-feed > :not(.held-note) { opacity: .6; }   /* dimmed, but not the note over it */
+.tile .held-note { max-width: calc(100% - 16px); white-space: nowrap; cursor: default; }
+.tile.ended { opacity: .7; }
+/* An audio call's tile: their audio above, yours below, as on the stage. */
+.tile-viz { position: absolute; left: 8%; top: 20%; width: 84%; height: 60%; display: none; color: var(--tile-ink); --viz-me: var(--accent); --viz-warn: var(--danger); }
+.tile.audio .tile-viz { display: block; }
+.tile.audio .tile-avatar { display: none; }
+/* The self view in a video call's tile: what that call sends, small in the corner. */
+.tile-self {
+  position: absolute; right: 8px; bottom: 8px; width: 28%; max-width: 200px; aspect-ratio: 16 / 9; object-fit: cover;
+  border-radius: 6px; border: 1px solid rgb(255 255 255 / .55); box-shadow: 0 2px 8px rgb(0 0 0 / .3); background: #000;
+}
+.tile-self[hidden] { display: none; }
+.tile-self.mirror { transform: scaleX(-1); }
+
+/* ---------- Call history (history.js) ---------- */
+
+.missed-count {
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; display: grid; place-items: center;
+  background: var(--danger-soft); color: var(--danger); font-size: 12px; font-weight: 600;
+}
+.missed-count:empty { display: none; }
+.people-btn { position: relative; }
+.people-btn[hidden] { display: none; }
+.people-btn.on { color: var(--accent); border-color: var(--accent); }
+/* Pressed here means "the view is open", not .btn[aria-pressed]'s red (Mute and the like). */
+.btn.people-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); border-color: var(--accent); }
+.people-btn .missed-count { position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--danger-fill); color: #fff; }
+.hv-outcome svg { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hv-icon svg, .hv-actions svg, .hv-clear svg, .hv-confirm svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* The History view, over the stage like Accounts (it shares the .am frame). */
+.hv { gap: 12px; }
+.hv-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.hv-search {
+  flex: 1 1 220px; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface);
+}
+.hv-search:focus-within { outline: 2px solid var(--accent); outline-offset: -1px; }
+.hv-search svg { width: 16px; height: 16px; flex: none; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; }
+.hv-search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: none; color: var(--text); font: inherit; }
+.hv-filters { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface-3); border-radius: 9px; }
+.hv-filters button { height: 30px; padding: 0 12px; border: 0; border-radius: 7px; background: none; font: inherit; font-size: 13px; color: var(--muted); cursor: pointer; }
+.hv-filters button:hover { color: var(--text); }
+.hv-filters button.on { background: var(--seg-on); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .08); }
+.hv-filters button:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+.hv-clear { margin-left: auto; }
+.hv-day { margin: 6px 0 6px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.hv-list { list-style: none; margin: 0 0 8px; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); }
+.hv-row { position: relative; border-top: 1px solid var(--border); }
+.hv-row:first-child { border-top: 0; }
+.hv-row.selected { background: var(--surface-2); }
+.hv-main {
+  width: 100%; display: grid; grid-template-columns: 30px minmax(0, 1.4fr) minmax(0, 1fr) 56px; gap: 12px; align-items: center;
+  padding: 10px calc(var(--hv-btns, 3) * 36px + 14px) 10px 14px; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.hv-main:hover { background: var(--surface-2); }
+.hv-row:first-child .hv-main { border-radius: var(--radius) var(--radius) 0 0; }
+.hv-main:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.hv-who { display: grid; min-width: 0; }
+.hv-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hv-uri { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hv-outcome { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 13px; color: var(--muted); }
+.hv-outcome > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hv-outcome.bad { color: var(--danger); }
+.hv-outcome.warn { color: var(--warn-ink); }
+.hv-time { font-size: 12.5px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+/* A row's buttons, at its top right: Add or Edit contact, Details, Copy address, Call, Video call. */
+.hv-btns { position: absolute; top: 9px; right: 10px; display: flex; gap: 4px; }
+.hv-icon {
+  width: 32px; height: 32px; display: grid; place-items: center; flex: none;
+  border: 0; border-radius: 50%; background: none; cursor: pointer;
+}
+.hv-icon:hover { background: var(--surface-3); }
+.hv-icon:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.hv-call, .hv-video { color: var(--accent); }
+.hv-toggle, .hv-copy { color: var(--muted); }
+.hv-contact { color: var(--muted); }
+.hv-contact.is-contact { color: var(--accent); }
+.hv-toggle svg { transition: transform .15s; }
+.hv-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.hv-detail { padding: 2px 14px 14px 56px; }
+.hv-detail dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px 18px; margin: 0 0 12px; }
+.hv-detail dl > .wide { grid-column: 1 / -1; }
+.hv-detail dt { font-size: 12px; color: var(--muted); }
+.hv-detail dd { margin: 2px 0 0; font-size: 13.5px; overflow-wrap: anywhere; }
+.hv-mono { display: block; font: 12px "Cascadia Mono", Consolas, monospace; color: var(--muted); margin-top: 2px; }
+.hv-mono-dd { font: 12.5px "Cascadia Mono", Consolas, monospace; }
+.hv-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hv-empty { padding: 30px; text-align: center; color: var(--muted); border: 1px dashed var(--border-strong); border-radius: var(--radius); }
+.hv-foot { margin: auto 0 0; font-size: 12px; color: var(--muted); }
+@media (max-width: 699px) {
+  .hv-main { grid-template-columns: 30px minmax(0, 1fr); }
+  .hv-outcome { grid-column: 2; }
+  .hv-time { display: none; }
+  .hv-detail { padding-left: 14px; }
+}
+/* Clear history asks first. */
+.hv-confirm { width: min(420px, calc(100vw - 32px)); padding: 20px 22px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); box-shadow: 0 20px 50px rgba(0, 0, 0, .3); }
+.hv-confirm::backdrop { background: rgba(10, 16, 14, .45); }
+.hv-confirm h2 { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
+.hv-confirm p { margin: 0 0 16px; color: var(--muted); font-size: 13.5px; }
+.hv-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.hv-confirm .btn { display: inline-flex; align-items: center; gap: 6px; }
+/* Removed … Undo, and Copied: a pill at the bottom of the stage, over the History view. */
+.hist-toast {
+  position: absolute; left: 50%; bottom: 16px; z-index: 9; transform: translateX(-50%); max-width: min(480px, calc(100% - 32px));
+  display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; border-radius: 999px;
+  background: rgba(20, 28, 25, .9); color: #fff; font-size: 13px; box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
+}
+.hist-toast[hidden] { display: none; }
+.hist-toast-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-toast-undo { flex: none; height: 26px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--accent); color: #fff; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.hist-toast-undo[hidden] { display: none; }
+.hist-toast-x { flex: none; width: 26px; height: 26px; border: 0; border-radius: 50%; background: none; color: #fff; opacity: .7; font-size: 16px; line-height: 1; cursor: pointer; }
+.hist-toast-x:hover { opacity: 1; background: rgba(255, 255, 255, .12); }
+.hist-toast button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+
+/* ---- Transfer: the popover above its button, and the note on the stage ---- */
+/* Over the stage's bottom right, left of the dock when it's open. */
+.xfer-pop {
+  position: absolute; right: 12px; bottom: 12px; z-index: 7; width: min(380px, calc(100% - 24px)); max-height: calc(100% - 24px);
+  display: flex; flex-direction: column; margin: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+}
+.xfer-pop[hidden] { display: none; }
+.xfer-pop .rtt-head { flex: none; }
+.xfer-pop .rtt-title { margin-right: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.xfer-body { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; min-height: 0; }
+.xfer-calls:empty { display: none; }
+.xfer-calls { display: grid; gap: 6px; }
+.xfer-label { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.xfer-call {
+  display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%;
+  padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2);
+  color: var(--text); font: inherit; text-align: left; cursor: pointer;
+}
+.xfer-call:hover, .xfer-call:focus-visible { border-color: var(--accent); }
+.xfer-call .suggest-uri { font-size: 12.5px; }
+.xfer-call-go { font-size: 12.5px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+.xfer-entry { display: flex; gap: 8px; }
+.xfer-input {
+  flex: 1; min-width: 0; height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--text); font: inherit;
+}
+/* The address bar's pill and ×, in a narrower field. */
+.xfer-entry .dest-wrap.has-contact input { padding-right: 132px; }
+.xfer-entry .dest-contact { max-width: 92px; }
+.xfer-input:focus { outline: none; border-color: var(--accent); }
+.xfer-entry .btn { height: 36px; }
+.xfer-sug { overflow: auto; min-height: 0; margin: 0 -6px; }
+.xfer-sug:empty { display: none; }
+/* The address bar's rows, less the last call (no room): the contact button and the transfer icon. */
+.xfer-sug .suggest-item { grid-template-columns: 36px minmax(0, 1fr) 26px 18px; }
+.xfer-sug .suggest-meta, .xfer-sug .suggest-item > span:empty { display: none; }
+.controls .btn.xfer-btn[aria-pressed="true"] {
+  color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+.controls .btn.xfer-btn[hidden] { display: none; }
+.controls .btn.xfer-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* The control bar's buttons as icons once their words would be cut short (860 px and under, with
+   a call's Stop video and Self view): the words kept for screen readers (and in the tooltips).
+   Laid out as with words: the call's buttons together in the middle, the rest at the right end. */
+@media (max-width: 860px) {
+  .controls { grid-template-columns: minmax(0, 1fr) repeat(4, auto) minmax(max-content, 1fr); gap: 6px; }
+  .controls-right { gap: 6px; }
+  .controls .btn { padding: 0 12px; }
+  .controls .btn > span:not(.split-caret) {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  .controls .btn { position: relative; }
+  .controls .split-caret { width: 24px; }
+  .controls .btn.icon-btn { width: 40px; }
+  .controls #hangupBtn { padding: 0 16px; }
+}
+
+/* The ⋯ More button, only at phone width (below): Transfer, Keypad, Text and Self view, which
+   don't fit there beside Mute, Camera, Hold and End. Its menu opens above it, against the right
+   edge; a new text message puts the Text button's red dot on it. Accent-edged while a panel it
+   opens (transfer, keypad, text) is open. */
+.controls .more-wrap { display: none; }
+.more-btn { position: relative; }
+.more-btn svg { fill: currentColor; stroke: none; }
+.more-btn .btn-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); border: 1.5px solid var(--surface); }
+.controls .btn.more-btn.active, .controls .btn.more-btn[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
+.more-menu { left: auto; right: 0; min-width: 210px; }
+.more-option .more-icon { width: 18px; display: grid; place-items: center; flex: none; color: var(--muted); }
+.more-option .more-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.more-option > span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.more-option .more-new { color: var(--danger); }
+.more-option:disabled { color: var(--muted); opacity: .55; cursor: default; }
+.more-option:disabled:hover { background: none; }
+@media (max-width: 500px) {
+  .controls { display: flex; justify-content: center; }
+  .controls-right > :not(.more-wrap) { display: none !important; }
+  .controls .more-wrap { display: flex; }
+}
+
+/* ---- A phone (the web softphone in a phone's browser, or the desktop window made that narrow:
+   it goes down to 360 px, MainForm.MinPageSize) ----
+   The header is the mark, the name and its buttons. The dial bar takes three rows: People (and on
+   the desktop Manage accounts and Call from), the address, then Call and Video call, side by side.
+   The control bar's buttons (icons from 860 px, above) are taller, for a finger. Text fields are
+   16 px, so iOS doesn't zoom in when one's tapped. */
+@media (max-width: 500px) {
+  .shell { padding: 10px 12px; gap: 10px; }
+  .brand { gap: 8px; }
+  .brand-divider, .brand-sub { display: none; }
+  .topbar-right { gap: 8px; }
+  .dialbar .call-btn { height: 44px; }
+  .dialbar input, .xfer-input, .rtt-input, .hv-search input { font-size: 16px; }
+  .dialbar input { height: 44px; }
+  .controls .btn { height: 44px; }
+  /* Privacy mode's words, while it's on, need the name's room: the name goes, and the words are
+     cut short with "…" before they'd push Settings off the screen. */
+  .topbar:has(.privacy-btn.on) .brand-name { display: none; }
+  .topbar-right { min-width: 0; }
+  .privacy { min-width: 0; }
+  .privacy-btn { min-width: 34px; max-width: 100%; }
+  .privacy-text { flex: 0 1 auto; min-width: 0; text-overflow: ellipsis; }
+  /* Diagnostics: the tabs, a ⋯ and the panel's close; the title is its icon and F12 (no key for
+     it on a phone) goes. The open tab always shows; the others as fit, the rest in the ⋯ menu,
+     with Copy log and Clear on the SIP log (diagnostics.js, fitDevTabs). */
+  .dev-bar { gap: 4px; padding: 0 6px 0 10px; }
+  .dev-title { font-size: 0; gap: 0; margin-right: 2px; padding-right: 10px; }
+  .dev-key { display: none; }
+  .dev-tabs { flex: 1 1 0; min-width: 0; overflow: hidden; }
+  .dev-tab { flex: none; padding: 0 8px; white-space: nowrap; }
+  .dev-spacer { flex: 0 0 0; }
+  .dev-act { display: none !important; }
+  .dev-more:not([hidden]) { display: block; flex: none; }
+  .dev-close { flex: none; }
+  .dev-details, .dev-quality, .dev-net { padding: 10px 12px; }
+}
+
+/* ---- Home (home.js): the stage with no call on it ----
+   Recent calls on the left; on the right your accounts, Your devices and, while it's on, privacy
+   mode. The dial view (the address focused) is one column: Your devices at the top, then New call,
+   your contacts and recent addresses to pick from. */
+.home { position: absolute; inset: 0; z-index: 1; overflow-y: auto; padding: 14px; }
+.home[hidden] { display: none; }
+.home-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 14px; align-items: start; max-width: 1100px; margin: 0 auto; }
+.home-right { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.home-right > div:empty { display: none; }
+.home.dialing .home-wrap { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
+.home.dialing .home-right { order: -1; }
+.home-card, .scard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.home-card { padding: 12px 10px 10px 14px; }
+.scard { padding: 12px 14px; }
+.home-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 4px 8px 0; }
+.home-head h2 { margin: 0; font-size: 16px; }
+.home-head h3 { margin: 0; font-size: 14px; }
+.home-head .link-btn { margin-left: auto; }
+.home-empty { margin: 4px 0; color: var(--muted); }
+.home-foot { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; }
+.home-foot b { color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
+.missed-pill { padding: 0 8px; border-radius: 10px; background: var(--danger-soft); color: var(--danger); font-size: 12px; font-weight: 600; }
+.home-rows { list-style: none; margin: 0; padding: 0; }
+.home-group { padding: 8px 6px 4px; color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.home-group:first-child { padding-top: 0; }
+.home-row { display: flex; align-items: center; gap: 10px; padding: 7px 6px; border-radius: var(--radius-sm); }
+.home-row:hover { background: var(--surface-2); }
+.home-row.pickable { cursor: pointer; }
+.home-row.missed .home-name { color: var(--danger); }
+.home-row.unseen .home-name { font-weight: 700; }
+.home-row.fresh { animation: home-fresh 3s ease-out; }
+@keyframes home-fresh { from { background: color-mix(in srgb, var(--accent) 24%, transparent); } to { background: transparent; } }
+.home-row.used, .home-row.used:hover { background: color-mix(in srgb, var(--ok) 10%, transparent); }
+.home-avatar { width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--tile); color: var(--tile-ink); font-size: 15px; font-weight: 600; background-size: cover; }
+.home-row.missed .home-avatar { background-color: var(--danger-soft); color: var(--danger); }
+.home-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.home-name, .home-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-name { font-weight: 500; }
+.home-sub { color: var(--muted); font-size: 13px; }
+.home-sub.bad { color: var(--danger); }
+.home-sub.warn { color: var(--warn-ink); }
+.home-btns { display: flex; gap: 6px; flex: none; opacity: .6; }
+/* At phone width a Recent row has room for three: Edit contact (or Add), Call and Video call.
+   Copy address goes (People's Recent and Contacts have it), so the name isn't squeezed to "C…". */
+@media (max-width: 500px) {
+  .home-btns:has([data-home="contact"]) [data-home="copy"] { display: none; }
+}
+.home-row:hover .home-btns, .home-row:focus-within .home-btns { opacity: 1; }
+.home-hint { flex: none; color: var(--accent); font-size: 12.5px; font-weight: 600; opacity: 0; }
+.home-row:hover .home-hint { opacity: 1; }
+.home-note { display: inline-flex; align-items: center; gap: 4px; flex: none; color: var(--muted); font-size: 12.5px; }
+.home-note svg { width: 14px; height: 14px; fill: none; stroke: var(--ok); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon-sq { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--surface); color: var(--accent); cursor: pointer; }
+.icon-sq:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.icon-sq-quiet { color: var(--muted); }   /* Copy address: beside Call and Video call, not one of them */
+.icon-sq svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.link-btn { border: 0; padding: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; text-decoration: underline; }
+.link-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.btn-small { height: 30px; padding: 0 10px; font-size: 13px; }
+.home-dim { color: var(--muted); }
+/* The address field filled from a pick: a flash, so you see where it went. */
+.dest-wrap.filled input { animation: dest-filled 1.2s ease-out; }
+@keyframes dest-filled { from { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); } to { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .home-row.fresh, .dest-wrap.filled input { animation: none; } }
+/* Accounts on Home: each with its registration, and Retry and Edit when it failed. */
+.ha { display: flex; gap: 9px; padding: 6px 0; }
+.ha-dot { width: 9px; height: 9px; flex: none; margin-top: 6px; border-radius: 50%; background: var(--border-strong); }
+.ha.ok .ha-dot { background: var(--ok); }
+.ha.warn .ha-dot { background: var(--warn-ink); }
+.ha.bad .ha-dot { background: var(--danger-fill); }
+.ha-main { flex: 1; min-width: 0; }
+.ha-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ha-state { color: var(--muted); font-size: 13px; }
+.ha.ok .ha-state { color: var(--ok); }
+.ha.bad .ha-state { color: var(--danger); font-weight: 500; }
+.ha-why { margin-top: 2px; color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.ha-btns { display: flex; gap: 6px; margin-top: 6px; }
+/* Each account's (and this device's) Copy address and, for an account, Edit. */
+.ha-icons { display: flex; gap: 4px; flex: none; align-self: flex-start; }
+.icon-sq-small { width: 28px; height: 28px; }
+.icon-sq-small svg { width: 14px; height: 14px; }
+.home-local { display: flex; align-items: center; gap: 9px; }
+.home-local > span { flex: 1; min-width: 0; }
+/* Privacy mode, while it's on: in the text colour, as its chip in the top bar. */
+.privacy-card { display: flex; gap: 10px; background: var(--text); border-color: var(--text); color: var(--surface); }
+.privacy-card svg { width: 20px; height: 20px; flex: none; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.privacy-card p { margin: 2px 0 8px; font-size: 13px; opacity: .85; }
+.privacy-card .btn { background: transparent; border-color: currentColor; color: inherit; }
+@media (max-width: 700px) {
+  .home { padding: 10px; }
+  .home-wrap { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+}
+
+/* ---- Your devices (yourdevices.js): Home, the dial view, and a call ringing ----
+   Folded: three lines, the device chosen for each. Open: a row per device; wide, the icon, name,
+   picker and test on one row, what it'll do under the picker; narrow, the picker and the note
+   under the name. */
+.yd-host { container-type: inline-size; }
+.yd-host:empty { display: none; }
+.yd-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin-bottom: 6px; }
+.yd-title { margin: 0; font-size: 14px; }
+.yd-sub { color: var(--muted); font-size: 12.5px; }
+.yd-toggle { margin-left: auto; }
+.yd-ico { display: grid; color: var(--muted); }
+.yd-ico svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.yd-lines { display: flex; flex-direction: column; gap: 1px; }
+.yd-line {
+  display: grid; grid-template-columns: 20px 96px minmax(0, 1fr); align-items: center; gap: 10px; width: calc(100% + 12px);
+  margin: 0 -6px; padding: 3px 6px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--text);
+  font: inherit; font-size: 13.5px; text-align: left; cursor: pointer;
+}
+.yd-line:hover { background: var(--surface-2); }
+.yd-line.static { cursor: default; }   /* a call you're placing: what it uses, read-only */
+.yd-line.static:hover { background: none; }
+.yd-line:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.yd-line .yd-label { font-weight: 500; color: var(--muted); }
+.yd-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.yd-hint { color: var(--muted); }
+.yd-line.off .yd-ico, .yd-line.off .yd-name, .yd-line.off .yd-hint { color: var(--danger); }
+.yd-rows { display: flex; flex-direction: column; }
+.yd-row {
+  display: grid; grid-template-columns: 20px 96px minmax(0, 1fr) auto; grid-template-areas: "ico label pick act" ". . note note";
+  align-items: center; gap: 2px 10px; padding: 8px 0; border-top: 1px solid var(--border);
+}
+.yd-row:first-child { border-top: 0; padding-top: 4px; }
+.yd-row .yd-ico { grid-area: ico; }
+.yd-row .yd-label { grid-area: label; font-weight: 600; font-size: 13.5px; }
+.yd-pick {
+  grid-area: pick; min-width: 0; width: 100%; height: 34px; padding: 0 8px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 13.5px;
+}
+.yd-pick:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.yd-act { grid-area: act; justify-self: end; }
+.yd-note { grid-area: note; display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); font-size: 12.5px; }
+.yd-row.live .yd-ico, .yd-row.live .yd-note { color: var(--ok); }
+.yd-row.off .yd-ico, .yd-row.off .yd-note { color: var(--danger); }
+.yd-meter { display: inline-flex; align-items: flex-end; gap: 3px; flex: none; width: 90px; height: 14px; }
+.yd-meter i { flex: 1; height: 100%; border-radius: 2px; background: var(--border-strong); }
+.yd-meter i.on { background: var(--ok); }
+.yd-preview { width: min(320px, 100%); margin: 6px 0 2px 30px; aspect-ratio: 16 / 9; border-radius: var(--radius-sm); overflow: hidden; background: #000; }
+.yd-video { width: 100%; height: 100%; display: block; object-fit: cover; }
+.yd-video.mirror { transform: scaleX(-1); }
+.yd-foot { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; }
+@container (max-width: 480px) {
+  .yd-row { grid-template-columns: 20px minmax(0, 1fr) auto; grid-template-areas: "ico label act" ". pick pick" ". note note"; gap: 4px 10px; }
+  .yd-preview { margin-left: 0; width: 100%; }
+}
+
+/* ---- The indicator (yourdevices.js): your microphone and camera, only while one is open ----
+   Green dot: live (they hear or see you, or your own test). Amber: open but muted, or on hold.
+   A click opens why, and when each opened and closed. */
+.dev-ind { display: inline-flex; align-items: center; gap: 2px; height: 34px; padding: 0 6px; border-radius: 17px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); cursor: pointer; }
+.dev-ind[hidden] { display: none; }
+.dev-ind:hover { background: var(--surface-2); }
+.dev-ind:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ind { position: relative; display: inline-grid; place-items: center; width: 24px; height: 24px; }
+.ind svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ind::after { content: ""; position: absolute; right: 1px; top: 2px; width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 0 2px var(--surface); }
+.ind.live::after { background: var(--ok); }
+.ind.muted::after { background: var(--warn-ink); }
+.dev-pop {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; width: min(360px, calc(100vw - 32px)); padding: 12px 14px;
+  border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); box-shadow: 0 12px 32px rgb(0 0 0 / .18);
+}
+.dev-pop[hidden] { display: none; }
+.dp-head { font-weight: 600; margin-bottom: 6px; }
+.dp-log-head { margin: 10px 0 2px; font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.dp-row { display: flex; gap: 10px; align-items: flex-start; padding: 5px 0; }
+.dp-ico { display: grid; color: var(--ok); }
+.dp-row.muted .dp-ico { color: var(--warn-ink); }
+.dp-ico svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.dp-main { min-width: 0; display: flex; flex-direction: column; }
+.dp-dev { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.dp-why { font-size: 13px; color: var(--ok); }
+.dp-row.muted .dp-why { color: var(--warn-ink); }
+.dp-log { list-style: none; margin: 0; padding: 0; font-size: 13px; max-height: 150px; overflow-y: auto; }
+.dp-log li { padding: 2px 0; }
+.dp-at { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
+
+/* Privacy mode on a connected call: what they get, with Turn off, under the call header. */
+.privacy-note {
+  position: absolute; top: calc(var(--head-h, 44px) + 8px); left: 50%; transform: translateX(-50%); z-index: 3;
+  display: flex; align-items: center; gap: 8px; max-width: calc(100% - 24px); padding: 7px 12px; border-radius: 18px;
+  background: var(--text); color: var(--surface); font-size: 13px; white-space: nowrap;
+}
+.privacy-note[hidden] { display: none; }
+.privacy-note svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.privacy-note span { overflow: hidden; text-overflow: ellipsis; }
+.privacy-note .link-btn { color: inherit; font-weight: 600; }
+#incomingVideoAnswer { height: 34px; width: 38px; }
+#incomingVideoAnswer[hidden] { display: none; }
