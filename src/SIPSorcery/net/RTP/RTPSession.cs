@@ -2433,7 +2433,13 @@ namespace SIPSorcery.Net
 
                 // Best-effort SDES: crypto on every stream that hasn't settled on plain RTP, on
                 // RTP/AVP so a far end without SRTP can ignore it, unless the far end uses RTP/SAVP.
-                bool offerSdes = rtpSessionConfig.UseSdpCryptoNegotiation ||
+                // Mandatory SDES: crypto on every stream, except a declined one (port zero) in an
+                // answer: the offer's line for it often has no keys to answer, and a stream that
+                // carries no media needs none. E.g. MicroSIP declines our real-time text, then puts
+                // the call on hold (as it does before an attended transfer) with "m=text 0 RTP/SAVP"
+                // and no crypto.
+                bool isAnswer = RemoteDescription != null && !RequireRenegotiation;
+                bool offerSdes = (rtpSessionConfig.UseSdpCryptoNegotiation && !(isAnswer && rtpPort == 0)) ||
                     (rtpSessionConfig.UseSdpCryptoBestEffort && !mediaStream.IsPlainRtpAgreed && rtpPort != 0);
                 announcement.Transport = rtpSessionConfig.UseSdpCryptoNegotiation || (offerSdes && mediaStream.UsesSecureProfile) ?
                     RTP_SECUREMEDIA_PROFILE : RTP_MEDIA_PROFILE;
