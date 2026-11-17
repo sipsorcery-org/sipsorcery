@@ -18,6 +18,7 @@ import { $, escHtml as esc } from "./util.js";
 
 let view = "layers";       // "layers" or "timeline"
 let bodyHtml = "";
+let pairsOpen = false;     // the connected ICE row's candidate pairs, unfolded (kept across the redraws)
 
 const LAYERS = ["sdp", "ice", "dtls", "srtp", "rtp", "rtcp"];
 const LAYER_NAME = { sdp: "SDP", sip: "SIP", ice: "ICE", dtls: "DTLS", srtp: "SRTP", rtp: "RTP", rtcp: "RTCP" };
@@ -116,9 +117,11 @@ function ladder(r, now) {
     const peers = f.icePeers ?? [];
     const answered = peers.filter((p) => p.answers > 0).length;
     if (f.iceState === "connected" || f.iceState === "completed") {
-      rows.push(["ice", "ok", "Connected", `<span class="mono">${esc(f.icePair ?? "")}</span><small>ours: ${esc(f.iceLocal ?? "?")}${role}${took} · ${answered} of ${peers.length} of their addresses answered</small>`]);
+      const rtt = f.iceRtt != null ? ` · RTT ${f.iceRtt} ms` : "";
+      const more = f.icePairs?.length ? `<details class="cx-more"${pairsOpen ? " open" : ""}><summary>${f.icePairs.length} candidate pair${f.icePairs.length === 1 ? "" : "s"}</summary>${checkTable(f, peers, theirs)}</details>` : "";
+      rows.push(["ice", "ok", "Connected", `<span class="mono">${esc(f.icePair ?? "")}</span><small>ours: ${esc(f.iceLocal ?? "?")}${role}${took}${rtt} · ${answered} of ${peers.length} of their addresses answered</small>`, more]);
     } else if (f.iceState === "checking") {
-      rows.push(["ice", "wait", "Checking", `ours: ${esc(f.iceLocal ?? "?")}${role} · ${peers.reduce((n, p) => n + p.sent, 0)} checks sent, ${peers.reduce((n, p) => n + p.answers, 0)} answers`, peerTable(peers, theirs)]);
+      rows.push(["ice", "wait", "Checking", `ours: ${esc(f.iceLocal ?? "?")}${role} · ${peers.reduce((n, p) => n + p.sent, 0)} checks sent, ${peers.reduce((n, p) => n + p.answers, 0)} answers`, checkTable(f, peers, theirs)]);
     } else if (f.iceState === "disconnected") {
       rows.push(["ice", "warn", "Disconnected", `checks to them stopped getting answers · was <span class="mono">${esc(f.icePair ?? "?")}</span>`,
         `<p class="cx-why"><b>Likely why</b> ICE checks the path every few seconds once it's up, and their phone stopped answering: it may have gone (closed, crashed or lost its network), or a NAT between you forgot the mapping. The media stops with it.</p>`]);
@@ -129,7 +132,7 @@ function ladder(r, now) {
     } else {
       const why = iceWhy(peers, theirs, f);
       rows.push(["ice", "bad", `Failed${f.iceStartedAt && f.iceDoneAt ? ` after ${secs(f.iceDoneAt - f.iceStartedAt)}` : ""}`,
-        `${answered} of ${peers.length} of their addresses answered our checks${role}`, `${why ? `<p class="cx-why"><b>Likely why</b> ${why}</p>` : ""}${peerTable(peers, theirs)}`]);
+        `${answered} of ${peers.length} of their addresses answered our checks${role}`, `${why ? `<p class="cx-why"><b>Likely why</b> ${why}</p>` : ""}${checkTable(f, peers, theirs)}`]);
     }
   }
   // Lost or disconnected after connecting: the layers above it still came up, so show them.
@@ -140,24 +143,25 @@ function ladder(r, now) {
   if (!webrtc) rows.push(["dtls", "na", "Not used", sdes ? "the keys came in the SDP (SDES)" : encrypted ? "" : "the media isn't encrypted"]);
   else if (!iceOk || !f.dtlsState) rows.push(["dtls", "na", "Not reached", ""]);
   else if (f.dtlsState === "starting") rows.push(["dtls", ended ? "bad" : "wait", ended ? "Didn't finish" : "Handshaking", `we're the ${esc(f.dtlsRole ?? "?")}${f.dtlsStartedAt ? ` · for ${secs((r.endedAt || now) - f.dtlsStartedAt)}` : ""}`]);
-  else if (f.dtlsState === "connected") rows.push(["dtls", "ok", "Connected", `we're the ${esc(f.dtlsRole)} (${f.dtlsRole === "client" ? "a=setup:active" : "a=setup:passive"}) · their certificate matches their SDP's fingerprint${f.dtlsStartedAt && f.dtlsDoneAt ? ` · ${secs(f.dtlsDoneAt - f.dtlsStartedAt)}` : ""}`]);
+  else if (f.dtlsState === "connected") rows.push(["dtls", "ok", "Connected", `we're the ${esc(f.dtlsRole)} (${f.dtlsRole === "client" ? "a=setup:active" : "a=setup:passive"}) · their certificate matches their SDP's fingerprint${f.dtlsStartedAt && f.dtlsDoneAt ? ` · ${secs(f.dtlsDoneAt - f.dtlsStartedAt)}` : ""}${f.dtlsAlert ? `<small>then an alert: <span class="mono">${esc(f.dtlsAlert)}</span></small>` : ""}`]);
   else {
     const mismatch = /fingerprint/i.test(f.dtlsError ?? "");
-    rows.push(["dtls", "bad", "Failed", `we're the ${esc(f.dtlsRole ?? "?")}${f.dtlsError ? `<small class="mono">${esc(f.dtlsError)}</small>` : ""}`,
-      `<p class="cx-why"><b>Likely why</b> ${mismatch
-        ? "Their DTLS certificate isn't the one their SDP's fingerprint names. A server between you may have rewritten the SDP without terminating the media. ICE worked, so the network path is fine."
-        : "ICE worked, so packets reach them, but the handshake didn't complete: their phone may not support DTLS-SRTP the way its SDP says, or a firewall lets STUN through but not DTLS."}</p>`]);
+    const prints = mismatch && (f.dtlsExpected || f.dtlsRemote)
+      ? `<small>their SDP's: <span class="mono">${esc(fp(f.dtlsExpected))}</span> · their certificate's: <span class="mono">${esc(fp(f.dtlsRemote))}</span></small>` : "";
+    const alert = f.dtlsAlert ? `<small>alert: <span class="mono">${esc(f.dtlsAlert)}</span></small>` : "";
+    rows.push(["dtls", "bad", "Failed", `we're the ${esc(f.dtlsRole ?? "?")}${f.dtlsError ? `<small class="mono">${esc(f.dtlsError)}</small>` : ""}${alert}${prints}`,
+      `<p class="cx-why"><b>Likely why</b> ${dtlsWhy(f, mismatch)}</p>`]);
   }
   const dtlsOk = !webrtc || rows[2][1] === "ok";
 
   // SRTP
-  const errs = f.srtpErrors ? ` · <b class="bad-ink">${f.srtpErrors} packets couldn't be decrypted</b><small class="mono">${esc(f.srtpError ?? "")}</small>` : "";
+  const { errs, level: errLevel } = srtpErrs(f);
   if (webrtc) {
     if (!dtlsOk) rows.push(["srtp", "na", "Not reached", ""]);
-    else rows.push(["srtp", f.srtpErrors ? "bad" : "ok", "Keys from DTLS", `the profile and keys were agreed in the handshake, not the SDP${errs}`, f.srtpErrors ? srtpWhy() : ""]);
+    else rows.push(["srtp", errLevel ?? "ok", "Keys from DTLS", `${f.dtlsProfile ? `<span class="mono">${esc(f.dtlsProfile)}</span> · ` : ""}the profile and keys were agreed in the handshake, not the SDP${errs}`, errLevel ? srtpWhy(f) : ""]);
   } else if (sdes) {
     const open = signalling && !/^(TLS|WSS)/i.test(signalling);
-    rows.push(["srtp", f.srtpErrors ? "bad" : open ? "warn" : "ok", "Keys from SDP", `${esc(cryptoSuite(x) ?? "SDES")}${open ? `<small>the keys went in SIP over ${esc(signalling.split(" ")[0])}: anyone who can see the SIP can read them</small>` : ""}${errs}`, f.srtpErrors ? srtpWhy() : ""]);
+    rows.push(["srtp", errLevel === "bad" ? "bad" : open ? "warn" : errLevel ?? "ok", "Keys from SDP", `${esc(cryptoSuite(x) ?? "SDES")}${open ? `<small>the keys went in SIP over ${esc(signalling.split(" ")[0])}: anyone who can see the SIP can read them</small>` : ""}${errs}`, errLevel ? srtpWhy(f) : ""]);
   } else rows.push(["srtp", sdpOk ? "na" : "na", sdpOk ? "Not used" : "Not reached", sdpOk ? "plain RTP: the media isn't encrypted" : ""]);
 
   // RTP
@@ -185,15 +189,18 @@ function rtpRow(r, f, live, now, iceLost) {
   const first = (k) => f[`rtpFirst${k[0].toUpperCase()}${k.slice(1)}`];
   const start = answerOf(r)?.at ?? r.exchanges.find((e) => e.ok)?.at ?? r.startedAt;
   const firsts = kinds.map((s) => (first(s.kind) ? `first ${s.kind} ↓ ${secs(first(s.kind) - start)} after the answer` : `no ${s.kind} ↓ yet`)).join(" · ");
+  // Where their RTP came from, if not their SDP's address: the session switched to it (and says so).
+  const mv = f.rtpMovedAudio ?? f.rtpMovedVideo;
+  const a = r.rates.audio ?? r.rates[kinds[0]?.kind];
+  const moved = mv ? `<small>their ${f.rtpMovedAudio ? "audio" : "video"} came from <span class="mono">${esc(mv.to)}</span>, not their SDP's address (<span class="mono">${esc(mv.from)}</span>), so we send there now: a NAT between you, likely</small>`
+    : a?.from && a.remote && a.from !== a.remote ? `<small>it arrives from <span class="mono">${esc(a.from)}</span>, not their SDP's address (<span class="mono">${esc(a.remote)}</span>): a NAT between you, likely</small>` : "";
   if (r.endedAt && iceLost) return ["rtp", "bad", "Stopped", `${firsts}<small>with ICE: see above</small>`];
   if (r.endedAt) {
     const any = kinds.some((s) => first(s.kind));
     const timeouts = kinds.filter((s) => f[`rtpTimeout${s.kind[0].toUpperCase()}${s.kind.slice(1)}`]).map((s) => `${s.kind} timed out`);
-    return ["rtp", timeouts.length ? "bad" : any ? "ok" : "bad", timeouts.length ? "Timed out" : any ? "Flowed" : "Nothing arrived", [firsts, ...timeouts].filter(Boolean).join(" · ")];
+    return ["rtp", timeouts.length ? "bad" : any ? "ok" : "bad", timeouts.length ? "Timed out" : any ? (mv ? "Flowed, moved" : "Flowed") : "Nothing arrived", `${[firsts, ...timeouts].filter(Boolean).join(" · ")}${moved}`];
   }
   const counts = kinds.map((s) => { const x = r.rates[s.kind]; return x ? `${s.kind} ↑ ${x.tx} ↓ ${x.rx}` : null; }).filter(Boolean).join(" · ");
-  const a = r.rates.audio ?? r.rates[kinds[0]?.kind];
-  const moved = a?.from && a.remote && a.from !== a.remote ? `<small>it arrives from <span class="mono">${esc(a.from)}</span>, not their SDP's address (<span class="mono">${esc(a.remote)}</span>): a NAT between you, likely</small>` : "";
   const missing = kinds.filter((s) => { const x = r.rates[s.kind]; return x && x.rx === 0 && x.idle >= GONE_MS && (s.theirs === "sendrecv" || s.theirs === "sendonly") && (s.ours === "sendrecv" || s.ours === "recvonly"); });
   if (missing.length && iceLost) return ["rtp", "bad", "Stopped", `${counts} packets/s · ${firsts}<small>with ICE: see above</small>`];
   if (missing.length) {
@@ -203,7 +210,38 @@ function rtpRow(r, f, live, now, iceLost) {
   return ["rtp", a?.rx ? "ok" : "wait", a?.rx ? (moved ? "Flowing, moved" : "Flowing") : "Starting", `${counts} packets/s · ${firsts}${moved}`];
 }
 
-const srtpWhy = () => `<p class="cx-why"><b>Likely why</b> Packets arrive but can't be decrypted: the keys don't match. A re-INVITE that changed the keys on one side only, a server that rewrote the SDP, or packets from an earlier session. (The count is from the library's log, while this was the only call.)</p>`;
+// The packets that couldn't be decrypted, by why, as the library counts them on each stream. A call
+// saved before it did has only srtpErrors (and srtpError, the log line it came from).
+function srtpErrs(f) {
+  const n = f.srtpErrors ?? 0, rtcp = f.srtcpErrors ?? 0;
+  if (!n && !rtcp) return { errs: "", level: null };
+  const counted = f.srtpAuth != null;
+  const keys = counted ? f.srtpAuth + (f.srtpOther ?? 0) > 0 : n > 0;
+  const parts = counted ? [f.srtpAuth ? `${f.srtpAuth} with keys that don't match` : null, f.srtpReplay ? `${f.srtpReplay} replay${f.srtpReplay === 1 ? "" : "s"}` : null, f.srtpOther ? `${f.srtpOther} other` : null].filter(Boolean) : [];
+  const what = [n ? `${n} RTP packet${n === 1 ? "" : "s"}` : null, rtcp ? `${rtcp} RTCP` : null].filter(Boolean).join(" and ");
+  const errs = ` · <b class="${keys ? "bad-ink" : ""}">${what} couldn't be decrypted</b>${parts.length ? ` (${parts.join(", ")})` : ""}${f.srtpError ? `<small class="mono">${esc(f.srtpError)}</small>` : ""}`;
+  return { errs, level: keys ? "bad" : "warn" };
+}
+
+function srtpWhy(f) {
+  if (f.srtpAuth == null) return `<p class="cx-why"><b>Likely why</b> Packets arrive but can't be decrypted: the keys don't match. A re-INVITE that changed the keys on one side only, a server that rewrote the SDP, or packets from an earlier session. (The count is from the library's log, while this was the only call.)</p>`;
+  if (f.srtpAuth) return `<p class="cx-why"><b>Likely why</b> Packets arrive but their authentication fails: they were encrypted with other keys than ours for them. A re-INVITE that changed the keys on one side only, a server between you that rewrote the SDP, or packets from an earlier session still arriving on this port.</p>`;
+  if (f.srtpOther) return `<p class="cx-why"><b>Likely why</b> Packets arrive that the SRTP context can't take: a cipher it doesn't support, a key identifier (MKI) it doesn't know, or a key past its lifetime.</p>`;
+  return `<p class="cx-why"><b>Likely why</b> Packets already seen, or too old for the replay window: duplicated on the network, or held up long enough for later ones to pass them. A few are harmless; the rest decrypt.</p>`;
+}
+
+// A DTLS failure's likely why, from the library's reason and the alert.
+function dtlsWhy(f, mismatch) {
+  if (mismatch) return "Their DTLS certificate isn't the one their SDP's fingerprint names. A server between you may have rewritten the SDP without terminating the media. ICE worked, so the network path is fine.";
+  const alert = f.dtlsAlert ?? "";
+  if (/handshake_failure|insufficient_security|illegal_parameter/i.test(alert)) return `The handshake was refused (${esc(alert)}): their phone and this one have no SRTP profile or cipher suite in common, or one side wouldn't accept the other's certificate. ICE worked, so the network path is fine.`;
+  if (alert) return `The handshake ended with an alert (${esc(alert)}). ICE worked, so packets reach them.`;
+  if (/time/i.test(f.dtlsError ?? "")) return "No answer to the handshake: ICE worked, so packets reach them, but nothing came back. Their phone may not be doing DTLS-SRTP the way its SDP says, or a firewall lets STUN through but not DTLS.";
+  return "ICE worked, so packets reach them, but the handshake didn't complete: their phone may not support DTLS-SRTP the way its SDP says, or a firewall lets STUN through but not DTLS.";
+}
+
+// A fingerprint, shortened: its hash and first bytes.
+const fp = (s) => (!s ? "?" : s.length > 32 ? `${s.slice(0, 32)}…` : s);
 
 function iceWhy(peers, theirs, f) {
   if (!theirs.length) return "Their SDP has no ICE candidates, so there was nowhere to check.";
@@ -212,6 +250,22 @@ function iceWhy(peers, theirs, f) {
   if (allPrivate) return `They offered only private addresses (${esc(theirs.map((c) => c.address).slice(0, 2).join(", "))}) and no server-reflexive or relay candidate, so nothing we send can reach them unless we're on their network. Their phone needs a STUN or TURN server, or their server needs to relay the media.`;
   if (!theirChecks) return "None of our checks got an answer, and none of theirs reached us: a firewall is likely dropping UDP between you, or one side's addresses are unreachable from the other.";
   return "Their checks reach us, but none of ours got an answer back: their side's firewall or NAT may let our packets in only after they've sent to us from the same address.";
+}
+
+// The checks: per candidate pair from the library's checklist, or (a call saved before it could be
+// read) per their address, from the STUN messages.
+const checkTable = (f, peers, theirs) => (f.icePairs ? pairTable(f.icePairs, theirs) : peerTable(peers, theirs));
+
+const PAIR_STATE = { Frozen: "frozen", Waiting: "waiting", InProgress: "checking", Succeeded: "succeeded", Failed: "failed" };
+
+function pairTable(pairs, theirs) {
+  const addr = (c) => `${c.address.includes(":") ? `[${c.address}]` : c.address}:${c.port}`;
+  const rows = pairs.map((p) => `<tr class="${p.selected ? "sel" : ""}"><td class="mono">${esc(p.ours)}</td><td class="mono">${esc(p.theirs)}</td>`
+    + `<td class="${p.state === "Failed" ? "bad-ink" : ""}">${esc(PAIR_STATE[p.state] ?? p.state)}${p.selected ? " · in use" : p.nominated ? " · nominated" : ""}</td>`
+    + `<td>${p.sent}</td><td class="${p.sent && !p.answers ? "bad-ink" : ""}">${p.answers}</td><td>${p.received}</td><td>${p.rtt != null ? `${p.rtt} ms` : ""}</td></tr>`).join("");
+  const unchecked = theirs.filter((c) => !pairs.some((p) => p.theirs.endsWith(` ${addr(c)}`)))
+    .map((c) => `<tr><td></td><td class="mono">${esc(c.type)} ${esc(c.protocol)} ${esc(addr(c))}</td><td colspan="5" class="m">not paired</td></tr>`).join("");
+  return `<table class="cx-peers"><thead><tr><th>Ours</th><th>Theirs</th><th>State</th><th>Our checks</th><th>Answers</th><th>Their checks</th><th>RTT</th></tr></thead><tbody>${rows}${unchecked}</tbody></table>`;
 }
 
 function peerTable(peers, theirs) {
@@ -334,6 +388,7 @@ export function renderConnection() {
 export function initConnection() {
   const pane = $("paneConn");
   if (!pane) return;
+  pane.addEventListener("toggle", (ev) => { if (ev.target.classList?.contains("cx-more")) pairsOpen = ev.target.open; }, true);
   pane.addEventListener("click", (ev) => {
     const v = ev.target.closest("[data-view]");
     if (v) { view = v.dataset.view; renderConnection(); }

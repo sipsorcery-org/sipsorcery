@@ -106,6 +106,8 @@ public sealed class Phone : IDisposable
         internal readonly System.Collections.Concurrent.ConcurrentDictionary<SDPMediaTypesEnum, System.Net.IPEndPoint> LastFrom = new();
         /// <summary>The packet counts at the last tick (sent, from RTCP's count; received), for the rates.</summary>
         internal readonly Dictionary<SDPMediaTypesEnum, (long Tx, long Rx)> RatesBefore = new();
+        /// <summary>The SRTP failures counted so far, and the session they're from (a transfer's new one starts at 0).</summary>
+        internal (RTPSession? Rtp, long Auth, long Replay, long Other, long Rtcp) SrtpCounted;
         /// <summary>Sends the Streams tab the call's offers and answers a moment after a message changes them.</summary>
         internal System.Threading.Timer? StreamsTimer;
         /// <summary>Why the call's media stopped, while it has (an RTP timeout, or a WebRTC connection
@@ -373,6 +375,7 @@ public sealed class Phone : IDisposable
             // In case the call's Call-ID changed without a response that said so.
             AttachStreams(c, c.Ua?.Dialogue?.CallId);
             if (c.Rtp is not { } rtp) continue;
+            CountSrtpErrors(c, rtp);
             foreach (var kind in new[] { SDPMediaTypesEnum.audio, SDPMediaTypesEnum.video, SDPMediaTypesEnum.text })
             {
                 var stream = StreamFor(rtp, kind);
@@ -393,6 +396,39 @@ public sealed class Phone : IDisposable
             }
         }
         if (rates.Count > 0) StreamRates?.Invoke(rates);
+    }
+
+    // The packets the call's streams couldn't decrypt, as the library counts them on each stream: the
+    // keys differ (authentication), a replay, or something else; and the SRTCP ones. Added to the
+    // call's facts as they grow, so a transfer's new session (whose counts start at 0) adds to them.
+    private void CountSrtpErrors(Call c, RTPSession rtp)
+    {
+        long auth = 0, replay = 0, other = 0, rtcp = 0;
+        foreach (var st in rtp.AudioStreamList.Cast<MediaStream>().Concat(rtp.VideoStreamList).Concat(rtp.TextStreamList))
+        {
+            auth += st.SrtpErrors.Authentication;
+            replay += st.SrtpErrors.Replay;
+            other += st.SrtpErrors.Other;
+            rtcp += st.SrtcpErrors.Total;
+        }
+        var was = c.SrtpCounted.Rtp == rtp ? c.SrtpCounted : (rtp, 0, 0, 0, 0);
+        if (auth == was.Auth && replay == was.Replay && other == was.Other && rtcp == was.Rtcp) return;
+        c.SrtpCounted = (rtp, auth, replay, other, rtcp);
+        var log = c.Streams;
+        bool first = (log.Get("srtpErrors") as long? ?? 0) + (log.Get("srtcpErrors") as long? ?? 0) == 0;
+        log.Count("srtpAuth", auth - was.Auth);
+        log.Count("srtpReplay", replay - was.Replay);
+        log.Count("srtpOther", other - was.Other);
+        log.Count("srtcpErrors", rtcp - was.Rtcp);
+        long total = log.Count("srtpErrors", (auth - was.Auth) + (replay - was.Replay) + (other - was.Other));
+        log.Set("srtpLastAt", StreamLog.PageTime(DateTime.Now));
+        if (first)
+        {
+            var why = auth > 0 ? "the keys don't match" : replay > 0 ? "replays" : "couldn't decrypt";
+            log.AddEvent("srtp", $"packets couldn't be decrypted: {why}", auth > 0 || other > 0 ? "bad" : "warn");
+            Log?.Invoke($"call {c.Id}: SRTP: packets from them couldn't be decrypted ({auth} authentication, {replay} replay, {other} other; {rtcp} SRTCP)");
+        }
+        StreamsChangedSoon(c);
     }
 
     // UDP for plain SIP media; for WebRTC, the protocol and the candidate types of ICE's chosen pair
@@ -429,37 +465,6 @@ public sealed class Phone : IDisposable
         _transport.SIPResponseInTraceEvent += (l, r, resp) => { Log?.Invoke($"<- {r} {resp.ShortDescription}"); Trace?.Invoke($"<- {r}\n{resp}"); RecordSip(StreamLog.From(resp, false)); RecordWire(l, r, resp, false); };
         _transport.SIPResponseOutTraceEvent += (l, r, resp) => { Log?.Invoke($"-> {r} {resp.ShortDescription}"); Trace?.Invoke($"-> {r}\n{resp}"); RecordSip(StreamLog.From(resp, true)); RecordWire(l, r, resp, true); };
         _streamsTick = new System.Threading.Timer(_ => { try { StreamsTick(); } catch (Exception ex) { Log?.Invoke($"streams tick failed: {ex.Message}"); } }, null, 1000, 1000);
-        LibraryLog.Line += OnLibraryLine;
-    }
-
-    // The library's DTLS and SRTP warnings don't say which call they're about, so the Connection
-    // tab gets them only where that's clear: a DTLS failure for the calls whose handshake is under
-    // way, and an SRTP one while there's just the one call. (The relay to the page has DTLS and
-    // SRTP too, but its warnings about stray packets aren't failures, so those are left out.)
-    private void OnLibraryLine(string line)
-    {
-        bool dtls = line.Contains("fingerprint mismatch", StringComparison.OrdinalIgnoreCase) || line.Contains("handshake failed", StringComparison.OrdinalIgnoreCase);
-        bool srtp = line.Contains("unprotect", StringComparison.OrdinalIgnoreCase);
-        if (!dtls && !srtp) return;
-        var text = System.Text.RegularExpressions.Regex.Replace(line, @"^sipsorcery \w+: \w+: (RTCPeerConnection )?", "");
-        if (dtls)
-        {
-            foreach (var c in Calls.Where(c => c.Live && c.Streams.Get("dtlsState") as string == "starting"))
-            {
-                c.Streams.Set("dtlsError", text);
-                c.Streams.AddEvent("dtls", text, "bad");
-                StreamsChangedSoon(c);
-            }
-            return;
-        }
-        var live = Calls.Where(c => c.State == CallState.Connected).ToList();
-        if (live.Count != 1) return;
-        var only = live[0];
-        var more = System.Text.RegularExpressions.Regex.Match(text, @"\(and (\d+) more like it\)");
-        if (only.Streams.Count("srtpErrors", 1 + (more.Success ? long.Parse(more.Groups[1].Value) : 0)) == 1 + (more.Success ? long.Parse(more.Groups[1].Value) : 0))
-            only.Streams.AddEvent("srtp", text, "bad");
-        only.Streams.Set("srtpError", text);
-        StreamsChangedSoon(only);
     }
 
     /// <summary>Set when the configured SIP port was taken and another one was used instead.</summary>
@@ -1778,6 +1783,16 @@ public sealed class Phone : IDisposable
             if (kind == SDPMediaTypesEnum.audio) c.TimedOut = $"No audio from them for {secs} s";
             StreamsChangedSoon(c);
         };
+        // Their RTP came from somewhere other than their SDP's address, and the session now sends there.
+        rtp.OnRtpEndPointSwitched += (index, kind, from, to) =>
+        {
+            if (c.Rtp != rtp) return;
+            var name = $"{char.ToUpperInvariant(kind.ToString()[0])}{kind.ToString()[1..]}";
+            Log?.Invoke($"call {c.Id}: RTP: their {kind} comes from {Ep(to)}, not {Ep(from)} as their SDP says: sending there now");
+            c.Streams.AddEvent("rtp", $"{kind} moved to {Ep(to)}");
+            c.Streams.Set($"rtpMoved{name}", new { from = Ep(from), to = Ep(to), at = StreamLog.PageTime(DateTime.Now) });
+            StreamsChangedSoon(c);
+        };
         rtp.OnRtcpBye += reason =>
         {
             if (c.Rtp != rtp) return;
@@ -1827,26 +1842,43 @@ public sealed class Phone : IDisposable
         bool iceUp = false;
         var log = c.Streams;
         long Now() => StreamLog.PageTime(DateTime.Now);
-        // The connectivity checks with each of their addresses: ours sent, their answers, and
-        // their checks to us. (The library keeps its checklist to itself; its STUN events say this much.)
-        var peers = new System.Collections.Concurrent.ConcurrentDictionary<string, long[]>();
-        void Peers() => log.Set("icePeers", peers.OrderBy(p => p.Key).Select(p => new { ep = p.Key, sent = p.Value[0], answers = p.Value[1], theirs = p.Value[2] }).ToList());
-        void Stun(STUNMessage m, System.Net.IPEndPoint ep, int slot)
+        string Addr(RTCIceCandidate? x) => x == null ? "?" : $"{(x.address.Contains(':') ? $"[{x.address}]" : x.address)}:{x.port}";
+        string Cand(RTCIceCandidate? x) => x == null ? "?" : $"{x.type} {x.protocol.ToString().ToUpperInvariant()} {Addr(x)}";
+        // The checklist, copied: each candidate pair, its state, and the checks each way on it.
+        // Copied again as checks go and come; once the channel's closed the copy is empty, so the
+        // last one stands. icePeers is the same by their address (what saved diagnostics had before).
+        void Pairs()
+        {
+            var pairs = ice.GetChecklistSnapshot();
+            if (pairs.Count == 0) return;
+            log.Set("icePairs", pairs.Select(p => new
+            {
+                ours = Cand(p.LocalCandidate),
+                theirs = Cand(p.RemoteCandidate),
+                state = p.State.ToString(),
+                selected = p.Selected,
+                nominated = p.Nominated || p.RemoteNominated,
+                sent = p.ChecksSent,
+                answers = p.ResponsesReceived,
+                received = p.RequestsReceived,
+                rtt = p.RoundTripTime is { } t ? Math.Round(t.TotalMilliseconds, 1) : (double?)null,
+            }).ToList());
+            log.Set("icePeers", pairs.GroupBy(p => Addr(p.RemoteCandidate)).OrderBy(g => g.Key)
+                .Select(g => new { ep = g.Key, sent = g.Sum(p => p.ChecksSent), answers = g.Sum(p => p.ResponsesReceived), theirs = g.Sum(p => p.RequestsReceived) }).ToList());
+            if (pairs.FirstOrDefault(p => p.Selected)?.RoundTripTime is { } rtt) log.Set("iceRtt", Math.Round(rtt.TotalMilliseconds, 1));
+        }
+        void Stun()
         {
             if (c.Rtp != pc) return;
-            var n = peers.GetOrAdd(Ep(ep) ?? ep.ToString(), _ => new long[3]);
-            Interlocked.Increment(ref n[slot]);
-            Peers();
+            Pairs();
             // While it's still checking: the counts are the story. Once it's up they ride on the next update.
             if (log.Get("iceState") is "checking" or "new" or null) StreamsChangedSoon(c);
         }
-        ice.OnStunMessageSent += (m, ep, relayed) => { if (m.Header.MessageType == STUNMessageTypesEnum.BindingRequest) Stun(m, ep, 0); };
+        ice.OnStunMessageSent += (m, ep, relayed) => { if (m.Header.MessageType == STUNMessageTypesEnum.BindingRequest) Stun(); };
         ice.OnStunMessageReceived += (m, ep, relayed) =>
         {
-            if (m.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse) Stun(m, ep, 1);
-            else if (m.Header.MessageType == STUNMessageTypesEnum.BindingRequest) Stun(m, ep, 2);
+            if (m.Header.MessageType is STUNMessageTypesEnum.BindingSuccessResponse or STUNMessageTypesEnum.BindingRequest) Stun();
         };
-        string Cand(RTCIceCandidate? x) => x == null ? "?" : $"{x.type} {x.protocol.ToString().ToUpperInvariant()} {(x.address.Contains(':') ? $"[{x.address}]" : x.address)}:{x.port}";
         string Kinds() => string.Join(", ", ice.Candidates.GroupBy(x => x.type).Select(g => $"{g.Count()} {g.Key}"));
         pc.onicegatheringstatechange += s =>
         {
@@ -1883,39 +1915,60 @@ public sealed class Phone : IDisposable
             else if (s == RTCIceConnectionState.failed && iceUp) { log.Set("iceLostAt", Now()); log.AddEvent("ice", "lost: no answers to our checks", "bad"); }
             else if (s == RTCIceConnectionState.failed) { log.Set("iceDoneAt", Now()); log.AddEvent("ice", "failed: no pair answered", "bad"); }
             else if (s == RTCIceConnectionState.disconnected) log.AddEvent("ice", "disconnected", "warn");
-            Peers();
-            if (s == RTCIceConnectionState.connected && !iceUp)
+            Pairs();
+            if (s == RTCIceConnectionState.connected) iceUp = true;
+            StreamsChangedSoon(c);
+        };
+        // DTLS, as the peer connection reports it: the handshake starting (once ICE is up), done
+        // (with the SRTP profile it agreed), or failed (and why: their certificate not the one their
+        // SDP's fingerprint names, an alert, or a timeout).
+        pc.ondtlsstatechange += info =>
+        {
+            if (c.Rtp != pc) return;
+            var role = info.IsClient ? "client" : "server";
+            switch (info.State)
             {
-                iceUp = true;
-                bool client = pc.IceRole == IceRolesEnum.active;
-                Log?.Invoke($"call {c.Id}: DTLS: handshake starting, we're the {(client ? "client (a=setup:active)" : "server (a=setup:passive)")}");
-                log.Set("dtlsState", "starting");
-                log.Set("dtlsRole", client ? "client" : "server");
-                log.Set("dtlsStartedAt", Now());
-                log.AddEvent("dtls", $"handshake · we're {(client ? "client" : "server")}");
+                case RTCDtlsTransportState.connecting:
+                    Log?.Invoke($"call {c.Id}: DTLS: handshake starting, we're the {(info.IsClient ? "client (a=setup:active)" : "server (a=setup:passive)")}");
+                    log.Set("dtlsState", "starting");
+                    log.Set("dtlsRole", role);
+                    log.Set("dtlsStartedAt", Now());
+                    log.AddEvent("dtls", $"handshake · we're {role}");
+                    break;
+                case RTCDtlsTransportState.connected:
+                    Log?.Invoke($"call {c.Id}: DTLS: handshake done, their certificate matches their SDP's fingerprint: SRTP keys set ({info.SrtpProtectionProfile ?? "profile unknown"})");
+                    log.Set("dtlsState", "connected");
+                    log.Set("dtlsRole", role);
+                    log.Set("dtlsDoneAt", Now());
+                    log.Set("dtlsProfile", info.SrtpProtectionProfile);
+                    log.AddEvent("dtls", "connected · fingerprint matches", "ok");
+                    log.AddEvent("srtp", $"keys from DTLS{(info.SrtpProtectionProfile != null ? $" · {info.SrtpProtectionProfile}" : "")}", "ok");
+                    break;
+                case RTCDtlsTransportState.failed:
+                    Log?.Invoke($"call {c.Id}: DTLS: the handshake failed: {info.Reason}{(info.LastAlert != null ? $" (alert: {info.LastAlert})" : "")}");
+                    log.Set("dtlsState", "failed");
+                    log.Set("dtlsRole", role);
+                    log.Set("dtlsDoneAt", Now());
+                    log.Set("dtlsError", info.Reason);
+                    log.Set("dtlsAlert", info.LastAlert);
+                    log.Set("dtlsExpected", info.ExpectedFingerprint);
+                    log.Set("dtlsRemote", info.RemoteFingerprint);
+                    log.AddEvent("dtls", $"failed{(info.Reason != null ? $": {info.Reason}" : "")}", "bad");
+                    break;
+                case RTCDtlsTransportState.closed:
+                    // Closed after it was up: by a hang up, or their close_notify. An alert says otherwise.
+                    if (info.LastAlert != null) log.Set("dtlsAlert", info.LastAlert);
+                    log.AddEvent("dtls", $"closed{(info.LastAlert != null ? $" · {info.LastAlert}" : "")}", info.LastAlert != null ? "warn" : "info");
+                    break;
+                default:
+                    return;
             }
             StreamsChangedSoon(c);
         };
         pc.onconnectionstatechange += s =>
         {
             if (c.Rtp != pc) return;
-            if (s == RTCPeerConnectionState.connected && iceUp)
-            {
-                Log?.Invoke($"call {c.Id}: DTLS: handshake done, their certificate matches their SDP's fingerprint: SRTP keys set");
-                log.Set("dtlsState", "connected");
-                log.Set("dtlsDoneAt", Now());
-                log.AddEvent("dtls", "connected · fingerprint matches", "ok");
-                log.AddEvent("srtp", "keys from DTLS", "ok");
-            }
-            else if (s == RTCPeerConnectionState.failed && iceUp && log.Get("dtlsState") as string == "starting")
-            {
-                Log?.Invoke($"call {c.Id}: DTLS: the handshake failed");
-                log.Set("dtlsState", "failed");
-                log.Set("dtlsDoneAt", Now());
-                log.AddEvent("dtls", "failed", "bad");
-            }
-            else if (s is RTCPeerConnectionState.failed or RTCPeerConnectionState.closed) Log?.Invoke($"call {c.Id}: media connection {s}");
-            StreamsChangedSoon(c);
+            if (s is RTCPeerConnectionState.failed or RTCPeerConnectionState.closed) Log?.Invoke($"call {c.Id}: media connection {s}");
         };
     }
 
@@ -2435,6 +2488,8 @@ public sealed class Phone : IDisposable
         {
             if (c.State is CallState.Idle or CallState.Ended) return;
             c.EndReason = reason;
+            // The SRTP failures since the last tick: the saved diagnostics have them all.
+            if (c.Rtp is { } ended) try { CountSrtpErrors(c, ended); } catch { }
             Interlocked.Exchange(ref c.AddVideoTimer, null)?.Dispose();
             Interlocked.Exchange(ref c.AddTextTimer, null)?.Dispose();
             Interlocked.Exchange(ref c.HoldTimer, null)?.Dispose();
@@ -2496,7 +2551,6 @@ public sealed class Phone : IDisposable
     public void Dispose()
     {
         _streamsTick?.Dispose();
-        LibraryLog.Line -= OnLibraryLine;
         foreach (var c in Calls.Where(c => c.State == CallState.Connected)) c.Ua?.Hangup();
         lock (_accounts) foreach (var reg in _accounts.Values) StopRegistration(reg);
         Thread.Sleep(300);

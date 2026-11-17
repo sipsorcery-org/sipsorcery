@@ -1097,7 +1097,7 @@ coloured tag for what it's about:
 |---|---|
 | SIP | Each SIP message, one line (`-> udp:… INVITE …`, `<- … 200 Ok`); registration; the WebSocket server connection (web) |
 | ICE | A WebRTC call's SIP leg: our candidates, checking (controlling or controlled), the pair it connected on (`host UDP [::]:64116 ⇄ host UDP [fdec:…]:64288`), failed or disconnected |
-| DTLS | The handshake after ICE: starting, as client or server (`a=setup`), done (the certificate matched the SDP's fingerprint, so the SRTP keys are set), failed |
+| DTLS | The handshake after ICE: starting, as client or server (`a=setup`), done (the certificate matched the SDP's fingerprint, so the SRTP keys are set, with the profile agreed), failed (with the library's reason and alert) |
 | RTP / RTCP | The media: the codecs agreed, the first packet of each kind from them (and from where), RTCP reports, RTP timeouts, SRTP errors, real-time text, simulated loss |
 | Calls | Calls starting and ending, hold, transfers, DTMF, the history |
 | App | The rest: devices, the page's view, accounts, and the relay to the page (known to work, so not the media) |
@@ -1221,21 +1221,30 @@ is marked, and it says why, as far as the call can tell:
 - **SDP**: *Agreed* (the media, the profiles, where the answer came; on WebRTC their candidates),
   *Waiting for their answer*, or *Turned down* with the response.
 - **ICE**: *Not used* on plain SIP (the media goes straight to their SDP's address); *Checking*,
-  with a table of their addresses and the checks each way; *Connected* with the pair, our
-  candidates, whether we're controlling, and how long it took; *Disconnected* (their phone stopped
+  with a table of the candidate pairs: ours and theirs, the pair's state (frozen, waiting,
+  checking, succeeded, failed; the one in use marked), our checks, their answers, their checks, and
+  the round trip time of the latest answered check, with any candidate of theirs that was never
+  paired; *Connected* with the pair, our candidates, whether we're controlling, how long it took
+  and the pair's RTT, the table folded under it (unfolded, it stays so as the row redraws);
+  *Disconnected* (their phone stopped
   answering the checks that keep the path up); *Lost* (connected, then gone for good); *Failed*
   (never connected), with the likely why: their SDP had no candidates, they offered only private
   addresses with no server-reflexive or relay one, nothing answered either way (a firewall), or
   their checks reach us but ours get no answer.
 - **DTLS**: *Not used* on plain SIP; *Handshaking*, *Connected* (our role, *a=setup*, the
-  fingerprint matched), or *Failed*, with the library's reason: a fingerprint mismatch means
-  something rewrote their SDP.
-- **SRTP**: *Keys from DTLS*; *Keys from SDP* with the suite, amber when the SIP went over UDP or
-  TCP, since anyone who sees the SIP can read the keys; *Not used* (plain RTP). Packets that
-  couldn't be decrypted turn it red, with the count (from the library's log, while the call was
-  the only one).
+  fingerprint matched; an alert after, if one came), or *Failed*, with the library's reason and
+  the alert, and the likely why: a fingerprint mismatch (both fingerprints shown) means something
+  rewrote their SDP; an alert such as *handshake_failure*, no profile or cipher in common; a
+  timeout, nothing coming back (a firewall that lets STUN through but not DTLS).
+- **SRTP**: *Keys from DTLS* with the profile the handshake agreed (between two SIPSorcery peers,
+  RFC 8723's *DOUBLE_AEAD_AES_256_GCM_AEAD_AES_256_GCM*, the server's first choice); *Keys from
+  SDP* with the suite, amber when the SIP went over UDP or TCP, since anyone who sees the SIP can
+  read the keys; *Not used* (plain RTP). Packets that couldn't be decrypted, as the library counts
+  them on each stream, by why: red when the keys don't match (authentication) or for another
+  reason, amber for replays only (already seen, or too old: a few are harmless); SRTCP's too.
 - **RTP**: *Flowing* (packets/s each way, how long after the answer each kind's first packet came),
-  *Flowing, moved* when it arrives from another address than their SDP's (a NAT), *Nothing
+  *Flowing, moved* when their RTP came from another address than their SDP's and the session
+  switched to it (a NAT; the library says when, and it stays in the saved diagnostics), *Nothing
   arriving* when their SDP says they send and nothing has for 3 s, *Stopped* when ICE went with it;
   at the end *Flowed* or *Timed out*.
 - **RTCP**: *Reporting* (their last report, rtcp-mux or its port, RTT, the count), *Waiting* for the
@@ -1249,10 +1258,16 @@ event's time. Its head line says *answered 1.12 s after the INVITE · media up 0
 
 The host keeps it with Streams' record of the call (`StreamLog`): the call's SIP messages (each
 request and response, not just those with SDP), setup events by layer (ICE's gathering and state
-changes, DTLS's handshake, the first RTP of each kind, an RTP timeout, RTCP's first report and a
-BYE), and facts (when ICE started and connected, the pair, the checks per address of theirs from
-the library's STUN events, DTLS's role and times, RTCP's last report and RTT). The relay between the
-host and the page doesn't count, as in Streams. The web softphone has no Connection tab.
+changes, DTLS's handshake, the first RTP of each kind, an RTP timeout, an RTP address switch,
+RTCP's first report and a BYE), and facts (when ICE started and connected, the pair, the
+checklist's candidate pairs, DTLS's role, times, profile and failure, the SRTP failures by why,
+RTCP's last report and RTT). It reads the library's diagnostics for these, not its log:
+`RtpIceChannel.GetChecklistSnapshot` (copied again as checks go and come), `ondtlsstatechange`,
+each stream's `SrtpErrors` and `SrtcpErrors` (each second, and at the end), and
+`OnRtpEndPointSwitched`; so an SRTP failure is the call's own even with several calls up. A call
+saved before has the older facts (the checks per address of theirs, the SRTP count from the log),
+and the tab shows those as it did. The relay between the host and the page doesn't count, as in
+Streams. The web softphone has no Connection tab.
 
 A WebRTC call whose media connection fails now ends *Media connection failed* (before: *They hung
 up*, as the user agent hangs up itself when it does).

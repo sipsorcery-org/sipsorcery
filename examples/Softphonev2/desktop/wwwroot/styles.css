@@ -527,6 +527,10 @@ button.sx-ev:hover b { text-decoration: underline; }
 .cx-peers { margin-top: 6px; border-collapse: collapse; font-size: 11.5px; }
 .cx-peers th { text-align: left; font-weight: 600; color: var(--muted); padding: 2px 14px 2px 0; border-bottom: 1px solid var(--border); white-space: nowrap; }
 .cx-peers td { padding: 3px 14px 3px 0; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.cx-peers tr.sel td { font-weight: 600; }
+.cx-more { margin-top: 4px; }
+.cx-more summary { cursor: pointer; color: var(--muted); font-size: 11.5px; width: max-content; }
+.cx-more summary:hover { color: var(--text); }
 .cx-tl-head { margin: 0 0 8px; color: var(--muted); }
 .cx-tl { margin-right: 6px; font-size: 11.5px; }
 .cx-lane { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: center; min-height: 28px; border-bottom: 1px solid var(--border); }
