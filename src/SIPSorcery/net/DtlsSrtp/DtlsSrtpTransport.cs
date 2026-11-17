@@ -62,6 +62,45 @@ namespace SIPSorcery.Net
 
         public event OnDtlsAlertEvent OnAlert;
 
+        /// <summary>
+        /// The SRTP protection profile the handshake agreed, one of <see cref="Org.BouncyCastle.Tls.SrtpProtectionProfile"/>'s
+        /// values, or -1 until it has completed.
+        /// </summary>
+        public int SrtpProtectionProfile { get; private set; } = -1;
+
+        /// <summary>
+        /// The agreed SRTP protection profile's name as RFC 5764 and its successors give it, for example
+        /// "SRTP_AES128_CM_HMAC_SHA1_80" or "SRTP_AEAD_AES_128_GCM"; null until the handshake has completed.
+        /// </summary>
+        public string SrtpProtectionProfileName => ProfileName(SrtpProtectionProfile);
+
+        /// <summary>
+        /// The most recent alert, from either side, other than a close_notify: "fatal handshake_failure", say,
+        /// with its description if it had one. Null if there has been none. For diagnostics, as an alert is
+        /// often the only account of why a handshake failed.
+        /// </summary>
+        public string LastAlert { get; private set; }
+
+        private static readonly System.Collections.Generic.Dictionary<int, string> _profileNames = ProfileNames();
+
+        private static System.Collections.Generic.Dictionary<int, string> ProfileNames()
+        {
+            var names = new System.Collections.Generic.Dictionary<int, string>();
+            foreach (var field in typeof(Org.BouncyCastle.Tls.SrtpProtectionProfile).GetFields(
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
+            {
+                if (field.IsLiteral && field.FieldType == typeof(int) && field.GetValue(null) is int id && !names.ContainsKey(id))
+                {
+                    names[id] = field.Name;
+                }
+            }
+            return names;
+        }
+
+        /// <summary>The name of an SRTP protection profile (RFC 5764's), or null if it isn't one.</summary>
+        public static string ProfileName(int profile) =>
+            profile >= 0 && _profileNames.TryGetValue(profile, out var name) ? name : null;
+
         internal DtlsSrtpTransport(IDtlsSrtpPeer connection)
         {
             this._connection = connection;
@@ -73,10 +112,15 @@ namespace SIPSorcery.Net
         {
             this._peerCertificate = e.PeerCertificate;
             this.Context = new ThreadSafeSrtpSessionContext(e.Context);
+            this.SrtpProtectionProfile = e.ProtectionProfile;
         }
 
         private void DtlsSrtpTransport_OnAlert(object sender, DtlsAlertEventArgs args)
         {
+            if (args.AlertType != TlsAlertTypesEnum.CloseNotify)
+            {
+                LastAlert = $"{args.Level} {args.AlertType}{(string.IsNullOrEmpty(args.Description) ? "" : $": {args.Description}")}";
+            }
             OnAlert?.Invoke(args.Level, args.AlertType, args.Description);
         }
 
