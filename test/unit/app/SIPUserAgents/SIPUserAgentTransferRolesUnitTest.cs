@@ -11,6 +11,7 @@
 //
 // History:
 // 30 Aug 2026  Aaron Clauson   Created.
+// 17 Nov 2026  Claude Code - Opus 5.5   A transferee's call to the target turned down leaves the original call up.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -601,6 +602,68 @@ namespace SIPSorcery.SIP.App.UnitTests
                 await Task.Delay(500);
 
                 Assert.False(SentInviteToTarget(channel), "The transfer destination was called after the call had ended.");
+            }
+            finally
+            {
+                agent.Close();
+                transport.Shutdown();
+            }
+        }
+
+
+        /// <summary>
+        /// Verifies that when the transfer destination turns the call down (a 488, say) the call being
+        /// transferred goes on: it isn't reported hung up, its media stays open and its dialog stays, and
+        /// it's taken off hold. (It used to be ended as if the remote party had hung up, without a BYE,
+        /// and the response to the re-INVITE taking it off hold then hit a null dialog.)
+        /// </summary>
+        [Fact]
+        public async Task TransferToTargetRefusedOriginalCallGoesOn()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var channelEndPoint = new IPEndPoint(IPAddress.Loopback, 6097);
+            var channel = new RecordingMockSIPChannel(channelEndPoint);
+            var transport = new SIPTransport();
+            transport.AddSIPChannel(channel);
+
+            var agent = new SIPUserAgent(transport, null);
+            bool hungup = false;
+            var failed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            try
+            {
+                var mediaSession = await EstablishDialogAsync(agent, channel, channelEndPoint);
+                string originalCallId = agent.Dialogue.CallId;
+
+                agent.OnCallHungup += _ => hungup = true;
+                agent.OnTransferRequested += (referTo, referredBy) => true;
+                agent.OnTransferToTargetFailed += _ => failed.TrySetResult(true);
+
+                var referRequest = CreateReferRequest(agent.Dialogue, channelEndPoint, "<sip:transfer-target@127.0.0.1:6099>");
+                var responses = await InjectRequestAsync(channel, channelEndPoint, referRequest);
+                Assert.Contains(responses, x => x.StartsWith("SIP/2.0 202"));
+
+                string inviteStr = channel.AllSentMessages.FirstOrDefault(x => x.StartsWith("INVITE sip:transfer-target@127.0.0.1:6099"));
+                Assert.False(inviteStr == null, "The transfer destination was not called.");
+                var invite = SIPRequest.ParseSIPRequest(SIPMessageBuffer.ParseSIPMessage(inviteStr, DummySIPEndPoint, DummySIPEndPoint));
+
+                var refused = SIPResponse.GetResponse(invite, SIPResponseStatusCodesEnum.NotAcceptableHere, null);
+                refused.Header.To.ToTag = CallProperties.CreateNewTag();
+                channel.FireMessageReceived(new SIPEndPoint(SIPProtocolsEnum.udp, channelEndPoint), DummySIPEndPoint, Encoding.UTF8.GetBytes(refused.ToString()));
+
+                await Task.WhenAny(failed.Task, Task.Delay(5000));
+                Assert.True(failed.Task.IsCompleted, "OnTransferToTargetFailed did not fire.");
+                await Task.Delay(500);
+
+                Assert.False(hungup, "The original call was reported hung up.");
+                Assert.NotNull(agent.Dialogue);
+                Assert.Equal(originalCallId, agent.Dialogue.CallId);
+                Assert.False(mediaSession.IsClosed, "The original call's media was closed.");
+                // Put on hold as the transfer started, and taken off it again.
+                Assert.True(channel.AllSentMessages.Count(x => x.StartsWith("INVITE ") && x.Contains($"Call-ID: {originalCallId}")) >= 2,
+                    "The original call wasn't taken off hold.");
+                Assert.DoesNotContain(channel.AllSentMessages, x => x.StartsWith("BYE "));
             }
             finally
             {
