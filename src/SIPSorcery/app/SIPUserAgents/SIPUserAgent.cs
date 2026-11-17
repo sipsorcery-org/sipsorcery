@@ -141,6 +141,14 @@ namespace SIPSorcery.SIP.App
         private string _oldCallID;
 
         /// <summary>
+        /// While this user agent calls a transfer's target (it's the transferee), the client user agent
+        /// and call descriptor of the call being transferred, if it was one we placed. The call to the
+        /// target takes their place, and if it fails they're put back, as the original call goes on.
+        /// </summary>
+        private SIPClientUserAgent _preTransferUac;
+        private SIPCallDescriptor _preTransferCallDescriptor;
+
+        /// <summary>
         /// Gets set to true if the SIP user agent has been explicitly closed and is no longer
         /// required.
         /// </summary>
@@ -1657,7 +1665,10 @@ namespace SIPSorcery.SIP.App
                     OnTransferCallDescriptorCreated?.Invoke(callDescriptor, referRequest);
 
                     // The call to the transfer destination is allowed to replace the established call. If it
-                    // succeeds the call being replaced is hungup with the BYE request captured above.
+                    // succeeds the call being replaced is hungup with the BYE request captured above. If it
+                    // fails the established call goes on (see CallEndedSynchronised).
+                    _preTransferUac = m_uac;
+                    _preTransferCallDescriptor = m_callDescriptor;
                     var transferResult = await Call(callDescriptor, MediaSession, 0, true).ConfigureAwait(false);
 
                     logger.LogDebug("Result of calling transfer destination {TransferResult}.", transferResult);
@@ -1670,6 +1681,8 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
+                        _preTransferUac = null;
+                        _preTransferCallDescriptor = null;
                         OnTransferToTargetSuccessful?.Invoke(referToUserField);
                         // Hanging up original call.
 
@@ -1921,6 +1934,11 @@ namespace SIPSorcery.SIP.App
                     // it's the response to our on hold re-INVITE request. We don't want to update the media session state
                     // with this response.
                     logger.LogDebug("Re-INVITE response received for original Call-ID, disregarding.");
+                }
+                else if (m_sipDialogue == null || MediaSession == null)
+                {
+                    // The call ended while the re-INVITE was out.
+                    logger.LogDebug("Re-INVITE response received after the call ended, disregarding.");
                 }
                 else
                 {
@@ -2258,6 +2276,22 @@ namespace SIPSorcery.SIP.App
 
         private void CallEndedSynchronised(string callId)
         {
+            // A call attempt that never became this user agent's call: as transferee, our call to the
+            // transfer's target turned down (a 488, say). The established call, with another Call-ID,
+            // goes on: its media stays open, it's taken off hold, and the call it was takes its place
+            // again. Ending it here would close its media and report it hung up without a BYE.
+            if (m_sipDialogue != null && !string.IsNullOrWhiteSpace(callId) &&
+                !callId.Equals(m_sipDialogue.CallId, StringComparison.OrdinalIgnoreCase) &&
+                m_callDescriptor != null && callId.Equals(m_callDescriptor.CallId, StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogDebug("Call attempt {CallID} ended; the established call {DialogCallID} goes on.", callId, m_sipDialogue.CallId);
+                m_uac = _preTransferUac;
+                m_callDescriptor = _preTransferCallDescriptor;
+                _preTransferUac = null;
+                _preTransferCallDescriptor = null;
+                return;
+            }
+
             if (m_callDescriptor != null)
             {
                 if (!string.IsNullOrWhiteSpace(callId) && m_callDescriptor.CallId.Equals(callId, StringComparison.OrdinalIgnoreCase))
