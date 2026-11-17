@@ -46,6 +46,7 @@ import { closeDevices, initYourDevices, renderIndicator, renderYourDevices, stop
 import { dialDone, homeShown, initHome, renderHome } from "./home.js";
 import { initQuality, newQuality, onQuality, renderDetails, renderDock, renderQuality } from "./quality.js";
 import { initStreams, noteStreamCalls, onStreamRates, onStreams, renderStreams } from "./streams.js";
+import { initConnection, renderConnection } from "./connection.js";
 import { captureDiagnostics, closeSnapshot, onDiagSnapshot, snap } from "./snapshots.js";
 import { closeTextForGrid, hideToast, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen, toastCallId } from "./rtt.js";
 import { initTransfer, renderTransfer, transferShort, xferBusy } from "./transfer.js";
@@ -839,6 +840,7 @@ export function render() {
   lastSelected = selectedId;
   renderQuality();
   renderStreams();
+  renderConnection();
 
   renderCalls();
   renderPrivacy();
@@ -1366,6 +1368,7 @@ initMenus();
 let lossLoaded = false;   // the host's starting values (--loss-audio, --loss-video), taken from the first state
 initDiagnostics();
 initStreams();
+initConnection();
 
 $("hangupBtn").onclick = () => post({ type: "hangup", id: selectedId });
 $("holdBtn").onclick = () => { const e = sel(); if (e && holdState(e)) goLive(e); else holdCall(e, true); };

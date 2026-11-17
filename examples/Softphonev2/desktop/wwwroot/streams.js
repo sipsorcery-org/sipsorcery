@@ -15,6 +15,7 @@
 // are saved with its history entry (snapshots.js), and shown from there, from its row in Recent.
 
 import { entries, holdState, selectedId } from "./app.js";
+import { renderConnection } from "./connection.js";
 import { snap } from "./snapshots.js";
 import { $, escHtml as esc, post, shortName } from "./util.js";
 import { SOURCE_LABEL, sourceOf } from "./video.js";
@@ -54,7 +55,7 @@ function rec(id) {
   let r = recs.get(id);
   if (!r) {
     r = { id, names: [], startedAt: Date.now(), connectedAt: 0, endedAt: 0, reason: null, exchanges: [], streams: [], notes: [],
-      rates: {}, quietSince: {}, lanes: {}, marks: [], held: false, heldByThem: false, holdMode: null };
+      rates: {}, quietSince: {}, lanes: {}, marks: [], held: false, heldByThem: false, holdMode: null, sip: [], events: [], facts: {} };
     recs.set(id, r);
   }
   return r;
@@ -70,6 +71,10 @@ export function onStreams(msg) {
   r.exchanges = msg.exchanges ?? [];
   r.streams = msg.streams ?? [];
   r.notes = msg.notes ?? [];
+  // For the Connection tab (connection.js): the SIP messages, the media layers' events, their facts.
+  r.sip = msg.sip ?? [];
+  r.events = msg.events ?? [];
+  r.facts = msg.facts ?? {};
   if (r.exchanges[0] && r.exchanges[0].at < r.startedAt) r.startedAt = r.exchanges[0].at;
   scheduleRender();
 }
@@ -274,7 +279,7 @@ let renderQueued = false;
 function scheduleRender() {
   if (renderQueued) return;
   renderQueued = true;
-  requestAnimationFrame(() => { renderQueued = false; renderStreams(); });
+  requestAnimationFrame(() => { renderQueued = false; renderStreams(); renderConnection(); });
 }
 
 // The calls the tab offers: those going (an ended one clears at once, as the other tabs do).
@@ -288,6 +293,14 @@ function shown() {
   const on = (id) => id != null && recs.has(id) && !recs.get(id).endedAt;
   if (on(pickedId)) return recs.get(pickedId);
   if (on(selectedId)) return recs.get(selectedId);
+  return live().sort((a, b) => Number(b.id) - Number(a.id))[0] ?? null;
+}
+// The Connection tab's call: a call's saved diagnostics, else the selected call, else the latest
+// that's going. (It has no picker: it follows the selected call, as Call details does.)
+export function connRec(selected) {
+  if (snap) return snap.streams ?? null;
+  const r = recs.get(selected);
+  if (r && !r.endedAt) return r;
   return live().sort((a, b) => Number(b.id) - Number(a.id))[0] ?? null;
 }
 let snapShown = null;      // the snapshot last drawn, to start it on its latest offer/answer

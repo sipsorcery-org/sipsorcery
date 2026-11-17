@@ -1,4 +1,4 @@
-// Saved diagnostics: as a call ends, its Call details, Streams and Call quality are kept with its
+// Saved diagnostics: as a call ends, its Call details, Connection, Streams and Call quality are kept with its
 // history entry, and the live tabs clear, as they always have. A Diagnostics button on the call's
 // row in Home's Recent and People's Recent opens them again in the Diagnostics panel, with a bar
 // across it saying whose they are, until Back to live, closing the panel, or a call starting.
@@ -8,6 +8,7 @@
 
 import { setDiagnostics, setDevTab, currentDevTab } from "./diagnostics.js";
 import { renderDetails, renderQuality } from "./quality.js";
+import { renderConnection } from "./connection.js";
 import { dropStreams, renderStreams, streamsSnapshot } from "./streams.js";
 import { $, log, post } from "./util.js";
 
@@ -19,7 +20,7 @@ let wanted = null;   // the row asked for: { id, name }
 // The last of a call's offers and answers can reach the page a moment after it ends (the host
 // gathers a burst of SIP into one message), so Streams is taken after this.
 const STREAMS_WAIT_MS = 600;
-const SNAP_TABS = ["details", "streams", "quality"];
+const SNAP_TABS = ["details", "conn", "streams", "quality"];
 
 // Run as a call ends, before its media is closed: what the three tabs had for it.
 export function captureDiagnostics(e) {
@@ -66,6 +67,7 @@ export function closeSnapshot() {
 function showAll() {
   renderSnap();
   renderDetails();
+  renderConnection();
   renderStreams();
   renderQuality();
 }

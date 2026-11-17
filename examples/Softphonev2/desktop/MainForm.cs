@@ -556,6 +556,9 @@ internal sealed class MainForm : Form
         }),
         v.Streams,
         notes = v.Notes.Select(n => new { at = PageTime(n.At), n.Text, n.Level }),
+        sip = v.Sip.Select(s => new { at = PageTime(s.At), s.Out, s.Text, s.CSeq }),
+        events = v.Events.Select(e => new { at = PageTime(e.At), e.Layer, e.Text, e.Level }),
+        facts = v.Facts,
     };
 
     private void Post(object message)

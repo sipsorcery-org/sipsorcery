@@ -502,6 +502,50 @@ button.sx-ev:hover b { text-decoration: underline; }
 .sx-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .sx-legend .sx-bar { position: static; display: inline-block; width: 16px; }
 .sx-legend .sx-bar.idle { height: 2px; }
+
+/* Connection (connection.js): the layers, and the setup timeline. */
+.dev-conn .warn { --c: var(--warn-ink); }
+.dev-conn .wait { --c: var(--accent); }
+.dev-conn .mono { font: 12px Consolas, monospace; }
+.dev-conn .bad-ink { color: var(--danger); }
+.cx-who { flex: none; font-size: 13px; }
+.cx-ladder { display: grid; border-top: 1px solid var(--border); }
+.cx-row { display: grid; grid-template-columns: 56px 150px minmax(0, 1fr); gap: 0 12px; align-items: baseline; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+.cx-row > b { font-size: 12px; letter-spacing: .02em; }
+.cx-row.na > b, .cx-row.na .cx-st { color: var(--muted); }
+.cx-st { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--c); }
+.cx-st i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.cx-row.na .cx-st i { background: none; box-shadow: inset 0 0 0 1.5px var(--border-strong); }
+.cx-row.wait .cx-st i { animation: cx-pulse 1.2s ease-in-out infinite; }
+@keyframes cx-pulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .cx-row.wait .cx-st i { animation: none; } }
+.cx-facts { min-width: 0; overflow-wrap: anywhere; }
+.cx-facts small { display: block; margin-top: 2px; color: var(--muted); font-size: 11.5px; }
+.cx-row.first { background: color-mix(in srgb, var(--c) 9%, transparent); box-shadow: inset 3px 0 0 var(--c); }
+.cx-why { margin: 6px 0 2px; padding: 6px 9px; border-radius: 6px; background: var(--surface-2); line-height: 1.45; }
+.cx-why b { color: var(--c); margin-right: 4px; }
+.cx-peers { margin-top: 6px; border-collapse: collapse; font-size: 11.5px; }
+.cx-peers th { text-align: left; font-weight: 600; color: var(--muted); padding: 2px 14px 2px 0; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.cx-peers td { padding: 3px 14px 3px 0; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.cx-tl-head { margin: 0 0 8px; color: var(--muted); }
+.cx-tl { margin-right: 6px; font-size: 11.5px; }
+.cx-lane { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: center; min-height: 28px; border-bottom: 1px solid var(--border); }
+.cx-lane > b { font-size: 12px; }
+.cx-track { position: relative; height: 28px; }
+.cx-mk { position: absolute; top: 9px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--surface); box-shadow: inset 0 0 0 2px var(--muted); }
+.cx-mk.ok { box-shadow: none; background: var(--ok); }
+.cx-mk.warn { box-shadow: none; background: var(--warn-ink); }
+.cx-mk.bad { box-shadow: none; background: var(--danger); }
+.cx-lbl { position: absolute; top: 6px; max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cx-lbl em { font-style: normal; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cx-lbl.bad { color: var(--danger); }
+.cx-lbl.m { color: var(--muted); }
+.cx-span { position: absolute; top: 11px; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--tag-sip) 30%, transparent); }
+.cx-span span { position: absolute; top: 9px; left: 0; white-space: nowrap; color: var(--muted); font-size: 10.5px; }
+.cx-axis { position: relative; height: 18px; margin-left: 56px; color: var(--muted); font-size: 10.5px; border-top: 1px solid var(--border-strong); }
+.cx-axis span { position: absolute; top: 3px; white-space: nowrap; font-variant-numeric: tabular-nums; transform: translateX(-50%); }
+.cx-axis span:first-child { transform: none; }
+.cx-axis .later { transform: none; }
 /* Offers and answers: the list, then the one picked's SDPs side by side. */
 .sx-oa { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 0; }
 .sx-oa-list { display: flex; flex-direction: column; gap: 2px; padding-right: 8px; border-right: 1px solid var(--border); }
@@ -1517,6 +1561,9 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
   .dev-more:not([hidden]) { display: block; flex: none; }
   .dev-close { flex: none; }
   .dev-details, .dev-streams, .dev-quality, .dev-net { padding: 10px 12px; }
+  .cx-row { grid-template-columns: 46px minmax(0, 1fr); }
+  .cx-row .cx-facts { grid-column: 2; }
+  .cx-lbl { max-width: 60%; }
 }
 
 /* ---- Home (home.js): the stage with no call on it ----

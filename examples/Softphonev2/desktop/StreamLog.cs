@@ -10,6 +10,9 @@ namespace SIPSorcery.Softphone;
 /// offered, why (a hold, a resume, video added, a transfer's new session), what each side's SDP
 /// said, and the streams as the last answer left them. A transfer keeps the same call, so one
 /// log can span several Call-IDs (sessions).
+/// It also keeps what the Connection tab needs: the SIP messages that set the call up and end it
+/// (<see cref="View.Sip"/>), the media layers' events as they happen (ICE, DTLS, SRTP, RTP, RTCP:
+/// <see cref="AddEvent"/>), and their latest facts (<see cref="Set"/>).
 /// </summary>
 public sealed class StreamLog
 {
@@ -33,19 +36,29 @@ public sealed class StreamLog
     /// <summary>Something that happened to the media that no SDP says: an RTP timeout, an RTCP BYE.</summary>
     public sealed record Note(DateTime At, string Text, string Level);
 
-    public sealed record View(IReadOnlyList<Exchange> Exchanges, IReadOnlyList<Stream> Streams, IReadOnlyList<Note> Notes);
+    /// <summary>A SIP message, for the Connection tab's timeline: "INVITE", "180 Ringing", "ACK", "BYE".</summary>
+    public sealed record SipEvent(DateTime At, bool Out, string Text, int CSeq);
+
+    /// <summary>One of the media layers' events: Layer is ice, dtls, srtp, rtp or rtcp; Level info, ok, warn or bad.</summary>
+    public sealed record Event(DateTime At, string Layer, string Text, string Level);
+
+    public sealed record View(IReadOnlyList<Exchange> Exchanges, IReadOnlyList<Stream> Streams, IReadOnlyList<Note> Notes,
+        IReadOnlyList<SipEvent> Sip, IReadOnlyList<Event> Events, IReadOnlyDictionary<string, object?> Facts);
 
     private readonly object _lock = new();
     private readonly List<Message> _messages = new();
     private readonly HashSet<(bool, string, int, string, int)> _seen = new();
     private readonly List<Note> _notes = new();
+    private readonly List<Event> _events = new();
+    private readonly Dictionary<string, object?> _facts = new();
 
     /// <summary>The message as one for this log, or null if it has no part in an offer/answer.</summary>
     public static Message? From(SIPRequest req, bool sent)
     {
-        if (req.Method is not (SIPMethodsEnum.INVITE or SIPMethodsEnum.ACK or SIPMethodsEnum.UPDATE)) return null;
+        // BYE and CANCEL, and an ACK without SDP, aren't offers or answers, but the Connection
+        // tab's timeline shows them.
+        if (req.Method is not (SIPMethodsEnum.INVITE or SIPMethodsEnum.ACK or SIPMethodsEnum.UPDATE or SIPMethodsEnum.BYE or SIPMethodsEnum.CANCEL)) return null;
         var sdp = SdpOf(req.Header.ContentType, req.Body);
-        if (req.Method == SIPMethodsEnum.ACK && sdp == null) return null;
         // Who it's to (ours) or from (theirs), for "Replaced by Carol" and "Transfer: called Dave".
         var who = sent ? req.Header.To?.ToName is { Length: > 0 } tn ? tn : req.Header.To?.ToURI?.User
             : req.Header.From?.FromName is { Length: > 0 } fn ? fn : req.Header.From?.FromURI?.User;
@@ -82,6 +95,38 @@ public sealed class StreamLog
     {
         lock (_lock) _notes.Add(new Note(DateTime.Now, text, level));
     }
+
+    /// <summary>A media layer's event (ice, dtls, srtp, rtp, rtcp), for the Connection tab.</summary>
+    public void AddEvent(string layer, string text, string level = "info")
+    {
+        lock (_lock) _events.Add(new Event(DateTime.Now, layer, text, level));
+    }
+
+    /// <summary>A fact the Connection tab shows (iceState, dtlsRole, rtcpRtt, …): a string, number or bool.</summary>
+    public void Set(string key, object? value)
+    {
+        lock (_lock) _facts[key] = value;
+    }
+
+    /// <summary>A fact, as it is now.</summary>
+    public object? Get(string key)
+    {
+        lock (_lock) return _facts.GetValueOrDefault(key);
+    }
+
+    /// <summary>Adds to a count among the facts (srtpErrors, say), and returns it.</summary>
+    public long Count(string key, long by = 1)
+    {
+        lock (_lock)
+        {
+            long n = (_facts.GetValueOrDefault(key) as long? ?? 0) + by;
+            _facts[key] = n;
+            return n;
+        }
+    }
+
+    /// <summary>A time for the page, as its Date.now() counts.</summary>
+    public static long PageTime(DateTime t) => new DateTimeOffset(t).ToUnixTimeMilliseconds();
 
     // A media line's facts, from one side's SDP.
     private sealed record Line(string Kind, int Port, string Dir, string Transport, bool Crypto, string[] Formats);
@@ -133,9 +178,15 @@ public sealed class StreamLog
     /// <summary>The offers and answers so far, the streams as the last answer left them, and the notes.</summary>
     public View Build()
     {
-        List<Message> msgs;
+        List<Message> all;
         List<Note> notes;
-        lock (_lock) { msgs = _messages.ToList(); notes = _notes.ToList(); }
+        List<Event> events;
+        Dictionary<string, object?> facts;
+        lock (_lock) { all = _messages.ToList(); notes = _notes.ToList(); events = _events.ToList(); facts = new(_facts); }
+        // The SIP lane: every message, in order (offer/answer or not).
+        var sip = all.Select(m => new SipEvent(m.At, m.Out, m.Status > 0 ? $"{m.Status} {m.Reason}" : m.Method, m.CSeq)).ToList();
+        // The offers and answers: no BYE or CANCEL, and an ACK only with SDP.
+        var msgs = all.Where(m => m.Method is "INVITE" or "UPDATE" || (m.Method == "ACK" && m.Sdp != null)).ToList();
         var exchanges = new List<Exchange>();
         var answeredCallIds = new List<string>();
         Dictionary<string, string>? prevOurs = null, prevTheirs = null;   // per kind, from the last answered exchange
@@ -228,6 +279,6 @@ public sealed class StreamLog
                 streams.Add(new Stream(i, any.Kind, a?.Port ?? 0, b?.Port ?? 0, transport, security, a?.Dir ?? "inactive", b?.Dir ?? "inactive", formats));
             }
         }
-        return new View(exchanges, streams, notes);
+        return new View(exchanges, streams, notes, sip, events, facts);
     }
 }

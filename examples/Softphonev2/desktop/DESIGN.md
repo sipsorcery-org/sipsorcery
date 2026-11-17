@@ -1118,11 +1118,12 @@ thousand at a time).
 
 ## Saved diagnostics
 
-Call details, Streams and Call quality show the calls that are going, and clear as a call ends.
-But a call that went wrong is the one you most want to look at, and it's the one that ends. So as
-each call ends the page takes what the three tabs had for it (`snapshots.js`): the host's details
+Call details, Connection, Streams and Call quality show the calls that are going, and clear as a
+call ends. But a call that went wrong is the one you most want to look at, and it's the one that
+ends. So as each call ends the page takes what the tabs had for it (`snapshots.js`): the host's details
 and the codecs each way, the quality table and its last two minutes of graph, and Streams' record
-of the call (its offers and answers, lanes and notes). Streams is taken 0.6 s after the end, as
+of the call (its offers and answers, lanes and notes, and the SIP messages, setup events and
+facts Connection draws from). Streams is taken 0.6 s after the end, as
 the call's last offer or answer can reach the page a moment later. The page sends it as
 `diag-save {id, snapshot}`, and the host keeps it with the call's history entry, as
 `diagnostics-<profile>\<entry id>.json` beside the history (`CallHistory.SaveDiagnostics`). The
@@ -1133,7 +1134,7 @@ A call with saved diagnostics has a pulse button (Diagnostics' icon) on its row 
 and in People's Recent, and a *Diagnostics* button in its row's details. Those show only with no
 call going, which is when they're wanted. The button asks the host for it (`diag-get {id}`,
 answered by `diag-snapshot {id, snapshot}`), opens Diagnostics on Call details (or the tab that's
-open, if it's one of the three), and puts a bar across the panel: *Saved with the call: Bob, ended
+open, if it's one of the four), and puts a bar across the panel: *Saved with the call: Bob, ended
 17 Nov, 11:03 am · You hung up*, and *Back to live*. The tabs draw from the snapshot as they would
 from the call, except that nothing's live: Streams' ↑ and ↓ show –, its picker holds that call
 alone, and Call quality's foot says whether RTCP reports ever came. A tab with nothing saved says
@@ -1144,6 +1145,60 @@ They go with the call: one that falls off the end of the history (500 calls) los
 once; one removed (or cleared) keeps it until the app closes, so Undo brings it back whole, and
 any left over (the app was killed) go at the next start. The web softphone saves none: it has no
 host to keep them, and no Streams tab.
+
+## Connection (diagnostics mode)
+
+**Connection** is a tab in Diagnostics (F12), between Call details and Streams. Its question is
+the first one asked of a call with no audio: did the media get through, and if not, where did it
+stop? A call's media goes up in layers, each needing the one before: the SDP agrees what to send
+and where; on a WebRTC call ICE finds a path and DTLS agrees the keys over it; SRTP encrypts with
+those keys (or, on plain SIP, with keys the SDP carried); then RTP flows and RTCP reports on it.
+The tab shows the call it's for (the selected call, else the latest), live or saved
+([Saved diagnostics](#saved-diagnostics)), with a meta line: *WebRTC · UDP/TLS/RTP/SAVP · rtcp-mux
+· SIP over UDP*, or *Plain SIP · RTP/AVP with SDES keys*.
+
+*Layers* is a ladder, one row per layer: a state (green, amber, red, grey for not used or not
+reached, and a pulsing dot while it's under way), a word, and the facts. The first amber or red row
+is marked, and it says why, as far as the call can tell:
+
+- **SDP**: *Agreed* (the media, the profiles, where the answer came; on WebRTC their candidates),
+  *Waiting for their answer*, or *Turned down* with the response.
+- **ICE**: *Not used* on plain SIP (the media goes straight to their SDP's address); *Checking*,
+  with a table of their addresses and the checks each way; *Connected* with the pair, our
+  candidates, whether we're controlling, and how long it took; *Disconnected* (their phone stopped
+  answering the checks that keep the path up); *Lost* (connected, then gone for good); *Failed*
+  (never connected), with the likely why: their SDP had no candidates, they offered only private
+  addresses with no server-reflexive or relay one, nothing answered either way (a firewall), or
+  their checks reach us but ours get no answer.
+- **DTLS**: *Not used* on plain SIP; *Handshaking*, *Connected* (our role, *a=setup*, the
+  fingerprint matched), or *Failed*, with the library's reason: a fingerprint mismatch means
+  something rewrote their SDP.
+- **SRTP**: *Keys from DTLS*; *Keys from SDP* with the suite, amber when the SIP went over UDP or
+  TCP, since anyone who sees the SIP can read the keys; *Not used* (plain RTP). Packets that
+  couldn't be decrypted turn it red, with the count (from the library's log, while the call was
+  the only one).
+- **RTP**: *Flowing* (packets/s each way, how long after the answer each kind's first packet came),
+  *Flowing, moved* when it arrives from another address than their SDP's (a NAT), *Nothing
+  arriving* when their SDP says they send and nothing has for 3 s, *Stopped* when ICE went with it;
+  at the end *Flowed* or *Timed out*.
+- **RTCP**: *Reporting* (their last report, rtcp-mux or its port, RTT, the count), *Waiting* for the
+  first, *No reports* after 15 s (their phone may not send it), *Stopped* when none for 15 s.
+
+*Setup timeline* puts the same events on lanes, SIP, ICE, DTLS, SRTP, RTP and RTCP, along one
+axis: the INVITE to the answer squeezed into the first sixth (ringing as a bar), the setup after
+the answer (ICE, DTLS, SRTP and the first RTP, within 10 s) across most of it, and anything later
+(their first RTCP report, a BYE) in the rest. Times are from the answer; hovering a mark gives each
+event's time. Its head line says *answered 1.12 s after the INVITE · media up 0.23 s later*.
+
+The host keeps it with Streams' record of the call (`StreamLog`): the call's SIP messages (each
+request and response, not just those with SDP), setup events by layer (ICE's gathering and state
+changes, DTLS's handshake, the first RTP of each kind, an RTP timeout, RTCP's first report and a
+BYE), and facts (when ICE started and connected, the pair, the checks per address of theirs from
+the library's STUN events, DTLS's role and times, RTCP's last report and RTT). The relay between the
+host and the page doesn't count, as in Streams. The web softphone has no Connection tab.
+
+A WebRTC call whose media connection fails now ends *Media connection failed* (before: *They hung
+up*, as the user agent hangs up itself when it does).
 
 ## Streams (diagnostics mode)
 

@@ -343,6 +343,7 @@
       <div class="dev-tabs" role="tablist" aria-label="Diagnostics">
         <button type="button" class="dev-tab" role="tab" id="tabLog" data-tab="log" aria-controls="paneLog" aria-selected="true">Debug log</button>
         <button type="button" class="dev-tab" role="tab" id="tabDetails" data-tab="details" aria-controls="paneDetails" aria-selected="false">Call details</button>
+        <button type="button" class="dev-tab" role="tab" id="tabConn" data-tab="conn" aria-controls="paneConn" aria-selected="false">Connection</button>
         <button type="button" class="dev-tab" role="tab" id="tabStreams" data-tab="streams" aria-controls="paneStreams" aria-selected="false">Streams</button>
         <button type="button" class="dev-tab" role="tab" id="tabQuality" data-tab="quality" aria-controls="paneQuality" aria-selected="false">Call quality</button>
         <button type="button" class="dev-tab" role="tab" id="tabNet" data-tab="net" aria-controls="paneNet" aria-selected="false">Network</button>
@@ -377,6 +378,23 @@
     <div class="dev-pane dev-details" id="paneDetails" role="tabpanel" aria-labelledby="tabDetails" hidden>
       <p class="q-empty" id="detailsEmpty">Call details show here during a call.</p>
       <dl class="details" id="details" hidden></dl>
+    </div>
+    <!-- Connection for the selected call (connection.js): its media connection on the SIP side,
+         layer by layer, now, or how it came up. The desktop only: the web softphone takes it out. -->
+    <div class="dev-pane dev-streams dev-conn" id="paneConn" role="tabpanel" aria-labelledby="tabConn" hidden>
+      <p class="q-empty" id="connEmpty">The connection shows here during a call: each layer of its media, and how it came up.</p>
+      <div id="connView" hidden>
+        <div class="sx-top">
+          <b class="cx-who" id="connWho"></b>
+          <span class="sx-meta" id="connMeta"></span>
+          <span class="sx-grow"></span>
+          <div class="sx-seg" id="connViews" role="group" aria-label="View">
+            <button type="button" data-view="layers" aria-pressed="true">Layers</button>
+            <button type="button" data-view="timeline" aria-pressed="false">Setup timeline</button>
+          </div>
+        </div>
+        <div id="connBody"></div>
+      </div>
     </div>
     <!-- Streams for a call (streams.js): its media lines as its offers and answers left them, and
          what's going each way on the SIP side. Now, a timeline of the call, and each offer and
