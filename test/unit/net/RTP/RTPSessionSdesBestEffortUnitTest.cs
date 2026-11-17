@@ -10,6 +10,7 @@
 // History:
 // 12 Nov 2026	Claude Code - Opus 5.5	Created.
 // 14 Nov 2026	Claude Code - Opus 5.5	A new far end's keys on a session's next offer, and video on one side only.
+// 17 Nov 2026	Claude Code - Opus 5.5	An answer that leaves out one of our m-lines.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -269,6 +270,69 @@ a=rtpmap:0 PCMU/8000
 
                 Assert.False(session.AudioStream.IsAwaitingSecureContext);
                 Assert.False(session.VideoStream.IsAwaitingSecureContext);
+            }
+        }
+
+        /// <summary>
+        /// An answer that leaves out one of our m-lines instead of declining it with port zero
+        /// (LiveKit's SIP answers an audio and text offer with plain audio alone): the left-out
+        /// stream is taken as declined, and doesn't hold back the audio waiting for keys.
+        /// </summary>
+        [Fact]
+        public void Offerer_AnswerLeavesOutStream_IsDeclinedAndDoesNotHoldBackMedia()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            using (var session = new RtpSessionBuilder().WithSdpCryptoBestEffort().WithBindAddress(IPAddress.Loopback).WithAudioTrack()
+                .WithTrack(new MediaStreamTrack(new TextFormat(TextCodecsEnum.T140, 98))).Build())
+            {
+                Assert.Equal(2, session.CreateOffer(IPAddress.Loopback).Media.Count);
+
+                Assert.Equal(SetDescriptionResultEnum.OK, session.SetRemoteDescription(SdpType.answer, Audio("RTP/AVP", false)));
+                Assert.False(session.AudioStream.IsAwaitingSecureContext);
+                Assert.False(session.TextStream.IsAwaitingSecureContext);
+                Assert.Equal(MediaStreamStatusEnum.Inactive, session.TextStream.LocalTrack.StreamStatus);
+            }
+        }
+
+        /// <summary>
+        /// The same, end to end: the far end's audio gets through, both ways.
+        /// </summary>
+        [Fact]
+        public async Task Offerer_AnswerLeavesOutStream_AudioGetsThroughBothWays()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            using (var offerer = new RtpSessionBuilder().WithSdpCryptoBestEffort().WithBindAddress(IPAddress.Loopback).WithAudioTrack()
+                .WithTrack(new MediaStreamTrack(new TextFormat(TextCodecsEnum.T140, 98))).Build())
+            using (var answerer = new RtpSessionBuilder().WithBindAddress(IPAddress.Loopback).WithAudioTrack().Build())
+            {
+                Assert.Equal(SetDescriptionResultEnum.OK, answerer.SetRemoteDescription(SdpType.offer, offerer.CreateOffer(IPAddress.Loopback)));
+                var answer = answerer.CreateAnswer(IPAddress.Loopback);
+                answer.Media.RemoveAll(m => m.Media == SDPMediaTypesEnum.text);
+                Assert.Equal(SetDescriptionResultEnum.OK, offerer.SetRemoteDescription(SdpType.answer, answer));
+
+                var atAnswerer = new ConcurrentQueue<byte[]>();
+                var atOfferer = new ConcurrentQueue<byte[]>();
+                answerer.OnRtpPacketReceived += (ep, kind, pkt) => { if (kind == SDPMediaTypesEnum.audio) { atAnswerer.Enqueue(pkt.Payload.ToArray()); } };
+                offerer.OnRtpPacketReceived += (ep, kind, pkt) => { if (kind == SDPMediaTypesEnum.audio) { atOfferer.Enqueue(pkt.Payload.ToArray()); } };
+                await offerer.Start();
+                await answerer.Start();
+
+                var payload = Enumerable.Range(0, 160).Select(i => (byte)i).ToArray();
+                var deadline = DateTime.UtcNow.AddSeconds(3);
+                while ((atAnswerer.IsEmpty || atOfferer.IsEmpty) && DateTime.UtcNow < deadline)
+                {
+                    offerer.SendAudio(160, payload);
+                    answerer.SendAudio(160, payload);
+                    await Task.Delay(20);
+                }
+
+                Assert.False(atAnswerer.IsEmpty, "No audio at the answerer.");
+                Assert.False(atOfferer.IsEmpty, "No audio at the offerer.");
+
+                offerer.Close("done");
+                answerer.Close("done");
             }
         }
 
