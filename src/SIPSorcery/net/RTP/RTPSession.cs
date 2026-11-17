@@ -1535,6 +1535,38 @@ namespace SIPSorcery.Net
                     }
                 }
 
+                // RFC 3264 section 6: an answer has an m-line for each of the offer's, declining one
+                // with port zero. Some leave the line out instead (LiveKit's SIP answers an audio and
+                // text offer with audio alone), so a stream of ours the answer doesn't mention is
+                // declined, as with port zero. Otherwise, with SDES, the left-out stream waits for
+                // keys that never come, and the session holds back everything it receives, the
+                // other streams' media included. Not for multiplexed (BUNDLE) sessions, as above.
+                if (sdpType == SdpType.answer && !rtpSessionConfig.IsMediaMultiplexed)
+                {
+                    var omitted = AudioStreamList.Skip(currentAudioStreamCount)
+                        .Concat<MediaStream>(VideoStreamList.Skip(currentVideoStreamCount))
+                        .Concat(TextStreamList.Skip(currentTextStreamCount))
+                        .Where(s => s.LocalTrack != null && s.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
+                        .ToList();
+
+                    foreach (var omittedStream in omitted)
+                    {
+                        logger.LogWarning("Remote party's answer left out the {MediaType} stream, taken as declined.", omittedStream.MediaType);
+                        omittedStream.LocalTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                        declinedStreams.Add(omittedStream);
+
+                        if (omittedStream.RtcpSession != null && !omittedStream.RtcpSession.IsClosed)
+                        {
+                            omittedStream.RtcpSession.Close(null);
+                        }
+                    }
+
+                    if (omitted.Count > 0)
+                    {
+                        DrainPendingSecurePackets();
+                    }
+                }
+
                 //Close old RTCPSessions opened
                 foreach (var audioStream in AudioStreamList)
                 {
