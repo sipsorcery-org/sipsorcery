@@ -13,6 +13,8 @@ namespace SIPSorcery.Softphone;
 /// It also keeps what the Connection tab needs: the SIP messages that set the call up and end it
 /// (<see cref="View.Sip"/>), the media layers' events as they happen (ICE, DTLS, SRTP, RTP, RTCP:
 /// <see cref="AddEvent"/>), and their latest facts (<see cref="Set"/>).
+/// And for the SIP ladder tab, every SIP message of the call as it crossed the wire (<see cref="AddWire"/>):
+/// each sending its own entry, a retransmission numbered as one.
 /// </summary>
 public sealed class StreamLog
 {
@@ -42,8 +44,19 @@ public sealed class StreamLog
     /// <summary>One of the media layers' events: Layer is ice, dtls, srtp, rtp or rtcp; Level info, ok, warn or bad.</summary>
     public sealed record Event(DateTime At, string Layer, string Text, string Level);
 
+    /// <summary>
+    /// One SIP message as it crossed the wire, for the SIP ladder: our socket and theirs, what it was
+    /// (Label "INVITE" or "180 Ringing"), the Request-URI and From of a request, and its whole text.
+    /// Attempt is which sending of it this is: 2 for the first retransmission.
+    /// </summary>
+    public sealed record Wire(DateTime At, bool Out, string Local, string Remote, string CallId, int CSeq, string CSeqMethod,
+        string Label, string? Uri, string? From, bool Response, string Branch, int Attempt, string Text);
+
     public sealed record View(IReadOnlyList<Exchange> Exchanges, IReadOnlyList<Stream> Streams, IReadOnlyList<Note> Notes,
-        IReadOnlyList<SipEvent> Sip, IReadOnlyList<Event> Events, IReadOnlyDictionary<string, object?> Facts);
+        IReadOnlyList<SipEvent> Sip, IReadOnlyList<Event> Events, IReadOnlyDictionary<string, object?> Facts, IReadOnlyList<Wire> Wire);
+
+    /// <summary>The most a call's ladder keeps: a call that's up for hours re-INVITEs now and then.</summary>
+    private const int WireMax = 500;
 
     private readonly object _lock = new();
     private readonly List<Message> _messages = new();
@@ -51,6 +64,8 @@ public sealed class StreamLog
     private readonly List<Note> _notes = new();
     private readonly List<Event> _events = new();
     private readonly Dictionary<string, object?> _facts = new();
+    private readonly List<Wire> _wire = new();
+    private readonly Dictionary<(bool, string, int, string, string, string), int> _sendings = new();
 
     /// <summary>The message as one for this log, or null if it has no part in an offer/answer.</summary>
     public static Message? From(SIPRequest req, bool sent)
@@ -71,6 +86,41 @@ public sealed class StreamLog
         if (resp.Header.CSeqMethod is not (SIPMethodsEnum.INVITE or SIPMethodsEnum.UPDATE) || resp.StatusCode < 101) return null;
         return new Message(DateTime.Now, sent, resp.Header.CallId, resp.Header.CSeq, resp.Header.CSeqMethod.ToString(), resp.StatusCode,
             resp.ReasonPhrase, SdpOf(resp.Header.ContentType, resp.Body), false, false, null);
+    }
+
+    /// <summary>The message as the ladder draws it (its Attempt set as it's added).</summary>
+    public static Wire WireOf(SIPEndPoint local, SIPEndPoint remote, SIPMessageBase msg, bool sent)
+    {
+        var h = msg.Header;
+        var (label, uri, from, cseqMethod) = msg switch
+        {
+            SIPRequest q => (q.Method.ToString(), q.URI?.ToString(), h.From is { } f
+                ? (string.IsNullOrWhiteSpace(f.FromName) ? f.FromURI?.ToParameterlessString() : $"{f.FromName} <{f.FromURI?.ToParameterlessString()}>")
+                : null, q.Method.ToString()),
+            SIPResponse r => ($"{r.StatusCode} {r.ReasonPhrase}", null, null, h.CSeqMethod.ToString()),
+            _ => ("?", null, null, ""),
+        };
+        return new Wire(DateTime.Now, sent, local?.ToString() ?? "", remote?.ToString() ?? "", h.CallId ?? "", h.CSeq, cseqMethod,
+            label, uri, from, msg is SIPResponse, h.Vias?.TopViaHeader?.Branch ?? "", 1, msg.ToString());
+    }
+
+    /// <summary>
+    /// Adds a message to the ladder. A retransmission is its own entry, and says which sending it is:
+    /// the same message (Call-ID, CSeq, what it is, the top Via's branch) going the same way again.
+    /// </summary>
+    /// <summary>How many messages the ladder has.</summary>
+    public int WireCount { get { lock (_lock) return _wire.Count; } }
+
+    public void AddWire(Wire w)
+    {
+        lock (_lock)
+        {
+            if (_wire.Count >= WireMax) return;
+            var key = (w.Out, w.CallId, w.CSeq, w.CSeqMethod, w.Label, w.Branch);
+            int attempt = _sendings.GetValueOrDefault(key) + 1;
+            _sendings[key] = attempt;
+            _wire.Add(w with { Attempt = attempt });
+        }
     }
 
     private static string? SdpOf(string? contentType, string? body)
@@ -182,7 +232,8 @@ public sealed class StreamLog
         List<Note> notes;
         List<Event> events;
         Dictionary<string, object?> facts;
-        lock (_lock) { all = _messages.ToList(); notes = _notes.ToList(); events = _events.ToList(); facts = new(_facts); }
+        List<Wire> wire;
+        lock (_lock) { all = _messages.ToList(); notes = _notes.ToList(); events = _events.ToList(); facts = new(_facts); wire = _wire.ToList(); }
         // The SIP lane: every message, in order (offer/answer or not).
         var sip = all.Select(m => new SipEvent(m.At, m.Out, m.Status > 0 ? $"{m.Status} {m.Reason}" : m.Method, m.CSeq)).ToList();
         // The offers and answers: no BYE or CANCEL, and an ACK only with SDP.
@@ -279,6 +330,6 @@ public sealed class StreamLog
                 streams.Add(new Stream(i, any.Kind, a?.Port ?? 0, b?.Port ?? 0, transport, security, a?.Dir ?? "inactive", b?.Dir ?? "inactive", formats));
             }
         }
-        return new View(exchanges, streams, notes, sip, events, facts);
+        return new View(exchanges, streams, notes, sip, events, facts, wire);
     }
 }

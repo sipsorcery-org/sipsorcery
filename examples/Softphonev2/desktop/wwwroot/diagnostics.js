@@ -4,8 +4,9 @@ import { entries, nextVideo, params, render, sel, setCamera } from "./app.js";
 import { closeMenu, openMenu, showLoss } from "./menus.js";
 import { renderDetails, renderQuality } from "./quality.js";
 import { clearLog, copyLog, initLogView } from "./logview.js";
-import { closeSnapshot, renderSnap } from "./snapshots.js";
+import { closeSnapshot, initEnded, renderSnap } from "./snapshots.js";
 import { renderConnection } from "./connection.js";
+import { renderLadder } from "./sipladder.js";
 import { renderStreams } from "./streams.js";
 import { $, ICON, post } from "./util.js";
 import { SOURCE_LABEL, setVideoSource, sourceOf } from "./video.js";
@@ -114,6 +115,7 @@ export function setDevTab(tab) {
   for (const b of document.querySelectorAll(".dev-tab")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
   $("paneLog").hidden = tab !== "log";
   $("paneDetails").hidden = tab !== "details";
+  if ($("paneLadder")) $("paneLadder").hidden = tab !== "ladder";
   if ($("paneConn")) $("paneConn").hidden = tab !== "conn";
   if ($("paneStreams")) $("paneStreams").hidden = tab !== "streams";
   $("paneQuality").hidden = tab !== "quality";
@@ -123,6 +125,7 @@ export function setDevTab(tab) {
   renderSnap();
   if (tab === "log") $("log").scrollTop = $("log").scrollHeight;
   if (tab === "details") renderDetails();
+  if (tab === "ladder") renderLadder();
   if (tab === "conn") renderConnection();
   if (tab === "streams") renderStreams();
   if (tab === "quality") renderQuality();
@@ -186,8 +189,8 @@ const devHeight = (h) => Math.round(Math.max(120, Math.min(window.innerHeight * 
 export function initDiagnostics() {
   // Streams is the desktop's: its host records each call's offers and answers off the wire. The
   // web softphone's doesn't, so the tab goes (removed, not hidden: fitDevTabs shows every tab).
-  // Connection reads the same records, so it goes too.
-  if (document.documentElement.dataset.host === "web") { for (const id of ["tabStreams", "paneStreams", "tabConn", "paneConn"]) $(id).remove(); }
+  // The SIP ladder and Connection read the same records, so they go too.
+  if (document.documentElement.dataset.host === "web") { for (const id of ["tabStreams", "paneStreams", "tabConn", "paneConn", "tabLadder", "paneLadder"]) $(id).remove(); }
   document.body.classList.toggle("diag", params.get("diag") === "1");
   $("devPanel").hidden = params.get("diag") !== "1";
   // F12, caught before WebView2 would open its DevTools with it.
@@ -200,6 +203,7 @@ export function initDiagnostics() {
   $("devClose").innerHTML = ICON.close;
   $("devClose").onclick = () => setDiagnostics(false);
   $("devSnapBack").onclick = () => closeSnapshot();
+  initEnded();
   $("infoLock").setAttribute("aria-haspopup", "dialog");
   $("infoLock").onclick = () => setSecurityOpen($("secPop").hidden);
   document.addEventListener("keydown", (ev) => {

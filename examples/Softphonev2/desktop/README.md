@@ -59,6 +59,7 @@ The page (`wwwroot`, shared with the web softphone in [../web](../web/README.md)
 | `levels.js` | Audio levels: the bars of the audio-only view and of the grid's tiles. |
 | `keypad.js`, `rtt.js`, `transfer.js` | The keypad (DTMF), real-time text, and transfer. |
 | `quality.js` | Call details and Call quality. |
+| `sipladder.js` | SIP ladder: every SIP message of a call as it went, a lane per party and an arrow per message, as SIP Trace draws one; each opens whole; copies as Mermaid or text, or saves as a PNG. |
 | `connection.js` | Connection: a call's media, layer by layer (SDP, ICE, DTLS, SRTP, RTP, RTCP), each with its state and why, and a timeline of its setup. |
 | `streams.js` | Streams: each call's media lines, as its offers and answers left them and as they're going. |
 | `logview.js` | The debug log: each line tagged (SIP, ICE, DTLS, RTP / RTCP, Calls, App), with a chip per tag to show or hide them, and full SIP messages on demand. |
@@ -84,7 +85,7 @@ On its own it listens on port 5060 (UDP and TCP), or if that's taken on a port t
 bottom of the window, and F12 again (or its ×) closes it. It's closed at every start
 (`--diagnostics` opens it). Drag its top edge to resize it, between 120 px and 70% of the
 window. The height you leave it at is remembered per profile and used whenever it opens.
-It has six tabs:
+It has seven tabs:
 
 - **Debug log**: everything the host and page log, each line with its time and a coloured tag (*SIP*, *ICE*,
   *DTLS*, *RTP / RTCP*, *Calls*, *App*), following the newest line unless you've scrolled up. A chip per tag,
@@ -92,6 +93,10 @@ It has six tabs:
   its line (see [Debug log](DESIGN.md#debug-log-diagnostics-mode)). *Copy log* puts the lines shown on the
   clipboard; *Clear* empties it.
 - **Call details**: how the selected call was set up (see [Call details](DESIGN.md#call-details)).
+- **SIP ladder**: every SIP message of a call, as it went: a lane per party, an arrow per message,
+  numbered, retransmissions included. Click one to read it whole; *Hide progress messages* keeps the
+  numbers; copy it as Mermaid or text, or save it as a PNG (see [SIP ladder](DESIGN.md#sip-ladder-diagnostics-mode)).
+  The desktop only.
 - **Connection**: whether a call's media got through, layer by layer (SDP, ICE, DTLS, SRTP, RTP,
   RTCP), the first that didn't and its likely reason, and a timeline of the setup (see
   [Connection](DESIGN.md#connection-diagnostics-mode)). The desktop only.
@@ -101,10 +106,12 @@ It has six tabs:
 - **Call quality**: the selected call's table and graphs (see [Call quality](DESIGN.md#call-quality-diagnostics-mode)).
 - **Network**: the simulated loss sliders (see [Call quality](DESIGN.md#call-quality-diagnostics-mode)).
 
-Call details, Connection, Streams and Call quality are for the calls that are going, and clear as a call ends.
+Call details, SIP ladder, Connection, Streams and Call quality are for the calls that are going, and clear as a call ends.
 What they had for it is saved with the call's history entry, though: a pulse button on its row in
 Home's Recent and People's Recent opens them again, with a bar saying whose they are and *Back to
-live* (see [Saved diagnostics](DESIGN.md#saved-diagnostics)).
+live* (see [Saved diagnostics](DESIGN.md#saved-diagnostics)). As a call ends, a bar across the
+panel links to them: *The call with Bob ended · You hung up. Its diagnostics are saved.* and *Open
+its diagnostics*.
 
 While it's open the app is in diagnostics mode: the Test pattern and Audio bars sources on the Camera ▾. Closing it
 hides them all. The page catches F12 before WebView2 does, so it doesn't open WebView2's own

@@ -26,6 +26,9 @@ public sealed class Phone : IDisposable
     public const int MaxCalls = 8;
     /// <summary>How long an ended call stays in <see cref="Calls"/>, so the page can say how it ended.</summary>
     private const int EndedKeepMs = 4000;
+    /// <summary>How long an ended call's Call-ID stays its own, for the SIP ladder: a BYE to a phone
+    /// that's gone goes again for 32 s (64 × T1, Timer F), and the ladder shows each sending.</summary>
+    private const int WireLingerMs = 33000;
 
     /// <summary>One call: its SIP side, media session, relay to the page and text.</summary>
     public sealed class Call
@@ -270,6 +273,11 @@ public sealed class Phone : IDisposable
 
     /// <summary>A call's offers and answers have changed (a message, an RTP timeout): the whole view.</summary>
     public event Action<Call, StreamLog.View>? StreamsChanged;
+    /// <summary>
+    /// An ended call's SIP ladder, when messages came after it ended (a BYE's retransmissions, their
+    /// late answer): all of it, for its saved diagnostics, which were taken as it ended.
+    /// </summary>
+    public event Action<Call, IReadOnlyList<StreamLog.Wire>>? LateWire;
     /// <summary>Once a second, for every connected call: RTP packets sent and received in that second, per
     /// kind, and the stream's network: the transport (UDP, or ICE's pair), our sockets, where we send and
     /// where their RTP comes from. RTCP's sockets are null when it shares RTP's (rtcp-mux).</summary>
@@ -277,44 +285,61 @@ public sealed class Phone : IDisposable
         string Transport, string? Local, string? Remote, string? From, string? RtcpLocal, string? RtcpRemote);
     public event Action<IReadOnlyList<StreamRate>>? StreamRates;
     private readonly Dictionary<string, Call> _streamCalls = new();               // Call-ID -> call
-    private readonly Dictionary<string, List<StreamLog.Message>> _streamsPending = new();
+    // What's come for a Call-ID that's no call's yet, to add to its log when it is (or forget).
+    private readonly Dictionary<string, List<Action<StreamLog>>> _streamsPending = new();
     private readonly Queue<string> _streamsPendingOrder = new();
     private const int StreamsPendingMax = 32;
+    // A Call-ID that's never a call's (a registration's, refreshed for hours) keeps only so many.
+    private const int StreamsPendingPerCallId = 50;
     private System.Threading.Timer? _streamsTick;
 
     private void RecordSip(StreamLog.Message? m)
     {
-        if (m == null) return;
+        if (m != null) ToStreams(m.CallId, log => log.Add(m));
+    }
+
+    /// <summary>Every SIP message, for the SIP ladder: the call's, by its Call-ID.</summary>
+    private void RecordWire(SIPEndPoint local, SIPEndPoint remote, SIPMessageBase msg, bool sent)
+    {
+        if (string.IsNullOrEmpty(msg.Header?.CallId)) return;
+        var w = StreamLog.WireOf(local, remote, msg, sent);
+        ToStreams(w.CallId, log => log.AddWire(w));
+    }
+
+    // Adds to the log of the call this Call-ID is, or keeps it until it's one's (AttachStreams).
+    private void ToStreams(string callId, Action<StreamLog> add)
+    {
         Call? c;
         lock (_streamCalls)
         {
-            if (!_streamCalls.TryGetValue(m.CallId, out c))
+            if (!_streamCalls.TryGetValue(callId, out c))
             {
-                if (!_streamsPending.TryGetValue(m.CallId, out var list))
+                if (!_streamsPending.TryGetValue(callId, out var list))
                 {
-                    _streamsPending[m.CallId] = list = new();
-                    _streamsPendingOrder.Enqueue(m.CallId);
+                    _streamsPending[callId] = list = new();
+                    _streamsPendingOrder.Enqueue(callId);
                     while (_streamsPendingOrder.Count > StreamsPendingMax) _streamsPending.Remove(_streamsPendingOrder.Dequeue());
                 }
-                list.Add(m);
+                if (list.Count < StreamsPendingPerCallId) list.Add(add);
                 return;
             }
         }
-        if (c.Streams.Add(m)) StreamsChangedSoon(c);
+        add(c.Streams);
+        StreamsChangedSoon(c);
     }
 
     /// <summary>This Call-ID is the call's (its first, or a new one after a transfer): its messages go to the call's log.</summary>
     private void AttachStreams(Call c, string? callId)
     {
         if (string.IsNullOrEmpty(callId)) return;
-        List<StreamLog.Message>? pending;
+        List<Action<StreamLog>>? pending;
         lock (_streamCalls)
         {
             if (_streamCalls.TryGetValue(callId, out var had) && had == c) return;
             _streamCalls[callId] = c;
             _streamsPending.Remove(callId, out pending);
         }
-        if (pending != null) foreach (var m in pending) c.Streams.Add(m);
+        if (pending != null) foreach (var add in pending) add(c.Streams);
         StreamsChangedSoon(c);
     }
 
@@ -399,10 +424,10 @@ public sealed class Phone : IDisposable
         VideoLossPercent = settings.VideoLossPercent;
         OpenChannels(settings.SipPort);
         _transport.SIPTransportRequestReceived += OnRequest;
-        _transport.SIPRequestOutTraceEvent += (l, r, req) => { Log?.Invoke($"-> {r} {req.StatusLine}"); Trace?.Invoke($"-> {r}\n{req}"); RecordSip(StreamLog.From(req, true)); };
-        _transport.SIPRequestInTraceEvent += (l, r, req) => { Log?.Invoke($"<- {r} {req.StatusLine}"); Trace?.Invoke($"<- {r}\n{req}"); RecordSip(StreamLog.From(req, false)); };
-        _transport.SIPResponseInTraceEvent += (l, r, resp) => { Log?.Invoke($"<- {r} {resp.ShortDescription}"); Trace?.Invoke($"<- {r}\n{resp}"); RecordSip(StreamLog.From(resp, false)); };
-        _transport.SIPResponseOutTraceEvent += (l, r, resp) => { Log?.Invoke($"-> {r} {resp.ShortDescription}"); Trace?.Invoke($"-> {r}\n{resp}"); RecordSip(StreamLog.From(resp, true)); };
+        _transport.SIPRequestOutTraceEvent += (l, r, req) => { Log?.Invoke($"-> {r} {req.StatusLine}"); Trace?.Invoke($"-> {r}\n{req}"); RecordSip(StreamLog.From(req, true)); RecordWire(l, r, req, true); };
+        _transport.SIPRequestInTraceEvent += (l, r, req) => { Log?.Invoke($"<- {r} {req.StatusLine}"); Trace?.Invoke($"<- {r}\n{req}"); RecordSip(StreamLog.From(req, false)); RecordWire(l, r, req, false); };
+        _transport.SIPResponseInTraceEvent += (l, r, resp) => { Log?.Invoke($"<- {r} {resp.ShortDescription}"); Trace?.Invoke($"<- {r}\n{resp}"); RecordSip(StreamLog.From(resp, false)); RecordWire(l, r, resp, false); };
+        _transport.SIPResponseOutTraceEvent += (l, r, resp) => { Log?.Invoke($"-> {r} {resp.ShortDescription}"); Trace?.Invoke($"-> {r}\n{resp}"); RecordSip(StreamLog.From(resp, true)); RecordWire(l, r, resp, true); };
         _streamsTick = new System.Threading.Timer(_ => { try { StreamsTick(); } catch (Exception ex) { Log?.Invoke($"streams tick failed: {ex.Message}"); } }, null, 1000, 1000);
         LibraryLog.Line += OnLibraryLine;
     }
@@ -2440,8 +2465,14 @@ public sealed class Phone : IDisposable
         _ = Task.Delay(EndedKeepMs).ContinueWith(_ =>
         {
             lock (_lock) _calls.Remove(c);
-            ForgetStreams(c);
             Changed?.Invoke();
+        });
+        // Its SIP keeps going to its log a while longer (WireLingerMs), for the ladder.
+        int wireAtEnd = c.Streams.WireCount;
+        _ = Task.Delay(WireLingerMs).ContinueWith(_ =>
+        {
+            ForgetStreams(c);
+            if (c.Streams.WireCount > wireAtEnd) LateWire?.Invoke(c, c.Streams.Build().Wire);
         });
     }
 

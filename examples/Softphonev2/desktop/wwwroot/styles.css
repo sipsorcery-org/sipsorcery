@@ -546,6 +546,60 @@ button.sx-ev:hover b { text-decoration: underline; }
 .cx-axis span { position: absolute; top: 3px; white-space: nowrap; font-variant-numeric: tabular-nums; transform: translateX(-50%); }
 .cx-axis span:first-child { transform: none; }
 .cx-axis .later { transform: none; }
+
+/* The SIP ladder (sipladder.js): a lane per party, an arrow per message, as SIP Trace draws one.
+   Lanes sit at even percentages of the track (right of the time gutter), so arrows are a left and
+   a width; it scrolls sideways inside the pane when the lanes don't fit, never the page. */
+.dev-ladder .mono { font: 11.5px Consolas, monospace; }
+.ld-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-bottom: 8px; }
+.ld-check, .ld-key { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--muted); }
+.ld-check input, .ld-key input { margin: 0; accent-color: var(--accent); }
+.ld-keys { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; }
+.ld-key i { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.ld-key:has(input:not(:checked)) { text-decoration: line-through; }
+.ld-btn { padding: 2px 9px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); color: var(--text); font: inherit; font-size: 12px; cursor: pointer; }
+.ld-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.ld-btn:disabled { opacity: .45; cursor: default; }
+.ld-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ld-scroll { overflow-x: auto; }
+.ld { position: relative; }
+.ld-heads { position: relative; height: 40px; margin-left: 70px; border-bottom: 1px solid var(--border-strong); }
+.ld-head { position: absolute; top: 0; transform: translateX(-50%); max-width: 180px; text-align: center; display: flex; flex-direction: column; gap: 1px; }
+.ld-head b, .ld-head span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ld-head b { font-size: 12px; }
+.ld-head span { color: var(--muted); font-size: 10.5px; }
+.ld-body { position: relative; padding: 4px 0 6px; }
+.ld-guides { position: absolute; inset: 0 0 0 70px; pointer-events: none; }
+.ld-guides i { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--border-strong); }
+.ld-row { position: relative; display: flex; height: 44px; }
+.ld-t { flex: none; width: 70px; padding-top: 14px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; text-align: right; padding-right: 10px; box-sizing: border-box; }
+.ld-track { position: relative; flex: 1; }
+.ld-arrow { position: absolute; top: 0; height: 44px; padding: 0; border: 0; background: none; color: var(--c); font: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; border-radius: 4px; }
+.ld-arrow:hover, .ld-arrow.on { background: color-mix(in srgb, var(--c) 9%, transparent); }
+.ld-arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+/* On the pane's background, so a lane's line an arrow crosses doesn't run through its text. */
+.ld-lbl, .ld-uri { background: var(--surface); position: relative; }
+.ld-arrow:hover .ld-lbl, .ld-arrow:hover .ld-uri, .ld-arrow.on .ld-lbl, .ld-arrow.on .ld-uri { background: none; }
+.ld-lbl { max-width: calc(100% - 36px); padding: 4px 3px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; line-height: 15px; }
+.ld-lbl em { font-style: normal; font-weight: 400; color: var(--warn-ink); }
+.ld-line { position: relative; align-self: stretch; height: 0; margin-top: 3px; border-top: 1.5px solid var(--c); }
+.ld-row.resp .ld-line { border-top-style: dashed; }
+/* The head: at the right end, or the left on an arrow going left. */
+.ld-line::after { content: ""; position: absolute; top: -5.5px; right: -1px; border: 4.5px solid transparent; border-left: 8px solid var(--c); border-right: 0; }
+.ld-row.rtl .ld-line::after { right: auto; left: -1px; border-left: 0; border-right: 8px solid var(--c); }
+/* The number: at the arrow's start, the end it leaves from. */
+.ld-n { position: absolute; top: -9px; left: 4px; min-width: 17px; height: 17px; padding: 0 3px; box-sizing: border-box; border-radius: 9px; background: var(--c); color: var(--surface); font-size: 10.5px; font-weight: 700; line-height: 17px; text-align: center; font-variant-numeric: tabular-nums; }
+.ld-row.rtl .ld-n { left: auto; right: 4px; }
+.ld-uri { max-width: calc(100% - 36px); padding: 1px 3px 0; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 10.5px !important; }
+.ld-foot { margin: 8px 0 0; color: var(--muted); }
+.ld-pop { width: min(860px, calc(100vw - 32px)); max-height: 82vh; padding: 0; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); box-sizing: border-box; }
+.ld-pop[open] { display: flex; flex-direction: column; }
+.ld-pop::backdrop { background: rgb(0 0 0 / .45); }
+.ld-pop-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.ld-pop-head b { min-width: 0; overflow-wrap: anywhere; }
+.ld-pop-seq { color: var(--accent); font-weight: 700; }
+.ld-pop-where { margin: 0; padding: 8px 14px 0; color: var(--muted); overflow-wrap: anywhere; }
+.ld-pop-raw { flex: 1; min-height: 0; margin: 0; padding: 10px 14px 14px; overflow: auto; font: 12px/1.45 Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 /* Offers and answers: the list, then the one picked's SDPs side by side. */
 .sx-oa { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 0; }
 .sx-oa-list { display: flex; flex-direction: column; gap: 2px; padding-right: 8px; border-right: 1px solid var(--border); }
@@ -858,6 +912,14 @@ button.sx-ev:hover b { text-decoration: underline; }
   background: var(--surface); color: var(--text); font: inherit; cursor: pointer;
 }
 .dev-snap-back:hover { background: var(--surface-2); }
+/* A call just ended: a link to its saved diagnostics, and × to dismiss it. */
+.dev-ended-open { flex: none; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.dev-ended-open:hover { color: var(--accent-hover); }
+.dev-ended-open:focus-visible, .dev-ended-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.dev-ended-x { flex: none; position: relative; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 5px; background: none; color: var(--muted); cursor: pointer; }
+.dev-ended-x:hover { background: var(--surface-2); color: var(--text); }
+.dev-ended-x::before, .dev-ended-x::after { content: ""; position: absolute; left: 6px; top: 10.25px; width: 10px; height: 1.5px; background: currentColor; transform: rotate(45deg); }
+.dev-ended-x::after { transform: rotate(-45deg); }
 .dev-pane[hidden] { display: none; }
 /* The debug log: its tag chips, then the lines, each with its time and tag. */
 .dev-log { display: flex; flex-direction: column; overflow: hidden; }

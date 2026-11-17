@@ -47,7 +47,8 @@ import { dialDone, homeShown, initHome, renderHome } from "./home.js";
 import { initQuality, newQuality, onQuality, renderDetails, renderDock, renderQuality } from "./quality.js";
 import { initStreams, noteStreamCalls, onStreamRates, onStreams, renderStreams } from "./streams.js";
 import { initConnection, renderConnection } from "./connection.js";
-import { captureDiagnostics, closeSnapshot, onDiagSnapshot, snap } from "./snapshots.js";
+import { initLadder, renderLadder } from "./sipladder.js";
+import { captureDiagnostics, closeSnapshot, dismissEnded, onDiagSaved, onDiagSnapshot, snap } from "./snapshots.js";
 import { closeTextForGrid, hideToast, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen, toastCallId } from "./rtt.js";
 import { initTransfer, renderTransfer, transferShort, xferBusy } from "./transfer.js";
 import { $, ICON, initial, log, post, shortName } from "./util.js";
@@ -841,6 +842,7 @@ export function render() {
   renderQuality();
   renderStreams();
   renderConnection();
+  renderLadder();
 
   renderCalls();
   renderPrivacy();
@@ -1369,6 +1371,7 @@ let lossLoaded = false;   // the host's starting values (--loss-audio, --loss-vi
 initDiagnostics();
 initStreams();
 initConnection();
+initLadder();
 
 $("hangupBtn").onclick = () => post({ type: "hangup", id: selectedId });
 $("holdBtn").onclick = () => { const e = sel(); if (e && holdState(e)) goLive(e); else holdCall(e, true); };
@@ -1504,6 +1507,8 @@ chrome.webview.addEventListener("message", async (e) => {
       noteStreamCalls(msg.calls ?? []);
       // A call's saved diagnostics give way to a call that's going.
       if (snap && (msg.calls ?? []).some((c) => c.call !== "ended")) closeSnapshot();
+      // And the link to the last call's, to a new one starting.
+      if ((msg.calls ?? []).some((c) => c.call === "calling" || c.call === "ringing")) dismissEnded();
       takeAccounts(msg);        // before render(): Home's accounts and registrations are this message's
       if (!lossLoaded) {
         lossLoaded = true;
@@ -1525,6 +1530,7 @@ chrome.webview.addEventListener("message", async (e) => {
     else if (msg.type === "streams") onStreams(msg);
     else if (msg.type === "stream-rates") onStreamRates(msg);
     else if (msg.type === "diag-snapshot") onDiagSnapshot(msg);
+    else if (msg.type === "diag-saved") onDiagSaved(msg);
     else if (msg.type === "details") { if (e) { e.details = msg; if (e.id === selectedId) { renderDetails(); renderInfoLock(); } } }
     else if (msg.type === "text") onTextReceived(msg.id, msg.text);
     else if (msg.type === "dtmf-in") onDtmfIn(msg.id, msg.digit);

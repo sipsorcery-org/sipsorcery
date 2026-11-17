@@ -16,6 +16,7 @@
 
 import { entries, holdState, selectedId } from "./app.js";
 import { renderConnection } from "./connection.js";
+import { renderLadder } from "./sipladder.js";
 import { snap } from "./snapshots.js";
 import { $, escHtml as esc, post, shortName } from "./util.js";
 import { SOURCE_LABEL, sourceOf } from "./video.js";
@@ -55,7 +56,7 @@ function rec(id) {
   let r = recs.get(id);
   if (!r) {
     r = { id, names: [], startedAt: Date.now(), connectedAt: 0, endedAt: 0, reason: null, exchanges: [], streams: [], notes: [],
-      rates: {}, quietSince: {}, lanes: {}, marks: [], held: false, heldByThem: false, holdMode: null, sip: [], events: [], facts: {} };
+      rates: {}, quietSince: {}, lanes: {}, marks: [], held: false, heldByThem: false, holdMode: null, sip: [], events: [], facts: {}, wire: [] };
     recs.set(id, r);
   }
   return r;
@@ -75,6 +76,8 @@ export function onStreams(msg) {
   r.sip = msg.sip ?? [];
   r.events = msg.events ?? [];
   r.facts = msg.facts ?? {};
+  // For the SIP ladder (sipladder.js): every SIP message of the call, whole.
+  r.wire = msg.wire ?? [];
   if (r.exchanges[0] && r.exchanges[0].at < r.startedAt) r.startedAt = r.exchanges[0].at;
   scheduleRender();
 }
@@ -279,7 +282,7 @@ let renderQueued = false;
 function scheduleRender() {
   if (renderQueued) return;
   renderQueued = true;
-  requestAnimationFrame(() => { renderQueued = false; renderStreams(); renderConnection(); });
+  requestAnimationFrame(() => { renderQueued = false; renderStreams(); renderConnection(); renderLadder(); });
 }
 
 // The calls the tab offers: those going (an ended one clears at once, as the other tabs do).

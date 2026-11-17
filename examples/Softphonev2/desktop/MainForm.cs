@@ -139,6 +139,7 @@ internal sealed class MainForm : Form
         // Diagnostics' Streams tab: each call's offers and answers as they change, and its RTP
         // packets each way once a second.
         _phone.StreamsChanged += (c, v) => { if (_pageReady) Post(StreamsMessage(c, v)); };
+        _phone.LateWire += (c, wire) => BeginInvoke(() => SaveLateWire(c.Id, wire));
         _phone.StreamRates += rates => { if (_pageReady) Post(new { type = "stream-rates", rates }); };
         _phone.VideoRefused += c => Post(new { type = "video-refused", id = c.Id });
         _phone.MediaOffer += (c, sdp) =>
@@ -350,6 +351,29 @@ internal sealed class MainForm : Form
                     Post(new { type = "diag-snapshot", id = entryId, snapshot = saved == null ? null : JsonNode.Parse(saved) });
                     break;
                 }
+                case "save-png":
+                {
+                    // A picture the page drew (the SIP ladder): where to put it is asked here, the
+                    // page can't save a file.
+                    using var dlg = new SaveFileDialog
+                    {
+                        Title = (string?)msg["title"] ?? "Save the picture",
+                        Filter = "PNG image (*.png)|*.png",
+                        FileName = (string?)msg["name"] ?? "picture.png",
+                        DefaultExt = "png",
+                        AddExtension = true,
+                        InitialDirectory = _lastSaveDir ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+                    };
+                    if (dlg.ShowDialog(this) != DialogResult.OK) break;
+                    try
+                    {
+                        File.WriteAllBytes(dlg.FileName, Convert.FromBase64String((string)msg["data"]!));
+                        _lastSaveDir = Path.GetDirectoryName(dlg.FileName);
+                        WriteLog($"saved {dlg.FileName}");
+                    }
+                    catch (Exception ex) { WriteLog($"couldn't save {dlg.FileName}: {ex.Message}"); }
+                    break;
+                }
                 case "copy":
                     // The host's clipboard rather than the page's, which needs permissions the
                     // page may not have.
@@ -441,6 +465,7 @@ internal sealed class MainForm : Form
     /// <summary>Every past call, newest first, with the cap so the page can say when old ones go.</summary>
     // Call id -> its history entry's id (this run's calls), and snapshots that came before their entry.
     private readonly Dictionary<string, string> _diagEntry = new();
+    private string? _lastSaveDir;   // where the last picture went: the next one's asked there first
     private readonly Dictionary<string, string> _diagPending = new();
 
     private void SaveDiagnostics(string callId, string entryId, string json)
@@ -450,9 +475,35 @@ internal sealed class MainForm : Form
             if (!_history.SaveDiagnostics(entryId, json)) return;
             WriteLog($"history: call {callId}'s diagnostics saved ({json.Length / 1024} KB)");
             Post(HistoryMessage());
+            // The page links to them from Diagnostics, as the call's just ended.
+            Post(new { type = "diag-saved", id = callId, entry = entryId });
         }
         catch (Exception ex) { WriteLog($"history: couldn't save call {callId}'s diagnostics: {ex.Message}"); }
     }
+
+    /// <summary>
+    /// The SIP that came after a call ended (a BYE going again to a phone that's gone), into its saved
+    /// diagnostics: the page took them as it ended, so they'd stop short of it.
+    /// </summary>
+    private void SaveLateWire(string callId, IReadOnlyList<StreamLog.Wire> wire)
+    {
+        try
+        {
+            string? entryId, pending;
+            lock (_diagPending) { _diagEntry.TryGetValue(callId, out entryId); _diagPending.TryGetValue(callId, out pending); }
+            var json = pending ?? (entryId != null ? _history.ReadDiagnostics(entryId) : null);
+            if (json == null || JsonNode.Parse(json) is not JsonObject snap || snap["streams"] is not JsonObject streams) return;
+            streams["wire"] = JsonSerializer.SerializeToNode(WireOf(wire), JsonOpts);
+            var patched = snap.ToJsonString();
+            if (pending != null) lock (_diagPending) _diagPending[callId] = patched;
+            else if (entryId != null && _history.SaveDiagnostics(entryId, patched))
+                WriteLog($"history: call {callId}'s SIP ladder: {wire.Count} messages, with those after it ended");
+        }
+        catch (Exception ex) { WriteLog($"history: couldn't add call {callId}'s late SIP: {ex.Message}"); }
+    }
+
+    private static object WireOf(IEnumerable<StreamLog.Wire> wire) =>
+        wire.Select(w => new { at = PageTime(w.At), w.Out, w.Local, w.Remote, w.CallId, w.CSeq, w.CSeqMethod, w.Label, w.Uri, w.From, w.Response, w.Attempt, w.Text }).ToList();
 
     private object HistoryMessage() => new { type = "history", entries = _history.All, max = CallHistory.MaxEntries };
 
@@ -559,6 +610,8 @@ internal sealed class MainForm : Form
         sip = v.Sip.Select(s => new { at = PageTime(s.At), s.Out, s.Text, s.CSeq }),
         events = v.Events.Select(e => new { at = PageTime(e.At), e.Layer, e.Text, e.Level }),
         facts = v.Facts,
+        // The SIP ladder tab's (sipladder.js): every message of the call, whole.
+        wire = WireOf(v.Wire),
     };
 
     private void Post(object message)

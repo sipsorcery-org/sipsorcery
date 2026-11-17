@@ -1118,12 +1118,14 @@ thousand at a time).
 
 ## Saved diagnostics
 
-Call details, Connection, Streams and Call quality show the calls that are going, and clear as a
-call ends. But a call that went wrong is the one you most want to look at, and it's the one that
+Call details, SIP ladder, Connection, Streams and Call quality show the calls that are going, and
+clear as a call ends. But a call that went wrong is the one you most want to look at, and it's the one that
 ends. So as each call ends the page takes what the tabs had for it (`snapshots.js`): the host's details
 and the codecs each way, the quality table and its last two minutes of graph, and Streams' record
-of the call (its offers and answers, lanes and notes, and the SIP messages, setup events and
-facts Connection draws from). Streams is taken 0.6 s after the end, as
+of the call (its offers and answers, lanes and notes, the SIP messages, setup events and
+facts Connection draws from, and every SIP message whole, for the SIP ladder). A BYE to a phone
+that's gone goes again for 32 s after the call ends; the host keeps adding to the call's ladder for
+33 s, and if anything came, writes it into the saved file (`MainForm.SaveLateWire`). Streams is taken 0.6 s after the end, as
 the call's last offer or answer can reach the page a moment later. The page sends it as
 `diag-save {id, snapshot}`, and the host keeps it with the call's history entry, as
 `diagnostics-<profile>\<entry id>.json` beside the history (`CallHistory.SaveDiagnostics`). The
@@ -1134,17 +1136,72 @@ A call with saved diagnostics has a pulse button (Diagnostics' icon) on its row 
 and in People's Recent, and a *Diagnostics* button in its row's details. Those show only with no
 call going, which is when they're wanted. The button asks the host for it (`diag-get {id}`,
 answered by `diag-snapshot {id, snapshot}`), opens Diagnostics on Call details (or the tab that's
-open, if it's one of the four), and puts a bar across the panel: *Saved with the call: Bob, ended
+open, if it's one of the five), and puts a bar across the panel: *Saved with the call: Bob, ended
 17 Nov, 11:03 am · You hung up*, and *Back to live*. The tabs draw from the snapshot as they would
 from the call, except that nothing's live: Streams' ↑ and ↓ show –, its picker holds that call
 alone, and Call quality's foot says whether RTCP reports ever came. A tab with nothing saved says
 so (a call that never connected has no details or quality). The bar goes with *Back to live*,
 closing Diagnostics, or a call starting.
 
+The call that's just ended is the one most likely wanted, and the live tabs have just cleared, so
+there's a link to it in the panel itself: once the host has saved them it says so (`diag-saved {id,
+entry}`), and a bar across the panel, on every tab, reads *The call with Bob ended · You hung up.
+Its diagnostics are saved.*, with *Open its diagnostics* and ×. The link opens them as the row's
+button does (and the bar gives way to that one). It stays, for the panel opened later too, until
+it's opened, dismissed, or another call starts (calling or ringing); a call still going doesn't
+take it away. While a saved call's diagnostics show, it waits behind their bar.
+
 They go with the call: one that falls off the end of the history (500 calls) loses its file at
 once; one removed (or cleared) keeps it until the app closes, so Undo brings it back whole, and
 any left over (the app was killed) go at the next start. The web softphone saves none: it has no
 host to keep them, and no Streams tab.
+
+## SIP ladder (diagnostics mode)
+
+**SIP ladder** is a tab in Diagnostics (F12), after Call details: every SIP message of the call
+(the selected one, else the latest; or a call's saved diagnostics), as it crossed the wire, drawn as
+a ladder. It follows SIP Trace's rules (`sipsorcery-servers`, `SIPSorcery.SipTrace`: `CallFlow`,
+`MermaidWriter`, `TranscriptWriter`), so a ladder here reads like one there:
+
+- A lane per party: this phone first, under its socket, then each far socket in the order it first
+  appears. A far lane is named from the From of the requests it sent (not of those sent to it,
+  which name the other party); one that only answered is *Them*.
+- An arrow per message, solid for a request and dashed for a response, its label above, a
+  request's Request-URI under it (without parameters), and its time from the first message on the
+  left.
+- Every message is numbered once, over the whole call, in the order it went. The number is on the
+  arrow's start, in the popup and in both copies.
+- A retransmission is its own arrow, *BYE retransmit 3*: the same message (Call-ID, CSeq, what it
+  is, the top Via's branch) going the same way again. The timer doubling is read off the times.
+- *Hide progress messages* takes out every 1xx, ACK and PRACK, and a PRACK's responses (which
+  alone would read as answers to the INVITE). What's left keeps its numbers and times: 1, 6, 8.
+- A call with more than one Call-ID (a transfer's new call) colours each, with a key whose boxes
+  hide or show one, numbers kept the same way.
+- A number, or anywhere on an arrow, opens that message whole over the page: which way, its
+  sockets, the time, the text. ‹ and › (or the arrow keys) step through what's shown; *Copy* copies
+  it.
+- *Copy as Mermaid* gives SIP Trace's diagram source (`autonumber` reset after each gap, so the
+  numbers stay the ladder's), to paste into anything Mermaid runs in; *Copy as text*, its
+  transcript: each message numbered, with its UTC time, sockets and whole text.
+- *Save as PNG*: the ladder as shown (the filters too), as SIP Trace's PNG is: at twice its size,
+  for a ticket or a slide where it's scaled up, on the theme's background, as a transparent PNG of
+  dark-theme text is unreadable on white. Over it, whose call, when, and the Call-ID; under it,
+  *Drawn by the SIPSorcery softphone*. It's drawn onto a canvas from the flow (`ladderPng`), not
+  copied from the page, whose ladder is HTML sized to the pane and scrolled. The page can't save a
+  file, so it sends the picture to the host (`save-png {name, title, data}`), which asks where with
+  a Save dialog: in Pictures the first time, then where the last went; named from the Call-ID,
+  anything but letters, digits, `-` and `_` made `-` (SIP Trace's rule, as whoever placed the call
+  chose it).
+
+It's drawn in HTML, not by Mermaid as SIP Trace does: the ladder is a few lanes, so this way it's
+in the app's colours, light or dark, with no 3 MB library. It scrolls sideways inside the pane when
+the lanes don't fit. An arrow's label and URI sit on the pane's background, so the line of a lane
+the arrow crosses (a transfer's third party) doesn't run through them.
+
+The host keeps the messages with the call's other records (`StreamLog.Wire`, from the transport's
+trace events, all methods, by Call-ID; at most 500 a call). A Call-ID that's no call's yet (a
+transfer's new call, before it's claimed) holds its messages until it is, so the page orders them
+by time before numbering. The web softphone has no SIP ladder tab.
 
 ## Connection (diagnostics mode)
 

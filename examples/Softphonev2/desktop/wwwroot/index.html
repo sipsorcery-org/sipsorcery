@@ -343,6 +343,7 @@
       <div class="dev-tabs" role="tablist" aria-label="Diagnostics">
         <button type="button" class="dev-tab" role="tab" id="tabLog" data-tab="log" aria-controls="paneLog" aria-selected="true">Debug log</button>
         <button type="button" class="dev-tab" role="tab" id="tabDetails" data-tab="details" aria-controls="paneDetails" aria-selected="false">Call details</button>
+        <button type="button" class="dev-tab" role="tab" id="tabLadder" data-tab="ladder" aria-controls="paneLadder" aria-selected="false">SIP ladder</button>
         <button type="button" class="dev-tab" role="tab" id="tabConn" data-tab="conn" aria-controls="paneConn" aria-selected="false">Connection</button>
         <button type="button" class="dev-tab" role="tab" id="tabStreams" data-tab="streams" aria-controls="paneStreams" aria-selected="false">Streams</button>
         <button type="button" class="dev-tab" role="tab" id="tabQuality" data-tab="quality" aria-controls="paneQuality" aria-selected="false">Call quality</button>
@@ -368,6 +369,14 @@
       <span id="devSnapText"></span>
       <button type="button" class="dev-snap-back" id="devSnapBack">Back to live</button>
     </div>
+    <!-- A call that's just ended (snapshots.js): its diagnostics are saved, and this opens them,
+         until it's closed, they're opened, or a new call starts. -->
+    <div class="dev-snap dev-ended" id="devEnded" role="status" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+      <span id="devEndedText"></span>
+      <button type="button" class="dev-ended-open" id="devEndedOpen">Open its diagnostics</button>
+      <button type="button" class="dev-ended-x" id="devEndedClose" aria-label="Dismiss" title="Dismiss"></button>
+    </div>
     <!-- The debug log (logview.js): a chip per tag, to show or hide its lines, then the lines. -->
     <div class="dev-pane dev-log" id="paneLog" role="tabpanel" aria-labelledby="tabLog">
       <div class="lg-chips" id="logChips" role="group" aria-label="Show lines tagged"></div>
@@ -378,6 +387,31 @@
     <div class="dev-pane dev-details" id="paneDetails" role="tabpanel" aria-labelledby="tabDetails" hidden>
       <p class="q-empty" id="detailsEmpty">Call details show here during a call.</p>
       <dl class="details" id="details" hidden></dl>
+    </div>
+    <!-- The SIP ladder for the selected call (sipladder.js): every SIP message of it as it went, a
+         lane per party, as SIP Trace draws one. The desktop only: the web softphone takes it out. -->
+    <div class="dev-pane dev-streams dev-ladder" id="paneLadder" role="tabpanel" aria-labelledby="tabLadder" hidden>
+      <p class="q-empty" id="ladderEmpty">The SIP ladder shows here during a call: every SIP message of it, as it went, a lane per party.</p>
+      <div id="ladderView" hidden>
+        <div class="sx-top">
+          <b class="cx-who" id="ladderWho"></b>
+        </div>
+        <div id="ladderBody"></div>
+      </div>
+      <!-- One message, whole: opened from its number on the ladder. -->
+      <dialog class="ld-pop" id="ladderPopup" aria-labelledby="ldpWhat">
+        <div class="ld-pop-head">
+          <span class="ld-pop-seq mono" id="ldpSeq"></span>
+          <b id="ldpWhat"></b>
+          <span class="sx-grow"></span>
+          <button type="button" class="ld-btn" id="ldpPrev" title="The message before (←)" aria-label="Previous message">‹</button>
+          <button type="button" class="ld-btn" id="ldpNext" title="The message after (→)" aria-label="Next message">›</button>
+          <button type="button" class="ld-btn" id="ldpCopy">Copy</button>
+          <button type="button" class="ld-btn" id="ldpClose">Close</button>
+        </div>
+        <p class="ld-pop-where mono" id="ldpWhere"></p>
+        <pre class="ld-pop-raw" id="ldpRaw"></pre>
+      </dialog>
     </div>
     <!-- Connection for the selected call (connection.js): its media connection on the SIP side,
          layer by layer, now, or how it came up. The desktop only: the web softphone takes it out. -->
