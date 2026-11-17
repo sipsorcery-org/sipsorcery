@@ -1154,12 +1154,11 @@ so (a call that never connected has no details or quality). The bar goes with *B
 closing Diagnostics, or a call starting.
 
 The call that's just ended is the one most likely wanted, and the live tabs have just cleared, so
-there's a link to it in the panel itself: once the host has saved them it says so (`diag-saved {id,
-entry}`), and a bar across the panel, on every tab, reads *The call with Bob ended · You hung up.
-Its diagnostics are saved.*, with *Open its diagnostics* and ×. The link opens them as the row's
-button does (and the bar gives way to that one). It stays, for the panel opened later too, until
-it's opened, dismissed, or another call starts (calling or ringing); a call still going doesn't
-take it away. While a saved call's diagnostics show, it waits behind their bar.
+in diagnostics mode its ended card on the stage links to them: once the host has saved them it says
+so (`diag-saved {id, entry}`), and the card's line reads *You hung up · Open diagnostics*. The link
+opens them as the row's button does. The card still gives way to Home after 3 s, link or not;
+after that it's the row's button. Out of diagnostics mode there's no link. There used to be a bar
+across the panel for this instead; the card is where you're looking as the call ends.
 
 They go with the call: one that falls off the end of the history (500 calls) loses its file at
 once; one removed (or cleared) keeps it until the app closes, so Undo brings it back whole, and

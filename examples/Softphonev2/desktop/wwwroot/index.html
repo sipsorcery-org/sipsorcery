@@ -369,14 +369,6 @@
       <span id="devSnapText"></span>
       <button type="button" class="dev-snap-back" id="devSnapBack">Back to live</button>
     </div>
-    <!-- A call that's just ended (snapshots.js): its diagnostics are saved, and this opens them,
-         until it's closed, they're opened, or a new call starts. -->
-    <div class="dev-snap dev-ended" id="devEnded" role="status" hidden>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
-      <span id="devEndedText"></span>
-      <button type="button" class="dev-ended-open" id="devEndedOpen">Open its diagnostics</button>
-      <button type="button" class="dev-ended-x" id="devEndedClose" aria-label="Dismiss" title="Dismiss"></button>
-    </div>
     <!-- The debug log (logview.js): a chip per tag, to show or hide its lines, then the lines. -->
     <div class="dev-pane dev-log" id="paneLog" role="tabpanel" aria-labelledby="tabLog">
       <div class="lg-chips" id="logChips" role="group" aria-label="Show lines tagged"></div>

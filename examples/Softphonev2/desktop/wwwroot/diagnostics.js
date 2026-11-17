@@ -4,7 +4,7 @@ import { entries, nextVideo, params, render, sel, setCamera } from "./app.js";
 import { closeMenu, openMenu, showLoss } from "./menus.js";
 import { renderDetails, renderQuality } from "./quality.js";
 import { clearLog, copyLog, initLogView } from "./logview.js";
-import { closeSnapshot, initEnded, renderSnap } from "./snapshots.js";
+import { closeSnapshot, renderSnap } from "./snapshots.js";
 import { renderConnection } from "./connection.js";
 import { renderLadder } from "./sipladder.js";
 import { renderStreams } from "./streams.js";
@@ -203,7 +203,6 @@ export function initDiagnostics() {
   $("devClose").innerHTML = ICON.close;
   $("devClose").onclick = () => setDiagnostics(false);
   $("devSnapBack").onclick = () => closeSnapshot();
-  initEnded();
   $("infoLock").setAttribute("aria-haspopup", "dialog");
   $("infoLock").onclick = () => setSecurityOpen($("secPop").hidden);
   document.addEventListener("keydown", (ev) => {

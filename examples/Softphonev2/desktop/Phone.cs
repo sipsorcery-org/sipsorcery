@@ -2295,11 +2295,13 @@ public sealed class Phone : IDisposable
             {
                 c.Streams.Set("rtcpFirstAt", now);
                 c.Streams.AddEvent("rtcp", "their first report ↓", "ok");
-                StreamsChangedSoon(c);
             }
             c.Streams.Set("rtcpLastAt", now);
             c.Streams.Count("rtcpReports");
             if (sample.RttMs is { } rtt) c.Streams.Set("rtcpRtt", Math.Round(rtt, 1));
+            // Every report, not just the first: the page only gets the facts when told they
+            // changed, and without this its last report time stays at the first (so "Stopped").
+            StreamsChangedSoon(c);
         };
         c.Relay = relay;
         Log?.Invoke($"call connected: {relay.Describe()}");

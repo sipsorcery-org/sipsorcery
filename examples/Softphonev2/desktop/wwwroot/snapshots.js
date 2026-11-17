@@ -5,8 +5,8 @@
 // The host keeps each call's as a file beside the history and deletes it when the call drops off
 // the list (MainForm, CallHistory.SaveDiagnostics). The desktop only: the web softphone has no
 // host to keep them.
-// As a call ends, with the panel open, a bar across it links to what was just saved: the live tabs
-// have cleared, and that's where the call went.
+// As a call ends, in diagnostics mode, its ended card on the stage links to what was just saved
+// (app.js, savedFor): the live tabs have cleared, and that's where the call went.
 
 import { setDiagnostics, setDevTab, currentDevTab } from "./diagnostics.js";
 import { renderDetails, renderQuality } from "./quality.js";
@@ -19,8 +19,9 @@ import { $, log, post, shortName } from "./util.js";
 // name }), or null for the live call.
 export let snap = null;
 let wanted = null;   // the row asked for: { id, name }
-const endedNames = new Map();   // call id -> { name, reason, endedAt }, for the saved diagnostics' bar
-let ended = null;               // the call just ended whose are saved: { entryId, name, reason, endedAt }
+const endedNames = new Map();   // call id -> name, till the host says it's saved them
+const saved = new Map();        // call id -> { entryId, name }: the calls just ended whose are saved
+let onSaved = null;             // app.js: to put the link on the call's ended card
 
 // The last of a call's offers and answers can reach the page a moment after it ends (the host
 // gathers a burst of SIP into one message), so Streams is taken after this.
@@ -42,17 +43,10 @@ export function captureDiagnostics(e) {
     const streams = streamsSnapshot(e.id, e.h.reason, e.codecs);
     dropStreams(e.id);
     if (!details && !quality && !streams) return;
-    endedNames.set(e.id, { name: shortName(e.h.remote), reason: e.h.reason ?? null, endedAt });
+    endedNames.set(e.id, shortName(e.h.remote));
     if (endedNames.size > 8) endedNames.delete(endedNames.keys().next().value);
     post({ type: "diag-save", id: e.id, snapshot: { v: 1, remote: e.h.remote, endedAt, reason: e.h.reason ?? null, details, quality, streams } });
   }, STREAMS_WAIT_MS);
-}
-
-// Run by diagnostics.js at start-up.
-export function initEnded() {
-  if (!$("devEnded")) return;
-  $("devEndedOpen").onclick = openEnded;
-  $("devEndedClose").onclick = dismissEnded;
 }
 
 // A row's Diagnostics button: the host sends the call's back (diag-snapshot).
@@ -87,38 +81,24 @@ function showAll() {
   renderQuality();
 }
 
-// The host has saved a call's diagnostics (diag-saved): link to them, as it's the call that just ended.
+// The host has saved a call's diagnostics (diag-saved): its ended card links to them.
 export function onDiagSaved(msg) {
-  const c = endedNames.get(msg.id);
-  if (!c) return;
+  const name = endedNames.get(msg.id);
+  if (name == null) return;
   endedNames.delete(msg.id);
-  ended = { entryId: msg.entry, ...c };
-  renderSnap();
+  saved.set(msg.id, { entryId: msg.entry, name });
+  if (saved.size > 8) saved.delete(saved.keys().next().value);
+  onSaved?.(msg.id);
 }
 
-// No more link: it's been opened or dismissed, or another call's started.
-export function dismissEnded() {
-  if (!ended) return;
-  ended = null;
-  renderSnap();
-}
+/** A call just ended whose diagnostics are saved: { entryId, name }, else null. */
+export const savedFor = (id) => saved.get(id) ?? null;
 
-function openEnded() {
-  if (!ended) return;
-  const { entryId, name } = ended;
-  ended = null;
-  openSnapshot(entryId, name);
-  renderSnap();
-}
+/** Run with a call's id once its diagnostics are saved. */
+export function onDiagnosticsSaved(fn) { onSaved = fn; }
 
-// The bar across the panel while a snapshot shows, on its tabs; else, after a call's ended, the link
-// to what was saved of it, on every tab.
+// The bar across the panel while a snapshot shows, on its tabs.
 export function renderSnap() {
-  const done = $("devEnded");
-  if (done) {
-    done.hidden = !ended || !!snap;
-    if (!done.hidden) $("devEndedText").textContent = `The call with ${ended.name} ended${ended.reason ? ` · ${ended.reason}` : ""}. Its diagnostics are saved.`;
-  }
   const bar = $("devSnap");
   if (!bar) return;
   bar.hidden = !snap || !SNAP_TABS.includes(currentDevTab());

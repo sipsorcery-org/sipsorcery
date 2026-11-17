@@ -916,14 +916,6 @@ button.sx-ev:hover b { text-decoration: underline; }
   background: var(--surface); color: var(--text); font: inherit; cursor: pointer;
 }
 .dev-snap-back:hover { background: var(--surface-2); }
-/* A call just ended: a link to its saved diagnostics, and × to dismiss it. */
-.dev-ended-open { flex: none; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
-.dev-ended-open:hover { color: var(--accent-hover); }
-.dev-ended-open:focus-visible, .dev-ended-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
-.dev-ended-x { flex: none; position: relative; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 5px; background: none; color: var(--muted); cursor: pointer; }
-.dev-ended-x:hover { background: var(--surface-2); color: var(--text); }
-.dev-ended-x::before, .dev-ended-x::after { content: ""; position: absolute; left: 6px; top: 10.25px; width: 10px; height: 1.5px; background: currentColor; transform: rotate(45deg); }
-.dev-ended-x::after { transform: rotate(-45deg); }
 .dev-pane[hidden] { display: none; }
 /* The debug log: its tag chips, then the lines, each with its time and tag. */
 .dev-log { display: flex; flex-direction: column; overflow: hidden; }

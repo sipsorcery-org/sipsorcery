@@ -109,9 +109,8 @@ It has seven tabs:
 Call details, SIP ladder, Connection, Streams and Call quality are for the calls that are going, and clear as a call ends.
 What they had for it is saved with the call's history entry, though: a pulse button on its row in
 Home's Recent and People's Recent opens them again, with a bar saying whose they are and *Back to
-live* (see [Saved diagnostics](DESIGN.md#saved-diagnostics)). As a call ends, a bar across the
-panel links to them: *The call with Bob ended · You hung up. Its diagnostics are saved.* and *Open
-its diagnostics*.
+live* (see [Saved diagnostics](DESIGN.md#saved-diagnostics)). As a call ends, its ended card
+links to them, in diagnostics mode, for the 3 s it shows: *You hung up · Open diagnostics*.
 
 While it's open the app is in diagnostics mode: the Test pattern and Audio bars sources on the Camera ▾. Closing it
 hides them all. The page catches F12 before WebView2 does, so it doesn't open WebView2's own

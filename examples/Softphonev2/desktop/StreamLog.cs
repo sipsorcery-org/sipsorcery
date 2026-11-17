@@ -101,7 +101,7 @@ public sealed class StreamLog
             _ => ("?", null, null, ""),
         };
         return new Wire(DateTime.Now, sent, local?.ToString() ?? "", remote?.ToString() ?? "", h.CallId ?? "", h.CSeq, cseqMethod,
-            label, uri, from, msg is SIPResponse, h.Vias?.TopViaHeader?.Branch ?? "", 1, msg.ToString());
+            label, uri, from, msg is SIPResponse, h.Vias?.TopViaHeader?.Branch ?? "", 1, msg.ToString() ?? "");
     }
 
     /// <summary>

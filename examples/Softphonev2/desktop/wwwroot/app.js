@@ -48,7 +48,7 @@ import { initQuality, newQuality, onQuality, renderDetails, renderDock, renderQu
 import { initStreams, noteStreamCalls, onStreamRates, onStreams, renderStreams } from "./streams.js";
 import { initConnection, renderConnection } from "./connection.js";
 import { initLadder, renderLadder } from "./sipladder.js";
-import { captureDiagnostics, closeSnapshot, dismissEnded, onDiagSaved, onDiagSnapshot, snap } from "./snapshots.js";
+import { captureDiagnostics, closeSnapshot, onDiagSaved, onDiagnosticsSaved, onDiagSnapshot, openSnapshot, savedFor, snap } from "./snapshots.js";
 import { closeTextForGrid, hideToast, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen, toastCallId } from "./rtt.js";
 import { initTransfer, renderTransfer, transferShort, xferBusy } from "./transfer.js";
 import { $, ICON, initial, log, post, shortName } from "./util.js";
@@ -56,6 +56,9 @@ import { cameraInUse, hasCamera, isTestTrack, openSources, placeholderTrack, ret
 
 const CAMERA_KBPS = 1500;
 const ENDED_CARD_MS = 3000;   // how long a call's "Call ended" card stays before Home, with no other call
+
+// A call's diagnostics saved: the link on its ended card, if it's the one on the stage.
+onDiagnosticsSaved((id) => { if (id === selectedId) render(); });
 const NO_FRAMES_MS = 2000;   // how long without video frames before saying their camera is off
 export const NO_AUDIO_MS = 2000;    // how long without audio packets before saying none is arriving
 
@@ -805,6 +808,16 @@ export function render() {
     case "ended": {
       title.textContent = shown || "Call ended";
       sub.textContent = reason || "Call ended";
+      // In diagnostics mode, once they're saved (snapshots.js), a link to the call's diagnostics.
+      const saved = document.body.classList.contains("diag") ? savedFor(e.id) : null;
+      if (saved) {
+        const open = document.createElement("button");
+        open.type = "button";
+        open.className = "link-btn";
+        open.textContent = "Open diagnostics";
+        open.onclick = () => openSnapshot(saved.entryId, saved.name);
+        sub.append(" · ", open);
+      }
       // Back to the call you're on, or with none, Close: Home now, rather than in a few seconds.
       const back = otherLive();
       if (back) actions.append(button("", `Back to ${nameOf(back)}`, () => selectCall(back.id)));
@@ -1507,8 +1520,6 @@ chrome.webview.addEventListener("message", async (e) => {
       noteStreamCalls(msg.calls ?? []);
       // A call's saved diagnostics give way to a call that's going.
       if (snap && (msg.calls ?? []).some((c) => c.call !== "ended")) closeSnapshot();
-      // And the link to the last call's, to a new one starting.
-      if ((msg.calls ?? []).some((c) => c.call === "calling" || c.call === "ringing")) dismissEnded();
       takeAccounts(msg);        // before render(): Home's accounts and registrations are this message's
       if (!lossLoaded) {
         lossLoaded = true;
