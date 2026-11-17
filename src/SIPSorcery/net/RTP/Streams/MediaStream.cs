@@ -596,12 +596,19 @@ namespace SIPSorcery.Net
         /// (not a local track the far end never offered). Otherwise, say, an audio-only session
         /// answering an audio and video offer never received any audio. With DTLS-SRTP the keys
         /// come from the handshake, so a stream waits as soon as it's secure.
+        /// A stream with no RTP channel of its own (not multiplexed) doesn't wait either: we
+        /// answer its m-line with port 0, so it carries nothing. It can still have a local track
+        /// that isn't inactive: one made for an m-line we declined, then set send and receive by
+        /// a later re-INVITE (the user agent sets each stream's direction from the offer). Its
+        /// wait held back the call's audio, e.g. after a far end put the call on hold with video
+        /// added, which we declined, and took it off hold again.
         /// </summary>
         internal bool IsAwaitingSecureContext
         {
             get => RequiresSecureContext && !IsSecurityContextReady() &&
                 (!RtpSessionConfig.UsesSdpCrypto ||
-                    (LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive && (RemoteTrack != null || SrtpHandler != null)));
+                    (LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive && (RemoteTrack != null || SrtpHandler != null) &&
+                        (RtpSessionConfig.IsMediaMultiplexed || HasRtpChannel())));
         }
 
         /// <summary>
