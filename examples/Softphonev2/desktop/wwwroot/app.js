@@ -45,6 +45,8 @@ import { closeMenu, initMenus, openMenu, pickDevice, pickMic, renderMore, selfVi
 import { closeDevices, initYourDevices, renderIndicator, renderYourDevices, stopTests } from "./yourdevices.js";
 import { dialDone, homeShown, initHome, renderHome } from "./home.js";
 import { initQuality, newQuality, onQuality, renderDetails, renderDock, renderQuality } from "./quality.js";
+import { initStreams, noteStreamCalls, onStreamRates, onStreams, renderStreams } from "./streams.js";
+import { captureDiagnostics, closeSnapshot, onDiagSnapshot, snap } from "./snapshots.js";
 import { closeTextForGrid, hideToast, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen, toastCallId } from "./rtt.js";
 import { initTransfer, renderTransfer, transferShort, xferBusy } from "./transfer.js";
 import { $, ICON, initial, log, post, shortName } from "./util.js";
@@ -836,6 +838,7 @@ export function render() {
   lastPhase = phase;
   lastSelected = selectedId;
   renderQuality();
+  renderStreams();
 
   renderCalls();
   renderPrivacy();
@@ -1002,6 +1005,9 @@ function onPhase(e) {
     }
     if (testAddVideo) setTimeout(() => { if (e.m && !e.m.hasVideo && e.id === selectedId) $("camBtn").click(); }, testAddVideo * 1000);
   } else if (e.h.call === "ended") {
+    // Its Call details, Streams and Call quality are kept with its history entry (snapshots.js),
+    // taken before its media goes; then the tabs clear.
+    captureDiagnostics(e);
     // Not while calling or ringing: in the web softphone the page's connection is the call's
     // own, and it's set up (offer or answer) before the call connects.
     closeMedia(e);
@@ -1359,6 +1365,7 @@ navigator.mediaDevices.addEventListener?.("devicechange", refreshCameras);
 initMenus();
 let lossLoaded = false;   // the host's starting values (--loss-audio, --loss-video), taken from the first state
 initDiagnostics();
+initStreams();
 
 $("hangupBtn").onclick = () => post({ type: "hangup", id: selectedId });
 $("holdBtn").onclick = () => { const e = sel(); if (e && holdState(e)) goLive(e); else holdCall(e, true); };
@@ -1491,6 +1498,9 @@ chrome.webview.addEventListener("message", async (e) => {
     const e = msg.id != null ? entries.get(msg.id) : null;
     if (msg.type === "state") {
       onState(msg);
+      noteStreamCalls(msg.calls ?? []);
+      // A call's saved diagnostics give way to a call that's going.
+      if (snap && (msg.calls ?? []).some((c) => c.call !== "ended")) closeSnapshot();
       takeAccounts(msg);        // before render(): Home's accounts and registrations are this message's
       if (!lossLoaded) {
         lossLoaded = true;
@@ -1509,6 +1519,9 @@ chrome.webview.addEventListener("message", async (e) => {
     else if (msg.type === "media-remote-answer") await onMediaAnswer(msg.id, msg.sdp);
     else if (msg.type === "media-health") { if (e?.m) { e.m.txLost = !!msg.txLost; render(); } }
     else if (msg.type === "quality") onQuality(msg);
+    else if (msg.type === "streams") onStreams(msg);
+    else if (msg.type === "stream-rates") onStreamRates(msg);
+    else if (msg.type === "diag-snapshot") onDiagSnapshot(msg);
     else if (msg.type === "details") { if (e) { e.details = msg; if (e.id === selectedId) { renderDetails(); renderInfoLock(); } } }
     else if (msg.type === "text") onTextReceived(msg.id, msg.text);
     else if (msg.type === "dtmf-in") onDtmfIn(msg.id, msg.digit);

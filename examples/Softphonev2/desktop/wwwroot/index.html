@@ -341,14 +341,15 @@
     <div class="dev-bar">
       <h2 class="dev-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Diagnostics</h2>
       <div class="dev-tabs" role="tablist" aria-label="Diagnostics">
-        <button type="button" class="dev-tab" role="tab" id="tabLog" data-tab="log" aria-controls="log" aria-selected="true">SIP log</button>
+        <button type="button" class="dev-tab" role="tab" id="tabLog" data-tab="log" aria-controls="log" aria-selected="true">Debug log</button>
         <button type="button" class="dev-tab" role="tab" id="tabDetails" data-tab="details" aria-controls="paneDetails" aria-selected="false">Call details</button>
+        <button type="button" class="dev-tab" role="tab" id="tabStreams" data-tab="streams" aria-controls="paneStreams" aria-selected="false">Streams</button>
         <button type="button" class="dev-tab" role="tab" id="tabQuality" data-tab="quality" aria-controls="paneQuality" aria-selected="false">Call quality</button>
         <button type="button" class="dev-tab" role="tab" id="tabNet" data-tab="net" aria-controls="paneNet" aria-selected="false">Network</button>
       </div>
       <span class="dev-spacer"></span>
-      <button type="button" class="dev-act" id="logCopy" title="Copy the whole SIP log">Copy log</button>
-      <button type="button" class="dev-act" id="logClear" title="Clear the SIP log">Clear</button>
+      <button type="button" class="dev-act" id="logCopy" title="Copy the whole debug log">Copy log</button>
+      <button type="button" class="dev-act" id="logClear" title="Clear the debug log">Clear</button>
       <!-- At phone width (500 px and under): Copy log and Clear, and the tabs that don't fit,
            go into this ⋯ menu (diagnostics.js, fitDevTabs and fillDevMenu). -->
       <div class="dev-more" id="devMore">
@@ -359,12 +360,38 @@
       <span class="dev-key" title="F12 opens and closes diagnostics">F12</span>
       <button type="button" class="dev-close" id="devClose" aria-label="Close diagnostics" title="Close diagnostics (F12)"></button>
     </div>
+    <!-- A call's saved diagnostics (snapshots.js), opened from its row in Recent: whose, and back to
+         the live call. On Call details, Streams and Call quality. -->
+    <div class="dev-snap" id="devSnap" role="status" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+      <span id="devSnapText"></span>
+      <button type="button" class="dev-snap-back" id="devSnapBack">Back to live</button>
+    </div>
     <pre class="dev-pane" id="log" role="tabpanel" aria-labelledby="tabLog" tabindex="0"></pre>
     <!-- Call details for the selected call: how it was set up (from the host) and the codecs each
          way (from the page's stats). -->
     <div class="dev-pane dev-details" id="paneDetails" role="tabpanel" aria-labelledby="tabDetails" hidden>
       <p class="q-empty" id="detailsEmpty">Call details show here during a call.</p>
       <dl class="details" id="details" hidden></dl>
+    </div>
+    <!-- Streams for a call (streams.js): its media lines as its offers and answers left them, and
+         what's going each way on the SIP side. Now, a timeline of the call, and each offer and
+         answer with its SDP. The desktop only: the web softphone takes this tab out. -->
+    <div class="dev-pane dev-streams" id="paneStreams" role="tabpanel" aria-labelledby="tabStreams" hidden>
+      <p class="q-empty" id="streamsEmpty">Streams show here once there's a call: the media its offers and answers agreed, and what's going each way.</p>
+      <div class="sx" id="streamsView" hidden>
+        <div class="sx-top">
+          <select class="sx-pick" id="streamsCall" aria-label="Call"></select>
+          <span class="sx-meta" id="streamsMeta"></span>
+          <span class="sx-grow"></span>
+          <div class="sx-seg" id="streamsViews" role="group" aria-label="View">
+            <button type="button" data-view="now" aria-pressed="true">Now</button>
+            <button type="button" data-view="timeline" aria-pressed="false">Timeline</button>
+            <button type="button" data-view="oa" aria-pressed="false">Offers/answers</button>
+          </div>
+        </div>
+        <div id="streamsBody"></div>
+      </div>
     </div>
     <!-- Call quality for the selected call: ↑ what we send (their RTCP) and ↓ what we receive
          (measured here), the table and PLIs at the left and the graph at the right. -->

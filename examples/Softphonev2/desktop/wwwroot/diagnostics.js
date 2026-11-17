@@ -3,12 +3,14 @@
 import { entries, nextVideo, params, render, sel, setCamera } from "./app.js";
 import { closeMenu, openMenu, showLoss } from "./menus.js";
 import { renderDetails, renderQuality } from "./quality.js";
+import { closeSnapshot, renderSnap } from "./snapshots.js";
+import { renderStreams } from "./streams.js";
 import { $, ICON, post } from "./util.js";
 import { SOURCE_LABEL, setVideoSource, sourceOf } from "./video.js";
 
 // ---- Diagnostics (F12) ----
-// A panel docked at the bottom, like a browser's developer tools: the SIP log, Call details,
-// Call quality and Network (the loss sliders). While it's open the app is in diagnostics mode, which also shows
+// A panel docked at the bottom, like a browser's developer tools: the debug log, Call details,
+// Streams (the desktop only), Call quality and Network (the loss sliders). While it's open the app is in diagnostics mode, which also shows
 // your SIP address in the header, and the test video sources. Closed at every start
 // (--diagnostics opens it, for testing). Ctrl+Shift+I is left to WebView2's own DevTools.
 export function setDiagnostics(on) {
@@ -34,6 +36,8 @@ export function setDiagnostics(on) {
     showLoss();
     post({ type: "loss", audio: 0, video: 0 });
   }
+  // A call's saved diagnostics show until the panel closes; it opens on the live call.
+  if (!on) closeSnapshot();
   closeMenu();
   renderQuality();
   render();
@@ -101,22 +105,28 @@ function setSecurityOpen(on) {
   if (on) renderSecurity();
 }
 
-function setDevTab(tab) {
+let devTab = "log";
+export const currentDevTab = () => devTab;
+export function setDevTab(tab) {
+  devTab = tab;
   for (const b of document.querySelectorAll(".dev-tab")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
   $("log").hidden = tab !== "log";
   $("paneDetails").hidden = tab !== "details";
+  if ($("paneStreams")) $("paneStreams").hidden = tab !== "streams";
   $("paneQuality").hidden = tab !== "quality";
   $("paneNet").hidden = tab !== "net";
   $("logCopy").hidden = $("logClear").hidden = tab !== "log";
   fitDevTabs();
+  renderSnap();
   if (tab === "log") $("log").scrollTop = $("log").scrollHeight;
   if (tab === "details") renderDetails();
+  if (tab === "streams") renderStreams();
   if (tab === "quality") renderQuality();
 }
 
 // ---- The bar at phone width: a ⋯ for what doesn't fit ----
 // The open tab always shows; the others from the left as fit, the rest (from the right) go into
-// the ⋯ menu, with Copy log and Clear while the SIP log is open. Wider, everything's on the bar.
+// the ⋯ menu, with Copy log and Clear while the debug log is open. Wider, everything's on the bar.
 const compactBar = () => matchMedia("(max-width: 500px)").matches;
 export function fitDevTabs() {
   const tabs = [...document.querySelectorAll(".dev-tab")];
@@ -170,6 +180,9 @@ const devHeight = (h) => Math.round(Math.max(120, Math.min(window.innerHeight * 
 
 // Run by app.js at this point in its start-up, in the order it always ran.
 export function initDiagnostics() {
+  // Streams is the desktop's: its host records each call's offers and answers off the wire. The
+  // web softphone's doesn't, so the tab goes (removed, not hidden: fitDevTabs shows every tab).
+  if (document.documentElement.dataset.host === "web") { $("tabStreams").remove(); $("paneStreams").remove(); }
   document.body.classList.toggle("diag", params.get("diag") === "1");
   $("devPanel").hidden = params.get("diag") !== "1";
   // F12, caught before WebView2 would open its DevTools with it.
@@ -181,6 +194,7 @@ export function initDiagnostics() {
   }, true);
   $("devClose").innerHTML = ICON.close;
   $("devClose").onclick = () => setDiagnostics(false);
+  $("devSnapBack").onclick = () => closeSnapshot();
   $("infoLock").setAttribute("aria-haspopup", "dialog");
   $("infoLock").onclick = () => setSecurityOpen($("secPop").hidden);
   document.addEventListener("keydown", (ev) => {

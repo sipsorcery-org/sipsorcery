@@ -111,6 +111,10 @@ internal sealed class MainForm : Form
         {
             var e = HistoryEntry.From(c);
             _history.Add(e);
+            // Its diagnostics, which the page sends as the call ends: before this, or after.
+            string? diag;
+            lock (_diagPending) { _diagEntry[c.Id] = e.Id; _diagPending.Remove(c.Id, out diag); }
+            if (diag != null) SaveDiagnostics(c.Id, e.Id, diag);
             LogLine($"{DateTime.Now:HH:mm:ss.fff} history: call {c.Id} {e.Dir} {e.Uri} {e.Note ?? (e.Duration > 0 ? $"{e.Duration / 1000} s" : "")}".TrimEnd());
             Post(HistoryMessage());
         };
@@ -130,6 +134,10 @@ internal sealed class MainForm : Form
             type = "details", id = c.Id, d.Direction, d.Account, d.Signalling, d.TheirPhone, d.CallId, d.TheirMedia,
             d.MediaEncrypted, d.SignallingEncrypted, d.Audio, d.Video, d.MediaSecurity,
         });
+        // Diagnostics' Streams tab: each call's offers and answers as they change, and its RTP
+        // packets each way once a second.
+        _phone.StreamsChanged += (c, v) => { if (_pageReady) Post(StreamsMessage(c, v)); };
+        _phone.StreamRates += rates => { if (_pageReady) Post(new { type = "stream-rates", rates }); };
         _phone.VideoRefused += c => Post(new { type = "video-refused", id = c.Id });
         _phone.MediaOffer += (c, sdp) =>
         {
@@ -143,6 +151,7 @@ internal sealed class MainForm : Form
         {
             WindowPlacement.Save(this, _settings.Profile);
             _phone.Dispose();
+            try { _history.DropRemovedDiagnostics(); } catch (Exception ex) { WriteLog($"history: {ex.Message}"); }
             // The library goes on logging from its own threads after this (TCP and TLS connections
             // dropping as the process ends), so stop listening and close the file under its lock;
             // a write after that is dropped rather than throwing on one of those threads, which
@@ -224,6 +233,7 @@ internal sealed class MainForm : Form
                     Post(HistoryMessage());
                     Post(StateMessage());
                     lock (_pendingOffers) { _pendingOffers.ForEach(Post); _pendingOffers.Clear(); }
+                    foreach (var c in _phone.Calls) Post(StreamsMessage(c, _phone.StreamsOf(c)));
                     if (_contacts.LoadNote != null) WriteLog(_contacts.LoadNote);
                     PostContacts();
                     if (!string.IsNullOrWhiteSpace(_settings.Dial)) DialAtStart();
@@ -312,6 +322,32 @@ internal sealed class MainForm : Form
                     // Our blind transfer, ringing: hang up and leave it to their phone.
                     _phone.LeaveTransfer(Id(msg));
                     break;
+                case "diag-save":
+                {
+                    // A call's Call details, Streams and Call quality as it ended, for its history entry.
+                    var callId = Id(msg);
+                    var snapJson = msg["snapshot"]?.ToJsonString();
+                    if (snapJson == null) break;
+                    string? entryId;
+                    lock (_diagPending)
+                    {
+                        if (!_diagEntry.TryGetValue(callId, out entryId))
+                        {
+                            _diagPending[callId] = snapJson;
+                            if (_diagPending.Count > 16) _diagPending.Remove(_diagPending.Keys.First());
+                        }
+                    }
+                    if (entryId != null) SaveDiagnostics(callId, entryId, snapJson);
+                    break;
+                }
+                case "diag-get":
+                {
+                    var entryId = Id(msg);
+                    string? saved = null;
+                    try { saved = _history.ReadDiagnostics(entryId); } catch (Exception ex) { WriteLog($"history: couldn't read the diagnostics: {ex.Message}"); }
+                    Post(new { type = "diag-snapshot", id = entryId, snapshot = saved == null ? null : JsonNode.Parse(saved) });
+                    break;
+                }
                 case "copy":
                     // The host's clipboard rather than the page's, which needs permissions the
                     // page may not have.
@@ -399,6 +435,21 @@ internal sealed class MainForm : Form
         msg["ids"]?.AsArray().Select(n => (string?)n).OfType<string>().ToList() ?? new List<string>();
 
     /// <summary>Every past call, newest first, with the cap so the page can say when old ones go.</summary>
+    // Call id -> its history entry's id (this run's calls), and snapshots that came before their entry.
+    private readonly Dictionary<string, string> _diagEntry = new();
+    private readonly Dictionary<string, string> _diagPending = new();
+
+    private void SaveDiagnostics(string callId, string entryId, string json)
+    {
+        try
+        {
+            if (!_history.SaveDiagnostics(entryId, json)) return;
+            WriteLog($"history: call {callId}'s diagnostics saved ({json.Length / 1024} KB)");
+            Post(HistoryMessage());
+        }
+        catch (Exception ex) { WriteLog($"history: couldn't save call {callId}'s diagnostics: {ex.Message}"); }
+    }
+
     private object HistoryMessage() => new { type = "history", entries = _history.All, max = CallHistory.MaxEntries };
 
     /// <summary>--dial (testing): places its call, and remembers it for --dial-count.</summary>
@@ -487,6 +538,21 @@ internal sealed class MainForm : Form
     }
 
     private void PostContacts() => Post(new { type = "contacts", contacts = _contacts.All });
+
+    // Times as the page's clock has them (ms since 1970), so it can place them on its timeline.
+    private static long PageTime(DateTime t) => new DateTimeOffset(t).ToUnixTimeMilliseconds();
+
+    private static object StreamsMessage(Phone.Call c, StreamLog.View v) => new
+    {
+        type = "streams",
+        id = c.Id,
+        exchanges = v.Exchanges.Select(x => new
+        {
+            x.N, at = PageTime(x.At), x.ByUs, x.Label, x.OfferMsg, x.AnswerMsg, x.Status, x.Ok, x.Pending, x.Session, x.Offer, x.Answer, x.AnswerMs,
+        }),
+        v.Streams,
+        notes = v.Notes.Select(n => new { at = PageTime(n.At), n.Text, n.Level }),
+    };
 
     private void Post(object message)
     {

@@ -35,6 +35,7 @@ The host (C#: WinForms and WebView2):
 | `MainForm.cs` | The window: WebView2 showing the page, and the messages between the page and `Phone`. |
 | `Phone.cs` | SIP: the transport, each account's registration, and up to 8 calls (dial, answer, hold, transfer). |
 | `MediaRelay.cs` | One per call: passes its SIP media to and from the page's WebRTC connection without decoding it. |
+| `StreamLog.cs` | One per call: its offers and answers as they went over the wire, for Diagnostics' Streams tab. |
 | `TextPeerConnection.cs` | A WebRTC call's SIP leg, with real-time text on a data channel. |
 | `Accounts.cs`, `Contacts.cs`, `History.cs` | SIP accounts, contacts and call history, kept per profile in `%LOCALAPPDATA%\SIPSorcery\Softphonev2`. |
 | `Settings.cs` | `softphone.json` and the switches. |
@@ -58,6 +59,8 @@ The page (`wwwroot`, shared with the web softphone in [../web](../web/README.md)
 | `levels.js` | Audio levels: the bars of the audio-only view and of the grid's tiles. |
 | `keypad.js`, `rtt.js`, `transfer.js` | The keypad (DTMF), real-time text, and transfer. |
 | `quality.js` | Call details and Call quality. |
+| `streams.js` | Streams: each call's media lines, as its offers and answers left them and as they're going. |
+| `snapshots.js` | Saved diagnostics: a call's Call details, Streams and Call quality as it ended, kept with its history entry and opened from its row in Recent. |
 | `diagnostics.js` | The F12 panel, the test sources' menu items, and the security popover. |
 | `accounts.js`, `contacts.js`, `history.js` | Call from and Manage accounts; contacts and the People view; call history. |
 | `settings.js`, `avatar.js`, `contactmark.js`, `selfview.js` | Settings; Gravatar pictures; the saved-contact mark; moving and sizing the self view. |
@@ -79,13 +82,21 @@ On its own it listens on port 5060 (UDP and TCP), or if that's taken on a port t
 bottom of the window, and F12 again (or its ×) closes it. It's closed at every start
 (`--diagnostics` opens it). Drag its top edge to resize it, between 120 px and 70% of the
 window. The height you leave it at is remembered per profile and used whenever it opens.
-It has four tabs:
+It has five tabs:
 
-- **SIP log**: everything the host and page log, following the newest line unless you've
+- **Debug log**: everything the host and page log (SIP, media, the relay, the page), following the newest line unless you've
   scrolled up. *Copy log* puts the whole log on the clipboard; *Clear* empties it.
 - **Call details**: how the selected call was set up (see [Call details](DESIGN.md#call-details)).
+- **Streams**: a call's audio, video and text lines: what its offers and answers agreed, what's
+  going each way, a timeline of the call, and each offer and answer's SDP (see
+  [Streams](DESIGN.md#streams-diagnostics-mode)). The desktop only.
 - **Call quality**: the selected call's table and graphs (see [Call quality](DESIGN.md#call-quality-diagnostics-mode)).
 - **Network**: the simulated loss sliders (see [Call quality](DESIGN.md#call-quality-diagnostics-mode)).
+
+Call details, Streams and Call quality are for the calls that are going, and clear as a call ends.
+What they had for it is saved with the call's history entry, though: a pulse button on its row in
+Home's Recent and People's Recent opens them again, with a bar saying whose they are and *Back to
+live* (see [Saved diagnostics](DESIGN.md#saved-diagnostics)).
 
 While it's open the app is in diagnostics mode: the Test pattern and Audio bars sources on the Camera ▾. Closing it
 hides them all. The page catches F12 before WebView2 does, so it doesn't open WebView2's own

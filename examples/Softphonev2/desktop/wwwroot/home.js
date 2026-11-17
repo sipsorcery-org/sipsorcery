@@ -23,6 +23,7 @@ import { avatarAttr } from "./avatar.js";
 import { contactMark, normAddress } from "./contactmark.js";
 import { allContacts, contactFor, openContacts, sameUri } from "./contacts.js";
 import { copyAddress, describeCall, historyEntries, isUnseen, openPeople, unseenMissed } from "./history.js";
+import { openSnapshot } from "./snapshots.js";
 import { $, escHtml, ICON, initial, post, shortName } from "./util.js";
 import { closeDevices, renderYourDevices } from "./yourdevices.js";
 
@@ -121,13 +122,16 @@ const CONTACT_ICON = {
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
   add: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>',
 };
-function callBtns(uri, account, name, contactBtn = null) {
+function callBtns(uri, account, name, contactBtn = null, diagId = null) {
   const btn = (act, label, icon, quiet) => `<button type="button" class="icon-sq${quiet ? " icon-sq-quiet" : ""}" data-home="${act}" data-uri="${escHtml(uri)}" data-account="${escHtml(account ?? "")}"
       title="${label}" aria-label="${label}">${icon}</button>`;
   const contact = contactBtn === null ? ""
     : contactBtn ? btn("contact", `Edit contact ${escHtml(name)}`, CONTACT_ICON.edit, true)
     : btn("contact", `Add ${escHtml(name)} to contacts`, CONTACT_ICON.add, true);
-  return `<span class="home-btns">${btn("copy", `Copy ${escHtml(name)}'s address`, ICON.copy, true)}${contact}${btn("call", `Call ${escHtml(name)}`, ICON.phone)}${state.videoAllowed !== false ? btn("video", `Video call ${escHtml(name)}`, ICON.video) : ""}</span>`;
+  // A call's saved diagnostics (snapshots.js): its Call details, Streams and Call quality as it ended.
+  const diag = diagId ? `<button type="button" class="icon-sq icon-sq-quiet" data-home="diag" data-id="${escHtml(diagId)}" data-name="${escHtml(name)}"
+      title="Diagnostics for this call" aria-label="Diagnostics for the call with ${escHtml(name)}">${ICON.diag}</button>` : "";
+  return `<span class="home-btns">${diag}${btn("copy", `Copy ${escHtml(name)}'s address`, ICON.copy, true)}${contact}${btn("call", `Call ${escHtml(name)}`, ICON.phone)}${state.videoAllowed !== false ? btn("video", `Video call ${escHtml(name)}`, ICON.video) : ""}</span>`;
 }
 
 // ---- Recent (Home) ----
@@ -147,7 +151,7 @@ function recentHtml() {
     return `<li class="${cls}"><span class="home-avatar" aria-hidden="true"${avatarAttr(e.uri)}>${escHtml(initial(name))}</span>
       <span class="home-main"><span class="home-name">${escHtml(name)}${c ? contactMark(c.name) : ""}</span>
         <span class="home-sub ${d.tone}">${escHtml(d.text)} · ${escHtml(d.when)}</span></span>
-      ${callBtns(e.uri, e.account, name, !!c)}</li>`;
+      ${callBtns(e.uri, e.account, name, !!c, e.diag ? e.id : null)}</li>`;
   }).join("");
   return `${head}<ol class="home-rows">${rows}</ol>`;
 }
@@ -286,6 +290,7 @@ export function initHome() {
         break;
       }
       case "history": openPeople("recent"); break;
+      case "diag": openSnapshot(t.dataset.id, t.dataset.name); break;
       case "back": leaveDial(); break;
       case "retry": reRegister(t.dataset.id); break;
       case "edit": openAccounts(t.dataset.id); break;

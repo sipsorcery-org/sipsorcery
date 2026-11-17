@@ -20,6 +20,7 @@
 
 import { contactMark } from "./contactmark.js";
 import { avatarAttr } from "./avatar.js";
+import { openSnapshot } from "./snapshots.js";
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -35,6 +36,7 @@ const ICON = {
   trash: svg('<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>'),
   copy: svg('<rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'),
   chevronDown: svg('<path d="m6 9 6 6 6-6"/>'),
+  diag: svg('<path d="M3 12h4l3-8 4 16 3-8h4"/>'),
   close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
   back: svg('<path d="M19 12H5M12 19l-7-7 7-7"/>'),
   addContact: svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>'),
@@ -355,20 +357,21 @@ function renderResults() {
           ${api.videoAllowed() ? `<button type="button" class="btn am-small" data-act="video" data-id="${esc(e.id)}">${ICON.video}Video call</button>` : ""}
           <button type="button" class="btn am-small" data-act="copy" data-id="${esc(e.id)}">${ICON.copy}Copy address</button>
           <button type="button" class="btn am-small" data-act="contact" data-id="${esc(e.id)}">${contactOf(e) ? `${ICON.contact}Edit contact` : `${ICON.addContact}Add to contacts`}</button>
+          ${e.diag ? `<button type="button" class="btn am-small" data-act="diag" data-id="${esc(e.id)}">${ICON.diag}Diagnostics</button>` : ""}
           <span class="am-spacer"></span>
           <button type="button" class="btn am-small" data-act="remove" data-id="${esc(e.id)}">${ICON.trash}Remove</button>
           ${same > 1 ? `<button type="button" class="btn am-small" data-act="remove-uri" data-id="${esc(e.id)}">${ICON.trash}Remove all ${same} from this address</button>` : ""}
         </div>
       </div>` : "";
     const video = api.videoAllowed();
-    return `${head}<li class="hv-row${sel ? " selected" : ""}" data-id="${esc(e.id)}" style="--hv-btns: ${video ? 5 : 4}">
+    return `${head}<li class="hv-row${sel ? " selected" : ""}" data-id="${esc(e.id)}" style="--hv-btns: ${(video ? 5 : 4) + (e.diag ? 1 : 0)}">
         <button type="button" class="hv-main" data-act="select" data-id="${esc(e.id)}" aria-expanded="${sel}"${sel ? ` aria-controls="hv-detail-${esc(e.id)}"` : ""}>
           <span class="call-avatar" aria-hidden="true"${avatarAttr(e.uri)}>${esc(initial(name))}</span>
           <span class="hv-who"><span class="hv-name">${esc(name)}${markOf(e)}</span><span class="hv-uri">${esc(e.uri)}</span></span>
           <span class="hv-outcome ${o.tone}">${o.ico}<span>${esc(o.text)}</span></span>
           <span class="hv-time">${esc(clockTime(e.at))}</span>
         </button>
-        <span class="hv-btns">${contactOf(e)
+        <span class="hv-btns">${e.diag ? `<button type="button" class="hv-icon hv-diag" data-act="diag" data-id="${esc(e.id)}" aria-label="Diagnostics for the call with ${esc(name)}" title="Diagnostics for this call">${ICON.diag}</button>` : ""}${contactOf(e)
           ? `<button type="button" class="hv-icon hv-contact is-contact" data-act="contact" data-id="${esc(e.id)}" aria-label="Edit contact ${esc(name)}" title="Edit contact">${ICON.contact}</button>`
           : `<button type="button" class="hv-icon hv-contact" data-act="contact" data-id="${esc(e.id)}" aria-label="Add ${esc(name)} to contacts" title="Add to contacts">${ICON.addContact}</button>`}
         <button type="button" class="hv-icon hv-toggle" data-act="select" data-id="${esc(e.id)}" aria-expanded="${sel}"
@@ -397,6 +400,7 @@ function onViewClick(ev) {
     case "video": callBack(e, true); break;
     case "contact": if (e) api.editContact(e); break;
     case "copy": if (e) copyAddress(e.uri); break;
+    case "diag": if (e) openSnapshot(e.id, nameOf(e)); break;
     case "remove": if (e) remove([e.id], `Removed <b>${esc(nameOf(e))}</b> from history`); break;
     case "remove-uri": {
       if (!e) break;

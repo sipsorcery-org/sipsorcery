@@ -94,6 +94,20 @@ public sealed class Phone : IDisposable
         internal bool Answering;          // Answer is under way (a double click mustn't answer twice)
         /// <summary>The SSRC each kind of media last arrived with on the SIP side.</summary>
         internal readonly System.Collections.Concurrent.ConcurrentDictionary<SDPMediaTypesEnum, uint> Sources = new();
+        /// <summary>The call's offers and answers, for the Streams tab in Diagnostics (see <see cref="StreamLog"/>).</summary>
+        internal readonly StreamLog Streams = new();
+        /// <summary>RTP packets that have arrived on the SIP side, per kind, and when the last one did: the Streams tab's rates.</summary>
+        internal readonly System.Collections.Concurrent.ConcurrentDictionary<SDPMediaTypesEnum, long> RxPackets = new();
+        internal readonly System.Collections.Concurrent.ConcurrentDictionary<SDPMediaTypesEnum, DateTime> LastRx = new();
+        /// <summary>Where their RTP last came from, per kind (it can differ from their SDP's address, behind a NAT).</summary>
+        internal readonly System.Collections.Concurrent.ConcurrentDictionary<SDPMediaTypesEnum, System.Net.IPEndPoint> LastFrom = new();
+        /// <summary>The packet counts at the last tick (sent, from RTCP's count; received), for the rates.</summary>
+        internal readonly Dictionary<SDPMediaTypesEnum, (long Tx, long Rx)> RatesBefore = new();
+        /// <summary>Sends the Streams tab the call's offers and answers a moment after a message changes them.</summary>
+        internal System.Threading.Timer? StreamsTimer;
+        /// <summary>Why the call's audio stopped, while it has (an RTP timeout): the user agent hangs up
+        /// on it, and the call ends with this, not "They hung up".</summary>
+        internal string? TimedOut;
         public bool Live => State is CallState.Calling or CallState.Ringing or CallState.Connected;
         /// <summary>A transfer of this call, ours or theirs, while it's under way and for a moment after; null if none.</summary>
         public TransferInfo? Transfer { get; internal set; }
@@ -248,6 +262,136 @@ public sealed class Phone : IDisposable
     /// <summary>Full SIP messages, for the log file only.</summary>
     public event Action<string>? Trace;
 
+    // ---- Streams (Diagnostics): each call's offers and answers, and its packets each way ----
+    // The transport's trace of every SIP message is where the offers and answers are recorded, as
+    // they went over the wire: each call's are in its StreamLog, found by Call-ID. A message can
+    // come before its call knows its Call-ID (our INVITE, before the 100 Trying), so a few are held
+    // until it does (AttachStreams).
+
+    /// <summary>A call's offers and answers have changed (a message, an RTP timeout): the whole view.</summary>
+    public event Action<Call, StreamLog.View>? StreamsChanged;
+    /// <summary>Once a second, for every connected call: RTP packets sent and received in that second, per
+    /// kind, and the stream's network: the transport (UDP, or ICE's pair), our sockets, where we send and
+    /// where their RTP comes from. RTCP's sockets are null when it shares RTP's (rtcp-mux).</summary>
+    public sealed record StreamRate(string Id, string Kind, int Tx, int Rx, int Idle,
+        string Transport, string? Local, string? Remote, string? From, string? RtcpLocal, string? RtcpRemote);
+    public event Action<IReadOnlyList<StreamRate>>? StreamRates;
+    private readonly Dictionary<string, Call> _streamCalls = new();               // Call-ID -> call
+    private readonly Dictionary<string, List<StreamLog.Message>> _streamsPending = new();
+    private readonly Queue<string> _streamsPendingOrder = new();
+    private const int StreamsPendingMax = 32;
+    private System.Threading.Timer? _streamsTick;
+
+    private void RecordSip(StreamLog.Message? m)
+    {
+        if (m == null) return;
+        Call? c;
+        lock (_streamCalls)
+        {
+            if (!_streamCalls.TryGetValue(m.CallId, out c))
+            {
+                if (!_streamsPending.TryGetValue(m.CallId, out var list))
+                {
+                    _streamsPending[m.CallId] = list = new();
+                    _streamsPendingOrder.Enqueue(m.CallId);
+                    while (_streamsPendingOrder.Count > StreamsPendingMax) _streamsPending.Remove(_streamsPendingOrder.Dequeue());
+                }
+                list.Add(m);
+                return;
+            }
+        }
+        if (c.Streams.Add(m)) StreamsChangedSoon(c);
+    }
+
+    /// <summary>This Call-ID is the call's (its first, or a new one after a transfer): its messages go to the call's log.</summary>
+    private void AttachStreams(Call c, string? callId)
+    {
+        if (string.IsNullOrEmpty(callId)) return;
+        List<StreamLog.Message>? pending;
+        lock (_streamCalls)
+        {
+            if (_streamCalls.TryGetValue(callId, out var had) && had == c) return;
+            _streamCalls[callId] = c;
+            _streamsPending.Remove(callId, out pending);
+        }
+        if (pending != null) foreach (var m in pending) c.Streams.Add(m);
+        StreamsChangedSoon(c);
+    }
+
+    private void ForgetStreams(Call c)
+    {
+        lock (_streamCalls) foreach (var id in _streamCalls.Where(kv => kv.Value == c).Select(kv => kv.Key).ToList()) _streamCalls.Remove(id);
+        lock (c.Streams) c.StreamsTimer?.Dispose();
+    }
+
+    // Retransmissions and a response's several copies come close together: one update for them.
+    private void StreamsChangedSoon(Call c)
+    {
+        lock (c.Streams)
+        {
+            if (c.StreamsTimer != null) { try { c.StreamsTimer.Change(150, Timeout.Infinite); } catch (ObjectDisposedException) { } return; }
+            c.StreamsTimer = new System.Threading.Timer(_ => StreamsChanged?.Invoke(c, c.Streams.Build()), null, 150, Timeout.Infinite);
+        }
+    }
+
+    /// <summary>The call's offers and answers now: for a page that's (re)loaded.</summary>
+    public StreamLog.View StreamsOf(Call c) => c.Streams.Build();
+
+    private void StreamsTick()
+    {
+        List<Call> calls;
+        lock (_lock) calls = _calls.Where(c => c.State == CallState.Connected && c.Rtp != null).ToList();
+        var now = DateTime.Now;
+        var rates = new List<StreamRate>();
+        foreach (var c in calls)
+        {
+            // In case the call's Call-ID changed without a response that said so.
+            AttachStreams(c, c.Ua?.Dialogue?.CallId);
+            if (c.Rtp is not { } rtp) continue;
+            foreach (var kind in new[] { SDPMediaTypesEnum.audio, SDPMediaTypesEnum.video, SDPMediaTypesEnum.text })
+            {
+                var stream = StreamFor(rtp, kind);
+                if (stream == null || (stream.LocalTrack == null && stream.RemoteTrack == null)) continue;
+                // Sent: RTCP's count, of the packets that actually went (not those the session held
+                // back, as it does on a stream they've put on hold). Received: counted as they arrive.
+                long tx = stream.RtcpSession?.PacketsSentCount ?? 0;
+                long rx = c.RxPackets.GetValueOrDefault(kind);
+                (long Tx, long Rx) before;
+                bool had;
+                lock (c.RatesBefore) { had = c.RatesBefore.TryGetValue(kind, out before); c.RatesBefore[kind] = (tx, rx); }
+                if (!had) continue;   // the first tick only sets where counting starts
+                int idle = (int)(now - (c.LastRx.TryGetValue(kind, out var at) ? at : c.ConnectedAt ?? now)).TotalMilliseconds;
+                var ch = stream.GetRTPChannel();
+                rates.Add(new StreamRate(c.Id, kind.ToString(), (int)Math.Max(0, tx >= before.Tx ? tx - before.Tx : tx), (int)Math.Max(0, rx - before.Rx), idle,
+                    TransportOf(stream, ch), Ep(ch?.RTPLocalEndPoint), Ep(stream.DestinationEndPoint), Ep(c.LastFrom.GetValueOrDefault(kind)),
+                    Ep(ch?.ControlLocalEndPoint), ch?.ControlLocalEndPoint == null ? null : Ep(stream.ControlDestinationEndPoint)));
+            }
+        }
+        if (rates.Count > 0) StreamRates?.Invoke(rates);
+    }
+
+    // UDP for plain SIP media; for WebRTC, the protocol and the candidate types of ICE's chosen pair
+    // ("UDP · ICE host ⇄ srflx"), or that it's still checking.
+    private static string TransportOf(MediaStream stream, RTPChannel? ch)
+    {
+        if (ch is RtpIceChannel ice)
+        {
+            if (ice.NominatedEntry is not { } pair) return $"ICE {ice.IceConnectionState}";
+            return $"{pair.LocalCandidate.protocol.ToString().ToUpperInvariant()} · ICE {pair.LocalCandidate.type} ⇄ {pair.RemoteCandidate.type}";
+        }
+        return stream.IsUsingRelayEndPoint ? "UDP via TURN" : "UDP";
+    }
+
+    // An address and port as people write them: IPv4 as IPv4 (not ::ffff:), IPv6 in brackets, and a
+    // socket bound to every address as *:port.
+    private static string? Ep(System.Net.IPEndPoint? ep)
+    {
+        if (ep == null) return null;
+        var a = ep.Address.IsIPv4MappedToIPv6 ? ep.Address.MapToIPv4() : ep.Address;
+        if (a.Equals(System.Net.IPAddress.Any) || a.Equals(System.Net.IPAddress.IPv6Any)) return $"*:{ep.Port}";
+        return a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? $"[{a}]:{ep.Port}" : $"{a}:{ep.Port}";
+    }
+
     public Phone(Settings settings)
     {
         _settings = settings;
@@ -255,10 +399,11 @@ public sealed class Phone : IDisposable
         VideoLossPercent = settings.VideoLossPercent;
         OpenChannels(settings.SipPort);
         _transport.SIPTransportRequestReceived += OnRequest;
-        _transport.SIPRequestOutTraceEvent += (l, r, req) => { Log?.Invoke($"-> {r} {req.StatusLine}"); Trace?.Invoke($"-> {r}\n{req}"); };
-        _transport.SIPRequestInTraceEvent += (l, r, req) => { Log?.Invoke($"<- {r} {req.StatusLine}"); Trace?.Invoke($"<- {r}\n{req}"); };
-        _transport.SIPResponseInTraceEvent += (l, r, resp) => { Log?.Invoke($"<- {r} {resp.ShortDescription}"); Trace?.Invoke($"<- {r}\n{resp}"); };
-        _transport.SIPResponseOutTraceEvent += (l, r, resp) => { Log?.Invoke($"-> {r} {resp.ShortDescription}"); Trace?.Invoke($"-> {r}\n{resp}"); };
+        _transport.SIPRequestOutTraceEvent += (l, r, req) => { Log?.Invoke($"-> {r} {req.StatusLine}"); Trace?.Invoke($"-> {r}\n{req}"); RecordSip(StreamLog.From(req, true)); };
+        _transport.SIPRequestInTraceEvent += (l, r, req) => { Log?.Invoke($"<- {r} {req.StatusLine}"); Trace?.Invoke($"<- {r}\n{req}"); RecordSip(StreamLog.From(req, false)); };
+        _transport.SIPResponseInTraceEvent += (l, r, resp) => { Log?.Invoke($"<- {r} {resp.ShortDescription}"); Trace?.Invoke($"<- {r}\n{resp}"); RecordSip(StreamLog.From(resp, false)); };
+        _transport.SIPResponseOutTraceEvent += (l, r, resp) => { Log?.Invoke($"-> {r} {resp.ShortDescription}"); Trace?.Invoke($"-> {r}\n{resp}"); RecordSip(StreamLog.From(resp, true)); };
+        _streamsTick = new System.Threading.Timer(_ => { try { StreamsTick(); } catch (Exception ex) { Log?.Invoke($"streams tick failed: {ex.Message}"); } }, null, 1000, 1000);
     }
 
     /// <summary>Set when the configured SIP port was taken and another one was used instead.</summary>
@@ -1359,6 +1504,7 @@ public sealed class Phone : IDisposable
             };
             Log?.Invoke($"call {c.Id}: INVITE with Replaces from {newRemote}{(invite.Header.ReferredBy != null ? $" (referred by {invite.Header.ReferredBy})" : "")}: taking over the call with {c.Remote}");
         }
+        AttachStreams(c, invite.Header.CallId);
         Changed?.Invoke();
     }
 
@@ -1546,7 +1692,32 @@ public sealed class Phone : IDisposable
         bool srtp = _settings.OfferSrtp || (theirOffer != null && OffersSavp(theirOffer));
         var rtp = MediaRelay.CreateSipSession(video, c.WebRtc, srtp, requireSrtp: theirOffer == null && c.RequireSrtp);
         // Who's sending, per kind: a transfer needs the old far end's sources (ForgetOldSources).
-        rtp.OnRtpPacketReceived += (_, kind, pkt) => { if (c.Rtp == rtp) c.Sources[kind] = pkt.Header.SyncSource; };
+        rtp.OnRtpPacketReceived += (from, kind, pkt) =>
+        {
+            if (c.Rtp != rtp) return;
+            c.Sources[kind] = pkt.Header.SyncSource;
+            c.LastFrom[kind] = from;
+            c.RxPackets.AddOrUpdate(kind, 1, (_, n) => n + 1);
+            c.LastRx[kind] = DateTime.Now;
+            if (kind == SDPMediaTypesEnum.audio) c.TimedOut = null;
+        };
+        // For the Streams tab: what no SDP says.
+        rtp.OnTimeout += kind =>
+        {
+            // (Text that's gone quiet isn't news: it's quiet most of the time.)
+            if (c.Rtp != rtp || kind == SDPMediaTypesEnum.text) return;
+            var secs = (StreamFor(rtp, kind)?.RtcpSession?.NoActivityTimeoutMilliseconds ?? 0) / 1000;
+            c.Streams.AddNote($"RTP timeout: no {kind} from them in {secs} s", "warn");
+            Log?.Invoke($"call {c.Id}: no {kind} RTP or RTCP from them for {secs} s (RTP timeout)");
+            if (kind == SDPMediaTypesEnum.audio) c.TimedOut = $"No audio from them for {secs} s";
+            StreamsChangedSoon(c);
+        };
+        rtp.OnRtcpBye += reason =>
+        {
+            if (c.Rtp != rtp) return;
+            c.Streams.AddNote(string.IsNullOrWhiteSpace(reason) ? "RTCP BYE from them" : $"RTCP BYE from them: {reason}");
+            StreamsChangedSoon(c);
+        };
         if (rtp is TextPeerConnection pc)
         {
             c.Rtt?.Dispose();
@@ -1975,6 +2146,7 @@ public sealed class Phone : IDisposable
             c.Account = AccountForIncoming(req);
             c.TheirPhone = req.Header.UserAgent;
             c.IncomingOffer = req.Body;
+            AttachStreams(c, req.Header.CallId);
             // A call from a browser phone is answered with WebRTC media: one over WebSocket, or
             // one whose offer is WebRTC's (it came through a server, so over UDP, TCP or TLS).
             c.WebRtc = remote.Protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss || IsWebRtcOffer(req.Body);
@@ -2009,6 +2181,12 @@ public sealed class Phone : IDisposable
     private SIPUserAgent NewUserAgent(Call c, SIPEndPoint? outboundProxy = null)
     {
         var ua = new SIPUserAgent(_transport, outboundProxy);
+        // Every call this user agent places is this call's (a retry, a transfer's call to its
+        // target): its Call-ID's messages go to the call's offers and answers.
+        ua.ClientCallTrying += (_, resp) => AttachStreams(c, resp?.Header.CallId);
+        ua.ClientCallRinging += (_, resp) => AttachStreams(c, resp?.Header.CallId);
+        ua.ClientCallAnswered += (_, resp) => AttachStreams(c, resp?.Header.CallId);
+        ua.ClientCallFailed += (_, _, resp) => AttachStreams(c, resp?.Header.CallId);
         // Only the call's current user agent, once connected. The user agent raises this too when
         // a call we place fails with WebRTC media (closing the RTCPeerConnection), and for a
         // turned-down attempt DialAsync retries; there, DialAsync gives the real reason.
@@ -2024,7 +2202,8 @@ public sealed class Phone : IDisposable
                 c.TransferNote = $"Transferred to {to} (their phone went ahead after you cancelled)";
                 End(c, c.TransferNote);
             }
-            else End(c, "They hung up");
+            // The user agent hangs up itself when their audio stops (an RTP timeout): not them.
+            else End(c, c.TimedOut ?? "They hung up");
         };
         // Transfer (see BlindTransfer and TransferRequested).
         ua.OnTransferNotify += sipfrag => OnTransferNotify(c, ua, sipfrag);
@@ -2102,6 +2281,7 @@ public sealed class Phone : IDisposable
         _ = Task.Delay(EndedKeepMs).ContinueWith(_ =>
         {
             lock (_lock) _calls.Remove(c);
+            ForgetStreams(c);
             Changed?.Invoke();
         });
     }
@@ -2125,6 +2305,7 @@ public sealed class Phone : IDisposable
 
     public void Dispose()
     {
+        _streamsTick?.Dispose();
         foreach (var c in Calls.Where(c => c.State == CallState.Connected)) c.Ua?.Hangup();
         lock (_accounts) foreach (var reg in _accounts.Values) StopRegistration(reg);
         Thread.Sleep(300);

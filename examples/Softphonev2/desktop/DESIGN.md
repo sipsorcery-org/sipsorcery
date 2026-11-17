@@ -24,7 +24,7 @@ than a 360 × 560 page, the narrowest phone that layout is made for. That's in C
 minimum is the same page at any display scaling, and it's set again when the window moves to a
 monitor with other scaling (`MainForm.MinPageSize`). Narrow, the Accounts view puts this PC's
 direct address under its title, the Diagnostics bar has a ⋯ too (the open tab always on the
-bar, the others as fit, the rest in its menu, with Copy log and Clear log on the SIP log; a tab's
+bar, the others as fit, the rest in its menu, with Copy log and Clear log on the debug log; a tab's
 red dot, Network's with loss on, shows on the ⋯ while it's in there), and the address field's
 direct-mode hint drops its example (it's in the tooltip).
 
@@ -548,7 +548,9 @@ What a call is recorded as:
 accounts, newest first, the last 500 calls (`CallHistory` in `History.cs`). The host sends the
 page all of it (`history {entries, max}`) when the page is ready and whenever it changes; the
 page sends `history-remove {ids}` and `history-restore {ids}` (Undo), and the host keeps what was
-removed in memory, so Undo works until the app closes. The address field's Recent list comes
+removed in memory, so Undo works until the app closes. Each call's saved diagnostics (see
+[Saved diagnostics](#saved-diagnostics)) are a file beside it, in `diagnostics-<profile>`, and go
+with the call. The address field's Recent list comes
 from the same history. The web softphone's host keeps its history the same way in the browser's
 `localStorage` (`callHistory`); a host that sends no history shows no People button at all.
 
@@ -947,7 +949,7 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
     A 488 with any other Warning (305: the codecs) or an SDP on our own profile isn't retried:
     "They can't take this call's media (488)". `406 Failed creating media transport` is retried
     too, alongside those: it's what sipsorcery.com's server says when it can't set up the media
-    the offer asked for. Any other 406 isn't. The SIP log says when it retries, and why
+    the offer asked for. Any other 406 isn't. The debug log says when it retries, and why
     ("they can't take plain RTP media (406, Failed creating media transport); calling again with
     WebRTC").
   - **A bare 488 to plain RTP tries SRTP required first.** Our plain RTP offer puts SDES keys
@@ -1084,6 +1086,107 @@ The bars also show **one-way audio**, the classic SIP/NAT fault. If no audio pac
 2 s, their row drops to a thin line with "No audio arriving from X". If the far end's RTCP
 reports show our audio isn't reaching them (our source isn't listed, or its sequence number has
 stopped), your row turns red with "X isn't getting your audio".
+
+## Saved diagnostics
+
+Call details, Streams and Call quality show the calls that are going, and clear as a call ends.
+But a call that went wrong is the one you most want to look at, and it's the one that ends. So as
+each call ends the page takes what the three tabs had for it (`snapshots.js`): the host's details
+and the codecs each way, the quality table and its last two minutes of graph, and Streams' record
+of the call (its offers and answers, lanes and notes). Streams is taken 0.6 s after the end, as
+the call's last offer or answer can reach the page a moment later. The page sends it as
+`diag-save {id, snapshot}`, and the host keeps it with the call's history entry, as
+`diagnostics-<profile>\<entry id>.json` beside the history (`CallHistory.SaveDiagnostics`). The
+entry's `diag` says it has one; whichever comes first, the entry or the snapshot, waits for the
+other.
+
+A call with saved diagnostics has a pulse button (Diagnostics' icon) on its row in Home's Recent
+and in People's Recent, and a *Diagnostics* button in its row's details. Those show only with no
+call going, which is when they're wanted. The button asks the host for it (`diag-get {id}`,
+answered by `diag-snapshot {id, snapshot}`), opens Diagnostics on Call details (or the tab that's
+open, if it's one of the three), and puts a bar across the panel: *Saved with the call: Bob, ended
+17 Nov, 11:03 am · You hung up*, and *Back to live*. The tabs draw from the snapshot as they would
+from the call, except that nothing's live: Streams' ↑ and ↓ show –, its picker holds that call
+alone, and Call quality's foot says whether RTCP reports ever came. A tab with nothing saved says
+so (a call that never connected has no details or quality). The bar goes with *Back to live*,
+closing Diagnostics, or a call starting.
+
+They go with the call: one that falls off the end of the history (500 calls) loses its file at
+once; one removed (or cleared) keeps it until the app closes, so Undo brings it back whole, and
+any left over (the app was killed) go at the next start. The web softphone saves none: it has no
+host to keep them, and no Streams tab.
+
+## Streams (diagnostics mode)
+
+**Streams** is a tab in Diagnostics (F12), after Call details. It's for the question Call
+quality can't answer: not how good the media is, but whether it's there at all, and why not. A
+call's media lines are set by its offers and answers (the first INVITE, a re-INVITE to hold or
+add video, a transfer's new call), and what's actually sent can differ from what they say. Music
+on hold, for one, sends music on a line that still says sendrecv; a phone that loses its keys
+after a re-INVITE still says sendrecv while nothing it gets can be decrypted. The tab puts the
+two side by side.
+
+Only the SIP side counts. The relay between the host and the page is a loopback connection that's
+known to work, so the tab doesn't show it.
+
+A bar at the top picks the call: the selected one by default (following it as it changes), or
+any other live call. Like Call details and Call quality, it clears as a call ends; what it had is
+saved with the call, and opened from its row in Recent (see [Saved diagnostics](#saved-diagnostics)),
+where the bar shows that call alone (*Carol · ended 09:28:47*). Beside it, a line on the call's
+state (*On hold: music on hold, nothing signalled (the SDP still says sendrecv)*, *They've
+put the call on hold*, *Ended …: No audio from them for 30 s*), and three views:
+
+- **Now**: a row per m-line (Audio, Text, Video, with its index): its **Network**, the transport
+  (*UDP*, or on WebRTC the protocol and ICE's chosen pair, *UDP · ICE host ⇄ srflx*) with our
+  socket ⇄ where we send (`*:59130 ⇄ 192.168.1.123:55258`; `*` is every address), RTCP's the
+  same or *RTCP on the same port* (rtcp-mux, and WebRTC's bundle), and in amber where their RTP
+  actually arrives from if that isn't where we send; then the **Profile** and security
+  (*RTP/AVP · SRTP (SDES)*, *UDP/TLS/RTP/SAVP · DTLS-SRTP*), the codec (each way while the call's up, from the page's stats; else
+  the answer's first format), **We said** and **They said**, the direction each side's SDP gave it
+  (shaded when the last offer/answer changed it), then **↑ Sending** and **↓ Receiving**: what's
+  going and the RTP packets in the last second. Sending names what the page puts on the line:
+  Microphone, Muted, Music, Silence; Camera, Test pattern, the camera-off card, the hold card.
+  Each is flagged against what was agreed: *Nothing · as agreed*, *Nothing · on hold*,
+  *Arriving · not shown while held*, and in red *Nothing for 2 min 37 s · they agreed to send*. A line turned down (port 0) says which side
+  did. The foot names the offer/answer the lines come from.
+- **Timeline**: the call from its first INVITE to now (or its end), a lane for each line and
+  direction (↑ Audio, ↓ Audio, ↑ Video, ↓ Video, and one for text), sampled every second: flowing
+  (green), on hold (amber stripes: music, silence, the hold card, or nothing by design), off by
+  agreement (grey hatching), agreed but nothing arriving for 3 s or more (red), idle (text, a
+  thin line). Along the top, what changed things: each offer/answer after the first (a click
+  opens it in Offers/answers), music on hold and resume (which no SDP records), RTP timeouts and
+  RTCP BYEs, and the end. Labels take three rows and give way to a dot when there's no room;
+  ones a second or so apart share a label. A transfer's new session is a line through the lanes.
+- **Offers/answers**: each one in order, numbered, with its time into the call, a name for it
+  and the messages that carried it (*↑ re-INVITE · ↓ 200 Ok*). Names: Call, Added video / They
+  added video, Hold / Held by them, Resume / They resumed, Dropped video, *re-INVITE, no change*,
+  and for a new Call-ID *Transfer: called Carol*, *Replaced by Carol* (an INVITE with Replaces) or
+  *New session*. One turned down shows its status in red. Picked, the offer and the answer side by
+  side, each line marked against that side's last SDP in the same session: changed (with what it
+  was, *was sendrecv*), new or removed. Copy puts either SDP on the clipboard.
+
+Where it comes from:
+
+- The host records each call's offers and answers from the SIP transport's trace of every
+  message (`StreamLog.cs`): INVITEs, UPDATEs and their responses, and an ACK with SDP (the answer
+  to an INVITE without one). A call finds its messages by Call-ID; one that comes before the call
+  knows its Call-ID (our INVITE, before the 100 Trying) is held until it does. A 401 or 407 and
+  the INVITE it challenged are left out. Each change sends the page the whole call (`streams`), a
+  moment after the last message, so retransmissions make one update.
+- Once a second, for every connected call, the host counts each kind's RTP packets on the SIP
+  side (`stream-rates`), with each stream's sockets (its RTP channel's local RTP and RTCP
+  endpoints, the stream's destinations, the address the last packet came from, and ICE's
+  nominated pair): sent from RTCP's count (packets that actually went, not ones the session
+  held back), received as they arrive, and how long since the last one arrived.
+- An RTP timeout (no RTP or RTCP for 30 s) and an RTCP BYE are notes on the call. A text line's
+  timeout isn't: text is quiet most of the time. The user agent hangs up on an audio timeout, and
+  the call ends *No audio from them for 30 s* (before, *They hung up*).
+- The rest is the page's: whether the call's held and how (music, or SIP), muted, and what
+  camera or card it sends.
+
+The web softphone has no Streams tab: its host doesn't record the offers and answers (it's the
+browser's), so the tab is taken out there (removed, not hidden, as the bar's fitting shows every
+tab).
 
 ## Call quality (diagnostics mode)
 

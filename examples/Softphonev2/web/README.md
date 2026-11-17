@@ -90,7 +90,7 @@ from the stub or a local server isn't tried against sipsorcery.com.
 
 ## Running it
 
-1. Start the desktop app. Its SIP log starts with "browser phones: connect to ws://…:8081".
+1. Start the desktop app. Its debug log starts with "browser phones: connect to ws://…:8081".
 2. Serve this folder's parent (`examples/Softphonev2`) over HTTP, from the same PC:
 
    ```bash
@@ -142,7 +142,7 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   together): Call and Video call, Answer and Answer with video, Mute / Unmute with the
   *You're muted* pill, Stop video / Start video, the device menus, self view (which you can
   drag, resize from its corner and double-click to reset), ringing, decline, cancel, hang up,
-  the SIP log (F12).
+  the debug log (F12).
 - **Home** with no call: recent calls (Call and Video call on each), the account, Your devices
   and privacy mode. Focusing the address opens the dial view: Your devices at the top, then your
   contacts and recent addresses to pick from. **Your devices** picks the microphone, speaker and
@@ -253,7 +253,7 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
     screen's width, one above the other.
   - **The screen stays on** while a call is calling, ringing or connected (the Screen Wake Lock
     API, any browser that has it, desktops too). A browser drops the lock while the page is
-    hidden; it's asked for again on coming back, and let go when the last call ends. The SIP log
+    hidden; it's asked for again on coming back, and let go when the last call ends. The debug log
     says each.
   - **Keep the page open**: a phone's browser stops the microphone, and soon the page, when you
     switch apps or lock the screen, so the call goes one way or drops, and no web page can stop
