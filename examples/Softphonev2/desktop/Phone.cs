@@ -787,7 +787,7 @@ public sealed class Phone : IDisposable
                     string tried = MediaKind(c);
                     if (toSavp) c.RequireSrtp = true;
                     else { c.WebRtc = !c.WebRtc; switchedKind = true; }
-                    var why = response!.StatusCode == 406 ? response.ReasonPhrase
+                    var why = IsFailedMediaTransport(response!.StatusCode, response.ReasonPhrase) ? response.ReasonPhrase
                         : response.Header.Warning ?? (string.IsNullOrWhiteSpace(response.Body) ? "no reason given" : "their SDP");
                     Log?.Invoke($"they can't take {tried} media ({response.StatusCode}, {why}); calling again with {MediaKind(c)}");
                     rtp.Close("retrying with other media");
@@ -822,8 +822,8 @@ public sealed class Phone : IDisposable
             string said = resp != null ? $"{resp.StatusCode} {resp.ReasonPhrase}" : "";
             failure = resp is { StatusCode: >= 200 and < 300 } ? "Their answer's media doesn't match ours"
                 : resp is { Status: SIPResponseStatusCodesEnum.NotAcceptableHere } ? "They can't take this call's media (488)"
-                : resp is { StatusCode: 406 } && string.Equals(resp.ReasonPhrase?.Trim(), FailedMediaTransport, StringComparison.OrdinalIgnoreCase)
-                    ? "They can't take this call's media (406)"
+                : resp != null && IsFailedMediaTransport(resp.StatusCode, resp.ReasonPhrase)
+                    ? $"They can't take this call's media ({resp.StatusCode})"
                 : resp != null && ringing is { } r && resp.StatusCode is 408 or 480 or 487
                     ? $"Not answered: rang for {(DateTime.Now - r).TotalSeconds:0} s, then the far end said {said}"
                 : resp != null ? $"The far end said {said}" : err;
@@ -856,9 +856,16 @@ public sealed class Phone : IDisposable
     /// codecs. Any other 488 isn't retried.
     /// Also <c>406 Failed creating media transport</c>: what sipsorcery.com's server says when it
     /// can't set up the media our offer asked for (a browser's DTLS-SRTP, or plain RTP to one), so
-    /// the other kind might work. Any other 406 isn't retried.
+    /// the other kind might work. Any other 406 isn't retried. And <c>480 Failed creating media
+    /// transport</c>: what pjsip (MicroSIP) says when its account's media encryption is DTLS-SRTP
+    /// (as it must be to call the web softphone) and the offer is plain RTP or SDES on RTP/SAVP, so
+    /// WebRTC's DTLS-SRTP might work. Any other 480 isn't retried (it's an unanswered call).
     /// </summary>
     private const string FailedMediaTransport = "Failed creating media transport";
+
+    /// <summary>A 406 or 480 "Failed creating media transport": they couldn't set up the media our offer asked for.</summary>
+    private static bool IsFailedMediaTransport(int status, string? reason) =>
+        status is 406 or 480 && string.Equals(reason?.Trim(), FailedMediaTransport, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The kind of media a call offers, for the log.</summary>
     private static string MediaKind(Call c) => c.WebRtc ? "WebRTC" : c.RequireSrtp ? "SRTP (RTP/SAVP)" : "plain RTP";
@@ -870,7 +877,7 @@ public sealed class Phone : IDisposable
 
     private static bool WantsOtherMedia(SIPResponse? resp, bool offeredWebRtc)
     {
-        if (resp is { StatusCode: 406 } && string.Equals(resp.ReasonPhrase?.Trim(), FailedMediaTransport, StringComparison.OrdinalIgnoreCase)) return true;
+        if (resp != null && IsFailedMediaTransport(resp.StatusCode, resp.ReasonPhrase)) return true;
         if (resp is not { Status: SIPResponseStatusCodesEnum.NotAcceptableHere }) return false;
         var warning = resp.Header.Warning;
         if (warning is { } w && System.Text.RegularExpressions.Regex.IsMatch(w, @"(^|,)\s*302\s")) return true;
@@ -1338,7 +1345,8 @@ public sealed class Phone : IDisposable
     }
 
     /// <summary>Why the call to a transfer's target failed, in words, from its response.</summary>
-    private static string TransferFailure(int code, string reason, string who) => code switch
+    private static string TransferFailure(int code, string reason, string who) => (IsFailedMediaTransport(code, reason)
+        ? $"{who}'s phone couldn't take the call" : code switch
     {
         404 or 604 => $"{who} wasn't found",
         486 or 600 => $"{who} is busy",
@@ -1350,7 +1358,7 @@ public sealed class Phone : IDisposable
         488 or 606 => $"{who}'s phone couldn't take the call",
         502 or 503 or 504 => $"{who} couldn't be reached",
         _ => $"the call to {who} failed",
-    } + $" ({code} {reason})".Replace(" )", ")");
+    }) + $" ({code} {reason})".Replace(" )", ")");
 
     /// <summary>
     /// The far end asks us to call someone in their place (a REFER on our call with them). One

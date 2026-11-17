@@ -949,7 +949,12 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
     A 488 with any other Warning (305: the codecs) or an SDP on our own profile isn't retried:
     "They can't take this call's media (488)". `406 Failed creating media transport` is retried
     too, alongside those: it's what sipsorcery.com's server says when it can't set up the media
-    the offer asked for. Any other 406 isn't. The debug log says when it retries, and why
+    the offer asked for. Any other 406 isn't. So is `480 Failed creating media transport`:
+    pjsip's (MicroSIP's) answer when its account's media encryption is DTLS-SRTP, as it must be
+    to call the web softphone, and the offer is plain RTP; it goes straight to WebRTC (not via
+    `RTP/SAVP`, whose SDES keys it would turn down too), and is shown as "They can't take this
+    call's media (480)", not as unanswered, even after ringing. Any other 480 isn't retried. The
+    debug log says when it retries, and why
     ("they can't take plain RTP media (406, Failed creating media transport); calling again with
     WebRTC").
   - **A bare 488 to plain RTP tries SRTP required first.** Our plain RTP offer puts SDES keys
@@ -959,6 +964,11 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
     WebRTC for such a phone, as pjsip (MicroSIP's stack) doesn't do BUNDLE: it answers a WebRTC
     offer with an ICE and DTLS session per m-line, of which our one bundled transport only ever
     completes the first, so the call has audio but no video.
+  - **MicroSIP to call both softphones:** set the account's *Media Encryption* to
+    *DTLS-SRTP/SRTP*. It then takes the web softphone's DTLS-SRTP (a browser gives each m-line
+    its own transport when pjsip doesn't bundle, so video works) and the desktop's SDES keys, so
+    the desktop's call never falls back to WebRTC and has video too. With *DTLS-SRTP* alone it
+    turns the desktop's offer down with the 480 above, and the WebRTC retry has no video.
   - **A contact's *Media*** skips the guessing when you know what their phone takes: the
     contact form's *Media* is *Automatic* (all of the above), *Plain RTP* (`RTP/AVP` with SDES
     keys), *SRTP required* (`RTP/SAVP`) or *WebRTC*. A call to the contact offers just that in
