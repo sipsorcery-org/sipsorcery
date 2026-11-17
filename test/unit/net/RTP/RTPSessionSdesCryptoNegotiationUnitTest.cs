@@ -15,11 +15,13 @@
 //
 // History:
 // 23 May 2026	Claude Code - Opus 4.7	Created.
+// 17 Nov 2026	Claude Code - Opus 5.5	A declined line in an offer is answered without crypto, not refused.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net.UnitTests.Helpers;
@@ -178,11 +180,9 @@ a=sendrecv");
         /// triggers CryptoNegotiationFailed when the port is nonzero.
         /// This characterises the call-hold / rejected-media branch.
         ///
-        /// Note: in the current implementation a subsequent CreateAnswer
-        /// on this session WILL throw (see
-        /// RejectedMediaPortZeroWithoutCrypto_CreateAnswerThrows below).
-        /// SetRemoteDescription itself succeeds though, which is what
-        /// this test pins down.
+        /// A subsequent CreateAnswer declines the line without crypto (see
+        /// RejectedMediaPortZeroWithoutCrypto_AnswerDeclinesWithoutCrypto
+        /// below).
         /// </summary>
         [Fact]
         public void RejectedMediaPortZeroWithoutCrypto_SetRemoteDescriptionReturnsOk()
@@ -212,20 +212,15 @@ a=rtpmap:96 VP8/90000");
         }
 
         /// <summary>
-        /// Companion to the previous test: although
-        /// SetRemoteDescription accepts an SDES-mode offer with a
-        /// port=0 (and crypto-less) video m-line, the current
-        /// CreateAnswer implementation throws ApplicationException
-        /// when it tries to emit the answer for that rejected video
-        /// stream ("Error creating crypto attribute for SDP answer.
-        /// No compatible offer.").
-        ///
-        /// This is observable behaviour worth locking down — a
-        /// refactor that "fixes" CreateAnswer to handle this case
-        /// silently is a behaviour change callers may be relying on.
+        /// Companion to the previous test: the answer to an SDES-mode offer
+        /// with a port=0 (and crypto-less) video m-line declines that line
+        /// with port 0 and no crypto, and keys the audio as usual. (It used
+        /// to throw "Error creating crypto attribute for SDP answer. No
+        /// compatible offer.", so a phone's re-INVITE, MicroSIP's hold say,
+        /// was refused with a 406.)
         /// </summary>
         [Fact]
-        public void RejectedMediaPortZeroWithoutCrypto_CreateAnswerThrows()
+        public void RejectedMediaPortZeroWithoutCrypto_AnswerDeclinesWithoutCrypto()
         {
             using (var session = new RtpSessionBuilder()
                 .WithSdpCryptoNegotiation()
@@ -249,8 +244,61 @@ a=rtpmap:96 VP8/90000");
                 Assert.Equal(SetDescriptionResultEnum.OK,
                     session.SetRemoteDescription(SdpType.offer, offer));
 
-                Assert.Throws<System.ApplicationException>(
-                    () => session.CreateAnswer(IPAddress.Loopback));
+                SDP answer = session.CreateAnswer(IPAddress.Loopback);
+                var audio = answer.Media.Single(m => m.Media == SDPMediaTypesEnum.audio);
+                var video = answer.Media.Single(m => m.Media == SDPMediaTypesEnum.video);
+                Assert.NotEqual(0, audio.Port);
+                Assert.Single(audio.SecurityDescriptions);
+                Assert.Equal(0, video.Port);
+                Assert.Empty(video.SecurityDescriptions);
+            }
+        }
+
+        /// <summary>
+        /// MicroSIP with SRTP mandatory: it declines our real-time text with port 0, then
+        /// puts the call on hold (as it does before an attended transfer) with a re-INVITE
+        /// whose text line is still port 0 and has no crypto. The re-INVITE is answered, with
+        /// the audio's keys kept, rather than refused.
+        /// </summary>
+        [Fact]
+        public void HoldReInviteWithDeclinedTextWithoutCrypto_IsAnswered()
+        {
+            using (var caller = new RtpSessionBuilder()
+                .WithSdpCryptoNegotiation()
+                .WithBindAddress(IPAddress.Loopback)
+                .WithAudioTrack()
+                .WithTrack(new MediaStreamTrack(new TextFormat(TextCodecsEnum.T140, 98)))
+                .Build())
+            {
+                Assert.Equal(2, caller.CreateOffer(IPAddress.Loopback).Media.Count);
+
+                const string crypto = "a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:WVNfX19zZW1jdGwgKCkgewkyMjA7fQp9CnVubGVz|2^20|1:32";
+                SDP Phone(int version, string direction) => SDP.ParseSDPDescription(
+$@"v=0
+o=- 5000 {version} IN IP4 192.0.2.10
+s=-
+c=IN IP4 192.0.2.10
+t=0 0
+m=audio 20030 RTP/SAVP 0
+a=rtpmap:0 PCMU/8000
+{crypto}
+a={direction}
+m=text 0 RTP/SAVP 98
+a=rtpmap:98 t140/1000");
+
+                Assert.Equal(SetDescriptionResultEnum.OK, caller.SetRemoteDescription(SdpType.answer, Phone(1, "sendrecv")));
+                Assert.True(caller.AudioStream.IsSecurityContextReady());
+
+                Assert.Equal(SetDescriptionResultEnum.OK, caller.SetRemoteDescription(SdpType.offer, Phone(2, "sendonly")));
+                SDP answer = caller.CreateAnswer(IPAddress.Loopback);
+
+                var audio = answer.Media.Single(m => m.Media == SDPMediaTypesEnum.audio);
+                var text = answer.Media.Single(m => m.Media == SDPMediaTypesEnum.text);
+                Assert.Equal(MediaStreamStatusEnum.RecvOnly, audio.MediaStreamStatus);
+                Assert.Single(audio.SecurityDescriptions);
+                Assert.Equal(0, text.Port);
+                Assert.Empty(text.SecurityDescriptions);
+                Assert.True(caller.AudioStream.IsSecurityContextReady());
             }
         }
 

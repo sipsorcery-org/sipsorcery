@@ -11,6 +11,7 @@
 // 12 Nov 2026	Claude Code - Opus 5.5	Created.
 // 14 Nov 2026	Claude Code - Opus 5.5	A new far end's keys on a session's next offer, and video on one side only.
 // 17 Nov 2026	Claude Code - Opus 5.5	An answer that leaves out one of our m-lines.
+// 17 Nov 2026	Claude Code - Opus 5.5	A declined video stream a re-offer sets to send and receive.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -519,6 +520,68 @@ a=rtpmap:0 PCMU/8000
             {
                 Assert.Equal(SetDescriptionResultEnum.OK, answerer.SetRemoteDescription(SdpType.offer, offerer.CreateOffer(IPAddress.Loopback)));
                 Assert.Equal(SetDescriptionResultEnum.OK, offerer.SetRemoteDescription(SdpType.answer, answerer.CreateAnswer(IPAddress.Loopback)));
+
+                var atAnswerer = new ConcurrentQueue<byte[]>();
+                var atOfferer = new ConcurrentQueue<byte[]>();
+                answerer.OnRtpPacketReceived += (ep, kind, pkt) => { if (kind == SDPMediaTypesEnum.audio) { atAnswerer.Enqueue(pkt.Payload.ToArray()); } };
+                offerer.OnRtpPacketReceived += (ep, kind, pkt) => { if (kind == SDPMediaTypesEnum.audio) { atOfferer.Enqueue(pkt.Payload.ToArray()); } };
+                await offerer.Start();
+                await answerer.Start();
+
+                var payload = Enumerable.Range(0, 160).Select(i => (byte)i).ToArray();
+                var deadline = DateTime.UtcNow.AddSeconds(3);
+                while ((atAnswerer.IsEmpty || atOfferer.IsEmpty) && DateTime.UtcNow < deadline)
+                {
+                    offerer.SendAudio(160, payload);
+                    answerer.SendAudio(160, payload);
+                    await Task.Delay(20);
+                }
+
+                Assert.False(atAnswerer.IsEmpty, "No audio at the answerer.");
+                Assert.False(atOfferer.IsEmpty, "No audio at the offerer.");
+
+                offerer.Close("done");
+                answerer.Close("done");
+            }
+        }
+
+        /// <summary>
+        /// A video stream we declined (port 0: we have no video) whose local track a later
+        /// re-INVITE sets to send and receive, as the SIP user agent does from the offer's
+        /// direction. It carries nothing, so it mustn't wait for keys: its wait held back all the
+        /// call's received audio. Seen when a softphone put a call on hold with video added (as
+        /// it started a transfer), then took it off hold.
+        /// </summary>
+        [Theory]
+        [InlineData(RtpSecureMediaOptionEnum.SdpCryptoBestEffort)]
+        [InlineData(RtpSecureMediaOptionEnum.SdpCryptoNegotiation)]
+        public async Task Answerer_DeclinedVideoSetSendRecvByReoffer_AudioGetsThroughBothWays(RtpSecureMediaOptionEnum option)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            RtpSessionBuilder Builder(bool video)
+            {
+                var b = new RtpSessionBuilder().WithBindAddress(IPAddress.Loopback).WithAudioTrack();
+                b = option == RtpSecureMediaOptionEnum.SdpCryptoBestEffort ? b.WithSdpCryptoBestEffort() : b.WithSdpCryptoNegotiation();
+                return video ? b.WithVideoTrack() : b;
+            }
+
+            using (var offerer = Builder(true).Build())
+            using (var answerer = Builder(false).Build())
+            {
+                Assert.Equal(SetDescriptionResultEnum.OK, answerer.SetRemoteDescription(SdpType.offer, offerer.CreateOffer(IPAddress.Loopback)));
+                var answer = answerer.CreateAnswer(IPAddress.Loopback);
+                Assert.Equal(0, answer.Media.Single(m => m.Media == SDPMediaTypesEnum.video).Port);
+                Assert.Equal(SetDescriptionResultEnum.OK, offerer.SetRemoteDescription(SdpType.answer, answer));
+
+                // Their re-offer, and the user agent setting each stream's direction from it.
+                Assert.Equal(SetDescriptionResultEnum.OK, answerer.SetRemoteDescription(SdpType.offer, offerer.CreateOffer(IPAddress.Loopback)));
+                answerer.SetMediaStreamStatus(SDPMediaTypesEnum.video, MediaStreamStatusEnum.SendRecv);
+                answer = answerer.CreateAnswer(IPAddress.Loopback);
+                Assert.Equal(0, answer.Media.Single(m => m.Media == SDPMediaTypesEnum.video).Port);
+                Assert.Equal(SetDescriptionResultEnum.OK, offerer.SetRemoteDescription(SdpType.answer, answer));
+
+                Assert.False(answerer.VideoStream.IsAwaitingSecureContext);
 
                 var atAnswerer = new ConcurrentQueue<byte[]>();
                 var atOfferer = new ConcurrentQueue<byte[]>();
