@@ -319,6 +319,26 @@ namespace SIPSorcery.Net
         public event Action<int, IPEndPoint, SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceivedByIndex;
 
         /// <summary>
+        /// Fires when RTP from the remote party starts arriving from an address other than the one
+        /// expected (their SDP's, or ICE's), and the stream switches to sending there: a NAT between
+        /// the parties, most likely. The parameters are the stream's index, its media type, the address
+        /// it was sending to, and the one it now sends to. Only fires for a switch the stream accepts
+        /// (see <see cref="AcceptRtpFromAny"/>); RTP from an address that's turned away is only logged.
+        /// </summary>
+        public event Action<int, SDPMediaTypesEnum, IPEndPoint, IPEndPoint> OnRtpEndPointSwitchedByIndex;
+
+        /// <summary>
+        /// The SRTP packets on this stream that couldn't be unprotected, by why (the keys differ, or a
+        /// replay). Zero for a stream without SRTP.
+        /// </summary>
+        public SrtpErrorCounts SrtpErrors { get; } = new SrtpErrorCounts();
+
+        /// <summary>
+        /// The SRTCP packets for this stream that couldn't be unprotected, by why.
+        /// </summary>
+        public SrtpErrorCounts SrtcpErrors { get; } = new SrtpErrorCounts();
+
+        /// <summary>
         /// Gets fired when an RTP Header packet is received from a remote party.
         /// Parameters are:
         ///  - index of the AudioStream or VideoStream
@@ -626,6 +646,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
+                    SrtpErrors.Record(res);
                     logger.LogWarning("SRTP unprotect failed for {MediaType}, result {Result}.", MediaType, res);
                 }
             }
@@ -1749,6 +1770,15 @@ namespace SIPSorcery.Net
                 else
                 {
                     ControlDestinationEndPoint = new IPEndPoint(DestinationEndPoint.Address, DestinationEndPoint.Port + 1);
+                }
+
+                try
+                {
+                    OnRtpEndPointSwitchedByIndex?.Invoke(Index, MediaType, expectedEndPoint, receivedOnEndPoint);
+                }
+                catch (Exception excp)
+                {
+                    logger.LogWarning(excp, "Exception in an OnRtpEndPointSwitchedByIndex handler. {ErrorMessage}", excp.Message);
                 }
 
                 isValidSource = true;

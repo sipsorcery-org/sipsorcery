@@ -627,6 +627,14 @@ namespace SIPSorcery.Net
         public event Action<int, SDPMediaTypesEnum> OnTimeoutByIndex;
 
         /// <summary>
+        /// Fires when a stream's RTP from the remote party starts arriving from an address other than the
+        /// one expected, and the stream switches to sending there (a NAT between the parties, most likely).
+        /// The parameters are the stream's index, its media type, the old address and the new one. See
+        /// <see cref="MediaStream.OnRtpEndPointSwitchedByIndex"/>.
+        /// </summary>
+        public event Action<int, SDPMediaTypesEnum, IPEndPoint, IPEndPoint> OnRtpEndPointSwitched;
+
+        /// <summary>
         /// Gets fired when an RTCP report is received (the primary one). This event is for diagnostics only.
         /// </summary>
         public event Action<IPEndPoint, SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReport;
@@ -773,6 +781,7 @@ namespace SIPSorcery.Net
             if (mediaStream.CreateRtcpSession(Cname))
             {
                 mediaStream.OnTimeoutByIndex += RaiseOnTimeOut;
+                mediaStream.OnRtpEndPointSwitchedByIndex += RaiseOnRtpEndPointSwitched;
                 mediaStream.OnSendReportByIndex += RaiseOnSendReport;
                 mediaStream.OnRtpEventByIndex += RaisedOnRtpEvent;
                 mediaStream.OnRtpPacketReceivedByIndex += RaisedOnRtpPacketReceived;
@@ -817,6 +826,7 @@ namespace SIPSorcery.Net
             if (mediaStream.RtcpSession != null)
             {
                 mediaStream.OnTimeoutByIndex -= RaiseOnTimeOut;
+                mediaStream.OnRtpEndPointSwitchedByIndex -= RaiseOnRtpEndPointSwitched;
                 mediaStream.OnSendReportByIndex -= RaiseOnSendReport;
                 mediaStream.OnRtpEventByIndex -= RaisedOnRtpEvent;
                 mediaStream.OnRtpPacketReceivedByIndex -= RaisedOnRtpPacketReceived;
@@ -852,6 +862,11 @@ namespace SIPSorcery.Net
                 mediaStream.RtcpSession?.Close(reason);
                 mediaStream.RtcpSession = null;
             }
+        }
+
+        private void RaiseOnRtpEndPointSwitched(int index, SDPMediaTypesEnum media, IPEndPoint from, IPEndPoint to)
+        {
+            OnRtpEndPointSwitched?.Invoke(index, media, from, to);
         }
 
         private void RaiseOnTimeOut(int index, SDPMediaTypesEnum media)
@@ -3006,6 +3021,7 @@ namespace SIPSorcery.Net
                 int res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out int outBufLen);
                 if (res != 0)
                 {
+                    (mediaStream ?? PrimaryStream)?.SrtcpErrors.Record(res);
                     logger.LogWarning("SRTCP unprotect failed for {MediaType} track, result {Result}.", PrimaryStream.MediaType, res);
                     return;
                 }

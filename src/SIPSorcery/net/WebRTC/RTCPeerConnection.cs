@@ -444,6 +444,43 @@ namespace SIPSorcery.Net
         public event Action<RTCPeerConnectionState> onconnectionstatechange;
 
         /// <summary>
+        /// Fires when the DTLS transport changes state: connecting as the handshake starts (ICE has connected),
+        /// then connected, failed or closed. The info says our role, the SRTP protection profile agreed, and why
+        /// it failed: the handshake's error, its last alert, or both fingerprints when the remote certificate
+        /// didn't match their SDP. <see cref="onconnectionstatechange"/> says failed for an ICE failure as well;
+        /// this one is only DTLS's.
+        /// </summary>
+        public event Action<RTCDtlsTransportInfo> ondtlsstatechange;
+
+        /// <summary>
+        /// The DTLS transport's state, and what's known about it (see <see cref="ondtlsstatechange"/>).
+        /// </summary>
+        public RTCDtlsTransportInfo DtlsTransportInfo { get; private set; } = new RTCDtlsTransportInfo(RTCDtlsTransportState.@new, false);
+
+        /// <summary>The DTLS transport's state.</summary>
+        public RTCDtlsTransportState dtlsState => DtlsTransportInfo.State;
+
+        private void SetDtlsState(DtlsSrtpTransport dtlsHandle, RTCDtlsTransportState state, string reason = null, string remoteFingerprint = null)
+        {
+            var info = new RTCDtlsTransportInfo(state,
+                dtlsHandle?.IsClient ?? IceRole == IceRolesEnum.active,
+                dtlsHandle?.SrtpProtectionProfileName,
+                reason,
+                dtlsHandle?.LastAlert,
+                RemotePeerDtlsFingerprint?.ToString(),
+                remoteFingerprint);
+            DtlsTransportInfo = info;
+            try
+            {
+                ondtlsstatechange?.Invoke(info);
+            }
+            catch (Exception excp)
+            {
+                logger.LogWarning(excp, "Exception in an ondtlsstatechange handler. {ErrorMessage}", excp.Message);
+            }
+        }
+
+        /// <summary>
         /// Fires when a new data channel is created by the remote peer.
         /// </summary>
         public event Action<RTCDataChannel> ondatachannel;
@@ -696,6 +733,7 @@ namespace SIPSorcery.Net
                     }
 
                     logger.LogDebug("Starting DTLS handshake with role {IceRole}.", IceRole);
+                    SetDtlsState(dtlsHandle, RTCDtlsTransportState.connecting);
 
                     try
                     {
@@ -717,6 +755,10 @@ namespace SIPSorcery.Net
                     catch (Exception excp)
                     {
                         logger.LogWarning(excp, "RTCPeerConnection DTLS handshake failed. {ErrorMessage}", excp.Message);
+                        if (dtlsState == RTCDtlsTransportState.connecting)
+                        {
+                            SetDtlsState(dtlsHandle, RTCDtlsTransportState.failed, excp.Message);
+                        }
 
                         //connectionState = RTCPeerConnectionState.failed;
                         //onconnectionstatechange?.Invoke(connectionState);
@@ -1123,6 +1165,12 @@ namespace SIPSorcery.Net
 
                 _rtpIceChannel?.Close();
                 _dtlsHandle?.Close();
+
+                // A transport that got going closes with the connection; one that failed stays failed.
+                if (dtlsState == RTCDtlsTransportState.connecting || dtlsState == RTCDtlsTransportState.connected)
+                {
+                    SetDtlsState(_dtlsHandle, RTCDtlsTransportState.closed, reason, DtlsTransportInfo.RemoteFingerprint);
+                }
 
                 sctp?.Close();
 
@@ -2228,6 +2276,7 @@ namespace SIPSorcery.Net
             {
                 handshakeError = handshakeError ?? "unknown";
                 logger.LogWarning("RTCPeerConnection DTLS handshake failed with error {HandshakeError}.", handshakeError);
+                SetDtlsState(dtlsHandle, RTCDtlsTransportState.failed, handshakeError);
                 Close("dtls handshake failed");
                 return false;
             }
@@ -2242,6 +2291,7 @@ namespace SIPSorcery.Net
                 if (!string.Equals(remoteFingerprint.value, expectedFp.value, StringComparison.OrdinalIgnoreCase))
                 {
                     logger.LogWarning("RTCPeerConnection remote certificate fingerprint mismatch, expected {ExpectedFingerprint}, actual {RemoteFingerprint}.", expectedFp, remoteFingerprint);
+                    SetDtlsState(dtlsHandle, RTCDtlsTransportState.failed, "fingerprint mismatch", remoteFingerprint.ToString());
                     Close("dtls fingerprint mismatch");
                     return false;
                 }
@@ -2256,6 +2306,7 @@ namespace SIPSorcery.Net
 
 
                     IsDtlsNegotiationComplete = true;
+                    SetDtlsState(dtlsHandle, RTCDtlsTransportState.connected, null, remoteFingerprint.ToString());
 
                     return true;
                 }

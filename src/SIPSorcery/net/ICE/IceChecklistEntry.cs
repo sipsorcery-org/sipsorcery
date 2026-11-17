@@ -253,12 +253,39 @@ namespace SIPSorcery.Net
         public DateTime UnansweredSince { get; set; } = DateTime.MinValue;
 
         /// <summary>
+        /// Every connectivity check sent on this entry, the periodic ones on a nominated entry
+        /// included. Unlike <see cref="ChecksSent"/>, which goes back to zero when a check is
+        /// answered, this only ever counts up. For diagnostics.
+        /// </summary>
+        public int TotalChecksSent { get; private set; }
+
+        /// <summary>
+        /// The success responses received to our connectivity checks on this entry. For diagnostics.
+        /// </summary>
+        public int ResponsesReceived { get; private set; }
+
+        /// <summary>
+        /// The connectivity checks (binding requests) the remote peer has sent on this entry. For
+        /// diagnostics: checks arriving with none of ours answered points at a firewall on our side
+        /// of the path, or theirs letting nothing in.
+        /// </summary>
+        public int BindingRequestsReceived { get; internal set; }
+
+        /// <summary>
+        /// The round trip time of the most recent connectivity check on this entry to be answered,
+        /// or null if none has been. Only a response to the latest check counts, so a late answer to
+        /// an earlier check (which would be timed from the wrong send) is not measured.
+        /// </summary>
+        public TimeSpan? RoundTripTime { get; private set; }
+
+        /// <summary>
         /// Records a check sent on this entry: <see cref="LastCheckSentAt"/>, and
         /// <see cref="UnansweredSince"/> unless a check is already outstanding.
         /// </summary>
         internal void MarkCheckSent()
         {
             var now = DateTime.Now;
+            TotalChecksSent++;
             if (UnansweredSince == DateTime.MinValue || LastResponseAt >= UnansweredSince)
             {
                 UnansweredSince = now;
@@ -356,6 +383,13 @@ namespace SIPSorcery.Net
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
             {
                 LastResponseAt = DateTime.Now;
+                ResponsesReceived++;
+
+                if (LastCheckSentAt != DateTime.MinValue && stunResponse.Header.TransactionId != null &&
+                    Encoding.ASCII.GetString(stunResponse.Header.TransactionId) == RequestTransactionID)
+                {
+                    RoundTripTime = LastResponseAt - LastCheckSentAt;
+                }
 
                 if (Nominated)
                 {

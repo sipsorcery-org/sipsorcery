@@ -32,8 +32,12 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
         public Certificate PeerCertificate { get; private set;  }
         public DatagramTransport ClientDatagramTransport { get; private set; }
 
-        public DtlsSessionStartedEventArgs(SrtpSessionContext context, Certificate peerCertificate, DatagramTransport clientDatagramTransport)
+        /// <summary>The SRTP protection profile the handshake agreed (one of <see cref="SrtpProtectionProfile"/>'s), or -1.</summary>
+        public int ProtectionProfile { get; private set; }
+
+        public DtlsSessionStartedEventArgs(SrtpSessionContext context, Certificate peerCertificate, DatagramTransport clientDatagramTransport, int protectionProfile = -1)
         {
+            this.ProtectionProfile = protectionProfile;
             this.Context = context ?? throw new ArgumentNullException(nameof(context));
             this.PeerCertificate = peerCertificate ?? throw new ArgumentNullException(nameof(peerCertificate));
             this.ClientDatagramTransport = clientDatagramTransport ?? throw new ArgumentNullException(nameof(clientDatagramTransport));
