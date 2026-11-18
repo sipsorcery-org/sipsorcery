@@ -159,6 +159,8 @@ export function transferNotices(open) {
       continue;
     }
     if (t.status === "offered") continue;
+    // Theirs, and you declined it: nothing to say (you know, and the call goes on as it was).
+    if (t.role === "in" && t.status === "declined" && t.reason === "you declined it") continue;
     const dismiss = () => post({ type: "transfer-dismiss", id });
     const failed = t.status === "failed";
     outcomes.push({
