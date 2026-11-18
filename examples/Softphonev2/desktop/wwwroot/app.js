@@ -1154,8 +1154,22 @@ function pushOutcome(o) {
   outcomes.push({ ...o, at, until: o.action ? null : at + OUTCOME_MS });
   render();
 }
+// Away (the window in the background, or no mouse or keys for IDLE_MS): the outcomes' clocks
+// stop, so one isn't gone before you've seen it; back, the call bar's notice pulses once more.
+const IDLE_MS = 15000;
+let lastInput = Date.now(), lastTick = Date.now(), wasAway = false;
+for (const t of ["pointermove", "pointerdown", "keydown", "wheel"]) window.addEventListener(t, () => { lastInput = Date.now(); }, { passive: true, capture: true });
 setInterval(() => {
-  if (noticesHeldAt != null) return;
+  const tickNow = Date.now(), step = tickNow - lastTick;
+  lastTick = tickNow;
+  const away = document.hidden || !document.hasFocus() || tickNow - lastInput > IDLE_MS;
+  if (away) { for (const o of outcomes) if (o.until) o.until += step; }
+  else if (wasAway && !$("headEnded").hidden) {
+    const b = $("headEnded");
+    b.classList.remove("again"); void b.offsetWidth; b.classList.add("again");
+  }
+  wasAway = away;
+  if (away || noticesHeldAt != null) return;
   const now = Date.now(), n = outcomes.length;
   for (let j = outcomes.length - 1; j >= 0; j--) if (outcomes[j].until && outcomes[j].until <= now) outcomes.splice(j, 1);
   if (outcomes.length !== n) render();
@@ -1335,6 +1349,10 @@ function renderHeadEnded() {
   box.title = o.whoTitle ?? "";
   box.dataset.tone = o.tone ?? "";
   $("headEndedX").onclick = () => dropOutcome(o.key);
+  const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
+  $("headEndedDiag").hidden = !saved;
+  $("headEndedDiag").title = saved ? "Open this call's saved diagnostics" : "";
+  $("headEndedDiag").onclick = saved ? () => openSnapshot(saved.entryId, saved.name) : null;
 }
 $("headEndedX").innerHTML = ICON.close;
 $("headEnded").addEventListener("mouseenter", () => { noticesHeldAt = Date.now(); });

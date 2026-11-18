@@ -306,18 +306,32 @@ body:not(.diag) .diag-only { display: none; }
 .call-head[hidden] { display: none; }
 /* A call that ended on you, at the right of the bar (app.js renderHeadEnded); with no call on
    the stage, the bar holds only that, and Home starts under it. */
-.head-ended { flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 60%; font-size: 13px; color: var(--muted); animation: head-ended-in .2s ease-out; }
+/* Between info and warning: amber, a pill, two soft pulses as it comes (and one more when you
+   come back from being away), then still, so it catches the eye of someone idle without
+   pulling at someone busy. Red if the call failed or dropped. */
+.head-ended {
+  flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 70%;
+  height: 28px; padding: 0 2px 0 10px; border-radius: 999px; font-size: 13px;
+  background: var(--warn-bg); color: var(--warn-ink); border: 1px solid color-mix(in srgb, var(--warn-ink) 35%, transparent);
+  --glow: color-mix(in srgb, var(--warn-ink) 45%, transparent);
+  animation: head-ended-in .2s ease-out, head-ended-glow 1.4s ease-out .2s 2;
+}
+.head-ended.again { animation: head-ended-glow 1.4s ease-out 1; }
 .head-ended[hidden] { display: none; }
-.head-ended[data-tone="bad"] { color: var(--danger); }
+.head-ended[data-tone="bad"] { background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border); --glow: color-mix(in srgb, var(--danger) 40%, transparent); }
+@keyframes head-ended-glow { 0% { box-shadow: 0 0 0 0 var(--glow); } 100% { box-shadow: 0 0 0 8px transparent; } }
+@media (prefers-reduced-motion: reduce) { .head-ended, .head-ended.again { animation: none; } }
+/* Diagnostics, once saved: it comes a moment after the notice, so it fades in. */
+.head-ended .head-ended-diag { flex: none; font-size: 12.5px; color: inherit; font-weight: 600; animation: head-ended-in .3s ease-out; }
+.head-ended .head-ended-diag[hidden] { display: none; }
 .head-ended-icon { display: grid; }
 .head-ended-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .head-ended-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
-.head-ended-x { width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
-.head-ended-x:hover { background: var(--surface-2); color: var(--text); }
+.head-ended-x { flex: none; width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 999px; background: none; color: inherit; cursor: pointer; }
+.head-ended-x:hover { background: color-mix(in srgb, currentColor 14%, transparent); }
 .head-ended-x svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .call-head.ended-only > :not(.head-ended) { display: none; }
-.call-head.ended-only .head-ended { margin-left: 0; max-width: none; flex: 1 1 auto; }
-.call-head.ended-only .head-ended-x { margin-left: auto; }
+.call-head.ended-only .head-ended { margin-left: 0; max-width: 100%; }
 .stage.head .home, .stage.head .card { top: var(--head-h); }
 @keyframes head-ended-in { from { opacity: 0; transform: translateY(-4px); } }
 .stage.head .remote { top: var(--head-h); height: calc(100% - var(--head-h)); }
