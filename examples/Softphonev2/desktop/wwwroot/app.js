@@ -1346,13 +1346,42 @@ function fillNotice(p, it, many) {
 // A call that ended on you, in the bar at the top of the stage where the call's padlock, name
 // and timer are: at its right over the call you're back on, or the bar on its own (Home, or a
 // call's card). The latest one; × closes it, and it goes by itself as the notices' outcomes do.
+// Going, it fades out over HEAD_CLOSE_MS; the bar on its own (over Home) closes up as it does,
+// Home sliding up under it, rather than jumping.
+const HEAD_CLOSE_MS = 500;
+let headClosing = null;   // the timer that hides it once it's faded
 function renderHeadEnded() {
   const o = inGrid() ? null : outcomes.findLast((x) => x.head);
-  const box = $("headEnded"), info = $("info"), connected = sel()?.h.call === "connected";
+  const box = $("headEnded"), info = $("info"), stage = $("stage"), connected = sel()?.h.call === "connected";
+  if (!o && !box.hidden) {
+    if (!headClosing) {
+      box.classList.add("closing");
+      if (info.classList.contains("ended-only") && !connected) { info.classList.add("closing"); stage.classList.add("head-closing"); }
+      headClosing = setTimeout(() => {
+        headClosing = null;
+        box.hidden = true;
+        box.classList.remove("closing");
+        info.classList.remove("closing", "ended-only");
+        stage.classList.remove("head-closing");
+        render();
+      }, HEAD_CLOSE_MS);
+    }
+    // Closing: the bar stays while it closes up (render() has just hidden it, and dropped the
+    // stage's head, which is what closes it up).
+    if (info.classList.contains("ended-only") && !connected) { info.hidden = false; stage.classList.remove("head"); }
+    return;
+  }
+  if (o && headClosing) {
+    clearTimeout(headClosing);
+    headClosing = null;
+    box.classList.remove("closing");
+    info.classList.remove("closing");
+    stage.classList.remove("head-closing");
+  }
   box.hidden = !o;
   info.classList.toggle("ended-only", !!o && !connected);
   if (!connected) info.hidden = !o;
-  $("stage").classList.toggle("head", connected || !!o);
+  stage.classList.toggle("head", connected || !!o);
   if (!o) return;
   if (box.dataset.key !== o.key) { $("headEndedIcon").innerHTML = o.icon ?? ""; box.dataset.key = o.key; }
   $("headEndedText").textContent = o.text ?? `${o.who} · ${o.what}`;

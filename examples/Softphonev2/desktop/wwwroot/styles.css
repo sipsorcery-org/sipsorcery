@@ -296,7 +296,11 @@ body:not(.diag) .diag-only { display: none; }
    where people look for who it's with (a phone's call screen, an email's From line). On one
    line: who, how long, and a red mic while you're muted. The stage's layers start below it
    (--head-h), so it never covers their video; in Grid view each tile has its own name instead. */
+/* Registered, so it can be animated: the call bar on its own over Home closes up (app.js
+   renderHeadEnded), Home sliding up under it. */
+@property --head-h { syntax: "<length>"; inherits: true; initial-value: 0px; }
 .stage { --head-h: 0px; }
+.stage.head-closing { transition: --head-h .5s ease; }
 .stage.head:not(.grid) { --head-h: 40px; }
 .call-head {
   position: absolute; left: 0; right: 0; top: 0; height: var(--head-h); z-index: 4;
@@ -317,8 +321,11 @@ body:not(.diag) .diag-only { display: none; }
   animation: head-ended-in .2s ease-out, head-ended-glow 1.4s ease-out .2s 2;
 }
 .head-ended.again { animation: head-ended-glow 1.4s ease-out 1; }
-/* Its fade out (app.js fadeHeadEnded sets the opacity every quarter second). */
+/* Its fade out (app.js fadeHeadEnded sets the opacity every quarter second), and the last of
+   it when it goes (its × too), over half a second, the bar with it if that's all there is. */
 .head-ended { transition: opacity .25s linear; }
+.head-ended.closing { opacity: 0 !important; transition: opacity .5s ease; }
+.call-head.closing { opacity: 0; transition: opacity .5s ease; }
 .head-ended[hidden] { display: none; }
 .head-ended[data-tone="bad"] { background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border); --glow: color-mix(in srgb, var(--danger) 40%, transparent); }
 @keyframes head-ended-glow { 0% { box-shadow: 0 0 0 0 var(--glow); } 100% { box-shadow: 0 0 0 8px transparent; } }
@@ -334,7 +341,7 @@ body:not(.diag) .diag-only { display: none; }
 .head-ended-x svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .call-head.ended-only > :not(.head-ended) { display: none; }
 .call-head.ended-only .head-ended { margin-left: 0; max-width: 100%; }
-.stage.head .home, .stage.head .card { top: var(--head-h); }
+.stage .home, .stage .card { top: var(--head-h); }   /* 0 without the bar; follows it as it closes up */
 @keyframes head-ended-in { from { opacity: 0; transform: translateY(-4px); } }
 .stage.head .remote { top: var(--head-h); height: calc(100% - var(--head-h)); }
 .stage.head .nocam, .stage.head .audio-view { top: var(--head-h); }
