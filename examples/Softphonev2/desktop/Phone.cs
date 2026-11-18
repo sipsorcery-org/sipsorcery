@@ -1662,10 +1662,19 @@ public sealed class Phone : IDisposable
         if (cancelNow) try { uac.Cancel(); } catch (Exception ex) { Log?.Invoke($"call {c.Id}: cancelling the call to the transfer's target: {ex.Message}"); }
     }
 
+    /// <summary>
+    /// The note on a transfer that's over goes after a few seconds, but not one that failed (one
+    /// you cancelled isn't a failure): that stays until it's closed (or, ours, until Resume).
+    /// </summary>
     private async Task ClearTransferLater(Call c, TransferInfo t)
     {
         await Task.Delay(TransferNoteMs);
-        lock (_lock) { if (c.Transfer != t || t.Status is "asking" or "calling") return; c.Transfer = null; }
+        lock (_lock)
+        {
+            if (c.Transfer != t || t.Status is "asking" or "calling") return;
+            if (t.Status == "failed" && t.Reason != "you cancelled it") return;
+            c.Transfer = null;
+        }
         Changed?.Invoke();
     }
 
