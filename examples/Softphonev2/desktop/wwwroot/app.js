@@ -747,8 +747,8 @@ export function render() {
     const holdText = state.held ? `On hold · ${fmtElapsed(Date.now() - e.heldAt)}` : state.heldByThem ? `${name} put you on hold` : "";
     $("heldText").textContent = xs ? xs.text : holdText;
     $("heldText").title = xs?.title ?? "";
-    $("heldSub").hidden = !(xs && holdText) && !pointing;
-    $("heldSub").textContent = xs ? holdText : pointing ? "Resume is below (H)" : "";
+    $("heldSub").hidden = !(xs && holdText);
+    $("heldSub").textContent = xs ? holdText : "";
     heldNote.classList.toggle("long", long);
     heldNote.classList.toggle("busy", !!xs);
     $("heldCancel").hidden = !xs?.cancel;
