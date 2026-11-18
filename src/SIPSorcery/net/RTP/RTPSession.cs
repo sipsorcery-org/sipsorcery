@@ -1414,6 +1414,14 @@ namespace SIPSorcery.Net
                             // capability list or changing an existing stream's runtime state.
                             _fecPayloadTypes.RecordNegotiatedFormats(currentMediaStream, capabilities, rtpSessionConfig.IsMediaMultiplexed);
                         }
+
+                        // If we made the offer, note the telephone-event payload ID we advertised before the
+                        // local capabilities are replaced with the negotiated ones (which carry the answerer's IDs).
+                        // RFC 3264 has the answerer send its RTP events to us on the payload ID we offered.
+                        var offeredRtpEventFormat = sdpType == SdpType.answer && currentMediaStream.MediaType == SDPMediaTypesEnum.audio
+                            ? SDPAudioVideoMediaFormat.GetFormatForName(currentMediaStream.LocalTrack.Capabilities, SDP.TELEPHONE_EVENT_ATTRIBUTE)
+                            : SDPAudioVideoMediaFormat.Empty;
+
                         currentMediaStream.LocalTrack.Capabilities = capabilities;
                         currentMediaStream.RemoteTrack.Capabilities = capabilities;
 
@@ -1450,6 +1458,15 @@ namespace SIPSorcery.Net
                                 currentMediaStream.LocalTrack.Capabilities.RemoveAll(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
                                 currentMediaStream.LocalTrack.Capabilities.Add(commonEventFormat);
                             }
+
+                            // Also accept RTP events on the payload ID we offered when the answer used a different one,
+                            // unless the answer uses that ID for another negotiated format.
+                            currentMediaStream.OfferedRtpEventPayloadID =
+                                !offeredRtpEventFormat.IsEmpty() &&
+                                offeredRtpEventFormat.ID != currentMediaStream.NegotiatedRtpEventPayloadID &&
+                                !capabilities.Any(x => x.ID == offeredRtpEventFormat.ID)
+                                    ? offeredRtpEventFormat.ID
+                                    : 0;
                         }
 
                         IPEndPoint remoteRtpEP = GetAnnouncementRTPDestination(announcement, connectionAddress);
