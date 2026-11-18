@@ -6,6 +6,7 @@ import { contactMarkEl } from "./contactmark.js";
 import { contactFor } from "./contacts.js";
 import { closeMenu, openMenu, showMenu } from "./menus.js";
 import { openLine } from "./rtt.js";
+import { tonesStatus } from "./tonesin.js";
 import { transferShort } from "./transfer.js";
 import { $, ICON, escHtml, initial, log, post } from "./util.js";
 import { sourceAvailable, sourceOf } from "./video.js";
@@ -65,6 +66,7 @@ export function callStatus(e) {
     } else if (h.heldByThem) c.statusText = `${nameOf(e)} put you on hold`;
     else if (c.typing) c.statusText = "Typing…";
     else if (c.unread) c.statusText = e.text.lines.findLast((l) => !l.me)?.text || "New message";
+    else if (tonesStatus(e)) c.statusText = tonesStatus(e);   // keys they pressed (DTMF) you haven't seen: "Pressed 4 1 2"
     else c.statusText = c.audioOff ? "Audio off" : c.muted ? "Muted" : m.hasVideo ? "Video call" : "Audio call";
     // What they get from you, at a glance: your mic and camera, or why not.
     const held = holdState(e), music = h.holdMode !== "sip";

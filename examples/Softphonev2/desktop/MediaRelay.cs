@@ -231,10 +231,14 @@ public sealed class MediaRelay : IDisposable
     /// True once both SIP ends have agreed on video: we have video codecs of our own, and their
     /// SDP has a video line that isn't turned down (port 0). A session can have a video stream
     /// without either: SIPSorcery makes one, with an inactive local track, for any m=video it's
-    /// offered.
+    /// offered. Nor is video agreed on a stream with no RTP channel (on a SIP call, not WebRTC's
+    /// bundled one): that's one we answered with port 0. Its track isn't always inactive: a
+    /// re-INVITE sets it to their direction (they put the call on hold with video added, which
+    /// we declined, then took it off hold), and video sent on it went nowhere.
     /// </summary>
     public static bool HasNegotiatedVideo(RTPSession rtp) =>
         rtp.HasVideo && rtp.VideoLocalTrack is { StreamStatus: not MediaStreamStatusEnum.Inactive } &&
+        (rtp is RTCPeerConnection || rtp.VideoStream.HasRtpChannel()) &&
         rtp.RemoteDescription?.Media.Any(m => m.Media == SDPMediaTypesEnum.video && m.Port != 0) == true &&
         Negotiated(rtp.VideoStream).HasValue;
 

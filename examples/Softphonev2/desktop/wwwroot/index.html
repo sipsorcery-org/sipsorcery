@@ -102,6 +102,9 @@
       <div class="call-info call-head" id="info" hidden>
         <button type="button" class="info-lock" id="infoLock" hidden></button>
         <div class="info-text info-line"><span class="info-contact" id="infoContact" hidden></span><span class="info-name" id="infoName"></span><span class="info-addr" id="infoAddr" hidden></span><span class="timer" id="timer"></span><span class="muted-pill" id="mutedPill" hidden></span></div>
+        <!-- New keys (DTMF) or text on this call that you haven't seen: an alert each, with a link
+             that opens the keypad or the text panel (tonesin.js). -->
+        <div class="head-alerts" id="headAlerts" role="status" hidden></div>
       </div>
       <!-- The call's security, under the padlock (app.js, "renderSecurity"): in plain words, with
            the technical names small. -->
@@ -190,7 +193,8 @@
         </div>
         <div class="dtmf-display" id="keypadDigits" role="status" aria-label="Tones sent"></div>
         <div class="keypad" id="keypadKeys"></div>
-        <div class="keypad-in" id="keypadIn" role="status"></div>
+        <!-- The keys they've pressed on this call (tonesin.js). -->
+        <div class="keypad-in" id="keypadIn" role="img"></div>
       </aside>
 
       <!-- Real-time text (RFC 4103): in the dock, under the keypad if that's open too. Esc or its

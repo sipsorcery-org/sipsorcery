@@ -9,7 +9,8 @@
 // It reads the record Streams keeps for the call (streams.js): the host's offers and answers, its
 // SIP messages, the media layers' events and facts (StreamLog.cs, Phone.cs), and the RTP counts
 // each second. The relay to this page is left out: it's a loopback connection that's known to
-// work. The desktop only, as Streams.
+// work. The web softphone's host sends the same record (web/conndiag.js), from SIP.js and the
+// browser's getStats(); there the page's own connection is the media leg.
 
 import { entries, selectedId } from "./app.js";
 import { snap } from "./snapshots.js";

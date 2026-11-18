@@ -612,6 +612,8 @@ internal sealed class MainForm : Form
         facts = v.Facts,
         // The SIP ladder tab's (sipladder.js): every message of the call, whole.
         wire = WireOf(v.Wire),
+        // Keypad tones each way, for the Streams tab's timeline (streams.js).
+        tones = v.Tones.Select(t => new { at = PageTime(t.At), t.Out, t.Digit, t.Via, t.Held }),
     };
 
     private void Post(object message)

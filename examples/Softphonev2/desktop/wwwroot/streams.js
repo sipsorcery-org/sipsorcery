@@ -13,6 +13,8 @@
 // a `streams` message whenever they change) and counts the SIP side's RTP packets every second
 // (`stream-rates`). Live calls only, like Call details and Call quality: as a call ends its streams
 // are saved with its history entry (snapshots.js), and shown from there, from its row in Recent.
+// The web softphone's host sends the same two messages (web/conndiag.js), from SIP.js and the
+// browser's getStats(); there the page's own connection is the media leg, and nothing's saved.
 
 import { entries, holdState, selectedId } from "./app.js";
 import { renderConnection } from "./connection.js";
@@ -56,7 +58,7 @@ function rec(id) {
   let r = recs.get(id);
   if (!r) {
     r = { id, names: [], startedAt: Date.now(), connectedAt: 0, endedAt: 0, reason: null, exchanges: [], streams: [], notes: [],
-      rates: {}, quietSince: {}, lanes: {}, marks: [], held: false, heldByThem: false, holdMode: null, sip: [], events: [], facts: {}, wire: [] };
+      rates: {}, quietSince: {}, lanes: {}, marks: [], held: false, heldByThem: false, holdMode: null, sip: [], events: [], facts: {}, wire: [], tones: [] };
     recs.set(id, r);
   }
   return r;
@@ -78,6 +80,8 @@ export function onStreams(msg) {
   r.facts = msg.facts ?? {};
   // For the SIP ladder (sipladder.js): every SIP message of the call, whole.
   r.wire = msg.wire ?? [];
+  // Keypad tones (DTMF) each way: { at, out, digit, via, held }, on the timeline's audio lanes.
+  r.tones = msg.tones ?? [];
   if (r.exchanges[0] && r.exchanges[0].at < r.startedAt) r.startedAt = r.exchanges[0].at;
   scheduleRender();
 }
@@ -104,7 +108,7 @@ export function onStreamRates(msg) {
 
 // The host's calls (each state message): who each is with, whether it's held, and when it ended.
 export function noteStreamCalls(hostCalls) {
-  if (!$("paneStreams")) return;   // the web softphone
+  if (!$("paneStreams") && !$("paneConn")) return;
   const now = Date.now();
   const listed = new Set();
   for (const h of hostCalls) {
@@ -444,13 +448,47 @@ function nowHtml(r) {
       + `<td>${dir(s.ours, chg.ours.has(s.index))}</td><td>${dir(s.theirs, chg.theirs.has(s.index))}</td>${flow}</tr>`;
   }).join("");
   const anyChg = chg.ours.size || chg.theirs.size;
+  // Keypad tones (DTMF), each way: the digits, and how they went.
+  const keys = (out) => {
+    const list = (r.tones ?? []).filter((t) => !!t.out === out);
+    if (!list.length) return "";
+    const vias = [...new Set(list.map((t) => t.via).filter(Boolean))].join(", ");
+    const digits = list.slice(-24).map((t) => t.digit).join("");
+    return `${out ? "↑ sent" : "↓ received"} <span class="sx-keys">${list.length > 24 ? "…" : ""}${esc(digits)}</span>${vias ? ` (${esc(vias)})` : ""}`;
+  };
+  const tonesLine = [keys(false), keys(true)].filter(Boolean).join(" · ");
   const foot = [
     anyChg ? "Shaded directions changed in the last offer/answer." : "",
     last ? `From offer/answer ${last.n} of ${r.exchanges.length} (${esc(last.label)}).` : "",
-    r.endedAt ? "Ended, so nothing's flowing: the Timeline has how it went." : "↑ and ↓ are this second's RTP packets on the SIP side.",
+    r.endedAt ? "Ended, so nothing's flowing: the Timeline has how it went."
+      : document.documentElement.dataset.host === "web" ? "↑ and ↓ are this second's RTP packets on the call's connection." : "↑ and ↓ are this second's RTP packets on the SIP side.",
   ].filter(Boolean).join(" ");
   return `<div class="sx-wrap"><table class="sx-table"><thead><tr><th>Stream</th><th>Network</th><th>Profile</th><th>Codec</th><th>We said</th><th>They said</th><th>↑ Sending</th><th>↓ Receiving</th></tr></thead><tbody>${rows}</tbody></table></div>`
+    + (tonesLine ? `<p class="sx-foot">Keypad tones: ${tonesLine}. <button type="button" class="sx-link" data-view="timeline">Timeline ›</button></p>` : "")
     + `<p class="sx-foot">${foot} <button type="button" class="sx-link" data-view="oa">Offers/answers ›</button></p>`;
+}
+
+// Keypad tones on an audio lane (↑ ours, ↓ theirs): a marker per run of tones close enough
+// together that they'd overlap at this zoom, labelled with its digits; hover for each one's time
+// and how it came. Only where they started: no length is reported.
+function tonesHtml(r, out, x, track) {
+  const list = (r.tones ?? []).filter((t) => !!t.out === out).sort((a, b) => a.at - b.at);
+  const runs = [];
+  for (const t of list) {
+    const run = runs.at(-1);
+    // About 8 px a digit: a tone joins the run if it'd land on the run's label.
+    if (run && x(t.at) - run.p < ((run.tones.length + 2) * 8 * 100) / track) run.tones.push(t);
+    else runs.push({ p: x(t.at), tones: [t] });
+  }
+  return runs.map((run) => {
+    const digits = run.tones.map((t) => t.digit).join("");
+    const label = digits.length > 10 ? `${digits.slice(0, 9)}…` : digits;
+    const title = run.tones.map((t) => `${since(r, t.at)} ${out ? "↑" : "↓"} ${t.digit}${t.via ? ` by ${t.via}` : ""}${t.held ? " (on hold)" : ""}`).join("\n");
+    const held = run.tones.every((t) => t.held) ? " held" : "";
+    // Near the right edge it ends at its time instead, so it isn't cut off.
+    const end = run.p + ((label.length + 2) * 8 * 100) / track > 100 ? " end" : "";
+    return `<span class="sx-tone${held}${end}" style="left:${run.p}%" title="${esc(`Keypad tones ${out ? "sent" : "received"}:\n${title}`)}">${esc(label)}</span>`;
+  }).join("");
 }
 
 function timelineHtml(r) {
@@ -507,14 +545,16 @@ function timelineHtml(r) {
       const w = Math.max(0.4, x(g.e) - x(g.s));
       return `<div class="sx-bar ${g.st}" style="left:${x(g.s)}%;width:${w}%" title="${esc(`${name} ${arrow} ${since(r, g.s)}–${since(r, g.e)}: ${STATE_NAME[g.st]}`)}"></div>`;
     }).join("");
-    return `<div class="sx-row"><b>${name}${arrow ? ` <small>${arrow}</small>` : ""}</b><div class="sx-track">${bars}</div></div>`;
+    const tones = k === "audio-up" ? tonesHtml(r, true, x, track) : k === "audio-down" ? tonesHtml(r, false, x, track) : "";
+    return `<div class="sx-row"><b>${name}${arrow ? ` <small>${arrow}</small>` : ""}</b><div class="sx-track">${bars}${tones}</div></div>`;
   }).join("");
   // Ticks at a round step, about six of them.
   const steps = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200];
   const step = (steps.find((s) => (span / 1000) / s <= 6) ?? 7200) * 1000;
   const ticks = [];
   for (let t = 0; t <= span; t += step) ticks.push(`<span style="left:${(t * 100) / span}%">${since(r, t0 + t)}</span>`);
-  const legend = ["flow", "hold", "off", "gone", "idle"].map((st) => `<span><i class="sx-bar ${st}"></i>${STATE_NAME[st]}</span>`).join("");
+  const legend = ["flow", "hold", "off", "gone", "idle"].map((st) => `<span><i class="sx-bar ${st}"></i>${STATE_NAME[st]}</span>`).join("")
+    + (r.tones?.length ? `<span><i class="sx-tone">5</i>Keypad tones (DTMF), where each started</span>` : "");
   return `<div class="sx-tl">
     <div class="sx-events">${evHtml}</div>
     <div class="sx-lanes"><div class="sx-guides">${guides}</div>${laneHtml || `<p class="q-empty sx-nolanes">The lanes start once the call's connected and media's counted.</p>`}</div>
@@ -569,7 +609,7 @@ function oaHtml(r) {
 // Run by app.js at start-up.
 export function initStreams() {
   const pane = $("paneStreams");
-  if (!pane) return;   // the web softphone has no Streams tab (its host doesn't record offers and answers)
+  if (!pane) return;
   pane.addEventListener("click", (ev) => {
     const v = ev.target.closest("[data-view]");
     if (v) { view = v.dataset.view; renderStreams(); return; }

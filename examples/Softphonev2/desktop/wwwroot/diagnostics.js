@@ -187,10 +187,6 @@ const devHeight = (h) => Math.round(Math.max(120, Math.min(window.innerHeight * 
 
 // Run by app.js at this point in its start-up, in the order it always ran.
 export function initDiagnostics() {
-  // Streams is the desktop's: its host records each call's offers and answers off the wire. The
-  // web softphone's doesn't, so the tab goes (removed, not hidden: fitDevTabs shows every tab).
-  // The SIP ladder and Connection read the same records, so they go too.
-  if (document.documentElement.dataset.host === "web") { for (const id of ["tabStreams", "paneStreams", "tabConn", "paneConn", "tabLadder", "paneLadder"]) $(id).remove(); }
   document.body.classList.toggle("diag", params.get("diag") === "1");
   $("devPanel").hidden = params.get("diag") !== "1";
   // F12, caught before WebView2 would open its DevTools with it.

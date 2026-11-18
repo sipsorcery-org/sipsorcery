@@ -669,10 +669,15 @@ same on both.
   characters are ignored.
 - **In the dock**, to the right of the call (see [The dock](#the-dock-keypad-and-text)). Esc,
   its ×, the Text button or T closes it, and Esc puts the focus back on the button.
-- **Text arriving while it's closed** shows as a toast at the bottom of the stage: their name,
-  what they've typed (live, if their phone sends letter by letter) and *Reply*, which opens the
-  panel. It fades 6 s after the last letter, and the Text button keeps a red dot until the
-  panel is opened. Nothing opens by itself.
+- **Text arriving while it's closed**, on the call on the stage: an alert at the right of the
+  call header, the Text icon with a red dot, "New text" (or "Typing…" while their line is open)
+  and an *Open text* link, which opens the panel; and the same red dot on the Text button (and
+  on ⋯ More at phone width). Both stay until the panel is opened on that call. Nothing opens by
+  itself. The keypad's tones are flagged the same way (see [Keypad](#keypad-dtmf)).
+- **Text on a call that isn't on the stage** (or in Grid view) shows as a toast at the bottom of
+  the stage: their name, what they've typed (live, if their phone sends letter by letter) and
+  *Reply*, which opens that call's panel. It fades 6 s after the last letter; the call's line in
+  the calls panel shows their last line until you read it.
 - **Not on the call** (their phone didn't answer `m=text`): "Text isn't set up on this call"
   and *Add text to this call*, which sends a re-INVITE with `m=text`. If they turn it down
   (`m=text` with port 0) it says their phone doesn't support real-time text; with no answer in
@@ -706,8 +711,30 @@ letters) in the dock to the right of the call, above the text panel if that's op
   hold (either way), ends, or another call is selected, and in Grid view (which has no
   controls). It's also disabled until the call's audio to the page is connected, so the first
   tone isn't lost.
-- **Tones they send** are logged by the host (`DTMF '5' received (RFC 4733)` or `(SIP INFO)`),
-  and while the keypad is open on that call they show under the keys ("Name sent 123").
+- **Tones they send** are logged by the host (`DTMF '5' received (RFC 4733)` or `(SIP INFO)`)
+  and kept on the call (`tonesin.js`). New ones you haven't seen are flagged twice, as new text
+  is: an alert at the right of the call header (the keypad icon with a red dot, "New keys" and an
+  *Open keypad* link, disabled with the reason when the keypad can't open) and a red dot on the
+  Keypad button (and on ⋯ More at phone width). Opening the keypad on that call clears both.
+  - **In the keypad**, under the keys: "Name pressed 4 1 2  #", every tone on the call, newest
+    last and lit as it arrives. A pause of 2 s or more shows as a gap, and tones that came while
+    the call was on hold (either way) are dimmed. Hover for the time of the last and how it came.
+    Tones that arrive with it open are read as they come: no alert. The ▾ by the name drops down
+    the full list (up to 500, oldest first): each tone's time, digit and how it came, "on hold"
+    if it was, scrolled to the newest. It stays open or shut until toggled. *Clear* empties the
+    call's keys there (the Streams tab keeps them all).
+  - **With the text panel open too**, opening the list makes the keypad taller and the text
+    shorter, down to 200 px (160 in a narrow window); the keypad gives way first, its keys down to
+    26 px (the letters go under 32) and the list down to two rows, scrolling, so both still fit.
+  - **A call's status line** (calls panel, grid tile) says "Pressed 4 1 2" while it has tones
+    you haven't seen. Hold, a transfer and unread text come first.
+  Each call keeps its own. Only where each tone started: the library reports a tone once, at its
+  start, with no end.
+- **In Diagnostics**, both ways: the host keeps every tone in the call's StreamLog (`AddTone`, up
+  to 500), so it's saved with the call. Streams → Timeline marks them on the Audio ↑ and ↓ lanes
+  (runs that would overlap share one tag; hover for each tone's time and how it came), Streams →
+  Now lists them under the table, and the SIP ladder labels a DTMF INFO "INFO · 5". The web
+  build's host records them the same way (`web/conndiag.js`).
 
 How the host sends them (`Phone.SendDtmf`):
 
@@ -1162,8 +1189,11 @@ across the panel for this instead; the card is where you're looking as the call 
 
 They go with the call: one that falls off the end of the history (500 calls) loses its file at
 once; one removed (or cleared) keeps it until the app closes, so Undo brings it back whole, and
-any left over (the app was killed) go at the next start. The web softphone saves none: it has no
-host to keep them, and no Streams tab.
+any left over (the app was killed) go at the next start. The web softphone saves them too, the
+same way, with no file to put them in: `web/host.js` keeps each in the browser's IndexedDB
+(`softphone-diagnostics`, keyed by the history entry's id) and answers the same `diag-save` and
+`diag-get`, so the page's links and buttons are the same. A removed entry's stay until the page
+is reloaded, for Undo, and what's left over goes as it loads.
 
 ## SIP ladder (diagnostics mode)
 
@@ -1210,7 +1240,13 @@ the arrow crosses (a transfer's third party) doesn't run through them.
 The host keeps the messages with the call's other records (`StreamLog.Wire`, from the transport's
 trace events, all methods, by Call-ID; at most 500 a call). A Call-ID that's no call's yet (a
 transfer's new call, before it's claimed) holds its messages until it is, so the page orders them
-by time before numbering. The web softphone has no SIP ladder tab.
+by time before numbering.
+
+The web softphone has the tab too. `web/conndiag.js` keeps the messages from SIP.js's transport
+(every one sent or received on the WebSocket, whole, on a call's Call-ID; at most 500 a call),
+with retransmissions counted the same way. The browser has no sockets to name: their lane is the
+server the WebSocket goes to (`ws://localhost:8393`), and ours the Via SIP.js sends
+(`ws:jkv1bfu66hus.invalid`). *Save as PNG* is a download there.
 
 ## Connection (diagnostics mode)
 
@@ -1276,7 +1312,23 @@ each stream's `SrtpErrors` and `SrtcpErrors` (each second, and at the end), and
 `OnRtpEndPointSwitched`; so an SRTP failure is the call's own even with several calls up. A call
 saved before has the older facts (the checks per address of theirs, the SRTP count from the log),
 and the tab shows those as it did. The relay between the host and the page doesn't count, as in
-Streams. The web softphone has no Connection tab.
+Streams.
+
+The web softphone has the tab too, and Streams. Its host (`web/conndiag.js`) sends the page the same `streams`
+and `stream-rates` messages, so `connection.js` draws them unchanged. The SIP messages come off
+SIP.js's transport (its `send`, and the `onMessage` it's given), and the offers and answers are
+built from them as `StreamLog.Build` does. The media layers come from the page's own
+`RTCPeerConnection`, which is the media leg there: its ICE connection state and DTLS transport
+state as they change, and `getStats()` each second: the candidate pairs (`requestsSent`,
+`responsesReceived`, `requestsReceived`, `currentRoundTripTime`), the pair in use and our ICE role
+(the `transport` stats' `selectedCandidatePairId` and `iceRole`), the DTLS role and SRTP profile
+(`dtlsRole`, `srtpCipher`), the first RTP of each kind and the packets a second
+(`inbound-rtp`, `outbound-rtp`), and their RTCP reports (`remote-inbound-rtp`, by timestamp).
+What the browser doesn't give, it goes without: SRTP packets that couldn't be decrypted (dropped
+uncounted), and why a DTLS handshake failed beyond a fingerprint mismatch or an alert, where the
+browser's `RTCError` says so. A peer-reflexive candidate's address the browser hides shows as `?`.
+As on the desktop, what the tab had for a call is saved with it as it ends (see
+[Saved diagnostics](#saved-diagnostics)).
 
 A WebRTC call whose media connection fails now ends *Media connection failed* (before: *They hung
 up*, as the user agent hangs up itself when it does).
@@ -1349,9 +1401,13 @@ Where it comes from:
 - The rest is the page's: whether the call's held and how (music, or SIP), muted, and what
   camera or card it sends.
 
-The web softphone has no Streams tab: its host doesn't record the offers and answers (it's the
-browser's), so the tab is taken out there (removed, not hidden, as the bar's fitting shows every
-tab).
+The web softphone has the tab too: its host (`web/conndiag.js`, see
+[Connection](#connection-diagnostics-mode)) builds the offers and answers from the SIP messages
+on SIP.js's transport, with the same labels (*Call*, *Hold*, *Resume*, *Added video*, …) and each
+line's formats from the answer's `a=rtpmap`, and counts the packets each way from `getStats()`.
+A line's network is the page's own connection's: the ICE pair by type (*UDP · ICE host ⇄ host*),
+our candidate's address and theirs, RTCP on the same port. The foot says the packets are on the
+call's connection (there's no SIP side apart from it).
 
 ## Call quality (diagnostics mode)
 

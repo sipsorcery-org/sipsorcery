@@ -3,8 +3,8 @@
 // row in Home's Recent and People's Recent opens them again in the Diagnostics panel, with a bar
 // across it saying whose they are, until Back to live, closing the panel, or a call starting.
 // The host keeps each call's as a file beside the history and deletes it when the call drops off
-// the list (MainForm, CallHistory.SaveDiagnostics). The desktop only: the web softphone has no
-// host to keep them.
+// the list (MainForm, CallHistory.SaveDiagnostics); the web softphone's keeps them in the
+// browser's IndexedDB, the same way (web/host.js, Saved diagnostics).
 // As a call ends, in diagnostics mode, its ended card on the stage links to what was just saved
 // (app.js, savedFor): the live tabs have cleared, and that's where the call went.
 
@@ -30,7 +30,6 @@ const SNAP_TABS = ["details", "ladder", "conn", "streams", "quality"];
 
 // Run as a call ends, before its media is closed: what the three tabs had for it.
 export function captureDiagnostics(e) {
-  if (document.documentElement.dataset.host === "web") return;
   const endedAt = Date.now();
   const hasVideo = !!e.m?.hasVideo;
   const details = e.details ? { d: e.details, codecs: e.codecs ?? null, remote: e.h.remote, hasVideo } : null;

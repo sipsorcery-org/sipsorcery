@@ -96,13 +96,14 @@ It has seven tabs:
 - **SIP ladder**: every SIP message of a call, as it went: a lane per party, an arrow per message,
   numbered, retransmissions included. Click one to read it whole; *Hide progress messages* keeps the
   numbers; copy it as Mermaid or text, or save it as a PNG (see [SIP ladder](DESIGN.md#sip-ladder-diagnostics-mode)).
-  The desktop only.
+  In the web softphone too.
 - **Connection**: whether a call's media got through, layer by layer (SDP, ICE, DTLS, SRTP, RTP,
   RTCP), the first that didn't and its likely reason, and a timeline of the setup (see
-  [Connection](DESIGN.md#connection-diagnostics-mode)). The desktop only.
+  [Connection](DESIGN.md#connection-diagnostics-mode)). In the web softphone too, from SIP.js
+  and the browser's `getStats()`.
 - **Streams**: a call's audio, video and text lines: what its offers and answers agreed, what's
   going each way, a timeline of the call, and each offer and answer's SDP (see
-  [Streams](DESIGN.md#streams-diagnostics-mode)). The desktop only.
+  [Streams](DESIGN.md#streams-diagnostics-mode)). In the web softphone too.
 - **Call quality**: the selected call's table and graphs (see [Call quality](DESIGN.md#call-quality-diagnostics-mode)).
 - **Network**: the simulated loss sliders (see [Call quality](DESIGN.md#call-quality-diagnostics-mode)).
 

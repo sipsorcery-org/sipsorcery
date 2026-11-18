@@ -11,7 +11,7 @@ import { $, ICON, post, shortName } from "./util.js";
 // backspaces and all, dashed with a caret.
 const LINE_SEP = "\u2028";
 // Each call has its own conversation (entry.text): { lines: [{ me, text, open }], unread (they
-// typed while you weren't reading it: a dot on the Text button and in the call list), bomSent
+// typed while you weren't reading it: an alert in the header, a dot on the Text button, and the call list), bomSent
 // (T.140 starts with a byte order mark), said (--say, testing, typed once per call) }. The
 // text panel shows the selected call's.
 export let textOpen = false;        // the text panel, in the dock
@@ -39,12 +39,17 @@ export function onTextReceived(id, chars) {
     else if (ch === LINE_SEP || ch === "\u2029" || ch === "\n" || ch === "\r") closeLine(t, false);
     else if (ch >= " ") openLine(t, false).text += ch;
   }
-  if (!textOpen || id !== selectedId) { t.unread = true; showToast(e); }
+  if (!textOpen || id !== selectedId) {
+    t.unread = true;
+    // The call on the stage has the header's alert (tonesin.js) and the Text button's dot; the
+    // toast is for text on a call that isn't showing.
+    if (id !== selectedId || inGrid()) showToast(e);
+  }
   if (id === selectedId) renderText();
   render();
 }
 
-// With the text panel closed (or for another call), what they type shows in a toast for 6 s after
+// Text on a call that isn't on the stage (or in the grid): what they type shows in a toast for 6 s after
 // the last letter. Reply opens that call's text.
 function showToast(e) {
   const l = openLine(e.text, false, false) ?? e.text.lines.findLast((x) => !x.me);

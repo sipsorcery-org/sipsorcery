@@ -39,7 +39,8 @@ import { addressHint, addressTip, dial, fieldText, fieldUri, initAddress, initAd
 import { callStatus, fmtElapsed, initCallList, renderCallTimes, renderCalls, sendsHtml } from "./calllist.js";
 import { initDiagnostics, renderInfoLock, setDiagnostics } from "./diagnostics.js";
 import { holdAudio, quietAudio, stopHoldMusic } from "./holdmusic.js";
-import { initKeypad, keypadOpen, onDtmfIn, renderKeypad, setKeypadOpen } from "./keypad.js";
+import { initKeypad, keypadOpen, renderKeypad, setKeypadOpen } from "./keypad.js";
+import { onDtmfIn, renderHeadAlerts } from "./tonesin.js";
 import { analyserFor, drawViz, initLevels, startTiles } from "./levels.js";
 import { closeMenu, initMenus, openMenu, pickDevice, pickMic, renderMore, selfViewOn, showLoss } from "./menus.js";
 import { closeDevices, initYourDevices, renderIndicator, renderYourDevices, stopTests } from "./yourdevices.js";
@@ -724,6 +725,9 @@ export function render() {
 
   renderTextControls(phase);
   renderKeypad();
+  // New keys (DTMF) or text on this call that you haven't seen, at the header's right: after the
+  // keypad and text panels, which may have just closed.
+  renderHeadAlerts();
   renderTransfer();
   renderMore();   // the ⋯ at phone width, from the four above
   renderDock();
@@ -1673,7 +1677,7 @@ chrome.webview.addEventListener("message", async (e) => {
     else if (msg.type === "diag-saved") { onDiagSaved(msg); render(); }
     else if (msg.type === "details") { if (e) { e.details = msg; if (e.id === selectedId) { renderDetails(); renderInfoLock(); } } }
     else if (msg.type === "text") onTextReceived(msg.id, msg.text);
-    else if (msg.type === "dtmf-in") onDtmfIn(msg.id, msg.digit);
+    else if (msg.type === "dtmf-in") onDtmfIn(msg.id, msg.digit, msg.via);
     else if (msg.type === "video-refused") { if (e) { e.addingVideo = false; e.videoRefused = true; } log("they didn't take video"); onVideoRefused(e); render(); }
     else if (msg.type === "log") log(msg.text, true, !!msg.full);
     else if (msg.type === "contacts") onContacts(msg.contacts);
