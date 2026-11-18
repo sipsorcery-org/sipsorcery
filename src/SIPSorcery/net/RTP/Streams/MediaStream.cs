@@ -403,6 +403,14 @@ namespace SIPSorcery.Net
         public int NegotiatedRtpEventPayloadID { get; set; } = RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID;
 
         /// <summary>
+        /// The telephone-event payload ID we put in our SDP offer, when the remote party's answer
+        /// used a different one. Per RFC 3264 the answerer sends its RTP events on the payload ID
+        /// we offered, so incoming packets with this ID are treated as RTP events as well as those
+        /// with <see cref="NegotiatedRtpEventPayloadID"/>. Zero when not needed.
+        /// </summary>
+        public int OfferedRtpEventPayloadID { get; internal set; }
+
+        /// <summary>
         /// To type of this media
         /// </summary>
         public SDPMediaTypesEnum MediaType { get; set; }
@@ -1394,7 +1402,9 @@ namespace SIPSorcery.Net
         public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
             RTPPacket rtpPacket;
-            if (MediaType == SDPMediaTypesEnum.audio && NegotiatedRtpEventPayloadID != 0 && hdr.PayloadType == NegotiatedRtpEventPayloadID)
+            if (MediaType == SDPMediaTypesEnum.audio &&
+                ((NegotiatedRtpEventPayloadID != 0 && hdr.PayloadType == NegotiatedRtpEventPayloadID) ||
+                 (OfferedRtpEventPayloadID != 0 && hdr.PayloadType == OfferedRtpEventPayloadID)))
             {
                 if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
                 {
