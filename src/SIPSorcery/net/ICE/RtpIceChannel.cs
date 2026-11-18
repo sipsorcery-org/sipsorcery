@@ -602,6 +602,14 @@ namespace SIPSorcery.Net
                     CloseTcp(pair.Value, reason);
                 }
             }
+
+            foreach (var pair in RtpTcpSocketByUri)
+            {
+                if (pair.Key.Scheme == STUNSchemesEnum.turns || pair.Key.Scheme == STUNSchemesEnum.stuns)
+                {
+                    pair.Value.Close();
+                }
+            }
         }
 
         protected void CloseTcp(IceTcpReceiver target, string reason)
@@ -2657,10 +2665,7 @@ namespace SIPSorcery.Net
             finally
             {
                 _tlsStreams.TryRemove(uri, out _);
-                if (_tlsWriteLocks.TryRemove(uri, out var removedLock))
-                {
-                    removedLock.Dispose();
-                }
+                _tlsWriteLocks.TryRemove(uri, out _);
             }
         }
 
