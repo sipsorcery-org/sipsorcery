@@ -1204,11 +1204,10 @@ function endWords(reason) {
 }
 // The call on the stage ended: no "Call ended" card. The stage goes straight on to what's next
 // (another call you're on, a call still ringing, or Home). If they ended it (or it dropped), the
-// notice bar says so for a few seconds (× closes it sooner): who, why, and how long it lasted;
-// if you hung up, nothing (you know). One you placed
-// that wasn't answered says why with Call again, and stays; one you hung up on before it was
-// answered, or declined, says nothing (you know). In diagnostics mode, once they're saved, its
-// diagnostics are a button on it.
+// call's bar says so for a few seconds (× closes it sooner): who, why, and how long it lasted;
+// so does a call you placed that wasn't answered (declined, busy, no answer), with why. One you
+// hung up on, or declined, says nothing (you know). In diagnostics mode, once they're saved, its
+// diagnostics are a link on it.
 function leaveEnded(e) {
   const reason = e.h.reason || "Call ended";
   if (e.connectedAt) {
@@ -1231,12 +1230,15 @@ function leaveEnded(e) {
   dropEntry(e);
   render();
 }
-// A call you placed over another, not answered: who, why, and Call again.
+// A call you placed that wasn't answered (declined, busy, no answer, or it failed): who and why,
+// in the call's bar like a call that ended on you; amber, or red if it failed. No Call again:
+// Recent has it. The host's sentence, with its SIP status, is the tooltip.
 function onPlacedEnded(e) {
-  const remote = e.h.remote, account = e.h.account ?? null, video = !!e.placedVideo, who = nameOf(e), key = `out-${e.id}`;
+  const what = endWords(e.h.reason);
+  const failed = what.startsWith("·") || /found|couldn't|can't/.test(what);
   pushOutcome({
-    key, who, whoTitle: remote, what: endWords(e.h.reason), title: e.h.reason || "", icon: ICON.hangup, tone: "bad", diagFor: e.id,
-    action: { label: "Call again", title: `Call ${who} again`, fn: () => { dropOutcome(key); placeCall(remote, account, null, video); } },
+    key: `out-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what, text: `${nameOf(e)} ${what}`,
+    title: [e.h.remote, e.h.reason].filter(Boolean).join(": "), icon: ICON.hangup, tone: failed ? "bad" : "info", diagFor: e.id, head: true,
   });
 }
 function onVideoRefused(e) {
@@ -1345,8 +1347,8 @@ function renderHeadEnded() {
   $("stage").classList.toggle("head", connected || !!o);
   if (!o) return;
   if (box.dataset.key !== o.key) { $("headEndedIcon").innerHTML = o.icon ?? ""; box.dataset.key = o.key; }
-  $("headEndedText").textContent = `${o.who} · ${o.what}`;
-  box.title = o.whoTitle ?? "";
+  $("headEndedText").textContent = o.text ?? `${o.who} · ${o.what}`;
+  box.title = o.title || o.whoTitle || "";
   box.dataset.tone = o.tone ?? "";
   $("headEndedX").onclick = () => dropOutcome(o.key);
   const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
