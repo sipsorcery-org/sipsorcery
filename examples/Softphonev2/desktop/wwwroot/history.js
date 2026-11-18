@@ -104,7 +104,7 @@ function outcome(e) {
   const text = e.dir === "missed" ? "Missed"
     : e.note && e.duration ? `${e.note} · ${fmtDuration(e.duration)}`
     : e.note ?? `${e.dir === "in" ? "Incoming" : "Outgoing"}${e.duration ? ` · ${fmtDuration(e.duration)}` : ""}`;
-  return { ico, text, tone: e.dir === "missed" ? "bad" : e.note && !e.duration ? "warn" : "" };
+  return { ico, text, tone: e.dir === "missed" || (e.note && !e.duration) ? "warn" : "" };
 }
 /** A call as the lists show it: {ico, text, tone, when ("5 min ago"), at ("Today, 08:09")}. */
 export const describeCall = (e) => ({ ...outcome(e), when: relTime(e.at), at: `${dayLabel(e.at)}, ${clockTime(e.at)}` });

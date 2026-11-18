@@ -1439,7 +1439,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 
 .missed-count {
   min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; display: grid; place-items: center;
-  background: var(--danger-soft); color: var(--danger); font-size: 12px; font-weight: 600;
+  background: var(--warn-bg); color: var(--warn-ink); font-size: 12px; font-weight: 600;
 }
 .missed-count:empty { display: none; }
 .people-btn { position: relative; }
@@ -1447,7 +1447,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .people-btn.on { color: var(--accent); border-color: var(--accent); }
 /* Pressed here means "the view is open", not .btn[aria-pressed]'s red (Mute and the like). */
 .btn.people-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); border-color: var(--accent); }
-.people-btn .missed-count { position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--danger-fill); color: #fff; }
+.people-btn .missed-count { position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--warn-ink); color: var(--surface); }
 .hv-outcome svg { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .hv-icon svg, .hv-actions svg, .hv-clear svg, .hv-confirm svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -1681,20 +1681,21 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .home-empty { margin: 4px 0; color: var(--muted); }
 .home-foot { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; }
 .home-foot b { color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
-.missed-pill { padding: 0 8px; border-radius: 10px; background: var(--danger-soft); color: var(--danger); font-size: 12px; font-weight: 600; }
+/* Missed calls are amber, not red: nothing went wrong, you just weren't there. */
+.missed-pill { padding: 0 8px; border-radius: 10px; background: var(--warn-bg); color: var(--warn-ink); font-size: 12px; font-weight: 600; }
 .home-rows { list-style: none; margin: 0; padding: 0; }
 .home-group { padding: 8px 6px 4px; color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 .home-group:first-child { padding-top: 0; }
 .home-row { display: flex; align-items: center; gap: 10px; padding: 7px 6px; border-radius: var(--radius-sm); }
 .home-row:hover { background: var(--surface-2); }
 .home-row.pickable { cursor: pointer; }
-.home-row.missed .home-name { color: var(--danger); }
+.home-row.missed .home-name { color: var(--warn-ink); }
 .home-row.unseen .home-name { font-weight: 700; }
 .home-row.fresh { animation: home-fresh 3s ease-out; }
 @keyframes home-fresh { from { background: color-mix(in srgb, var(--accent) 24%, transparent); } to { background: transparent; } }
 .home-row.used, .home-row.used:hover { background: color-mix(in srgb, var(--ok) 10%, transparent); }
 .home-avatar { width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--tile); color: var(--tile-ink); font-size: 15px; font-weight: 600; background-size: cover; }
-.home-row.missed .home-avatar { background-color: var(--danger-soft); color: var(--danger); }
+.home-row.missed .home-avatar { background-color: var(--warn-bg); color: var(--warn-ink); }
 .home-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .home-name, .home-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .home-name { font-weight: 500; }

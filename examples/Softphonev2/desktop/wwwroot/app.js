@@ -1206,7 +1206,7 @@ function endWords(reason) {
 // (another call you're on, a call still ringing, or Home). If they ended it (or it dropped), the
 // call's bar says so for a few seconds (× closes it sooner): who, why, and how long it lasted;
 // so does a call you placed that wasn't answered (declined, busy, no answer), with why. One you
-// hung up on, or declined, says nothing (you know). In diagnostics mode, once they're saved, its
+// hung up on, or declined, says nothing (you know), nor does a missed call (Recent has it). In diagnostics mode, once they're saved, its
 // diagnostics are a link on it.
 function leaveEnded(e) {
   const reason = e.h.reason || "Call ended";
@@ -1222,7 +1222,8 @@ function leaveEnded(e) {
     }
   } else if (e.h.outgoing ? reason !== "You hung up" : reason !== "Declined") {
     if (e.h.outgoing) onPlacedEnded(e);
-    else pushOutcome({ key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: reason, icon: ICON.phone, tone: reason === "Missed call" ? "info" : "bad", diagFor: e.id });
+    // A missed call says nothing here: Recent has it (and its "N missed").
+    else if (reason !== "Missed call") pushOutcome({ key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: reason, icon: ICON.phone, tone: "bad", diagFor: e.id });
   }
   const back = otherLive();
   if (back) selectCall(back.id);

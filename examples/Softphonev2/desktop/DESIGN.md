@@ -61,7 +61,7 @@ answered the ▾ on Mute and Camera change them.
 
 ## Home and the dial view
 
-With no call on the stage, it's **Home**: your recent calls on the left (missed ones red, the
+With no call on the stage, it's **Home**: your recent calls on the left (missed ones amber, the
 unseen ones bold, a call that's just ended highlighted for a moment), each with Copy address,
 **Edit contact** (or **Add to contacts**, as in History: the Contacts form, its name the one the
 row shows, the call's or else one from the address, and Save or Cancel comes back to Home), Call and Video call (at phone width Copy address goes, for the name's room;
@@ -513,7 +513,7 @@ list; the page (`history.js`) shows it in the People view's *Recent* tab, and th
 suggests from it. (An earlier History section under the active calls was dropped: it was a third
 way to the same calls.)
 
-- **The badge**: a red count on the People button of missed calls you haven't looked at; opening
+- **The badge**: an amber count on the People button of missed calls you haven't looked at; opening
   Recent clears it (`historySeenAt` in `localStorage`).
 - **The History view** (the People view's *Recent* tab, see above), over the stage like Accounts: it isn't a
   call, so opening it holds nothing and the call carries on under it. *Back to …* (while a call
