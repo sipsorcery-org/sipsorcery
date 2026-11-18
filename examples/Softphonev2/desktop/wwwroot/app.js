@@ -1145,13 +1145,16 @@ const ringingWho = (e, ringing) => {
 // with a button stays until you use it or close it; one without goes after OUTCOME_MS (a line
 // along its foot runs down meanwhile), the clock stopped while the pointer is on the notices.
 const OUTCOME_MS = 8000;
+// The call bar's notice (a call that ended on you, or one you placed that wasn't answered): there
+// for HEAD_MS, the last HEAD_FADE_MS of it fading out.
+const HEAD_MS = 6000, HEAD_FADE_MS = 3000;
 const outcomes = [];
 let noticesHeldAt = null;   // the pointer's on the notices, since then
 function pushOutcome(o) {
   const i = outcomes.findIndex((x) => x.key === o.key);
   if (i >= 0) outcomes.splice(i, 1);
   const at = Date.now();
-  outcomes.push({ ...o, at, until: o.action ? null : at + OUTCOME_MS });
+  outcomes.push({ ...o, at, until: o.action ? null : at + (o.head ? HEAD_MS : OUTCOME_MS) });
   render();
 }
 // Away (the window in the background, or no mouse or keys for IDLE_MS): the outcomes' clocks
@@ -1169,6 +1172,7 @@ setInterval(() => {
     b.classList.remove("again"); void b.offsetWidth; b.classList.add("again");
   }
   wasAway = away;
+  fadeHeadEnded();
   if (away || noticesHeldAt != null) return;
   const now = Date.now(), n = outcomes.length;
   for (let j = outcomes.length - 1; j >= 0; j--) if (outcomes[j].until && outcomes[j].until <= now) outcomes.splice(j, 1);
@@ -1352,10 +1356,20 @@ function renderHeadEnded() {
   box.title = o.title || o.whoTitle || "";
   box.dataset.tone = o.tone ?? "";
   $("headEndedX").onclick = () => dropOutcome(o.key);
+  fadeHeadEnded();
   const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
   $("headEndedDiag").hidden = !saved;
   $("headEndedDiag").title = saved ? "Open this call's saved diagnostics" : "";
   $("headEndedDiag").onclick = saved ? () => openSnapshot(saved.entryId, saved.name) : null;
+}
+// Its fade: full for the first HEAD_MS - HEAD_FADE_MS, then down to nothing as its time runs out;
+// full again while the pointer's on it (its clock stopped), and while you're away (so is that).
+function fadeHeadEnded() {
+  const box = $("headEnded");
+  const o = box.hidden ? null : outcomes.find((x) => x.key === box.dataset.key);
+  if (!o?.until) { box.style.opacity = ""; return; }
+  const left = o.until - Date.now();
+  box.style.opacity = noticesHeldAt != null || wasAway ? "" : String(Math.max(0, Math.min(1, left / HEAD_FADE_MS)));
 }
 $("headEndedX").innerHTML = ICON.close;
 $("headEnded").addEventListener("mouseenter", () => { noticesHeldAt = Date.now(); });

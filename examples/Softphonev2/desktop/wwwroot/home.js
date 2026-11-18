@@ -22,7 +22,7 @@ import { placeCall, privacyOn, render, state, syncCallBtn, togglePrivacy } from 
 import { avatarAttr } from "./avatar.js";
 import { contactMark, normAddress } from "./contactmark.js";
 import { allContacts, contactFor, openContacts, sameUri } from "./contacts.js";
-import { copyAddress, describeCall, historyEntries, isUnseen, openPeople, unseenMissed } from "./history.js";
+import { copyAddress, describeCall, historyEntries, isUnseen, markSeen, openPeople, renderSide, unseenMissed } from "./history.js";
 import { openSnapshot } from "./snapshots.js";
 import { $, escHtml, ICON, initial, post, shortName } from "./util.js";
 import { closeDevices, renderYourDevices } from "./yourdevices.js";
@@ -138,7 +138,8 @@ function callBtns(uri, account, name, contactBtn = null, diagId = null) {
 function recentHtml() {
   const h = historyEntries();
   const missed = unseenMissed();
-  const head = `<div class="home-head"><h2>Recent</h2>${missed ? `<span class="missed-pill">${missed} missed</span>` : ""}
+  const head = `<div class="home-head"><h2>Recent</h2>${missed ? `<span class="missed-pill">${missed} missed<button type="button" class="missed-x" data-home="seen"
+      aria-label="Mark ${missed === 1 ? "it" : "them"} as seen" title="Mark ${missed === 1 ? "it" : "them"} as seen: clears this and the count on People">${ICON.close}</button></span>` : ""}
     ${Array.isArray(h) ? `<button type="button" class="link-btn" data-home="history">All history</button>` : ""}</div>`;
   if (!Array.isArray(h) || !h.length) {
     return `${head}<p class="home-empty">${Array.isArray(h) ? "No calls yet. Type a name or number above to make one." : "Type a name or number above to make a call."}</p>`;
@@ -290,6 +291,7 @@ export function initHome() {
         break;
       }
       case "history": openPeople("recent"); break;
+      case "seen": markSeen(); renderSide(); renderHome(); break;
       case "diag": openSnapshot(t.dataset.id, t.dataset.name); break;
       case "back": leaveDial(); break;
       case "retry": reRegister(t.dataset.id); break;

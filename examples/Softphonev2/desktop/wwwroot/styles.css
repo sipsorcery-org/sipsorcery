@@ -317,6 +317,8 @@ body:not(.diag) .diag-only { display: none; }
   animation: head-ended-in .2s ease-out, head-ended-glow 1.4s ease-out .2s 2;
 }
 .head-ended.again { animation: head-ended-glow 1.4s ease-out 1; }
+/* Its fade out (app.js fadeHeadEnded sets the opacity every quarter second). */
+.head-ended { transition: opacity .25s linear; }
 .head-ended[hidden] { display: none; }
 .head-ended[data-tone="bad"] { background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border); --glow: color-mix(in srgb, var(--danger) 40%, transparent); }
 @keyframes head-ended-glow { 0% { box-shadow: 0 0 0 0 var(--glow); } 100% { box-shadow: 0 0 0 8px transparent; } }
@@ -1682,7 +1684,11 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .home-foot { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; }
 .home-foot b { color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
 /* Missed calls are amber, not red: nothing went wrong, you just weren't there. */
-.missed-pill { padding: 0 8px; border-radius: 10px; background: var(--warn-bg); color: var(--warn-ink); font-size: 12px; font-weight: 600; }
+.missed-pill { display: inline-flex; align-items: center; gap: 2px; padding: 0 2px 0 8px; border-radius: 10px; background: var(--warn-bg); color: var(--warn-ink); font-size: 12px; font-weight: 600; align-self: center; }
+/* Its ×: marks them seen here, without opening People. */
+.missed-x { width: 18px; height: 18px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; }
+.missed-x:hover { background: color-mix(in srgb, currentColor 16%, transparent); }
+.missed-x svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .home-rows { list-style: none; margin: 0; padding: 0; }
 .home-group { padding: 8px 6px 4px; color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 .home-group:first-child { padding-top: 0; }
