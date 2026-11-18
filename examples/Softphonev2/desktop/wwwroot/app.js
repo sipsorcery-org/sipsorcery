@@ -1199,12 +1199,12 @@ function leaveEnded(e) {
   const reason = e.h.reason || "Call ended";
   if (e.connectedAt) {
     // A call you were on: said only if you didn't end it (you hung up, or your transfer of it
-    // went through: you know), in the notice bar like a call ringing in, not over the stage dulled.
+    // went through: you know), in the call's bar at the top of the stage (renderHeadEnded).
     const yours = reason === "You hung up" || (e.h.transfer?.role === "out" && e.h.transfer?.status === "done");
     if (!yours) {
       pushOutcome({
         key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: `${reason} · ${fmtElapsed(Date.now() - e.connectedAt)}`,
-        icon: ICON.hangup, tone: /fail|closed|couldn't|no audio/i.test(reason) ? "bad" : "info", diagFor: e.id, bar: true,
+        icon: ICON.hangup, tone: /fail|closed|couldn't|no audio/i.test(reason) ? "bad" : "info", diagFor: e.id, head: true,
       });
     }
   } else if (e.h.outgoing ? reason !== "You hung up" : reason !== "Declined") {
@@ -1266,11 +1266,12 @@ function noticeItems() {
   }
   items.push(...xfer.outcomes.map((o) => ({ ...o, outcome: true })));
   for (const o of outcomes) {
+    if (o.head && !inGrid()) continue;   // in the call's bar (renderHeadEnded); Grid has none
     const live = o.callId && entries.get(o.callId)?.h.call === "connected";
     const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
     items.push({
       key: o.key, icon: o.icon, who: o.who, whoTitle: o.whoTitle, onWho: live ? open(o.callId) : null, what: o.what, title: o.title, tone: o.tone,
-      outcome: true, bar: !!o.bar, until: o.until,
+      outcome: true, bar: !!o.head, until: o.until,
       actions: [
         ...(saved ? [{ label: "Diagnostics", title: "Open this call's saved diagnostics", cls: "btn", fn: () => openSnapshot(saved.entryId, saved.name) }] : []),
         ...(o.action ? [{ label: o.action.label, title: o.action.title, cls: "btn", fn: o.action.fn }] : []),
@@ -1318,8 +1319,30 @@ function fillNotice(p, it, many) {
   syncActions(p.acts, it);
 }
 
+// A call that ended on you, in the bar at the top of the stage where the call's padlock, name
+// and timer are: at its right over the call you're back on, or the bar on its own (Home, or a
+// call's card). The latest one; × closes it, and it goes by itself as the notices' outcomes do.
+function renderHeadEnded() {
+  const o = inGrid() ? null : outcomes.findLast((x) => x.head);
+  const box = $("headEnded"), info = $("info"), connected = sel()?.h.call === "connected";
+  box.hidden = !o;
+  info.classList.toggle("ended-only", !!o && !connected);
+  if (!connected) info.hidden = !o;
+  $("stage").classList.toggle("head", connected || !!o);
+  if (!o) return;
+  if (box.dataset.key !== o.key) { $("headEndedIcon").innerHTML = o.icon ?? ""; box.dataset.key = o.key; }
+  $("headEndedText").textContent = `${o.who} · ${o.what}`;
+  box.title = o.whoTitle ?? "";
+  box.dataset.tone = o.tone ?? "";
+  $("headEndedX").onclick = () => dropOutcome(o.key);
+}
+$("headEndedX").innerHTML = ICON.close;
+$("headEnded").addEventListener("mouseenter", () => { noticesHeldAt = Date.now(); });
+$("headEnded").addEventListener("mouseleave", () => $("incoming").dispatchEvent(new MouseEvent("mouseleave")));
+
 const noticeRows = new Map();   // key -> { li, icon, who, what, acts }
 function renderNotices() {
+  renderHeadEnded();
   const items = noticeItems();
   const el = $("incoming");
   el.hidden = !items.length;

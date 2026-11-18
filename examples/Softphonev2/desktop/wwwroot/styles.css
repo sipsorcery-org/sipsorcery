@@ -304,6 +304,22 @@ body:not(.diag) .diag-only { display: none; }
   background: var(--surface); border-bottom: 1px solid var(--border); color: var(--text); white-space: nowrap;
 }
 .call-head[hidden] { display: none; }
+/* A call that ended on you, at the right of the bar (app.js renderHeadEnded); with no call on
+   the stage, the bar holds only that, and Home starts under it. */
+.head-ended { flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 60%; font-size: 13px; color: var(--muted); animation: head-ended-in .2s ease-out; }
+.head-ended[hidden] { display: none; }
+.head-ended[data-tone="bad"] { color: var(--danger); }
+.head-ended-icon { display: grid; }
+.head-ended-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.head-ended-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.head-ended-x { width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
+.head-ended-x:hover { background: var(--surface-2); color: var(--text); }
+.head-ended-x svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.call-head.ended-only > :not(.head-ended) { display: none; }
+.call-head.ended-only .head-ended { margin-left: 0; max-width: none; flex: 1 1 auto; }
+.call-head.ended-only .head-ended-x { margin-left: auto; }
+.stage.head .home, .stage.head .card { top: var(--head-h); }
+@keyframes head-ended-in { from { opacity: 0; transform: translateY(-4px); } }
 .stage.head .remote { top: var(--head-h); height: calc(100% - var(--head-h)); }
 .stage.head .nocam, .stage.head .audio-view { top: var(--head-h); }
 /* One line: a saved contact's mark and name (bold), the address (grey), the timer (grey), the
