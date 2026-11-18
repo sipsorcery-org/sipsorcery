@@ -306,7 +306,6 @@ body:not(.diag) .diag-only { display: none; }
 .call-head[hidden] { display: none; }
 .stage.head .remote { top: var(--head-h); height: calc(100% - var(--head-h)); }
 .stage.head .nocam, .stage.head .audio-view { top: var(--head-h); }
-.stage.head .held-note { top: calc(50% + var(--head-h) / 2); }
 /* One line: a saved contact's mark and name (bold), the address (grey), the timer (grey), the
    red mic. Short of room the address is cut short first, then the name; the timer never is. */
 .info-text { flex: 1 1 auto; min-width: 0; gap: 8px; line-height: 1.3; }
@@ -320,44 +319,6 @@ body:not(.diag) .diag-only { display: none; }
 .call-head .muted-pill { width: 18px; height: 18px; }
 .call-head .muted-pill svg { width: 11px; height: 11px; }
 .info-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
-/* The call's status, at the right of the header line (a transfer's progress): a tinted pill, in
-   a few words, with its buttons. It's passing and it's news, so it keeps its width (up to most of
-   the line) and the name and address give way; its own text is cut short last. The colour says
-   how it's going: under way (accent), done (green), failed (red), otherwise grey. */
-.head-status {
-  flex: 0 0 auto; max-width: 74%; min-width: 0; margin-left: auto; height: 28px;
-  display: flex; align-items: center; gap: 6px; padding: 0 3px 0 9px; border-radius: 999px;
-  font-size: 13px; font-weight: 500; color: var(--accent); background: color-mix(in srgb, var(--accent) 11%, var(--surface));
-  animation: head-status-in .2s ease-out;
-}
-.head-status[hidden] { display: none; }
-/* A narrow header (under ~560 px): it goes over the top of the whole line rather than leave the
-   name squeezed to nothing beside it. It's passing; who the call's with is back when it goes. */
-.call-head { container-type: inline-size; }
-@container (max-width: 560px) {
-  .head-status { position: absolute; left: 6px; right: 6px; top: 50%; transform: translateY(-50%); max-width: none; margin: 0; animation: none; }
-}
-.head-status[data-state="done"] { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, var(--surface)); }
-.head-status[data-state="bad"] { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
-.head-status[data-state="info"] { color: var(--muted); background: var(--surface-2); }
-/* Being asked to accept a transfer: the accent, and Accept filled. */
-.head-status[data-state="ask"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
-.head-btn.head-btn-go { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.head-btn.head-btn-go:hover { background: var(--accent-hover); }
-@keyframes head-status-in { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: none; } }
-.head-status-icon { display: grid; flex: none; }
-.head-status-icon svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.head-status-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-right: 3px; }
-.head-btn {
-  flex: none; height: 22px; padding: 0 9px; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); border-radius: 999px;
-  background: var(--surface); color: inherit; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
-}
-.head-btn:hover { background: color-mix(in srgb, currentColor 10%, var(--surface)); }
-.head-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.head-btn[hidden], .head-x[hidden] { display: none; }
-.call-head .head-x { width: 22px; height: 22px; color: inherit; }
-.call-head .head-x:hover { background: color-mix(in srgb, currentColor 12%, transparent); color: inherit; }
-.call-head .head-x svg { width: 14px; height: 14px; }
 .info-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 /* The call's security, a small card under the padlock: a headline, the two things that can be
    encrypted (each with its padlock and, small, the technical name), and what that means. */
@@ -854,6 +815,8 @@ button.sx-ev:hover b { text-decoration: underline; }
   background: rgba(20, 28, 25, .88); color: #fff; font-size: 13px; box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
 }
 .rtt-toast[hidden] { display: none; }
+/* With the state card at the bottom of the stage, above it. */
+.stage-row:has(.held-note:not([hidden])) .rtt-toast { bottom: 76px; }
 .rtt-toast-icon svg { display: block; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
 .rtt-toast-who { font-weight: 600; white-space: nowrap; }
 .rtt-toast-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .9; }
@@ -1271,18 +1234,20 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .call-row.ended { opacity: .6; }
 .call-row.ended .call-avatar { box-shadow: none; }
 
-/* On hold: a note over the middle of the stage, with Resume. Amber after a minute. */
+/* The state card: what the call is doing now (on hold, with Resume, amber after a minute; a
+   transfer under way, with Cancel), at the bottom of the stage, over the call. What needs an
+   answer and what just happened are in the middle (the notices, .incoming). */
 .held-note {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 3;
+  position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 3; max-width: calc(100% - 32px);
   display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border-radius: var(--radius);
   background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--text); font-weight: 600;
   box-shadow: 0 6px 24px rgb(0 0 0 / .18); font-variant-numeric: tabular-nums;
 }
 .held-note[hidden] { display: none; }
 .held-lines { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-/* A failed transfer of yours, above "On hold · 00:04": why. */
-.held-why { color: var(--danger); font-size: 13px; }
-.held-why[hidden] { display: none; }
+/* A transfer under way: how it's going, and under it, On hold · 00:04. */
+.held-sub { color: var(--muted); font-size: 12.5px; font-weight: 500; }
+.held-sub[hidden] { display: none; }
 .held-note.long { color: var(--warn-ink); }
 .held-note .btn { height: 34px; display: inline-flex; align-items: center; gap: 6px; }
 .held-note .btn[hidden] { display: none; }
@@ -1290,9 +1255,12 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .controls #holdBtn svg { fill: currentColor; stroke: none; width: 14px; height: 14px; }
 .controls #holdBtn[aria-pressed="true"] { background: var(--warn-bg); border-color: var(--warn-ink); color: var(--warn-ink); }
 
-/* A call ringing while you're on another: a banner along the top of the stage. Centred with
-   left/right + auto margins, not left: 50% and a translate: that caps its width at half the
-   stage, and "Answer & hold current" with "+1 more waiting" pushed the buttons out of it. */
+/* The notices (app.js renderNotices): what needs an answer (a call ringing while you're on
+   another, a transfer offered, a call you're placing) and what just happened (not answered,
+   transfer failed, video refused), one at a time. Over a call, in the middle of the stage
+   (.mid); over a ringing call's card, along the top. Centred with left/right + auto margins,
+   not left: 50% and a translate: that caps its width at half the stage, and "Answer & hold
+   current" with "+1 more waiting" pushed the buttons out of it. */
 .incoming {
   position: absolute; left: 12px; right: 12px; top: 12px; z-index: 12;
   width: fit-content; margin-inline: auto;
@@ -1302,6 +1270,24 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
   box-shadow: 0 8px 28px rgb(0 0 0 / .2);
 }
 .incoming[hidden] { display: none; }
+.incoming.mid { top: 50%; transform: translateY(-50%); }
+.incoming-icon { display: grid; flex: none; color: var(--muted); }
+.incoming-icon:empty { display: none; }
+.incoming-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.incoming-x { align-self: center; width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
+.incoming-x:hover { background: var(--surface-2); color: var(--text); }
+.incoming-x svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.incoming-who.static { cursor: default; }
+.incoming-who.static:hover { text-decoration: none; }
+/* What, in the colour of what it is: waiting for you (amber), going (grey), failed (red), news (grey). */
+.incoming-what[data-tone="muted"], .incoming-what[data-tone="info"] { color: var(--muted); }
+.incoming-what[data-tone="bad"] { color: var(--danger); }
+.incoming:has(> .incoming-what[data-tone="bad"]) > .incoming-icon, .incoming-row:has(.incoming-what[data-tone="bad"]) .incoming-icon { color: var(--danger); }
+.incoming:has(> .incoming-what[data-tone="warn"]) > .incoming-icon, .incoming-row:has(.incoming-what[data-tone="warn"]) .incoming-icon { color: var(--warn-ink); }
+/* Two or more: Dismiss all, under them. */
+.incoming-foot { flex: 1 0 100%; display: flex; justify-content: flex-end; margin: -2px 0 -2px; }
+.incoming-foot[hidden] { display: none; }
+.incoming-foot .link-btn { font-size: 12.5px; }
 .incoming-who { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--text); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .incoming-who:hover { text-decoration: underline; }
 /* The ringing call in the answer view, when it's in the banner's list too. */
@@ -1334,18 +1320,8 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .incoming-row:last-child { border-bottom: 0; }
 .incoming-row .incoming-what { font-variant-numeric: tabular-nums; }
 .incoming-row .btn { height: 30px; }
-/* Placing a call over another: the same banner, not a button to open (it isn't a call yet). */
-.outgoing .incoming-who { cursor: default; }
-.outgoing .incoming-who:hover { text-decoration: none; }
-.outgoing .incoming-what { color: var(--muted); }
-.outgoing.ended .incoming-what { color: var(--danger); }
-/* Both at once: the call you're placing goes below the one ringing in. */
-.incoming:not([hidden]) ~ .outgoing, .outgoing:not([hidden]) ~ .incoming { top: 64px; }
-/* With the call header showing, they start below it: the header is this call's, the banners
-   are other calls', and neither covers the other. */
-.shell:has(.stage.head:not(.grid)) .incoming { top: calc(var(--banner-top, 12px) + 40px); }
-.shell:has(.stage.head:not(.grid)) .incoming:not([hidden]) ~ .outgoing,
-.shell:has(.stage.head:not(.grid)) .outgoing:not([hidden]) ~ .incoming { top: calc(var(--banner-top, 12px) + 92px); }
+/* Along the top with the call header showing, they start below it. */
+.shell:has(.stage.head:not(.grid)) .incoming:not(.mid) { top: calc(var(--banner-top, 12px) + 40px); }
 
 /* ---------- Focus and grid views ---------- */
 /* The Grid toggle is in the Active calls footer. In the grid the call buttons go: they'd act on

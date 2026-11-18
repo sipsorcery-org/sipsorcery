@@ -96,25 +96,12 @@
            contact's name, then the address), for how long, and a red mic while you're muted. The
            video, the bars and the self view start below it, so it covers nothing. Short of room,
            the address is cut short first (hover for all of it), so the name and timer stay. The padlock (green: SIP and media encrypted; yellow: one
-           of them; grey and open: neither) opens the call's security under it (#secPop). At its
-           right, the call's status while there is one (#xferNote): how a transfer's going, in a few
-           words with what you can do (the full sentence on hover). It's passing, so it comes first:
-           short of room, the name and address give way to it. Other calls' news (one ringing in,
-           one you're placing) has its banners below the header, so the two never cover each other. -->
+           of them; grey and open: neither) opens the call's security under it (#secPop). What
+           needs an answer and what just happened are in the notices in the middle of the stage
+           (#incoming); what the call is doing now is the state card at the bottom (#heldNote). -->
       <div class="call-info call-head" id="info" hidden>
         <button type="button" class="info-lock" id="infoLock" hidden></button>
         <div class="info-text info-line"><span class="info-contact" id="infoContact" hidden></span><span class="info-name" id="infoName"></span><span class="info-addr" id="infoAddr" hidden></span><span class="timer" id="timer"></span><span class="muted-pill" id="mutedPill" hidden></span></div>
-        <div class="head-status" id="xferNote" role="status" hidden>
-          <span class="head-status-icon" id="xferIcon" aria-hidden="true"></span>
-          <span class="head-status-text" id="xferText"></span>
-          <!-- Being transferred: you decide (the host waits for it to answer their REFER). -->
-          <button type="button" class="head-btn head-btn-go" id="xferAccept">Accept</button>
-          <button type="button" class="head-btn" id="xferDecline">Decline</button>
-          <button type="button" class="head-btn" id="xferCancel">Cancel</button>
-          <button type="button" class="head-btn" id="xferLeave">Hang up</button>
-          <button type="button" class="head-btn" id="xferRetry">Try again</button>
-          <button type="button" class="rtt-close head-x" id="xferDismiss" aria-label="Dismiss" title="Dismiss"></button>
-        </div>
       </div>
       <!-- The call's security, under the padlock (app.js, "renderSecurity"): in plain words, with
            the technical names small. -->
@@ -181,11 +168,13 @@
         <span id="privacyNoteText"></span>
         <button type="button" class="link-btn" id="privacyNoteOff">Turn off</button>
       </div>
-      <!-- On hold: how long, with Resume; or that they've put you on hold. After a transfer of
-           yours that failed (declined, say), why, above, with Try again. -->
+      <!-- The state card, at the bottom of the stage: what this call is doing now. On hold: how
+           long, with Resume; or that they've put you on hold. A transfer under way: how it's going,
+           with Cancel or Hang up (and On hold under it, if it is). -->
       <div class="held-note" id="heldNote" hidden>
-        <span class="held-lines"><span class="held-why" id="heldWhy" hidden></span><span id="heldText"></span></span>
-        <button type="button" class="btn" id="heldRetry" hidden>Try again</button>
+        <span class="held-lines"><span id="heldText"></span><span class="held-sub" id="heldSub" hidden></span></span>
+        <button type="button" class="btn" id="heldCancel" hidden>Cancel</button>
+        <button type="button" class="btn" id="heldLeave" hidden>Hang up</button>
         <button type="button" class="btn" id="heldResume"></button>
       </div>
     </main>
@@ -223,29 +212,25 @@
       </aside>
     </div>
 
-    <!-- A call you're placing while on another: Calling… until it's answered (then it's in the
-         list and on the stage), or why it wasn't. -->
-    <div class="incoming outgoing" id="outgoing" role="status" hidden>
-      <span class="incoming-who" id="outgoingWho"></span>
-      <span class="incoming-what" id="outgoingWhat"></span>
-      <span class="incoming-actions">
-        <button type="button" class="btn btn-danger" id="outgoingCancel">Cancel</button>
-      </span>
-    </div>
-    <!-- A call ringing while you're on another: who, and Decline, Answer & hold current and, on a
-         video call, Answer with video (the camera icon). The name opens the full answer view.
-         More than one ringing: "+N more" drops a list of the others down inside the banner, each
-         with its own Decline and Answer, scrolling past a few. -->
+    <!-- The notices (app.js, "renderNotices"): what needs your answer, then what just happened,
+         one at a time, in the middle of the stage over a call (at the top over a ringing call's
+         card). Decisions: a call ringing while you're on another (Decline, Answer & hold current,
+         and Answer with video on a video call), a transfer they're asking you to take (Decline,
+         Accept), a call you're placing over another (Cancel). Outcomes: a call that wasn't
+         answered (Call again), a transfer that failed (Try again), video they didn't take, each
+         with ×. The name opens that call. More than one: "+N more" drops the rest down inside
+         it, each with its own buttons, and Dismiss all declines the calls and transfers waiting
+         and clears the rest, so you can stay on the call you're on. -->
     <div class="incoming" id="incoming" role="alert" hidden>
+      <span class="incoming-icon" id="incomingIcon" aria-hidden="true"></span>
       <button type="button" class="incoming-who" id="incomingWho"></button>
       <span class="incoming-what" id="incomingWhat"></span>
       <button type="button" class="incoming-more" id="incomingMore" aria-expanded="false" aria-controls="incomingList" hidden></button>
-      <span class="incoming-actions">
-        <button type="button" class="btn btn-danger" id="incomingDecline">Decline</button>
-        <button type="button" class="btn btn-primary" id="incomingAnswer">Answer</button>
-        <button type="button" class="btn btn-primary icon-btn" id="incomingVideoAnswer" hidden></button>
-      </span>
+      <span class="incoming-actions" id="incomingActions"></span>
       <ul class="incoming-list" id="incomingList" hidden></ul>
+      <div class="incoming-foot" id="incomingFoot" hidden>
+        <button type="button" class="link-btn" id="incomingDismissAll">Dismiss all</button>
+      </div>
     </div>
 
     <!-- Manage accounts (desktop only, accounts.js): over the stage, which carries on under it. -->
