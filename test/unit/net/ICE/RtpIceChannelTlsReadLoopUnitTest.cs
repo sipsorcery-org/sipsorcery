@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -93,6 +94,31 @@ namespace SIPSorcery.Net.UnitTests
                 channel.Close("normal");
                 listener.Stop();
             }
+
+            logger.LogDebug("Test complete.");
+        }
+
+        /// <summary>
+        /// A TURNS or STUNS socket has no TCP receiver to close it, since the TLS read loop owns it, and that
+        /// loop stays blocked in a read for as long as the server keeps the connection open. Closing the
+        /// channel has to close the socket itself, or every closed peer connection keeps one connected
+        /// socket, and its port, for good.
+        /// </summary>
+        [Fact]
+        public void CloseClosesTlsIceServerSocket()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var iceServer = new RTCIceServer { urls = "turns:127.0.0.1:5349?transport=tcp", username = "user", credential = "password" };
+            var channel = new RtpIceChannel(null, RTCIceComponent.rtp, new List<RTCIceServer> { iceServer });
+            var socket = Assert.Single(channel.RtpTcpSocketByUri).Value;
+
+            channel.StartGathering();
+            channel.Close();
+            channel.Close("normal");
+
+            Assert.Throws<ObjectDisposedException>(() => socket.LocalEndPoint);
 
             logger.LogDebug("Test complete.");
         }
