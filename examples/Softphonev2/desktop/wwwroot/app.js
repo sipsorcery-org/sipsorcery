@@ -1189,18 +1189,24 @@ function endWords(reason) {
   return END_WORDS[code] ?? (code ? "· the call failed" : `· ${r}`);
 }
 // The call on the stage ended: no "Call ended" card. The stage goes straight on to what's next
-// (another call you're on, a call still ringing, or Home) and the notices say how it ended, over
-// it, for a few seconds (× closes it sooner): who, why, and how long it lasted. One you placed
+// (another call you're on, a call still ringing, or Home). If they ended it (or it dropped), the
+// notice bar says so for a few seconds (× closes it sooner): who, why, and how long it lasted;
+// if you hung up, nothing (you know). One you placed
 // that wasn't answered says why with Call again, and stays; one you hung up on before it was
 // answered, or declined, says nothing (you know). In diagnostics mode, once they're saved, its
 // diagnostics are a button on it.
 function leaveEnded(e) {
   const reason = e.h.reason || "Call ended";
   if (e.connectedAt) {
-    pushOutcome({
-      key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: `${reason} · ${fmtElapsed(Date.now() - e.connectedAt)}`,
-      icon: ICON.hangup, tone: /fail|closed|couldn't/i.test(reason) ? "bad" : "info", diagFor: e.id,
-    });
+    // A call you were on: said only if you didn't end it (you hung up, or your transfer of it
+    // went through: you know), in the notice bar like a call ringing in, not over the stage dulled.
+    const yours = reason === "You hung up" || (e.h.transfer?.role === "out" && e.h.transfer?.status === "done");
+    if (!yours) {
+      pushOutcome({
+        key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: `${reason} · ${fmtElapsed(Date.now() - e.connectedAt)}`,
+        icon: ICON.hangup, tone: /fail|closed|couldn't|no audio/i.test(reason) ? "bad" : "info", diagFor: e.id, bar: true,
+      });
+    }
   } else if (e.h.outgoing ? reason !== "You hung up" : reason !== "Declined") {
     if (e.h.outgoing) onPlacedEnded(e);
     else pushOutcome({ key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: reason, icon: ICON.phone, tone: reason === "Missed call" ? "info" : "bad", diagFor: e.id });
@@ -1264,7 +1270,7 @@ function noticeItems() {
     const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
     items.push({
       key: o.key, icon: o.icon, who: o.who, whoTitle: o.whoTitle, onWho: live ? open(o.callId) : null, what: o.what, title: o.title, tone: o.tone,
-      outcome: true, until: o.until,
+      outcome: true, bar: !!o.bar, until: o.until,
       actions: [
         ...(saved ? [{ label: "Diagnostics", title: "Open this call's saved diagnostics", cls: "btn", fn: () => openSnapshot(saved.entryId, saved.name) }] : []),
         ...(o.action ? [{ label: o.action.label, title: o.action.title, cls: "btn", fn: o.action.fn }] : []),
@@ -1321,9 +1327,11 @@ function renderNotices() {
   // Over a call, in the middle of the stage; over a ringing call's card (or Home), at the top.
   // What just happened (an outcome on top) is in the middle, wherever, over the stage dulled;
   // a click on the dulled stage closes it.
-  const outcome = !!top?.outcome;
+  // A call that ended on you is in the bar, where a call ringing in would be: no dulled stage.
+  const outcome = !!top?.outcome && !top.bar;
   el.classList.toggle("mid", outcome || sel()?.h.call === "connected");
   el.classList.toggle("outcome", outcome);
+  el.classList.toggle("timed", !!top?.until);
   const scrim = $("noticeScrim");
   scrim.hidden = !outcome;
   scrim.onclick = outcome && top.dismiss ? top.dismiss : null;

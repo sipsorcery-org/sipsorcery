@@ -1296,7 +1296,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .notice-scrim { position: absolute; inset: 0; z-index: 11; background: rgb(0 0 0 / .45); backdrop-filter: blur(2px) grayscale(.4); animation: scrim-in .18s ease-out; cursor: pointer; }
 .notice-scrim[hidden] { display: none; }
 @keyframes scrim-in { from { opacity: 0; } }
-.incoming.outcome { overflow: hidden; }
+.incoming.outcome, .incoming.timed { overflow: hidden; }
 /* Along the foot of one that goes by itself: the time it has left, held while the pointer's on it. */
 .incoming-drain { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--accent); opacity: .55; transform-origin: left; transform: scaleX(0); }
 .incoming-drain[hidden] { display: none; }
