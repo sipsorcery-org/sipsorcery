@@ -82,7 +82,12 @@ namespace SIPSorcery.Net
         /// This is the payload user data.
         /// </summary>
         public byte[] UserData;
-
+        
+        /// <summary>
+        /// The payload length of reused user data buffers
+        /// </summary>
+        internal int UserDataLength;
+        
         // These properties are used by the data sender.
         internal DateTime LastSentAt;
         internal int SendCount;
@@ -128,11 +133,60 @@ namespace SIPSorcery.Net
             StreamSeqNum = seqnum; 
             PPID = ppid;
             UserData = data;
+            UserDataLength = data.Length;
 
             ChunkFlags = (byte)(
                 (Unordered ? 0x04 : 0x0) +
                 (Begining ? 0x02 : 0x0) +
                 (Ending ? 0x01 : 0x0));
+        }
+        
+        internal static readonly SctpDataChunkPool ChunkPool = new(static () => new SctpDataChunk());
+        
+        /// <summary>
+        /// Creates a new DATA from the <see cref="ChunkPool"/>. 
+        /// </summary>
+        public static SctpDataChunk Create(
+            bool isUnordered,
+            bool isBegining,
+            bool isEnd,
+            uint tsn, 
+            ushort streamID, 
+            ushort seqnum, 
+            uint ppid, 
+            byte[] data,
+            int offset,
+            int dataLength) // : base(SctpChunkType.DATA)
+        {
+            // var chunk = new SctpDataChunk();
+            var chunk = ChunkPool.Get();
+
+            if (data == null || dataLength == 0)
+            {
+                throw new ArgumentNullException("data", "The SctpDataChunk data parameter cannot be empty.");
+            }
+
+            chunk.Unordered = isUnordered;
+            chunk.Begining = isBegining;
+            chunk.Ending = isEnd;
+            chunk.TSN = tsn;
+            chunk.StreamID = streamID;
+            chunk.StreamSeqNum = seqnum; 
+            chunk.PPID = ppid;
+            // UserData = data;
+            
+            chunk.ChunkFlags = (byte)(
+                (chunk.Unordered ? 0x04 : 0x0) +
+                (chunk.Begining ? 0x02 : 0x0) +
+                (chunk.Ending ? 0x01 : 0x0));
+            
+            chunk.UserDataLength = dataLength;
+            if (chunk.UserData == null || chunk.UserData.Length < dataLength) {
+                chunk.UserData = new byte[dataLength];
+            }
+            Buffer.BlockCopy(data, offset, chunk.UserData, 0, dataLength);
+
+            return chunk;
         }
 
         /// <summary>
@@ -143,7 +197,7 @@ namespace SIPSorcery.Net
         public override ushort GetChunkLength(bool padded)
         {
             ushort len = SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
-            len += (ushort)(UserData != null ? UserData.Length : 0);
+            len += (ushort)UserDataLength;
             return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
@@ -170,7 +224,7 @@ namespace SIPSorcery.Net
 
             if (UserData != null)
             {
-                Buffer.BlockCopy(UserData, 0, buffer, userDataPosn, UserData.Length);
+                Buffer.BlockCopy(UserData, 0, buffer, userDataPosn, UserDataLength);
             }
 
             return GetChunkLength(true);
@@ -178,7 +232,7 @@ namespace SIPSorcery.Net
 
         public bool IsEmpty()
         {
-            return UserData == null;
+            return UserData == null || UserDataLength == 0;
         }
 
         /// <summary>
@@ -213,7 +267,8 @@ namespace SIPSorcery.Net
             if (userDataLen > 0)
             {
                 dataChunk.UserData = new byte[userDataLen];
-                Buffer.BlockCopy(buffer, userDataPosn, dataChunk.UserData, 0, dataChunk.UserData.Length);
+                dataChunk.UserDataLength = userDataLen;
+                Buffer.BlockCopy(buffer, userDataPosn, dataChunk.UserData, 0, dataChunk.UserDataLength);
             }
 
             return dataChunk;
