@@ -1117,7 +1117,7 @@ function holdCall(e, hold) {
 // Decisions first, oldest first: a call ringing while you're on another, a transfer they're
 // asking you to take, a call you're placing over another (Calling… until it's answered: then it's
 // in the list and on the stage). Then outcomes: a call you placed over another that wasn't
-// answered (Call again, until you close it), a transfer that's over (failed: Try again), video they
+// answered (Call again, until you close it), a transfer that's over, video they
 // didn't take (it goes by itself). Clicking the name opens that call (a ringing one: the answer
 // view). More than one: "+N more" drops down a list of the rest inside it (scrolling past a few),
 // each with its own buttons, and Dismiss all declines every call and transfer waiting and clears

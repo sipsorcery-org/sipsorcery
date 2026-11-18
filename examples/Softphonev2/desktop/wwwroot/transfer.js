@@ -1,7 +1,7 @@
 // Transfer: to another of your calls (attended), or to an address (blind).
 
 import { addressField, fieldText, fieldUri } from "./address.js";
-import { entries, holdState, hostState, inGrid, listed, nameOf, render, sel, selectCall, selectedId, setView } from "./app.js";
+import { entries, holdState, hostState, inGrid, listed, nameOf, render, sel, selectedId } from "./app.js";
 import { avatarAttr } from "./avatar.js";
 import { contactFor, sameUri } from "./contacts.js";
 import { openMenu } from "./menus.js";
@@ -17,8 +17,8 @@ import { syncCamera } from "./video.js";
 // Enter or a click puts a row in the field; Transfer, or Enter again, sends the call there. A
 // bare name or number goes to the call's account's server (the host resolves it). A note on
 // the stage says how it's going, from the host's transfer state (see MainForm). Blind, the call
-// isn't held (they may be deciding): failed, you're still talking, with Try again. Attended, both
-// calls go on hold as it starts: failed, Resume or Try again, your choice. A transfer done to you (they send you elsewhere, or someone takes over from them)
+// isn't held (they may be deciding): failed, you're still talking. Attended, both calls go on
+// hold as it starts: failed, Resume takes it back (or Transfer again). A transfer done to you (they send you elsewhere, or someone takes over from them)
 // shows in the same note, for a few seconds.
 export let xferOpen = false;
 let xferFor = null;        // the call it was opened on: it closes if another is selected
@@ -137,8 +137,8 @@ export function transferShort(t) {
 // stage, on its call (transferState), with Cancel or Hang up. Theirs, offered (they've asked to
 // transfer you): a decision in the notices, Decline and Accept; no answer in 20 s declines it
 // (the host). Over: an outcome in the notices with × (done, cancelled, declined: the host lets
-// it go by itself after a few seconds); ours failed, with Try again (attended, the call stays on
-// hold, and the state card says so with Resume). open(id) opens that call (the name's click).
+// it go by itself after a few seconds); ours failed, until you close it or Resume (attended, the
+// call stays on hold, and the state card says so). No Try again: Transfer is on the bar. open(id) opens that call (the name's click).
 export function transferNotices(open) {
   const decisions = [], outcomes = [];
   for (const e of [...entries.values()].sort((a, b) => Number(a.id) - Number(b.id))) {
@@ -166,7 +166,7 @@ export function transferNotices(open) {
     outcomes.push({
       key: `xfer-${id}-${t.status}`, icon: ICON.transfer, who: name, whoTitle: `${e.h.remote}: open this call`, onWho: open(id),
       what: transferShort(t), title: t.detail || "", tone: failed ? "bad" : "info",
-      actions: failed && t.role === "out" ? [{ label: "Try again", title: `Transfer ${name} again`, cls: "btn", fn: () => retryTransfer(id) }] : [],
+      actions: [],
       dismiss, bulk: dismiss,
     });
   }
@@ -187,13 +187,6 @@ export function transferState(e) {
 }
 export function cancelTransfer(id) { log(`call ${id}: transfer cancelled`); post({ type: "transfer-cancel", id }); }
 export function leaveTransfer(id) { log(`call ${id}: hanging up, leaving the transfer to them`); post({ type: "transfer-leave", id }); }
-// Try again: the failed one goes, and Transfer opens on that call (in Focus).
-function retryTransfer(id) {
-  post({ type: "transfer-dismiss", id });
-  if (selectedId !== id) selectCall(id);
-  if (inGrid()) setView("focus");
-  setTransferOpen(true);
-}
 
 // Run by app.js at this point in its start-up, in the order it always ran.
 export function initTransfer() {
