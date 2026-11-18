@@ -1252,6 +1252,27 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .held-note .btn { height: 34px; display: inline-flex; align-items: center; gap: 6px; }
 .held-note .btn[hidden] { display: none; }
 .held-note .btn svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
+/* On hold: over Resume on the control bar (app.js placeHeldNote sets left and --tail-x), with a
+   pointer down at it. A click on it pulses Resume again. */
+.held-note.point { transform: none; cursor: pointer; }
+.held-note.point::after {
+  content: ""; position: absolute; top: 100%; left: var(--tail-x, 50%); translate: -50% 0;
+  border: 8px solid transparent; border-top-color: color-mix(in srgb, var(--surface) 92%, transparent); border-bottom: 0;
+}
+.held-note.point .held-sub { color: var(--muted); }
+/* Resume, while the call's held: an amber ring, pulsing three times as it goes on hold, at a
+   minute, and when the card is clicked. */
+.controls #holdBtn.attn {
+  background: var(--warn-bg); border-color: var(--warn-ink); color: var(--warn-ink);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--warn-ink) 45%, transparent);
+  animation: attn 1.2s ease-out 3;
+}
+.controls #holdBtn.attn.attn-long { animation: attn-long 1.2s ease-out 3; }
+.controls #holdBtn.attn.attn-again { animation: attn-again 1.2s ease-out 2; }
+@keyframes attn { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--warn-ink) 70%, transparent); } 100% { box-shadow: 0 0 0 12px transparent; } }
+@keyframes attn-long { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--warn-ink) 70%, transparent); } 100% { box-shadow: 0 0 0 12px transparent; } }
+@keyframes attn-again { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--warn-ink) 70%, transparent); } 100% { box-shadow: 0 0 0 12px transparent; } }
+@media (prefers-reduced-motion: reduce) { .controls #holdBtn.attn, .controls #holdBtn.attn.attn-long, .controls #holdBtn.attn.attn-again { animation: none; } }
 .controls #holdBtn svg { fill: currentColor; stroke: none; width: 14px; height: 14px; }
 .controls #holdBtn[aria-pressed="true"] { background: var(--warn-bg); border-color: var(--warn-ink); color: var(--warn-ink); }
 
@@ -1271,6 +1292,15 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 }
 .incoming[hidden] { display: none; }
 .incoming.mid { top: 50%; transform: translateY(-50%); }
+/* What just happened, over the stage dulled (a click on it closes the notice). */
+.notice-scrim { position: absolute; inset: 0; z-index: 11; background: rgb(0 0 0 / .45); backdrop-filter: blur(2px) grayscale(.4); animation: scrim-in .18s ease-out; cursor: pointer; }
+.notice-scrim[hidden] { display: none; }
+@keyframes scrim-in { from { opacity: 0; } }
+.incoming.outcome { overflow: hidden; }
+/* Along the foot of one that goes by itself: the time it has left, held while the pointer's on it. */
+.incoming-drain { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--accent); opacity: .55; transform-origin: left; transform: scaleX(0); }
+.incoming-drain[hidden] { display: none; }
+@keyframes drain { from { transform: scaleX(var(--from, 1)); } to { transform: scaleX(0); } }
 .incoming-icon { display: grid; flex: none; color: var(--muted); }
 .incoming-icon:empty { display: none; }
 .incoming-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

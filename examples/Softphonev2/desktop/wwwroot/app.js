@@ -733,27 +733,35 @@ export function render() {
   hold.setAttribute("aria-pressed", String(connected && state.held));
   setBtn(hold, state.held ? ICON.play : ICON.pause, state.held ? "Resume" : "Hold");
   hold.title = !connected ? "Hold, during a call" : state.held ? "Take the call off hold (H)" : "Put the call on hold (H)";
-  // The state card, at the bottom of the stage: what this call is doing now. On hold, how long,
-  // with Resume (amber after a minute), or that they've put you on hold; a transfer under way, how
-  // it's going, with Cancel or Hang up, and On hold under it if it is (no Resume: that's the
-  // transfer's to settle).
+  // The state card, at the bottom of the stage: what this call is doing now. On hold, how long
+  // (amber after a minute), sitting over Resume on the control bar and pointing down at it (that
+  // button is the one way back, and glows while held); or that they've put you on hold. A
+  // transfer under way: how it's going, with Cancel or Hang up, and On hold under it if it is
+  // (no pointer: that's the transfer's to settle).
   const heldNote = $("heldNote");
   const xs = connected ? transferState(e) : null;
   heldNote.hidden = !(connected && (state.held || state.heldByThem || xs));
+  const pointing = !heldNote.hidden && state.held && !xs;
+  const long = pointing && Date.now() - e.heldAt > 60000;
   if (!heldNote.hidden) {
     const holdText = state.held ? `On hold · ${fmtElapsed(Date.now() - e.heldAt)}` : state.heldByThem ? `${name} put you on hold` : "";
     $("heldText").textContent = xs ? xs.text : holdText;
     $("heldText").title = xs?.title ?? "";
-    $("heldSub").hidden = !(xs && holdText);
-    $("heldSub").textContent = xs ? holdText : "";
-    heldNote.classList.toggle("long", !xs && state.held && Date.now() - e.heldAt > 60000);
+    $("heldSub").hidden = !(xs && holdText) && !pointing;
+    $("heldSub").textContent = xs ? holdText : pointing ? "Resume is below (H)" : "";
+    heldNote.classList.toggle("long", long);
     heldNote.classList.toggle("busy", !!xs);
-    $("heldResume").hidden = !state.held || !!xs;
     $("heldCancel").hidden = !xs?.cancel;
     $("heldCancel").title = xs?.cancel ?? "";
     $("heldLeave").hidden = !xs?.leave;
     $("heldLeave").title = xs?.leave ?? "";
   }
+  heldNote.classList.toggle("point", pointing);
+  // Resume on the bar glows while the call is held: a few pulses when it goes on hold, again at
+  // a minute, and a steady amber ring between.
+  hold.classList.toggle("attn", pointing);
+  hold.classList.toggle("attn-long", long);
+  placeHeldNote();
   // End is for a connected call. A call you're placing is cancelled from its card, beside who
   // you're calling, as a call ringing in is declined from its card.
   const hang = $("hangupBtn");
@@ -885,6 +893,28 @@ async function statsLine(e) {
       `audio out ${fps("outbound-rtp-audio", "packetsSent")} pkt/s, stage ${$("stage").dataset.mode}`);
   e.lastStats = now;
 }
+
+// The state card, on hold, sits over Resume on the control bar with its pointer on the button:
+// left where the button's middle is, kept inside the stage.
+function placeHeldNote() {
+  const note = $("heldNote");
+  const clear = () => { note.style.left = ""; note.style.removeProperty("--tail-x"); };
+  if (note.hidden || !note.classList.contains("point")) return clear();
+  const stage = $("stage").getBoundingClientRect(), btn = $("holdBtn").getBoundingClientRect();
+  if (!btn.width) return clear();
+  const w = note.offsetWidth, x = btn.left + btn.width / 2 - stage.left;
+  const left = Math.max(16, Math.min(stage.width - w - 16, x - w / 2));
+  note.style.left = `${left}px`;
+  note.style.setProperty("--tail-x", `${Math.max(14, Math.min(w - 14, x - left))}px`);
+}
+new ResizeObserver(placeHeldNote).observe($("stage"));
+// A click on the card pulses Resume again: "it's down there".
+$("heldNote").addEventListener("click", (ev) => {
+  if (ev.target.closest("button") || !$("heldNote").classList.contains("point")) return;
+  const b = $("holdBtn");
+  b.classList.remove("attn-again"); void b.offsetWidth; b.classList.add("attn-again");
+});
+$("holdBtn").addEventListener("animationend", (ev) => { if (ev.animationName === "attn-again") $("holdBtn").classList.remove("attn-again"); });
 
 // Once a second: the selected call's timer, every call's time in the list, and how long held
 // calls have been held.
@@ -1112,22 +1142,32 @@ const ringingWho = (e, ringing) => {
 
 // Outcomes kept here (the host lets an unanswered call go after a few seconds; a refused video
 // is only a message): { key, callId, who, whoTitle, what, title, icon, tone, action, at }. One
-// with a button stays until you use it or close it; one without goes after OUTCOME_MS.
+// with a button stays until you use it or close it; one without goes after OUTCOME_MS (a line
+// along its foot runs down meanwhile), the clock stopped while the pointer is on the notices.
 const OUTCOME_MS = 8000;
 const outcomes = [];
+let noticesHeldAt = null;   // the pointer's on the notices, since then
 function pushOutcome(o) {
   const i = outcomes.findIndex((x) => x.key === o.key);
   if (i >= 0) outcomes.splice(i, 1);
   const at = Date.now();
-  outcomes.push({ ...o, at });
-  if (!o.action) {
-    setTimeout(() => {
-      const j = outcomes.findIndex((x) => x.key === o.key && x.at === at);
-      if (j >= 0) { outcomes.splice(j, 1); render(); }
-    }, OUTCOME_MS);
-  }
+  outcomes.push({ ...o, at, until: o.action ? null : at + OUTCOME_MS });
   render();
 }
+setInterval(() => {
+  if (noticesHeldAt != null) return;
+  const now = Date.now(), n = outcomes.length;
+  for (let j = outcomes.length - 1; j >= 0; j--) if (outcomes[j].until && outcomes[j].until <= now) outcomes.splice(j, 1);
+  if (outcomes.length !== n) render();
+}, 250);
+$("incoming").addEventListener("mouseenter", () => { noticesHeldAt = Date.now(); });
+$("incoming").addEventListener("mouseleave", () => {
+  if (noticesHeldAt == null) return;
+  const away = Date.now() - noticesHeldAt;
+  noticesHeldAt = null;
+  for (const o of outcomes) if (o.until) o.until += away;
+  renderNotices();
+});
 function dropOutcome(key) {
   const i = outcomes.findIndex((x) => x.key === key);
   if (i >= 0) { outcomes.splice(i, 1); render(); }
@@ -1218,12 +1258,13 @@ function noticeItems() {
       actions: [{ label: "Cancel", cls: "btn btn-danger", fn: () => { post({ type: "hangup", id: e.id }); e.cancelled = true; render(); } }],
     });
   }
-  items.push(...xfer.outcomes);
+  items.push(...xfer.outcomes.map((o) => ({ ...o, outcome: true })));
   for (const o of outcomes) {
     const live = o.callId && entries.get(o.callId)?.h.call === "connected";
     const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
     items.push({
       key: o.key, icon: o.icon, who: o.who, whoTitle: o.whoTitle, onWho: live ? open(o.callId) : null, what: o.what, title: o.title, tone: o.tone,
+      outcome: true, until: o.until,
       actions: [
         ...(saved ? [{ label: "Diagnostics", title: "Open this call's saved diagnostics", cls: "btn", fn: () => openSnapshot(saved.entryId, saved.name) }] : []),
         ...(o.action ? [{ label: o.action.label, title: o.action.title, cls: "btn", fn: o.action.fn }] : []),
@@ -1276,9 +1317,28 @@ function renderNotices() {
   const items = noticeItems();
   const el = $("incoming");
   el.hidden = !items.length;
-  // Over a call, in the middle of the stage; over a ringing call's card (or Home), at the top.
-  el.classList.toggle("mid", sel()?.h.call === "connected");
   const top = items[0], rest = items.slice(1), many = rest.length > 0;
+  // Over a call, in the middle of the stage; over a ringing call's card (or Home), at the top.
+  // What just happened (an outcome on top) is in the middle, wherever, over the stage dulled;
+  // a click on the dulled stage closes it.
+  const outcome = !!top?.outcome;
+  el.classList.toggle("mid", outcome || sel()?.h.call === "connected");
+  el.classList.toggle("outcome", outcome);
+  const scrim = $("noticeScrim");
+  scrim.hidden = !outcome;
+  scrim.onclick = outcome && top.dismiss ? top.dismiss : null;
+  // The line running down along the foot of one that goes by itself (held still while the
+  // pointer's on it, as its clock is).
+  const drain = $("incomingDrain");
+  drain.hidden = !top?.until;
+  if (top?.until && noticesHeldAt == null && drain.dataset.key !== `${top.key}@${top.until}`) {
+    drain.dataset.key = `${top.key}@${top.until}`;
+    const left = Math.max(0, top.until - Date.now());
+    drain.style.animation = "none";
+    drain.style.setProperty("--from", String(left / OUTCOME_MS));
+    void drain.offsetWidth;
+    drain.style.animation = `drain ${left}ms linear forwards`;
+  }
   if (!many) incomingOpen = false;
   el.classList.toggle("open", incomingOpen);
   if (top) fillNotice({ icon: $("incomingIcon"), who: $("incomingWho"), what: $("incomingWhat"), acts: $("incomingActions") }, top, many);
@@ -1517,10 +1577,8 @@ initLadder();
 
 $("hangupBtn").onclick = () => post({ type: "hangup", id: selectedId });
 $("holdBtn").onclick = () => { const e = sel(); if (e && holdState(e)) goLive(e); else holdCall(e, true); };
-$("heldResume").onclick = () => goLive(sel());
 $("heldCancel").onclick = () => cancelTransfer(selectedId);
 $("heldLeave").onclick = () => leaveTransfer(selectedId);
-$("heldResume").innerHTML = `${ICON.play}<span>Resume</span>`;
 // Mute: the selected call's microphone, for that call only. Not in privacy mode: only its own
 // button turns that off.
 function toggleMute() {

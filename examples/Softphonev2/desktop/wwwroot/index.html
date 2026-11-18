@@ -169,14 +169,18 @@
         <button type="button" class="link-btn" id="privacyNoteOff">Turn off</button>
       </div>
       <!-- The state card, at the bottom of the stage: what this call is doing now. On hold: how
-           long, with Resume; or that they've put you on hold. A transfer under way: how it's going,
-           with Cancel or Hang up (and On hold under it, if it is). -->
+           long, and a pointer down to Resume on the control bar (the one place to resume, which
+           glows while the call is held), the card sitting over it; or that they've put you on
+           hold. A transfer under way: how it's going, with Cancel or Hang up (and On hold under
+           it, if it is). -->
       <div class="held-note" id="heldNote" hidden>
         <span class="held-lines"><span id="heldText"></span><span class="held-sub" id="heldSub" hidden></span></span>
         <button type="button" class="btn" id="heldCancel" hidden>Cancel</button>
         <button type="button" class="btn" id="heldLeave" hidden>Hang up</button>
-        <button type="button" class="btn" id="heldResume"></button>
       </div>
+      <!-- Behind an outcome notice (how a call ended, a call not answered, a transfer failed): the
+           stage dulled, so the notice reads as "this just happened". A click on it closes the notice. -->
+      <div class="notice-scrim" id="noticeScrim" hidden></div>
     </main>
     <!-- The dock: a side panel right of the call, where the keypad and the text panel open (the
          keypad on top). It shows while either is open (app.js renderDock). -->
@@ -228,6 +232,7 @@
       <button type="button" class="incoming-more" id="incomingMore" aria-expanded="false" aria-controls="incomingList" hidden></button>
       <span class="incoming-actions" id="incomingActions"></span>
       <ul class="incoming-list" id="incomingList" hidden></ul>
+      <span class="incoming-drain" id="incomingDrain" aria-hidden="true" hidden></span>
       <div class="incoming-foot" id="incomingFoot" hidden>
         <button type="button" class="link-btn" id="incomingDismissAll">Dismiss all</button>
       </div>
