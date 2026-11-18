@@ -1332,6 +1332,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 /* Along the foot of one that goes by itself: the time it has left, held while the pointer's on it. */
 .incoming-drain { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--accent); opacity: .55; transform-origin: left; transform: scaleX(0); }
 .incoming-drain[hidden] { display: none; }
+.incoming:hover .incoming-drain { animation-play-state: paused !important; }
 @keyframes drain { from { transform: scaleX(var(--from, 1)); } to { transform: scaleX(0); } }
 .incoming-icon { display: grid; flex: none; color: var(--muted); }
 .incoming-icon:empty { display: none; }

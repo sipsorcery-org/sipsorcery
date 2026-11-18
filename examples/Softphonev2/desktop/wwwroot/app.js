@@ -946,6 +946,8 @@ function onState(msg) {
     let e = entries.get(h.id);
     const isNew = !e;
     if (isNew) { e = newEntry(h.id); entries.set(h.id, e); }
+    // A new call (ringing in, or one you've placed) clears the call bar's notice: that's old news.
+    if (isNew && h.call !== "ended") clearHeadEnded();
     const was = e.h.call, wasHeld = !!e.h.held, wasWith = e.h.remote;
     e.h = h;
     if (h.call === "ringing") e.ringAt ||= Date.now();   // how long it's waited, in the ringing banner's list
@@ -1147,9 +1149,9 @@ const ringingWho = (e, ringing) => {
 const OUTCOME_MS = 8000;
 // The call bar's notice (a call that ended on you, or one you placed that wasn't answered): there
 // for HEAD_MS, the last HEAD_FADE_MS of it fading out.
-const HEAD_MS = 6000, HEAD_FADE_MS = 3000;
+const HEAD_MS = 4000, HEAD_FADE_MS = 2000;
 const outcomes = [];
-let noticesHeldAt = null;   // the pointer's on the notices, since then
+let noticesHeldAt = null;   // the pointer's on the notices (or the call bar's), since then
 function pushOutcome(o) {
   const i = outcomes.findIndex((x) => x.key === o.key);
   if (i >= 0) outcomes.splice(i, 1);
@@ -1157,35 +1159,36 @@ function pushOutcome(o) {
   outcomes.push({ ...o, at, until: o.action ? null : at + (o.head ? HEAD_MS : OUTCOME_MS) });
   render();
 }
-// Away (the window in the background, or no mouse or keys for IDLE_MS): the outcomes' clocks
-// stop, so one isn't gone before you've seen it; back, the call bar's notice pulses once more.
-const IDLE_MS = 15000;
-let lastInput = Date.now(), lastTick = Date.now(), wasAway = false;
-for (const t of ["pointermove", "pointerdown", "keydown", "wheel"]) window.addEventListener(t, () => { lastInput = Date.now(); }, { passive: true, capture: true });
+// The outcomes' clocks stop while the window is hidden (minimised), so one isn't gone before
+// you've seen it (back, the call bar's notice pulses once more), and while the pointer is on
+// the notices or the call bar's notice. Both are looked at afresh every tick (not kept from
+// mouseenter/mouseleave, which a notice closed under the pointer never gets, leaving every
+// clock stopped).
+let lastTick = Date.now(), wasAway = false;
 setInterval(() => {
   const tickNow = Date.now(), step = tickNow - lastTick;
   lastTick = tickNow;
-  const away = document.hidden || !document.hasFocus() || tickNow - lastInput > IDLE_MS;
-  if (away) { for (const o of outcomes) if (o.until) o.until += step; }
-  else if (wasAway && !$("headEnded").hidden) {
+  const away = document.hidden;
+  const held = (!$("incoming").hidden && $("incoming").matches(":hover")) || (!$("headEnded").hidden && $("headEnded").matches(":hover"));
+  noticesHeldAt = held ? noticesHeldAt ?? tickNow : null;
+  if (away || held) { for (const o of outcomes) if (o.until) o.until += step; }
+  if (!away && wasAway && !$("headEnded").hidden) {
     const b = $("headEnded");
     b.classList.remove("again"); void b.offsetWidth; b.classList.add("again");
   }
   wasAway = away;
   fadeHeadEnded();
-  if (away || noticesHeldAt != null) return;
-  const now = Date.now(), n = outcomes.length;
-  for (let j = outcomes.length - 1; j >= 0; j--) if (outcomes[j].until && outcomes[j].until <= now) outcomes.splice(j, 1);
+  if (away || held) return;
+  const n = outcomes.length;
+  for (let j = outcomes.length - 1; j >= 0; j--) if (outcomes[j].until && outcomes[j].until <= tickNow) outcomes.splice(j, 1);
   if (outcomes.length !== n) render();
 }, 250);
-$("incoming").addEventListener("mouseenter", () => { noticesHeldAt = Date.now(); });
-$("incoming").addEventListener("mouseleave", () => {
-  if (noticesHeldAt == null) return;
-  const away = Date.now() - noticesHeldAt;
-  noticesHeldAt = null;
-  for (const o of outcomes) if (o.until) o.until += away;
-  renderNotices();
-});
+// A new call: the call bar's notice goes.
+function clearHeadEnded() {
+  const n = outcomes.length;
+  for (let j = outcomes.length - 1; j >= 0; j--) if (outcomes[j].head) outcomes.splice(j, 1);
+  if (outcomes.length !== n) render();
+}
 function dropOutcome(key) {
   const i = outcomes.findIndex((x) => x.key === key);
   if (i >= 0) { outcomes.splice(i, 1); render(); }
@@ -1372,8 +1375,6 @@ function fadeHeadEnded() {
   box.style.opacity = noticesHeldAt != null || wasAway ? "" : String(Math.max(0, Math.min(1, left / HEAD_FADE_MS)));
 }
 $("headEndedX").innerHTML = ICON.close;
-$("headEnded").addEventListener("mouseenter", () => { noticesHeldAt = Date.now(); });
-$("headEnded").addEventListener("mouseleave", () => $("incoming").dispatchEvent(new MouseEvent("mouseleave")));
 
 const noticeRows = new Map();   // key -> { li, icon, who, what, acts }
 function renderNotices() {
