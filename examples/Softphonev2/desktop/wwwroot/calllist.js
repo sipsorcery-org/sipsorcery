@@ -93,18 +93,22 @@ export function sendsHtml(c) {
   return chip(c.sends.mic, ICON.mic, ICON.micOff) + (c.sends.cam ? chip(c.sends.cam, ICON.video, ICON.videoOff) : "");
 }
 
-// The panel shows only with two or more calls (or while the grid is on screen): with one, the
-// stage says all there is to say about it.
+// (Experiment) The panel shows whenever there's a call (or the grid's on screen), so it's always
+// where a call's lamp is: with one, as the rail (its avatar, what it gets from you, its timer),
+// which opens into the full list, where it is, when a second call comes (unless you've folded it).
 export function renderCalls() {
   // (A call that's ended on you shows as its gone row, not its own, while the host still lists it.)
   const gone = goneRows(), goneIds = new Set(gone.map((o) => String(o.row.id)));
   const calls = listed().filter((e) => !goneIds.has(String(e.id)));
   const panel = $("calls");
-  panel.hidden = calls.length + gone.length < 2 && !inGrid();
-  const rail = narrowCalls.matches || callsCollapsed;
+  const single = calls.length + gone.length < 2 && !inGrid();
+  panel.hidden = calls.length + gone.length < 1 && !inGrid();
+  const rail = narrowCalls.matches || callsCollapsed || single;
   panel.classList.toggle("collapsed", rail);
+  panel.classList.toggle("single", single);
   const toggle = $("callsToggle");
-  toggle.hidden = narrowCalls.matches;
+  // (One call: nothing more to unfold; the stage has its name and state.)
+  toggle.hidden = narrowCalls.matches || single;
   const label = rail ? "Show active calls" : "Fold active calls";
   toggle.setAttribute("aria-expanded", String(!rail));
   toggle.setAttribute("aria-label", label);
@@ -187,7 +191,7 @@ function callRow(e, i, collapsed = false) {
   const c = callStatus(e);
   const name = nameOf(e);
   const li = document.createElement("li");
-  li.className = `call-row ${c.status}${c.muted ? " muted" : ""}${c.held ? " held" : ""}${c.long ? " long" : ""}${c.audioOff ? " audio-off" : ""}`;
+  li.className = `call-row ${c.status}${c.muted ? " muted" : ""}${c.held ? " held" : ""}${c.long ? " long" : ""}${c.audioOff ? " audio-off" : ""}${c.unread ? " unread" : ""}`;
   li.dataset.call = e.id;
   if (e.id === selectedId) li.setAttribute("aria-current", "true");   // the call on the stage
   li.title = [e.h.remote || name, c.statusText, i < 8 ? `(${i + 1})` : ""].filter(Boolean).join(" · ");

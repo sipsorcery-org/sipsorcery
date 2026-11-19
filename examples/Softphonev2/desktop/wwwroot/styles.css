@@ -1220,6 +1220,16 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 /* Narrow windows: a rail, each call as its avatar and timer. */
 .call-row { cursor: pointer; }
 .calls.collapsed { width: var(--rail-w); padding: 10px 0; align-items: center; }
+/* (Experiment) From one call to two: the rail opens into the list where it is, sliding, so the
+   stage beside it eases over rather than jumping. */
+.calls { transition: width .2s ease, padding .2s ease; }
+@media (prefers-reduced-motion: reduce) { .calls { transition: none; } }
+/* On the rail: a message you haven't read, a dot on the avatar's corner (the list's row says it). */
+.calls.collapsed .call-row.unread .call-avatar { position: relative; overflow: visible; }
+.calls.collapsed .call-row.unread .call-avatar::after {
+  content: ""; position: absolute; top: -3px; right: -3px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 0 2px var(--surface-2);
+}
 /* Folded: just the chevron at the top (narrow windows have none, so no head at all). */
 .calls.collapsed .calls-head { justify-content: center; padding: 0; margin-bottom: 6px; }
 .calls.collapsed .calls-title, .calls.collapsed .call-count { display: none; }
