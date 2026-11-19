@@ -319,7 +319,7 @@ body:not(.diag) .diag-only { display: none; }
   height: 28px; padding: 0 2px 0 10px; border-radius: 999px; font-size: 13px;
   background: var(--warn-bg); color: var(--warn-ink); border: 1px solid color-mix(in srgb, var(--warn-ink) 35%, transparent);
   --glow: color-mix(in srgb, var(--warn-ink) 45%, transparent);
-  /* (Experiment) it arrives at twice its size and shrinks to its place in its first second, so
+  /* (Experiment) it arrives half as big again and shrinks to its place in its first second, so
      it isn't missed; then the two soft pulses. Grown from its top left, so it spills over the
      stage below rather than off the top. */
   transform-origin: left top;
@@ -354,9 +354,9 @@ body:not(.diag) .diag-only { display: none; }
 .stage .home, .stage .card { top: var(--head-h); }   /* 0 without the bar; follows it as it closes up */
 @keyframes head-ended-in { from { opacity: 0; transform: translateY(-4px); } }
 @keyframes head-ended-pop {
-  0% { opacity: 0; transform: scale(2.2); }
-  10% { opacity: 1; transform: scale(2); }
-  45% { transform: scale(2); }
+  0% { opacity: 0; transform: scale(1.6); }
+  10% { opacity: 1; transform: scale(1.5); }
+  45% { transform: scale(1.5); }
   100% { transform: scale(1); }
 }
 .stage.head .remote { top: var(--head-h); height: calc(100% - var(--head-h)); }
