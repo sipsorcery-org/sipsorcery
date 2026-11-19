@@ -176,6 +176,8 @@ export function transferNotices(open) {
       // (Experiment) A call in the background, or any in Grid, with the calls panel showing: on
       // its row there (calllist.js), not in the notices. The call on the stage: the notices.
       row: (inGrid() || id !== selectedId) && (listed().length > 1 || inGrid()) ? id : null,
+      // (Experiment) The call on the stage (Focus): in its bar (app.js renderHeadEnded).
+      stage: !inGrid() && id === selectedId,
     });
   }
   return { decisions, outcomes };

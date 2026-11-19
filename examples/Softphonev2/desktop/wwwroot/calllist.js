@@ -1,6 +1,6 @@
 // The Active calls panel down the left, the grid of calls, and End all.
 
-import { ROW_MS, audioId, dropOutcome, focusCall, goneRows, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, selectedId, setView, tiles, view } from "./app.js";
+import { ROW_MS, audioId, callNotes, dropOutcome, focusCall, goneRows, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, selectedId, setView, tiles, view } from "./app.js";
 import { setAvatar } from "./avatar.js";
 import { contactMarkEl } from "./contactmark.js";
 import { contactFor } from "./contacts.js";
@@ -114,7 +114,7 @@ export function renderCalls() {
   $("callCount").textContent = calls.filter(isLive).length || "";
   // How a transfer on a call in the background went: on its row (noteRow).
   const xn = transferNotices(() => () => {});
-  const notes = new Map(xn.outcomes.filter((o) => o.row).map((o) => [String(o.row), o]));
+  const notes = new Map([...callNotes(), ...xn.outcomes.filter((o) => o.row)].map((o) => [String(o.row), o]));
   // (Experiment) A transfer you're asked to take, on a call in the background: its lamp (askRow).
   const asks = new Map(xn.decisions.filter((d) => d.row).map((d) => [String(d.row), d]));
   for (const k of [...noteSeen.keys()]) if (![...notes.values()].some((o) => o.key === k)) noteSeen.delete(k);

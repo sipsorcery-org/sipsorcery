@@ -1181,7 +1181,7 @@ setInterval(() => {
   lastTick = tickNow;
   const away = document.hidden;
   const held = (!$("incoming").hidden && $("incoming").matches(":hover")) || (!$("headEnded").hidden && $("headEnded").matches(":hover"))
-    || !!document.querySelector("#callList .call-row.gone:hover, #tiles .tile.gone:hover");
+    || !!document.querySelector("#callList .call-row.gone:hover, #tiles .tile.gone:hover, #callList .call-row.noted:hover, #tiles .tile.noted:hover");
   noticesHeldAt = held ? noticesHeldAt ?? tickNow : null;
   if (away || held) { for (const o of outcomes) if (o.until) o.until += step; }
   if (!away && wasAway && !$("headEnded").hidden) {
@@ -1203,6 +1203,9 @@ function clearHeadEnded() {
 }
 // The calls panel's rows for calls that have just ended on you (calllist.js).
 export const goneRows = () => outcomes.filter((o) => o.row);
+// (Experiment) What just happened on a call that's still on (video they didn't take), for its row
+// and tile, shaped as a transfer's outcome is there: { row: call id, what, tone, dismiss }.
+export const callNotes = () => outcomes.filter((o) => o.note != null).map((o) => ({ ...o, row: o.note, dismiss: () => dropOutcome(o.key) }));
 export function dropOutcome(key) {
   const i = outcomes.findIndex((x) => x.key === key);
   if (i >= 0) { outcomes.splice(i, 1); render(); }
@@ -1249,7 +1252,12 @@ function noticeEnded(e) {
   } else if (e.h.outgoing ? reason !== "You hung up" : reason !== "Declined") {
     if (e.h.outgoing) onPlacedEnded(e);
     // A missed call says nothing here: Recent has it (and its "N missed").
-    else if (reason !== "Missed call") pushOutcome({ key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: reason, icon: ICON.phone, tone: "bad", diagFor: e.id });
+    // (Experiment) The call on the stage: its bar; one in the background (or in Grid): its row.
+    else if (reason !== "Missed call") {
+      const row = inGrid() || e.id !== selectedId;
+      pushOutcome({ key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: reason, icon: ICON.phone, tone: "bad", diagFor: e.id,
+        head: !row, row: row ? { id: e.id, remote: e.h.remote, reason } : null });
+    }
   }
 }
 // The call on the stage ended: on to what's next.
@@ -1276,6 +1284,9 @@ function onVideoRefused(e) {
   pushOutcome({
     key: `video-${e.id}`, callId: e.id, who: nameOf(e), whoTitle: e.h.remote, what: "didn't take video",
     title: "Their phone turned video down: the call carries on as audio", icon: ICON.videoOff, tone: "info",
+    // (Experiment) On the call: the stage's, its bar; one in the background (or in Grid), its row
+    // and tile, as a transfer's outcome is (noteRow).
+    ...(!inGrid() && e.id === selectedId || listed().length < 2 && !inGrid() ? { head: true } : { note: e.id }),
   });
 }
 
@@ -1310,9 +1321,9 @@ function noticeItems() {
       actions: [{ label: "Cancel", cls: "btn btn-danger", fn: () => { post({ type: "hangup", id: e.id }); e.cancelled = true; render(); } }],
     });
   }
-  items.push(...xfer.outcomes.filter((o) => !o.row).map((o) => ({ ...o, outcome: true })));
+  items.push(...xfer.outcomes.filter((o) => !o.row && !o.stage).map((o) => ({ ...o, outcome: true })));
   for (const o of outcomes) {
-    if (o.head || o.row) continue;   // in the call's bar, or its row in the calls panel; the call's bar (renderHeadEnded); in Grid, floating over its top
+    if (o.head || o.row || o.note != null) continue;   // in the call's bar, or its row in the calls panel; the call's bar (renderHeadEnded); in Grid, floating over its top
     const live = o.callId && entries.get(o.callId)?.h.call === "connected";
     const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
     items.push({
@@ -1375,8 +1386,10 @@ let headClosing = null;   // the timer that hides it once it's faded
 function renderHeadEnded() {
   // (Experiment) The call on the stage being asked to transfer you: asked here, in its bar, with
   // Decline and Accept, until it's answered (or the host lets it go). Before any outcome.
-  const ask = !inGrid() && sel()?.h.call === "connected" ? transferNotices(() => () => {}).decisions.find((d) => d.stage) : null;
-  const o = ask ?? outcomes.findLast((x) => x.head);
+  // Then how a transfer on it went (until it's closed, or the host clears it), then the latest outcome.
+  const xn = !inGrid() && sel()?.h.call === "connected" ? transferNotices(() => () => {}) : null;
+  const ask = xn?.decisions.find((d) => d.stage) ?? null;
+  const o = ask ?? xn?.outcomes.find((x) => x.stage) ?? outcomes.findLast((x) => x.head);
   const box = $("headEnded"), info = $("info"), stage = $("stage"), connected = !inGrid() && sel()?.h.call === "connected";
   if (!o && !box.hidden) {
     if (!headClosing) {
@@ -1419,7 +1432,7 @@ function renderHeadEnded() {
   $("headEndedText").textContent = o.text ?? `${o.who} · ${o.what}`;
   box.title = o.title || o.whoTitle || "";
   box.dataset.tone = ask ? "ask" : o.tone ?? "";
-  $("headEndedX").onclick = () => dropOutcome(o.key);
+  $("headEndedX").onclick = o.dismiss ?? (() => dropOutcome(o.key));
   $("headEndedX").hidden = !!ask;
   let acts = box.querySelector(".head-ask");
   if (ask && !acts) { acts = Object.assign(document.createElement("span"), { className: "head-ask" }); box.insertBefore(acts, $("headEndedX")); }
@@ -1576,7 +1589,7 @@ function renderGrid(grid) {
   // (Experiment) How a transfer on a call went (done, failed, cancelled, declined): on its tile,
   // as on its row in the calls panel (calllist.js noteRow), with × to close it.
   const xn = grid ? transferNotices(() => () => {}) : { outcomes: [], decisions: [] };
-  const notes = new Map(xn.outcomes.filter((o) => o.row).map((o) => [String(o.row), o]));
+  const notes = new Map([...(grid ? callNotes() : []), ...xn.outcomes.filter((o) => o.row)].map((o) => [String(o.row), o]));
   // (Experiment) A transfer you're asked to take: the tile blinks; a click switches to the call,
   // where its bar asks.
   const asks = new Map(xn.decisions.filter((d) => d.row).map((d) => [String(d.row), d]));
