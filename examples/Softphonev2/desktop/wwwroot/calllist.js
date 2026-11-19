@@ -1,6 +1,6 @@
 // The Active calls panel down the left, the grid of calls, and End all.
 
-import { ROW_MS, audioId, callNotes, dropOutcome, focusCall, goneRows, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, selectedId, setView, tiles, view } from "./app.js";
+import { ROW_MS, audioId, callNotes, cancelPlacing, dropOutcome, focusCall, goneRows, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, placingCalls, selectedId, setView, tiles, view } from "./app.js";
 import { setAvatar } from "./avatar.js";
 import { contactMarkEl } from "./contactmark.js";
 import { contactFor } from "./contacts.js";
@@ -104,9 +104,10 @@ export function renderCalls() {
   // (A call that's ended on you shows as its gone row, not its own, while the host still lists it.)
   const gone = goneRows(), goneIds = new Set(gone.map((o) => String(o.row.id)));
   const calls = listed().filter((e) => !goneIds.has(String(e.id)));
+  const placing = placingCalls().filter((e) => !goneIds.has(String(e.id)));
   const panel = $("calls");
-  const single = calls.length + gone.length < 2 && !inGrid();
-  panel.hidden = calls.length + gone.length < 1 && !inGrid();
+  const single = calls.length + gone.length + placing.length < 2 && !inGrid();
+  panel.hidden = calls.length + gone.length + placing.length < 1 && !inGrid();
   if (panel.hidden) singleOpen = false;
   wasSingle = single;
   const rail = narrowCalls.matches || (single ? !singleOpen : callsCollapsed);
@@ -128,7 +129,7 @@ export function renderCalls() {
   const asks = new Map(xn.decisions.filter((d) => d.row).map((d) => [String(d.row), d]));
   for (const k of [...noteSeen.keys()]) if (![...notes.values()].some((o) => o.key === k)) noteSeen.delete(k);
   // A call that's just ended on you keeps its place a few seconds (goneRow), among the rest.
-  const rows = [...calls.map((e, i) => ({ id: Number(e.id), el: asks.has(String(e.id)) ? askRow(callRow(e, i, rail), asks.get(String(e.id))) : noteRow(callRow(e, i, rail), notes.get(String(e.id))) })), ...gone.map((o) => ({ id: Number(o.row.id), el: goneRow(o) }))];
+  const rows = [...calls.map((e, i) => ({ id: Number(e.id), el: asks.has(String(e.id)) ? askRow(callRow(e, i, rail), asks.get(String(e.id))) : noteRow(callRow(e, i, rail), notes.get(String(e.id))) })), ...gone.map((o) => ({ id: Number(o.row.id), el: goneRow(o) })), ...placing.map((e) => ({ id: Number(e.id), el: placingRow(e, rail) }))];
   $("callList").replaceChildren(...rows.sort((a, b) => a.id - b.id).map((r) => r.el));
   // Folded to the rail, the chevron to open it pulses too: there's more to read there.
   toggle.classList.toggle("attn", rail && !narrowCalls.matches && (gone.length > 0 || notes.size > 0 || asks.size > 0 || calls.some((e) => e.h.call === "ringing")));
@@ -271,6 +272,24 @@ function noteRow(li, o) {
   x.onclick = (ev) => { ev.stopPropagation(); o.dismiss(); };
   li.querySelector(".call-time")?.replaceWith(x);
   li.style.animationDelay = `-${Date.now() - noteSeen.get(o.key)}ms`;
+  return li;
+}
+
+// (Experiment) A call you're placing over another: its row, Calling…, pulsing as a call ringing
+// out does, with a hang-up button to cancel it where its timer will be. Not a call to switch to
+// yet (it joins the stage once it's answered), so a click on it does nothing. Unanswered, it
+// stays a few seconds saying why (goneRow).
+function placingRow(e, rail) {
+  const li = callRow(e, 0, rail);
+  li.classList.add("placing");
+  li.removeAttribute("aria-current");
+  li.title = [e.h.remote || nameOf(e), "Calling…"].join(" · ");
+  li.onclick = (ev) => ev.stopPropagation();
+  li.querySelector(".call-status").textContent = "Calling…";
+  const x = Object.assign(document.createElement("button"), { type: "button", className: "call-cancel", title: `Cancel the call to ${nameOf(e)}`, innerHTML: ICON.hangup });
+  x.setAttribute("aria-label", `Cancel the call to ${nameOf(e)}`);
+  x.onclick = (ev) => { ev.stopPropagation(); cancelPlacing(e.id); };
+  li.querySelector(".call-time").replaceWith(x);
   return li;
 }
 

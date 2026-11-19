@@ -88,6 +88,17 @@ export const liveEntries = () => [...entries.values()].filter(isLive);
 // the bottom, so where a call is stays where you remember it.
 // A call you're placing while on another isn't in it until it's answered (see onNewCall).
 export const listed = () => [...entries.values()].filter((e) => !e.gone && !e.pending).sort((a, b) => Number(a.id) - Number(b.id));
+// (Experiment) Calls you're placing over another, still ringing out: a row of their own in the
+// calls panel (Calling…, with a hang-up button to cancel), not a banner. Not in listed(): they
+// aren't calls you can switch to yet, nor number keys.
+export const placingCalls = () => [...entries.values()].filter((x) => x.pending && !x.cancelled && x.h.call !== "ended").sort((a, b) => Number(a.id) - Number(b.id));
+export function cancelPlacing(id) {
+  const e = entries.get(id);
+  if (!e) return;
+  post({ type: "hangup", id });
+  e.cancelled = true;
+  render();
+}
 export const nameOf = (e) => shortName(e?.h.remote);
 
 function newEntry(id) {
@@ -1020,9 +1031,9 @@ function closeEnded(e) {
 function onNewCall(e) {
   const s = sel();
   if (e.h.outgoing) e.placedVideo = placedVideo;
-  // A call you place while on another (now on hold) leaves the stage and the list alone: it shows
-  // as a "Calling…" banner, and only once it's answered does it join the list and take the stage.
-  // Unanswered, the banner says why, and the call you were on stays on hold: you may want to
+  // A call you place while on another (now on hold) leaves the stage alone: (experiment) it shows
+  // as its own row in the calls panel, Calling… (placingCalls), and only once it's answered does
+  // it take the stage. Unanswered, its row says why for a few seconds, and the call you were on stays on hold: you may want to
   // call someone else, or resume it, and that's your choice.
   if (e.h.outgoing && isLive(s) && !s.gone) {
     e.pending = true;
@@ -1274,9 +1285,13 @@ function leaveEnded(e) {
 function onPlacedEnded(e) {
   const what = endWords(e.h.reason);
   const failed = what.startsWith("·") || /found|couldn't|can't/.test(what);
+  // (Experiment) One you placed over another (its row in the calls panel), or not on the stage:
+  // its row stays a few seconds saying why (goneRow), not the bar of the call you're on.
+  const row = e.pending || inGrid() || e.id !== selectedId;
   pushOutcome({
-    key: `out-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what, text: `${nameOf(e)} ${what}`,
-    title: [e.h.remote, e.h.reason].filter(Boolean).join(": "), icon: ICON.hangup, tone: failed ? "bad" : "info", diagFor: e.id, head: true,
+    key: `out-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: row ? what.replace(/^· /, "") : what, text: `${nameOf(e)} ${what}`,
+    title: [e.h.remote, e.h.reason].filter(Boolean).join(": "), icon: ICON.hangup, tone: failed ? "bad" : "info", diagFor: e.id,
+    head: !row, row: row ? { id: e.id, remote: e.h.remote, reason: e.h.reason } : null,
   });
 }
 function onVideoRefused(e) {
@@ -1313,14 +1328,7 @@ function noticeItems() {
   const open = (id) => () => { closeHistory(false); selectCall(id); setView("focus"); };
   const xfer = transferNotices(open);
   items.push(...xfer.decisions.filter((d) => !d.stage && !d.row));   // (on the call: its bar, or its lamp)
-  // A call you're placing over another: Cancel (cancelled, it just goes: you know why).
-  const placing = [...entries.values()].filter((x) => x.pending && !x.cancelled && x.h.call !== "ended").sort((a, b) => Number(a.id) - Number(b.id));
-  for (const e of placing) {
-    items.push({
-      key: `out-${e.id}`, icon: ICON.phone, who: nameOf(e), whoTitle: e.h.remote, what: "Calling…", tone: "muted",
-      actions: [{ label: "Cancel", cls: "btn btn-danger", fn: () => { post({ type: "hangup", id: e.id }); e.cancelled = true; render(); } }],
-    });
-  }
+  // (Experiment) A call you're placing over another: its row in the calls panel (calllist.js).
   items.push(...xfer.outcomes.filter((o) => !o.row && !o.stage).map((o) => ({ ...o, outcome: true })));
   for (const o of outcomes) {
     if (o.head || o.row || o.note != null) continue;   // in the call's bar, or its row in the calls panel; the call's bar (renderHeadEnded); in Grid, floating over its top
