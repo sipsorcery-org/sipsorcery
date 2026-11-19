@@ -1,6 +1,6 @@
 // The Active calls panel down the left, the grid of calls, and End all.
 
-import { audioId, focusCall, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, selectedId, setView, tiles, view } from "./app.js";
+import { ROW_MS, audioId, dropOutcome, focusCall, goneRows, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, selectedId, setView, tiles, view } from "./app.js";
 import { setAvatar } from "./avatar.js";
 import { contactMarkEl } from "./contactmark.js";
 import { contactFor } from "./contacts.js";
@@ -96,9 +96,11 @@ export function sendsHtml(c) {
 // The panel shows only with two or more calls (or while the grid is on screen): with one, the
 // stage says all there is to say about it.
 export function renderCalls() {
-  const calls = listed();
+  // (A call that's ended on you shows as its gone row, not its own, while the host still lists it.)
+  const gone = goneRows(), goneIds = new Set(gone.map((o) => String(o.row.id)));
+  const calls = listed().filter((e) => !goneIds.has(String(e.id)));
   const panel = $("calls");
-  panel.hidden = calls.length < 2 && !inGrid();
+  panel.hidden = calls.length + gone.length < 2 && !inGrid();
   const rail = narrowCalls.matches || callsCollapsed;
   panel.classList.toggle("collapsed", rail);
   const toggle = $("callsToggle");
@@ -110,7 +112,11 @@ export function renderCalls() {
   const icon = rail ? CALLS_ICON.expand : CALLS_ICON.collapse;
   if (toggle.innerHTML !== icon) toggle.innerHTML = icon;
   $("callCount").textContent = calls.filter(isLive).length || "";
-  $("callList").replaceChildren(...calls.map((e, i) => callRow(e, i, rail)));
+  // A call that's just ended on you keeps its place a few seconds (goneRow), among the rest.
+  const rows = [...calls.map((e, i) => ({ id: Number(e.id), el: callRow(e, i, rail) })), ...gone.map((o) => ({ id: Number(o.row.id), el: goneRow(o) }))];
+  $("callList").replaceChildren(...rows.sort((a, b) => a.id - b.id).map((r) => r.el));
+  // Folded to the rail, the chevron to open it pulses too: there's more to read there.
+  toggle.classList.toggle("attn", rail && !narrowCalls.matches && gone.length > 0);
   renderAllButtons();
 }
 
@@ -203,6 +209,30 @@ function callRow(e, i, collapsed = false) {
   li.append(avatar, main);
   if (c.sends && collapsed) li.append(sends);
   li.append(time);
+  return li;
+}
+
+// A call that's just ended on you (they hung up, or it dropped), in the background or in Grid:
+// its row stays where it was, amber (red if it failed), saying so and how long it lasted, for
+// ROW_MS; then it fades and folds away. Its one animation runs the whole time, so a rebuilt row
+// carries on from where it was (a negative delay: the time it's been there by the outcome's
+// clock, which stops while the pointer's on it, as does the animation). A click closes it.
+function goneRow(o) {
+  const li = document.createElement("li");
+  li.className = "call-row gone";
+  li.dataset.tone = o.tone ?? "";
+  li.title = [o.whoTitle, o.what, "click to close"].filter(Boolean).join(" · ");
+  li.onclick = (ev) => { ev.stopPropagation(); dropOutcome(o.key); };
+  const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls, textContent: text ?? "" });
+  const avatar = el("span", "call-avatar", initial(o.who));
+  avatar.setAttribute("aria-hidden", "true");
+  setAvatar(avatar, o.row.remote);
+  const main = el("span", "call-main");
+  main.append(el("span", "call-top"), el("span", "call-status", o.what));
+  main.firstChild.append(el("span", "call-name", o.who));
+  li.append(avatar, main, el("span", "call-time", ""));
+  const been = Math.max(0, ROW_MS - ((o.until ?? 0) - Date.now()));
+  li.style.animationDelay = `-${been}ms, -${been}ms`;
   return li;
 }
 

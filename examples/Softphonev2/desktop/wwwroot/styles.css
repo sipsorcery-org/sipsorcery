@@ -1285,6 +1285,33 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 
 .call-row { cursor: pointer; }
 .call-row:not([aria-current="true"]):hover { background: var(--surface-3); }
+/* (Experiment) A call that's just ended on you, in the background or in Grid (calllist.js
+   goneRow): its row stays, amber (red if it failed), with two soft pulses, then fades and folds
+   away. One timeline (ROW_MS, 4 s), carried on across rebuilds; paused while the pointer's on it. */
+.call-row.gone {
+  overflow: hidden; max-height: 80px;
+  background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn-ink) 35%, transparent); color: var(--warn-ink);
+  --glow: color-mix(in srgb, var(--warn-ink) 45%, transparent);
+  animation: row-gone-glow .9s ease-out 2 backwards, row-gone 4s linear forwards;
+}
+.call-row.gone:hover { background: var(--warn-bg); animation-play-state: paused; }
+.call-row.gone[data-tone="bad"] { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger); --glow: color-mix(in srgb, var(--danger) 40%, transparent); }
+.call-row.gone .call-status { color: inherit; font-weight: 600; }
+.call-row.gone .call-avatar { box-shadow: 0 0 0 2px currentColor; }
+.calls.collapsed .call-row.gone { background: none; border-color: transparent; }
+@keyframes row-gone-glow { 0% { box-shadow: 0 0 0 0 var(--glow); } 100% { box-shadow: 0 0 0 7px transparent; } }
+@keyframes row-gone {
+  0%, 60% { opacity: 1; max-height: 80px; }
+  85% { opacity: 0; max-height: 80px; padding-top: 10px; padding-bottom: 10px; }
+  100% { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; border-width: 0; }
+}
+/* Folded to the rail: the chevron that opens it pulses a few times. */
+.calls-toggle.attn { color: var(--warn-ink); animation: toggle-attn 1.2s ease-in-out 3; }
+@keyframes toggle-attn { 50% { background: var(--warn-bg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn-ink) 30%, transparent); } }
+@media (prefers-reduced-motion: reduce) {
+  .call-row.gone { animation: row-gone 4s linear forwards; }
+  .calls-toggle.attn { animation: none; }
+}
 .call-row.held .call-avatar { box-shadow: 0 0 0 2px var(--border-strong); }
 /* The selected call, live: a bolder, darker ring than the other connected calls. */
 .call-row.connected[aria-current="true"]:not(.held) .call-avatar { box-shadow: 0 0 0 3px var(--accent-hover); }

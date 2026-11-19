@@ -1152,13 +1152,17 @@ const OUTCOME_MS = 8000;
 // The call bar's notice (a call that ended on you, or one you placed that wasn't answered): there
 // for HEAD_MS, the last HEAD_FADE_MS of it fading out.
 const HEAD_MS = 4000, HEAD_FADE_MS = 2000;
+// A call in the background (or in Grid) that ended on you: its row in the calls panel stays this
+// long, amber, saying so, then fades and folds away (calllist.js). Not the call bar: that's the
+// call on the stage's.
+export const ROW_MS = 4000;
 const outcomes = [];
 let noticesHeldAt = null;   // the pointer's on the notices (or the call bar's), since then
 function pushOutcome(o) {
   const i = outcomes.findIndex((x) => x.key === o.key);
   if (i >= 0) outcomes.splice(i, 1);
   const at = Date.now();
-  outcomes.push({ ...o, at, until: o.action ? null : at + (o.head ? HEAD_MS : OUTCOME_MS) });
+  outcomes.push({ ...o, at, until: o.action ? null : at + (o.head ? HEAD_MS : o.row ? ROW_MS : OUTCOME_MS) });
   render();
 }
 // The outcomes' clocks stop while the window is hidden (minimised), so one isn't gone before
@@ -1171,7 +1175,8 @@ setInterval(() => {
   const tickNow = Date.now(), step = tickNow - lastTick;
   lastTick = tickNow;
   const away = document.hidden;
-  const held = (!$("incoming").hidden && $("incoming").matches(":hover")) || (!$("headEnded").hidden && $("headEnded").matches(":hover"));
+  const held = (!$("incoming").hidden && $("incoming").matches(":hover")) || (!$("headEnded").hidden && $("headEnded").matches(":hover"))
+    || !!document.querySelector("#callList .call-row.gone:hover");
   noticesHeldAt = held ? noticesHeldAt ?? tickNow : null;
   if (away || held) { for (const o of outcomes) if (o.until) o.until += step; }
   if (!away && wasAway && !$("headEnded").hidden) {
@@ -1191,7 +1196,9 @@ function clearHeadEnded() {
   for (let j = outcomes.length - 1; j >= 0; j--) if (outcomes[j].head) outcomes.splice(j, 1);
   if (outcomes.length !== n) render();
 }
-function dropOutcome(key) {
+// The calls panel's rows for calls that have just ended on you (calllist.js).
+export const goneRows = () => outcomes.filter((o) => o.row);
+export function dropOutcome(key) {
   const i = outcomes.findIndex((x) => x.key === key);
   if (i >= 0) { outcomes.splice(i, 1); render(); }
 }
@@ -1224,10 +1231,14 @@ function noticeEnded(e) {
     // A call you were on: said only if you didn't end it (you hung up, or your transfer of it
     // went through: you know), in the call's bar at the top of the stage (renderHeadEnded).
     const yours = reason === "You hung up" || (e.h.transfer?.role === "out" && e.h.transfer?.status === "done");
+    // The call on the stage: its bar. One in the background, or any in Grid: its row in the
+    // calls panel, where it was (the bar is the call on the stage's, and would read as that one).
+    const row = inGrid() || e.id !== selectedId;
     if (!yours) {
       pushOutcome({
         key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: `${reason} · ${fmtElapsed(Date.now() - e.connectedAt)}`,
-        icon: ICON.hangup, tone: /fail|closed|couldn't|no audio/i.test(reason) ? "bad" : "info", diagFor: e.id, head: true,
+        icon: ICON.hangup, tone: /fail|closed|couldn't|no audio/i.test(reason) ? "bad" : "info", diagFor: e.id,
+        head: !row, row: row ? { id: e.id, remote: e.h.remote, reason } : null,
       });
     }
   } else if (e.h.outgoing ? reason !== "You hung up" : reason !== "Declined") {
@@ -1296,7 +1307,7 @@ function noticeItems() {
   }
   items.push(...xfer.outcomes.map((o) => ({ ...o, outcome: true })));
   for (const o of outcomes) {
-    if (o.head) continue;   // in the call's bar (renderHeadEnded); in Grid, floating over its top
+    if (o.head || o.row) continue;   // in the call's bar, or its row in the calls panel; the call's bar (renderHeadEnded); in Grid, floating over its top
     const live = o.callId && entries.get(o.callId)?.h.call === "connected";
     const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
     items.push({
