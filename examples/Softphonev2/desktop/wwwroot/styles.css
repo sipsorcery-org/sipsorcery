@@ -308,8 +308,9 @@ body:not(.diag) .diag-only { display: none; }
   background: var(--surface); border-bottom: 1px solid var(--border); color: var(--text); white-space: nowrap;
 }
 .call-head[hidden] { display: none; }
-/* A call that ended on you, at the right of the bar (app.js renderHeadEnded); with no call on
-   the stage, the bar holds only that, and Home starts under it. */
+/* A call that ended on you, at the left of the bar (app.js renderHeadEnded), always: over a
+   call, laid over its details, which fade out under it and back as it fades (--cover, its
+   opacity); with no call on the stage, the bar holds only that, and Home starts under it. */
 /* Between info and warning: amber, a pill, two soft pulses as it comes (and one more when you
    come back from being away), then still, so it catches the eye of someone idle without
    pulling at someone busy. Red if the call failed or dropped. */
@@ -340,6 +341,9 @@ body:not(.diag) .diag-only { display: none; }
 .head-ended-x:hover { background: color-mix(in srgb, currentColor 14%, transparent); }
 .head-ended-x svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .call-head.ended-only > :not(.head-ended) { display: none; }
+.call-head.covered > :not(.head-ended) { opacity: calc(1 - var(--cover, 1)); pointer-events: none; transition: opacity .25s linear; }
+.call-head.covered.uncovering > :not(.head-ended) { transition: opacity .5s ease; }
+.call-head.covered .head-ended { position: absolute; left: 10px; top: 0; bottom: 0; margin: auto 0; max-width: calc(100% - 22px); }
 .call-head.ended-only .head-ended { margin-left: 0; max-width: 100%; }
 .stage .home, .stage .card { top: var(--head-h); }   /* 0 without the bar; follows it as it closes up */
 @keyframes head-ended-in { from { opacity: 0; transform: translateY(-4px); } }

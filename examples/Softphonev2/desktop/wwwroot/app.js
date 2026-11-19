@@ -1357,11 +1357,14 @@ function renderHeadEnded() {
     if (!headClosing) {
       box.classList.add("closing");
       if (info.classList.contains("ended-only") && !connected) { info.classList.add("closing"); stage.classList.add("head-closing"); }
+      // Over a call, the call's details come back as it goes.
+      if (info.classList.contains("covered")) { info.classList.add("uncovering"); info.style.setProperty("--cover", "0"); }
       headClosing = setTimeout(() => {
         headClosing = null;
         box.hidden = true;
         box.classList.remove("closing");
-        info.classList.remove("closing", "ended-only");
+        info.classList.remove("closing", "ended-only", "covered", "uncovering");
+        info.style.removeProperty("--cover");
         stage.classList.remove("head-closing");
         render();
       }, HEAD_CLOSE_MS);
@@ -1375,11 +1378,15 @@ function renderHeadEnded() {
     clearTimeout(headClosing);
     headClosing = null;
     box.classList.remove("closing");
-    info.classList.remove("closing");
+    info.classList.remove("closing", "uncovering");
     stage.classList.remove("head-closing");
   }
   box.hidden = !o;
   info.classList.toggle("ended-only", !!o && !connected);
+  // Over a call it's where it always is, at the left, over the call's details (they fade out as
+  // it comes and back as it fades): × if you want them back sooner.
+  info.classList.toggle("covered", !!o && connected);
+  if (!o) info.style.removeProperty("--cover");
   if (!connected) info.hidden = !o;
   stage.classList.toggle("head", connected || !!o);
   if (!o) return;
@@ -1398,10 +1405,12 @@ function renderHeadEnded() {
 // full again while the pointer's on it (its clock stopped), and while you're away (so is that).
 function fadeHeadEnded() {
   const box = $("headEnded");
+  if (headClosing) return;
   const o = box.hidden ? null : outcomes.find((x) => x.key === box.dataset.key);
-  if (!o?.until) { box.style.opacity = ""; return; }
-  const left = o.until - Date.now();
-  box.style.opacity = noticesHeldAt != null || wasAway ? "" : String(Math.max(0, Math.min(1, left / HEAD_FADE_MS)));
+  const left = o?.until ? o.until - Date.now() : HEAD_FADE_MS;
+  box.style.opacity = !o?.until || noticesHeldAt != null || wasAway ? "" : String(Math.max(0, Math.min(1, left / HEAD_FADE_MS)));
+  // The call's details under it, the other way.
+  $("info").style.setProperty("--cover", box.style.opacity || "1");
 }
 $("headEndedX").innerHTML = ICON.close;
 
