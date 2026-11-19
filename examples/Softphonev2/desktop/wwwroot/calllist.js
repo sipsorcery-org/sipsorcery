@@ -233,7 +233,10 @@ function goneRow(o) {
   const main = el("span", "call-main");
   main.append(el("span", "call-top"), el("span", "call-status", o.what));
   main.firstChild.append(el("span", "call-name", o.who));
-  li.append(avatar, main, el("span", "call-time", ""));
+  // A hang-up mark where its timer was (at the right; on the rail, under the avatar).
+  const mark = el("span", "call-time gone-mark");
+  mark.innerHTML = ICON.hangup;
+  li.append(avatar, main, mark);
   const been = Math.max(0, ROW_MS - ((o.until ?? 0) - Date.now()));
   li.style.animationDelay = `-${been}ms, -${been}ms`;
   return li;

@@ -1298,7 +1298,16 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .call-row.gone[data-tone="bad"] { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger); --glow: color-mix(in srgb, var(--danger) 40%, transparent); }
 .call-row.gone .call-status { color: inherit; font-weight: 600; }
 .call-row.gone .call-avatar { box-shadow: 0 0 0 2px currentColor; }
-.calls.collapsed .call-row.gone { background: none; border-color: transparent; }
+/* On the rail (no name or status there): a filled amber tile round its avatar, dulled, with the
+   hang-up mark under it, so it reads at a glance. */
+.call-row.gone .call-avatar { opacity: .6; filter: grayscale(.5); }
+.call-row.gone .gone-mark { display: grid; place-items: center; }
+.call-row.gone .gone-mark svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.calls.collapsed .call-row.gone {
+  padding: 5px 4px; border-radius: 10px; background: var(--warn-bg);
+  border-color: color-mix(in srgb, var(--warn-ink) 35%, transparent);
+}
+.calls.collapsed .call-row.gone[data-tone="bad"] { background: var(--danger-soft); border-color: var(--danger-border); }
 @keyframes row-gone-glow { 0% { box-shadow: 0 0 0 0 var(--glow); } 100% { box-shadow: 0 0 0 7px transparent; } }
 @keyframes row-gone {
   0%, 60% { opacity: 1; max-height: 80px; }
