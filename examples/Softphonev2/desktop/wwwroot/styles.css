@@ -319,8 +319,14 @@ body:not(.diag) .diag-only { display: none; }
   height: 28px; padding: 0 2px 0 10px; border-radius: 999px; font-size: 13px;
   background: var(--warn-bg); color: var(--warn-ink); border: 1px solid color-mix(in srgb, var(--warn-ink) 35%, transparent);
   --glow: color-mix(in srgb, var(--warn-ink) 45%, transparent);
-  animation: head-ended-in .2s ease-out, head-ended-glow 1.4s ease-out .2s 2;
+  /* (Experiment) it arrives at twice its size and shrinks to its place in its first second, so
+     it isn't missed; then the two soft pulses. Grown from its top left, so it spills over the
+     stage below rather than off the top. */
+  transform-origin: left top;
+  animation: head-ended-pop 1.1s ease-in-out, head-ended-glow 1.4s ease-out 1.1s 2;
 }
+/* While it's there the bar lets it spill out (it's all the bar shows, or laid over the rest). */
+.call-head:is(.covered, .ended-only) { overflow: visible; }
 .head-ended.again { animation: head-ended-glow 1.4s ease-out 1; }
 /* Its fade out (app.js fadeHeadEnded sets the opacity every quarter second), and the last of
    it when it goes (its × too), over half a second, the bar with it if that's all there is. */
@@ -347,6 +353,12 @@ body:not(.diag) .diag-only { display: none; }
 .call-head.ended-only .head-ended { margin-left: 0; max-width: 100%; }
 .stage .home, .stage .card { top: var(--head-h); }   /* 0 without the bar; follows it as it closes up */
 @keyframes head-ended-in { from { opacity: 0; transform: translateY(-4px); } }
+@keyframes head-ended-pop {
+  0% { opacity: 0; transform: scale(2.2); }
+  10% { opacity: 1; transform: scale(2); }
+  45% { transform: scale(2); }
+  100% { transform: scale(1); }
+}
 .stage.head .remote { top: var(--head-h); height: calc(100% - var(--head-h)); }
 .stage.head .nocam, .stage.head .audio-view { top: var(--head-h); }
 /* One line: a saved contact's mark and name (bold), the address (grey), the timer (grey), the
