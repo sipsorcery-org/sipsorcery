@@ -1553,6 +1553,9 @@ function renderGrid(grid) {
   // until its row goes (ROW_MS): then it fades and the grid closes up.
   const gone = grid ? goneTiles().filter((o) => !shown.some((e) => e.id === o.row.id)) : [];
   const ids = new Set([...shown.map((e) => e.id), ...gone.map((o) => o.row.id)]);
+  // (Experiment) How a transfer on a call went (done, failed, cancelled, declined): on its tile,
+  // as on its row in the calls panel (calllist.js noteRow), with × to close it.
+  const notes = grid ? new Map(transferNotices(() => () => {}).outcomes.filter((o) => o.row).map((o) => [String(o.row), o])) : new Map();
   box.style.setProperty("--cols", stage.clientWidth < 560 ? 1 : ids.size > 4 ? 3 : 2);
   // Calls leaving the grid (or all of them, back in Focus): their <video> goes back on the stage.
   for (const [id, t] of tiles) {
@@ -1581,14 +1584,25 @@ function renderGrid(grid) {
     // it keeps coming), and on an audio call the bars.
     const video = !!m?.hasVideo && performance.now() - m.lastFrameAt < NO_FRAMES_MS;
     const audio = !!m && !m.hasVideo && c.status === "connected";
-    t.root.className = `tile ${c.status}${video ? " video" : ""}${audio ? " audio" : ""}${e.id === selectedId ? " sel" : ""}${c.muted ? " muted" : ""}${c.held ? " held" : ""}${c.long ? " long" : ""}`;
+    const note = notes.get(String(e.id));
+    t.root.className = `tile ${c.status}${video ? " video" : ""}${audio ? " audio" : ""}${e.id === selectedId ? " sel" : ""}${c.muted ? " muted" : ""}${c.held ? " held" : ""}${c.long ? " long" : ""}${note ? ` noted${note.tone === "bad" ? " bad" : ""}` : ""}`;
     t.root.title = [e.h.remote || name, c.statusText, i < 8 ? `${i + 1} opens it` : "Open this call"].join(" · ");
     t.root.setAttribute("aria-label", `${name}, ${c.statusText}`);
     setInitial(t.avatar, name, e.h.remote);
     t.name.textContent = name;
     const tc = contactFor(e.h.remote);
     if (tc) t.name.append(contactMarkEl(tc.name));
-    t.status.textContent = c.statusText;
+    t.status.textContent = note ? note.what : c.statusText;
+    if (note) t.root.title = [note.title || note.what, "click to open this call"].join(" · ");
+    if (note && !t.noteX) {
+      t.noteX = Object.assign(document.createElement("button"), { type: "button", className: "call-note-x", title: "Close", innerHTML: ICON.close });
+      t.noteX.setAttribute("aria-label", "Close");
+      t.status.closest(".tile-meta").append(t.noteX);
+    }
+    if (t.noteX) {
+      t.noteX.hidden = !note;
+      t.noteX.onclick = note ? (ev) => { ev.stopPropagation(); note.dismiss(); } : null;
+    }
     t.time.textContent = c.since ? fmtElapsed(Date.now() - c.since) : "";
     const media = sendsHtml(c);
     if (t.media.innerHTML !== media) t.media.innerHTML = media;
