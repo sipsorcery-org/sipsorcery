@@ -1076,6 +1076,8 @@ function onPhase(e) {
       if (textOpen) setTextOpen(false, false);
       log(`call ${e.id} ended: keypad and text closed`);
     }
+    // Said in the call bar whichever call it was (one in the background, or in Grid, too).
+    noticeEnded(e);
     if (e.id === selectedId) leaveEnded(e);
   }
 }
@@ -1215,7 +1217,8 @@ function endWords(reason) {
 // so does a call you placed that wasn't answered (declined, busy, no answer), with why. One you
 // hung up on, or declined, says nothing (you know), nor does a missed call (Recent has it). In diagnostics mode, once they're saved, its
 // diagnostics are a link on it.
-function leaveEnded(e) {
+function noticeEnded(e) {
+  if (e.cancelled) return;
   const reason = e.h.reason || "Call ended";
   if (e.connectedAt) {
     // A call you were on: said only if you didn't end it (you hung up, or your transfer of it
@@ -1232,6 +1235,9 @@ function leaveEnded(e) {
     // A missed call says nothing here: Recent has it (and its "N missed").
     else if (reason !== "Missed call") pushOutcome({ key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: reason, icon: ICON.phone, tone: "bad", diagFor: e.id });
   }
+}
+// The call on the stage ended: on to what's next.
+function leaveEnded(e) {
   const back = otherLive();
   if (back) selectCall(back.id);
   else selectedId = null;
@@ -1290,7 +1296,7 @@ function noticeItems() {
   }
   items.push(...xfer.outcomes.map((o) => ({ ...o, outcome: true })));
   for (const o of outcomes) {
-    if (o.head && !inGrid()) continue;   // in the call's bar (renderHeadEnded); Grid has none
+    if (o.head) continue;   // in the call's bar (renderHeadEnded); in Grid, floating over its top
     const live = o.callId && entries.get(o.callId)?.h.call === "connected";
     const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
     items.push({
@@ -1351,8 +1357,8 @@ function fillNotice(p, it, many) {
 const HEAD_CLOSE_MS = 500;
 let headClosing = null;   // the timer that hides it once it's faded
 function renderHeadEnded() {
-  const o = inGrid() ? null : outcomes.findLast((x) => x.head);
-  const box = $("headEnded"), info = $("info"), stage = $("stage"), connected = sel()?.h.call === "connected";
+  const o = outcomes.findLast((x) => x.head);
+  const box = $("headEnded"), info = $("info"), stage = $("stage"), connected = !inGrid() && sel()?.h.call === "connected";
   if (!o && !box.hidden) {
     if (!headClosing) {
       box.classList.add("closing");

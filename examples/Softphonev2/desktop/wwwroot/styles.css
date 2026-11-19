@@ -207,7 +207,11 @@ body:not(.diag) .diag-only { display: none; }
    but none arriving) or audio (no video on the call). */
 .remote { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: none; }
 /* Grid view: only the tiles; the stage's overlays are the selected call's, for Focus view. */
-.stage.grid > :not(.tiles) { display: none !important; }
+.stage.grid > :not(.tiles, .call-head.ended-only) { display: none !important; }
+/* Grid: the call bar's notice, on its own, floating over the top of the grid (the bar itself
+   neither takes room nor clicks). */
+.stage.grid .call-head.ended-only { height: 40px; background: none; border: 0; pointer-events: none; }
+.stage.grid .call-head.ended-only .head-ended { pointer-events: auto; }
 .stage[data-mode="video"] .remote.sel { display: block; }
 .card { position: absolute; inset: 0; display: none; place-content: center; text-align: center; gap: 6px; color: var(--tile-ink); padding: 16px; }
 .stage[data-mode="card"] .card { display: grid; }
