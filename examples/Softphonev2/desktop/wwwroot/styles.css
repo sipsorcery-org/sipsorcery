@@ -1500,6 +1500,22 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .tile.held .tile-feed > :not(.held-note) { opacity: .6; }   /* dimmed, but not the note over it */
 .tile .held-note { max-width: calc(100% - 16px); white-space: nowrap; cursor: default; }
 .tile.ended { opacity: .7; }
+/* (Experiment) A call that's just ended on you, in Grid (app.js renderGrid): its tile stays where
+   it was for ROW_MS (4 s), dulled, amber (red if it failed) with two soft pulses, saying so; then
+   it fades and the grid closes up. Paused while the pointer's on it; a click closes it. */
+.tile.gone {
+  border-color: var(--warn-ink); --glow: color-mix(in srgb, var(--warn-ink) 45%, transparent);
+  animation: row-gone-glow .9s ease-out 2 backwards, tile-gone 4s linear forwards;
+}
+.tile.gone.bad { border-color: var(--danger); --glow: color-mix(in srgb, var(--danger) 40%, transparent); }
+.tile.gone:hover { animation-play-state: paused; }
+.tile.gone .tile-feed { opacity: .45; filter: grayscale(.6); }
+.tile.gone .tile-meta { background: var(--warn-bg); }
+.tile.gone.bad .tile-meta { background: var(--danger-soft); }
+.tile.gone .tile-status { color: var(--warn-ink); font-weight: 600; }
+.tile.gone.bad .tile-status { color: var(--danger); }
+@keyframes tile-gone { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .tile.gone { animation: tile-gone 4s linear forwards; } }
 /* An audio call's tile: their audio above, yours below, as on the stage. */
 .tile-viz { position: absolute; left: 8%; top: 20%; width: 84%; height: 60%; display: none; color: var(--tile-ink); --viz-me: var(--accent); --viz-warn: var(--danger); }
 .tile.audio .tile-viz { display: block; }

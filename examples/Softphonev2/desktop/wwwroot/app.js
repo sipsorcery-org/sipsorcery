@@ -176,7 +176,12 @@ export const gridCalls = () => [...entries.values()].filter((e) => (!e.gone && !
   .sort((a, b) => Number(a.id) - Number(b.id));
 export function inGrid() {
   const e = sel();
-  return view === "grid" && !!e && e.h.call !== "ringing" && gridCalls().length > 1;
+  return view === "grid" && !!e && e.h.call !== "ringing" && gridCalls().length + goneTiles().length > 1;
+}
+// (Experiment) Tiles of calls that have just ended on you, staying a few seconds (renderGrid):
+// the outcomes for their rows whose call had a tile. (Before those are set up at start-up: none.)
+function goneTiles() {
+  try { return outcomes.filter((o) => o.row && tiles.has(o.row.id)); } catch { return []; }
 }
 export function setView(v) {
   if (v === view) return;
@@ -1176,7 +1181,7 @@ setInterval(() => {
   lastTick = tickNow;
   const away = document.hidden;
   const held = (!$("incoming").hidden && $("incoming").matches(":hover")) || (!$("headEnded").hidden && $("headEnded").matches(":hover"))
-    || !!document.querySelector("#callList .call-row.gone:hover");
+    || !!document.querySelector("#callList .call-row.gone:hover, #tiles .tile.gone:hover");
   noticesHeldAt = held ? noticesHeldAt ?? tickNow : null;
   if (away || held) { for (const o of outcomes) if (o.until) o.until += step; }
   if (!away && wasAway && !$("headEnded").hidden) {
@@ -1517,7 +1522,8 @@ function makeTile(e) {
   t.root.dataset.call = e.id;
   t.root.tabIndex = 0;
   t.root.setAttribute("role", "button");
-  t.root.onclick = () => focusCall(e.id);
+  // (A tile that's staying after its call ended on you: a click closes it.)
+  t.root.onclick = () => t.root.classList.contains("gone") ? dropOutcome(`end-${e.id}`) : focusCall(e.id);
   t.root.onkeydown = (ev) => { if (ev.target === t.root && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); focusCall(e.id); } };
   t.avatar.setAttribute("aria-hidden", "true");
   const text = el("span", "tile-text");
@@ -1543,8 +1549,11 @@ function renderGrid(grid) {
   $("controls").classList.toggle("grid", grid);
 
   const shown = grid ? gridCalls() : [];
-  const ids = new Set(shown.map((e) => e.id));
-  box.style.setProperty("--cols", stage.clientWidth < 560 ? 1 : shown.length > 4 ? 3 : 2);
+  // (Experiment) A call that's just ended on you keeps its tile, where it was, dulled, saying so,
+  // until its row goes (ROW_MS): then it fades and the grid closes up.
+  const gone = grid ? goneTiles().filter((o) => !shown.some((e) => e.id === o.row.id)) : [];
+  const ids = new Set([...shown.map((e) => e.id), ...gone.map((o) => o.row.id)]);
+  box.style.setProperty("--cols", stage.clientWidth < 560 ? 1 : ids.size > 4 ? 3 : 2);
   // Calls leaving the grid (or all of them, back in Focus): their <video> goes back on the stage.
   for (const [id, t] of tiles) {
     if (ids.has(id)) continue;
@@ -1563,7 +1572,8 @@ function renderGrid(grid) {
       t.feed.prepend(e.el);
       if (e.el.srcObject && e.el.paused) e.el.play().catch(() => {});
     }
-    if (box.children[i] !== t.root) box.insertBefore(t.root, box.children[i] ?? null);
+    const at = gone.length ? [...ids].map(Number).sort((a, b) => a - b).indexOf(Number(e.id)) : i;
+    if (box.children[at] !== t.root) box.insertBefore(t.root, box.children[at] ?? null);
     const c = callStatus(e);
     const name = nameOf(e);
     const m = e.m;
@@ -1596,6 +1606,20 @@ function renderGrid(grid) {
       t.resume.hidden = !c.held;
     }
   });
+  for (const o of gone) {
+    const t = tiles.get(o.row.id);
+    const at = [...ids].map(Number).sort((a, b) => a - b).indexOf(Number(o.row.id));
+    if (box.children[at] !== t.root) box.insertBefore(t.root, box.children[at] ?? null);
+    const cls = `tile gone${o.tone === "bad" ? " bad" : ""}`;
+    if (t.root.className !== cls) t.root.className = cls;
+    t.root.title = [o.whoTitle, o.what, "click to close"].filter(Boolean).join(" · ");
+    t.root.setAttribute("aria-label", `${o.who}, ${o.what}`);
+    t.status.textContent = o.what;
+    t.time.textContent = "";
+    t.media.innerHTML = "";
+    t.held.hidden = true;
+    t.self.hidden = true;
+  }
   if (grid) startTiles();
 }
 initCallList();
