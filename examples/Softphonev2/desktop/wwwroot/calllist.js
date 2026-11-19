@@ -20,16 +20,12 @@ import { sourceAvailable, sourceOf } from "./video.js";
 
 // Narrow windows (under 700 px): the panel is a rail of avatars, to leave the stage its room.
 const narrowCalls = matchMedia("(max-width: 699px)");
-let callsCollapsed = false;   // your choice on wider windows
-// (Experiment) With one call it starts as the rail; unfolding it gives the full list (this call
-// only: back to the rail for the next one). Two or more calls go by callsCollapsed.
-let singleOpen = false;
-let wasSingle = false;
-// Folds or unfolds the panel: one call, for that call; several, remembered.
+// (Experiment) Open or folded to the rail: yours to choose, and it stays as you left it while
+// calls come and go (a new call never opens or folds it). It starts as the rail when the first
+// call comes, and goes back to that once there are none.
+let callsOpen = false;
 function foldCalls() {
-  if (wasSingle) { singleOpen = !singleOpen; renderCalls(); return; }
-  callsCollapsed = !callsCollapsed;
-  try { localStorage.setItem("callsPanel", callsCollapsed ? "collapsed" : "open"); } catch { /* private window: this visit only */ }
+  callsOpen = !callsOpen;
   renderCalls();
 }
 const CALLS_ICON = {
@@ -114,9 +110,8 @@ export function renderCalls() {
   const panel = $("calls");
   const single = calls.length + gone.length < 2 && !inGrid();
   panel.hidden = calls.length + gone.length < 1 && !inGrid();
-  if (panel.hidden) singleOpen = false;
-  wasSingle = single;
-  const rail = narrowCalls.matches || (single ? !singleOpen : callsCollapsed);
+  if (panel.hidden) callsOpen = false;
+  const rail = narrowCalls.matches || !callsOpen;
   panel.classList.toggle("collapsed", rail);
   panel.classList.toggle("single", single);
   const toggle = $("callsToggle");
@@ -301,7 +296,6 @@ export function renderCallTimes() {
 
 // Run by app.js at this point in its start-up, in the order it always ran.
 export function initCallList() {
-  try { callsCollapsed = localStorage.getItem("callsPanel") === "collapsed"; } catch { /* storage unavailable */ }
   $("gridBtn").onclick = () => setView(view === "grid" ? "focus" : "grid");
   $("allMenuBtn").onclick = () => showMenu("all");
 

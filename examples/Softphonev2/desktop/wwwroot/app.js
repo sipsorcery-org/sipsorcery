@@ -1084,7 +1084,11 @@ function onPhase(e) {
     }
     // Said in the call bar whichever call it was (one in the background, or in Grid, too).
     noticeEnded(e);
-    if (e.id === selectedId) leaveEnded(e);
+    // (Experiment) A call you placed that didn't go through stays on the stage a few seconds, its
+    // card saying why (with Back to … or Close), before the stage goes on; cancelled, it just goes.
+    if (e.id === selectedId && placedFailed(e)) {
+      setTimeout(() => { if (selectedId === e.id && entries.get(e.id) === e) leaveEnded(e); }, PLACED_STAY_MS);
+    } else if (e.id === selectedId) leaveEnded(e);
   }
 }
 
@@ -1272,7 +1276,12 @@ function leaveEnded(e) {
 // A call you placed that wasn't answered (declined, busy, no answer, or it failed): who and why,
 // in the call's bar like a call that ended on you; amber, or red if it failed. No Call again:
 // Recent has it. The host's sentence, with its SIP status, is the tooltip.
+// (Experiment) A call you placed, on the stage, that wasn't answered and that you didn't cancel:
+// its card stays PLACED_STAY_MS saying why, instead of a notice.
+const PLACED_STAY_MS = 4000;
+const placedFailed = (e) => e.h.outgoing && !e.connectedAt && !e.cancelled && (e.h.reason || "") !== "You hung up" && !inGrid();
 function onPlacedEnded(e) {
+  if (e.id === selectedId && placedFailed(e)) return;   // its card says it
   const what = endWords(e.h.reason);
   const failed = what.startsWith("·") || /found|couldn't|can't/.test(what);
   // (Experiment) With another call to go back to (or in Grid, or not on the stage), its row says
