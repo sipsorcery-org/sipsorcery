@@ -155,6 +155,11 @@ export function transferNotices(open) {
           { label: "Accept", title: `Go to ${t.target}: ${t.by} hangs up once ${t.target} answers`, cls: "btn btn-primary", fn: () => answer(true) },
         ],
         bulk: () => answer(false),
+        // (Experiment) Where it's asked: the call on the stage (Focus), in its call bar
+        // (app.js renderHeadEnded); a call in the background, or any in Grid, by its row and
+        // tile blinking (calllist.js, app.js renderGrid): you switch to it to answer.
+        stage: !inGrid() && id === selectedId,
+        row: (inGrid() || id !== selectedId) && (listed().length > 1 || inGrid()) ? id : null,
       });
       continue;
     }

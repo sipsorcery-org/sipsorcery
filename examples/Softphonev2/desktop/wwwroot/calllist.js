@@ -113,13 +113,16 @@ export function renderCalls() {
   if (toggle.innerHTML !== icon) toggle.innerHTML = icon;
   $("callCount").textContent = calls.filter(isLive).length || "";
   // How a transfer on a call in the background went: on its row (noteRow).
-  const notes = new Map(transferNotices(() => () => {}).outcomes.filter((o) => o.row).map((o) => [String(o.row), o]));
+  const xn = transferNotices(() => () => {});
+  const notes = new Map(xn.outcomes.filter((o) => o.row).map((o) => [String(o.row), o]));
+  // (Experiment) A transfer you're asked to take, on a call in the background: its lamp (askRow).
+  const asks = new Map(xn.decisions.filter((d) => d.row).map((d) => [String(d.row), d]));
   for (const k of [...noteSeen.keys()]) if (![...notes.values()].some((o) => o.key === k)) noteSeen.delete(k);
   // A call that's just ended on you keeps its place a few seconds (goneRow), among the rest.
-  const rows = [...calls.map((e, i) => ({ id: Number(e.id), el: noteRow(callRow(e, i, rail), notes.get(String(e.id))) })), ...gone.map((o) => ({ id: Number(o.row.id), el: goneRow(o) }))];
+  const rows = [...calls.map((e, i) => ({ id: Number(e.id), el: asks.has(String(e.id)) ? askRow(callRow(e, i, rail), asks.get(String(e.id))) : noteRow(callRow(e, i, rail), notes.get(String(e.id))) })), ...gone.map((o) => ({ id: Number(o.row.id), el: goneRow(o) }))];
   $("callList").replaceChildren(...rows.sort((a, b) => a.id - b.id).map((r) => r.el));
   // Folded to the rail, the chevron to open it pulses too: there's more to read there.
-  toggle.classList.toggle("attn", rail && !narrowCalls.matches && (gone.length > 0 || notes.size > 0));
+  toggle.classList.toggle("attn", rail && !narrowCalls.matches && (gone.length > 0 || notes.size > 0 || asks.size > 0));
   renderAllButtons();
 }
 
@@ -259,6 +262,16 @@ function noteRow(li, o) {
   x.onclick = (ev) => { ev.stopPropagation(); o.dismiss(); };
   li.querySelector(".call-time")?.replaceWith(x);
   li.style.animationDelay = `-${Date.now() - noteSeen.get(o.key)}ms`;
+  return li;
+}
+
+// (Experiment) A call in the background whose caller wants to transfer you: its row blinks, like a
+// phone's line lamp, until it's answered (or the host lets it go after 20 s). You switch to it to
+// answer (a click, or its number key): its call bar asks.
+function askRow(li, d) {
+  li.classList.add("asking");
+  li.querySelector(".call-status").textContent = `Transfer request · to ${d.what.replace(/^wants to transfer you to /, "")}`;
+  li.title = [`${d.who} ${d.what}`, "click to switch to this call and answer"].join(" · ");
   return li;
 }
 

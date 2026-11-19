@@ -342,6 +342,13 @@ body:not(.diag) .diag-only { display: none; }
 @keyframes head-ended-glow { 0% { box-shadow: 0 0 0 0 var(--glow); } 100% { box-shadow: 0 0 0 8px transparent; } }
 @media (prefers-reduced-motion: reduce) { .head-ended, .head-ended.again { animation: none; } }
 /* Diagnostics, once saved: it comes a moment after the notice, so it fades in. */
+/* (Experiment) The call on the stage asked to transfer you: its bar asks, Decline and Accept,
+   pulsing softly until it's answered. */
+.head-ended[data-tone="ask"] { animation: head-ended-pop 1.1s ease-in-out, head-ended-glow 1.4s ease-out 1.1s infinite; padding-right: 3px; }
+.head-ask { flex: none; display: inline-flex; gap: 6px; }
+.head-ask[hidden] { display: none; }
+.head-ask .btn { height: 22px; padding: 0 10px; font-size: 12.5px; border-radius: 999px; }
+.head-ended .head-ended-x[hidden] { display: none; }
 .head-ended .head-ended-diag { flex: none; font-size: 12.5px; color: inherit; font-weight: 600; animation: head-ended-in .3s ease-out; }
 .head-ended .head-ended-diag[hidden] { display: none; }
 .head-ended-icon { display: grid; }
@@ -1333,12 +1340,21 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .call-note-x svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .calls.collapsed .call-row.noted { background: none; border-color: transparent; }
 .calls.collapsed .call-note-x { display: none; }
+/* (Experiment) A transfer you're asked to take, on a call in the background: its row blinks
+   (a line lamp), amber, until it's answered; switch to the call to answer. */
+.call-row.asking { animation: lamp .8s ease-in-out infinite; }
+.call-row.asking .call-status { color: var(--warn-ink); font-weight: 600; }
+.call-row.asking .call-avatar { box-shadow: 0 0 0 2px var(--warn-ink); }
+@keyframes lamp { 50% { background: var(--warn-bg); box-shadow: inset 0 0 0 2px var(--warn-ink); } }
 /* Folded to the rail: the chevron that opens it pulses a few times. */
 .calls-toggle.attn { color: var(--warn-ink); animation: toggle-attn 1.2s ease-in-out 3; }
 @keyframes toggle-attn { 50% { background: var(--warn-bg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn-ink) 30%, transparent); } }
 @media (prefers-reduced-motion: reduce) {
   .call-row.gone { animation: row-gone 4s linear forwards; }
   .call-row.noted { animation: none; }
+  .call-row.asking { animation: none; background: var(--warn-bg); box-shadow: inset 0 0 0 2px var(--warn-ink); }
+  .tile.asking { animation: none; border-color: var(--warn-ink); }
+  .head-ended[data-tone="ask"] { animation: none; }
   .calls-toggle.attn { animation: none; }
 }
 .call-row.held .call-avatar { box-shadow: 0 0 0 2px var(--border-strong); }
@@ -1534,6 +1550,11 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .tile .call-note-x { flex: none; }
 .tile .call-note-x[hidden] { display: none; }
 .tile.noted.bad .call-note-x { color: var(--danger); }
+/* (Experiment) A transfer you're asked to take, in Grid: the tile blinks (a line lamp). */
+.tile.asking { animation: tile-lamp .8s ease-in-out infinite; }
+.tile.asking .tile-meta { background: var(--warn-bg); }
+.tile.asking .tile-status { color: var(--warn-ink); font-weight: 600; }
+@keyframes tile-lamp { 50% { border-color: var(--warn-ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn-ink) 45%, transparent); } }
 @keyframes tile-gone { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .tile.gone { animation: tile-gone 4s linear forwards; } .tile.noted { animation: none; } }
 /* An audio call's tile: their audio above, yours below, as on the stage. */

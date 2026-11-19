@@ -1301,7 +1301,7 @@ function noticeItems() {
   }));
   const open = (id) => () => { closeHistory(false); selectCall(id); setView("focus"); };
   const xfer = transferNotices(open);
-  items.push(...xfer.decisions);
+  items.push(...xfer.decisions.filter((d) => !d.stage && !d.row));   // (on the call: its bar, or its lamp)
   // A call you're placing over another: Cancel (cancelled, it just goes: you know why).
   const placing = [...entries.values()].filter((x) => x.pending && !x.cancelled && x.h.call !== "ended").sort((a, b) => Number(a.id) - Number(b.id));
   for (const e of placing) {
@@ -1373,7 +1373,10 @@ function fillNotice(p, it, many) {
 const HEAD_CLOSE_MS = 500;
 let headClosing = null;   // the timer that hides it once it's faded
 function renderHeadEnded() {
-  const o = outcomes.findLast((x) => x.head);
+  // (Experiment) The call on the stage being asked to transfer you: asked here, in its bar, with
+  // Decline and Accept, until it's answered (or the host lets it go). Before any outcome.
+  const ask = !inGrid() && sel()?.h.call === "connected" ? transferNotices(() => () => {}).decisions.find((d) => d.stage) : null;
+  const o = ask ?? outcomes.findLast((x) => x.head);
   const box = $("headEnded"), info = $("info"), stage = $("stage"), connected = !inGrid() && sel()?.h.call === "connected";
   if (!o && !box.hidden) {
     if (!headClosing) {
@@ -1415,8 +1418,23 @@ function renderHeadEnded() {
   if (box.dataset.key !== o.key) { $("headEndedIcon").innerHTML = o.icon ?? ""; box.dataset.key = o.key; }
   $("headEndedText").textContent = o.text ?? `${o.who} · ${o.what}`;
   box.title = o.title || o.whoTitle || "";
-  box.dataset.tone = o.tone ?? "";
+  box.dataset.tone = ask ? "ask" : o.tone ?? "";
   $("headEndedX").onclick = () => dropOutcome(o.key);
+  $("headEndedX").hidden = !!ask;
+  let acts = box.querySelector(".head-ask");
+  if (ask && !acts) { acts = Object.assign(document.createElement("span"), { className: "head-ask" }); box.insertBefore(acts, $("headEndedX")); }
+  if (acts) {
+    acts.hidden = !ask;
+    if (ask && acts.dataset.key !== ask.key) {
+      acts.dataset.key = ask.key;
+      acts.replaceChildren(...ask.actions.map((a) => {
+        const b = Object.assign(document.createElement("button"), { type: "button", className: a.cls, textContent: a.label, title: a.title ?? "" });
+        b.onclick = (ev) => { ev.stopPropagation(); a.fn(); };
+        return b;
+      }));
+    }
+    if (!ask) delete acts.dataset.key;
+  }
   fadeHeadEnded();
   const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
   $("headEndedDiag").hidden = !saved;
@@ -1555,7 +1573,11 @@ function renderGrid(grid) {
   const ids = new Set([...shown.map((e) => e.id), ...gone.map((o) => o.row.id)]);
   // (Experiment) How a transfer on a call went (done, failed, cancelled, declined): on its tile,
   // as on its row in the calls panel (calllist.js noteRow), with × to close it.
-  const notes = grid ? new Map(transferNotices(() => () => {}).outcomes.filter((o) => o.row).map((o) => [String(o.row), o])) : new Map();
+  const xn = grid ? transferNotices(() => () => {}) : { outcomes: [], decisions: [] };
+  const notes = new Map(xn.outcomes.filter((o) => o.row).map((o) => [String(o.row), o]));
+  // (Experiment) A transfer you're asked to take: the tile blinks; a click switches to the call,
+  // where its bar asks.
+  const asks = new Map(xn.decisions.filter((d) => d.row).map((d) => [String(d.row), d]));
   box.style.setProperty("--cols", stage.clientWidth < 560 ? 1 : ids.size > 4 ? 3 : 2);
   // Calls leaving the grid (or all of them, back in Focus): their <video> goes back on the stage.
   for (const [id, t] of tiles) {
@@ -1584,16 +1606,18 @@ function renderGrid(grid) {
     // it keeps coming), and on an audio call the bars.
     const video = !!m?.hasVideo && performance.now() - m.lastFrameAt < NO_FRAMES_MS;
     const audio = !!m && !m.hasVideo && c.status === "connected";
-    const note = notes.get(String(e.id));
-    t.root.className = `tile ${c.status}${video ? " video" : ""}${audio ? " audio" : ""}${e.id === selectedId ? " sel" : ""}${c.muted ? " muted" : ""}${c.held ? " held" : ""}${c.long ? " long" : ""}${note ? ` noted${note.tone === "bad" ? " bad" : ""}` : ""}`;
+    const ask = asks.get(String(e.id));
+    const note = ask ? null : notes.get(String(e.id));
+    t.root.className = `tile ${c.status}${video ? " video" : ""}${audio ? " audio" : ""}${e.id === selectedId ? " sel" : ""}${c.muted ? " muted" : ""}${c.held ? " held" : ""}${c.long ? " long" : ""}${note ? ` noted${note.tone === "bad" ? " bad" : ""}` : ""}${ask ? " asking" : ""}`;
     t.root.title = [e.h.remote || name, c.statusText, i < 8 ? `${i + 1} opens it` : "Open this call"].join(" · ");
     t.root.setAttribute("aria-label", `${name}, ${c.statusText}`);
     setInitial(t.avatar, name, e.h.remote);
     t.name.textContent = name;
     const tc = contactFor(e.h.remote);
     if (tc) t.name.append(contactMarkEl(tc.name));
-    t.status.textContent = note ? note.what : c.statusText;
+    t.status.textContent = ask ? `Transfer request · to ${ask.what.replace(/^wants to transfer you to /, "")}` : note ? note.what : c.statusText;
     if (note) t.root.title = [note.title || note.what, "click to open this call"].join(" · ");
+    if (ask) t.root.title = [`${ask.who} ${ask.what}`, "click to switch to this call and answer"].join(" · ");
     if (note && !t.noteX) {
       t.noteX = Object.assign(document.createElement("button"), { type: "button", className: "call-note-x", title: "Close", innerHTML: ICON.close });
       t.noteX.setAttribute("aria-label", "Close");
