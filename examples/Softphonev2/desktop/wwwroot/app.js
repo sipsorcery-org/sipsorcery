@@ -1466,7 +1466,9 @@ function renderNotices() {
   // a click on the dulled stage closes it.
   // A call that ended on you is in the bar, where a call ringing in would be: no dulled stage.
   const outcome = !!top?.outcome && !top.bar;
-  el.classList.toggle("mid", outcome || sel()?.h.call === "connected");
+  // (Experiment) A call ringing in (or any question) over a call you're on: at the top, under its
+  // bar, not over the middle of it; its row in the calls panel blinks too (its lamp).
+  el.classList.toggle("mid", outcome);
   el.classList.toggle("outcome", outcome);
   el.classList.toggle("timed", !!top?.until);
   const scrim = $("noticeScrim");

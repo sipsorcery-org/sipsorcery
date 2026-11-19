@@ -1343,6 +1343,10 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 /* (Experiment) A transfer you're asked to take, on a call in the background: its row blinks
    (a line lamp), amber, until it's answered; switch to the call to answer. */
 .call-row.asking { animation: lamp .8s ease-in-out infinite; }
+/* (Experiment) A call ringing in: its row blinks too, the same lamp, until it's answered or goes;
+   a click (or its number key) opens its answer view. */
+.call-row.ringing { animation: lamp .8s ease-in-out infinite; }
+.call-row.ringing .call-status { font-weight: 600; }
 .call-row.asking .call-status { color: var(--warn-ink); font-weight: 600; }
 .call-row.asking .call-avatar { box-shadow: 0 0 0 2px var(--warn-ink); }
 @keyframes lamp { 50% { background: var(--warn-bg); box-shadow: inset 0 0 0 2px var(--warn-ink); } }
@@ -1352,7 +1356,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 @media (prefers-reduced-motion: reduce) {
   .call-row.gone { animation: row-gone 4s linear forwards; }
   .call-row.noted { animation: none; }
-  .call-row.asking { animation: none; background: var(--warn-bg); box-shadow: inset 0 0 0 2px var(--warn-ink); }
+  .call-row.asking, .call-row.ringing { animation: none; background: var(--warn-bg); box-shadow: inset 0 0 0 2px var(--warn-ink); }
   .tile.asking { animation: none; border-color: var(--warn-ink); }
   .head-ended[data-tone="ask"] { animation: none; }
   .calls-toggle.attn { animation: none; }

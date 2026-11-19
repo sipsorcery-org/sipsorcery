@@ -122,7 +122,7 @@ export function renderCalls() {
   const rows = [...calls.map((e, i) => ({ id: Number(e.id), el: asks.has(String(e.id)) ? askRow(callRow(e, i, rail), asks.get(String(e.id))) : noteRow(callRow(e, i, rail), notes.get(String(e.id))) })), ...gone.map((o) => ({ id: Number(o.row.id), el: goneRow(o) }))];
   $("callList").replaceChildren(...rows.sort((a, b) => a.id - b.id).map((r) => r.el));
   // Folded to the rail, the chevron to open it pulses too: there's more to read there.
-  toggle.classList.toggle("attn", rail && !narrowCalls.matches && (gone.length > 0 || notes.size > 0 || asks.size > 0));
+  toggle.classList.toggle("attn", rail && !narrowCalls.matches && (gone.length > 0 || notes.size > 0 || asks.size > 0 || calls.some((e) => e.h.call === "ringing")));
   renderAllButtons();
 }
 
