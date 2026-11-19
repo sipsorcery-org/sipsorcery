@@ -1350,15 +1350,6 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .call-note-x svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .calls.collapsed .call-row.noted { background: none; border-color: transparent; }
 .calls.collapsed .call-note-x { display: none; }
-/* (Experiment) A call you're placing over another: its row, with a hang-up button to cancel it
-   (on the rail too, under the avatar). */
-.call-row.placing { cursor: default; }
-.call-row.placing:hover { background: none; }
-.call-cancel { width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 999px; background: var(--danger); color: #fff; cursor: pointer; flex: none; }
-.call-cancel:hover { filter: brightness(1.1); }
-.call-cancel:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.call-cancel svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.calls.collapsed .call-cancel { width: 22px; height: 22px; }
 /* (Experiment) A transfer you're asked to take, on a call in the background: its row blinks
    (a line lamp), amber, until it's answered; switch to the call to answer. */
 .call-row.asking { animation: lamp .8s ease-in-out infinite; }

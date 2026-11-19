@@ -1,6 +1,6 @@
 // The Active calls panel down the left, the grid of calls, and End all.
 
-import { ROW_MS, audioId, callNotes, cancelPlacing, dropOutcome, focusCall, goneRows, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, placingCalls, selectedId, setView, tiles, view } from "./app.js";
+import { ROW_MS, audioId, callNotes, dropOutcome, focusCall, goneRows, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, selectedId, setView, tiles, view } from "./app.js";
 import { setAvatar } from "./avatar.js";
 import { contactMarkEl } from "./contactmark.js";
 import { contactFor } from "./contacts.js";
@@ -25,6 +25,13 @@ let callsCollapsed = false;   // your choice on wider windows
 // only: back to the rail for the next one). Two or more calls go by callsCollapsed.
 let singleOpen = false;
 let wasSingle = false;
+// Folds or unfolds the panel: one call, for that call; several, remembered.
+function foldCalls() {
+  if (wasSingle) { singleOpen = !singleOpen; renderCalls(); return; }
+  callsCollapsed = !callsCollapsed;
+  try { localStorage.setItem("callsPanel", callsCollapsed ? "collapsed" : "open"); } catch { /* private window: this visit only */ }
+  renderCalls();
+}
 const CALLS_ICON = {
   collapse: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
   expand: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
@@ -104,10 +111,9 @@ export function renderCalls() {
   // (A call that's ended on you shows as its gone row, not its own, while the host still lists it.)
   const gone = goneRows(), goneIds = new Set(gone.map((o) => String(o.row.id)));
   const calls = listed().filter((e) => !goneIds.has(String(e.id)));
-  const placing = placingCalls().filter((e) => !goneIds.has(String(e.id)));
   const panel = $("calls");
-  const single = calls.length + gone.length + placing.length < 2 && !inGrid();
-  panel.hidden = calls.length + gone.length + placing.length < 1 && !inGrid();
+  const single = calls.length + gone.length < 2 && !inGrid();
+  panel.hidden = calls.length + gone.length < 1 && !inGrid();
   if (panel.hidden) singleOpen = false;
   wasSingle = single;
   const rail = narrowCalls.matches || (single ? !singleOpen : callsCollapsed);
@@ -129,7 +135,7 @@ export function renderCalls() {
   const asks = new Map(xn.decisions.filter((d) => d.row).map((d) => [String(d.row), d]));
   for (const k of [...noteSeen.keys()]) if (![...notes.values()].some((o) => o.key === k)) noteSeen.delete(k);
   // A call that's just ended on you keeps its place a few seconds (goneRow), among the rest.
-  const rows = [...calls.map((e, i) => ({ id: Number(e.id), el: asks.has(String(e.id)) ? askRow(callRow(e, i, rail), asks.get(String(e.id))) : noteRow(callRow(e, i, rail), notes.get(String(e.id))) })), ...gone.map((o) => ({ id: Number(o.row.id), el: goneRow(o) })), ...placing.map((e) => ({ id: Number(e.id), el: placingRow(e, rail) }))];
+  const rows = [...calls.map((e, i) => ({ id: Number(e.id), el: asks.has(String(e.id)) ? askRow(callRow(e, i, rail), asks.get(String(e.id))) : noteRow(callRow(e, i, rail), notes.get(String(e.id))) })), ...gone.map((o) => ({ id: Number(o.row.id), el: goneRow(o) }))];
   $("callList").replaceChildren(...rows.sort((a, b) => a.id - b.id).map((r) => r.el));
   // Folded to the rail, the chevron to open it pulses too: there's more to read there.
   toggle.classList.toggle("attn", rail && !narrowCalls.matches && (gone.length > 0 || notes.size > 0 || asks.size > 0 || calls.some((e) => e.h.call === "ringing")));
@@ -201,10 +207,13 @@ function callRow(e, i, collapsed = false) {
   li.dataset.call = e.id;
   if (e.id === selectedId) li.setAttribute("aria-current", "true");   // the call on the stage
   li.title = [e.h.remote || name, c.statusText, i < 8 ? `(${i + 1})` : ""].filter(Boolean).join(" · ");
-  // A click picks the call.
+  // A click picks the call; (experiment) on the rail you folded it to, it opens the panel too, to
+  // read what the call's doing.
   li.onclick = (ev) => {
     ev.stopPropagation();
+    const unfold = collapsed && !narrowCalls.matches;
     focusCall(e.id);
+    if (unfold) foldCalls();
   };
   const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls, textContent: text ?? "" });
   const avatar = el("span", "call-avatar", initial(name));
@@ -275,24 +284,6 @@ function noteRow(li, o) {
   return li;
 }
 
-// (Experiment) A call you're placing over another: its row, Calling…, pulsing as a call ringing
-// out does, with a hang-up button to cancel it where its timer will be. Not a call to switch to
-// yet (it joins the stage once it's answered), so a click on it does nothing. Unanswered, it
-// stays a few seconds saying why (goneRow).
-function placingRow(e, rail) {
-  const li = callRow(e, 0, rail);
-  li.classList.add("placing");
-  li.removeAttribute("aria-current");
-  li.title = [e.h.remote || nameOf(e), "Calling…"].join(" · ");
-  li.onclick = (ev) => ev.stopPropagation();
-  li.querySelector(".call-status").textContent = "Calling…";
-  const x = Object.assign(document.createElement("button"), { type: "button", className: "call-cancel", title: `Cancel the call to ${nameOf(e)}`, innerHTML: ICON.hangup });
-  x.setAttribute("aria-label", `Cancel the call to ${nameOf(e)}`);
-  x.onclick = (ev) => { ev.stopPropagation(); cancelPlacing(e.id); };
-  li.querySelector(".call-time").replaceWith(x);
-  return li;
-}
-
 // (Experiment) A call in the background whose caller wants to transfer you: its row blinks, like a
 // phone's line lamp, until it's answered (or the host lets it go after 20 s). You switch to it to
 // answer (a click, or its number key): its call bar asks.
@@ -315,17 +306,14 @@ export function initCallList() {
   $("allMenuBtn").onclick = () => showMenu("all");
 
   narrowCalls.addEventListener("change", renderCalls);
-  const fold = () => {
-    if (wasSingle) { singleOpen = !singleOpen; renderCalls(); return; }
-    callsCollapsed = !callsCollapsed;
-    try { localStorage.setItem("callsPanel", callsCollapsed ? "collapsed" : "open"); } catch { /* private window: this visit only */ }
-    renderCalls();
-  };
-  $("callsToggle").onclick = fold;
-  // (Experiment) A click on the panel's empty space folds or unfolds it too (not on a call, a
-  // button, or Grid and ⋯ under the list). Not under 700 px: there it's always the rail.
+  // (Experiment) A click anywhere on the panel folds or unfolds it: the chevron, its head, the
+  // space under the calls. Not a call (its row picks it, and on the rail opens the panel too: see
+  // callRow), nor what closes a notice on a row, nor Grid and ⋯ under the list. One handler for
+  // the chevron too, so a click on it is one toggle, not two. Not under 700 px: always the rail.
   $("calls").addEventListener("click", (ev) => {
-    if (narrowCalls.matches || ev.target.closest(".call-row, button, a, input, .calls-foot")) return;
-    fold();
+    if (narrowCalls.matches) return;
+    const t = ev.target;
+    if (t.closest(".calls-foot, .call-row") || (t.closest("button, a, input") && !t.closest("#callsToggle"))) return;
+    foldCalls();
   });
 }
