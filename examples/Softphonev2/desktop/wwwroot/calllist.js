@@ -21,6 +21,10 @@ import { sourceAvailable, sourceOf } from "./video.js";
 // Narrow windows (under 700 px): the panel is a rail of avatars, to leave the stage its room.
 const narrowCalls = matchMedia("(max-width: 699px)");
 let callsCollapsed = false;   // your choice on wider windows
+// (Experiment) With one call it starts as the rail; unfolding it gives the full list (this call
+// only: back to the rail for the next one). Two or more calls go by callsCollapsed.
+let singleOpen = false;
+let wasSingle = false;
 const CALLS_ICON = {
   collapse: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
   expand: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
@@ -103,12 +107,13 @@ export function renderCalls() {
   const panel = $("calls");
   const single = calls.length + gone.length < 2 && !inGrid();
   panel.hidden = calls.length + gone.length < 1 && !inGrid();
-  const rail = narrowCalls.matches || callsCollapsed || single;
+  if (panel.hidden) singleOpen = false;
+  wasSingle = single;
+  const rail = narrowCalls.matches || (single ? !singleOpen : callsCollapsed);
   panel.classList.toggle("collapsed", rail);
   panel.classList.toggle("single", single);
   const toggle = $("callsToggle");
-  // (One call: nothing more to unfold; the stage has its name and state.)
-  toggle.hidden = narrowCalls.matches || single;
+  toggle.hidden = narrowCalls.matches;
   const label = rail ? "Show active calls" : "Fold active calls";
   toggle.setAttribute("aria-expanded", String(!rail));
   toggle.setAttribute("aria-label", label);
@@ -291,9 +296,17 @@ export function initCallList() {
   $("allMenuBtn").onclick = () => showMenu("all");
 
   narrowCalls.addEventListener("change", renderCalls);
-  $("callsToggle").onclick = () => {
+  const fold = () => {
+    if (wasSingle) { singleOpen = !singleOpen; renderCalls(); return; }
     callsCollapsed = !callsCollapsed;
     try { localStorage.setItem("callsPanel", callsCollapsed ? "collapsed" : "open"); } catch { /* private window: this visit only */ }
     renderCalls();
   };
+  $("callsToggle").onclick = fold;
+  // (Experiment) A click on the panel's empty space folds or unfolds it too (not on a call, a
+  // button, or Grid and ⋯ under the list). Not under 700 px: there it's always the rail.
+  $("calls").addEventListener("click", (ev) => {
+    if (narrowCalls.matches || ev.target.closest(".call-row, button, a, input, .calls-foot")) return;
+    fold();
+  });
 }
