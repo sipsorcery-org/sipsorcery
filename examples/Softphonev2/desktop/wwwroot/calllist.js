@@ -6,7 +6,7 @@ import { contactMarkEl } from "./contactmark.js";
 import { contactFor } from "./contacts.js";
 import { closeMenu, openMenu, showMenu } from "./menus.js";
 import { openLine } from "./rtt.js";
-import { transferShort } from "./transfer.js";
+import { transferNotices, transferShort } from "./transfer.js";
 import { $, ICON, escHtml, initial, log, post } from "./util.js";
 import { sourceAvailable, sourceOf } from "./video.js";
 
@@ -112,11 +112,14 @@ export function renderCalls() {
   const icon = rail ? CALLS_ICON.expand : CALLS_ICON.collapse;
   if (toggle.innerHTML !== icon) toggle.innerHTML = icon;
   $("callCount").textContent = calls.filter(isLive).length || "";
+  // How a transfer on a call in the background went: on its row (noteRow).
+  const notes = new Map(transferNotices(() => () => {}).outcomes.filter((o) => o.row).map((o) => [String(o.row), o]));
+  for (const k of [...noteSeen.keys()]) if (![...notes.values()].some((o) => o.key === k)) noteSeen.delete(k);
   // A call that's just ended on you keeps its place a few seconds (goneRow), among the rest.
-  const rows = [...calls.map((e, i) => ({ id: Number(e.id), el: callRow(e, i, rail) })), ...gone.map((o) => ({ id: Number(o.row.id), el: goneRow(o) }))];
+  const rows = [...calls.map((e, i) => ({ id: Number(e.id), el: noteRow(callRow(e, i, rail), notes.get(String(e.id))) })), ...gone.map((o) => ({ id: Number(o.row.id), el: goneRow(o) }))];
   $("callList").replaceChildren(...rows.sort((a, b) => a.id - b.id).map((r) => r.el));
   // Folded to the rail, the chevron to open it pulses too: there's more to read there.
-  toggle.classList.toggle("attn", rail && !narrowCalls.matches && gone.length > 0);
+  toggle.classList.toggle("attn", rail && !narrowCalls.matches && (gone.length > 0 || notes.size > 0));
   renderAllButtons();
 }
 
@@ -233,6 +236,26 @@ function goneRow(o) {
   li.append(avatar, main, el("span", "call-time", ""));
   const been = Math.max(0, ROW_MS - ((o.until ?? 0) - Date.now()));
   li.style.animationDelay = `-${been}ms, -${been}ms`;
+  return li;
+}
+
+// A transfer on a call in the background that's over (done, failed, cancelled, declined): its row
+// says so, amber (red if it failed) with two soft pulses when it comes (carried on across
+// rebuilds, by when it was first seen), and × to close it (the host clears all but a failed one
+// by itself after a few seconds). The row still picks the call.
+const noteSeen = new Map();   // outcome key -> when its row first said so
+function noteRow(li, o) {
+  if (!o) return li;
+  if (!noteSeen.has(o.key)) noteSeen.set(o.key, Date.now());
+  li.classList.add("noted");
+  li.dataset.tone = o.tone ?? "";
+  li.title = [o.title || o.what, "click to open this call"].filter(Boolean).join(" · ");
+  li.querySelector(".call-status").textContent = o.what;
+  const x = Object.assign(document.createElement("button"), { type: "button", className: "call-note-x", title: "Close", innerHTML: ICON.close });
+  x.setAttribute("aria-label", "Close");
+  x.onclick = (ev) => { ev.stopPropagation(); o.dismiss(); };
+  li.querySelector(".call-time")?.replaceWith(x);
+  li.style.animationDelay = `-${Date.now() - noteSeen.get(o.key)}ms`;
   return li;
 }
 

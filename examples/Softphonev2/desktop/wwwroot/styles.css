@@ -1305,11 +1305,31 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
   85% { opacity: 0; max-height: 80px; padding-top: 10px; padding-bottom: 10px; }
   100% { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; border-width: 0; }
 }
+/* (Experiment) A transfer on a call in the background that's over (calllist.js noteRow): its
+   row says so, amber (red if it failed), two soft pulses as it comes, × to close it. */
+.call-row.noted {
+  background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn-ink) 35%, transparent);
+  --glow: color-mix(in srgb, var(--warn-ink) 45%, transparent);
+  animation: row-gone-glow .9s ease-out 2 backwards;
+}
+.call-row.noted:not([aria-current="true"]):hover { background: var(--warn-bg); }
+.call-row.noted[data-tone="bad"] { background: var(--danger-soft); border-color: var(--danger-border); --glow: color-mix(in srgb, var(--danger) 40%, transparent); }
+.call-row.noted .call-status { color: var(--warn-ink); font-weight: 600; white-space: normal; }
+.call-row.noted[data-tone="bad"] .call-status { color: var(--danger); }
+.call-row.noted .call-avatar { box-shadow: 0 0 0 2px var(--warn-ink); }
+.call-row.noted[data-tone="bad"] .call-avatar { box-shadow: 0 0 0 2px var(--danger); }
+.call-note-x { width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 999px; background: none; color: var(--warn-ink); cursor: pointer; }
+.call-row.noted[data-tone="bad"] .call-note-x { color: var(--danger); }
+.call-note-x:hover { background: color-mix(in srgb, currentColor 14%, transparent); }
+.call-note-x svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.calls.collapsed .call-row.noted { background: none; border-color: transparent; }
+.calls.collapsed .call-note-x { display: none; }
 /* Folded to the rail: the chevron that opens it pulses a few times. */
 .calls-toggle.attn { color: var(--warn-ink); animation: toggle-attn 1.2s ease-in-out 3; }
 @keyframes toggle-attn { 50% { background: var(--warn-bg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn-ink) 30%, transparent); } }
 @media (prefers-reduced-motion: reduce) {
   .call-row.gone { animation: row-gone 4s linear forwards; }
+  .call-row.noted { animation: none; }
   .calls-toggle.attn { animation: none; }
 }
 .call-row.held .call-avatar { box-shadow: 0 0 0 2px var(--border-strong); }

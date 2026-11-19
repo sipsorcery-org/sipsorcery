@@ -1305,7 +1305,7 @@ function noticeItems() {
       actions: [{ label: "Cancel", cls: "btn btn-danger", fn: () => { post({ type: "hangup", id: e.id }); e.cancelled = true; render(); } }],
     });
   }
-  items.push(...xfer.outcomes.map((o) => ({ ...o, outcome: true })));
+  items.push(...xfer.outcomes.filter((o) => !o.row).map((o) => ({ ...o, outcome: true })));
   for (const o of outcomes) {
     if (o.head || o.row) continue;   // in the call's bar, or its row in the calls panel; the call's bar (renderHeadEnded); in Grid, floating over its top
     const live = o.callId && entries.get(o.callId)?.h.call === "connected";

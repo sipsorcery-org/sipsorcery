@@ -168,6 +168,9 @@ export function transferNotices(open) {
       what: transferShort(t), title: t.detail || "", tone: failed ? "bad" : "info",
       actions: [],
       dismiss, bulk: dismiss,
+      // (Experiment) A call in the background, or any in Grid, with the calls panel showing: on
+      // its row there (calllist.js), not in the notices. The call on the stage: the notices.
+      row: (inGrid() || id !== selectedId) && (listed().length > 1 || inGrid()) ? id : null,
     });
   }
   return { decisions, outcomes };
