@@ -615,10 +615,9 @@ export function render() {
   // The selected call's source, or before a call the one it'll start with.
   const camAvailable = hasCamera || sourceOf(e) !== "camera";
   const videoAllowed = state.videoAllowed !== false;
-  // On a call, each says what happens to it: "Call & hold current", in the same words as a
-  // ringing call's "Answer & hold current" (its tooltip names who).
-  const tail = liveCall() ? '<span class="hold-tail"> &amp; hold current</span>' : "";
-  const callHtml = `${ICON.phone}<span>Call${tail}</span>`, videoHtml = `${ICON.video}<span>Video call${tail}</span>`;
+  // Just Call and Video call, on a call too: that the call you're on goes on hold is in the
+  // tooltip (syncCallBtn), and plain enough once you've done it.
+  const callHtml = `${ICON.phone}<span>Call</span>`, videoHtml = `${ICON.video}<span>Video call</span>`;
   if ($("callBtn").innerHTML !== callHtml) $("callBtn").innerHTML = callHtml;
   if ($("videoCallBtn").innerHTML !== videoHtml) $("videoCallBtn").innerHTML = videoHtml;
   $("videoCallBtn").hidden = !videoAllowed;

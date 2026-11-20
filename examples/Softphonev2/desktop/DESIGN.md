@@ -43,8 +43,8 @@ Beside the address, two buttons, so the kind of call is the button you press, as
 contact card: **Call** (Enter) leaves video out of the offer, and video can be added once it
 connects; **Video call** (Ctrl+Enter) offers it, with your camera on from the start (privacy
 mode sends your camera-off card instead). There's no setting for it: the button you press says
-it, and nothing carries from one call to the next. On a call, both say
-*& hold current*. A call ringing in has **Answer** (you see them, your camera stays closed) and,
+it, and nothing carries from one call to the next. On a call, both still just say *Call* and
+*Video call* (their tooltips say the call you're on goes on hold). A call ringing in has **Answer** (you see them, your camera stays closed) and,
 when they offered video, **Answer with video**; the banner for a call ringing while you're on
 another has Answer and a camera icon for Answer with video.
 
@@ -227,8 +227,10 @@ The address field's suggestions, from the UX prototype (its *New call*): focusin
 `/` anywhere outside a text field) lists contacts and recent calls, and typing filters and ranks
 them (below). Transfer's *To an address* field is the same component (`addressField` in
 `address.js`: the same lists, rows, keys, mark and ×; see Transfer). The address bar's rows are
-just who and when: no Add/Remove contact button or Call icon (a row fills the field; the bar's
-Call and Video call place it, and People and Home's New call rows have their own buttons).
+who and when, and each row's own **Call** and **Video call** icons, which call it straight away
+(from the contact's account, or the one it was last called from; on a call, holding it, as Call
+does); no Add/Remove contact button. A click elsewhere on a row fills the field, and the bar's
+Call and Video call place it.
 Transfer's keep theirs. Typing part of a name highlights the first match. ↑/↓ move through the list (and open it),
 and `Esc` closes it. **Picking never dials**: Enter or a click puts the highlighted entry's
 address in the field (the list closes, focus stays), and only **Call**, or Enter again with
@@ -398,10 +400,8 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   "No audio arriving" and "isn't getting your audio" notes stay quiet: the hold note says it.
 - **New call.** **Call** is enabled once there's something in the address field (greyed, with
   "Type a number or address to call", while it's empty or only spaces), kept in step as you
-  type, clear it with ×, pick a suggestion or paste. On a call, the button says what it will do:
-  *Call & hold current*, the same words as a ringing call's *Answer & hold current* (its
-  tooltip names who: "Call, and put Alice on hold"; under 1000 px it's just *Call* and
-  *Video call*, so both fit beside the address before they move to a row of their own); pressing it holds that call, which stays on the stage, and the new one
+  type, clear it with ×, pick a suggestion or paste. On a call it still just says *Call* (and
+  *Video call*): its tooltip says what it will do, "Call, and put Alice on hold"; pressing it holds that call, which stays on the stage, and the new one
   isn't a call in the list yet: a banner over the stage says "Dave · Calling… · Cancel". Only
   once Dave answers does it join the list and take the stage (in Focus). Not answered (busy,
   declined, no such number), the banner says why until the call goes (or *Close*), and the call

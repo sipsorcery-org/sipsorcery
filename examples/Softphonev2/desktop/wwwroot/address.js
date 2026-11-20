@@ -2,7 +2,7 @@
 // (the address bar's and Transfer's) with their suggestions.
 
 import { accountList, accountName } from "./accounts.js";
-import { callBlocked, render, state, syncCallBtn } from "./app.js";
+import { callBlocked, placeCall, render, state, syncCallBtn } from "./app.js";
 import { avatarAttr } from "./avatar.js";
 import { contactMark, normAddress } from "./contactmark.js";
 import { allContacts, contactFor, initContacts, openContacts, removeContact, sameUri, saveContact } from "./contacts.js";
@@ -224,11 +224,12 @@ const looksLikeAddress = (q) => /[@:]/.test(q) || /^[+\d*#\s]+$/.test(q.trim());
  * refresh(keepActive), close(), renderBadge() }.
  */
 // rowButtons: each row's Add/Remove contact button and its Call (or Transfer) icon. The address
-// bar's list has neither: a row fills the field, and the bar's own buttons call.
+// bar's list has neither: a row fills the field. quick(it, video): instead, each row gets its own
+// Call and Video call icons, which call it straight away (the address bar's, as Home's rows do).
 // warn(text): a note on what's typed (the web softphone's, for an address it can't call directly),
 // shown in the field's bubble when you pause; the text is kept either way.
 export function addressField({ input, list, clear, badge, idPrefix, popup, foot, goIcon, goLabel, skip = () => null, pick, changed = () => {},
-  inline = () => false, inlineId = null, cleared = () => {}, escEmpty = () => false, rowButtons = true, warn = () => null }) {
+  inline = () => false, inlineId = null, cleared = () => {}, escEmpty = () => false, rowButtons = true, quick = null, warn = () => null }) {
   const wrap = input.closest(".dest-wrap");
   const f = { open: false, items: [], active: -1, pick: null };
 
@@ -295,13 +296,16 @@ export function addressField({ input, list, clear, badge, idPrefix, popup, foot,
         : `<span class="suggest-meta ${missed ? "bad" : ""}" ${it.sip ? `title="${escHtml(it.sip)}"` : ""}>${SUGGEST_ICON[missed ? "missed" : it.dir === "in" ? "inbound" : "outgoing"]}
             ${missed ? "Missed · " : it.note ? `${escHtml(it.note)} · ` : ""}${relTime(it.at)}</span>`;
       const label = it.contact ? `Remove ${it.name} from contacts` : `Add ${it.name} to contacts`;
-      return `${head}<div class="${cls}${it.contact ? " is-contact" : ""}${rowButtons ? "" : " plain"}" ${attrs}>
+      const qb = (video) => `<button type="button" class="suggest-quick" tabindex="-1" data-quick="${video ? "video" : "call"}" data-idx="${i}"
+          title="${video ? "Video call" : "Call"} ${escHtml(it.name)}" aria-label="${video ? "Video call" : "Call"} ${escHtml(it.name)}">${video ? ICON.video : ICON.phone}</button>`;
+      const quickBtns = quick && !rowButtons ? `<span class="suggest-quicks">${qb(false)}${state.videoAllowed !== false ? qb(true) : ""}</span>` : "";
+      return `${head}<div class="${cls}${it.contact ? " is-contact" : ""}${rowButtons ? "" : quick ? " plain quick" : " plain"}" ${attrs}>
         <span class="suggest-avatar" aria-hidden="true"${avatarAttr(it.uri)}>${escHtml(initial(it.name))}</span>
         <span class="suggest-main"><span class="suggest-name">${escHtml(it.name)}${it.contact ? contactMark(it.name) : ""}</span><span class="suggest-uri" title="${escHtml(plainAddress(it.uri))}">${escHtml(shownAddress(it.uri))}${fromLabel(it)}</span></span>
         ${meta}
         ${rowButtons ? `<button type="button" class="suggest-contact" tabindex="-1" data-contact="${it.contact ? "remove" : "add"}" data-idx="${i}"
           title="${escHtml(label)}" aria-label="${escHtml(label)}">${it.contact ? SUGGEST_ICON.removeContact : SUGGEST_ICON.addContact}</button>
-        <span class="suggest-call" title="${escHtml(goLabel)}" aria-hidden="true">${goIcon()}</span>` : ""}
+        <span class="suggest-call" title="${escHtml(goLabel)}" aria-hidden="true">${goIcon()}</span>` : quickBtns}
       </div>`;
     }).join("");
     list.querySelector(".suggest-item.active")?.scrollIntoView({ block: "nearest" });
@@ -393,6 +397,12 @@ export function addressField({ input, list, clear, badge, idPrefix, popup, foot,
   });
   list.addEventListener("mousedown", (e) => e.preventDefault());   // keep focus in the field
   list.addEventListener("click", (e) => {
+    const q = e.target.closest(".suggest-quick");
+    if (q) {
+      const it = f.items[Number(q.dataset.idx)];
+      if (it) { f.close(); quick(it, q.dataset.quick === "video"); }
+      return;
+    }
     const btn = e.target.closest(".suggest-contact");
     if (btn) {
       const it = f.items[Number(btn.dataset.idx)];
@@ -429,6 +439,9 @@ export function initAddress2() {
   dial = addressField({
     input: $("address"), list: $("dialSuggest"), clear: $("destClear"), badge: $("destContact"),
     idPrefix: "sug", popup: true, foot: true, goIcon: () => ICON.phone, goLabel: "Call", rowButtons: false,
+    // Each row's own Call and Video call: straight away, from the contact's account (or the one it
+    // was last called from), as Home's rows do. On a call, that holds it, as Call does.
+    quick: (it, video) => placeCall(it.uri, it.account ?? null, it.name ?? null, video),
     // A pick goes in as New call's do: its account becomes Call from (Esc or × puts it back).
     pick: fill, changed() { followTyped(); syncCallBtn(); renderHome(); },
     warn: webDirectNote,
