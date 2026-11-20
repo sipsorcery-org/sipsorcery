@@ -186,7 +186,7 @@ function addHistory(c) {
   };
   if (!e.uri) return;
   if (!c.connectedAt) {
-    if (!c.outgoing) { if (c.reason === "Declined") e.note = "Declined"; else if (c.reason?.startsWith("Couldn't answer")) e.note = "Couldn't answer"; else e.dir = "missed"; }
+    if (!c.outgoing) { if (c.reason === "Declined") e.note = "Declined"; else if (c.reason === "Do not disturb") { e.note = c.reason; e.sip = "486 Busy Here"; } else if (c.reason?.startsWith("Couldn't answer")) e.note = "Couldn't answer"; else e.dir = "missed"; }
     else if (c.reason === "You hung up") e.note = "Cancelled";
     else { e.sip = /^\d{3} /.test(c.reason ?? "") ? c.reason : null; e.note = historyNote(c.reason); }
   }
@@ -1106,10 +1106,20 @@ async function rejectPlainRtp(invitation) {
   await invitation.reject({ statusCode: 488, extraHeaders: [warning], body }).catch(() => {});
 }
 
-// An incoming call rings alongside any others; only one past MAX_CALLS is busy.
+// An incoming call rings alongside any others; only one past MAX_CALLS is busy. So is every new
+// one while Do not disturb (the page's button, "dnd") is on: it's in the history as an incoming
+// call noted "Do not disturb", not a missed one, as on the desktop.
+let dnd = false;
 function onIncoming(invitation) {
   if (liveCalls().length >= MAX_CALLS) {
     invitation.reject({ statusCode: 486 });
+    return;
+  }
+  if (dnd) {
+    invitation.reject({ statusCode: 486 }).catch(() => {});
+    const remote = nameOf(invitation.remoteIdentity);
+    log(`do not disturb: turned away a call from ${remote} (486 Busy Here)`);
+    addHistory({ id: `dnd${++nextId}`, remote, outgoing: false, startedAt: Date.now(), connectedAt: 0, reason: "Do not disturb" });
     return;
   }
   if (!isWebRtcOffer(invitation.body)) {
@@ -1248,6 +1258,7 @@ async function onPageMessage(msg) {
       toPage(stateMessage());
       dialAtStart();
       break;
+    case "dnd": dnd = !!msg.on; log(`do not disturb ${dnd ? "on: new calls are answered 486 Busy Here" : "off"}`); break;
     case "log":
       console.log(`page: ${msg.text}`);
       break;

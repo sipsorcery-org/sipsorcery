@@ -241,6 +241,12 @@ internal sealed class MainForm : Form
                     PostContacts();
                     if (!string.IsNullOrWhiteSpace(_settings.Dial)) DialAtStart();
                     break;
+                case "dnd":
+                    // Do not disturb, the page's button: the page keeps the setting and sends it
+                    // with every change, and once it's loaded.
+                    _phone.DoNotDisturb = (bool?)msg["on"] ?? false;
+                    WriteLog($"do not disturb {(_phone.DoNotDisturb ? "on: new calls are answered 486 Busy Here" : "off")}");
+                    break;
                 case "log":
                     LogLine($"{DateTime.Now:HH:mm:ss.fff} page: {msg["text"]}");
                     break;

@@ -48,6 +48,7 @@ import { dialDone, homeShown, initHome, renderHome } from "./home.js";
 import { initQuality, newQuality, onQuality, renderDetails, renderDock, renderQuality } from "./quality.js";
 import { initStreams, noteStreamCalls, onStreamRates, onStreams, renderStreams } from "./streams.js";
 import { initConnection, renderConnection } from "./connection.js";
+import { initDnd } from "./dnd.js";
 import { initLadder, renderLadder } from "./sipladder.js";
 import { captureDiagnostics, closeSnapshot, onDiagSaved, onDiagnosticsSaved, onDiagSnapshot, openSnapshot, savedFor, snap } from "./snapshots.js";
 import { closeTextForGrid, hideToast, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen, toastCallId } from "./rtt.js";
@@ -1749,6 +1750,7 @@ export const settings = initSettings({
 });
 initYourDevices();
 initHome();
+initDnd();           // before "ready", so the host has it before anything rings
 
 render();            // the UI straight away, before the microphone is open
 await openDevices();

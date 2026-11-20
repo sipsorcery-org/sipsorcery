@@ -112,7 +112,7 @@ the call's.
 
 ## The indicator
 
-Left of privacy mode, only while your microphone or camera is open: nothing shows while both are
+Left of Do not disturb, only while your microphone or camera is open: nothing shows while both are
 closed, so there's nothing to work out. A microphone icon with a green dot is live (they hear you,
 or it's your mic test), amber is open but muted or on hold; a camera icon is open (they see you,
 or it's your preview). A click says why each is open, the device, and when each opened and closed
@@ -170,6 +170,25 @@ turns a camera on unasked), so a call you'd muted stays muted. There's no second
 confirm: turning it on only protects you, and turning it off loses nothing. It's never
 remembered, so the app always starts with it off. It's always there, with or without a call, so
 you can switch it on before answering.
+
+## Do not disturb
+
+Just left of privacy mode: a circle with a bar through it, the sign phones use for it, in the same
+round button. One click turns it on, and the host answers every new incoming call `486 Busy Here`
+without ringing, so the caller hears busy. Calls already ringing or in progress carry on, and you
+can still place calls. On, the button becomes a red chip with the sign and *Do not disturb*
+(`aria-pressed`, with a tooltip saying what it does), so it's hard to forget; another click turns
+it off.
+
+Unlike privacy mode it's **remembered** (Settings' storage, per profile), the way you'd expect of a
+phone's DND: you turn it on for the afternoon, and a restart shouldn't quietly start ringing again.
+The red chip at the top says it's on from the moment the app opens. The page sends it to the host
+(`dnd {on}`) before `ready`, so the host has it before anything can ring; a call that arrives in
+the second before the page has loaded still rings.
+
+A call it turns away is in Recent as an **incoming** call noted *Do not disturb*, with `486 Busy
+Here`, not a missed one: you chose not to be disturbed, so it doesn't badge People or show under
+Missed, but you can still see who called and call them back. The web softphone does the same.
 
 ## Names, numbers and SIP addresses
 
@@ -541,6 +560,7 @@ What a call is recorded as:
 | Placed, you hung up before it was answered | Outgoing, *Cancelled* |
 | Incoming, answered | Incoming, with its duration |
 | Incoming, you declined it | Incoming, *Declined* |
+| Incoming, turned away by [Do not disturb](#do-not-disturb) | Incoming, *Do not disturb*, with `486 Busy Here` (not missed: no badge) |
 | Incoming, they gave up before you answered | Missed (red) |
 | Transferred (by you, or you by them) | As above, with *Transferred to …* and its duration |
 

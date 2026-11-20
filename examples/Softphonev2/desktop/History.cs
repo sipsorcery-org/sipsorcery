@@ -64,6 +64,8 @@ public sealed class HistoryEntry
         {
             // Declined here, or answering failed; otherwise they gave up (or the app closed) while it rang.
             if (c.EndReason == "Declined") { e.Dir = "in"; e.Note = "Declined"; }
+            // Turned away by Do not disturb (486 Busy Here): incoming, not missed, so no badge.
+            else if (c.EndReason == Phone.DoNotDisturbReason) { e.Dir = "in"; e.Note = Phone.DoNotDisturbReason; e.Sip = "486 Busy Here"; }
             else if (c.EndReason == "Couldn't answer") { e.Dir = "in"; e.Note = "Couldn't answer"; }
             else e.Dir = "missed";
         }
