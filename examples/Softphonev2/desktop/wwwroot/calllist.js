@@ -12,16 +12,17 @@ import { $, ICON, escHtml, initial, log, post } from "./util.js";
 import { sourceAvailable, sourceOf } from "./video.js";
 
 // ---- Active calls panel, down the left ----
-// Every call, oldest at the top and new ones at the bottom, so a call never moves. Each row shows who, what you're sending (mic and camera), and
-// the call's state: calling, ringing, connected, on hold with how long (or "Holding…" and
-// "Resuming…" while the re-INVITE is out), or how it ended. Clicking a row puts that call on the
-// stage, as do the number keys. The chevron folds it to a rail of avatars and timers, which
-// leaves room for the call info beside Mute; the choice is remembered. Under 700 px it's always
-// the rail, with no chevron.
+// Every call, oldest at the top and new ones at the bottom, so a call never moves. Each row shows
+// who, a badge on the avatar for what matters most about the call (callBadge), and its state:
+// calling, ringing, connected, on hold with how long (or "Holding…" and "Resuming…" while the
+// re-INVITE is out), or how it ended. Clicking a row puts that call on the stage, as do the
+// number keys. It starts as a rail of avatars; a click on the panel (the chevron, its head, the
+// space under the calls) opens it into the list, and again folds it. Under 700 px it's always the
+// rail, with no chevron.
 
 // Narrow windows (under 700 px): the panel is a rail of avatars, to leave the stage its room.
 const narrowCalls = matchMedia("(max-width: 699px)");
-// (Experiment) Open or folded to the rail: yours to choose, and it stays as you left it while
+// Open or folded to the rail: yours to choose, and it stays as you left it while
 // calls come and go (a new call never opens or folds it). It starts as the rail when the first
 // call comes, and goes back to that once there are none.
 let callsOpen = false;
@@ -65,7 +66,8 @@ export function callStatus(e) {
     const xt = h.transfer;
     // A transfer under way says so first: it's what's happening to the call.
     if (xt && (xt.status === "asking" || xt.status === "calling" || xt.status === "offered")) c.statusText = transferShort(xt);
-    else if (xt?.status === "failed" && xt.role === "out") c.statusText = "Transfer failed · on hold";
+    // (Its note stays while you're back on the call, until × or Resume: "on hold" only if it is.)
+    else if (xt?.status === "failed" && xt.role === "out") c.statusText = c.held ? "Transfer failed · on hold" : "Transfer failed";
     else if (pending) c.statusText = e.holdWanted ? "Holding…" : "Resuming…";
     else if (c.held) {
       c.long = Date.now() - e.heldAt > 60000;
@@ -102,9 +104,9 @@ export function sendsHtml(c) {
   return chip(c.sends.mic, ICON.mic, ICON.micOff) + (c.sends.cam ? chip(c.sends.cam, ICON.video, ICON.videoOff) : "");
 }
 
-// (Experiment) The panel shows whenever there's a call (or the grid's on screen), so it's always
-// where a call's lamp is: with one, as the rail (its avatar and its badge),
-// which opens into the full list, where it is, when a second call comes (unless you've folded it).
+// The panel shows whenever there's a call (or the grid's on screen), so it's always where a
+// call's lamp is: the rail (each call's avatar and its badge) until you open it, and as you left
+// it while calls come and go.
 export function renderCalls() {
   // (A call that's ended on you shows as its gone row, not its own, while the host still lists it.)
   const gone = goneRows(), goneIds = new Set(gone.map((o) => String(o.row.id)));
@@ -128,7 +130,7 @@ export function renderCalls() {
   // How a transfer on a call in the background went: on its row (noteRow).
   const xn = transferNotices(() => () => {});
   const notes = new Map([...callNotes(), ...xn.outcomes.filter((o) => o.row)].map((o) => [String(o.row), o]));
-  // (Experiment) A transfer you're asked to take, on a call in the background: its lamp (askRow).
+  // A transfer you're asked to take, on a call in the background: its lamp (askRow).
   const asks = new Map(xn.decisions.filter((d) => d.row).map((d) => [String(d.row), d]));
   for (const k of [...noteSeen.keys()]) if (![...notes.values()].some((o) => o.key === k)) noteSeen.delete(k);
   // A call that's just ended on you keeps its place a few seconds (goneRow), among the rest.
@@ -204,7 +206,7 @@ function callRow(e, i, collapsed = false) {
   li.dataset.call = e.id;
   if (e.id === selectedId) li.setAttribute("aria-current", "true");   // the call on the stage
   li.title = [e.h.remote || name, c.statusText, i < 8 ? `(${i + 1})` : ""].filter(Boolean).join(" · ");
-  // A click picks the call; (experiment) on the rail you folded it to, it opens the panel too, to
+  // A click picks the call; on the rail you folded it to, it opens the panel too, to
   // read what the call's doing.
   li.onclick = (ev) => {
     ev.stopPropagation();
@@ -220,7 +222,7 @@ function callRow(e, i, collapsed = false) {
   top.append(el("span", "call-name", name));
   const contact = contactFor(e.h.remote);
   if (contact) top.firstChild.append(contactMarkEl(contact.name));
-  // (Experiment) No mic and camera chips, and no timer: the call bar has the time, and only one
+  // No mic and camera chips, and no timer: the call bar has the time, and only one
   // call ever has your mic. What matters about the call is a badge on its avatar (callBadge).
   const main = el("span", "call-main");
   const status = el("span", "call-status", c.statusText);
@@ -230,7 +232,7 @@ function callRow(e, i, collapsed = false) {
   return li;
 }
 
-// (Experiment) A call's state, as a badge on its avatar's corner: the one that matters most. The
+// A call's state, as a badge on its avatar's corner: the one that matters most. The
 // avatar stays, so you still see who it is (two calls on hold aren't two pause signs). In order:
 // ringing; then (askRow, noteRow) a transfer you're asked to take, then something that went wrong
 // or just happened; then on hold (amber after a minute); muted; your mic on a call that isn't on
@@ -294,11 +296,16 @@ function noteRow(li, o) {
   if (!noteSeen.has(o.key)) noteSeen.set(o.key, Date.now());
   li.classList.add("noted");
   li.dataset.tone = o.tone ?? "";
-  li.title = [o.title || o.what, "click to open this call"].filter(Boolean).join(" · ");
+  // Something that went wrong: the row just says what ("Transfer to Dave failed"), and the "!" on
+  // its avatar says there's more on the call itself. Hover the row for why, in full, without
+  // switching to it.
+  const bad = o.tone === "bad";
+  const full = o.title || o.what;   // the host's sentence, when it has one, else the short one
+  li.title = [full, "click to open this call"].filter(Boolean).join(" · ");
   const st = li.querySelector(".call-status");
-  st.textContent = o.what;
+  st.textContent = bad ? o.what.replace(/:.*$/s, "") : o.what;
   delete st.dataset.heldAt;
-  setBadge(li.querySelector(".call-face"), o.tone === "bad" ? { kind: "bad", text: "!", label: o.what } : { kind: "note", icon: o.icon ?? ICON.transfer, label: o.what });
+  setBadge(li.querySelector(".call-face"), bad ? { kind: "bad", text: "!", label: full } : { kind: "note", icon: o.icon ?? ICON.transfer, label: o.what });
   const x = Object.assign(document.createElement("button"), { type: "button", className: "call-note-x", title: "Close", innerHTML: ICON.close });
   x.setAttribute("aria-label", "Close");
   x.onclick = (ev) => { ev.stopPropagation(); o.dismiss(); };
@@ -307,7 +314,7 @@ function noteRow(li, o) {
   return li;
 }
 
-// (Experiment) A call in the background whose caller wants to transfer you: its row blinks, like a
+// A call in the background whose caller wants to transfer you: its row blinks, like a
 // phone's line lamp, until it's answered (or the host lets it go after 20 s). You switch to it to
 // answer (a click, or its number key): its call bar asks.
 function askRow(li, d) {
@@ -331,7 +338,7 @@ export function initCallList() {
   $("allMenuBtn").onclick = () => showMenu("all");
 
   narrowCalls.addEventListener("change", renderCalls);
-  // (Experiment) A click anywhere on the panel folds or unfolds it: the chevron, its head, the
+  // A click anywhere on the panel folds or unfolds it: the chevron, its head, the
   // space under the calls. Not a call (its row picks it, and on the rail opens the panel too: see
   // callRow), nor what closes a notice on a row, nor Grid and ⋯ under the list. One handler for
   // the chevron too, so a click on it is one toggle, not two. Not under 700 px: always the rail.

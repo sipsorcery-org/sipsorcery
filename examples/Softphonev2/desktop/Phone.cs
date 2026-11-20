@@ -146,6 +146,10 @@ public sealed class Phone : IDisposable
         public bool Attended { get; init; }
         /// <summary>Attended, ours: the other call, which ends with this one.</summary>
         public string? PartnerId { get; init; }
+        /// <summary>Attended, ours: this is the call the REFER went on (the person being transferred),
+        /// not the call to the target. Both carry the transfer's status; the page says how it ended
+        /// once, on this one.</summary>
+        public bool Referred { get; init; }
         public string Status { get; internal set; } = "asking";
         /// <summary>In full, for the tooltip and the log: "Couldn't transfer: Dave is busy (486 Busy Here). You're still on the call: Try again, if you like."</summary>
         public string? Detail { get; internal set; }
@@ -967,15 +971,16 @@ public sealed class Phone : IDisposable
     /// and the far end answers that 491.
     /// A change asked for meanwhile waits, and only the last one counts.
     /// </summary>
-    public void Hold(string id, bool hold)
+    public void Hold(string id, bool hold, bool resumed = false)
     {
         var c = Find(id);
         if (c == null) return;
         lock (_lock)
         {
             if (c.State != CallState.Connected || c.Ua == null) return;
-            // Resuming after a failed transfer is the answer to it: the note goes.
-            bool cleared = !hold && c.Transfer is { Role: "out", Status: "failed" } && ClearTransfer(c);
+            // Resume pressed after a failed transfer is the answer to it: the note goes. Switching to
+            // the call (which resumes it too) keeps it, so the call's bar can say what went wrong.
+            bool cleared = !hold && resumed && c.Transfer is { Role: "out", Status: "failed" } && ClearTransfer(c);
             // (A cancelled one's note stays its few seconds: it's saying what may still happen.)
             if (c.HoldMode != "sip")
             {
@@ -1109,7 +1114,7 @@ public sealed class Phone : IDisposable
             if (c == null || t == null || c == t || c.State != CallState.Connected || t.State != CallState.Connected
                 || c.Ua == null || t.Ua?.Dialogue == null || TransferBusy(c) || TransferBusy(t)) return;
             string cName = ShortName(c.Remote), tName = ShortName(t.Remote);
-            c.Transfer = new TransferInfo { Role = "out", Target = tName, Attended = true, PartnerId = t.Id, Detail = $"Asking {cName}'s phone to join {tName}…" };
+            c.Transfer = new TransferInfo { Role = "out", Target = tName, Attended = true, PartnerId = t.Id, Referred = true, Detail = $"Asking {cName}'s phone to join {tName}…" };
             t.Transfer = new TransferInfo { Role = "out", Target = cName, Attended = true, PartnerId = c.Id, Detail = $"Joining {cName} with {tName}…" };
             (ua, dialogue, a) = (c.Ua, t.Ua.Dialogue, c.Account);
             Log?.Invoke($"call {c.Id}: attended transfer of {c.Remote} to call {t.Id} ({t.Remote}): REFER with Replaces");

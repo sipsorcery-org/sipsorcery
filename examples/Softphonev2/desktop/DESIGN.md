@@ -77,7 +77,7 @@ address you called (kept for a retry), then closes.
 
 **New call**, at the top of Home, is the address bar's list (see [Names, numbers and SIP addresses](#names-numbers-and-sip-addresses)) drawn
 on Home instead of in a drop-down, so typing never swaps Home for another view. With nothing
-typed: your five most-called contacts as tiles, and *Contacts…*; as you type, the contacts and
+typed: your five most-called contacts, and *Contacts…*; as you type, the contacts and
 other addresses that match, as rows (scrolling inside the card past four and a half), and *Add …
 to contacts* for an address that isn't one. ↑/↓ in the field move through it, Enter or a click
 fills the address bar and Call from (the field flashes) and calls no one: Call or Video call
@@ -452,6 +452,13 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   you're looking at. Declining or losing the call on the stage moves it to the ones still
   ringing (the banner, or the answer view once there's one), not the ended call's card.
   `--auto-answer` answers each call alongside the others, keeping the audio where it is.
+  With more than one account enabled, the banner and the answer view say which one they're
+  calling: "Calling Carol", "Incoming call to Carol" (by the account's name). One case that
+  needs it: you're Alice on this phone, Bob transfers you to Carol, and Carol is an account on
+  this phone too, so Alice's call to Carol rings here; without the name it reads as some other
+  call. The stage stays on the call you're on (switching would take its video, text and keypad
+  away mid-call, and put the keyboard on Answer); the banner has the middle of the stage, and a
+  transfer's card under way there goes back to the bottom until it's gone.
 - **When a call ends** it stays in the list for a few seconds with how it ended. If it was on
   the stage, the stage keeps saying so, with *Back to …* (or `Esc`) to another call, or with
   none, *Close* (or `Esc`) for Home, after 3 s by itself. The host keeps listing an ended call a
@@ -480,7 +487,7 @@ yours below only while that call gets your mic), else their initial; and on a vi
 self view in the corner, showing what that call sends (your camera, your initial, or the "On
 hold" card), unless Self view is off. Under it the call's time,
 their name and its status line, the same as the list's: "On hold · 02:10" (amber), "Typing…",
-their last unread line, and what the call gets from you (as in the list). The selected call's tile, which has the audio,
+their last unread line, and what the call gets from you (the mic, and on a video call the camera). The selected call's tile, which has the audio,
 is outlined. The control bar's buttons go, so it's never in doubt which call a button acts on.
 *Grid* looks pressed while it's the view; clicking it again goes back to Focus, though there's
 no Focus button: picking a call does that. Clicking a tile opens that call in Focus, resuming it if it's held (and holding the
@@ -495,8 +502,7 @@ the audio, and the view stays Grid.
   the call (or grid) you're on. *Decline* leaves everything as it was; *Answer & hold current*
   holds the call you're on and opens the new one in Focus. Its own answer view (the banner's
   name) leaves the choice alone.
-- **`T`** in the grid switches to Focus with the text panel open, as does *Reply* on a text
-  toast. `M`, `H` and `V` do nothing in the grid; `Shift+M` (privacy mode) still works.
+- **`T`** in the grid switches to Focus with the text panel open. `M`, `H` and `V` do nothing in the grid; `Shift+M` (privacy mode) still works.
 - The choice is remembered (`view` in the page's settings) and only applies with two or more
   calls: with one, it's Focus.
 - Each call's `<video>` moves into its tile and back (`renderGrid` in `app.js` keeps the tiles
@@ -506,27 +512,35 @@ the audio, and the view stays Grid.
 ## Active calls
 
 A panel down the left, beside the stage and the control bar, from the prototype's sidebar, shown
-only while there are two or more calls (or the grid is on screen): with one, the stage already
-says who it's with and how it's going, so the stage and controls take the whole width. It
-lists every call, oldest at the top and new ones at the bottom, while it's live (calling, ringing or connected) and for a
-few seconds after it ends. Clicking a row puts that call on the stage. The list is built from
-`listed()` in `app.js` and `callStatus()` in `calllist.js`.
+whenever there's a call (or the grid is on screen), one call included. It's where a call's news
+goes when the call isn't the one on the stage (its "lamp"), so it's always in the same place:
+you learn to glance at it, and a second call arriving changes a row, not the layout. It lists
+every call, oldest at the top and new ones at the bottom, while it's live (calling, ringing or
+connected) and for a few seconds after it ends. Clicking a row puts that call on the stage. The
+list is built from `listed()` in `app.js` and `callStatus()` in `calllist.js`.
 
-- **A row**: their initial, their name (the full address in the tooltip), the status and, once
-  connected, the timer. Calling… (grey ring, pulsing), Incoming call / Incoming video call
-  (amber, pulsing), then Audio call or Video call (green), On hold · 02:10 (amber
-  after a minute), Holding… or Resuming…, Muted in red, or how it ended. A connected call also shows,
-  at a glance, what it gets from you: the mic, and on a video call the camera, as a filled
-  green chip while it gets it, and struck out when it doesn't, red if that's your choice
-  (muted, video stopped) and faint otherwise (on hold, held by them, the mic on another call).
-  The tooltip says which: "Bob hears you", "On hold: they hear music, not you". With text,
-  the status line says "Typing…" or their last line.
-- **Folding it**: the chevron at the top right of the panel folds it to a 48 px rail of
-  initials, the mic and camera chips, and timers (a click on one selects that call), and the
-  chevron at the top of the rail opens it again. The choice is remembered (`localStorage`,
-  `callsPanel`). The call header stays on the stage either way, for the selected call.
+- **The rail and the list**: it starts as a 48 px rail of avatars, and stays as you leave it
+  while calls come and go. A click on the panel (the chevron, its head, the space under the
+  calls) opens it into the 180 px list and folds it again; a click on a call on the rail opens
+  the list as it picks the call, to read what that call's doing. It isn't remembered: with no
+  calls it goes back to the rail.
+- **A row**: their avatar, their name (the full address in the tooltip) and the status:
+  Calling… (grey ring, pulsing), Incoming call (amber, pulsing, the row blinking like a line
+  lamp), Audio call or Video call (green), On hold · 02:10, Holding… or Resuming…, Muted in
+  red, "Typing…" or their last unread line, "Pressed 4 1 2", or how it ended. No mic and camera
+  chips, and no timer: the call bar has the time, and only one call has your mic.
+- **The badge** on the avatar's corner is the one thing that matters most about the call, in
+  order: ringing; a transfer you're asked to take (the row blinks; you switch to it to answer);
+  something that went wrong (a red **!**) or just happened; on hold (amber after a minute);
+  muted; your mic live on a call that isn't on the stage; a message you haven't read.
+- **Something that went wrong** (a transfer that failed) shows short on the row, "Transfer
+  failed" with the **!**, and × to close it; hover the row or the **!** for the full sentence,
+  without switching. Switching to the call keeps it: its bar on the stage says it in full (see
+  [Transfer](#transfer)).
+- **A call that ends on you** in the background keeps its row a few seconds, amber (red if it
+  failed), saying so and how long it lasted, then fades and folds away; a click closes it.
 - **Narrow windows** (under 700 px): always the rail, with no chevron, to leave the stage its
-  room.
+  room; opened, the list lies over the stage.
 
 ## Call history
 
@@ -619,8 +633,8 @@ buttons. The header is one line (40 px), read left to right:
 header: a call ringing in (*Answer* / *Decline*, the one waiting longest first, "+N more"
 dropping down the rest) and a call you're placing over this one have their banners just under
 it, so a call ringing in while a transfer's going covers neither. Another call's transfer shows
-on its row in Active calls ("Carol is ringing…", "Transfer failed · on hold"). Text they type
-has its toast at the bottom of the stage.
+on its row in Active calls ("Carol is ringing…", "Transfer failed"), and so does text they type
+on it (its badge, and their last line).
 
 On hold, the *On hold · Resume* note stays over the middle of the stage (below the header).
 Calling, ringing and ended calls have the stage's card, which already names the call, so the
@@ -697,10 +711,9 @@ same on both.
   and an *Open text* link, which opens the panel; and the same red dot on the Text button (and
   on ⋯ More at phone width). Both stay until the panel is opened on that call. Nothing opens by
   itself. The keypad's tones are flagged the same way (see [Keypad](#keypad-dtmf)).
-- **Text on a call that isn't on the stage** (or in Grid view) shows as a toast at the bottom of
-  the stage: their name, what they've typed (live, if their phone sends letter by letter) and
-  *Reply*, which opens that call's panel. It fades 6 s after the last letter; the call's line in
-  the calls panel shows their last line until you read it.
+- **Text on a call that isn't on the stage** (or in Grid view) shows on that call: its row in
+  Active calls (and its tile in Grid) shows their last line, live if their phone sends letter by
+  letter, and the unread badge, until you read it. Nothing over the call you're on.
 - **Not on the call** (their phone didn't answer `m=text`): "Text isn't set up on this call"
   and *Add text to this call*, which sends a re-INVITE with `m=text`. If they turn it down
   (`m=text` with port 0) it says their phone doesn't support real-time text; with no answer in
@@ -820,9 +833,16 @@ call is still on hold: Resume, or Try again.") is its tooltip; the host sends a 
 ringing. While it's under way the *On hold* note in the middle of the stage is hidden (Resume
 there would be Cancel by another name); once it's over, it's back.
 
-While it's under way the status has what you can do:
+While it's under way the state card sits in the middle of the stage (it's what the call is about
+now: "Transferring to Dave…", "Dave is ringing…"), with × to close it. It's in the notices'
+shape (the transfer icon, who, how it's going in grey, its button, ×), so the card under way and
+the notice it ends as ("Transfer failed: …", in red) read as one thing changing, not two.
 
-- **Cancel** (asking or calling, blind or attended): you take the call back. SIP has no way to
+- **No Cancel.** SIP can't call a REFER back once it's sent (RFC 3515), so there's nothing a
+  Cancel could do but forget the transfer while their phone carries on. × closes the card
+  instead: the transfer goes on, and how it ends comes as a notice (attended, the *On hold*
+  card comes back, with Resume). What Cancel used to do, for the record:
+- **Cancel** (asking or calling, blind or attended, before): you took the call back. SIP has no way to
   call off a REFER once the far end has accepted it (RFC 3515), so this is the most that can be
   done: the transfer is forgotten, attended the calls come off hold (blind, it was never held),
   and the status says
@@ -836,9 +856,9 @@ While it's under way the status has what you can do:
   hang up) is the transfer over: the other call isn't being transferred any more, and can be
   again. (Before, it stayed "under way", Transfer disabled on it, until it ended too: seen with a
   MicroSIP call as the target, which rang and never answered.)
-- **Hang up** (blind, accepted): you hang up now and leave it to their phone, as a blind
-  transfer usually goes (RFC 5589 lets the transferor leave once it has the 202). The call ends
-  *Transferred to Dave (you left it to their phone)*; their phone carries on calling Dave.
+- There's no **Hang up** on the card: End on the control bar still ends the call. (It used to
+  offer Hang up beside Cancel, leaving the transfer to their phone, as RFC 5589 allows once the
+  202 is in; the host still takes `transfer-leave`, but nothing sends it.)
 
 - **Done** (NOTIFY `200 OK`): they hang up on us (if they haven't 3 s later, we do), and the call
   ends with *Transferred to Dave*. Attended, both legs end: *Transferred to Carol* on Bob's,
@@ -848,8 +868,12 @@ While it's under way the status has what you can do:
   Here)", "… nothing answered at Dave's address (408 Request Timeout)", "… VtN's phone turned it
   down". **Try again** and **×** on the status. Blind, you're still talking. Attended, the call
   stays on hold, and the *On hold* note in the middle of the stage says why too, with Try again
-  and **Resume**: what happens next is your choice, never a silent resume. Resuming clears the
-  status; × just drops it, the call staying on hold.
+  and **Resume**: what happens next is your choice, never a silent resume. Resume (the button,
+  `H`, a grid tile's) clears the status; × just drops it, the call staying on hold. Switching to
+  the call (its row, its tile, its number key) resumes it too, but keeps the status, so its bar
+  can say what went wrong: the page sends `hold` with `resumed` only for Resume. On a call in
+  the background, its row says "Transfer failed" with a red **!**; in Grid, its tile has the
+  bar's pill at the top, with × (one line, the full sentence in its tooltip).
 - **No word**: accepted, but no outcome in 60 s, it's marked failed ("Transfer failed: no word
   from VtN's phone"), with the same.
 
@@ -875,8 +899,8 @@ anyone; false drops the transfer):
 - **No answer in 20 s** declines it: "Transfer not answered · still with Alice", and the NOTIFY
   says `603 Transfer not answered` (*Bob didn't answer it*, on Alice's phone).
 
-While you decide, Alice's phone shows *Transferring to Dave…* with Cancel and, on a blind
-transfer, Hang up (leave it to their phone: the call then ends, and so does the question). An
+While you decide, Alice's phone shows *Transferring to Dave…* in the middle of the stage, with
+× to close it. An
 immediate refusal of her REFER (a browser phone's, or a proxy's 408) reads *Bob's phone turned it
 down*, not *declined*. Our own REFER waits 10 s for its answer. Within limits, still:
 

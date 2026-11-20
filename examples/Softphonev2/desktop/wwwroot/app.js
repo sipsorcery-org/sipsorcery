@@ -28,7 +28,7 @@
 // nothing. When a call ends, nothing resumes on its own: a held call stays held, with Resume.
 // An incoming call while you're on one shows as a banner, with Answer & hold current or Decline.
 
-import { initAccounts, onAccountsState, onAccountMessage, closeAccounts, useAccount, accountName, accountList, takeAccounts } from "./accounts.js";
+import { initAccounts, onAccountsState, onAccountMessage, closeAccounts, useAccount, accountName, accountList, takeAccounts, calledAccountName } from "./accounts.js";
 import { initHistory, onHistoryMessage, onHistoryState, closeHistory, historyEntries, markSeen, openPeople, renderSide } from "./history.js";
 import { prefs, savePref, initSettings } from "./settings.js";
 import { initSelfView } from "./selfview.js";
@@ -51,8 +51,8 @@ import { initConnection, renderConnection } from "./connection.js";
 import { initDnd } from "./dnd.js";
 import { initLadder, renderLadder } from "./sipladder.js";
 import { captureDiagnostics, closeSnapshot, onDiagSaved, onDiagnosticsSaved, onDiagSnapshot, openSnapshot, savedFor, snap } from "./snapshots.js";
-import { closeTextForGrid, hideToast, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen, toastCallId } from "./rtt.js";
-import { cancelTransfer, initTransfer, leaveTransfer, renderTransfer, transferNotices, transferState } from "./transfer.js";
+import { closeTextForGrid, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen } from "./rtt.js";
+import { cancelTransfer, initTransfer, renderTransfer, transferNotices, transferState } from "./transfer.js";
 import { $, ICON, initial, log, post, shortName } from "./util.js";
 import { cameraInUse, hasCamera, isTestTrack, openSources, placeholderTrack, retryCamera, sameSources, setHasCamera, showSelfVideo, sourceAvailable, sourceOf, stopPlaceholders, syncCamera, videoToSend, wantedSources } from "./video.js";
 
@@ -137,7 +137,6 @@ export function selectCall(id) {
   if (old?.gone) dropEntry(old);
   if (textOpen) sel().text.unread = false;
   closeMenu();
-  hideToast();
   log(`selected call ${id} (${nameOf(sel())})`);
   renderText();
   render();
@@ -155,10 +154,12 @@ function holdOthers(keep) {
 }
 // Makes a connected call the one you're talking to: the live one goes on hold, and this one comes
 // off hold if it's on it. Anything else (ringing, calling, ended) is only looked at.
-function goLive(e) {
+// resumed: Resume pressed (the bar's, a grid tile's), which is also the answer to a failed transfer
+// on the call (its note goes); switching to a call keeps the note, so its bar shows it.
+function goLive(e, resumed = false) {
   if (e?.h.call !== "connected") return;
   holdOthers(e);
-  holdCall(e, false);
+  holdCall(e, false, resumed);
 }
 
 // The most recent live call other than the selected one, for "Back to …".
@@ -180,7 +181,7 @@ export function inGrid() {
   const e = sel();
   return view === "grid" && !!e && e.h.call !== "ringing" && gridCalls().length + goneTiles().length > 1;
 }
-// (Experiment) Tiles of calls that have just ended on you, staying a few seconds (renderGrid):
+// Tiles of calls that have just ended on you, staying a few seconds (renderGrid):
 // the outcomes for their rows whose call had a tile. (Before those are set up at start-up: none.)
 function goneTiles() {
   try { return outcomes.filter((o) => o.row && tiles.has(o.row.id)); } catch { return []; }
@@ -188,7 +189,6 @@ function goneTiles() {
 export function setView(v) {
   if (v === view) return;
   view = v;
-  if (v === "grid") hideToast();
   savePref("view", v);
   log(`view: ${v}`);
   settings?.refresh();
@@ -743,13 +743,17 @@ export function render() {
   hold.setAttribute("aria-pressed", String(connected && state.held));
   setBtn(hold, state.held ? ICON.play : ICON.pause, state.held ? "Resume" : "Hold");
   hold.title = !connected ? "Hold, during a call" : state.held ? "Take the call off hold (H)" : "Put the call on hold (H)";
-  // The state card, at the bottom of the stage: what this call is doing now. On hold, how long
+  // The state card: what this call is doing now. On hold, at the bottom of the stage, how long
   // (amber after a minute), sitting over Resume on the control bar and pointing down at it (that
   // button is the one way back, and glows while held); or that they've put you on hold. A
-  // transfer under way: how it's going, with Cancel or Hang up, and On hold under it if it is
-  // (no pointer: that's the transfer's to settle).
+  // transfer under way, in the middle of the stage (.busy): how it's going, with × (ours) or Cancel (theirs), and On
+  // hold under it if it is (no pointer: that's the transfer's to settle). End on the bar still
+  // ends the call.
   const heldNote = $("heldNote");
-  const xs = connected ? transferState(e) : null;
+  // A transfer's card closed with × stays closed until that transfer is over (e.xferClosed).
+  for (const x of entries.values()) if (x.xferClosed && transferState(x)?.key !== x.xferClosed) delete x.xferClosed;
+  const xsAll = connected ? transferState(e) : null;
+  const xs = xsAll && e.xferClosed !== xsAll.key ? xsAll : null;
   heldNote.hidden = !(connected && (state.held || state.heldByThem || xs));
   const pointing = !heldNote.hidden && state.held && !xs;
   const long = pointing && Date.now() - e.heldAt > 60000;
@@ -761,10 +765,14 @@ export function render() {
     $("heldSub").textContent = xs ? holdText : "";
     heldNote.classList.toggle("long", long);
     heldNote.classList.toggle("busy", !!xs);
+    // A transfer: in the notices' shape (icon, who, how it's going), like how it ends.
+    $("heldIcon").innerHTML = xs ? ICON.transfer : "";
+    $("heldWho").hidden = !xs;
+    $("heldWho").textContent = xs ? nameOf(e) : "";
     $("heldCancel").hidden = !xs?.cancel;
     $("heldCancel").title = xs?.cancel ?? "";
-    $("heldLeave").hidden = !xs?.leave;
-    $("heldLeave").title = xs?.leave ?? "";
+    $("heldClose").hidden = !xs?.close;
+    $("heldClose").title = xs?.close ?? "";
   }
   heldNote.classList.toggle("point", pointing);
   // Resume on the bar glows while the call is held: a few pulses when it goes on hold, again at
@@ -807,7 +815,7 @@ export function render() {
       }
       title.textContent = shown;
       markContact(title, remote);
-      sub.textContent = state.incomingVideo ? "Incoming video call" : "Incoming call";
+      sub.textContent = `${state.incomingVideo ? "Incoming video call" : "Incoming call"}${(() => { const n = calledAccountName(sel()?.h.account); return n ? ` to ${n}` : ""; })()}`;
       actions.append(button("btn-danger", "Decline", () => post({ type: "decline", id: selectedId })));
       // Answer: you see them (on a video call), your camera stays closed. Answer with video, only
       // when they offered it, opens it too. With another call going, either holds it.
@@ -1024,10 +1032,10 @@ function closeEnded(e) {
 
 function onNewCall(e) {
   const s = sel();
-  // (Experiment) A call ringing in is seen whatever you're doing: anything modal closes.
+  // A call ringing in is seen whatever you're doing: anything modal closes.
   if (!e.h.outgoing) for (const d of document.querySelectorAll("dialog[open]")) if (d.matches(":modal")) { log(`closing ${d.id || "a dialog"}: call ${e.id} ringing`); d.close(); }
   if (e.h.outgoing) e.placedVideo = placedVideo;
-  // (Experiment) A call you place while on another (now on hold) goes on the stage, as the first
+  // A call you place while on another (now on hold) goes on the stage, as the first
   // one does (Calling…, with its own card), and into the list. Unanswered, the stage goes back to
   // the call you were on (still on hold: resuming it is your choice) and its row says why for a
   // few seconds (onPlacedEnded).
@@ -1079,7 +1087,6 @@ function onPhase(e) {
     // own, and it's set up (offer or answer) before the call connects.
     closeMedia(e);
     if (audioId === e.id) audioId = null;
-    if (toastCallId === e.id) hideToast();
     // A call you placed over another, not answered (not cancelled: you know why): the notices say why.
     if (e.pending && !e.cancelled) onPlacedEnded(e);
     // The call on the stage ended: its keypad and text panels close (docked or not), so the
@@ -1091,7 +1098,7 @@ function onPhase(e) {
     }
     // Said in the call bar whichever call it was (one in the background, or in Grid, too).
     noticeEnded(e);
-    // (Experiment) A call you placed that didn't go through stays on the stage a few seconds, its
+    // A call you placed that didn't go through stays on the stage a few seconds, its
     // card saying why (with Back to … or Close), before the stage goes on; cancelled, it just goes.
     if (e.id === selectedId && placedFailed(e)) {
       setTimeout(() => { if (selectedId === e.id && entries.get(e.id) === e) leaveEnded(e); }, PLACED_STAY_MS);
@@ -1119,12 +1126,17 @@ function declineCall(id) { post({ type: "decline", id }); }
 // Holds or resumes a call. Compared with what was last asked for, not what the host has done
 // yet, so a quick switch back and forth still ends where you left it (the host sends the
 // re-INVITEs for a call one at a time).
-function holdCall(e, hold) {
-  if (e?.h.call !== "connected" || holdState(e) === hold) return;
+function holdCall(e, hold, resumed = false) {
+  if (e?.h.call !== "connected") return;
+  if (holdState(e) === hold) {
+    // Resume on a call that's already live (or on its way): still the answer to a failed transfer.
+    if (resumed && !hold && e.h.transfer?.status === "failed") post({ type: "hold", id: e.id, hold, resumed });
+    return;
+  }
   e.holdWanted = hold;
   e.holdAskedAt = Date.now();
   log(`${hold ? "holding" : "resuming"} call ${e.id} (${nameOf(e)})`);
-  post({ type: "hold", id: e.id, hold });
+  post({ type: "hold", id: e.id, hold, resumed });
   render();   // the audio moves now (syncAudio), and "Holding…" shows if the host queues it
   syncCamera();   // the "On hold" card, or the camera back
 }
@@ -1152,7 +1164,13 @@ const ringingInBanner = () => sel()?.h.call === "ringing" && allRinging().length
 const ringingUnpicked = () => ringingInBanner() && selectedId !== answerPicked;
 const pickRinging = (id) => { answerPicked = id; closeHistory(false); selectCall(id); render(); };
 const ringingWait = (e) => fmtElapsed(Date.now() - (e.ringAt ||= Date.now()));
-const ringingWhat = (e, many) => `${e.h.incomingVideo ? "Video call" : "Calling"}${many ? ` · ${ringingWait(e)}` : ""}`;
+// With more than one account, which one they're calling: "Calling Carol" (a transfer to an account
+// on this phone rings here too, and without it reads as some other call).
+const ringingWhat = (e, many) => {
+  const to = calledAccountName(e.h.account);
+  const kind = e.h.incomingVideo ? (to ? `Video call to ${to}` : "Video call") : (to ? `Calling ${to}` : "Calling");
+  return `${kind}${many ? ` · ${ringingWait(e)}` : ""}`;
+};
 // Two ringing with the same name but from different addresses: each says its address too, so
 // you can tell which is which (the same both ways, the waiting time is what tells them apart).
 const ringingAddr = (e) => (e.h.remote ?? "").replace(/^.*</, "").replace(/>.*$/, "").replace(/^sips?:/i, "");
@@ -1215,7 +1233,7 @@ function clearHeadEnded() {
 }
 // The calls panel's rows for calls that have just ended on you (calllist.js).
 export const goneRows = () => outcomes.filter((o) => o.row);
-// (Experiment) What just happened on a call that's still on (video they didn't take), for its row
+// What just happened on a call that's still on (video they didn't take), for its row
 // and tile, shaped as a transfer's outcome is there: { row: call id, what, tone, dismiss }.
 export const callNotes = () => outcomes.filter((o) => o.note != null).map((o) => ({ ...o, row: o.note, dismiss: () => dropOutcome(o.key) }));
 export function dropOutcome(key) {
@@ -1265,7 +1283,7 @@ function noticeEnded(e) {
   } else if (e.h.outgoing ? reason !== "You hung up" : reason !== "Declined") {
     if (e.h.outgoing) onPlacedEnded(e);
     // A missed call says nothing here: Recent has it (and its "N missed").
-    // (Experiment) The call on the stage: its bar; one in the background (or in Grid): its row.
+    // The call on the stage: its bar; one in the background (or in Grid): its row.
     else if (reason !== "Missed call") {
       const row = inGrid() || e.id !== selectedId || !!otherLive();
       pushOutcome({ key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: reason, icon: ICON.phone, tone: "bad", diagFor: e.id,
@@ -1284,7 +1302,7 @@ function leaveEnded(e) {
 // A call you placed that wasn't answered (declined, busy, no answer, or it failed): who and why,
 // in the call's bar like a call that ended on you; amber, or red if it failed. No Call again:
 // Recent has it. The host's sentence, with its SIP status, is the tooltip.
-// (Experiment) A call you placed, on the stage, that wasn't answered and that you didn't cancel:
+// A call you placed, on the stage, that wasn't answered and that you didn't cancel:
 // its card stays PLACED_STAY_MS saying why, instead of a notice.
 const PLACED_STAY_MS = 4000;
 const placedFailed = (e) => e.h.outgoing && !e.connectedAt && !e.cancelled && (e.h.reason || "") !== "You hung up" && !inGrid();
@@ -1292,7 +1310,7 @@ function onPlacedEnded(e) {
   if (e.id === selectedId && placedFailed(e)) return;   // its card says it
   const what = endWords(e.h.reason);
   const failed = what.startsWith("·") || /found|couldn't|can't/.test(what);
-  // (Experiment) With another call to go back to (or in Grid, or not on the stage), its row says
+  // With another call to go back to (or in Grid, or not on the stage), its row says
   // why for a few seconds (goneRow), not the bar of the call the stage goes back to.
   const row = inGrid() || e.id !== selectedId || !!otherLive();
   pushOutcome({
@@ -1306,7 +1324,7 @@ function onVideoRefused(e) {
   pushOutcome({
     key: `video-${e.id}`, callId: e.id, who: nameOf(e), whoTitle: e.h.remote, what: "didn't take video",
     title: "Their phone turned video down: the call carries on as audio", icon: ICON.videoOff, tone: "info",
-    // (Experiment) On the call: the stage's, its bar; one in the background (or in Grid), its row
+    // On the call: the stage's, its bar; one in the background (or in Grid), its row
     // and tile, as a transfer's outcome is (noteRow).
     ...(!inGrid() && e.id === selectedId ? { head: true } : { note: e.id }),
   });
@@ -1406,12 +1424,12 @@ function fillNotice(p, it, many) {
 const HEAD_CLOSE_MS = 500;
 let headClosing = null;   // the timer that hides it once it's faded
 function renderHeadEnded() {
-  // (Experiment) The call on the stage being asked to transfer you: asked here, in its bar, with
+  // The call on the stage being asked to transfer you: asked here, in its bar, with
   // Decline and Accept, until it's answered (or the host lets it go). Before any outcome.
   // Then how a transfer on it went (until it's closed, or the host clears it), then the latest outcome.
   const xn = !inGrid() && sel()?.h.call === "connected" ? transferNotices(() => () => {}) : null;
   const ask = xn?.decisions.find((d) => d.stage) ?? null;
-  // (Experiment) A head outcome is its call's: shown while that call is on the stage, or over
+  // A head outcome is its call's: shown while that call is on the stage, or over
   // Home once it's gone; not over another call you've switched to.
   const ours = (x) => selectedId == null || (x.callId ?? x.diagFor) === selectedId;
   const o = ask ?? xn?.outcomes.find((x) => x.stage) ?? outcomes.findLast((x) => x.head && ours(x));
@@ -1504,7 +1522,7 @@ function renderNotices() {
   // a click on the dulled stage closes it.
   // A call that ended on you is in the bar, where a call ringing in would be: no dulled stage.
   const outcome = !!top?.outcome && !top.bar;
-  // (Experiment) The one event from another call that takes the middle of the stage: a call ringing
+  // The one event from another call that takes the middle of the stage: a call ringing
   // in, over a call you're on (or Grid), bigger and pulsing; its row in the calls panel blinks too.
   // Everything else about another call is on that call (its row, its tile).
   const ringIn = top?.ringId != null && !outcome && sel()?.h.call === "connected";
@@ -1579,7 +1597,11 @@ function makeTile(e) {
   const t = { root: el("div", "tile"), feed: el("div", "tile-feed"), avatar: el("span", "avatar tile-avatar"), time: el("span", "tile-time"),
     name: el("span", "tile-name"), status: el("span", "tile-status"), media: el("span", "call-sends"), viz: el("canvas", "tile-viz"),
     self: Object.assign(el("video", "tile-self"), { autoplay: true, playsInline: true, muted: true, hidden: true }),
-    held: el("div", "held-note"), heldText: el("span", ""), resume: el("button", "btn") };
+    held: el("div", "held-note"), heldText: el("span", ""), resume: el("button", "btn"),
+    // How a transfer on the call went: the pill the call's bar has in Focus (renderHeadEnded), at
+    // the top of the tile, with × to close it.
+    alert: el("span", "head-ended tile-alert"), alertIcon: el("span", "head-ended-icon"), alertText: el("span", "head-ended-text"),
+    alertX: el("button", "head-ended-x") };
   t.root.dataset.call = e.id;
   t.root.tabIndex = 0;
   t.root.setAttribute("role", "button");
@@ -1596,9 +1618,16 @@ function makeTile(e) {
   t.held.hidden = true;
   t.resume.type = "button";
   t.resume.innerHTML = `${ICON.play}<span>Resume</span>`;
-  t.resume.onclick = (ev) => { ev.stopPropagation(); selectCall(e.id); goLive(e); };
+  t.resume.onclick = (ev) => { ev.stopPropagation(); selectCall(e.id); goLive(e, true); };
   t.held.append(t.heldText, t.resume);
-  t.feed.append(t.avatar, t.viz, t.self, t.time, t.held);
+  t.alert.hidden = true;
+  t.alert.setAttribute("role", "status");
+  t.alertX.type = "button";
+  t.alertX.title = "Dismiss";
+  t.alertX.setAttribute("aria-label", "Dismiss");
+  t.alertX.innerHTML = ICON.close;
+  t.alert.append(t.alertIcon, t.alertText, t.alertX);
+  t.feed.append(t.avatar, t.viz, t.self, t.time, t.held, t.alert);
   t.root.append(t.feed, meta);
   return t;
 }
@@ -1610,15 +1639,15 @@ function renderGrid(grid) {
   $("controls").classList.toggle("grid", grid);
 
   const shown = grid ? gridCalls() : [];
-  // (Experiment) A call that's just ended on you keeps its tile, where it was, dulled, saying so,
+  // A call that's just ended on you keeps its tile, where it was, dulled, saying so,
   // until its row goes (ROW_MS): then it fades and the grid closes up.
   const gone = grid ? goneTiles().filter((o) => !shown.some((e) => e.id === o.row.id)) : [];
   const ids = new Set([...shown.map((e) => e.id), ...gone.map((o) => o.row.id)]);
-  // (Experiment) How a transfer on a call went (done, failed, cancelled, declined): on its tile,
+  // How a transfer on a call went (done, failed, cancelled, declined): on its tile,
   // as on its row in the calls panel (calllist.js noteRow), with × to close it.
   const xn = grid ? transferNotices(() => () => {}) : { outcomes: [], decisions: [] };
   const notes = new Map([...(grid ? callNotes() : []), ...xn.outcomes.filter((o) => o.row)].map((o) => [String(o.row), o]));
-  // (Experiment) A transfer you're asked to take: the tile blinks; a click switches to the call,
+  // A transfer you're asked to take: the tile blinks; a click switches to the call,
   // where its bar asks.
   const asks = new Map(xn.decisions.filter((d) => d.row).map((d) => [String(d.row), d]));
   box.style.setProperty("--cols", stage.clientWidth < 560 ? 1 : ids.size > 4 ? 3 : 2);
@@ -1658,18 +1687,18 @@ function renderGrid(grid) {
     t.name.textContent = name;
     const tc = contactFor(e.h.remote);
     if (tc) t.name.append(contactMarkEl(tc.name));
-    t.status.textContent = ask ? `Transfer request · to ${ask.what.replace(/^wants to transfer you to /, "")}` : note ? note.what : c.statusText;
+    t.status.textContent = ask ? `Transfer request · to ${ask.what.replace(/^wants to transfer you to /, "")}` : c.statusText;
     if (note) t.root.title = [note.title || note.what, "click to open this call"].join(" · ");
     if (ask) t.root.title = [`${ask.who} ${ask.what}`, "click to switch to this call and answer"].join(" · ");
-    if (note && !t.noteX) {
-      t.noteX = Object.assign(document.createElement("button"), { type: "button", className: "call-note-x", title: "Close", innerHTML: ICON.close });
-      t.noteX.setAttribute("aria-label", "Close");
-      t.status.closest(".tile-meta").append(t.noteX);
-    }
-    if (t.noteX) {
-      t.noteX.hidden = !note;
-      t.noteX.onclick = note ? (ev) => { ev.stopPropagation(); note.dismiss(); } : null;
-    }
+    // The note: at the top of the tile, as the call's bar has it in Focus.
+    t.alert.hidden = !note;
+    if (note) {
+      if (t.alert.dataset.key !== note.key) { t.alertIcon.innerHTML = note.icon ?? ""; t.alert.dataset.key = note.key; }
+      t.alertText.textContent = note.what;
+      t.alert.title = note.title || note.what;
+      t.alert.dataset.tone = note.tone ?? "";
+      t.alertX.onclick = (ev) => { ev.stopPropagation(); note.dismiss(); };
+    } else delete t.alert.dataset.key;
     t.time.textContent = c.since ? fmtElapsed(Date.now() - c.since) : "";
     const media = sendsHtml(c);
     if (t.media.innerHTML !== media) t.media.innerHTML = media;
@@ -1803,9 +1832,10 @@ initConnection();
 initLadder();
 
 $("hangupBtn").onclick = () => post({ type: "hangup", id: selectedId });
-$("holdBtn").onclick = () => { const e = sel(); if (e && holdState(e)) goLive(e); else holdCall(e, true); };
+$("holdBtn").onclick = () => { const e = sel(); if (e && holdState(e)) goLive(e, true); else holdCall(e, true); };
 $("heldCancel").onclick = () => cancelTransfer(selectedId);
-$("heldLeave").onclick = () => leaveTransfer(selectedId);
+$("heldClose").innerHTML = ICON.close;
+$("heldClose").onclick = () => { const e = sel(), xs = transferState(e); if (xs) { e.xferClosed = xs.key; render(); } };
 // Mute: the selected call's microphone, for that call only. Not in privacy mode: only its own
 // button turns that off.
 function toggleMute() {

@@ -133,8 +133,8 @@ export function transferShort(t) {
   // "replace": someone taking over the call from the person you were talking to.
   return busy ? `${t.by} is handing you over…` : `Handed over by ${t.by}`;
 }
-// A transfer, where it shows. Under way (asking, calling): the state card at the bottom of the
-// stage, on its call (transferState), with Cancel or Hang up. Theirs, offered (they've asked to
+// A transfer, where it shows. Under way (asking, calling): the state card in the middle of the
+// stage, on its call (transferState): ours with × to close it, theirs with Cancel. Theirs, offered (they've asked to
 // transfer you): a decision in the notices, Decline and Accept; no answer in 20 s declines it
 // (the host). Over: an outcome in the notices with × (done, cancelled, declined: the host lets
 // it go by itself after a few seconds); ours failed, until you close it or Resume (attended, the
@@ -155,7 +155,7 @@ export function transferNotices(open) {
           { label: "Accept", title: `Go to ${t.target}: ${t.by} hangs up once ${t.target} answers`, cls: "btn btn-primary", fn: () => answer(true) },
         ],
         bulk: () => answer(false),
-        // (Experiment) Where it's asked: the call on the stage (Focus), in its call bar
+        // Where it's asked: the call on the stage (Focus), in its call bar
         // (app.js renderHeadEnded); a call in the background, or any in Grid, by its row and
         // tile blinking (calllist.js, app.js renderGrid): you switch to it to answer.
         stage: !inGrid() && id === selectedId,
@@ -164,6 +164,10 @@ export function transferNotices(open) {
       continue;
     }
     if (t.status === "offered") continue;
+    // Attended, ours: both calls carry the transfer's outcome (the host), but it's one transfer, so
+    // one notice, on the call the REFER went on (t.referred); × on it clears both. The other call
+    // says it only if that one's gone.
+    if (t.role === "out" && t.attended && !t.referred && entries.get(t.partner)?.h.transfer?.referred) continue;
     // Theirs, and you declined it: nothing to say (you know, and the call goes on as it was).
     if (t.role === "in" && t.status === "declined" && t.reason === "you declined it") continue;
     const dismiss = () => post({ type: "transfer-dismiss", id });
@@ -173,30 +177,33 @@ export function transferNotices(open) {
       what: transferShort(t), title: t.detail || "", tone: failed ? "bad" : "info",
       actions: [],
       dismiss, bulk: dismiss,
-      // (Experiment) A call in the background, or any in Grid, with the calls panel showing: on
+      // A call in the background, or any in Grid, with the calls panel showing: on
       // its row there (calllist.js), not in the notices. The call on the stage: the notices.
       row: inGrid() || id !== selectedId ? id : null,
-      // (Experiment) The call on the stage (Focus): in its bar (app.js renderHeadEnded).
+      // The call on the stage (Focus): in its bar (app.js renderHeadEnded).
       stage: !inGrid() && id === selectedId,
     });
   }
   return { decisions, outcomes };
 }
 // The selected call's transfer while it's under way, for the state card: { text, title, cancel
-// (Cancel's tooltip, if it can), leave (Hang up's) }, or null.
+// (Cancel's tooltip, if it can), close (×'s tooltip), key (which transfer, for × to remember) },
+// or null. Ours has no Cancel: SIP can't call back a REFER once it's sent (RFC 3515), so a
+// Cancel here only forgot it while their phone carried on. × closes the card instead, and the
+// outcome still comes as a notice. Theirs keeps Cancel: that one is real (a CANCEL of the call
+// to the target).
 export function transferState(e) {
   const t = e?.h.call === "connected" ? e.h.transfer : null;
   if (!t || !(t.status === "asking" || t.status === "calling")) return null;
   const ours = t.role === "out";
   return {
     text: transferShort(t), title: t.detail || "",
-    cancel: t.canCancel ? (ours ? "Take the call back (SIP can't stop their phone once it's accepted: if it still goes ahead, it will leave the call)"
-      : `Stay with ${t.by}: cancels the call to ${t.target}`) : null,
-    leave: t.canLeave ? `Hang up now and leave the transfer to ${t.target} to their phone` : null,
+    cancel: t.canCancel && !ours ? `Stay with ${t.by}: cancels the call to ${t.target}` : null,
+    close: ours ? `Close: the transfer to ${t.target} carries on, and how it ends will show here` : null,
+    key: `${t.role}|${t.target}|${t.attended ? "a" : "b"}`,
   };
 }
 export function cancelTransfer(id) { log(`call ${id}: transfer cancelled`); post({ type: "transfer-cancel", id }); }
-export function leaveTransfer(id) { log(`call ${id}: hanging up, leaving the transfer to them`); post({ type: "transfer-leave", id }); }
 
 // Run by app.js at this point in its start-up, in the order it always ran.
 export function initTransfer() {

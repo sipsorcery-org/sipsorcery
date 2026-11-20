@@ -92,7 +92,7 @@
       </div>
     </aside>
 
-    <!-- The stage, with the dock (keypad and text) at its right and the toast over its bottom edge. -->
+    <!-- The stage, with the dock (keypad and text) at its right. -->
     <div class="stage-row">
     <main class="stage" id="stage" data-mode="card">
       <!-- The call header, across the top of the stage on a connected call (Focus view), as a
@@ -183,15 +183,20 @@
         <span id="privacyNoteText"></span>
         <button type="button" class="link-btn" id="privacyNoteOff">Turn off</button>
       </div>
-      <!-- The state card, at the bottom of the stage: what this call is doing now. On hold: how
+      <!-- The state card: what this call is doing now. On hold, at the bottom of the stage: how
            long, and a pointer down to Resume on the control bar (the one place to resume, which
            glows while the call is held), the card sitting over it; or that they've put you on
-           hold. A transfer under way: how it's going, with Cancel or Hang up (and On hold under
-           it, if it is). -->
+           hold. A transfer under way, in the middle of the stage (it's what the call is about
+           now), in the notices' shape (icon, who, how it's going, buttons), so it reads as the
+           same thing as how it ends ("Transfer failed…"), and On hold under it if it is. Yours: × closes the card (SIP
+           can't take a REFER back, so there's no Cancel); its outcome still comes as a notice.
+           Theirs (you're being transferred): Cancel, which does stop it. -->
       <div class="held-note" id="heldNote" hidden>
+        <span class="incoming-icon held-icon" id="heldIcon" aria-hidden="true"></span>
+        <span class="incoming-who static held-who" id="heldWho" hidden></span>
         <span class="held-lines"><span id="heldText"></span><span class="held-sub" id="heldSub" hidden></span></span>
-        <button type="button" class="btn" id="heldCancel" hidden>Cancel</button>
-        <button type="button" class="btn" id="heldLeave" hidden>Hang up</button>
+        <button type="button" class="btn btn-primary" id="heldCancel" hidden>Cancel</button>
+        <button type="button" class="incoming-x held-close" id="heldClose" aria-label="Close" hidden></button>
       </div>
       <!-- Behind an outcome notice (how a call ended, a call not answered, a transfer failed): the
            stage dulled, so the notice reads as "this just happened". A click on it closes the notice. -->
@@ -289,13 +294,6 @@
       </div>
     </form>
 
-    <!-- Text arriving with the text panel closed: who and what, for a few seconds. -->
-    <div class="rtt-toast" id="rttToast" role="status" hidden>
-      <span class="rtt-toast-icon" id="rttToastIcon" aria-hidden="true"></span>
-      <span class="rtt-toast-who" id="rttToastWho"></span>
-      <span class="rtt-toast-text" id="rttToastText"></span>
-      <button type="button" class="rtt-toast-reply" id="rttReply">Reply</button>
-    </div>
     </div>
 
     <!-- The control bar, only once a call's been answered (app.js render), until the last one

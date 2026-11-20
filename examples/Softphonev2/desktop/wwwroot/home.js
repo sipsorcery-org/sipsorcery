@@ -1,8 +1,8 @@
 // Home: the stage when there's no call, from the devices mock (prototype/devices).
 //
 // At the left, New call, then Recent. New call is the address bar's list (address.js), drawn
-// here instead of in a drop-down: with nothing typed, your most-called contacts as tiles, and
-// Contacts…; as you type, the contacts and other addresses that match, as rows. ↑/↓ in the field
+// here instead of in a drop-down: with nothing typed, your most-called contacts, and
+// Contacts…; as you type, the contacts and other addresses that match: a list either way. ↑/↓ in the field
 // move through it, Enter (or a click) fills the address field and Call from with the one picked,
 // and calls no one: Call or Video call places the call. Each row has its own Call and Video call
 // too, to call it straight away. Esc lets go of the highlight, then clears the field (putting Call
@@ -172,7 +172,8 @@ function accountsHtml() {
       const st = accountStatus(a);
       const failed = a.reg === "failed";
       return `<div class="ha ${st.tone}"><span class="ha-dot"></span><div class="ha-main">
-        <div class="ha-name"><b>${escHtml(a.name)}</b> <span class="home-dim">${escHtml(accountAor(a))}</span></div>
+        <div class="ha-name"><b>${escHtml(a.name)}</b></div>
+        <div class="ha-aor" title="${escHtml(accountAor(a))}">${escHtml(accountAor(a))}</div>
         <div class="ha-state">${escHtml(st.short)}</div>
         ${failed ? `<div class="ha-why">${escHtml(a.regDetail || "No reason given")}</div>
           <div class="ha-btns"><button type="button" class="btn btn-small" data-home="retry" data-id="${escHtml(a.id)}">Retry</button></div>` : ""}
@@ -198,10 +199,10 @@ const privacyHtml = () => (privacyOn() ? `<section class="scard privacy-card">${
 
 // ---- New call (top of Home) ----
 // The address bar's list (address.js suggestions), drawn here rather than in a drop-down, so ↑/↓,
-// Enter and Esc in the field work on it. Nothing typed: your most-called contacts, as a strip of
-// tiles, and Contacts…; typed, the contacts and other addresses that match, as rows with their own
-// Call and Video call, and Add … to contacts for an address that isn't one. A pick fills the
-// address field and Call from, and calls no one.
+// Enter and Esc in the field work on it. Nothing typed: your most-called contacts, and Contacts…;
+// typed, the contacts and other addresses that match, and Add … to contacts for an address that
+// isn't one. Rows either way, each with its own Call and Video call. A pick fills the address
+// field and Call from, and calls no one.
 let picks = [];
 const FOOT_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>';
 function newCallHtml() {
@@ -211,37 +212,30 @@ function newCallHtml() {
   const inBar = (it) => typed && (sameUri(it.uri, fieldUri(typed)) || fieldText(it.uri) === typed);
   const opt = (i) => `id="sug-${i}" role="option" aria-selected="${i === active}" data-pick="${i}"`;
   const footText = (it) => (it.action === "add" ? `Add <b>${escHtml(shownAddress(it.uri))}</b> to contacts…` : "Contacts…");
-  let body;
-  if (!typed) {
-    const tiles = picks.map((it, i) => (it.action
-      ? `<li class="nc-tile nc-more${i === active ? " active" : ""}" ${opt(i)} title="Open your contacts">
-          <span class="home-avatar nc-more-icon" aria-hidden="true">${FOOT_ICON}</span><span class="nc-name">${footText(it)}</span></li>`
-      : `<li class="nc-tile${i === active ? " active" : ""}" ${opt(i)} title="Fill in ${escHtml(it.name)} (${escHtml(shownAddress(it.uri))})">
-          <span class="home-avatar" aria-hidden="true"${avatarAttr(it.uri)}>${escHtml(initial(it.name))}</span>
-          <span class="nc-name">${escHtml(it.name.split(/\s+/)[0])}</span></li>`)).join("");
-    const none = picks.some((it) => !it.action) ? "" : `<li class="nc-none home-empty" role="presentation">No contacts yet: type a name, number or SIP address above.</li>`;
-    body = `<ol class="nc-tiles" id="homePicks" role="listbox" aria-label="Contacts">${none}${tiles}</ol>`;
-  } else {
-    let group = "";
-    const rows = picks.map((it, i) => {
-      if (it.action) {
-        return `<li class="home-row pickable nc-foot${i === active ? " active" : ""}" ${opt(i)}>
-          <span class="home-avatar nc-more-icon" aria-hidden="true">${FOOT_ICON}</span><span class="home-main"><span class="home-name">${footText(it)}</span></span></li>`;
-      }
-      const head = it.group !== group ? `<li class="home-group" role="presentation">${(group = it.group)}</li>` : "";
-      const used = inBar(it);
-      const last = it.at ? describeCall(it) : null;
-      const sub = [shownAddress(it.uri), last ? `${last.text} · ${last.when}` : ""].filter(Boolean).join(" · ");
-      return `${head}<li class="home-row pickable${used ? " used" : ""}${i === active ? " active" : ""}" ${opt(i)} title="${used ? "In the address bar" : `Fill in ${escHtml(shownAddress(it.uri))}`}">
-        <span class="home-avatar" aria-hidden="true"${avatarAttr(it.uri)}>${escHtml(initial(it.name))}</span>
-        <span class="home-main"><span class="home-name">${escHtml(it.name)}${it.contact ? contactMark(it.name) : ""}</span><span class="home-sub">${escHtml(sub)}</span></span>
-        ${used ? `<span class="home-note">${ICON.check} In the address bar</span>` : `<span class="home-hint" aria-hidden="true">Fill in</span>`}
-        ${callBtns(it.uri, it.account, it.name)}</li>`;
-    }).join("");
-    body = picks.some((it) => !it.action)
-      ? `<ol class="home-rows nc-rows" id="homePicks" role="listbox" aria-label="Contacts and recent calls">${rows}</ol>`
-      : `<p class="home-empty">Nothing you've saved or called matches: Call or Enter calls <b>${escHtml(typed)}</b> as typed.</p>${rows ? `<ol class="home-rows nc-rows" id="homePicks" role="listbox" aria-label="Contacts">${rows}</ol>` : ""}`;
-  }
+  // One list either way: each row a contact (or, typed, a recent address), with its own Call and
+  // Video call, which are what New call is mostly for. A click elsewhere on the row fills the field.
+  let group = "";
+  const rows = picks.map((it, i) => {
+    if (it.action) {
+      return `<li class="home-row pickable nc-foot${i === active ? " active" : ""}" ${opt(i)}>
+        <span class="home-avatar nc-more-icon" aria-hidden="true">${FOOT_ICON}</span><span class="home-main"><span class="home-name">${footText(it)}</span></span></li>`;
+    }
+    // Typed, contacts and recent calls under their own heads; untyped, it's all contacts.
+    const head = typed && it.group && it.group !== group ? `<li class="home-group" role="presentation">${(group = it.group)}</li>` : "";
+    const used = inBar(it);
+    const last = it.at ? describeCall(it) : null;
+    const sub = [shownAddress(it.uri), last ? `${last.text} · ${last.when}` : ""].filter(Boolean).join(" · ");
+    return `${head}<li class="home-row pickable${used ? " used" : ""}${i === active ? " active" : ""}" ${opt(i)} title="${used ? "In the address bar" : `Fill in ${escHtml(shownAddress(it.uri))}`}">
+      <span class="home-avatar" aria-hidden="true"${avatarAttr(it.uri)}>${escHtml(initial(it.name))}</span>
+      <span class="home-main"><span class="home-name">${escHtml(it.name)}${it.contact ? contactMark(it.name) : ""}</span><span class="home-sub">${escHtml(sub)}</span></span>
+      ${used ? `<span class="home-note">${ICON.check} In the address bar</span>` : `<span class="home-hint" aria-hidden="true">Fill in</span>`}
+      ${callBtns(it.uri, it.account, it.name)}</li>`;
+  }).join("");
+  const list = (label) => `<ol class="home-rows nc-rows" id="homePicks" role="listbox" aria-label="${label}">${rows}</ol>`;
+  const body = picks.some((it) => !it.action)
+    ? list(typed ? "Contacts and recent calls" : "Contacts")
+    : `<p class="home-empty">${typed ? `Nothing you've saved or called matches: Call or Enter calls <b>${escHtml(typed)}</b> as typed.`
+      : "No contacts yet: type a name, number or SIP address above."}</p>${rows ? list("Contacts") : ""}`;
   const hint = typed ? "Matching contacts and calls" : `Type in the bar above, or pick one to fill it${Array.isArray(state.accounts) ? " and Call from" : ""}`;
   return `<div class="home-head"><h2>New call</h2><span class="home-dim">${hint}</span></div>${body}`;
 }

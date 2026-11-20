@@ -309,7 +309,7 @@ internal sealed class MainForm : Form
                     _phone.Hangup(Id(msg));
                     break;
                 case "hold":
-                    _phone.Hold(Id(msg), (bool?)msg["hold"] ?? true);
+                    _phone.Hold(Id(msg), (bool?)msg["hold"] ?? true, (bool?)msg["resumed"] ?? false);
                     break;
                 case "transfer":
                     // To another of our calls (attended, {target}), or to an address (blind, {address, label?}).
@@ -567,7 +567,7 @@ internal sealed class MainForm : Form
                 text = c.TextState,
                 // A transfer on the call, ours or theirs: { role: out | in | replace, target, by,
                 // attended, partner, status: asking | calling | done | failed, detail (in words) }.
-                transfer = c.Transfer is { } t ? new { t.Role, t.Target, t.By, t.Attended, partner = t.PartnerId, t.Status, t.Detail, t.Reason, t.Rang, t.TransferorGone, t.CanCancel, t.CanLeave, t.CanAnswer } : null,
+                transfer = c.Transfer is { } t ? new { t.Role, t.Target, t.By, t.Attended, partner = t.PartnerId, t.Referred, t.Status, t.Detail, t.Reason, t.Rang, t.TransferorGone, t.CanCancel, t.CanLeave, t.CanAnswer } : null,
             }).ToList(),
             maxCalls = Phone.MaxCalls,
             // This host can transfer calls (the web softphone's doesn't, and the page hides Transfer).
