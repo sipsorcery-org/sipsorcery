@@ -101,7 +101,7 @@ export function sendsHtml(c) {
 }
 
 // (Experiment) The panel shows whenever there's a call (or the grid's on screen), so it's always
-// where a call's lamp is: with one, as the rail (its avatar, what it gets from you, its timer),
+// where a call's lamp is: with one, as the rail (its avatar and its badge),
 // which opens into the full list, where it is, when a second call comes (unless you've folded it).
 export function renderCalls() {
   // (A call that's ended on you shows as its gone row, not its own, while the host still lists it.)
@@ -218,18 +218,43 @@ function callRow(e, i, collapsed = false) {
   top.append(el("span", "call-name", name));
   const contact = contactFor(e.h.remote);
   if (contact) top.firstChild.append(contactMarkEl(contact.name));
-  // What it gets from you: beside the name, or on the rail under the avatar.
-  const sends = el("span", "call-sends");
-  sends.innerHTML = sendsHtml(c);
-  if (c.sends && !collapsed) top.append(sends);
+  // (Experiment) No mic and camera chips, and no timer: the call bar has the time, and only one
+  // call ever has your mic. What matters about the call is a badge on its avatar (callBadge).
   const main = el("span", "call-main");
-  main.append(top, el("span", "call-status", c.statusText));
-  const time = el("span", "call-time", c.since ? fmtElapsed(Date.now() - c.since) : "");
-  if (c.since) time.dataset.since = c.since;
-  li.append(avatar, main);
-  if (c.sends && collapsed) li.append(sends);
-  li.append(time);
+  const status = el("span", "call-status", c.statusText);
+  if (c.held && c.statusText.startsWith("On hold")) status.dataset.heldAt = e.heldAt;   // ticks (renderCallTimes)
+  main.append(top, status);
+  li.append(callFace(avatar, callBadge(e, c)), main);
   return li;
+}
+
+// (Experiment) A call's state, as a badge on its avatar's corner: the one that matters most. The
+// avatar stays, so you still see who it is (two calls on hold aren't two pause signs). In order:
+// ringing; then (askRow, noteRow) a transfer you're asked to take, then something that went wrong
+// or just happened; then on hold (amber after a minute); muted; your mic on a call that isn't on
+// the stage (it hears you while you look at another); a message you haven't read.
+function callBadge(e, c) {
+  if (c.status === "ringing") return { kind: "ring", icon: ICON.phone, label: "Ringing" };
+  if (!c.sends) return null;
+  if (c.held || e.h.heldByThem) return { kind: `held${c.long ? " long" : ""}`, icon: ICON.pause, label: c.held ? "On hold" : "They've put you on hold" };
+  if (c.muted) return { kind: "muted", icon: ICON.micOff, label: "Muted" };
+  if (c.sends.mic.on && (e.id !== selectedId || inGrid())) return { kind: "live", icon: ICON.mic, label: c.sends.mic.label };
+  if (c.unread) return { kind: "unread", icon: ICON.text, label: "New message" };
+  return null;
+}
+function callFace(avatar, b) {
+  const f = Object.assign(document.createElement("span"), { className: "call-face" });
+  f.append(avatar);
+  setBadge(f, b);
+  return f;
+}
+function setBadge(f, b) {
+  f.querySelector(".call-badge")?.remove();
+  f.classList.toggle("badged", !!b);
+  if (!b) return;
+  const s = Object.assign(document.createElement("span"), { className: `call-badge ${b.kind}`, title: b.label ?? "" });
+  if (b.icon) s.innerHTML = b.icon; else s.textContent = b.text;
+  f.append(s);
 }
 
 // A call that's just ended on you (they hung up, or it dropped), in the background or in Grid:
@@ -250,10 +275,8 @@ function goneRow(o) {
   const main = el("span", "call-main");
   main.append(el("span", "call-top"), el("span", "call-status", o.what));
   main.firstChild.append(el("span", "call-name", o.who));
-  // A hang-up mark where its timer was (at the right; on the rail, under the avatar).
-  const mark = el("span", "call-time gone-mark");
-  mark.innerHTML = ICON.hangup;
-  li.append(avatar, main, mark);
+  // A hang-up mark on its avatar (its badge).
+  li.append(callFace(avatar, { kind: `gone${o.tone === "bad" ? " bad" : ""}`, icon: ICON.hangup, label: o.what }), main);
   const been = Math.max(0, ROW_MS - ((o.until ?? 0) - Date.now()));
   li.style.animationDelay = `-${been}ms, -${been}ms`;
   return li;
@@ -270,11 +293,14 @@ function noteRow(li, o) {
   li.classList.add("noted");
   li.dataset.tone = o.tone ?? "";
   li.title = [o.title || o.what, "click to open this call"].filter(Boolean).join(" · ");
-  li.querySelector(".call-status").textContent = o.what;
+  const st = li.querySelector(".call-status");
+  st.textContent = o.what;
+  delete st.dataset.heldAt;
+  setBadge(li.querySelector(".call-face"), o.tone === "bad" ? { kind: "bad", text: "!", label: o.what } : { kind: "note", icon: o.icon ?? ICON.transfer, label: o.what });
   const x = Object.assign(document.createElement("button"), { type: "button", className: "call-note-x", title: "Close", innerHTML: ICON.close });
   x.setAttribute("aria-label", "Close");
   x.onclick = (ev) => { ev.stopPropagation(); o.dismiss(); };
-  li.querySelector(".call-time")?.replaceWith(x);
+  li.append(x);
   li.style.animationDelay = `-${Date.now() - noteSeen.get(o.key)}ms`;
   return li;
 }
@@ -284,14 +310,17 @@ function noteRow(li, o) {
 // answer (a click, or its number key): its call bar asks.
 function askRow(li, d) {
   li.classList.add("asking");
-  li.querySelector(".call-status").textContent = `Transfer request · to ${d.what.replace(/^wants to transfer you to /, "")}`;
+  const st = li.querySelector(".call-status");
+  st.textContent = `Transfer request · to ${d.what.replace(/^wants to transfer you to /, "")}`;
+  delete st.dataset.heldAt;
+  setBadge(li.querySelector(".call-face"), { kind: "ask", icon: ICON.transfer, label: "Transfer request" });
   li.title = [`${d.who} ${d.what}`, "click to switch to this call and answer"].join(" · ");
   return li;
 }
 
-// Every second while connected: just the timers.
+// Every second while connected: just the timers (a row's time on hold; the rows have no call timer).
 export function renderCallTimes() {
-  for (const t of document.querySelectorAll("#callList .call-time[data-since]")) t.textContent = fmtElapsed(Date.now() - Number(t.dataset.since));
+  for (const s of document.querySelectorAll("#callList .call-status[data-held-at]")) s.textContent = `On hold · ${fmtElapsed(Date.now() - Number(s.dataset.heldAt))}`;
 }
 
 // Run by app.js at this point in its start-up, in the order it always ran.
