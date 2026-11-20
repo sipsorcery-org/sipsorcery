@@ -1192,6 +1192,10 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .privacy-text { display: inline-block; max-width: 0; margin-left: 0; opacity: 0; overflow: hidden; white-space: nowrap; transition: max-width 0.3s ease, margin-left 0.3s ease, opacity 0.2s ease; }
 .privacy-btn.on .privacy-text { max-width: 160px; margin-left: 7px; opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .privacy-btn, .privacy-text { transition: none; } }
+/* Do not disturb (dnd.js) looks like Privacy mode, a round icon button that opens into a chip
+   with its name when it's on, but the chip is red: calls are being turned away. */
+.dnd-btn.on { background: var(--danger-fill); border-color: var(--danger-fill); color: #fff; }
+.dnd-btn.on:hover { background: var(--danger-fill); }
 .settings-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); cursor: pointer; }
 .settings-btn:hover { background: var(--surface-2); }
 .settings-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

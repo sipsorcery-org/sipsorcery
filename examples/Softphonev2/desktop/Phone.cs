@@ -16,7 +16,7 @@ namespace SIPSorcery.Softphone;
 /// connects. Which call has the microphone and speaker is the page's business: it only sends
 /// its microphone on one call at a time. Hold is a SIP re-INVITE (<see cref="Hold"/>).
 /// An incoming call rings alongside the calls in progress; only one past <see cref="MaxCalls"/>
-/// is answered 486 Busy Here.
+/// is answered 486 Busy Here, and so is every new one while <see cref="DoNotDisturb"/> is on.
 /// </summary>
 public sealed class Phone : IDisposable
 {
@@ -24,6 +24,13 @@ public sealed class Phone : IDisposable
 
     /// <summary>The most calls at once, as in the UX prototype's Active calls list.</summary>
     public const int MaxCalls = 8;
+    /// <summary>
+    /// Do not disturb, the page's button beside Privacy mode: while it's on, every new incoming
+    /// call is answered 486 Busy Here without ringing. Calls already ringing or in progress go on.
+    /// </summary>
+    public bool DoNotDisturb { get; set; }
+    /// <summary>The <see cref="Call.EndReason"/> of a call turned away by <see cref="DoNotDisturb"/>.</summary>
+    public const string DoNotDisturbReason = "Do not disturb";
     /// <summary>How long an ended call stays in <see cref="Calls"/>, so the page can say how it ended.</summary>
     private const int EndedKeepMs = 4000;
     /// <summary>How long an ended call's Call-ID stays its own, for the SIP ladder: a BYE to a phone
@@ -2391,6 +2398,28 @@ public sealed class Phone : IDisposable
             if (replaces != null && Calls.Any(x => x.State == CallState.Connected && x.Ua?.Dialogue?.CallId == replaces.CallID)) return;
             Log?.Invoke($"INVITE with Replaces for a call we don't have ({req.Header.Replaces}): 481");
             await _transport.SendResponseAsync(SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, "No call to replace"));
+            return;
+        }
+
+        // Do not disturb: a new call is answered 486 Busy Here without ringing; the calls you're
+        // on carry on. It's still recorded, as an incoming call noted "Do not disturb" (not a
+        // missed call: you chose not to be disturbed, so no badge), so you can see who called.
+        if (DoNotDisturb)
+        {
+            await _transport.SendResponseAsync(SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.BusyHere, null));
+            var from = req.Header.From.FromURI.ToString();
+            Call away;
+            lock (_lock)
+            {
+                away = new Call
+                {
+                    Id = (++_nextId).ToString(), State = CallState.Ended, Outgoing = false, Account = AccountForIncoming(req),
+                    Remote = string.IsNullOrWhiteSpace(req.Header.From.FromName) ? from : $"{req.Header.From.FromName} <{from}>",
+                    EndedAt = DateTime.Now, EndReason = DoNotDisturbReason,
+                };
+            }
+            Log?.Invoke($"do not disturb: turned away a call from {away.Remote} (486 Busy Here)");
+            RecordEnded(away);
             return;
         }
 
