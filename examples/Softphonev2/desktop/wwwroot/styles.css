@@ -1437,6 +1437,17 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 }
 .incoming[hidden] { display: none; }
 .incoming.mid { top: 50%; transform: translateY(-50%); }
+/* (Experiment) A call ringing in over a call: the one thing from another call that has the middle
+   of the stage. Bigger, in the accent, with a ring pulsing out of it. */
+.incoming.ring { padding: 12px 12px 12px 18px; gap: 10px 14px; border: 2px solid var(--accent); font-size: 15px; animation: ring-in 1.4s ease-out infinite; }
+.incoming.ring .incoming-icon { color: var(--accent); }
+.incoming.ring .incoming-icon svg { width: 20px; height: 20px; }
+.incoming.ring .incoming-who { font-size: 16px; font-weight: 600; }
+@keyframes ring-in {
+  0% { box-shadow: 0 12px 36px rgb(0 0 0 / .28), 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  100% { box-shadow: 0 12px 36px rgb(0 0 0 / .28), 0 0 0 16px transparent; }
+}
+@media (prefers-reduced-motion: reduce) { .incoming.ring { animation: none; box-shadow: 0 12px 36px rgb(0 0 0 / .28), 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent); } }
 /* What just happened, over the stage dulled (a click on it closes the notice). */
 .notice-scrim { position: absolute; inset: 0; z-index: 11; background: rgb(0 0 0 / .45); backdrop-filter: blur(2px) grayscale(.4); animation: scrim-in .18s ease-out; cursor: pointer; }
 .notice-scrim[hidden] { display: none; }

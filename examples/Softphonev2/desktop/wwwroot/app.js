@@ -186,6 +186,7 @@ function goneTiles() {
 export function setView(v) {
   if (v === view) return;
   view = v;
+  if (v === "grid") hideToast();
   savePref("view", v);
   log(`view: ${v}`);
   settings?.refresh();
@@ -1019,6 +1020,8 @@ function closeEnded(e) {
 
 function onNewCall(e) {
   const s = sel();
+  // (Experiment) A call ringing in is seen whatever you're doing: anything modal closes.
+  if (!e.h.outgoing) for (const d of document.querySelectorAll("dialog[open]")) if (d.matches(":modal")) { log(`closing ${d.id || "a dialog"}: call ${e.id} ringing`); d.close(); }
   if (e.h.outgoing) e.placedVideo = placedVideo;
   // (Experiment) A call you place while on another (now on hold) goes on the stage, as the first
   // one does (Calling…, with its own card), and into the list. Unanswered, the stage goes back to
@@ -1244,9 +1247,10 @@ function noticeEnded(e) {
     // A call you were on: said only if you didn't end it (you hung up, or your transfer of it
     // went through: you know), in the call's bar at the top of the stage (renderHeadEnded).
     const yours = reason === "You hung up" || (e.h.transfer?.role === "out" && e.h.transfer?.status === "done");
-    // The call on the stage: its bar. One in the background, or any in Grid: its row in the
-    // calls panel, where it was (the bar is the call on the stage's, and would read as that one).
-    const row = inGrid() || e.id !== selectedId;
+    // The call on the stage, with nothing to go back to: its bar. One in the background, any in
+    // Grid, or the stage going back to another call: its row in the calls panel, where it was
+    // (the bar is the call on the stage's, and would read as that one).
+    const row = inGrid() || e.id !== selectedId || !!otherLive();
     if (!yours) {
       pushOutcome({
         key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: `${reason} · ${fmtElapsed(Date.now() - e.connectedAt)}`,
@@ -1259,7 +1263,7 @@ function noticeEnded(e) {
     // A missed call says nothing here: Recent has it (and its "N missed").
     // (Experiment) The call on the stage: its bar; one in the background (or in Grid): its row.
     else if (reason !== "Missed call") {
-      const row = inGrid() || e.id !== selectedId;
+      const row = inGrid() || e.id !== selectedId || !!otherLive();
       pushOutcome({ key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: reason, icon: ICON.phone, tone: "bad", diagFor: e.id,
         head: !row, row: row ? { id: e.id, remote: e.h.remote, reason } : null });
     }
@@ -1300,7 +1304,7 @@ function onVideoRefused(e) {
     title: "Their phone turned video down: the call carries on as audio", icon: ICON.videoOff, tone: "info",
     // (Experiment) On the call: the stage's, its bar; one in the background (or in Grid), its row
     // and tile, as a transfer's outcome is (noteRow).
-    ...(!inGrid() && e.id === selectedId || listed().length < 2 && !inGrid() ? { head: true } : { note: e.id }),
+    ...(!inGrid() && e.id === selectedId ? { head: true } : { note: e.id }),
   });
 }
 
@@ -1403,7 +1407,10 @@ function renderHeadEnded() {
   // Then how a transfer on it went (until it's closed, or the host clears it), then the latest outcome.
   const xn = !inGrid() && sel()?.h.call === "connected" ? transferNotices(() => () => {}) : null;
   const ask = xn?.decisions.find((d) => d.stage) ?? null;
-  const o = ask ?? xn?.outcomes.find((x) => x.stage) ?? outcomes.findLast((x) => x.head);
+  // (Experiment) A head outcome is its call's: shown while that call is on the stage, or over
+  // Home once it's gone; not over another call you've switched to.
+  const ours = (x) => selectedId == null || (x.callId ?? x.diagFor) === selectedId;
+  const o = ask ?? xn?.outcomes.find((x) => x.stage) ?? outcomes.findLast((x) => x.head && ours(x));
   const box = $("headEnded"), info = $("info"), stage = $("stage"), connected = !inGrid() && sel()?.h.call === "connected";
   if (!o && !box.hidden) {
     if (!headClosing) {
@@ -1493,9 +1500,12 @@ function renderNotices() {
   // a click on the dulled stage closes it.
   // A call that ended on you is in the bar, where a call ringing in would be: no dulled stage.
   const outcome = !!top?.outcome && !top.bar;
-  // (Experiment) A call ringing in (or any question) over a call you're on: at the top, under its
-  // bar, not over the middle of it; its row in the calls panel blinks too (its lamp).
-  el.classList.toggle("mid", outcome);
+  // (Experiment) The one event from another call that takes the middle of the stage: a call ringing
+  // in, over a call you're on (or Grid), bigger and pulsing; its row in the calls panel blinks too.
+  // Everything else about another call is on that call (its row, its tile).
+  const ringIn = top?.ringId != null && !outcome && sel()?.h.call === "connected";
+  el.classList.toggle("mid", outcome || ringIn);
+  el.classList.toggle("ring", ringIn);
   el.classList.toggle("outcome", outcome);
   el.classList.toggle("timed", !!top?.until);
   const scrim = $("noticeScrim");

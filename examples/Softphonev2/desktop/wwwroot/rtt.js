@@ -39,13 +39,17 @@ export function onTextReceived(id, chars) {
     else if (ch === LINE_SEP || ch === "\u2029" || ch === "\n" || ch === "\r") closeLine(t, false);
     else if (ch >= " ") openLine(t, false).text += ch;
   }
-  if (!textOpen || id !== selectedId) { t.unread = true; showToast(e); }
+  if (!textOpen || id !== selectedId) {
+    t.unread = true;
+    // (Experiment) Another call's text is on that call (its row, its tile), not over this one.
+    if (id === selectedId && !inGrid()) showToast(e);
+  }
   if (id === selectedId) renderText();
   render();
 }
 
-// With the text panel closed (or for another call), what they type shows in a toast for 6 s after
-// the last letter. Reply opens that call's text.
+// With the text panel closed, what they type on the call on the stage shows in a toast for 6 s
+// after the last letter. Reply opens the text. (Another call's: its row and tile.)
 function showToast(e) {
   const l = openLine(e.text, false, false) ?? e.text.lines.findLast((x) => !x.me);
   if (!l?.text) return;
