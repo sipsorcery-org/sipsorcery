@@ -3,12 +3,17 @@
 import { entries, nextVideo, params, render, sel, setCamera } from "./app.js";
 import { closeMenu, openMenu, showLoss } from "./menus.js";
 import { renderDetails, renderQuality } from "./quality.js";
+import { clearLog, copyLog, initLogView } from "./logview.js";
+import { closeSnapshot, renderSnap } from "./snapshots.js";
+import { renderConnection } from "./connection.js";
+import { renderLadder } from "./sipladder.js";
+import { renderStreams } from "./streams.js";
 import { $, ICON, post } from "./util.js";
 import { SOURCE_LABEL, setVideoSource, sourceOf } from "./video.js";
 
 // ---- Diagnostics (F12) ----
-// A panel docked at the bottom, like a browser's developer tools: the SIP log, Call details,
-// Call quality and Network (the loss sliders). While it's open the app is in diagnostics mode, which also shows
+// A panel docked at the bottom, like a browser's developer tools: the debug log, Call details,
+// Streams (the desktop only), Call quality and Network (the loss sliders). While it's open the app is in diagnostics mode, which also shows
 // your SIP address in the header, and the test video sources. Closed at every start
 // (--diagnostics opens it, for testing). Ctrl+Shift+I is left to WebView2's own DevTools.
 export function setDiagnostics(on) {
@@ -34,6 +39,8 @@ export function setDiagnostics(on) {
     showLoss();
     post({ type: "loss", audio: 0, video: 0 });
   }
+  // A call's saved diagnostics show until the panel closes; it opens on the live call.
+  if (!on) closeSnapshot();
   closeMenu();
   renderQuality();
   render();
@@ -101,22 +108,32 @@ function setSecurityOpen(on) {
   if (on) renderSecurity();
 }
 
-function setDevTab(tab) {
+let devTab = "log";
+export const currentDevTab = () => devTab;
+export function setDevTab(tab) {
+  devTab = tab;
   for (const b of document.querySelectorAll(".dev-tab")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
-  $("log").hidden = tab !== "log";
+  $("paneLog").hidden = tab !== "log";
   $("paneDetails").hidden = tab !== "details";
+  if ($("paneLadder")) $("paneLadder").hidden = tab !== "ladder";
+  if ($("paneConn")) $("paneConn").hidden = tab !== "conn";
+  if ($("paneStreams")) $("paneStreams").hidden = tab !== "streams";
   $("paneQuality").hidden = tab !== "quality";
   $("paneNet").hidden = tab !== "net";
   $("logCopy").hidden = $("logClear").hidden = tab !== "log";
   fitDevTabs();
+  renderSnap();
   if (tab === "log") $("log").scrollTop = $("log").scrollHeight;
   if (tab === "details") renderDetails();
+  if (tab === "ladder") renderLadder();
+  if (tab === "conn") renderConnection();
+  if (tab === "streams") renderStreams();
   if (tab === "quality") renderQuality();
 }
 
 // ---- The bar at phone width: a ⋯ for what doesn't fit ----
 // The open tab always shows; the others from the left as fit, the rest (from the right) go into
-// the ⋯ menu, with Copy log and Clear while the SIP log is open. Wider, everything's on the bar.
+// the ⋯ menu, with Copy log and Clear while the debug log is open. Wider, everything's on the bar.
 const compactBar = () => matchMedia("(max-width: 500px)").matches;
 export function fitDevTabs() {
   const tabs = [...document.querySelectorAll(".dev-tab")];
@@ -181,6 +198,7 @@ export function initDiagnostics() {
   }, true);
   $("devClose").innerHTML = ICON.close;
   $("devClose").onclick = () => setDiagnostics(false);
+  $("devSnapBack").onclick = () => closeSnapshot();
   $("infoLock").setAttribute("aria-haspopup", "dialog");
   $("infoLock").onclick = () => setSecurityOpen($("secPop").hidden);
   document.addEventListener("keydown", (ev) => {
@@ -194,12 +212,13 @@ export function initDiagnostics() {
     if (!$("secPop").hidden && !$("secPop").contains(ev.target) && !$("infoLock").contains(ev.target)) setSecurityOpen(false);
   }, true);
   for (const b of document.querySelectorAll(".dev-tab")) b.onclick = () => setDevTab(b.dataset.tab);
+  initLogView();
   $("logCopy").onclick = () => {
-    post({ type: "copy", text: $("log").textContent });
+    copyLog();
     $("logCopy").textContent = "Copied";
     setTimeout(() => { $("logCopy").textContent = "Copy log"; }, 1500);
   };
-  $("logClear").onclick = () => { $("log").textContent = ""; };
+  $("logClear").onclick = clearLog;
   addEventListener("resize", fitDevTabs);
   fitDevTabs();
   try {

@@ -1,7 +1,8 @@
 // The keypad (DTMF).
 
-import { entries, holdState, inGrid, nameOf, render, sel, selectedId } from "./app.js";
+import { holdState, inGrid, nameOf, render, sel, selectedId } from "./app.js";
 import { openMenu } from "./menus.js";
+import { renderKeypadTones, unreadTones } from "./tonesin.js";
 import { $, ICON, log, post } from "./util.js";
 
 // ---- The keypad (DTMF), from the prototype ----
@@ -16,7 +17,7 @@ let keypadDigits = "";     // the tones sent since it opened
 const KEYPAD_KEYS = [["1", ""], ["2", "ABC"], ["3", "DEF"], ["4", "GHI"], ["5", "JKL"], ["6", "MNO"],
   ["7", "PQRS"], ["8", "TUV"], ["9", "WXYZ"], ["*", ""], ["0", "+"], ["#", ""]];
 // Why the selected call can't take tones now, or null if it can.
-function keypadBlocked() {
+export function keypadBlocked() {
   const e = sel();
   if (!e || e.h.call !== "connected") return "Keypad, during a call";
   if (inGrid()) return "Keypad: pick the call to open it in Focus";
@@ -37,8 +38,12 @@ export function renderKeypad() {
   btn.disabled = !!blocked;
   btn.setAttribute("aria-pressed", String(keypadOpen));
   btn.setAttribute("aria-expanded", String(keypadOpen));
-  if (!btn.innerHTML) btn.innerHTML = ICON.keypad;
-  btn.title = blocked ?? (keypadOpen ? "Close keypad (Esc)" : "Keypad: send tones (DTMF)");
+  // Keys they've pressed that you haven't seen: a red dot, as the Text button has for new text.
+  const unread = !!sel() && unreadTones(sel()).length > 0;
+  const html = `${ICON.keypad}${unread ? '<span class="btn-dot" aria-hidden="true"></span>' : ""}`;
+  if (btn.innerHTML !== html) btn.innerHTML = html;
+  btn.setAttribute("aria-label", unread ? "Keypad, new keys" : "Keypad");
+  btn.title = blocked ?? (keypadOpen ? "Close keypad (Esc)" : unread ? "Keypad: they've pressed keys (DTMF)" : "Keypad: send tones (DTMF)");
   // --dtmf <keys> (testing): once a call is up, open the keypad and press them, as typed keys
   // would, 2 s in (so audio is flowing to put the tones in), one every 400 ms.
   const testKeys = new URLSearchParams(location.search).get("dtmf");
@@ -55,15 +60,15 @@ export function renderKeypad() {
     }, 2000);
   }
   $("keypad").hidden = !keypadOpen;
-  if (!keypadOpen) { $("keypadIn").textContent = ""; return; }
+  if (!keypadOpen) return;
   $("keypadTitle").textContent = `Keypad · ${nameOf(sel())}`;
   $("keypadDigits").textContent = keypadDigits;
+  renderKeypadTones();   // the keys they've pressed on this call, under the buttons
 }
 export function setKeypadOpen(open) {
   if (open && keypadBlocked()) return;
   keypadOpen = open;
   keypadFor = open ? selectedId : null;
-  if (open && sel()) sel().dtmfIn = "";
   render();
 }
 function pressKey(digit) {
@@ -76,14 +81,6 @@ function pressKey(digit) {
   log(`call ${e.id}: keypad '${digit}' → ${nameOf(e)}`);
   post({ type: "dtmf", id: e.id, digit });
 }
-// Tones they send: in the log (the host logs them), and under the keys while it's open on that call.
-export function onDtmfIn(id, digit) {
-  const e = entries.get(id);
-  if (!e || !keypadOpen || id !== keypadFor) return;
-  e.dtmfIn = ((e.dtmfIn ?? "") + digit).slice(-20);
-  $("keypadIn").textContent = `${nameOf(e)} sent ${e.dtmfIn}`;
-}
-
 // Run by app.js at this point in its start-up, in the order it always ran.
 export function initKeypad() {
   $("keypadKeys").innerHTML = KEYPAD_KEYS.map(([d, s]) => `<button type="button" class="key" data-digit="${d}" aria-label="${d}${s ? ` ${s}` : ""}"><span><b>${d}</b><br><small>${s || "&nbsp;"}</small></span></button>`).join("");

@@ -17,8 +17,8 @@ import { syncCamera } from "./video.js";
 // Enter or a click puts a row in the field; Transfer, or Enter again, sends the call there. A
 // bare name or number goes to the call's account's server (the host resolves it). A note on
 // the stage says how it's going, from the host's transfer state (see MainForm). Blind, the call
-// isn't held (they may be deciding): failed, you're still talking, with Try again. Attended, both
-// calls go on hold as it starts: failed, Resume or Try again, your choice. A transfer done to you (they send you elsewhere, or someone takes over from them)
+// isn't held (they may be deciding): failed, you're still talking. Attended, both calls go on
+// hold as it starts: failed, Resume takes it back (or Transfer again). A transfer done to you (they send you elsewhere, or someone takes over from them)
 // shows in the same note, for a few seconds.
 export let xferOpen = false;
 let xferFor = null;        // the call it was opened on: it closes if another is selected
@@ -62,7 +62,6 @@ export function renderTransfer() {
   if (!btn.innerHTML) btn.innerHTML = ICON.transfer;
   btn.title = blocked ?? (xferOpen ? "Close transfer (Esc)" : "Transfer this call: to another of your calls, or an address");
   $("xferPop").hidden = !xferOpen;
-  renderTransferNote();
   if (!xferOpen) return;
   const e = sel();
   $("xferTitle").textContent = `Transfer ${nameOf(e)}`;
@@ -134,39 +133,77 @@ export function transferShort(t) {
   // "replace": someone taking over the call from the person you were talking to.
   return busy ? `${t.by} is handing you over…` : `Handed over by ${t.by}`;
 }
-// The call header's status (#xferNote): the selected call's transfer while it's going and for a
-// few seconds after, with what you can do. Under way: Cancel (ours: take the call back; theirs:
-// stay with who's transferring you; the host says when it can), and on our blind one, Hang up
-// (leave it to their phone). Ours failed: Try again and ×; attended, the call's on hold, and the
-// held note in the middle of the stage says why, with Try again and Resume. Done, cancelled, theirs failed: × (it goes by itself).
-// Theirs, offered (they've asked to transfer you): Accept and Decline, nothing else; no answer in
-// 20 s declines it (the host).
-function renderTransferNote() {
-  const e = sel();
-  const t = e?.h.call === "connected" ? e.h.transfer : null;
-  const note = $("xferNote");
-  note.hidden = !t || inGrid();
-  if (note.hidden) return;
-  const ours = t.role === "out";
-  const busy = t.status === "asking" || t.status === "calling";
-  $("xferText").textContent = transferShort(t);
-  note.title = t.detail || "";
-  const asking = !!t.canAnswer;
-  note.dataset.state = asking ? "ask" : busy ? "busy" : t.status === "failed" ? "bad" : t.status === "done" ? "done" : "info";
-  $("xferAccept").hidden = $("xferDecline").hidden = !asking;
-  $("xferAccept").title = `Go to ${t.target}: ${t.by} hangs up once ${t.target} answers`;
-  $("xferDecline").title = `Stay with ${t.by}`;
-  if (!$("xferIcon").innerHTML) $("xferIcon").innerHTML = ICON.transfer;
-  const cancel = $("xferCancel");
-  cancel.hidden = !t.canCancel;
-  cancel.title = ours ? "Take the call back (SIP can't stop their phone once it's accepted: if it still goes ahead, it will leave the call)"
-    : `Stay with ${t.by}: cancels the call to ${t.target}`;
-  $("xferLeave").hidden = !t.canLeave;
-  $("xferLeave").title = `Hang up now and leave the transfer to ${t.target} to their phone`;
-  $("xferRetry").hidden = !(ours && t.status === "failed");
-  $("xferRetry").title = `Transfer ${nameOf(e)} again`;
-  $("xferDismiss").hidden = busy || asking;
+// A transfer, where it shows. Under way (asking, calling): the state card in the middle of the
+// stage, on its call (transferState): ours with × to close it, theirs with Cancel. Theirs, offered (they've asked to
+// transfer you): a decision in the notices, Decline and Accept; no answer in 20 s declines it
+// (the host). Over: an outcome in the notices with × (done, cancelled, declined: the host lets
+// it go by itself after a few seconds); ours failed, until you close it or Resume (attended, the
+// call stays on hold, and the state card says so). No Try again: Transfer is on the bar. open(id) opens that call (the name's click).
+export function transferNotices(open) {
+  const decisions = [], outcomes = [];
+  for (const e of [...entries.values()].sort((a, b) => Number(a.id) - Number(b.id))) {
+    const t = e.h.call === "connected" ? e.h.transfer : null;
+    if (!t || t.status === "asking" || t.status === "calling") continue;
+    const id = e.id, name = nameOf(e);
+    if (t.canAnswer) {
+      const answer = (accept) => { log(`call ${id}: transfer ${accept ? "accepted" : "declined"}`); post({ type: "transfer-answer", id, accept }); };
+      decisions.push({
+        key: `xfer-${id}`, icon: ICON.transfer, who: t.by || name, whoTitle: `${e.h.remote}: open this call`, onWho: open(id),
+        what: `wants to transfer you to ${t.target}`, title: t.detail || "", tone: "warn",
+        actions: [
+          { label: "Decline", title: `Stay with ${t.by}`, cls: "btn", fn: () => answer(false) },
+          { label: "Accept", title: `Go to ${t.target}: ${t.by} hangs up once ${t.target} answers`, cls: "btn btn-primary", fn: () => answer(true) },
+        ],
+        bulk: () => answer(false),
+        // Where it's asked: the call on the stage (Focus), in its call bar
+        // (app.js renderHeadEnded); a call in the background, or any in Grid, by its row and
+        // tile blinking (calllist.js, app.js renderGrid): you switch to it to answer.
+        stage: !inGrid() && id === selectedId,
+        row: inGrid() || id !== selectedId ? id : null,
+      });
+      continue;
+    }
+    if (t.status === "offered") continue;
+    // Attended, ours: both calls carry the transfer's outcome (the host), but it's one transfer, so
+    // one notice, on the call the REFER went on (t.referred); × on it clears both. The other call
+    // says it only if that one's gone.
+    if (t.role === "out" && t.attended && !t.referred && entries.get(t.partner)?.h.transfer?.referred) continue;
+    // Theirs, and you declined it: nothing to say (you know, and the call goes on as it was).
+    if (t.role === "in" && t.status === "declined" && t.reason === "you declined it") continue;
+    const dismiss = () => post({ type: "transfer-dismiss", id });
+    const failed = t.status === "failed";
+    outcomes.push({
+      key: `xfer-${id}-${t.status}`, icon: ICON.transfer, who: name, whoTitle: `${e.h.remote}: open this call`, onWho: open(id),
+      what: transferShort(t), title: t.detail || "", tone: failed ? "bad" : "info",
+      actions: [],
+      dismiss, bulk: dismiss,
+      // A call in the background, or any in Grid, with the calls panel showing: on
+      // its row there (calllist.js), not in the notices. The call on the stage: the notices.
+      row: inGrid() || id !== selectedId ? id : null,
+      // The call on the stage (Focus): in its bar (app.js renderHeadEnded).
+      stage: !inGrid() && id === selectedId,
+    });
+  }
+  return { decisions, outcomes };
 }
+// The selected call's transfer while it's under way, for the state card: { text, title, cancel
+// (Cancel's tooltip, if it can), close (×'s tooltip), key (which transfer, for × to remember) },
+// or null. Ours has no Cancel: SIP can't call back a REFER once it's sent (RFC 3515), so a
+// Cancel here only forgot it while their phone carried on. × closes the card instead, and the
+// outcome still comes as a notice. Theirs keeps Cancel: that one is real (a CANCEL of the call
+// to the target).
+export function transferState(e) {
+  const t = e?.h.call === "connected" ? e.h.transfer : null;
+  if (!t || !(t.status === "asking" || t.status === "calling")) return null;
+  const ours = t.role === "out";
+  return {
+    text: transferShort(t), title: t.detail || "",
+    cancel: t.canCancel && !ours ? `Stay with ${t.by}: cancels the call to ${t.target}` : null,
+    close: ours ? `Close: the transfer to ${t.target} carries on, and how it ends will show here` : null,
+    key: `${t.role}|${t.target}|${t.attended ? "a" : "b"}`,
+  };
+}
+export function cancelTransfer(id) { log(`call ${id}: transfer cancelled`); post({ type: "transfer-cancel", id }); }
 
 // Run by app.js at this point in its start-up, in the order it always ran.
 export function initTransfer() {
@@ -182,14 +219,6 @@ export function initTransfer() {
   $("transferBtn").onclick = () => setTransferOpen(!xferOpen);
   $("xferClose").innerHTML = ICON.close;
   $("xferClose").onclick = () => setTransferOpen(false);
-  $("xferDismiss").innerHTML = ICON.close;
-  $("xferDismiss").onclick = () => post({ type: "transfer-dismiss", id: selectedId });
-  const answer = (accept) => { log(`call ${selectedId}: transfer ${accept ? "accepted" : "declined"}`); post({ type: "transfer-answer", id: selectedId, accept }); };
-  $("xferAccept").onclick = () => answer(true);
-  $("xferDecline").onclick = () => answer(false);
-  $("xferCancel").onclick = () => { log(`call ${selectedId}: transfer cancelled`); post({ type: "transfer-cancel", id: selectedId }); };
-  $("xferLeave").onclick = () => { log(`call ${selectedId}: hanging up, leaving the transfer to them`); post({ type: "transfer-leave", id: selectedId }); };
-  $("xferRetry").onclick = () => { post({ type: "transfer-dismiss", id: selectedId }); setTransferOpen(true); };
   $("xferCalls").onclick = (ev) => { const b = ev.target.closest("[data-call]"); if (b) startTransfer({ target: b.dataset.call }); };
   $("xferPop").onsubmit = (ev) => {
     ev.preventDefault();

@@ -25,6 +25,9 @@
         <!-- Privacy mode (Shift+M), just left of Settings: a hard off. The microphone and camera
              close on every call, new ones too, and nothing else turns it off but pressing it
              again. Never remembered. -->
+        <!-- Do not disturb (dnd.js), beside Privacy mode: on, the host turns away every new
+             incoming call with 486 Busy Here; the calls you're on carry on. Remembered. -->
+        <button type="button" class="privacy-btn dnd-btn" id="dndBtn" aria-pressed="false"></button>
         <span class="privacy" id="privacy">
           <button type="button" class="privacy-btn" id="privacyBtn" aria-pressed="false"></button>
         </span>
@@ -46,8 +49,9 @@
         <!-- Why a call to a contact didn't use its account (accounts.js useAccount). -->
         <span class="from-note" id="fromNote" role="status" hidden></span>
       </div>
-      <!-- Focusing the address (or /) with no call on the stage opens the dial view (home.js);
-           during a call it lists contacts and recent calls. Typing filters them (address.js). -->
+      <!-- Focusing the address (or /) lists contacts and recent calls: with no call on the stage
+           in Home's New call (home.js), during a call in this drop-down. Typing filters them
+           (address.js). -->
       <div class="dest-wrap">
         <input id="address" type="text" placeholder="Name or number" spellcheck="false" aria-label="Name or number to call"
           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="dialSuggest">
@@ -88,7 +92,7 @@
       </div>
     </aside>
 
-    <!-- The stage, with the dock (keypad and text) at its right and the toast over its bottom edge. -->
+    <!-- The stage, with the dock (keypad and text) at its right. -->
     <div class="stage-row">
     <main class="stage" id="stage" data-mode="card">
       <!-- The call header, across the top of the stage on a connected call (Focus view), as a
@@ -96,25 +100,20 @@
            contact's name, then the address), for how long, and a red mic while you're muted. The
            video, the bars and the self view start below it, so it covers nothing. Short of room,
            the address is cut short first (hover for all of it), so the name and timer stay. The padlock (green: SIP and media encrypted; yellow: one
-           of them; grey and open: neither) opens the call's security under it (#secPop). At its
-           right, the call's status while there is one (#xferNote): how a transfer's going, in a few
-           words with what you can do (the full sentence on hover). It's passing, so it comes first:
-           short of room, the name and address give way to it. Other calls' news (one ringing in,
-           one you're placing) has its banners below the header, so the two never cover each other. -->
+           of them; grey and open: neither) opens the call's security under it (#secPop). What
+           needs an answer and what just happened are in the notices in the middle of the stage
+           (#incoming); what the call is doing now is the state card at the bottom (#heldNote). -->
       <div class="call-info call-head" id="info" hidden>
         <button type="button" class="info-lock" id="infoLock" hidden></button>
         <div class="info-text info-line"><span class="info-contact" id="infoContact" hidden></span><span class="info-name" id="infoName"></span><span class="info-addr" id="infoAddr" hidden></span><span class="timer" id="timer"></span><span class="muted-pill" id="mutedPill" hidden></span></div>
-        <div class="head-status" id="xferNote" role="status" hidden>
-          <span class="head-status-icon" id="xferIcon" aria-hidden="true"></span>
-          <span class="head-status-text" id="xferText"></span>
-          <!-- Being transferred: you decide (the host waits for it to answer their REFER). -->
-          <button type="button" class="head-btn head-btn-go" id="xferAccept">Accept</button>
-          <button type="button" class="head-btn" id="xferDecline">Decline</button>
-          <button type="button" class="head-btn" id="xferCancel">Cancel</button>
-          <button type="button" class="head-btn" id="xferLeave">Hang up</button>
-          <button type="button" class="head-btn" id="xferRetry">Try again</button>
-          <button type="button" class="rtt-close head-x" id="xferDismiss" aria-label="Dismiss" title="Dismiss"></button>
-        </div>
+        <!-- A call that ended on you (they hung up, or it dropped): a tinted pill at the left of
+             this bar, over the details of the call you're back on, or the bar on its own over Home. In diagnostics
+             mode, once they're saved (a moment later), "Diagnostics available" opens them. ×
+             closes it; it goes by itself, though not while you're away. -->
+        <span class="head-ended" id="headEnded" role="status" hidden><span class="head-ended-icon" id="headEndedIcon" aria-hidden="true"></span><span class="head-ended-text" id="headEndedText"></span><button type="button" class="link-btn head-ended-diag" id="headEndedDiag" hidden>Diagnostics available</button><button type="button" class="head-ended-x" id="headEndedX" aria-label="Dismiss" title="Dismiss"></button></span>
+        <!-- New keys (DTMF) or text on this call that you haven't seen: an alert each, with a link
+             that opens the keypad or the text panel (tonesin.js). -->
+        <div class="head-alerts" id="headAlerts" role="status" hidden></div>
       </div>
       <!-- The call's security, under the padlock (app.js, "renderSecurity"): in plain words, with
            the technical names small. -->
@@ -126,12 +125,15 @@
            call's <video> into its tile). Clicking a tile opens that call in Focus view. -->
       <div class="tiles" id="tiles" role="list" aria-label="Active calls" hidden></div>
 
-      <!-- No call on the stage: Home (home.js). Recent calls on the left; your accounts, Your
-           devices and privacy mode on the right. Focusing the address turns it into the dial
-           view: one column, Your devices at the top, then your contacts and recent addresses. -->
+      <!-- No call on the stage: Home (home.js). On the left, New call (the address bar's
+           contacts and recent calls, filtered as you type) above Recent calls; your accounts,
+           Your devices and privacy mode on the right. -->
       <section class="home" id="home" aria-label="Home" hidden>
         <div class="home-wrap">
-          <div class="home-left home-card" id="homeLeft"></div>
+          <div class="home-left">
+            <section class="home-card home-new" id="homeNew" aria-label="New call"></section>
+            <section class="home-card home-recent" id="homeLeft" aria-label="Recent calls"></section>
+          </div>
           <div class="home-right" id="homeRight">
             <div id="homeAccounts"></div>
             <section class="scard yd-host" id="ydHome" aria-label="Your devices"></section>
@@ -181,13 +183,24 @@
         <span id="privacyNoteText"></span>
         <button type="button" class="link-btn" id="privacyNoteOff">Turn off</button>
       </div>
-      <!-- On hold: how long, with Resume; or that they've put you on hold. After a transfer of
-           yours that failed (declined, say), why, above, with Try again. -->
+      <!-- The state card: what this call is doing now. On hold, at the bottom of the stage: how
+           long, and a pointer down to Resume on the control bar (the one place to resume, which
+           glows while the call is held), the card sitting over it; or that they've put you on
+           hold. A transfer under way, in the middle of the stage (it's what the call is about
+           now), in the notices' shape (icon, who, how it's going, buttons), so it reads as the
+           same thing as how it ends ("Transfer failed…"), and On hold under it if it is. Yours: × closes the card (SIP
+           can't take a REFER back, so there's no Cancel); its outcome still comes as a notice.
+           Theirs (you're being transferred): Cancel, which does stop it. -->
       <div class="held-note" id="heldNote" hidden>
-        <span class="held-lines"><span class="held-why" id="heldWhy" hidden></span><span id="heldText"></span></span>
-        <button type="button" class="btn" id="heldRetry" hidden>Try again</button>
-        <button type="button" class="btn" id="heldResume"></button>
+        <span class="incoming-icon held-icon" id="heldIcon" aria-hidden="true"></span>
+        <span class="incoming-who static held-who" id="heldWho" hidden></span>
+        <span class="held-lines"><span id="heldText"></span><span class="held-sub" id="heldSub" hidden></span></span>
+        <button type="button" class="btn btn-primary" id="heldCancel" hidden>Cancel</button>
+        <button type="button" class="incoming-x held-close" id="heldClose" aria-label="Close" hidden></button>
       </div>
+      <!-- Behind an outcome notice (how a call ended, a call not answered, a transfer failed): the
+           stage dulled, so the notice reads as "this just happened". A click on it closes the notice. -->
+      <div class="notice-scrim" id="noticeScrim" hidden></div>
     </main>
     <!-- The dock: a side panel right of the call, where the keypad and the text panel open (the
          keypad on top). It shows while either is open (app.js renderDock). -->
@@ -201,7 +214,8 @@
         </div>
         <div class="dtmf-display" id="keypadDigits" role="status" aria-label="Tones sent"></div>
         <div class="keypad" id="keypadKeys"></div>
-        <div class="keypad-in" id="keypadIn" role="status"></div>
+        <!-- The keys they've pressed on this call (tonesin.js). -->
+        <div class="keypad-in" id="keypadIn" role="img"></div>
       </aside>
 
       <!-- Real-time text (RFC 4103): in the dock, under the keypad if that's open too. Esc or its
@@ -223,29 +237,26 @@
       </aside>
     </div>
 
-    <!-- A call you're placing while on another: Calling… until it's answered (then it's in the
-         list and on the stage), or why it wasn't. -->
-    <div class="incoming outgoing" id="outgoing" role="status" hidden>
-      <span class="incoming-who" id="outgoingWho"></span>
-      <span class="incoming-what" id="outgoingWhat"></span>
-      <span class="incoming-actions">
-        <button type="button" class="btn btn-danger" id="outgoingCancel">Cancel</button>
-      </span>
-    </div>
-    <!-- A call ringing while you're on another: who, and Decline, Answer & hold current and, on a
-         video call, Answer with video (the camera icon). The name opens the full answer view.
-         More than one ringing: "+N more" drops a list of the others down inside the banner, each
-         with its own Decline and Answer, scrolling past a few. -->
+    <!-- The notices (app.js, "renderNotices"): what needs your answer, then what just happened,
+         one at a time, in the middle of the stage over a call (at the top over a ringing call's
+         card). Decisions: a call ringing while you're on another (Decline, Answer,
+         and Answer with video on a video call), a transfer they're asking you to take (Decline,
+         Accept), a call you're placing over another (Cancel). Outcomes: a call that wasn't
+         answered (Call again), a transfer that failed (Try again), video they didn't take, each
+         with ×. The name opens that call. More than one: "+N more" drops the rest down inside
+         it, each with its own buttons, and Dismiss all declines the calls and transfers waiting
+         and clears the rest, so you can stay on the call you're on. -->
     <div class="incoming" id="incoming" role="alert" hidden>
+      <span class="incoming-icon" id="incomingIcon" aria-hidden="true"></span>
       <button type="button" class="incoming-who" id="incomingWho"></button>
       <span class="incoming-what" id="incomingWhat"></span>
       <button type="button" class="incoming-more" id="incomingMore" aria-expanded="false" aria-controls="incomingList" hidden></button>
-      <span class="incoming-actions">
-        <button type="button" class="btn btn-danger" id="incomingDecline">Decline</button>
-        <button type="button" class="btn btn-primary" id="incomingAnswer">Answer</button>
-        <button type="button" class="btn btn-primary icon-btn" id="incomingVideoAnswer" hidden></button>
-      </span>
+      <span class="incoming-actions" id="incomingActions"></span>
       <ul class="incoming-list" id="incomingList" hidden></ul>
+      <span class="incoming-drain" id="incomingDrain" aria-hidden="true" hidden></span>
+      <div class="incoming-foot" id="incomingFoot" hidden>
+        <button type="button" class="link-btn" id="incomingDismissAll">Dismiss all</button>
+      </div>
     </div>
 
     <!-- Manage accounts (desktop only, accounts.js): over the stage, which carries on under it. -->
@@ -283,13 +294,6 @@
       </div>
     </form>
 
-    <!-- Text arriving with the text panel closed: who and what, for a few seconds. -->
-    <div class="rtt-toast" id="rttToast" role="status" hidden>
-      <span class="rtt-toast-icon" id="rttToastIcon" aria-hidden="true"></span>
-      <span class="rtt-toast-who" id="rttToastWho"></span>
-      <span class="rtt-toast-text" id="rttToastText"></span>
-      <button type="button" class="rtt-toast-reply" id="rttReply">Reply</button>
-    </div>
     </div>
 
     <!-- The control bar, only once a call's been answered (app.js render), until the last one
@@ -341,14 +345,17 @@
     <div class="dev-bar">
       <h2 class="dev-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Diagnostics</h2>
       <div class="dev-tabs" role="tablist" aria-label="Diagnostics">
-        <button type="button" class="dev-tab" role="tab" id="tabLog" data-tab="log" aria-controls="log" aria-selected="true">SIP log</button>
+        <button type="button" class="dev-tab" role="tab" id="tabLog" data-tab="log" aria-controls="paneLog" aria-selected="true">Debug log</button>
         <button type="button" class="dev-tab" role="tab" id="tabDetails" data-tab="details" aria-controls="paneDetails" aria-selected="false">Call details</button>
+        <button type="button" class="dev-tab" role="tab" id="tabLadder" data-tab="ladder" aria-controls="paneLadder" aria-selected="false">SIP ladder</button>
+        <button type="button" class="dev-tab" role="tab" id="tabConn" data-tab="conn" aria-controls="paneConn" aria-selected="false">Connection</button>
+        <button type="button" class="dev-tab" role="tab" id="tabStreams" data-tab="streams" aria-controls="paneStreams" aria-selected="false">Streams</button>
         <button type="button" class="dev-tab" role="tab" id="tabQuality" data-tab="quality" aria-controls="paneQuality" aria-selected="false">Call quality</button>
         <button type="button" class="dev-tab" role="tab" id="tabNet" data-tab="net" aria-controls="paneNet" aria-selected="false">Network</button>
       </div>
       <span class="dev-spacer"></span>
-      <button type="button" class="dev-act" id="logCopy" title="Copy the whole SIP log">Copy log</button>
-      <button type="button" class="dev-act" id="logClear" title="Clear the SIP log">Clear</button>
+      <button type="button" class="dev-act" id="logCopy" title="Copy the debug log's lines shown">Copy log</button>
+      <button type="button" class="dev-act" id="logClear" title="Clear the debug log">Clear</button>
       <!-- At phone width (500 px and under): Copy log and Clear, and the tabs that don't fit,
            go into this ⋯ menu (diagnostics.js, fitDevTabs and fillDevMenu). -->
       <div class="dev-more" id="devMore">
@@ -359,12 +366,84 @@
       <span class="dev-key" title="F12 opens and closes diagnostics">F12</span>
       <button type="button" class="dev-close" id="devClose" aria-label="Close diagnostics" title="Close diagnostics (F12)"></button>
     </div>
-    <pre class="dev-pane" id="log" role="tabpanel" aria-labelledby="tabLog" tabindex="0"></pre>
+    <!-- A call's saved diagnostics (snapshots.js), opened from its row in Recent: whose, and back to
+         the live call. On Call details, Streams and Call quality. -->
+    <div class="dev-snap" id="devSnap" role="status" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+      <span id="devSnapText"></span>
+      <button type="button" class="dev-snap-back" id="devSnapBack">Back to live</button>
+    </div>
+    <!-- The debug log (logview.js): a chip per tag, to show or hide its lines, then the lines. -->
+    <div class="dev-pane dev-log" id="paneLog" role="tabpanel" aria-labelledby="tabLog">
+      <div class="lg-chips" id="logChips" role="group" aria-label="Show lines tagged"></div>
+      <pre class="lg" id="log" tabindex="0" aria-label="Debug log"></pre>
+    </div>
     <!-- Call details for the selected call: how it was set up (from the host) and the codecs each
          way (from the page's stats). -->
     <div class="dev-pane dev-details" id="paneDetails" role="tabpanel" aria-labelledby="tabDetails" hidden>
       <p class="q-empty" id="detailsEmpty">Call details show here during a call.</p>
       <dl class="details" id="details" hidden></dl>
+    </div>
+    <!-- The SIP ladder for the selected call (sipladder.js): every SIP message of it as it went, a
+         lane per party, as SIP Trace draws one. The desktop only: the web softphone takes it out. -->
+    <div class="dev-pane dev-streams dev-ladder" id="paneLadder" role="tabpanel" aria-labelledby="tabLadder" hidden>
+      <p class="q-empty" id="ladderEmpty">The SIP ladder shows here during a call: every SIP message of it, as it went, a lane per party.</p>
+      <div id="ladderView" hidden>
+        <div class="sx-top">
+          <b class="cx-who" id="ladderWho"></b>
+        </div>
+        <div id="ladderBody"></div>
+      </div>
+      <!-- One message, whole: opened from its number on the ladder. -->
+      <dialog class="ld-pop" id="ladderPopup" aria-labelledby="ldpWhat">
+        <div class="ld-pop-head">
+          <span class="ld-pop-seq mono" id="ldpSeq"></span>
+          <b id="ldpWhat"></b>
+          <span class="sx-grow"></span>
+          <button type="button" class="ld-btn" id="ldpPrev" title="The message before (←)" aria-label="Previous message">‹</button>
+          <button type="button" class="ld-btn" id="ldpNext" title="The message after (→)" aria-label="Next message">›</button>
+          <button type="button" class="ld-btn" id="ldpCopy">Copy</button>
+          <button type="button" class="ld-btn" id="ldpClose">Close</button>
+        </div>
+        <p class="ld-pop-where mono" id="ldpWhere"></p>
+        <pre class="ld-pop-raw" id="ldpRaw"></pre>
+      </dialog>
+    </div>
+    <!-- Connection for the selected call (connection.js): its media connection on the SIP side,
+         layer by layer, now, or how it came up. The desktop only: the web softphone takes it out. -->
+    <div class="dev-pane dev-streams dev-conn" id="paneConn" role="tabpanel" aria-labelledby="tabConn" hidden>
+      <p class="q-empty" id="connEmpty">The connection shows here during a call: each layer of its media, and how it came up.</p>
+      <div id="connView" hidden>
+        <div class="sx-top">
+          <b class="cx-who" id="connWho"></b>
+          <span class="sx-meta" id="connMeta"></span>
+          <span class="sx-grow"></span>
+          <div class="sx-seg" id="connViews" role="group" aria-label="View">
+            <button type="button" data-view="layers" aria-pressed="true">Layers</button>
+            <button type="button" data-view="timeline" aria-pressed="false">Setup timeline</button>
+          </div>
+        </div>
+        <div id="connBody"></div>
+      </div>
+    </div>
+    <!-- Streams for a call (streams.js): its media lines as its offers and answers left them, and
+         what's going each way on the SIP side. Now, a timeline of the call, and each offer and
+         answer with its SDP. The desktop only: the web softphone takes this tab out. -->
+    <div class="dev-pane dev-streams" id="paneStreams" role="tabpanel" aria-labelledby="tabStreams" hidden>
+      <p class="q-empty" id="streamsEmpty">Streams show here once there's a call: the media its offers and answers agreed, and what's going each way.</p>
+      <div class="sx" id="streamsView" hidden>
+        <div class="sx-top">
+          <select class="sx-pick" id="streamsCall" aria-label="Call"></select>
+          <span class="sx-meta" id="streamsMeta"></span>
+          <span class="sx-grow"></span>
+          <div class="sx-seg" id="streamsViews" role="group" aria-label="View">
+            <button type="button" data-view="now" aria-pressed="true">Now</button>
+            <button type="button" data-view="timeline" aria-pressed="false">Timeline</button>
+            <button type="button" data-view="oa" aria-pressed="false">Offers/answers</button>
+          </div>
+        </div>
+        <div id="streamsBody"></div>
+      </div>
     </div>
     <!-- Call quality for the selected call: ↑ what we send (their RTCP) and ↓ what we receive
          (measured here), the table and PLIs at the left and the graph at the right. -->

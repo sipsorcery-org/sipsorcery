@@ -22,6 +22,7 @@
 
 import * as SIP from "https://cdn.jsdelivr.net/npm/sip.js@0.21.2/+esm";
 import { loadAccount, saveAccount, forgetAccount, accountUi, addressOf, githubGoneNote } from "./account.js";
+import { connDiag } from "./conndiag.js";
 
 const q = new URLSearchParams(location.search);
 const localServer = q.get("server");
@@ -93,6 +94,16 @@ function newCall(fields) {
 }
 const liveCalls = () => [...calls.values()].filter((c) => ["calling", "ringing", "connected"].includes(c.call));
 
+// The Connection tab's record of each call (conndiag.js): its SIP messages, by Call-ID, and its
+// media layers, from the page's connection for it.
+const callIdOf = (c) => c.session?.dialog?.callId ?? c.session?.request?.callId ?? null;
+const conn = connDiag({
+  toPage, callIdOf,
+  calls: () => [...calls.values()],
+  server: () => acct?.wsUri ?? null,
+  callOf: (callId) => [...calls.values()].find((c) => callIdOf(c) === callId) ?? null,
+});
+
 function stateMessage() {
   return {
     type: "state",
@@ -125,6 +136,7 @@ function setCall(c, phase, reason = null) {
   log(`call ${c.id} ${phase} ${c.remote ?? ""} ${c.reason ?? ""}`.trimEnd());
   if (phase === "connected") { c.mediaUp = true; c.connectedAt ||= Date.now(); updateText(c); }
   sendState();
+  conn.changed(c);
 }
 
 function end(c, reason) {
@@ -148,9 +160,13 @@ function loadHistory() {
   try { const h = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]"); return Array.isArray(h) ? h : []; } catch { return []; }
 }
 let history = loadHistory();
+// The diagnostics of calls removed last time (kept then for Undo) go now (see Saved diagnostics).
+setTimeout(() => pruneDiagnostics(), 0);
 function saveHistory() {
   history.sort((a, b) => b.at - a.at);
+  const over = history.length > HISTORY_MAX;
   history = history.slice(0, HISTORY_MAX);
+  if (over) pruneDiagnostics();
   try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch { /* storage unavailable */ }
   if (pageReady) toPage({ type: "history", entries: history, max: HISTORY_MAX });
 }
@@ -170,13 +186,95 @@ function addHistory(c) {
   };
   if (!e.uri) return;
   if (!c.connectedAt) {
-    if (!c.outgoing) { if (c.reason === "Declined") e.note = "Declined"; else if (c.reason?.startsWith("Couldn't answer")) e.note = "Couldn't answer"; else e.dir = "missed"; }
+    if (!c.outgoing) { if (c.reason === "Declined") e.note = "Declined"; else if (c.reason === "Do not disturb") { e.note = c.reason; e.sip = "486 Busy Here"; } else if (c.reason?.startsWith("Couldn't answer")) e.note = "Couldn't answer"; else e.dir = "missed"; }
     else if (c.reason === "You hung up") e.note = "Cancelled";
     else { e.sip = /^\d{3} /.test(c.reason ?? "") ? c.reason : null; e.note = historyNote(c.reason); }
   }
   history.unshift(e);
   saveHistory();
+  // Its diagnostics, which the page sends as the call ends: before this, or (as a rule) after.
+  diagEntry.set(c.id, e.id);
+  if (diagEntry.size > 32) diagEntry.delete(diagEntry.keys().next().value);
+  const pending = diagPending.get(c.id);
+  diagPending.delete(c.id);
+  if (pending) saveDiagnostics(c.id, e.id, pending);
 }
+
+// ---- Saved diagnostics ----
+//
+// As the desktop host keeps them (CallHistory.SaveDiagnostics): as a call ends the page sends its
+// Call details, Connection, Streams and Call quality (diag-save {id, snapshot}), and they're kept
+// with its history entry, which is marked diag; diag-saved {id, entry} tells the page, which links
+// to them from the call's ended card, and its row in Recent gets the Diagnostics button. diag-get
+// {id} (an entry's) has them back. Here they're in IndexedDB, by the entry's id (a snapshot is
+// tens of KB, too much for localStorage beside the history), and go when the entry leaves the
+// list: removed (after this page is closed, as Undo can bring it back till then) or past the cap.
+
+const diagEntry = new Map();     // call id -> its history entry's id
+const diagPending = new Map();   // call id -> a snapshot that came before its entry
+let diagDb = null;
+function diagStore(mode) {
+  diagDb ??= new Promise((resolve, reject) => {
+    const req = indexedDB.open("softphone-diagnostics", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("snapshots");
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  diagDb.catch(() => { diagDb = null; });
+  return diagDb.then((db) => db.transaction("snapshots", mode).objectStore("snapshots"));
+}
+const idbDone = (req) => new Promise((resolve, reject) => { req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); });
+
+async function saveDiagnostics(callId, entryId, snapshot) {
+  const e = history.find((x) => x.id === entryId);
+  if (!e) return;
+  try {
+    await idbDone((await diagStore("readwrite")).put(snapshot, entryId));
+  } catch (err) { log(`history: couldn't save call ${callId}'s diagnostics: ${err?.message ?? err}`); return; }
+  e.diag = true;
+  saveHistory();
+  log(`history: call ${callId}'s diagnostics saved (${Math.round(JSON.stringify(snapshot).length / 1024)} KB)`);
+  toPage({ type: "diag-saved", id: callId, entry: entryId });
+}
+
+function onDiagSave(callId, snapshot) {
+  if (!snapshot) return;
+  const entryId = diagEntry.get(callId);
+  if (entryId) { saveDiagnostics(callId, entryId, snapshot); return; }
+  diagPending.set(callId, snapshot);
+  if (diagPending.size > 16) diagPending.delete(diagPending.keys().next().value);
+}
+
+async function onDiagGet(entryId) {
+  let snapshot = null;
+  if (history.some((x) => x.id === entryId)) {
+    try { snapshot = (await idbDone((await diagStore("readonly")).get(entryId))) ?? null; }
+    catch (err) { log(`history: couldn't read the diagnostics: ${err?.message ?? err}`); }
+  }
+  toPage({ type: "diag-snapshot", id: entryId, snapshot });
+}
+
+// Deletes the diagnostics of calls no longer on the list (but not those removed in this page's
+// life, which Undo can bring back).
+async function pruneDiagnostics() {
+  try {
+    const store = await diagStore("readwrite");
+    const keep = new Set([...history.map((e) => e.id), ...removedHistory.keys()]);
+    for (const key of await idbDone(store.getAllKeys())) if (!keep.has(key)) store.delete(key);
+  } catch { /* no IndexedDB here: nothing was saved */ }
+}
+
+// Save as PNG (the SIP ladder's): the desktop asks where to put it; here it's a download, the
+// browser's own way of saving a file.
+function savePng(name, base64) {
+  if (!base64) return;
+  const a = document.createElement("a");
+  a.href = `data:image/png;base64,${base64}`;
+  a.download = String(name || "ladder.png");
+  a.click();
+  log(`saved ${a.download}`);
+}
+
 function removeHistory(ids) {
   const set = new Set(ids ?? []);
   for (const e of history.filter((x) => set.has(x.id))) removedHistory.set(e.id, e);
@@ -449,6 +547,7 @@ function sendDtmf(c, digit) {
   // Queued after any tones still playing: 100 ms each, 70 ms apart (the defaults).
   dtmf.insertDTMF(dtmf.toneBuffer + digit);
   log(`call ${c.id}: DTMF '${digit}' sent (RFC 4733, RTCDTMFSender)`);
+  conn.tone(c, true, digit, "RFC 4733");
 }
 
 // Tones from them, shown on the keypad ("Bob sent 123"), as the desktop does. Two ways:
@@ -461,6 +560,7 @@ function sendDtmf(c, digit) {
 const TONE_EVENTS = "0123456789*#ABCD";
 function onDtmfIn(c, digit, via) {
   log(`call ${c.id}: DTMF '${digit}' received (${via})`);
+  conn.tone(c, false, digit, via);
   toPage({ type: "dtmf-in", id: c.id, digit, via });
 }
 function onInfo(c, info) {
@@ -519,7 +619,7 @@ window.RTCPeerConnection = class extends NativeRTCPeerConnection {
     this.addEventListener("connectionstatechange", () => { if (this.connectionState === "closed") pcByKey.delete(this.key); });
     // The call this connection is for: the page says, and a renegotiated call gets a new one.
     const c = calls.get(String(config?.callId));
-    if (c) c.pc = this;
+    if (c) { c.pc = this; conn.watchPc(c, this); }
     this.t140 = null;          // the T.140 data channel, once there is one
     this.t140Agreed = false;   // their SDP has it too (or they opened it in band)
     // A far end that opens its T.140 channel in band (DCEP) rather than in the SDP.
@@ -805,6 +905,14 @@ async function startSip(a) {
     },
   });
   ua = myUa;
+  // Every SIP message each way, for the Connection tab (conndiag.js): SIP.js sends through the
+  // transport's send, and hands it an onMessage for what comes (kept, whenever it's set).
+  const tp = myUa.transport;
+  const send = tp.send.bind(tp);
+  tp.send = (m) => { conn.sipMessage(true, m); return send(m); };
+  let onMessage = tp.onMessage;
+  const heard = (m) => { conn.sipMessage(false, m); onMessage?.(m); };
+  Object.defineProperty(tp, "onMessage", { configurable: true, get: () => heard, set: (fn) => { onMessage = fn; } });
   if (a.noRegister) {
     setReg("registering");
     try {
@@ -998,10 +1106,20 @@ async function rejectPlainRtp(invitation) {
   await invitation.reject({ statusCode: 488, extraHeaders: [warning], body }).catch(() => {});
 }
 
-// An incoming call rings alongside any others; only one past MAX_CALLS is busy.
+// An incoming call rings alongside any others; only one past MAX_CALLS is busy. So is every new
+// one while Do not disturb (the page's button, "dnd") is on: it's in the history as an incoming
+// call noted "Do not disturb", not a missed one, as on the desktop.
+let dnd = false;
 function onIncoming(invitation) {
   if (liveCalls().length >= MAX_CALLS) {
     invitation.reject({ statusCode: 486 });
+    return;
+  }
+  if (dnd) {
+    invitation.reject({ statusCode: 486 }).catch(() => {});
+    const remote = nameOf(invitation.remoteIdentity);
+    log(`do not disturb: turned away a call from ${remote} (486 Busy Here)`);
+    addHistory({ id: `dnd${++nextId}`, remote, outgoing: false, startedAt: Date.now(), connectedAt: 0, reason: "Do not disturb" });
     return;
   }
   if (!isWebRtcOffer(invitation.body)) {
@@ -1140,6 +1258,7 @@ async function onPageMessage(msg) {
       toPage(stateMessage());
       dialAtStart();
       break;
+    case "dnd": dnd = !!msg.on; log(`do not disturb ${dnd ? "on: new calls are answered 486 Busy Here" : "off"}`); break;
     case "log":
       console.log(`page: ${msg.text}`);
       break;
@@ -1156,11 +1275,14 @@ async function onPageMessage(msg) {
     case "copy":
       navigator.clipboard?.writeText(msg.text).catch(() => {});
       break;
+    case "save-png": savePng(msg.name, msg.data); break;
     case "loss":
       setLoss(msg.audio, msg.video);
       break;
     case "history-remove": removeHistory(msg.ids); break;
     case "history-restore": restoreHistory(msg.ids); break;
+    case "diag-save": onDiagSave(String(msg.id), msg.snapshot); break;
+    case "diag-get": await onDiagGet(String(msg.id)); break;
     case "text":
       sendText(c, msg.text);
       break;

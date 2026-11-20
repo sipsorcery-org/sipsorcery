@@ -114,12 +114,27 @@ public sealed class MediaRelay : IDisposable
     private readonly Dictionary<string, (uint Seq, double Lost)> _lossTotals = [];
 
     // DTMF (RFC 4733): the last audio packet sent to the SIP side, and how far the page's audio
-    // sequence numbers have been moved along to make room for the event packets put in between.
-    private readonly object _audioOutLock = new();
+    // sequence numbers have been moved along: to make room for the event packets put in between,
+    // and, with its timestamps, to carry on from an earlier relay's (see SipAudioOut).
+    private readonly object _audioOutLock;
     private ushort _seqShift, _lastAudioSeq;
-    private uint _lastAudioTs;
+    private uint _tsShift, _lastAudioTs;
     private bool _audioSeen;
     private readonly SemaphoreSlim _dtmfOne = new(1, 1);
+
+    /// <summary>
+    /// Our audio on a call's SIP leg: the last sequence number and timestamp sent on it, and the
+    /// usual step between packets. One per SIP session, kept across relays: adding video builds
+    /// the relay again, with a new page connection whose audio starts at new random sequence
+    /// numbers and timestamps. Passed on as they were, our SIP stream (the same SSRC) would jump,
+    /// and a jump back has an SRTP far end's replay check drop every packet ("SRTP unprotect
+    /// failed for audio, result -4") until the new numbers catch up with the old, up to minutes
+    /// later. So the next relay carries on from where the last one stopped. It's also the relays'
+    /// lock on our audio out, so an old relay's last packet and the new one's first can't cross.
+    /// </summary>
+    private sealed class SipAudioOut { public ushort Seq; public uint Ts, TsStep; public bool Sent; }
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<RTPSession, SipAudioOut> SipAudioOuts = new();
+    private readonly SipAudioOut _sipAudioOut;
 
     /// <summary>
     /// Sends a DTMF digit (0–15: 0–9, * is 10, # is 11) as an RFC 4733 telephone-event on the
@@ -145,7 +160,7 @@ public sealed class MediaRelay : IDisposable
             void Send(bool end, ushort duration, int marker)
             {
                 ushort seq;
-                lock (_audioOutLock) { _seqShift++; seq = ++_lastAudioSeq; }
+                lock (_audioOutLock) { _seqShift++; seq = ++_lastAudioSeq; _sipAudioOut.Seq = seq; }
                 var payload = new RTPEvent(digit, end, RTPEvent.DEFAULT_VOLUME, duration, payloadType).GetEventPayload();
                 _sip.SendRtpRaw(SDPMediaTypesEnum.audio, payload, ts, marker, payloadType, seq);
             }
@@ -216,10 +231,14 @@ public sealed class MediaRelay : IDisposable
     /// True once both SIP ends have agreed on video: we have video codecs of our own, and their
     /// SDP has a video line that isn't turned down (port 0). A session can have a video stream
     /// without either: SIPSorcery makes one, with an inactive local track, for any m=video it's
-    /// offered.
+    /// offered. Nor is video agreed on a stream with no RTP channel (on a SIP call, not WebRTC's
+    /// bundled one): that's one we answered with port 0. Its track isn't always inactive: a
+    /// re-INVITE sets it to their direction (they put the call on hold with video added, which
+    /// we declined, then took it off hold), and video sent on it went nowhere.
     /// </summary>
     public static bool HasNegotiatedVideo(RTPSession rtp) =>
         rtp.HasVideo && rtp.VideoLocalTrack is { StreamStatus: not MediaStreamStatusEnum.Inactive } &&
+        (rtp is RTCPeerConnection || rtp.VideoStream.HasRtpChannel()) &&
         rtp.RemoteDescription?.Media.Any(m => m.Media == SDPMediaTypesEnum.video && m.Port != 0) == true &&
         Negotiated(rtp.VideoStream).HasValue;
 
@@ -227,6 +246,7 @@ public sealed class MediaRelay : IDisposable
     {
         _sip = sip;
         _log = log;
+        _audioOutLock = _sipAudioOut = SipAudioOuts.GetOrCreateValue(sip);
         Audio = Negotiated(sip.HasAudio ? sip.AudioStream : null);
         Video = HasNegotiatedVideo(sip) ? Negotiated(sip.VideoStream) : null;
         if (Audio.HasValue)
@@ -332,18 +352,35 @@ public sealed class MediaRelay : IDisposable
         }
 
         // Page -> SIP. Audio goes on with the page's sequence numbers, moved along by one for each
-        // DTMF packet put in between (see SendDtmfAsync), so the far end sees no gap or repeat.
+        // DTMF packet put in between (see SendDtmfAsync), so the far end sees no gap or repeat,
+        // and on a SIP leg an earlier relay sent on, moved with the timestamps to carry on from
+        // that relay's last packet (see SipAudioOut).
         pc.OnRtpPacketReceived += (_, kind, pkt) =>
         {
             if (kind == SDPMediaTypesEnum.video) _pageVideoSsrc = pkt.Header.SyncSource;
             if (kind != SDPMediaTypesEnum.audio) return;
+            var h = pkt.Header;
+            bool carriedOn = false;
             lock (_audioOutLock)
             {
-                pkt.Header.SequenceNumber = (ushort)(pkt.Header.SequenceNumber + _seqShift);
-                _lastAudioSeq = pkt.Header.SequenceNumber;
-                _lastAudioTs = pkt.Header.Timestamp;
-                _audioSeen = true;
+                if (!_audioSeen && _sipAudioOut.Sent)
+                {
+                    // One packet on from the last sent, as the start of a talkspurt.
+                    _seqShift = (ushort)(_sipAudioOut.Seq + 1 - h.SequenceNumber);
+                    _tsShift = _sipAudioOut.Ts + (_sipAudioOut.TsStep == 0 ? 960u : _sipAudioOut.TsStep) - h.Timestamp;
+                    h.MarkerBit = 1;
+                    carriedOn = true;
+                }
+                ushort seq = (ushort)(h.SequenceNumber + _seqShift);
+                uint ts = h.Timestamp + _tsShift;
+                // The usual step between packets (a frame's worth of samples), for the next relay.
+                uint step = ts - _lastAudioTs;
+                if (_audioSeen && (ushort)(seq - _lastAudioSeq) == 1 && step > 0 && step <= 48000) _sipAudioOut.TsStep = step;
+                (h.SequenceNumber, h.Timestamp) = (seq, ts);
+                (_lastAudioSeq, _lastAudioTs, _audioSeen) = (seq, ts, true);
+                (_sipAudioOut.Seq, _sipAudioOut.Ts, _sipAudioOut.Sent) = (seq, ts, true);
             }
+            if (carriedOn) _log("relay: our audio carries on its sequence and timestamps on the SIP side from the relay before");
             if (Lose(AudioLossPercent)) return;
             if (SipReady && ++_audioOut > 0 && !SendPastTheirHold(pkt))
                 _sip.SendRtpRaw(SDPMediaTypesEnum.audio, pkt.Payload, pkt.Header.Timestamp, pkt.Header.MarkerBit, pkt.Header.PayloadType, pkt.Header.SequenceNumber);

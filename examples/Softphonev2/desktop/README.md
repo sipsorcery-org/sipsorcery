@@ -35,6 +35,7 @@ The host (C#: WinForms and WebView2):
 | `MainForm.cs` | The window: WebView2 showing the page, and the messages between the page and `Phone`. |
 | `Phone.cs` | SIP: the transport, each account's registration, and up to 8 calls (dial, answer, hold, transfer). |
 | `MediaRelay.cs` | One per call: passes its SIP media to and from the page's WebRTC connection without decoding it. |
+| `StreamLog.cs` | One per call: its offers and answers as they went over the wire, for Diagnostics' Streams tab. |
 | `TextPeerConnection.cs` | A WebRTC call's SIP leg, with real-time text on a data channel. |
 | `Accounts.cs`, `Contacts.cs`, `History.cs` | SIP accounts, contacts and call history, kept per profile in `%LOCALAPPDATA%\SIPSorcery\Softphonev2`. |
 | `Settings.cs` | `softphone.json` and the switches. |
@@ -49,7 +50,7 @@ The page (`wwwroot`, shared with the web softphone in [../web](../web/README.md)
 | `app.js` | The calls: their state, the stage, the controls, the dial bar (Call and Video call), answering, privacy mode, the keys, and the messages to and from the host. It starts the rest. |
 | `util.js` | Small helpers the others share: elements by id, escaping, messages to the host, the log, names from addresses, the icons. |
 | `address.js` | Addresses as typed and shown, and the address fields (the dial bar's and Transfer's) with their suggestions. |
-| `home.js` | Home, the stage with no call on it (recent calls, accounts, Your devices, privacy mode), and the dial view the address field opens. |
+| `home.js` | Home, the stage with no call on it: New call (the address bar's list, filtered as you type) above recent calls, accounts, Your devices, privacy mode. |
 | `yourdevices.js` | Your devices (the microphone, speaker and camera, with Test mic, Play a sound and Preview), and the indicator that shows only while the microphone or camera is open. |
 | `video.js` | What each call sends as video: the camera, the test sources, the camera-off placeholder and the "On hold" card. |
 | `holdmusic.js` | Music on hold, and the silence a call sends when it isn't the live one. |
@@ -58,6 +59,11 @@ The page (`wwwroot`, shared with the web softphone in [../web](../web/README.md)
 | `levels.js` | Audio levels: the bars of the audio-only view and of the grid's tiles. |
 | `keypad.js`, `rtt.js`, `transfer.js` | The keypad (DTMF), real-time text, and transfer. |
 | `quality.js` | Call details and Call quality. |
+| `sipladder.js` | SIP ladder: every SIP message of a call as it went, a lane per party and an arrow per message, as SIP Trace draws one; each opens whole; copies as Mermaid or text, or saves as a PNG. |
+| `connection.js` | Connection: a call's media, layer by layer (SDP, ICE, DTLS, SRTP, RTP, RTCP), each with its state and why, and a timeline of its setup. |
+| `streams.js` | Streams: each call's media lines, as its offers and answers left them and as they're going. |
+| `logview.js` | The debug log: each line tagged (SIP, ICE, DTLS, RTP / RTCP, Calls, App), with a chip per tag to show or hide them, and full SIP messages on demand. |
+| `snapshots.js` | Saved diagnostics: a call's Call details, Streams and Call quality as it ended, kept with its history entry and opened from its row in Recent. |
 | `diagnostics.js` | The F12 panel, the test sources' menu items, and the security popover. |
 | `accounts.js`, `contacts.js`, `history.js` | Call from and Manage accounts; contacts and the People view; call history. |
 | `settings.js`, `avatar.js`, `contactmark.js`, `selfview.js` | Settings; Gravatar pictures; the saved-contact mark; moving and sizing the self view. |
@@ -79,13 +85,33 @@ On its own it listens on port 5060 (UDP and TCP), or if that's taken on a port t
 bottom of the window, and F12 again (or its ×) closes it. It's closed at every start
 (`--diagnostics` opens it). Drag its top edge to resize it, between 120 px and 70% of the
 window. The height you leave it at is remembered per profile and used whenever it opens.
-It has four tabs:
+It has seven tabs:
 
-- **SIP log**: everything the host and page log, following the newest line unless you've
-  scrolled up. *Copy log* puts the whole log on the clipboard; *Clear* empties it.
+- **Debug log**: everything the host and page log, each line with its time and a coloured tag (*SIP*, *ICE*,
+  *DTLS*, *RTP / RTCP*, *Calls*, *App*), following the newest line unless you've scrolled up. A chip per tag,
+  with its count, shows or hides its lines; *Full SIP messages* shows each SIP message's whole text under
+  its line (see [Debug log](DESIGN.md#debug-log-diagnostics-mode)). *Copy log* puts the lines shown on the
+  clipboard; *Clear* empties it.
 - **Call details**: how the selected call was set up (see [Call details](DESIGN.md#call-details)).
+- **SIP ladder**: every SIP message of a call, as it went: a lane per party, an arrow per message,
+  numbered, retransmissions included. Click one to read it whole; *Hide progress messages* keeps the
+  numbers; copy it as Mermaid or text, or save it as a PNG (see [SIP ladder](DESIGN.md#sip-ladder-diagnostics-mode)).
+  In the web softphone too.
+- **Connection**: whether a call's media got through, layer by layer (SDP, ICE, DTLS, SRTP, RTP,
+  RTCP), the first that didn't and its likely reason, and a timeline of the setup (see
+  [Connection](DESIGN.md#connection-diagnostics-mode)). In the web softphone too, from SIP.js
+  and the browser's `getStats()`.
+- **Streams**: a call's audio, video and text lines: what its offers and answers agreed, what's
+  going each way, a timeline of the call, and each offer and answer's SDP (see
+  [Streams](DESIGN.md#streams-diagnostics-mode)). In the web softphone too.
 - **Call quality**: the selected call's table and graphs (see [Call quality](DESIGN.md#call-quality-diagnostics-mode)).
 - **Network**: the simulated loss sliders (see [Call quality](DESIGN.md#call-quality-diagnostics-mode)).
+
+Call details, SIP ladder, Connection, Streams and Call quality are for the calls that are going, and clear as a call ends.
+What they had for it is saved with the call's history entry, though: a pulse button on its row in
+Home's Recent and People's Recent opens them again, with a bar saying whose they are and *Back to
+live* (see [Saved diagnostics](DESIGN.md#saved-diagnostics)). As a call ends, its ended card
+links to them, in diagnostics mode, for the 3 s it shows: *You hung up · Open diagnostics*.
 
 While it's open the app is in diagnostics mode: the Test pattern and Audio bars sources on the Camera ▾. Closing it
 hides them all. The page catches F12 before WebView2 does, so it doesn't open WebView2's own
