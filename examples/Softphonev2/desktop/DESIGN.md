@@ -435,11 +435,12 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   count, so Call & hold works as above. The address field is only disabled at 8 calls, when
   Call says "That's as many calls as there can be".
 - **Incoming calls** ring alongside the others (only a ninth gets 486 Busy Here). While you're
-  on a call, a banner over the stage says who, with *Answer & hold current* and *Decline*, and
+  on a call, a banner over the stage says who, with *Answer* (it holds the call you're on: its
+  tooltip says "Answer, and put Bob on hold", as Call's does) and *Decline*, and
   the call you're on carries on untouched (not held, still on the stage) unless you answer; the
   name opens the full answer view. With several ringing, the one waiting longest is on the
   banner, with how long each has waited and a **+N more** button that drops the others down
-  inside the banner: a row each (name, "Calling · 00:14", *Decline*, *Answer & hold current*,
+  inside the banner: a row each (name, "Calling · 00:14", *Decline*, *Answer*,
   the same as the top one, as they all do the same), scrolling past
   three, so you pick which to answer. Answering from it folds the list away; declining leaves
   it open for the next; the button again or `Esc` folds it. Two with the same name from
@@ -499,7 +500,7 @@ the audio, and the view stays Grid.
 - **Picking a call** from the grid, by its tile (or Enter on it), its row in Active calls, or
   its number key, opens it in Focus.
 - **A call ringing in** never switches to the grid, and isn't a tile: it asks on the banner over
-  the call (or grid) you're on. *Decline* leaves everything as it was; *Answer & hold current*
+  the call (or grid) you're on. *Decline* leaves everything as it was; *Answer*
   holds the call you're on and opens the new one in Focus. Its own answer view (the banner's
   name) leaves the choice alone.
 - **`T`** in the grid switches to Focus with the text panel open. `M`, `H` and `V` do nothing in the grid; `Shift+M` (privacy mode) still works.

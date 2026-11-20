@@ -26,7 +26,8 @@
 // or Resume) resumes it and holds the live one. Call and Answer hold the live call when you press
 // them, not before: typing an address, or looking at a ringing call, History or Accounts, holds
 // nothing. When a call ends, nothing resumes on its own: a held call stays held, with Resume.
-// An incoming call while you're on one shows as a banner, with Answer & hold current or Decline.
+// An incoming call while you're on one shows as a banner, with Answer (which holds the call you're
+// on: its tooltip says so) or Decline.
 
 import { initAccounts, onAccountsState, onAccountMessage, closeAccounts, useAccount, accountName, accountList, takeAccounts, calledAccountName } from "./accounts.js";
 import { initHistory, onHistoryMessage, onHistoryState, closeHistory, historyEntries, markSeen, openPeople, renderSide } from "./history.js";
@@ -818,15 +819,17 @@ export function render() {
       sub.textContent = `${state.incomingVideo ? "Incoming video call" : "Incoming call"}${(() => { const n = calledAccountName(sel()?.h.account); return n ? ` to ${n}` : ""; })()}`;
       actions.append(button("btn-danger", "Decline", () => post({ type: "decline", id: selectedId })));
       // Answer: you see them (on a video call), your camera stays closed. Answer with video, only
-      // when they offered it, opens it too. With another call going, either holds it.
-      const holdTail = liveCall() ? " & hold current" : "";
+      // when they offered it, opens it too. With another call going, either holds it: the
+      // tooltips say so, as Call's does.
+      const live = liveCall();
+      const holdTail = live ? `, and put ${nameOf(live)} on hold` : "";
       const offered = state.incomingVideo && state.videoAllowed !== false;
-      setBtn(answerBtn, ICON.phone, `Answer${holdTail}`);
-      answerBtn.title = offered ? "Answer: you'll see them; your camera stays closed (A)" : "Answer (A)";
+      setBtn(answerBtn, ICON.phone, "Answer");
+      answerBtn.title = offered ? `Answer${holdTail}: you'll see them; your camera stays closed (A)` : `Answer${holdTail} (A)`;
       actions.append(answerBtn);
       if (offered) {
-        setBtn(answerVideoBtn, ICON.video, `Answer with video${holdTail}`);
-        answerVideoBtn.title = privacy ? "Answer with video: privacy mode is on, so they'll see your camera-off card" : "Answer with your camera on";
+        setBtn(answerVideoBtn, ICON.video, "Answer with video");
+        answerVideoBtn.title = privacy ? `Answer with video${holdTail}: privacy mode is on, so they'll see your camera-off card` : `Answer with your camera on${holdTail}`;
         actions.append(answerVideoBtn);
       }
       if (lastPhase !== "ringing" || lastSelected !== selectedId) answerBtn.focus();
@@ -1336,16 +1339,18 @@ function onVideoRefused(e) {
 function noticeItems() {
   const all = ringingInBanner();
   const ringing = allRinging().filter((e) => all || e.id !== selectedId);
-  const answerLabel = liveCall() ? "Answer & hold current" : "Answer";
+  // Just "Answer": with a call going, it holds that one, and the tooltip says so.
+  const live = liveCall();
+  const holdTail = live ? `, and put ${nameOf(live)} on hold` : "";
   const items = ringing.map((e) => ({
     key: `ring-${e.id}`, icon: e.h.incomingVideo ? ICON.video : ICON.phone, ringId: e.id,
     who: ringingWho(e, ringing), whoTitle: `${e.h.remote}: show the answer view`, onWho: () => pickRinging(e.id),
     what: (many) => ringingWhat(e, many), tone: "warn",
     actions: [
       { label: "Decline", cls: "btn btn-danger", fn: () => declineCall(e.id) },
-      { label: answerLabel, cls: "btn btn-primary", fn: () => { incomingOpen = false; answerCall(e.id); } },
+      { label: "Answer", title: `Answer${holdTail}`, cls: "btn btn-primary", fn: () => { incomingOpen = false; answerCall(e.id); } },
       ...(e.h.incomingVideo && state.videoAllowed !== false
-        ? [{ icon: ICON.video, title: `${answerLabel} with video`, cls: "btn btn-primary icon-btn", fn: () => { incomingOpen = false; answerCall(e.id, true); } }]
+        ? [{ icon: ICON.video, title: `Answer with video${holdTail}`, cls: "btn btn-primary icon-btn", fn: () => { incomingOpen = false; answerCall(e.id, true); } }]
         : []),
     ],
     bulk: () => declineCall(e.id),
