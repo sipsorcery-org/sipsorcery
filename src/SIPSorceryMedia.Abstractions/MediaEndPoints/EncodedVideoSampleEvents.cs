@@ -18,18 +18,18 @@
 
 using System;
 using System.Buffers;
+using CommunityToolkit.HighPerformance.Buffers;
 
 namespace SIPSorceryMedia.Abstractions;
 
 /// <summary>
-/// The encoded sample events of a video source that implements <see cref="IVideoSourceSpan"/>, with the buffer each
-/// frame is encoded into for the span event. The source forwards its
+/// The encoded sample events of a video source that implements <see cref="IVideoSourceSpan"/>. The source forwards its
 /// <see cref="IVideoSource.OnVideoSourceEncodedSample"/> and <see cref="IVideoSourceSpan.OnVideoSourceEncodedSampleFaster"/>
 /// to an instance of this class and raises every frame through it:
 /// <list type="bullet">
 /// <item><description>When the span event has subscribers, <see cref="EncodeAndRaise{TState}"/> encodes the frame into
-/// a buffer re-used from frame to frame and raises it there on the span event, and as a copy, which its subscribers
-/// then own, on the array event.</description></item>
+/// a buffer rented from the shared array pool and raises it there on the span event, and as a copy, which its
+/// subscribers then own, on the array event.</description></item>
 /// <item><description>Otherwise <see cref="Raise"/> raises a frame the source has encoded into an array of its
 /// own.</description></item>
 /// </list>
@@ -37,12 +37,7 @@ namespace SIPSorceryMedia.Abstractions;
 /// </summary>
 public sealed class EncodedVideoSampleEvents
 {
-    private readonly ReusedBufferWriter _frameBuffer = new ReusedBufferWriter();
-    private readonly object _frameBufferLock = new object();
-
-    // Set while a frame is being raised, so a frame that one of its handlers pushes meanwhile is noticed. Only used
-    // under _frameBufferLock.
-    private bool _raising;
+    private readonly object _raiseLock = new object();
 
     /// <summary>
     /// Raised with every encoded frame in an array the subscribers own. See
@@ -85,8 +80,8 @@ public sealed class EncodedVideoSampleEvents
     }
 
     /// <summary>
-    /// Encodes a frame into the buffer re-used from frame to frame and raises it: in place on the span event, then as a
-    /// copy on the array event.
+    /// Encodes a frame into a buffer rented from the shared array pool and raises it: in place on the span event, then
+    /// as a copy on the array event. The buffer goes back to the pool once the frame has been raised.
     /// </summary>
     /// <typeparam name="TState">What <paramref name="encode"/> needs to encode the frame.</typeparam>
     /// <param name="durationRtpUnits">The duration of the frame in RTP timestamp units.</param>
@@ -105,8 +100,8 @@ public sealed class EncodedVideoSampleEvents
     /// </para>
     /// <para>
     /// While a frame is raised its lock is held, so a frame pushed meanwhile comes from one of its handlers, on the
-    /// same thread, as a relay might do. That frame is encoded into a buffer of its own and raised in full first, so
-    /// the handlers still to run get the frame they were raised with.
+    /// same thread, as a relay might do. That frame gets a buffer of its own and is raised in full first, so the
+    /// handlers still to run get the frame they were raised with.
     /// </para>
     /// </remarks>
     public int EncodeAndRaise<TState>(uint durationRtpUnits, TState state, Func<TState, IBufferWriter<byte>, bool> encode)
@@ -116,10 +111,9 @@ public sealed class EncodedVideoSampleEvents
             throw new ArgumentNullException(nameof(encode));
         }
 
-        lock (_frameBufferLock)
+        lock (_raiseLock)
         {
-            var output = _raising ? new ReusedBufferWriter() : _frameBuffer;
-            output.Reset();
+            using var output = new ArrayPoolBufferWriter<byte>();
 
             if (!encode(state, output))
             {
@@ -127,87 +121,14 @@ public sealed class EncodedVideoSampleEvents
             }
 
             ReadOnlySpan<byte> frame = output.WrittenSpan;
-            bool wasRaising = _raising;
-            _raising = true;
 
-            try
-            {
-                // Note the event handlers can be removed while the encoding is in progress.
-                OnVideoSourceEncodedSampleFaster?.Invoke(durationRtpUnits, frame);
+            // Note the event handlers can be removed while the encoding is in progress.
+            OnVideoSourceEncodedSampleFaster?.Invoke(durationRtpUnits, frame);
 
-                // Subscribers to the array event own what they are given, so they get a copy.
-                OnVideoSourceEncodedSample?.Invoke(durationRtpUnits, frame.ToArray());
-            }
-            finally
-            {
-                _raising = wasRaising;
-            }
+            // Subscribers to the array event own what they are given, so they get a copy.
+            OnVideoSourceEncodedSample?.Invoke(durationRtpUnits, frame.ToArray());
 
             return frame.Length;
-        }
-    }
-
-    /// <summary>
-    /// A buffer writer that keeps what is written in one array, re-used from frame to frame. ArrayBufferWriter is not
-    /// available on every target framework of this library, and where it is, resetting it without clearing the
-    /// memory is only possible from .NET 8.
-    /// </summary>
-    private sealed class ReusedBufferWriter : IBufferWriter<byte>
-    {
-        // The largest length of a byte array, Array.MaxLength, which not every target framework of this library has.
-        private const int MAX_ARRAY_LENGTH = 0x7FFFFFC7;
-
-        private byte[] _buffer = Array.Empty<byte>();
-        private int _written;
-
-        /// <summary>The data written since the last <see cref="Reset"/>.</summary>
-        public ReadOnlySpan<byte> WrittenSpan => new ReadOnlySpan<byte>(_buffer, 0, _written);
-
-        /// <summary>Discards what has been written, keeping the array for the next frame.</summary>
-        public void Reset() => _written = 0;
-
-        public void Advance(int count)
-        {
-            if (count < 0 || count > _buffer.Length - _written)
-            {
-                throw new ArgumentOutOfRangeException(nameof(count));
-            }
-
-            _written += count;
-        }
-
-        public Memory<byte> GetMemory(int sizeHint = 0)
-        {
-            Grow(sizeHint);
-            return _buffer.AsMemory(_written);
-        }
-
-        public Span<byte> GetSpan(int sizeHint = 0)
-        {
-            Grow(sizeHint);
-            return _buffer.AsSpan(_written);
-        }
-
-        // Makes room after what has been written for at least sizeHint bytes, or one byte when no size is given. It
-        // can replace _buffer, so callers read _buffer only after it returns.
-        private void Grow(int sizeHint)
-        {
-            if (sizeHint < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(sizeHint));
-            }
-
-            int needed = Math.Max(sizeHint, 1);
-            if (_buffer.Length - _written < needed)
-            {
-                long required = (long)_written + needed;
-                if (required > MAX_ARRAY_LENGTH)
-                {
-                    throw new OutOfMemoryException($"An encoded frame of {required} bytes would not fit in an array.");
-                }
-
-                Array.Resize(ref _buffer, (int)Math.Min(Math.Max(required, 2L * _buffer.Length), MAX_ARRAY_LENGTH));
-            }
         }
     }
 }

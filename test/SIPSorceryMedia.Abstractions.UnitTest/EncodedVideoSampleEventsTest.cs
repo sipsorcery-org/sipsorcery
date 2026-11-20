@@ -219,28 +219,8 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
         }
 
         /// <summary>
-        /// The writer the frame is encoded into refuses a negative size or advance, an advance past the memory it handed
-        /// out, and a size larger than any array can be, which it refuses without trying to allocate it.
-        /// </summary>
-        [Fact]
-        public void EncodeAndRaise_WriterRefusesInvalidRequests()
-        {
-            var events = new EncodedVideoSampleEvents();
-            events.EncodeAndRaise(3000, 0, (unused, output) =>
-            {
-                Assert.Throws<ArgumentOutOfRangeException>(() => output.GetSpan(-1));
-                Assert.Throws<ArgumentOutOfRangeException>(() => output.GetMemory(-1));
-                Assert.Throws<ArgumentOutOfRangeException>(() => output.Advance(-1));
-                int available = output.GetSpan(100).Length;
-                Assert.Throws<ArgumentOutOfRangeException>(() => output.Advance(available + 1));
-                Assert.Throws<OutOfMemoryException>(() => output.GetSpan(int.MaxValue));
-                return false;
-            });
-        }
-
-        /// <summary>
         /// Frames pushed from several threads at once are raised one at a time, each whole, without one overwriting
-        /// another in the re-used buffer.
+        /// another.
         /// </summary>
         [Fact]
         public async Task EncodeAndRaise_FromSeveralThreads_EachFrameRaisedWhole()
@@ -250,10 +230,20 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
             var events = new EncodedVideoSampleEvents();
             int raised = 0;
             int corrupted = 0;
+            int inHandler = 0;
+            int overlapped = 0;
 
             // Every byte of a frame is its id, and its length is 1000 plus the id.
             events.OnVideoSourceEncodedSampleFaster += (duration, sample) =>
             {
+                // Another frame raised while this one is would mean frames are not raised one at a time. The spin
+                // gives an overlap the time to show.
+                if (Interlocked.Increment(ref inHandler) > 1)
+                {
+                    Interlocked.Increment(ref overlapped);
+                }
+                Thread.SpinWait(200);
+
                 byte id = sample[0];
                 bool whole = sample.Length == 1000 + id;
                 for (int i = 0; whole && i < sample.Length; i++)
@@ -266,6 +256,7 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
                     Interlocked.Increment(ref corrupted);
                 }
                 Interlocked.Increment(ref raised);
+                Interlocked.Decrement(ref inHandler);
             };
 
             var tasks = Enumerable.Range(0, threads).Select(t => Task.Run(() =>
@@ -292,14 +283,15 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
 
             Assert.Equal(threads * framesPerThread, raised);
             Assert.Equal(0, corrupted);
+            Assert.Equal(0, overlapped);
         }
 
         /// <summary>
-        /// With only the span event subscribed, raising a frame allocates nothing once the buffer has grown to the frame
-        /// size.
+        /// With only the span event subscribed, raising a frame allocates no array for it: the buffer it is encoded into
+        /// comes from the shared array pool, so all that is allocated per frame is the small writer object.
         /// </summary>
         [Fact]
-        public void EncodeAndRaise_OnlySpanSubscribers_DoesNotAllocatePerFrame()
+        public void EncodeAndRaise_OnlySpanSubscribers_DoesNotAllocateTheFrame()
         {
             var events = new EncodedVideoSampleEvents();
             long raisedBytes = 0;
@@ -320,7 +312,8 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
             long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
             Assert.Equal((10L + count) * frame.Length, raisedBytes);
-            Assert.True(allocated < count, $"Allocated {allocated} bytes for {count} frames.");
+            // Under 100 bytes a frame for frames of 20,000 bytes: no array was allocated for them.
+            Assert.True(allocated < 100L * count, $"Allocated {allocated} bytes for {count} frames.");
         }
 
         /// <summary>
