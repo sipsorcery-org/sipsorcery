@@ -48,8 +48,8 @@ it, and nothing carries from one call to the next. On a call, both say
 when they offered video, **Answer with video**; the banner for a call ringing while you're on
 another has Answer and a camera icon for Answer with video.
 
-Every list of people has the same three buttons on each row: Home's Recent, the dial view's New
-call, and People's Recent and Contacts. **Copy address** puts the address on the clipboard (with a
+Every list of people has the same three buttons on each row: Home's Recent, Home's New call (as
+you type), and People's Recent and Contacts. **Copy address** puts the address on the clipboard (with a
 *Copied* notice), to paste into the address bar or elsewhere and call it some other way, with
 another account say; **Call** and **Video call** place the call straight away. In People the
 details also have Call (or Call back), Video call and Copy address.
@@ -59,9 +59,10 @@ microphone and speaker it's using, and the camera (its name and *opens when they
 your camera-off card*, or *Not used: it's an audio call*). They can't be changed there; once it's
 answered the ▾ on Mute and Camera change them.
 
-## Home and the dial view
+## Home
 
-With no call on the stage, it's **Home**: your recent calls on the left (missed ones red, the
+With no call on the stage, it's **Home**: on the left *New call* (below) and under it your
+last five calls (missed ones red, the
 unseen ones bold, a call that's just ended highlighted for a moment), each with Copy address,
 **Edit contact** (or **Add to contacts**, as in History: the Contacts form, its name the one the
 row shows, the call's or else one from the address, and Save or Cancel comes back to Home), Call and Video call (at phone width Copy address goes, for the name's room;
@@ -74,20 +75,22 @@ how it ended for 3 s, then Home; its **Close** button (or Esc) goes to Home stra
 from the address, where a call that's ended leaves you, empties it first if it still has the
 address you called (kept for a retry), then closes.
 
-Focusing the address (or `/`) turns Home into the **dial view**: one column, Your devices at the
-top, then *New call*, your contacts and the addresses of recent calls. Picking one fills the
-address bar and Call from (the field flashes) and calls no one: Call or Video call places it.
-Each row also has its own Copy address, **Call** and **Video call**, as Recent's rows do; the
-calls go straight away (from the contact's account, or the one it was last called from). Esc
-empties the field and puts Call from back; Esc again, Back to Home, or (with the field empty)
-clicking or tabbing to anything outside the dial bar and the dial view, leaves. Your devices'
-buttons and pickers are part of the dial view, so using them keeps it. The drop-down under
-the address only opens once you type, since the dial view is already the list. During a call,
-focusing the address opens the drop-down as before.
+**New call**, at the top of Home, is the address bar's list (see [Names, numbers and SIP addresses](#names-numbers-and-sip-addresses)) drawn
+on Home instead of in a drop-down, so typing never swaps Home for another view. With nothing
+typed: your five most-called contacts as tiles, and *Contacts…*; as you type, the contacts and
+other addresses that match, as rows (scrolling inside the card past four and a half), and *Add …
+to contacts* for an address that isn't one. ↑/↓ in the field move through it, Enter or a click
+fills the address bar and Call from (the field flashes) and calls no one: Call or Video call
+places it. Each row also has its own Copy address, **Call** and **Video call**, as Recent's rows
+do; the calls go straight away (from the contact's account, or the one it was last called from).
+Esc lets go of the highlight, then empties the field and puts Call from back, then leaves the
+field. While the field has focus or text, Your devices says what the call you're placing will do
+with each device. New call and the shortened Recent both fit a 1100×720 window without Home
+scrolling. During a call, focusing the address opens the drop-down as before.
 
 ## Your devices
 
-On Home, the dial view and under a call ringing on the stage (and read-only under one you're
+On Home and under a call ringing on the stage (and read-only under one you're
 placing): three lines, the microphone, speaker
 and camera the next call (or the one ringing) will use, each with a hint when it's not plain
 (*on only if you answer with video*, *off (privacy mode)*, and *for now* on one changed from
@@ -225,7 +228,7 @@ The address field's suggestions, from the UX prototype (its *New call*): focusin
 them (below). Transfer's *To an address* field is the same component (`addressField` in
 `address.js`: the same lists, rows, keys, mark and ×; see Transfer). The address bar's rows are
 just who and when: no Add/Remove contact button or Call icon (a row fills the field; the bar's
-Call and Video call place it, and People and the dial view's rows have their own buttons).
+Call and Video call place it, and People and Home's New call rows have their own buttons).
 Transfer's keep theirs. Typing part of a name highlights the first match. ↑/↓ move through the list (and open it),
 and `Esc` closes it. **Picking never dials**: Enter or a click puts the highlighted entry's
 address in the field (the list closes, focus stays), and only **Call**, or Enter again with

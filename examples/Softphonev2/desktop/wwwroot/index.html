@@ -46,8 +46,9 @@
         <!-- Why a call to a contact didn't use its account (accounts.js useAccount). -->
         <span class="from-note" id="fromNote" role="status" hidden></span>
       </div>
-      <!-- Focusing the address (or /) with no call on the stage opens the dial view (home.js);
-           during a call it lists contacts and recent calls. Typing filters them (address.js). -->
+      <!-- Focusing the address (or /) lists contacts and recent calls: with no call on the stage
+           in Home's New call (home.js), during a call in this drop-down. Typing filters them
+           (address.js). -->
       <div class="dest-wrap">
         <input id="address" type="text" placeholder="Name or number" spellcheck="false" aria-label="Name or number to call"
           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="dialSuggest">
@@ -116,12 +117,15 @@
            call's <video> into its tile). Clicking a tile opens that call in Focus view. -->
       <div class="tiles" id="tiles" role="list" aria-label="Active calls" hidden></div>
 
-      <!-- No call on the stage: Home (home.js). Recent calls on the left; your accounts, Your
-           devices and privacy mode on the right. Focusing the address turns it into the dial
-           view: one column, Your devices at the top, then your contacts and recent addresses. -->
+      <!-- No call on the stage: Home (home.js). On the left, New call (the address bar's
+           contacts and recent calls, filtered as you type) above Recent calls; your accounts,
+           Your devices and privacy mode on the right. -->
       <section class="home" id="home" aria-label="Home" hidden>
         <div class="home-wrap">
-          <div class="home-left home-card" id="homeLeft"></div>
+          <div class="home-left">
+            <section class="home-card home-new" id="homeNew" aria-label="New call"></section>
+            <section class="home-card home-recent" id="homeLeft" aria-label="Recent calls"></section>
+          </div>
           <div class="home-right" id="homeRight">
             <div id="homeAccounts"></div>
             <section class="scard yd-host" id="ydHome" aria-label="Your devices"></section>

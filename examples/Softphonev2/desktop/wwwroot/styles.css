@@ -1682,16 +1682,15 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 }
 
 /* ---- Home (home.js): the stage with no call on it ----
-   Recent calls on the left; on the right your accounts, Your devices and, while it's on, privacy
-   mode. The dial view (the address focused) is one column: Your devices at the top, then New call,
-   your contacts and recent addresses to pick from. */
+   On the left, New call (the address bar's list: contact tiles, or as you type, the rows that
+   match) above Recent calls; on the right your accounts, Your devices and, while it's on, privacy
+   mode. Rows are compact and Recent short, so both fit a 1100×720 window without scrolling. */
 .home { position: absolute; inset: 0; z-index: 1; overflow-y: auto; padding: 14px; }
 .home[hidden] { display: none; }
 .home-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 14px; align-items: start; max-width: 1100px; margin: 0 auto; }
 .home-right { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .home-right > div:empty { display: none; }
-.home.dialing .home-wrap { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
-.home.dialing .home-right { order: -1; }
+.home-left { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .home-card, .scard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
 .home-card { padding: 12px 10px 10px 14px; }
 .scard { padding: 12px 14px; }
@@ -1706,15 +1705,17 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .home-rows { list-style: none; margin: 0; padding: 0; }
 .home-group { padding: 8px 6px 4px; color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 .home-group:first-child { padding-top: 0; }
-.home-row { display: flex; align-items: center; gap: 10px; padding: 7px 6px; border-radius: var(--radius-sm); }
+.home-row { display: flex; align-items: center; gap: 10px; padding: 5px 6px; border-radius: var(--radius-sm); }
 .home-row:hover { background: var(--surface-2); }
+/* New call's highlighted pick (↑/↓ in the address field): Enter fills it in. */
+.home-row.active, .home-row.active:hover, .nc-tile.active { background: var(--surface-3); box-shadow: inset 0 0 0 1px var(--border-strong); }
 .home-row.pickable { cursor: pointer; }
 .home-row.missed .home-name { color: var(--danger); }
 .home-row.unseen .home-name { font-weight: 700; }
 .home-row.fresh { animation: home-fresh 3s ease-out; }
 @keyframes home-fresh { from { background: color-mix(in srgb, var(--accent) 24%, transparent); } to { background: transparent; } }
 .home-row.used, .home-row.used:hover { background: color-mix(in srgb, var(--ok) 10%, transparent); }
-.home-avatar { width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--tile); color: var(--tile-ink); font-size: 15px; font-weight: 600; background-size: cover; }
+.home-avatar { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--tile); color: var(--tile-ink); font-size: 15px; font-weight: 600; background-size: cover; }
 .home-row.missed .home-avatar { background-color: var(--danger-soft); color: var(--danger); }
 .home-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .home-name, .home-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1730,7 +1731,21 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 }
 .home-row:hover .home-btns, .home-row:focus-within .home-btns { opacity: 1; }
 .home-hint { flex: none; color: var(--accent); font-size: 12.5px; font-weight: 600; opacity: 0; }
-.home-row:hover .home-hint { opacity: 1; }
+.home-row:hover .home-hint, .home-row.active .home-hint { opacity: 1; }
+/* New call: nothing typed, your most-called contacts as tiles, then Contacts…; typed, the rows that
+   match, scrolling inside the card past four and a half of them. */
+.nc-tiles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.nc-tile { width: 80px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 7px 4px 6px; border-radius: var(--radius-sm); cursor: pointer; text-align: center; }
+.nc-tile:hover { background: var(--surface-2); }
+.nc-tile .home-avatar { width: 40px; height: 40px; font-size: 16px; }
+.nc-name { max-width: 100%; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nc-more .nc-name { color: var(--accent); font-weight: 500; }
+.nc-more-icon { background: var(--surface-2); color: var(--accent); box-shadow: inset 0 0 0 1px var(--border); }
+.nc-more-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nc-foot .home-name { color: var(--accent); font-weight: 500; }
+.nc-foot .home-name b { font-weight: 600; }
+.nc-none { flex-basis: 100%; }
+.nc-rows { position: relative; max-height: 200px; overflow-y: auto; }   /* relative: rows' offsetTop, to keep the pick in view */
 .home-note { display: inline-flex; align-items: center; gap: 4px; flex: none; color: var(--muted); font-size: 12.5px; }
 .home-note svg { width: 14px; height: 14px; fill: none; stroke: var(--ok); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .icon-sq { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--surface); color: var(--accent); cursor: pointer; }

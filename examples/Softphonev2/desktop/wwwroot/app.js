@@ -12,8 +12,8 @@
 // Call and Video call beside the address place the kind of call; a call ringing in has Answer
 // (your camera stays closed, but you see them) and Answer with video. An audio call has no video
 // line; "Add video" asks the far end for one (a SIP re-INVITE), and the host then sends a new offer.
-// With no call, the stage is Home (home.js), and while you place one, the dial view; Your devices
-// (yourdevices.js) is on both and under a call ringing in.
+// With no call, the stage is Home (home.js): New call (the address bar's list) above Recent; Your
+// devices (yourdevices.js) is on it and under a call ringing in.
 //
 // Several calls at once, as in the prototype: each call the host reports has an entry here (see
 // entries), with its own peer connection, <video> element, quality, details and text. The stage
@@ -847,7 +847,7 @@ export function render() {
   $("card").classList.toggle("with-devices", ringDevices || callingDevices);
   if (ringDevices) renderYourDevices($("cardDevices"), "ring");
   else if (callingDevices) renderYourDevices($("cardDevices"), "calling", e);
-  // No call: Home (or the dial view) in the card's place.
+  // No call: Home in the card's place.
   $("card").hidden = homeShown();
   // Privacy mode on a call: a note says what they get, with Turn off.
   const pn = $("privacyNote");
@@ -1473,7 +1473,7 @@ export function placeCall(address, account = null, who = null, video = false) {
   const blocked = callBlocked();
   if (blocked) { log(`not calling ${address}: ${blocked}`); return; }
   closeHistory(false);
-  dialDone();   // the dial view's done, and Your devices' tests stop: the call takes the devices
+  dialDone();   // placing it is done, and Your devices' tests stop: the call takes the devices
   markSeen();   // missed calls count as seen once you next place a call
   renderSide();
   lastDialled = address;

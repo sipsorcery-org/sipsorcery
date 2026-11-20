@@ -50,7 +50,7 @@ The page (`wwwroot`, shared with the web softphone in [../web](../web/README.md)
 | `app.js` | The calls: their state, the stage, the controls, the dial bar (Call and Video call), answering, privacy mode, the keys, and the messages to and from the host. It starts the rest. |
 | `util.js` | Small helpers the others share: elements by id, escaping, messages to the host, the log, names from addresses, the icons. |
 | `address.js` | Addresses as typed and shown, and the address fields (the dial bar's and Transfer's) with their suggestions. |
-| `home.js` | Home, the stage with no call on it (recent calls, accounts, Your devices, privacy mode), and the dial view the address field opens. |
+| `home.js` | Home, the stage with no call on it: New call (the address bar's list, filtered as you type) above recent calls, accounts, Your devices, privacy mode. |
 | `yourdevices.js` | Your devices (the microphone, speaker and camera, with Test mic, Play a sound and Preview), and the indicator that shows only while the microphone or camera is open. |
 | `video.js` | What each call sends as video: the camera, the test sources, the camera-off placeholder and the "On hold" card. |
 | `holdmusic.js` | Music on hold, and the silence a call sends when it isn't the live one. |

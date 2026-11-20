@@ -74,7 +74,8 @@ const directNote = () => (Array.isArray(state.accounts) ? "A full SIP address el
 export const addressTip = () => (directMode() ? (phoneWidth.matches ? "Number or SIP address, e.g. sip:alice@192.168.0.20" : "") : [`A name or number goes through ${domainOf(state.account) ?? "the account's server"}.`, directNote()].filter(Boolean).join(" "));
 
 // ---- Address fields: the address bar's, and Transfer's ----
-// As in the prototype: focusing the address (or /) lists contacts and recent calls; typing
+// As in the prototype: focusing the address (or /) lists contacts and recent calls (with no call
+// on the stage, in Home's New call rather than a drop-down: home.js); typing
 // filters them (see suggestions). Contacts come first, in their own group: with nothing typed the
 // ones you call most, then your latest calls to anyone else; typed, the contacts that match, then
 // other addresses you've called that match. Typing part of a name highlights the first match, so
@@ -157,7 +158,9 @@ function callStats() {
 // user part) before one inside, then the most called. Then Recent: one per address, newest
 // first, less the contacts already listed (a contact further down shows here, by its name);
 // typed, the other addresses that match, ranked the same way. skip: an address to leave out.
-function suggestions(typed, { skip = null, foot = true } = {}) {
+// emptyRecent: false leaves Recent out with nothing typed (Home's New call: Home lists your recent
+// calls under it).
+export function suggestions(typed, { skip = null, foot = true, emptyRecent = true } = {}) {
   typed = typed.trim();
   const q = typed.toLowerCase();
   const stats = callStats();
@@ -187,7 +190,7 @@ function suggestions(typed, { skip = null, foot = true } = {}) {
   if (!q) {
     top = contacts.sort((a, b) => score(b) - score(a) || byName(a, b)).slice(0, MAX_CONTACT_SUGGESTIONS);
     const shown = new Set(top.map((x) => normAddress(x.uri)));
-    rest = recent.filter((x) => !shown.has(normAddress(x.uri))).slice(0, MAX_RECENT_SUGGESTIONS);
+    rest = emptyRecent ? recent.filter((x) => !shown.has(normAddress(x.uri))).slice(0, MAX_RECENT_SUGGESTIONS) : [];
   } else {
     const rank = (list, max) => list.map((x) => ({ x, tier: matchTier(x, q) })).filter((m) => m.tier >= 0)
       .sort((a, b) => a.tier - b.tier || score(b.x) - score(a.x) || byName(a.x, b.x)).slice(0, max).map((m) => m.x);
@@ -213,9 +216,11 @@ const looksLikeAddress = (q) => /[@:]/.test(q) || /^[+\d*#\s]+$/.test(q.trim());
  * the Contacts… and Add to contacts rows. goIcon: the icon on the highlighted row (what Enter
  * does). skip(): an address to leave out. pick(entry): a row was chosen: its address is in the
  * field (f.pick is the entry, for its name and account), and nothing is dialled or sent. changed(): after every refresh.
- * listEmpty(): whether an empty field lists Contacts and Recent (the dial view has its own list).
- * cleared(): Esc or × emptied the field. escEmpty(): Esc with the field already empty; true if it
- * dealt with it. Returns its state: { open, items, active, pick,
+ * inline(): true while someone else draws the list (Home's New call, from f.items and f.active,
+ * with rows id'd `${idPrefix}-${i}` in the element inlineId): the drop-down stays shut, and ↑/↓,
+ * Enter and Esc work on that list instead; with nothing typed it leaves Recent out (Home lists
+ * your recent calls under it). cleared(): Esc or × emptied the field. escEmpty(): Esc with the
+ * field already empty; true if it dealt with it. Returns its state: { open, items, active, pick,
  * refresh(keepActive), close(), renderBadge() }.
  */
 // rowButtons: each row's Add/Remove contact button and its Call (or Transfer) icon. The address
@@ -223,7 +228,7 @@ const looksLikeAddress = (q) => /[@:]/.test(q) || /^[+\d*#\s]+$/.test(q.trim());
 // warn(text): a note on what's typed (the web softphone's, for an address it can't call directly),
 // shown in the field's bubble when you pause; the text is kept either way.
 export function addressField({ input, list, clear, badge, idPrefix, popup, foot, goIcon, goLabel, skip = () => null, pick, changed = () => {},
-  listEmpty = () => true, cleared = () => {}, escEmpty = () => false, rowButtons = true, warn = () => null }) {
+  inline = () => false, inlineId = null, cleared = () => {}, escEmpty = () => false, rowButtons = true, warn = () => null }) {
   const wrap = input.closest(".dest-wrap");
   const f = { open: false, items: [], active: -1, pick: null };
 
@@ -231,12 +236,7 @@ export function addressField({ input, list, clear, badge, idPrefix, popup, foot,
   f.refresh = (keepActive = false) => {
     if (input.disabled) return;
     const q = input.value;
-    if (popup && !q.trim() && !listEmpty()) {
-      f.close();
-      changed();
-      return;
-    }
-    const items = suggestions(q, { skip: skip(), foot });
+    const items = suggestions(q, { skip: skip(), foot, emptyRecent: !inline() });
     let active = q.trim() && !looksLikeAddress(q) && items.length && !items[0].action ? 0 : -1;
     if (keepActive && f.active >= 0) {
       const was = f.items[f.active];
@@ -274,10 +274,12 @@ export function addressField({ input, list, clear, badge, idPrefix, popup, foot,
 
   function render() {
     const { open, items, active } = f;
-    list.hidden = !open;
+    const elsewhere = inline();
+    list.hidden = !open || elsewhere;
+    input.setAttribute("aria-controls", elsewhere && inlineId ? inlineId : list.id);
     input.setAttribute("aria-expanded", String(open && items.length > 0));
     if (open && active >= 0) input.setAttribute("aria-activedescendant", `${idPrefix}-${active}`); else input.removeAttribute("aria-activedescendant");
-    if (!open) { list.innerHTML = ""; return; }
+    if (!open || elsewhere) { list.innerHTML = ""; return; }
     let group = "";
     list.innerHTML = items.map((it, i) => {
       const cls = `suggest-item${i === active ? " active" : ""}`;
@@ -374,7 +376,7 @@ export function addressField({ input, list, clear, badge, idPrefix, popup, foot,
       cleared();
       changed();
     } else if (e.key === "Escape" && popup && escEmpty()) {
-      e.stopPropagation();   // it was the dial view's Esc: back to Home, and nothing else
+      e.stopPropagation();   // it was Home's: the field let go, and nothing else
     }
   });
   // The clear (×) button: empties the field and lists Contacts and Recent, as deleting the text
@@ -430,9 +432,8 @@ export function initAddress2() {
     // A pick goes in as New call's do: its account becomes Call from (Esc or × puts it back).
     pick: fill, changed() { followTyped(); syncCallBtn(); renderHome(); },
     warn: webDirectNote,
-    // With no call on the stage, the dial view lists your contacts and recent calls itself, so the
-    // drop-down only opens once you type.
-    listEmpty: () => !homeShown(), cleared: restoreFrom,
+    // With no call on the stage, the list is Home's New call (home.js), not a drop-down.
+    inline: homeShown, inlineId: "homePicks", cleared: restoreFrom,
     escEmpty() {
       if (!homeShown()) return false;
       leaveDial();
