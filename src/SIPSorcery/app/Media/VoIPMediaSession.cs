@@ -134,7 +134,7 @@ namespace SIPSorcery.Media
             {
                 var videoTrack = new MediaStreamTrack(config.MediaEndPoint.VideoSource.GetVideoSourceFormats());
                 base.addTrack(videoTrack);
-                Media.VideoSource.OnVideoSourceEncodedSample += base.SendVideo;
+                SendEncodedVideoFrom(Media.VideoSource);
                 Media.VideoSource.OnVideoSourceError += VideoSource_OnVideoSourceError;
 
                 if (config.TestPatternSource != null)
@@ -142,7 +142,7 @@ namespace SIPSorcery.Media
                     // The test pattern source is used as failover if the webcam initialisation fails.
                     // It's also used as the video stream if the call is put on hold.
                     _videoTestPatternSource = config.TestPatternSource;
-                    _videoTestPatternSource.OnVideoSourceEncodedSample += base.SendVideo;
+                    SendEncodedVideoFrom(_videoTestPatternSource);
                     //_videoTestPatternSource.OnVideoSourceRawSample += Media.VideoSource.ExternalVideoSourceRawSample;
                 }
             }
@@ -173,6 +173,22 @@ namespace SIPSorcery.Media
             base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
             base.OnVideoFormatsNegotiated += VideoFormatsNegotiated;
             base.OnTextFormatsNegotiated += TextFormatsNegotiated;
+        }
+
+        /// <summary>
+        /// Sends the frames a video source encodes. A source that implements <see cref="IVideoSourceSpan"/> is subscribed
+        /// on its span event, which saves the array per frame of <see cref="IVideoSource.OnVideoSourceEncodedSample"/>.
+        /// </summary>
+        private void SendEncodedVideoFrom(IVideoSource videoSource)
+        {
+            if (videoSource is IVideoSourceSpan spanSource)
+            {
+                spanSource.OnVideoSourceEncodedSampleFaster += base.SendVideo;
+            }
+            else
+            {
+                videoSource.OnVideoSourceEncodedSample += base.SendVideo;
+            }
         }
 
         private async void VideoSource_OnVideoSourceError(string errorMessage)

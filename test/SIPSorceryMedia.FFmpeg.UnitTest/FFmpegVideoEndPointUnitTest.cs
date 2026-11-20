@@ -116,6 +116,16 @@ namespace SIPSorceryMedia.FFmpeg.UnitTest
         }
 
         /// <summary>
+        /// The end point implements IVideoSourceSpan, so sessions that check for it, such as VoIPMediaSession, send its
+        /// frames from the span event. Checked on the type, so it runs without the FFmpeg libraries.
+        /// </summary>
+        [Fact]
+        public void ImplementsIVideoSourceSpan()
+        {
+            Assert.True(typeof(IVideoSourceSpan).IsAssignableFrom(typeof(FFmpegVideoEndPoint)));
+        }
+
+        /// <summary>
         /// With both events subscribed each frame is encoded once and raised on both, with the same bytes and the same
         /// duration, the array event getting a copy of its own.
         /// </summary>
