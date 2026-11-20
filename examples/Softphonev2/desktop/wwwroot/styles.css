@@ -136,8 +136,17 @@ body:not(.diag) .diag-only { display: none; }
   .suggest-item { grid-template-columns: 36px minmax(0, 1fr) auto 26px; }
   .suggest-call { display: none; }
 }
-/* The address bar's list: no contact or call buttons, just who and when. */
+/* The address bar's list: no contact buttons; who and when, and its own Call and Video call. */
 .suggest-item.plain { grid-template-columns: 36px minmax(0, 1fr) auto; }
+.suggest-item.plain.quick { grid-template-columns: 36px minmax(0, 1fr) auto auto; }
+.suggest-quicks { display: flex; gap: 4px; opacity: .55; }
+.suggest-item:hover .suggest-quicks, .suggest-item.active .suggest-quicks { opacity: 1; }
+.suggest-quick {
+  width: 30px; height: 30px; padding: 0; display: grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--accent);
+}
+.suggest-quick:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.suggest-quick svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 /* The last row: Contacts…, or Add … to contacts. */
 .suggest-item.suggest-foot {
   display: flex; gap: 10px; margin-top: 4px; padding: 9px 10px; border-top: 1px solid var(--border);
@@ -192,9 +201,6 @@ body:not(.diag) .diag-only { display: none; }
 .call-btn[hidden] { display: none; }
 /* Call and Video call, one item in the dial bar: they wrap to the next row together. */
 .call-btns { display: flex; gap: 8px; flex: none; }
-/* "& hold current" only while the bar has room for it beside the address (~990 px with Call
-   from); narrower, just Call and Video call (their tooltips still say who is held). */
-@media (max-width: 999px) { .hold-tail { display: none; } }
 .call-btn svg, .answer-btn svg, #incomingVideoAnswer svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .btn-primary:hover { background: var(--accent-hover); }
@@ -385,6 +391,30 @@ body:not(.diag) .diag-only { display: none; }
 .call-head .muted-pill { width: 18px; height: 18px; }
 .call-head .muted-pill svg { width: 11px; height: 11px; }
 .info-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* New keys (DTMF) or text that you haven't seen, at the header's right (tonesin.js): an alert
+   each, the feature's icon with the control bar's red dot, a word or two and a link that opens its
+   panel. Narrow, the words go and the icon and link stay. */
+.head-alerts { flex: none; margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.head-alerts[hidden] { display: none; }
+.head-alert {
+  height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 4px 0 8px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--border); font-size: 12.5px; color: var(--text);
+  animation: head-status-in .2s ease-out;
+}
+.head-alert-icon { position: relative; display: grid; flex: none; }
+.head-alert-icon > svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.head-alert-icon .btn-dot { position: absolute; top: -3px; right: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); border: 1.5px solid var(--surface-2); }
+.head-alert-text { white-space: nowrap; }
+.head-link {
+  border: 0; background: none; font: inherit; font-weight: 500; color: var(--accent); cursor: pointer;
+  padding: 3px 6px; border-radius: 999px; white-space: nowrap;
+}
+.head-link:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); text-decoration: underline; }
+.head-link:disabled { color: var(--muted); cursor: default; }
+@container (max-width: 560px) { .head-alert-text { display: none; } }
+@media (prefers-reduced-motion: reduce) { .head-alert { animation: none; } }
+.call-head { container-type: inline-size; }
+@keyframes head-status-in { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: none; } }
 .info-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 /* The call's security, a small card under the padlock: a headline, the two things that can be
    encrypted (each with its padlock and, small, the technical name), and what that means. */
@@ -529,6 +559,16 @@ button.sx-ev:hover b { text-decoration: underline; }
 .sx-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .sx-legend .sx-bar { position: static; display: inline-block; width: 16px; }
 .sx-legend .sx-bar.idle { height: 2px; }
+/* Keypad tones (DTMF) on an audio lane: a tag over the bar, its left edge where the first started. */
+.sx-tone {
+  position: absolute; top: 3px; height: 18px; padding: 0 4px; display: inline-flex; align-items: center; border-radius: 4px;
+  border-left: 2px solid var(--accent); background: var(--surface); box-shadow: 0 0 0 1px var(--border-strong);
+  font: 600 11px ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--text); white-space: nowrap; cursor: default;
+}
+.sx-tone.held { color: var(--muted); }
+.sx-tone.end { transform: translateX(-100%); border-left: 0; border-right: 2px solid var(--accent); }
+.sx-legend .sx-tone { position: static; height: 14px; font-style: normal; }
+.sx-keys { font: 600 12px ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--text); letter-spacing: 1px; }
 
 /* Connection (connection.js): the layers, and the setup timeline. */
 .dev-conn .warn { --c: var(--warn-ink); }
@@ -736,8 +776,8 @@ button.sx-ev:hover b { text-decoration: underline; }
 .controls .btn.keypad-btn[aria-pressed="true"] {
   color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface));
 }
-.text-btn { position: relative; }
-.text-btn .btn-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); border: 1.5px solid var(--surface); }
+.text-btn, .keypad-btn { position: relative; }
+.text-btn .btn-dot, .keypad-btn .btn-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); border: 1.5px solid var(--surface); }
 .controls .self-toggle[hidden] { display: none; }
 .controls .btn.self-toggle[aria-pressed="true"] {
   color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface));
@@ -818,8 +858,48 @@ button.sx-ev:hover b { text-decoration: underline; }
 .key br { display: none; }
 .key b { font-size: 19px; font-weight: 500; }
 .key small { font-size: 9.5px; letter-spacing: .15em; color: var(--muted); }
-.keypad-in { margin: 8px 12px 0; font-size: 12px; color: var(--muted); min-height: 1em; }
+/* A key squeezed short (a tight dock, with the list of their keys open): the digit only. */
+.keypad-pop.tones-open .key { container-type: size; }
+@container (max-height: 31px) { .key small { display: none; } }
+/* The keys they've pressed on this call (tonesin.js), under the keypad's buttons: a ▾ and who,
+   the digits in a fixed-width face (newest last, scrolled to, lit as it arrives; a pause shows as
+   a gap, and tones that came while on hold are dimmed), and Clear. The ▾ drops down the full
+   list under them, which scrolls; the keypad's keys get shorter to make room for it. */
+.keypad-in { margin: 8px 12px 0; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 6px; flex: 0 1 auto; }
 .keypad-in:empty { display: none; }
+.tones-row { display: flex; align-items: center; gap: 6px; min-width: 0; flex: none; }
+.tones-toggle {
+  flex: none; display: flex; align-items: center; gap: 3px; max-width: 45%; padding: 2px 4px 2px 0;
+  border: 0; background: none; font: inherit; color: inherit; cursor: pointer; border-radius: var(--radius-sm);
+}
+.tones-toggle:hover { color: var(--text); }
+.tones-toggle svg { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transform: rotate(-90deg); transition: transform .15s; }
+.tones-toggle[aria-expanded="true"] svg { transform: none; }
+.tones-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tones-digits {
+  flex: 1; display: flex; gap: 3px; min-width: 0; overflow-x: auto; scrollbar-width: none; color: var(--text);
+  font: 600 14px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+.tones-digits b { font-weight: inherit; min-width: 1ch; text-align: center; border-radius: 4px; flex: none; }
+.tones-digits b.gap { margin-left: 8px; }
+.tones-digits b.held, .tones-list li.held { opacity: .45; }
+.tones-digits b.new, .tones-list li.new b { animation: tone-new 1.2s ease-out; }
+.tones-clear {
+  flex: none; border: 0; background: none; font: inherit; color: var(--accent); cursor: pointer; padding: 2px 4px; border-radius: var(--radius-sm);
+}
+.tones-clear:hover { text-decoration: underline; }
+.tones-list {
+  list-style: none; margin: 0; padding: 4px 0; flex: 1 1 auto; min-height: 44px; max-height: 200px; overflow-y: auto;
+  border-radius: var(--radius-sm); background: var(--surface-2);
+}
+.tones-list[hidden] { display: none; }
+.tones-list li { display: grid; grid-template-columns: auto 2ch 1fr; gap: 10px; align-items: baseline; padding: 1px 10px; }
+.tones-list li.gap { margin-top: 6px; }
+.tones-list .tl-at { font-variant-numeric: tabular-nums; }
+.tones-list b { color: var(--text); font: 600 14px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace; text-align: center; border-radius: 4px; }
+.tones-list .tl-via { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@keyframes tone-new { from { background: var(--accent); color: var(--accent-ink); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .tones-digits b.new, .tones-list li.new b { animation: none; } .tones-toggle svg { transition: none; } }
 /* The dock (app.js renderDock): a column right of the stage, which narrows to make room, holding
    the keypad and text panels; with both, the keypad keeps its size at the top and the text takes
    the rest. */
@@ -833,6 +913,13 @@ button.sx-ev:hover b { text-decoration: underline; }
 .dock > .keypad-pop { flex: 0 1 auto; max-height: none; min-height: 256px; }
 .dock > .rtt { flex: 1 1 auto; height: auto; min-height: 140px; }
 .dock.both .keypad { grid-template-rows: repeat(4, minmax(28px, 42px)); }
+/* With the keypad's list of their keys open, it's taller: with the text panel there too, the text
+   keeps what's left (at least 200 px, 160 in a narrow window) and the keypad gives way first:
+   its keys go to 34 px (26 if need be) and the list down to two rows (it scrolls), so both fit. */
+.dock > .keypad-pop.tones-open { min-height: 312px; }
+.keypad-pop.tones-open .keypad { flex: 0 1 auto; min-height: 128px; grid-template-rows: repeat(4, minmax(26px, 34px)); }
+.keypad-pop.tones-open .keypad-in { flex: 1 1 auto; min-height: 0; }
+@media (min-width: 960px) { .dock.both > .rtt { flex-basis: 0; } .dock.both > .keypad-pop.tones-open + .rtt { min-height: 200px; } }
 /* Transfer, opened beside the dock: over the stage, not the dock. */
 .stage-row.docked > .xfer-pop { right: calc(var(--dock-w) + 24px); }
 /* Narrow windows: no room for a column, so the dock floats over the stage's right edge, at the
@@ -1775,7 +1862,7 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 
 /* The ⋯ More button, only at phone width (below): Transfer, Keypad, Text and Self view, which
    don't fit there beside Mute, Camera, Hold and End. Its menu opens above it, against the right
-   edge; a new text message puts the Text button's red dot on it. Accent-edged while a panel it
+   edge; new text or keys put the Text or Keypad button's red dot on it. Accent-edged while a panel it
    opens (transfer, keypad, text) is open. */
 .controls .more-wrap { display: none; }
 .more-btn { position: relative; }
@@ -1836,16 +1923,15 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 }
 
 /* ---- Home (home.js): the stage with no call on it ----
-   Recent calls on the left; on the right your accounts, Your devices and, while it's on, privacy
-   mode. The dial view (the address focused) is one column: Your devices at the top, then New call,
-   your contacts and recent addresses to pick from. */
+   On the left, New call (the address bar's list: contact tiles, or as you type, the rows that
+   match) above Recent calls; on the right your accounts, Your devices and, while it's on, privacy
+   mode. Rows are compact and Recent short, so both fit a 1100×720 window without scrolling. */
 .home { position: absolute; inset: 0; z-index: 1; overflow-y: auto; padding: 14px; }
 .home[hidden] { display: none; }
 .home-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 14px; align-items: start; max-width: 1100px; margin: 0 auto; }
 .home-right { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .home-right > div:empty { display: none; }
-.home.dialing .home-wrap { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
-.home.dialing .home-right { order: -1; }
+.home-left { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .home-card, .scard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
 .home-card { padding: 12px 10px 10px 14px; }
 .scard { padding: 12px 14px; }
@@ -1865,15 +1951,17 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 .home-rows { list-style: none; margin: 0; padding: 0; }
 .home-group { padding: 8px 6px 4px; color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 .home-group:first-child { padding-top: 0; }
-.home-row { display: flex; align-items: center; gap: 10px; padding: 7px 6px; border-radius: var(--radius-sm); }
+.home-row { display: flex; align-items: center; gap: 10px; padding: 5px 6px; border-radius: var(--radius-sm); }
 .home-row:hover { background: var(--surface-2); }
+/* New call's highlighted pick (↑/↓ in the address field): Enter fills it in. */
+.home-row.active, .home-row.active:hover, .nc-tile.active { background: var(--surface-3); box-shadow: inset 0 0 0 1px var(--border-strong); }
 .home-row.pickable { cursor: pointer; }
 .home-row.missed .home-name { color: var(--warn-ink); }
 .home-row.unseen .home-name { font-weight: 700; }
 .home-row.fresh { animation: home-fresh 3s ease-out; }
 @keyframes home-fresh { from { background: color-mix(in srgb, var(--accent) 24%, transparent); } to { background: transparent; } }
 .home-row.used, .home-row.used:hover { background: color-mix(in srgb, var(--ok) 10%, transparent); }
-.home-avatar { width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--tile); color: var(--tile-ink); font-size: 15px; font-weight: 600; background-size: cover; }
+.home-avatar { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--tile); color: var(--tile-ink); font-size: 15px; font-weight: 600; background-size: cover; }
 .home-row.missed .home-avatar { background-color: var(--warn-bg); color: var(--warn-ink); }
 .home-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .home-name, .home-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1889,7 +1977,21 @@ body.dev-resizing { cursor: ns-resize; user-select: none; }
 }
 .home-row:hover .home-btns, .home-row:focus-within .home-btns { opacity: 1; }
 .home-hint { flex: none; color: var(--accent); font-size: 12.5px; font-weight: 600; opacity: 0; }
-.home-row:hover .home-hint { opacity: 1; }
+.home-row:hover .home-hint, .home-row.active .home-hint { opacity: 1; }
+/* New call: nothing typed, your most-called contacts as tiles, then Contacts…; typed, the rows that
+   match, scrolling inside the card past four and a half of them. */
+.nc-tiles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.nc-tile { width: 80px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 7px 4px 6px; border-radius: var(--radius-sm); cursor: pointer; text-align: center; }
+.nc-tile:hover { background: var(--surface-2); }
+.nc-tile .home-avatar { width: 40px; height: 40px; font-size: 16px; }
+.nc-name { max-width: 100%; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nc-more .nc-name { color: var(--accent); font-weight: 500; }
+.nc-more-icon { background: var(--surface-2); color: var(--accent); box-shadow: inset 0 0 0 1px var(--border); }
+.nc-more-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nc-foot .home-name { color: var(--accent); font-weight: 500; }
+.nc-foot .home-name b { font-weight: 600; }
+.nc-none { flex-basis: 100%; }
+.nc-rows { position: relative; max-height: 200px; overflow-y: auto; }   /* relative: rows' offsetTop, to keep the pick in view */
 .home-note { display: inline-flex; align-items: center; gap: 4px; flex: none; color: var(--muted); font-size: 12.5px; }
 .home-note svg { width: 14px; height: 14px; fill: none; stroke: var(--ok); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .icon-sq { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--surface); color: var(--accent); cursor: pointer; }

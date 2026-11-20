@@ -50,7 +50,7 @@ The page (`wwwroot`, shared with the web softphone in [../web](../web/README.md)
 | `app.js` | The calls: their state, the stage, the controls, the dial bar (Call and Video call), answering, privacy mode, the keys, and the messages to and from the host. It starts the rest. |
 | `util.js` | Small helpers the others share: elements by id, escaping, messages to the host, the log, names from addresses, the icons. |
 | `address.js` | Addresses as typed and shown, and the address fields (the dial bar's and Transfer's) with their suggestions. |
-| `home.js` | Home, the stage with no call on it (recent calls, accounts, Your devices, privacy mode), and the dial view the address field opens. |
+| `home.js` | Home, the stage with no call on it: New call (the address bar's list, filtered as you type) above recent calls, accounts, Your devices, privacy mode. |
 | `yourdevices.js` | Your devices (the microphone, speaker and camera, with Test mic, Play a sound and Preview), and the indicator that shows only while the microphone or camera is open. |
 | `video.js` | What each call sends as video: the camera, the test sources, the camera-off placeholder and the "On hold" card. |
 | `holdmusic.js` | Music on hold, and the silence a call sends when it isn't the live one. |
@@ -96,13 +96,14 @@ It has seven tabs:
 - **SIP ladder**: every SIP message of a call, as it went: a lane per party, an arrow per message,
   numbered, retransmissions included. Click one to read it whole; *Hide progress messages* keeps the
   numbers; copy it as Mermaid or text, or save it as a PNG (see [SIP ladder](DESIGN.md#sip-ladder-diagnostics-mode)).
-  The desktop only.
+  In the web softphone too.
 - **Connection**: whether a call's media got through, layer by layer (SDP, ICE, DTLS, SRTP, RTP,
   RTCP), the first that didn't and its likely reason, and a timeline of the setup (see
-  [Connection](DESIGN.md#connection-diagnostics-mode)). The desktop only.
+  [Connection](DESIGN.md#connection-diagnostics-mode)). In the web softphone too, from SIP.js
+  and the browser's `getStats()`.
 - **Streams**: a call's audio, video and text lines: what its offers and answers agreed, what's
   going each way, a timeline of the call, and each offer and answer's SDP (see
-  [Streams](DESIGN.md#streams-diagnostics-mode)). The desktop only.
+  [Streams](DESIGN.md#streams-diagnostics-mode)). In the web softphone too.
 - **Call quality**: the selected call's table and graphs (see [Call quality](DESIGN.md#call-quality-diagnostics-mode)).
 - **Network**: the simulated loss sliders (see [Call quality](DESIGN.md#call-quality-diagnostics-mode)).
 

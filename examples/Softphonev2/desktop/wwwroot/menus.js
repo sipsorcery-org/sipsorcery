@@ -220,7 +220,7 @@ export function renderMore() {
   const btn = $("moreBtn");
   const html = `${DOTS}${unread ? '<span class="btn-dot" aria-hidden="true"></span>' : ""}`;
   if (btn.innerHTML !== html) btn.innerHTML = html;
-  btn.setAttribute("aria-label", unread ? "More, new text message" : "More");
+  btn.setAttribute("aria-label", unread ? "More, something new" : "More");
   btn.classList.toggle("active", items.some((it) => it.b.id !== "selfViewBtn" && it.on && !it.hidden));
   if (openMenu === "more" && JSON.stringify(items.map(({ b, ...rest }) => rest)) !== moreShown) {
     const had = document.activeElement && $("moreMenu").contains(document.activeElement);

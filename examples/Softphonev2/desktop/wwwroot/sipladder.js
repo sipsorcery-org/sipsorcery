@@ -18,7 +18,8 @@
 // Trace's PNG is (the host asks where to save it). It's drawn here, not by Mermaid: the ladder is a few lanes, and
 // this way it's in the app's own colours, light or dark.
 // The host keeps the messages (StreamLog.Wire, from the transport's trace events), with the rest
-// of the call's record (streams.js). The desktop only, as Streams.
+// of the call's record (streams.js); the web softphone's from SIP.js's transport (web/conndiag.js),
+// with the server it connects to as their side.
 
 import { selectedId } from "./app.js";
 import { snap } from "./snapshots.js";
@@ -39,11 +40,24 @@ let recNow = null;               // whose it is: for the PNG's title
 // 1xx responses, ACK and PRACK, and a PRACK's responses: progress, not decisions.
 const isProgress = (m) => (m.response ? m.label.startsWith("1") || m.cSeqMethod === "PRACK" : m.label === "ACK" || m.label === "PRACK");
 
+// An INFO carrying a keypad tone says which: "INFO · 5" (application/dtmf-relay "Signal=5", or
+// application/dtmf "5"). Every other message keeps its label.
+function infoLabel(w) {
+  if (w.response || w.label !== "INFO" || !w.text) return w.label;
+  const split = w.text.search(/\r?\n\r?\n/);
+  if (split < 0) return w.label;
+  const head = w.text.slice(0, split), body = w.text.slice(split).trim();
+  const type = /^(?:Content-Type|c)\s*:\s*([^\r\n;]+)/im.exec(head)?.[1].trim().toLowerCase() ?? "";
+  const digit = type === "application/dtmf-relay" ? /^\s*Signal\s*=\s*(\S)/im.exec(body)?.[1]
+    : type === "application/dtmf" ? body[0] : null;
+  return digit && /^[0-9*#A-D]$/i.test(digit) ? `INFO · ${digit.toUpperCase()}` : w.label;
+}
+
 function flowOf(r) {
   const wire = r.wire ?? [];
   // In the order they went: a new Call-ID's first messages (a transfer's call) are kept by the
   // host until the call claims it, so they can be added after later ones. (A stable sort.)
-  const messages = [...wire].sort((a, b) => a.at - b.at).map((w, i) => ({ ...w, n: i + 1 }));
+  const messages = [...wire].sort((a, b) => a.at - b.at).map((w, i) => ({ ...w, n: i + 1, label: infoLabel(w) }));
   // Lanes: this phone first, then each far socket in the order it first appears.
   const remotes = [];
   for (const m of messages) if (!remotes.includes(m.remote)) remotes.push(m.remote);

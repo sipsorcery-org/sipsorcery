@@ -14,7 +14,8 @@ namespace SIPSorcery.Softphone;
 /// (<see cref="View.Sip"/>), the media layers' events as they happen (ICE, DTLS, SRTP, RTP, RTCP:
 /// <see cref="AddEvent"/>), and their latest facts (<see cref="Set"/>).
 /// And for the SIP ladder tab, every SIP message of the call as it crossed the wire (<see cref="AddWire"/>):
-/// each sending its own entry, a retransmission numbered as one.
+/// each sending its own entry, a retransmission numbered as one. And the keypad tones (DTMF) each
+/// way (<see cref="AddTone"/>), for the Streams tab's timeline.
 /// </summary>
 public sealed class StreamLog
 {
@@ -52,11 +53,21 @@ public sealed class StreamLog
     public sealed record Wire(DateTime At, bool Out, string Local, string Remote, string CallId, int CSeq, string CSeqMethod,
         string Label, string? Uri, string? From, bool Response, string Branch, int Attempt, string Text);
 
+    /// <summary>
+    /// A keypad tone (DTMF), for the Streams tab: Out if we sent it. Via is "RFC 4733" or "SIP INFO".
+    /// Held: the call was on hold, either way, when it went. Only its start: the library reports no end.
+    /// </summary>
+    public sealed record Tone(DateTime At, bool Out, string Digit, string Via, bool Held);
+
     public sealed record View(IReadOnlyList<Exchange> Exchanges, IReadOnlyList<Stream> Streams, IReadOnlyList<Note> Notes,
-        IReadOnlyList<SipEvent> Sip, IReadOnlyList<Event> Events, IReadOnlyDictionary<string, object?> Facts, IReadOnlyList<Wire> Wire);
+        IReadOnlyList<SipEvent> Sip, IReadOnlyList<Event> Events, IReadOnlyDictionary<string, object?> Facts, IReadOnlyList<Wire> Wire,
+        IReadOnlyList<Tone> Tones);
 
     /// <summary>The most a call's ladder keeps: a call that's up for hours re-INVITEs now and then.</summary>
     private const int WireMax = 500;
+
+    /// <summary>The most tones a call keeps, each way together: an IVR session can run to a few hundred.</summary>
+    private const int TonesMax = 500;
 
     private readonly object _lock = new();
     private readonly List<Message> _messages = new();
@@ -65,6 +76,7 @@ public sealed class StreamLog
     private readonly List<Event> _events = new();
     private readonly Dictionary<string, object?> _facts = new();
     private readonly List<Wire> _wire = new();
+    private readonly List<Tone> _tones = new();
     private readonly Dictionary<(bool, string, int, string, string, string), int> _sendings = new();
 
     /// <summary>The message as one for this log, or null if it has no part in an offer/answer.</summary>
@@ -152,6 +164,12 @@ public sealed class StreamLog
         lock (_lock) _events.Add(new Event(DateTime.Now, layer, text, level));
     }
 
+    /// <summary>A keypad tone sent or received (see <see cref="Tone"/>).</summary>
+    public void AddTone(bool sent, string digit, string via, bool held)
+    {
+        lock (_lock) if (_tones.Count < TonesMax) _tones.Add(new Tone(DateTime.Now, sent, digit, via, held));
+    }
+
     /// <summary>A fact the Connection tab shows (iceState, dtlsRole, rtcpRtt, …): a string, number or bool.</summary>
     public void Set(string key, object? value)
     {
@@ -233,7 +251,8 @@ public sealed class StreamLog
         List<Event> events;
         Dictionary<string, object?> facts;
         List<Wire> wire;
-        lock (_lock) { all = _messages.ToList(); notes = _notes.ToList(); events = _events.ToList(); facts = new(_facts); wire = _wire.ToList(); }
+        List<Tone> tones;
+        lock (_lock) { all = _messages.ToList(); notes = _notes.ToList(); events = _events.ToList(); facts = new(_facts); wire = _wire.ToList(); tones = _tones.ToList(); }
         // The SIP lane: every message, in order (offer/answer or not).
         var sip = all.Select(m => new SipEvent(m.At, m.Out, m.Status > 0 ? $"{m.Status} {m.Reason}" : m.Method, m.CSeq)).ToList();
         // The offers and answers: no BYE or CANCEL, and an ACK only with SDP.
@@ -330,6 +349,6 @@ public sealed class StreamLog
                 streams.Add(new Stream(i, any.Kind, a?.Port ?? 0, b?.Port ?? 0, transport, security, a?.Dir ?? "inactive", b?.Dir ?? "inactive", formats));
             }
         }
-        return new View(exchanges, streams, notes, sip, events, facts, wire);
+        return new View(exchanges, streams, notes, sip, events, facts, wire, tones);
     }
 }

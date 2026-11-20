@@ -900,10 +900,13 @@ public sealed class Phone : IDisposable
             if (c == null || c.State != CallState.Ringing || c.Incoming == null || c.Answering) return;
             c.Answering = true;
             (ua, uas) = (c.Ua, c.Incoming);
-            // A WebRTC answer can't add a stream the offer didn't have (RTCPeerConnection would
-            // put our video in as an extra m-line, and the browser rejects the answer), so video
-            // only if they offered it.
-            rtp = NewSession(c, c.WebRtc ? c.IncomingVideo : _settings.OfferVideo, c.IncomingOffer);
+            // Video only if they offered it (or sent no offer, so ours is the offer). A WebRTC
+            // answer can't add a stream the offer didn't have (RTCPeerConnection would put our
+            // video in as an extra m-line, and the browser rejects the answer). On a SIP call a
+            // video track they didn't offer stayed in the session unused, and our next offer
+            // (putting the call on hold, or calling a transfer target on it) added video to an
+            // audio call. Video they add later is still taken (OnRemoteMediaStreamAdded).
+            rtp = NewSession(c, c.IncomingVideo, c.IncomingOffer);
             c.Rtp = rtp;
         }
         if (ua != null && uas != null && await ua.Answer(uas, rtp)) await ConnectedAsync(c, rtp);
@@ -2154,6 +2157,7 @@ public sealed class Phone : IDisposable
             bool sent = relay != null && await relay.SendDtmfAsync((byte)code, ev.ID, ev.ClockRate());
             Log?.Invoke(sent ? $"call {c.Id}: DTMF '{digit}' sent (RFC 4733, telephone-event/{ev.ClockRate()} pt {ev.ID})"
                 : $"call {c.Id}: DTMF '{digit}' not sent: no audio going to them yet");
+            if (sent) ToneLogged(c, true, char.ToUpperInvariant(digit![0]).ToString(), "RFC 4733");
             return;
         }
         if (ua?.Dialogue is not { } dialogue)
@@ -2173,6 +2177,14 @@ public sealed class Phone : IDisposable
         };
         Log?.Invoke($"call {c.Id}: DTMF '{digit}': their SDP has no telephone-event, sending SIP INFO");
         tx.SendRequest();
+        ToneLogged(c, true, char.ToUpperInvariant(digit![0]).ToString(), "SIP INFO");
+    }
+
+    /// <summary>A tone sent or received, in the call's StreamLog: the Streams tab's timeline shows it, and it's saved with the call.</summary>
+    private void ToneLogged(Call c, bool sent, string digit, string via)
+    {
+        c.Streams.AddTone(sent, digit, via, c.Held || c.HeldByThem);
+        StreamsChangedSoon(c);
     }
 
     /// <summary>
@@ -2201,6 +2213,7 @@ public sealed class Phone : IDisposable
     private void OnDtmfIn(Call c, string digit, string via)
     {
         Log?.Invoke($"call {c.Id}: DTMF '{digit}' received ({via})");
+        ToneLogged(c, false, digit, via);
         DtmfReceived?.Invoke(c, digit, via);
     }
 
@@ -2494,6 +2507,14 @@ public sealed class Phone : IDisposable
         ua.OnRemoteMediaStreamAdded += kind =>
         {
             if (kind != SDPMediaTypesEnum.video || c.Ua != ua || c.WebRtc || !_settings.OfferVideo || c.Rtp is not { } rtp || rtp is RTCPeerConnection) return false;
+            // A video stream already there is one we declined before (port 0, so with no RTP
+            // channel; video they offered while putting the call on hold, say): a track can't be
+            // put on it now, and the answer declines the video again.
+            if (rtp.HasVideo && !rtp.VideoStream.HasRtpChannel())
+            {
+                Log?.Invoke($"{c.Remote} is adding video: we declined it earlier in the call, and can't take it now");
+                return false;
+            }
             MediaRelay.AddVideoTrack(rtp);
             Log?.Invoke($"{c.Remote} is adding video: taking it");
             return true;

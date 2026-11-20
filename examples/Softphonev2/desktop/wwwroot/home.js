@@ -1,52 +1,51 @@
-// Home: the stage when there's no call, from the devices mock (prototype/devices), and the dial
-// view it turns into while you place a call.
+// Home: the stage when there's no call, from the devices mock (prototype/devices).
 //
-// Home: at the left, Recent: the last 8 calls, each with Call and Video call, missed ones in red
-// and, until you open People or next place a call, bold with an "N missed" pill; All history opens
-// People. At the right, Status: Accounts (each account's registration; one that fails says why,
-// with Retry and Edit; the address direct calls reach you at), Your devices (yourdevices.js), and
-// while it's on, a Privacy mode card with Turn off. A call that ends goes to the top of Recent,
-// highlighted for a moment, once its "Call ended" card has gone.
+// At the left, New call, then Recent. New call is the address bar's list (address.js), drawn
+// here instead of in a drop-down: with nothing typed, your most-called contacts as tiles, and
+// Contacts…; as you type, the contacts and other addresses that match, as rows. ↑/↓ in the field
+// move through it, Enter (or a click) fills the address field and Call from with the one picked,
+// and calls no one: Call or Video call places the call. Each row has its own Call and Video call
+// too, to call it straight away. Esc lets go of the highlight, then clears the field (putting Call
+// from back), then leaves the field. Recent: the last few calls, each with Call and Video call,
+// missed ones in red and, until you open People or next place a call, bold with an "N missed"
+// pill; All history opens People. A call that ends goes to the top of Recent, highlighted for a
+// moment, once its "Call ended" card has gone. Both fit the usual window without it scrolling.
 //
-// The dial view: focusing the address field (with no call on the stage) replaces Home with one
-// column: Your devices at the top, then New call, all your contacts and the other addresses from
-// recent calls, which stays put while you type (typing searches in the field's drop-down, as
-// before). A pick from either fills the address field and Call from, and calls no one: Call or
-// Video call places the call. Each row has its own Call and Video call too, as Recent's do, to
-// call it straight away. Esc closes the drop-down, then clears the field (putting Call from
-// back), then goes back to Home, as do Back to Home and leaving the field empty.
+// At the right, Status: Accounts (each account's registration; one that fails says why, with Retry
+// and Edit; the address direct calls reach you at), Your devices (yourdevices.js; while the field
+// has focus or text, it says what the call you're placing will do with each), and while it's on, a
+// Privacy mode card with Turn off.
 
 import { accountAor, accountList, accountStatus, accountUri, DIRECT, openAccounts, reRegister, useAccount } from "./accounts.js";
-import { fieldText, fieldUri, dial, looksFull, offDomain, shownAddress } from "./address.js";
+import { fieldText, fieldUri, dial, looksFull, offDomain, shownAddress, suggestions } from "./address.js";
 import { placeCall, privacyOn, render, state, syncCallBtn, togglePrivacy } from "./app.js";
 import { avatarAttr } from "./avatar.js";
-import { contactMark, normAddress } from "./contactmark.js";
-import { allContacts, contactFor, openContacts, sameUri } from "./contacts.js";
+import { contactMark } from "./contactmark.js";
+import { contactFor, openContacts, sameUri } from "./contacts.js";
 import { copyAddress, describeCall, historyEntries, isUnseen, markSeen, openPeople, renderSide, unseenMissed } from "./history.js";
 import { openSnapshot } from "./snapshots.js";
 import { $, escHtml, ICON, initial, post, shortName } from "./util.js";
 import { closeDevices, renderYourDevices } from "./yourdevices.js";
 
-const RECENT_ON_HOME = 8;
-const RECENT_TO_PICK = 20;   // New call: recent addresses after the contacts
+const RECENT_ON_HOME = 5;      // with New call above, so both fit the usual window
 
-export let dialing = false;     // the dial view: you're placing a call (the address field has focus or text)
+export let dialing = false;     // you're placing a call: the address field has focus or text
 let fromBefore;                 // Call from before a pick changed it (undefined: not changed), for Esc
 let fresh = { id: null, until: 0 };   // the call just added to Recent, highlighted for a moment
 let topId;                      // the newest history entry last seen
 
 const looksEmpty = () => !$("address").value.trim();
-/** Home (or the dial view) is on the stage: no call there, nor Accounts or People over it. */
+/** Home is on the stage: no call there, nor Accounts or People over it. */
 export const homeShown = () => state.call === "idle";
 const dialShown = () => homeShown() && (dialing || !looksEmpty());
 
-/** The address field took focus: with no call on the stage, the dial view. */
+/** The address field took focus: with no call on the stage, Your devices says what a call will do. */
 function enterDial() {
   if (dialing || !homeShown()) return;
   dialing = true;
   render();
 }
-/** Back to Home: the field emptied, Call from as it was, the tests stopped. */
+/** The field let go: emptied, Call from as it was, the tests stopped. */
 export function leaveDial() {
   if (!dialing && looksEmpty()) return;
   dialing = false;
@@ -79,7 +78,7 @@ export function followTyped() {
   wasFull = full;
 }
 
-/** A call placed: the dial view's done with (the field is the call's to clear, as before). */
+/** A call placed: placing it is done with (the field is the call's to clear, as before). */
 export function dialDone() {
   dialing = false;
   autoDirect = false;
@@ -197,72 +196,83 @@ const privacyHtml = () => (privacyOn() ? `<section class="scard privacy-card">${
   <p>Your microphone and camera are off on every call: they hear silence and see your camera-off card.</p>
   <button type="button" class="btn btn-small" data-home="privacy">Turn off</button></div></section>` : "");
 
-// ---- New call (the dial view) ----
-// All your contacts (by name), then the other addresses from recent calls, newest first.
-function pickItems() {
-  const h = historyEntries() ?? [];
-  const last = new Map();
-  for (const e of h) { const k = normAddress(e.uri); if (!last.has(k)) last.set(k, e); }
-  const items = [...allContacts()].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
-    .map((c) => ({ group: "Contacts", name: c.name, uri: c.uri, contact: true, account: c.account ?? last.get(normAddress(c.uri))?.account ?? null, last: last.get(normAddress(c.uri)) }));
-  const seen = new Set(items.map((x) => normAddress(x.uri)));
-  for (const e of h) {
-    const k = normAddress(e.uri);
-    if (seen.has(k)) continue;
-    seen.add(k);
-    items.push({ group: "Recent", name: e.name || shortName(e.uri), uri: e.uri, contact: false, account: e.account ?? null, last: e });
-    if (items.filter((x) => x.group === "Recent").length >= RECENT_TO_PICK) break;
-  }
-  return items;
-}
+// ---- New call (top of Home) ----
+// The address bar's list (address.js suggestions), drawn here rather than in a drop-down, so ↑/↓,
+// Enter and Esc in the field work on it. Nothing typed: your most-called contacts, as a strip of
+// tiles, and Contacts…; typed, the contacts and other addresses that match, as rows with their own
+// Call and Video call, and Add … to contacts for an address that isn't one. A pick fills the
+// address field and Call from, and calls no one.
 let picks = [];
+const FOOT_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>';
 function newCallHtml() {
-  picks = pickItems();
   const typed = $("address").value.trim();
+  picks = dial?.open ? dial.items : suggestions(typed, { foot: true, emptyRecent: false });
+  const active = dial?.open ? dial.active : -1;
   const inBar = (it) => typed && (sameUri(it.uri, fieldUri(typed)) || fieldText(it.uri) === typed);
-  let group = "";
-  const rows = picks.map((it, i) => {
-    const head = it.group !== group ? `<li class="home-group" role="presentation">${(group = it.group)}</li>` : "";
-    const used = inBar(it);
-    const sub = [shownAddress(it.uri), it.last ? `${describeCall(it.last).text} · ${describeCall(it.last).when}` : ""].filter(Boolean).join(" · ");
-    return `${head}<li class="home-row pickable${used ? " used" : ""}" data-pick="${i}" title="${used ? "In the address bar" : `Fill in ${escHtml(shownAddress(it.uri))}`}">
-      <span class="home-avatar" aria-hidden="true"${avatarAttr(it.uri)}>${escHtml(initial(it.name))}</span>
-      <span class="home-main"><span class="home-name">${escHtml(it.name)}${it.contact ? contactMark(it.name) : ""}</span><span class="home-sub">${escHtml(sub)}</span></span>
-      ${used ? `<span class="home-note">${ICON.check} In the address bar</span>` : `<span class="home-hint" aria-hidden="true">Fill in</span>`}
-      ${callBtns(it.uri, it.account, it.name)}</li>`;
-  }).join("");
-  return `<div class="home-head"><h2>New call</h2><span class="home-dim">Contacts and recent calls</span>
-      <button type="button" class="link-btn" data-home="back">Back to Home</button></div>
-    ${picks.length ? `<ol class="home-rows">${rows}</ol>` : `<p class="home-empty">No contacts or recent calls yet: type a name or number above.</p>`}
-    <p class="home-foot">Type to search, or pick one here: it fills the address bar${Array.isArray(state.accounts) ? " and Call from" : ""}, and Call or Video call places the call. A row's own buttons call it straight away.</p>`;
+  const opt = (i) => `id="sug-${i}" role="option" aria-selected="${i === active}" data-pick="${i}"`;
+  const footText = (it) => (it.action === "add" ? `Add <b>${escHtml(shownAddress(it.uri))}</b> to contacts…` : "Contacts…");
+  let body;
+  if (!typed) {
+    const tiles = picks.map((it, i) => (it.action
+      ? `<li class="nc-tile nc-more${i === active ? " active" : ""}" ${opt(i)} title="Open your contacts">
+          <span class="home-avatar nc-more-icon" aria-hidden="true">${FOOT_ICON}</span><span class="nc-name">${footText(it)}</span></li>`
+      : `<li class="nc-tile${i === active ? " active" : ""}" ${opt(i)} title="Fill in ${escHtml(it.name)} (${escHtml(shownAddress(it.uri))})">
+          <span class="home-avatar" aria-hidden="true"${avatarAttr(it.uri)}>${escHtml(initial(it.name))}</span>
+          <span class="nc-name">${escHtml(it.name.split(/\s+/)[0])}</span></li>`)).join("");
+    const none = picks.some((it) => !it.action) ? "" : `<li class="nc-none home-empty" role="presentation">No contacts yet: type a name, number or SIP address above.</li>`;
+    body = `<ol class="nc-tiles" id="homePicks" role="listbox" aria-label="Contacts">${none}${tiles}</ol>`;
+  } else {
+    let group = "";
+    const rows = picks.map((it, i) => {
+      if (it.action) {
+        return `<li class="home-row pickable nc-foot${i === active ? " active" : ""}" ${opt(i)}>
+          <span class="home-avatar nc-more-icon" aria-hidden="true">${FOOT_ICON}</span><span class="home-main"><span class="home-name">${footText(it)}</span></span></li>`;
+      }
+      const head = it.group !== group ? `<li class="home-group" role="presentation">${(group = it.group)}</li>` : "";
+      const used = inBar(it);
+      const last = it.at ? describeCall(it) : null;
+      const sub = [shownAddress(it.uri), last ? `${last.text} · ${last.when}` : ""].filter(Boolean).join(" · ");
+      return `${head}<li class="home-row pickable${used ? " used" : ""}${i === active ? " active" : ""}" ${opt(i)} title="${used ? "In the address bar" : `Fill in ${escHtml(shownAddress(it.uri))}`}">
+        <span class="home-avatar" aria-hidden="true"${avatarAttr(it.uri)}>${escHtml(initial(it.name))}</span>
+        <span class="home-main"><span class="home-name">${escHtml(it.name)}${it.contact ? contactMark(it.name) : ""}</span><span class="home-sub">${escHtml(sub)}</span></span>
+        ${used ? `<span class="home-note">${ICON.check} In the address bar</span>` : `<span class="home-hint" aria-hidden="true">Fill in</span>`}
+        ${callBtns(it.uri, it.account, it.name)}</li>`;
+    }).join("");
+    body = picks.some((it) => !it.action)
+      ? `<ol class="home-rows nc-rows" id="homePicks" role="listbox" aria-label="Contacts and recent calls">${rows}</ol>`
+      : `<p class="home-empty">Nothing you've saved or called matches: Call or Enter calls <b>${escHtml(typed)}</b> as typed.</p>${rows ? `<ol class="home-rows nc-rows" id="homePicks" role="listbox" aria-label="Contacts">${rows}</ol>` : ""}`;
+  }
+  const hint = typed ? "Matching contacts and calls" : `Type in the bar above, or pick one to fill it${Array.isArray(state.accounts) ? " and Call from" : ""}`;
+  return `<div class="home-head"><h2>New call</h2><span class="home-dim">${hint}</span></div>${body}`;
 }
 
 const setHtml = (el, html) => { if (el.dataset.html !== html) { el.innerHTML = html; el.dataset.html = html; } };
 
-/** Draws Home or the dial view while the stage has no call; hides it otherwise. From app.js render(). */
+/** Draws Home while the stage has no call; hides it otherwise. From app.js render(). */
 export function renderHome() {
   const home = $("home");
   const shown = homeShown();
   home.hidden = !shown;
   if (!shown) return;
-  const dialView = dialShown();
-  home.classList.toggle("dialing", dialView);
-  home.setAttribute("aria-label", dialView ? "New call" : "Home");
-  setHtml($("homeLeft"), dialView ? newCallHtml() : recentHtml());
-  setHtml($("homeAccounts"), dialView ? "" : accountsHtml());
-  setHtml($("homePrivacy"), dialView ? "" : privacyHtml());
-  renderYourDevices($("ydHome"), dialView ? "dial" : "home");
+  setHtml($("homeNew"), newCallHtml());
+  setHtml($("homeLeft"), recentHtml());
+  setHtml($("homeAccounts"), accountsHtml());
+  setHtml($("homePrivacy"), privacyHtml());
+  renderYourDevices($("ydHome"), dialShown() ? "dial" : "home");
+  // The highlighted pick in view, as the drop-down's is (New call's rows scroll inside it).
+  const on = dial?.open && dial.active >= 0 ? $(`sug-${dial.active}`) : null;
+  if (on) { const box = on.closest(".nc-rows"); if (box) box.scrollTop = Math.min(Math.max(box.scrollTop, on.offsetTop + on.offsetHeight - box.clientHeight), on.offsetTop); }
 }
 
 // Run by app.js once the page is up.
 export function initHome() {
   const input = $("address");
   input.addEventListener("focus", enterDial);
-  // With the field empty, clicking or tabbing to something else goes back to Home: anything but
-  // the dial bar (the address, Call from, Call), the dial view itself (Your devices' pickers and
-  // buttons, New call) and what opens over them (the indicator's popover, a ▾ menu, a dialog).
-  // Focus merely dropping to the page doesn't count: Your devices redraws itself after a click
-  // or a pick, which takes the focused control away, and that's still the dial view.
+  // With the field empty, clicking or tabbing to something else lets go of it (Your devices back
+  // to Home's, its tests stopped): anything but the dial bar (the address, Call from, Call), Home
+  // itself (Your devices' pickers and buttons, New call) and what opens over them (the
+  // indicator's popover, a ▾ menu, a dialog). Focus merely dropping to the page doesn't count:
+  // Your devices redraws itself after a click or a pick, which takes the focused control away.
   const inside = (el) => !!el?.closest?.("#home, #dialForm, #devInd, #devPop, .device-menu, dialog");
   const leaveFor = (el) => { if (dialing && looksEmpty() && el && el !== document.body && !inside(el)) leaveDial(); };
   document.addEventListener("pointerdown", (e) => leaveFor(e.target), true);
@@ -272,7 +282,12 @@ export function initHome() {
   $("home").addEventListener("click", (e) => {
     const t = e.target.closest("[data-home]");
     const row = !t && e.target.closest("[data-pick]");
-    if (row) { const it = picks[Number(row.dataset.pick)]; if (it) fill(it); return; }
+    if (row) {
+      const it = picks[Number(row.dataset.pick)];
+      if (it?.action) { dial.close(); openContacts(it.action === "add" ? { name: "", uri: it.uri } : null); }
+      else if (it) fill(it);
+      return;
+    }
     if (!t) return;
     switch (t.dataset.home) {
       case "call": case "video": {
@@ -293,7 +308,6 @@ export function initHome() {
       case "history": openPeople("recent"); break;
       case "seen": markSeen(); renderSide(); renderHome(); break;
       case "diag": openSnapshot(t.dataset.id, t.dataset.name); break;
-      case "back": leaveDial(); break;
       case "retry": reRegister(t.dataset.id); break;
       case "edit": openAccounts(t.dataset.id); break;
       case "add": openAccounts("new"); break;

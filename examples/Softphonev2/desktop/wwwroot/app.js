@@ -12,8 +12,8 @@
 // Call and Video call beside the address place the kind of call; a call ringing in has Answer
 // (your camera stays closed, but you see them) and Answer with video. An audio call has no video
 // line; "Add video" asks the far end for one (a SIP re-INVITE), and the host then sends a new offer.
-// With no call, the stage is Home (home.js), and while you place one, the dial view; Your devices
-// (yourdevices.js) is on both and under a call ringing in.
+// With no call, the stage is Home (home.js): New call (the address bar's list) above Recent; Your
+// devices (yourdevices.js) is on it and under a call ringing in.
 //
 // Several calls at once, as in the prototype: each call the host reports has an entry here (see
 // entries), with its own peer connection, <video> element, quality, details and text. The stage
@@ -39,7 +39,8 @@ import { addressHint, addressTip, dial, fieldText, fieldUri, initAddress, initAd
 import { callStatus, fmtElapsed, initCallList, renderCallTimes, renderCalls, sendsHtml } from "./calllist.js";
 import { initDiagnostics, renderInfoLock, setDiagnostics } from "./diagnostics.js";
 import { holdAudio, quietAudio, stopHoldMusic } from "./holdmusic.js";
-import { initKeypad, keypadOpen, onDtmfIn, renderKeypad, setKeypadOpen } from "./keypad.js";
+import { initKeypad, keypadOpen, renderKeypad, setKeypadOpen } from "./keypad.js";
+import { onDtmfIn, renderHeadAlerts } from "./tonesin.js";
 import { analyserFor, drawViz, initLevels, startTiles } from "./levels.js";
 import { closeMenu, initMenus, openMenu, pickDevice, pickMic, renderMore, selfViewOn, showLoss } from "./menus.js";
 import { closeDevices, initYourDevices, renderIndicator, renderYourDevices, stopTests } from "./yourdevices.js";
@@ -620,10 +621,9 @@ export function render() {
   // The selected call's source, or before a call the one it'll start with.
   const camAvailable = hasCamera || sourceOf(e) !== "camera";
   const videoAllowed = state.videoAllowed !== false;
-  // On a call, each says what happens to it: "Call & hold current", in the same words as a
-  // ringing call's "Answer & hold current" (its tooltip names who).
-  const tail = liveCall() ? '<span class="hold-tail"> &amp; hold current</span>' : "";
-  const callHtml = `${ICON.phone}<span>Call${tail}</span>`, videoHtml = `${ICON.video}<span>Video call${tail}</span>`;
+  // Just Call and Video call, on a call too: that the call you're on goes on hold is in the
+  // tooltip (syncCallBtn), and plain enough once you've done it.
+  const callHtml = `${ICON.phone}<span>Call</span>`, videoHtml = `${ICON.video}<span>Video call</span>`;
   if ($("callBtn").innerHTML !== callHtml) $("callBtn").innerHTML = callHtml;
   if ($("videoCallBtn").innerHTML !== videoHtml) $("videoCallBtn").innerHTML = videoHtml;
   $("videoCallBtn").hidden = !videoAllowed;
@@ -730,6 +730,9 @@ export function render() {
 
   renderTextControls(phase);
   renderKeypad();
+  // New keys (DTMF) or text on this call that you haven't seen, at the header's right: after the
+  // keypad and text panels, which may have just closed.
+  renderHeadAlerts();
   renderTransfer();
   renderMore();   // the ⋯ at phone width, from the four above
   renderDock();
@@ -857,7 +860,7 @@ export function render() {
   $("card").classList.toggle("with-devices", ringDevices || callingDevices);
   if (ringDevices) renderYourDevices($("cardDevices"), "ring");
   else if (callingDevices) renderYourDevices($("cardDevices"), "calling", e);
-  // No call: Home (or the dial view) in the card's place.
+  // No call: Home in the card's place.
   $("card").hidden = homeShown();
   // Privacy mode on a call: a note says what they get, with Turn off.
   const pn = $("privacyNote");
@@ -1752,7 +1755,7 @@ export function placeCall(address, account = null, who = null, video = false) {
   const blocked = callBlocked();
   if (blocked) { log(`not calling ${address}: ${blocked}`); return; }
   closeHistory(false);
-  dialDone();   // the dial view's done, and Your devices' tests stop: the call takes the devices
+  dialDone();   // placing it is done, and Your devices' tests stop: the call takes the devices
   markSeen();   // missed calls count as seen once you next place a call
   renderSide();
   lastDialled = address;
@@ -1954,7 +1957,7 @@ chrome.webview.addEventListener("message", async (e) => {
     else if (msg.type === "diag-saved") { onDiagSaved(msg); render(); }
     else if (msg.type === "details") { if (e) { e.details = msg; if (e.id === selectedId) { renderDetails(); renderInfoLock(); } } }
     else if (msg.type === "text") onTextReceived(msg.id, msg.text);
-    else if (msg.type === "dtmf-in") onDtmfIn(msg.id, msg.digit);
+    else if (msg.type === "dtmf-in") onDtmfIn(msg.id, msg.digit, msg.via);
     else if (msg.type === "video-refused") { if (e) { e.addingVideo = false; e.videoRefused = true; } log("they didn't take video"); onVideoRefused(e); render(); }
     else if (msg.type === "log") log(msg.text, true, !!msg.full);
     else if (msg.type === "contacts") onContacts(msg.contacts);
