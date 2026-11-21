@@ -41,6 +41,9 @@ jobs:
 
       - name: Pack SIPSorcery.VP8
         run: dotnet pack src/SIPSorcery.VP8/SIPSorcery.VP8.csproj -c Release --no-build -o ./artifacts
+
+      - name: Pack SIPSorcery.AV1
+        run: dotnet pack src/SIPSorcery.AV1/SIPSorcery.AV1.csproj -c Release --no-build -o ./artifacts
         
       - name: Pack SIPSorcery.Cli
         run: dotnet pack src/SIPSorcery.Cli/SIPSorcery.Cli.csproj -c Release --no-build -o ./artifacts

@@ -1,0 +1,9 @@
+{
+  "solution": {
+    "path": "SIPSorcery.slnx",
+    "projects": [
+      "src\\SIPSorcery.AV1\\SIPSorcery.AV1.csproj",
+      "test\\SIPSorcery.AV1.UnitTest\\SIPSorcery.AV1.UnitTest.csproj"
+    ]
+  }
+}
