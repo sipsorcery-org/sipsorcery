@@ -74,6 +74,10 @@ public sealed class Settings
     /// <summary>Testing: once a call is connected, open the keypad and press these keys (0–9, *, #), one every 400 ms.</summary>
     public string? Dtmf { get; set; }
 
+    /// <summary>Testing: once a call is connected, Go live to this WHIP address (with <see cref="LiveToken"/>).</summary>
+    public string? GoLive { get; set; }
+    public string? LiveToken { get; set; }
+
     /// <summary>Testing: calls and answers start with the camera off.</summary>
     public bool CameraOff { get; set; }
 
@@ -130,6 +134,8 @@ public sealed class Settings
                 case "--diagnostics": settings.Diagnostics = true; break;
                 case "--say" when i + 1 < args.Length: settings.Say = args[++i]; break;
                 case "--dtmf" when i + 1 < args.Length: settings.Dtmf = args[++i]; break;
+                case "--go-live" when i + 1 < args.Length: settings.GoLive = args[++i]; break;
+                case "--live-token" when i + 1 < args.Length: settings.LiveToken = args[++i]; break;
                 case "--camera-off": settings.CameraOff = true; break;
                 case "--video": settings.VideoCall = true; break;
                 case "--test-pattern": settings.TestPattern = true; break;

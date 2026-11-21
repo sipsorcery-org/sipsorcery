@@ -2132,3 +2132,33 @@ body:has(#incoming.mid:not([hidden])) #heldNote.busy { top: auto; bottom: 16px; 
 .privacy-note .link-btn { color: inherit; font-weight: 600; }
 #incomingVideoAnswer { height: 34px; width: 38px; }
 #incomingVideoAnswer[hidden] { display: none; }
+
+/* ---- Go live (golive.js): the button, its popover (Transfer's, .xfer-pop), and LIVE ---- */
+.controls .btn.live-btn[hidden] { display: none; }
+.controls .btn.live-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.controls .btn.live-btn[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
+/* Live: red, whatever else. */
+.controls .btn.live-btn.live-on, .controls .btn.live-btn.live-on:hover:not(:disabled) { color: #fff; background: var(--danger-fill); border-color: var(--danger-fill); }
+.live-pop { width: min(400px, calc(100% - 24px)); }
+.live-setup, .live-on { display: flex; flex-direction: column; gap: 8px; }
+.live-setup[hidden], .live-on[hidden] { display: none; }
+.live-body p { margin: 0; }
+.live-what { color: var(--muted); font-size: 13px; }
+.live-input { width: 100%; box-sizing: border-box; }
+.live-consent { font-size: 13px; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--warn-bg); color: var(--warn-ink); }
+.live-error { font-size: 13px; color: var(--danger); }
+.live-error[hidden] { display: none; }
+.live-status { font-weight: 600; }
+.live-where { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-actions { display: flex; justify-content: flex-end; }
+/* In the call header, by the timer: red, with how long. A click opens the popover. */
+.live-pill {
+  display: inline-flex; align-items: center; gap: 5px; flex: none; height: 22px; padding: 0 9px 0 7px; border: 0; border-radius: 11px;
+  background: var(--danger-fill); color: #fff; font-family: inherit; font-size: 11.5px; font-weight: 600; line-height: 1; letter-spacing: .04em; cursor: pointer; font-variant-numeric: tabular-nums;
+}
+.live-pill[hidden] { display: none; }
+.live-pill svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.live-pill.starting { background: var(--surface-2); color: var(--danger); border: 1px solid var(--danger-border); }
+.live-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Its row in Active calls. */
+.call-live { flex: none; padding: 1px 5px; border-radius: 4px; background: var(--danger-fill); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .05em; }

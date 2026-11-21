@@ -185,16 +185,16 @@ export async function pickMic(id) {
 }
 
 // ---- The control bar's ⋯ More (phone width only: styles.css) ----
-// Transfer, Keypad, Text and Self view, which are hidden there. Each item stands for its button
+// Go live, Transfer, Keypad, Text and Self view, which are hidden there. Each item stands for its button
 // and does what pressing it does, so all their rules (disabled, hidden, the panels they open)
 // stay in one place; the menu only shows their state: disabled, open or on (ticked), new text.
-const MORE = [["transferBtn", "transfer", "Transfer…"], ["keypadBtn", "keypad", "Keypad"], ["textBtn", "text", "Text"], ["selfViewBtn", "selfView", "Self view"]];
+const MORE = [["liveBtn", "live", "Go live…"], ["transferBtn", "transfer", "Transfer…"], ["keypadBtn", "keypad", "Keypad"], ["textBtn", "text", "Text"], ["selfViewBtn", "selfView", "Self view"]];
 const DOTS = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
 let moreShown = "";   // what the open menu was drawn from, so a render only redraws it on a change
 const moreItems = () => MORE.map(([id, icon, label]) => {
   const b = $(id);
   return { b, icon, label, hidden: b.hidden, disabled: b.disabled, on: b.getAttribute("aria-pressed") === "true",
-    toggle: id !== "transferBtn", unread: !!b.querySelector(".btn-dot") };
+    toggle: id !== "transferBtn" && id !== "liveBtn", unread: !!b.querySelector(".btn-dot") };
 });
 function fillMoreMenu() {
   const items = moreItems();

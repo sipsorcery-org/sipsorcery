@@ -980,6 +980,54 @@ name, so after a direct (no-account) attended transfer the transferee sees an ad
 `127.0.0.1:5432` rather than a name. A failed blind transfer to an address where nothing
 answers takes the SIP timeout (about 32 s) to fail.
 
+## Go live
+
+**Go live** on the control bar (the broadcast icon, left of Transfer; in More at phone width)
+broadcasts the call you're on to a streaming server: a WHIP endpoint (RFC 9725), such as
+Cloudflare Stream, MediaMTX, Janus, LiveKit Ingress or Broadcast Box. Others watch it there (over
+WHEP, HLS or whatever the server offers). It's one way: watchers see and hear the call, and can't
+join it. It's for a call in Focus view, once it's connected, and one call at a time.
+
+It opens a popover over the stage, as Transfer does: what it broadcasts (*their video beside
+yours, and both sides' audio*, or on an audio call both sides' audio with your names on the
+picture), the **WHIP address** and **stream key or token** (sent as `Authorization: Bearer`),
+then, on amber, *Everyone watching will see and hear Bob. Tell them before you go live.* Going
+live broadcasts the other side as much as you, so it says so, as a call that's recorded would.
+**Go live** (red) starts it. The last address is filled in next time, and its key kept (by the
+host, encrypted with DPAPI as account passwords are, in `golive-<profile>.json`): left empty, the
+key field uses it.
+
+While it's live, the button is red, the call header has a red **LIVE** and how long, the call's
+row in Active calls says LIVE, and the popover (from the button or LIVE) says where to and has
+**Stop live**. It stops when the call ends, with Stop live, or if its connection to the server
+drops. A server that turns it down says why in the popover (*The server turned the stream key
+down (HTTP 401)*, *There's no WHIP endpoint at that address (HTTP 404)*, *The server didn't accept
+the call's media (HTTP 422: …)*).
+
+**What's broadcast is the call as its two sides have it.** Their audio and video come from the
+call's connection; yours are what the call sends them (its senders), so mute, hold (the music, or
+the On hold card), your camera off (your camera-off card) and privacy mode go out as they see
+them. WHIP takes one audio and one video track, so the page mixes them: Web Audio into one audio
+track, and a 1280×720 `<canvas>` (`captureStream`, 25 fps) with their picture on the left and
+yours on the right, each cropped to fill, its name at the foot; a side with no video (an audio
+call, or no frames yet) is its initial on a circle. The canvas is drawn on a worker's timer, as a
+page timer slows to once a second when the window's minimised. The tracks are checked once a
+second, so a camera switched, hold, or the connection rebuilt for added video is picked up.
+
+**The page publishes; the host does the HTTP.** The mix goes out on a send-only
+`RTCPeerConnection` of its own, straight from the page to the server (Opus, and H264 first, then
+the browser's other codecs: H264 is the one every server takes). Its offer, with every ICE
+candidate (WHIP's trickle, PATCH, isn't used), goes to the host (`live-start`), which POSTs it
+(`LiveStream.cs`) and returns the answer (`live-answer`) or why not (`live-failed`). Stop live is
+a DELETE of the session's `Location` (`live-stop`), as is the call ending, from the host too in
+case the page doesn't. C# doing the HTTP means the server needn't allow the page's origin (CORS).
+None of it goes through `MediaRelay` or the SIP side. The debug log has the steps, and 3 s in
+each side's peak level in the mix (*live mix level: them 0.094, you 0.012*).
+
+**Not done:** Link headers (ICE servers from the server), trickle ICE and ICE restarts (PATCH),
+simulcast, and redirects beyond what .NET follows. A server can reject an offer with codecs or
+lines it doesn't expect; this one is OBS-like (one audio, one video, send-only).
+
 ## The dock: keypad and text
 
 The keypad and the text panel open in a side panel (300 px) to the right of the selected call in
