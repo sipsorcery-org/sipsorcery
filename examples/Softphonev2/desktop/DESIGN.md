@@ -24,7 +24,7 @@ than a 360 × 560 page, the narrowest phone that layout is made for. That's in C
 minimum is the same page at any display scaling, and it's set again when the window moves to a
 monitor with other scaling (`MainForm.MinPageSize`). Narrow, the Accounts view puts this PC's
 direct address under its title, the Diagnostics bar has a ⋯ too (the open tab always on the
-bar, the others as fit, the rest in its menu, with Copy log and Clear log on the SIP log; a tab's
+bar, the others as fit, the rest in its menu, with Copy log and Clear log on the debug log; a tab's
 red dot, Network's with loss on, shows on the ⋯ while it's in there), and the address field's
 direct-mode hint drops its example (it's in the tooltip).
 
@@ -43,13 +43,13 @@ Beside the address, two buttons, so the kind of call is the button you press, as
 contact card: **Call** (Enter) leaves video out of the offer, and video can be added once it
 connects; **Video call** (Ctrl+Enter) offers it, with your camera on from the start (privacy
 mode sends your camera-off card instead). There's no setting for it: the button you press says
-it, and nothing carries from one call to the next. On a call, both say
-*& hold current*. A call ringing in has **Answer** (you see them, your camera stays closed) and,
+it, and nothing carries from one call to the next. On a call, both still just say *Call* and
+*Video call* (their tooltips say the call you're on goes on hold). A call ringing in has **Answer** (you see them, your camera stays closed) and,
 when they offered video, **Answer with video**; the banner for a call ringing while you're on
 another has Answer and a camera icon for Answer with video.
 
-Every list of people has the same three buttons on each row: Home's Recent, the dial view's New
-call, and People's Recent and Contacts. **Copy address** puts the address on the clipboard (with a
+Every list of people has the same three buttons on each row: Home's Recent, Home's New call (as
+you type), and People's Recent and Contacts. **Copy address** puts the address on the clipboard (with a
 *Copied* notice), to paste into the address bar or elsewhere and call it some other way, with
 another account say; **Call** and **Video call** place the call straight away. In People the
 details also have Call (or Call back), Video call and Copy address.
@@ -59,9 +59,10 @@ microphone and speaker it's using, and the camera (its name and *opens when they
 your camera-off card*, or *Not used: it's an audio call*). They can't be changed there; once it's
 answered the ▾ on Mute and Camera change them.
 
-## Home and the dial view
+## Home
 
-With no call on the stage, it's **Home**: your recent calls on the left (missed ones red, the
+With no call on the stage, it's **Home**: on the left *New call* (below) and under it your
+last five calls (missed ones amber, the
 unseen ones bold, a call that's just ended highlighted for a moment), each with Copy address,
 **Edit contact** (or **Add to contacts**, as in History: the Contacts form, its name the one the
 row shows, the call's or else one from the address, and Save or Cancel comes back to Home), Call and Video call (at phone width Copy address goes, for the name's room;
@@ -74,20 +75,22 @@ how it ended for 3 s, then Home; its **Close** button (or Esc) goes to Home stra
 from the address, where a call that's ended leaves you, empties it first if it still has the
 address you called (kept for a retry), then closes.
 
-Focusing the address (or `/`) turns Home into the **dial view**: one column, Your devices at the
-top, then *New call*, your contacts and the addresses of recent calls. Picking one fills the
-address bar and Call from (the field flashes) and calls no one: Call or Video call places it.
-Each row also has its own Copy address, **Call** and **Video call**, as Recent's rows do; the
-calls go straight away (from the contact's account, or the one it was last called from). Esc
-empties the field and puts Call from back; Esc again, Back to Home, or (with the field empty)
-clicking or tabbing to anything outside the dial bar and the dial view, leaves. Your devices'
-buttons and pickers are part of the dial view, so using them keeps it. The drop-down under
-the address only opens once you type, since the dial view is already the list. During a call,
-focusing the address opens the drop-down as before.
+**New call**, at the top of Home, is the address bar's list (see [Names, numbers and SIP addresses](#names-numbers-and-sip-addresses)) drawn
+on Home instead of in a drop-down, so typing never swaps Home for another view. With nothing
+typed: your five most-called contacts, and *Contacts…*; as you type, the contacts and
+other addresses that match, as rows (scrolling inside the card past four and a half), and *Add …
+to contacts* for an address that isn't one. ↑/↓ in the field move through it, Enter or a click
+fills the address bar and Call from (the field flashes) and calls no one: Call or Video call
+places it. Each row also has its own Copy address, **Call** and **Video call**, as Recent's rows
+do; the calls go straight away (from the contact's account, or the one it was last called from).
+Esc lets go of the highlight, then empties the field and puts Call from back, then leaves the
+field. While the field has focus or text, Your devices says what the call you're placing will do
+with each device. New call and the shortened Recent both fit a 1100×720 window without Home
+scrolling. During a call, focusing the address opens the drop-down as before.
 
 ## Your devices
 
-On Home, the dial view and under a call ringing on the stage (and read-only under one you're
+On Home and under a call ringing on the stage (and read-only under one you're
 placing): three lines, the microphone, speaker
 and camera the next call (or the one ringing) will use, each with a hint when it's not plain
 (*on only if you answer with video*, *off (privacy mode)*, and *for now* on one changed from
@@ -112,7 +115,7 @@ the call's.
 
 ## The indicator
 
-Left of privacy mode, only while your microphone or camera is open: nothing shows while both are
+Left of Do not disturb, only while your microphone or camera is open: nothing shows while both are
 closed, so there's nothing to work out. A microphone icon with a green dot is live (they hear you,
 or it's your mic test), amber is open but muted or on hold; a camera icon is open (they see you,
 or it's your preview). A click says why each is open, the device, and when each opened and closed
@@ -171,6 +174,25 @@ confirm: turning it on only protects you, and turning it off loses nothing. It's
 remembered, so the app always starts with it off. It's always there, with or without a call, so
 you can switch it on before answering.
 
+## Do not disturb
+
+Just left of privacy mode: a circle with a bar through it, the sign phones use for it, in the same
+round button. One click turns it on, and the host answers every new incoming call `486 Busy Here`
+without ringing, so the caller hears busy. Calls already ringing or in progress carry on, and you
+can still place calls. On, the button becomes a red chip with the sign and *Do not disturb*
+(`aria-pressed`, with a tooltip saying what it does), so it's hard to forget; another click turns
+it off.
+
+Unlike privacy mode it's **remembered** (Settings' storage, per profile), the way you'd expect of a
+phone's DND: you turn it on for the afternoon, and a restart shouldn't quietly start ringing again.
+The red chip at the top says it's on from the moment the app opens. The page sends it to the host
+(`dnd {on}`) before `ready`, so the host has it before anything can ring; a call that arrives in
+the second before the page has loaded still rings.
+
+A call it turns away is in Recent as an **incoming** call noted *Do not disturb*, with `486 Busy
+Here`, not a missed one: you chose not to be disturbed, so it doesn't badge People or show under
+Missed, but you can still see who called and call them back. The web softphone does the same.
+
 ## Names, numbers and SIP addresses
 
 With an account, a call goes to the account's server, which works out where it goes from the name
@@ -224,8 +246,10 @@ The address field's suggestions, from the UX prototype (its *New call*): focusin
 `/` anywhere outside a text field) lists contacts and recent calls, and typing filters and ranks
 them (below). Transfer's *To an address* field is the same component (`addressField` in
 `address.js`: the same lists, rows, keys, mark and ×; see Transfer). The address bar's rows are
-just who and when: no Add/Remove contact button or Call icon (a row fills the field; the bar's
-Call and Video call place it, and People and the dial view's rows have their own buttons).
+who and when, and each row's own **Call** and **Video call** icons, which call it straight away
+(from the contact's account, or the one it was last called from; on a call, holding it, as Call
+does); no Add/Remove contact button. A click elsewhere on a row fills the field, and the bar's
+Call and Video call place it.
 Transfer's keep theirs. Typing part of a name highlights the first match. ↑/↓ move through the list (and open it),
 and `Esc` closes it. **Picking never dials**: Enter or a click puts the highlighted entry's
 address in the field (the list closes, focus stays), and only **Call**, or Enter again with
@@ -395,10 +419,8 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   "No audio arriving" and "isn't getting your audio" notes stay quiet: the hold note says it.
 - **New call.** **Call** is enabled once there's something in the address field (greyed, with
   "Type a number or address to call", while it's empty or only spaces), kept in step as you
-  type, clear it with ×, pick a suggestion or paste. On a call, the button says what it will do:
-  *Call & hold current*, the same words as a ringing call's *Answer & hold current* (its
-  tooltip names who: "Call, and put Alice on hold"; under 1000 px it's just *Call* and
-  *Video call*, so both fit beside the address before they move to a row of their own); pressing it holds that call, which stays on the stage, and the new one
+  type, clear it with ×, pick a suggestion or paste. On a call it still just says *Call* (and
+  *Video call*): its tooltip says what it will do, "Call, and put Alice on hold"; pressing it holds that call, which stays on the stage, and the new one
   isn't a call in the list yet: a banner over the stage says "Dave · Calling… · Cancel". Only
   once Dave answers does it join the list and take the stage (in Focus). Not answered (busy,
   declined, no such number), the banner says why until the call goes (or *Close*), and the call
@@ -413,11 +435,12 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   count, so Call & hold works as above. The address field is only disabled at 8 calls, when
   Call says "That's as many calls as there can be".
 - **Incoming calls** ring alongside the others (only a ninth gets 486 Busy Here). While you're
-  on a call, a banner over the stage says who, with *Answer & hold current* and *Decline*, and
+  on a call, a banner over the stage says who, with *Answer* (it holds the call you're on: its
+  tooltip says "Answer, and put Bob on hold", as Call's does) and *Decline*, and
   the call you're on carries on untouched (not held, still on the stage) unless you answer; the
   name opens the full answer view. With several ringing, the one waiting longest is on the
   banner, with how long each has waited and a **+N more** button that drops the others down
-  inside the banner: a row each (name, "Calling · 00:14", *Decline*, *Answer & hold current*,
+  inside the banner: a row each (name, "Calling · 00:14", *Decline*, *Answer*,
   the same as the top one, as they all do the same), scrolling past
   three, so you pick which to answer. Answering from it folds the list away; declining leaves
   it open for the next; the button again or `Esc` folds it. Two with the same name from
@@ -430,6 +453,13 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   you're looking at. Declining or losing the call on the stage moves it to the ones still
   ringing (the banner, or the answer view once there's one), not the ended call's card.
   `--auto-answer` answers each call alongside the others, keeping the audio where it is.
+  With more than one account enabled, the banner and the answer view say which one they're
+  calling: "Calling Carol", "Incoming call to Carol" (by the account's name). One case that
+  needs it: you're Alice on this phone, Bob transfers you to Carol, and Carol is an account on
+  this phone too, so Alice's call to Carol rings here; without the name it reads as some other
+  call. The stage stays on the call you're on (switching would take its video, text and keypad
+  away mid-call, and put the keyboard on Answer); the banner has the middle of the stage, and a
+  transfer's card under way there goes back to the bottom until it's gone.
 - **When a call ends** it stays in the list for a few seconds with how it ended. If it was on
   the stage, the stage keeps saying so, with *Back to …* (or `Esc`) to another call, or with
   none, *Close* (or `Esc`) for Home, after 3 s by itself. The host keeps listing an ended call a
@@ -458,7 +488,7 @@ yours below only while that call gets your mic), else their initial; and on a vi
 self view in the corner, showing what that call sends (your camera, your initial, or the "On
 hold" card), unless Self view is off. Under it the call's time,
 their name and its status line, the same as the list's: "On hold · 02:10" (amber), "Typing…",
-their last unread line, and what the call gets from you (as in the list). The selected call's tile, which has the audio,
+their last unread line, and what the call gets from you (the mic, and on a video call the camera). The selected call's tile, which has the audio,
 is outlined. The control bar's buttons go, so it's never in doubt which call a button acts on.
 *Grid* looks pressed while it's the view; clicking it again goes back to Focus, though there's
 no Focus button: picking a call does that. Clicking a tile opens that call in Focus, resuming it if it's held (and holding the
@@ -470,11 +500,10 @@ the audio, and the view stays Grid.
 - **Picking a call** from the grid, by its tile (or Enter on it), its row in Active calls, or
   its number key, opens it in Focus.
 - **A call ringing in** never switches to the grid, and isn't a tile: it asks on the banner over
-  the call (or grid) you're on. *Decline* leaves everything as it was; *Answer & hold current*
+  the call (or grid) you're on. *Decline* leaves everything as it was; *Answer*
   holds the call you're on and opens the new one in Focus. Its own answer view (the banner's
   name) leaves the choice alone.
-- **`T`** in the grid switches to Focus with the text panel open, as does *Reply* on a text
-  toast. `M`, `H` and `V` do nothing in the grid; `Shift+M` (privacy mode) still works.
+- **`T`** in the grid switches to Focus with the text panel open. `M`, `H` and `V` do nothing in the grid; `Shift+M` (privacy mode) still works.
 - The choice is remembered (`view` in the page's settings) and only applies with two or more
   calls: with one, it's Focus.
 - Each call's `<video>` moves into its tile and back (`renderGrid` in `app.js` keeps the tiles
@@ -484,27 +513,35 @@ the audio, and the view stays Grid.
 ## Active calls
 
 A panel down the left, beside the stage and the control bar, from the prototype's sidebar, shown
-only while there are two or more calls (or the grid is on screen): with one, the stage already
-says who it's with and how it's going, so the stage and controls take the whole width. It
-lists every call, oldest at the top and new ones at the bottom, while it's live (calling, ringing or connected) and for a
-few seconds after it ends. Clicking a row puts that call on the stage. The list is built from
-`listed()` in `app.js` and `callStatus()` in `calllist.js`.
+whenever there's a call (or the grid is on screen), one call included. It's where a call's news
+goes when the call isn't the one on the stage (its "lamp"), so it's always in the same place:
+you learn to glance at it, and a second call arriving changes a row, not the layout. It lists
+every call, oldest at the top and new ones at the bottom, while it's live (calling, ringing or
+connected) and for a few seconds after it ends. Clicking a row puts that call on the stage. The
+list is built from `listed()` in `app.js` and `callStatus()` in `calllist.js`.
 
-- **A row**: their initial, their name (the full address in the tooltip), the status and, once
-  connected, the timer. Calling… (grey ring, pulsing), Incoming call / Incoming video call
-  (amber, pulsing), then Audio call or Video call (green), On hold · 02:10 (amber
-  after a minute), Holding… or Resuming…, Muted in red, or how it ended. A connected call also shows,
-  at a glance, what it gets from you: the mic, and on a video call the camera, as a filled
-  green chip while it gets it, and struck out when it doesn't, red if that's your choice
-  (muted, video stopped) and faint otherwise (on hold, held by them, the mic on another call).
-  The tooltip says which: "Bob hears you", "On hold: they hear music, not you". With text,
-  the status line says "Typing…" or their last line.
-- **Folding it**: the chevron at the top right of the panel folds it to a 48 px rail of
-  initials, the mic and camera chips, and timers (a click on one selects that call), and the
-  chevron at the top of the rail opens it again. The choice is remembered (`localStorage`,
-  `callsPanel`). The call header stays on the stage either way, for the selected call.
+- **The rail and the list**: it starts as a 48 px rail of avatars, and stays as you leave it
+  while calls come and go. A click on the panel (the chevron, its head, the space under the
+  calls) opens it into the 180 px list and folds it again; a click on a call on the rail opens
+  the list as it picks the call, to read what that call's doing. It isn't remembered: with no
+  calls it goes back to the rail.
+- **A row**: their avatar, their name (the full address in the tooltip) and the status:
+  Calling… (grey ring, pulsing), Incoming call (amber, pulsing, the row blinking like a line
+  lamp), Audio call or Video call (green), On hold · 02:10, Holding… or Resuming…, Muted in
+  red, "Typing…" or their last unread line, "Pressed 4 1 2", or how it ended. No mic and camera
+  chips, and no timer: the call bar has the time, and only one call has your mic.
+- **The badge** on the avatar's corner is the one thing that matters most about the call, in
+  order: ringing; a transfer you're asked to take (the row blinks; you switch to it to answer);
+  something that went wrong (a red **!**) or just happened; on hold (amber after a minute);
+  muted; your mic live on a call that isn't on the stage; a message you haven't read.
+- **Something that went wrong** (a transfer that failed) shows short on the row, "Transfer
+  failed" with the **!**, and × to close it; hover the row or the **!** for the full sentence,
+  without switching. Switching to the call keeps it: its bar on the stage says it in full (see
+  [Transfer](#transfer)).
+- **A call that ends on you** in the background keeps its row a few seconds, amber (red if it
+  failed), saying so and how long it lasted, then fades and folds away; a click closes it.
 - **Narrow windows** (under 700 px): always the rail, with no chevron, to leave the stage its
-  room.
+  room; opened, the list lies over the stage.
 
 ## Call history
 
@@ -513,7 +550,7 @@ list; the page (`history.js`) shows it in the People view's *Recent* tab, and th
 suggests from it. (An earlier History section under the active calls was dropped: it was a third
 way to the same calls.)
 
-- **The badge**: a red count on the People button of missed calls you haven't looked at; opening
+- **The badge**: an amber count on the People button of missed calls you haven't looked at; opening
   Recent clears it (`historySeenAt` in `localStorage`).
 - **The History view** (the People view's *Recent* tab, see above), over the stage like Accounts: it isn't a
   call, so opening it holds nothing and the call carries on under it. *Back to …* (while a call
@@ -541,6 +578,7 @@ What a call is recorded as:
 | Placed, you hung up before it was answered | Outgoing, *Cancelled* |
 | Incoming, answered | Incoming, with its duration |
 | Incoming, you declined it | Incoming, *Declined* |
+| Incoming, turned away by [Do not disturb](#do-not-disturb) | Incoming, *Do not disturb*, with `486 Busy Here` (not missed: no badge) |
 | Incoming, they gave up before you answered | Missed (red) |
 | Transferred (by you, or you by them) | As above, with *Transferred to …* and its duration |
 
@@ -548,7 +586,9 @@ What a call is recorded as:
 accounts, newest first, the last 500 calls (`CallHistory` in `History.cs`). The host sends the
 page all of it (`history {entries, max}`) when the page is ready and whenever it changes; the
 page sends `history-remove {ids}` and `history-restore {ids}` (Undo), and the host keeps what was
-removed in memory, so Undo works until the app closes. The address field's Recent list comes
+removed in memory, so Undo works until the app closes. Each call's saved diagnostics (see
+[Saved diagnostics](#saved-diagnostics)) are a file beside it, in `diagnostics-<profile>`, and go
+with the call. The address field's Recent list comes
 from the same history. The web softphone's host keeps its history the same way in the browser's
 `localStorage` (`callHistory`); a host that sends no history shows no People button at all.
 
@@ -594,8 +634,8 @@ buttons. The header is one line (40 px), read left to right:
 header: a call ringing in (*Answer* / *Decline*, the one waiting longest first, "+N more"
 dropping down the rest) and a call you're placing over this one have their banners just under
 it, so a call ringing in while a transfer's going covers neither. Another call's transfer shows
-on its row in Active calls ("Carol is ringing…", "Transfer failed · on hold"). Text they type
-has its toast at the bottom of the stage.
+on its row in Active calls ("Carol is ringing…", "Transfer failed"), and so does text they type
+on it (its badge, and their last line).
 
 On hold, the *On hold · Resume* note stays over the middle of the stage (below the header).
 Calling, ringing and ended calls have the stage's card, which already names the call, so the
@@ -667,10 +707,14 @@ same on both.
   characters are ignored.
 - **In the dock**, to the right of the call (see [The dock](#the-dock-keypad-and-text)). Esc,
   its ×, the Text button or T closes it, and Esc puts the focus back on the button.
-- **Text arriving while it's closed** shows as a toast at the bottom of the stage: their name,
-  what they've typed (live, if their phone sends letter by letter) and *Reply*, which opens the
-  panel. It fades 6 s after the last letter, and the Text button keeps a red dot until the
-  panel is opened. Nothing opens by itself.
+- **Text arriving while it's closed**, on the call on the stage: an alert at the right of the
+  call header, the Text icon with a red dot, "New text" (or "Typing…" while their line is open)
+  and an *Open text* link, which opens the panel; and the same red dot on the Text button (and
+  on ⋯ More at phone width). Both stay until the panel is opened on that call. Nothing opens by
+  itself. The keypad's tones are flagged the same way (see [Keypad](#keypad-dtmf)).
+- **Text on a call that isn't on the stage** (or in Grid view) shows on that call: its row in
+  Active calls (and its tile in Grid) shows their last line, live if their phone sends letter by
+  letter, and the unread badge, until you read it. Nothing over the call you're on.
 - **Not on the call** (their phone didn't answer `m=text`): "Text isn't set up on this call"
   and *Add text to this call*, which sends a re-INVITE with `m=text`. If they turn it down
   (`m=text` with port 0) it says their phone doesn't support real-time text; with no answer in
@@ -704,8 +748,30 @@ letters) in the dock to the right of the call, above the text panel if that's op
   hold (either way), ends, or another call is selected, and in Grid view (which has no
   controls). It's also disabled until the call's audio to the page is connected, so the first
   tone isn't lost.
-- **Tones they send** are logged by the host (`DTMF '5' received (RFC 4733)` or `(SIP INFO)`),
-  and while the keypad is open on that call they show under the keys ("Name sent 123").
+- **Tones they send** are logged by the host (`DTMF '5' received (RFC 4733)` or `(SIP INFO)`)
+  and kept on the call (`tonesin.js`). New ones you haven't seen are flagged twice, as new text
+  is: an alert at the right of the call header (the keypad icon with a red dot, "New keys" and an
+  *Open keypad* link, disabled with the reason when the keypad can't open) and a red dot on the
+  Keypad button (and on ⋯ More at phone width). Opening the keypad on that call clears both.
+  - **In the keypad**, under the keys: "Name pressed 4 1 2  #", every tone on the call, newest
+    last and lit as it arrives. A pause of 2 s or more shows as a gap, and tones that came while
+    the call was on hold (either way) are dimmed. Hover for the time of the last and how it came.
+    Tones that arrive with it open are read as they come: no alert. The ▾ by the name drops down
+    the full list (up to 500, oldest first): each tone's time, digit and how it came, "on hold"
+    if it was, scrolled to the newest. It stays open or shut until toggled. *Clear* empties the
+    call's keys there (the Streams tab keeps them all).
+  - **With the text panel open too**, opening the list makes the keypad taller and the text
+    shorter, down to 200 px (160 in a narrow window); the keypad gives way first, its keys down to
+    26 px (the letters go under 32) and the list down to two rows, scrolling, so both still fit.
+  - **A call's status line** (calls panel, grid tile) says "Pressed 4 1 2" while it has tones
+    you haven't seen. Hold, a transfer and unread text come first.
+  Each call keeps its own. Only where each tone started: the library reports a tone once, at its
+  start, with no end.
+- **In Diagnostics**, both ways: the host keeps every tone in the call's StreamLog (`AddTone`, up
+  to 500), so it's saved with the call. Streams → Timeline marks them on the Audio ↑ and ↓ lanes
+  (runs that would overlap share one tag; hover for each tone's time and how it came), Streams →
+  Now lists them under the table, and the SIP ladder labels a DTMF INFO "INFO · 5". The web
+  build's host records them the same way (`web/conndiag.js`).
 
 How the host sends them (`Phone.SendDtmf`):
 
@@ -768,9 +834,16 @@ call is still on hold: Resume, or Try again.") is its tooltip; the host sends a 
 ringing. While it's under way the *On hold* note in the middle of the stage is hidden (Resume
 there would be Cancel by another name); once it's over, it's back.
 
-While it's under way the status has what you can do:
+While it's under way the state card sits in the middle of the stage (it's what the call is about
+now: "Transferring to Dave…", "Dave is ringing…"), with × to close it. It's in the notices'
+shape (the transfer icon, who, how it's going in grey, its button, ×), so the card under way and
+the notice it ends as ("Transfer failed: …", in red) read as one thing changing, not two.
 
-- **Cancel** (asking or calling, blind or attended): you take the call back. SIP has no way to
+- **No Cancel.** SIP can't call a REFER back once it's sent (RFC 3515), so there's nothing a
+  Cancel could do but forget the transfer while their phone carries on. × closes the card
+  instead: the transfer goes on, and how it ends comes as a notice (attended, the *On hold*
+  card comes back, with Resume). What Cancel used to do, for the record:
+- **Cancel** (asking or calling, blind or attended, before): you took the call back. SIP has no way to
   call off a REFER once the far end has accepted it (RFC 3515), so this is the most that can be
   done: the transfer is forgotten, attended the calls come off hold (blind, it was never held),
   and the status says
@@ -784,9 +857,9 @@ While it's under way the status has what you can do:
   hang up) is the transfer over: the other call isn't being transferred any more, and can be
   again. (Before, it stayed "under way", Transfer disabled on it, until it ended too: seen with a
   MicroSIP call as the target, which rang and never answered.)
-- **Hang up** (blind, accepted): you hang up now and leave it to their phone, as a blind
-  transfer usually goes (RFC 5589 lets the transferor leave once it has the 202). The call ends
-  *Transferred to Dave (you left it to their phone)*; their phone carries on calling Dave.
+- There's no **Hang up** on the card: End on the control bar still ends the call. (It used to
+  offer Hang up beside Cancel, leaving the transfer to their phone, as RFC 5589 allows once the
+  202 is in; the host still takes `transfer-leave`, but nothing sends it.)
 
 - **Done** (NOTIFY `200 OK`): they hang up on us (if they haven't 3 s later, we do), and the call
   ends with *Transferred to Dave*. Attended, both legs end: *Transferred to Carol* on Bob's,
@@ -796,8 +869,12 @@ While it's under way the status has what you can do:
   Here)", "… nothing answered at Dave's address (408 Request Timeout)", "… VtN's phone turned it
   down". **Try again** and **×** on the status. Blind, you're still talking. Attended, the call
   stays on hold, and the *On hold* note in the middle of the stage says why too, with Try again
-  and **Resume**: what happens next is your choice, never a silent resume. Resuming clears the
-  status; × just drops it, the call staying on hold.
+  and **Resume**: what happens next is your choice, never a silent resume. Resume (the button,
+  `H`, a grid tile's) clears the status; × just drops it, the call staying on hold. Switching to
+  the call (its row, its tile, its number key) resumes it too, but keeps the status, so its bar
+  can say what went wrong: the page sends `hold` with `resumed` only for Resume. On a call in
+  the background, its row says "Transfer failed" with a red **!**; in Grid, its tile has the
+  bar's pill at the top, with × (one line, the full sentence in its tooltip).
 - **No word**: accepted, but no outcome in 60 s, it's marked failed ("Transfer failed: no word
   from VtN's phone"), with the same.
 
@@ -823,8 +900,8 @@ anyone; false drops the transfer):
 - **No answer in 20 s** declines it: "Transfer not answered · still with Alice", and the NOTIFY
   says `603 Transfer not answered` (*Bob didn't answer it*, on Alice's phone).
 
-While you decide, Alice's phone shows *Transferring to Dave…* with Cancel and, on a blind
-transfer, Hang up (leave it to their phone: the call then ends, and so does the question). An
+While you decide, Alice's phone shows *Transferring to Dave…* in the middle of the stage, with
+× to close it. An
 immediate refusal of her REFER (a browser phone's, or a proxy's 408) reads *Bob's phone turned it
 down*, not *declined*. Our own REFER waits 10 s for its answer. Within limits, still:
 
@@ -947,7 +1024,12 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
     A 488 with any other Warning (305: the codecs) or an SDP on our own profile isn't retried:
     "They can't take this call's media (488)". `406 Failed creating media transport` is retried
     too, alongside those: it's what sipsorcery.com's server says when it can't set up the media
-    the offer asked for. Any other 406 isn't. The SIP log says when it retries, and why
+    the offer asked for. Any other 406 isn't. So is `480 Failed creating media transport`:
+    pjsip's (MicroSIP's) answer when its account's media encryption is DTLS-SRTP, as it must be
+    to call the web softphone, and the offer is plain RTP; it goes straight to WebRTC (not via
+    `RTP/SAVP`, whose SDES keys it would turn down too), and is shown as "They can't take this
+    call's media (480)", not as unanswered, even after ringing. Any other 480 isn't retried. The
+    debug log says when it retries, and why
     ("they can't take plain RTP media (406, Failed creating media transport); calling again with
     WebRTC").
   - **A bare 488 to plain RTP tries SRTP required first.** Our plain RTP offer puts SDES keys
@@ -957,6 +1039,11 @@ log's first lines give the address, e.g. `browser phones: connect to ws://192.16
     WebRTC for such a phone, as pjsip (MicroSIP's stack) doesn't do BUNDLE: it answers a WebRTC
     offer with an ICE and DTLS session per m-line, of which our one bundled transport only ever
     completes the first, so the call has audio but no video.
+  - **MicroSIP to call both softphones:** set the account's *Media Encryption* to
+    *DTLS-SRTP/SRTP*. It then takes the web softphone's DTLS-SRTP (a browser gives each m-line
+    its own transport when pjsip doesn't bundle, so video works) and the desktop's SDES keys, so
+    the desktop's call never falls back to WebRTC and has video too. With *DTLS-SRTP* alone it
+    turns the desktop's offer down with the 480 above, and the WebRTC retry has no video.
   - **A contact's *Media*** skips the guessing when you know what their phone takes: the
     contact form's *Media* is *Automatic* (all of the above), *Plain RTP* (`RTP/AVP` with SDES
     keys), *SRTP required* (`RTP/SAVP`) or *WebRTC*. A call to the contact offers just that in
@@ -1084,6 +1171,291 @@ The bars also show **one-way audio**, the classic SIP/NAT fault. If no audio pac
 2 s, their row drops to a thin line with "No audio arriving from X". If the far end's RTCP
 reports show our audio isn't reaching them (our source isn't listed, or its sequence number has
 stopped), your row turns red with "X isn't getting your audio".
+
+## Debug log (diagnostics mode)
+
+The first tab in Diagnostics (F12): everything the host and the page log, newest at the bottom,
+following the newest line unless you've scrolled up (`logview.js`). Each line has its time and a
+coloured tag for what it's about:
+
+| Tag | Its lines |
+|---|---|
+| SIP | Each SIP message, one line (`-> udp:… INVITE …`, `<- … 200 Ok`); registration; the WebSocket server connection (web) |
+| ICE | A WebRTC call's SIP leg: our candidates, checking (controlling or controlled), the pair it connected on (`host UDP [::]:64116 ⇄ host UDP [fdec:…]:64288`), failed or disconnected |
+| DTLS | The handshake after ICE: starting, as client or server (`a=setup`), done (the certificate matched the SDP's fingerprint, so the SRTP keys are set, with the profile agreed), failed (with the library's reason and alert) |
+| RTP / RTCP | The media: the codecs agreed, the first packet of each kind from them (and from where), RTCP reports, RTP timeouts, SRTP errors, real-time text, simulated loss |
+| Calls | Calls starting and ending, hold, transfers, DTMF, the history |
+| App | The rest: devices, the page's view, accounts, and the relay to the page (known to work, so not the media) |
+
+Lines are tagged by what they say (`tagOf`), so the host, the page and the web softphone's host
+log as they always have. The host adds the ICE, DTLS and first-packet lines (`Phone.cs`,
+`LogIceAndDtls`), each as `call N: ICE: …`, so the tag is the word after the call's number. The
+library's warnings are tagged by their class and text (`sipsorcery warning: RTPSession: DTLS …`
+is DTLS). Lines saying something failed, and the library's warnings, are shaded.
+
+Above the lines, a chip per tag with how many lines it has: a click shows or hides them, and
+*Show all* brings back any hidden. *Full SIP messages* (off by default, and only with SIP shown)
+shows each SIP message's whole text under its line; the host sends them as `log {text, full:
+true}` after the line (they always go to the log file). The chips you leave off are remembered
+(`localStorage`). *Copy log* copies the lines shown, as shown; the host logs that as *copied N
+lines* rather than the whole text again. The log keeps the last 5,000 lines (the oldest go a
+thousand at a time).
+
+## Saved diagnostics
+
+Call details, SIP ladder, Connection, Streams and Call quality show the calls that are going, and
+clear as a call ends. But a call that went wrong is the one you most want to look at, and it's the one that
+ends. So as each call ends the page takes what the tabs had for it (`snapshots.js`): the host's details
+and the codecs each way, the quality table and its last two minutes of graph, and Streams' record
+of the call (its offers and answers, lanes and notes, the SIP messages, setup events and
+facts Connection draws from, and every SIP message whole, for the SIP ladder). A BYE to a phone
+that's gone goes again for 32 s after the call ends; the host keeps adding to the call's ladder for
+33 s, and if anything came, writes it into the saved file (`MainForm.SaveLateWire`). Streams is taken 0.6 s after the end, as
+the call's last offer or answer can reach the page a moment later. The page sends it as
+`diag-save {id, snapshot}`, and the host keeps it with the call's history entry, as
+`diagnostics-<profile>\<entry id>.json` beside the history (`CallHistory.SaveDiagnostics`). The
+entry's `diag` says it has one; whichever comes first, the entry or the snapshot, waits for the
+other.
+
+A call with saved diagnostics has a pulse button (Diagnostics' icon) on its row in Home's Recent
+and in People's Recent, and a *Diagnostics* button in its row's details. Those show only with no
+call going, which is when they're wanted. The button asks the host for it (`diag-get {id}`,
+answered by `diag-snapshot {id, snapshot}`), opens Diagnostics on Call details (or the tab that's
+open, if it's one of the five), and puts a bar across the panel: *Saved with the call: Bob, ended
+17 Nov, 11:03 am · You hung up*, and *Back to live*. The tabs draw from the snapshot as they would
+from the call, except that nothing's live: Streams' ↑ and ↓ show –, its picker holds that call
+alone, and Call quality's foot says whether RTCP reports ever came. A tab with nothing saved says
+so (a call that never connected has no details or quality). The bar goes with *Back to live*,
+closing Diagnostics, or a call starting.
+
+The call that's just ended is the one most likely wanted, and the live tabs have just cleared, so
+in diagnostics mode its ended card on the stage links to them: once the host has saved them it says
+so (`diag-saved {id, entry}`), and the card's line reads *You hung up · Open diagnostics*. The link
+opens them as the row's button does. The card still gives way to Home after 3 s, link or not;
+after that it's the row's button. Out of diagnostics mode there's no link. There used to be a bar
+across the panel for this instead; the card is where you're looking as the call ends.
+
+They go with the call: one that falls off the end of the history (500 calls) loses its file at
+once; one removed (or cleared) keeps it until the app closes, so Undo brings it back whole, and
+any left over (the app was killed) go at the next start. The web softphone saves them too, the
+same way, with no file to put them in: `web/host.js` keeps each in the browser's IndexedDB
+(`softphone-diagnostics`, keyed by the history entry's id) and answers the same `diag-save` and
+`diag-get`, so the page's links and buttons are the same. A removed entry's stay until the page
+is reloaded, for Undo, and what's left over goes as it loads.
+
+## SIP ladder (diagnostics mode)
+
+**SIP ladder** is a tab in Diagnostics (F12), after Call details: every SIP message of the call
+(the selected one, else the latest; or a call's saved diagnostics), as it crossed the wire, drawn as
+a ladder. It follows SIP Trace's rules (`sipsorcery-servers`, `SIPSorcery.SipTrace`: `CallFlow`,
+`MermaidWriter`, `TranscriptWriter`), so a ladder here reads like one there:
+
+- A lane per party: this phone first, under its socket, then each far socket in the order it first
+  appears. A far lane is named from the From of the requests it sent (not of those sent to it,
+  which name the other party); one that only answered is *Them*.
+- An arrow per message, solid for a request and dashed for a response, its label above, a
+  request's Request-URI under it (without parameters), and its time from the first message on the
+  left.
+- Every message is numbered once, over the whole call, in the order it went. The number is on the
+  arrow's start, in the popup and in both copies.
+- A retransmission is its own arrow, *BYE retransmit 3*: the same message (Call-ID, CSeq, what it
+  is, the top Via's branch) going the same way again. The timer doubling is read off the times.
+- *Hide progress messages* takes out every 1xx, ACK and PRACK, and a PRACK's responses (which
+  alone would read as answers to the INVITE). What's left keeps its numbers and times: 1, 6, 8.
+- A call with more than one Call-ID (a transfer's new call) colours each, with a key whose boxes
+  hide or show one, numbers kept the same way.
+- A number, or anywhere on an arrow, opens that message whole over the page: which way, its
+  sockets, the time, the text. ‹ and › (or the arrow keys) step through what's shown; *Copy* copies
+  it.
+- *Copy as Mermaid* gives SIP Trace's diagram source (`autonumber` reset after each gap, so the
+  numbers stay the ladder's), to paste into anything Mermaid runs in; *Copy as text*, its
+  transcript: each message numbered, with its UTC time, sockets and whole text.
+- *Save as PNG*: the ladder as shown (the filters too), as SIP Trace's PNG is: at twice its size,
+  for a ticket or a slide where it's scaled up, on the theme's background, as a transparent PNG of
+  dark-theme text is unreadable on white. Over it, whose call, when, and the Call-ID; under it,
+  *Drawn by the SIPSorcery softphone*. It's drawn onto a canvas from the flow (`ladderPng`), not
+  copied from the page, whose ladder is HTML sized to the pane and scrolled. The page can't save a
+  file, so it sends the picture to the host (`save-png {name, title, data}`), which asks where with
+  a Save dialog: in Pictures the first time, then where the last went; named from the Call-ID,
+  anything but letters, digits, `-` and `_` made `-` (SIP Trace's rule, as whoever placed the call
+  chose it).
+
+It's drawn in HTML, not by Mermaid as SIP Trace does: the ladder is a few lanes, so this way it's
+in the app's colours, light or dark, with no 3 MB library. It scrolls sideways inside the pane when
+the lanes don't fit. An arrow's label and URI sit on the pane's background, so the line of a lane
+the arrow crosses (a transfer's third party) doesn't run through them.
+
+The host keeps the messages with the call's other records (`StreamLog.Wire`, from the transport's
+trace events, all methods, by Call-ID; at most 500 a call). A Call-ID that's no call's yet (a
+transfer's new call, before it's claimed) holds its messages until it is, so the page orders them
+by time before numbering.
+
+The web softphone has the tab too. `web/conndiag.js` keeps the messages from SIP.js's transport
+(every one sent or received on the WebSocket, whole, on a call's Call-ID; at most 500 a call),
+with retransmissions counted the same way. The browser has no sockets to name: their lane is the
+server the WebSocket goes to (`ws://localhost:8393`), and ours the Via SIP.js sends
+(`ws:jkv1bfu66hus.invalid`). *Save as PNG* is a download there.
+
+## Connection (diagnostics mode)
+
+**Connection** is a tab in Diagnostics (F12), between Call details and Streams. Its question is
+the first one asked of a call with no audio: did the media get through, and if not, where did it
+stop? A call's media goes up in layers, each needing the one before: the SDP agrees what to send
+and where; on a WebRTC call ICE finds a path and DTLS agrees the keys over it; SRTP encrypts with
+those keys (or, on plain SIP, with keys the SDP carried); then RTP flows and RTCP reports on it.
+The tab shows the call it's for (the selected call, else the latest), live or saved
+([Saved diagnostics](#saved-diagnostics)), with a meta line: *WebRTC · UDP/TLS/RTP/SAVP · rtcp-mux
+· SIP over UDP*, or *Plain SIP · RTP/AVP with SDES keys*.
+
+*Layers* is a ladder, one row per layer: a state (green, amber, red, grey for not used or not
+reached, and a pulsing dot while it's under way), a word, and the facts. The first amber or red row
+is marked, and it says why, as far as the call can tell:
+
+- **SDP**: *Agreed* (the media, the profiles, where the answer came; on WebRTC their candidates),
+  *Waiting for their answer*, or *Turned down* with the response.
+- **ICE**: *Not used* on plain SIP (the media goes straight to their SDP's address); *Checking*,
+  with a table of the candidate pairs: ours and theirs, the pair's state (frozen, waiting,
+  checking, succeeded, failed; the one in use marked), our checks, their answers, their checks, and
+  the round trip time of the latest answered check, with any candidate of theirs that was never
+  paired; *Connected* with the pair, our candidates, whether we're controlling, how long it took
+  and the pair's RTT, the table folded under it (unfolded, it stays so as the row redraws);
+  *Disconnected* (their phone stopped
+  answering the checks that keep the path up); *Lost* (connected, then gone for good); *Failed*
+  (never connected), with the likely why: their SDP had no candidates, they offered only private
+  addresses with no server-reflexive or relay one, nothing answered either way (a firewall), or
+  their checks reach us but ours get no answer.
+- **DTLS**: *Not used* on plain SIP; *Handshaking*, *Connected* (our role, *a=setup*, the
+  fingerprint matched; an alert after, if one came), or *Failed*, with the library's reason and
+  the alert, and the likely why: a fingerprint mismatch (both fingerprints shown) means something
+  rewrote their SDP; an alert such as *handshake_failure*, no profile or cipher in common; a
+  timeout, nothing coming back (a firewall that lets STUN through but not DTLS).
+- **SRTP**: *Keys from DTLS* with the profile the handshake agreed (between two SIPSorcery peers,
+  RFC 8723's *DOUBLE_AEAD_AES_256_GCM_AEAD_AES_256_GCM*, the server's first choice); *Keys from
+  SDP* with the suite, amber when the SIP went over UDP or TCP, since anyone who sees the SIP can
+  read the keys; *Not used* (plain RTP). Packets that couldn't be decrypted, as the library counts
+  them on each stream, by why: red when the keys don't match (authentication) or for another
+  reason, amber for replays only (already seen, or too old: a few are harmless); SRTCP's too.
+- **RTP**: *Flowing* (packets/s each way, how long after the answer each kind's first packet came),
+  *Flowing, moved* when their RTP came from another address than their SDP's and the session
+  switched to it (a NAT; the library says when, and it stays in the saved diagnostics), *Nothing
+  arriving* when their SDP says they send and nothing has for 3 s, *Stopped* when ICE went with it;
+  at the end *Flowed* or *Timed out*.
+- **RTCP**: *Reporting* (their last report, rtcp-mux or its port, RTT, the count), *Waiting* for the
+  first, *No reports* after 15 s (their phone may not send it), *Stopped* when none for 15 s.
+
+*Setup timeline* puts the same events on lanes, SIP, ICE, DTLS, SRTP, RTP and RTCP, along one
+axis: the INVITE to the answer squeezed into the first sixth (ringing as a bar), the setup after
+the answer (ICE, DTLS, SRTP and the first RTP, within 10 s) across most of it, and anything later
+(their first RTCP report, a BYE) in the rest. Times are from the answer; hovering a mark gives each
+event's time. Its head line says *answered 1.12 s after the INVITE · media up 0.23 s later*.
+
+The host keeps it with Streams' record of the call (`StreamLog`): the call's SIP messages (each
+request and response, not just those with SDP), setup events by layer (ICE's gathering and state
+changes, DTLS's handshake, the first RTP of each kind, an RTP timeout, an RTP address switch,
+RTCP's first report and a BYE), and facts (when ICE started and connected, the pair, the
+checklist's candidate pairs, DTLS's role, times, profile and failure, the SRTP failures by why,
+RTCP's last report and RTT). It reads the library's diagnostics for these, not its log:
+`RtpIceChannel.GetChecklistSnapshot` (copied again as checks go and come), `ondtlsstatechange`,
+each stream's `SrtpErrors` and `SrtcpErrors` (each second, and at the end), and
+`OnRtpEndPointSwitched`; so an SRTP failure is the call's own even with several calls up. A call
+saved before has the older facts (the checks per address of theirs, the SRTP count from the log),
+and the tab shows those as it did. The relay between the host and the page doesn't count, as in
+Streams.
+
+The web softphone has the tab too, and Streams. Its host (`web/conndiag.js`) sends the page the same `streams`
+and `stream-rates` messages, so `connection.js` draws them unchanged. The SIP messages come off
+SIP.js's transport (its `send`, and the `onMessage` it's given), and the offers and answers are
+built from them as `StreamLog.Build` does. The media layers come from the page's own
+`RTCPeerConnection`, which is the media leg there: its ICE connection state and DTLS transport
+state as they change, and `getStats()` each second: the candidate pairs (`requestsSent`,
+`responsesReceived`, `requestsReceived`, `currentRoundTripTime`), the pair in use and our ICE role
+(the `transport` stats' `selectedCandidatePairId` and `iceRole`), the DTLS role and SRTP profile
+(`dtlsRole`, `srtpCipher`), the first RTP of each kind and the packets a second
+(`inbound-rtp`, `outbound-rtp`), and their RTCP reports (`remote-inbound-rtp`, by timestamp).
+What the browser doesn't give, it goes without: SRTP packets that couldn't be decrypted (dropped
+uncounted), and why a DTLS handshake failed beyond a fingerprint mismatch or an alert, where the
+browser's `RTCError` says so. A peer-reflexive candidate's address the browser hides shows as `?`.
+As on the desktop, what the tab had for a call is saved with it as it ends (see
+[Saved diagnostics](#saved-diagnostics)).
+
+A WebRTC call whose media connection fails now ends *Media connection failed* (before: *They hung
+up*, as the user agent hangs up itself when it does).
+
+## Streams (diagnostics mode)
+
+**Streams** is a tab in Diagnostics (F12), after Call details. It's for the question Call
+quality can't answer: not how good the media is, but whether it's there at all, and why not. A
+call's media lines are set by its offers and answers (the first INVITE, a re-INVITE to hold or
+add video, a transfer's new call), and what's actually sent can differ from what they say. Music
+on hold, for one, sends music on a line that still says sendrecv; a phone that loses its keys
+after a re-INVITE still says sendrecv while nothing it gets can be decrypted. The tab puts the
+two side by side.
+
+Only the SIP side counts. The relay between the host and the page is a loopback connection that's
+known to work, so the tab doesn't show it.
+
+A bar at the top picks the call: the selected one by default (following it as it changes), or
+any other live call. Like Call details and Call quality, it clears as a call ends; what it had is
+saved with the call, and opened from its row in Recent (see [Saved diagnostics](#saved-diagnostics)),
+where the bar shows that call alone (*Carol · ended 09:28:47*). Beside it, a line on the call's
+state (*On hold: music on hold, nothing signalled (the SDP still says sendrecv)*, *They've
+put the call on hold*, *Ended …: No audio from them for 30 s*), and three views:
+
+- **Now**: a row per m-line (Audio, Text, Video, with its index): its **Network**, the transport
+  (*UDP*, or on WebRTC the protocol and ICE's chosen pair, *UDP · ICE host ⇄ srflx*) with our
+  socket ⇄ where we send (`*:59130 ⇄ 192.168.1.123:55258`; `*` is every address), RTCP's the
+  same or *RTCP on the same port* (rtcp-mux, and WebRTC's bundle), and in amber where their RTP
+  actually arrives from if that isn't where we send; then the **Profile** and security
+  (*RTP/AVP · SRTP (SDES)*, *UDP/TLS/RTP/SAVP · DTLS-SRTP*), the codec (each way while the call's up, from the page's stats; else
+  the answer's first format), **We said** and **They said**, the direction each side's SDP gave it
+  (shaded when the last offer/answer changed it), then **↑ Sending** and **↓ Receiving**: what's
+  going and the RTP packets in the last second. Sending names what the page puts on the line:
+  Microphone, Muted, Music, Silence; Camera, Test pattern, the camera-off card, the hold card.
+  Each is flagged against what was agreed: *Nothing · as agreed*, *Nothing · on hold*,
+  *Arriving · not shown while held*, and in red *Nothing for 2 min 37 s · they agreed to send*. A line turned down (port 0) says which side
+  did. The foot names the offer/answer the lines come from.
+- **Timeline**: the call from its first INVITE to now (or its end), a lane for each line and
+  direction (↑ Audio, ↓ Audio, ↑ Video, ↓ Video, and one for text), sampled every second: flowing
+  (green), on hold (amber stripes: music, silence, the hold card, or nothing by design), off by
+  agreement (grey hatching), agreed but nothing arriving for 3 s or more (red), idle (text, a
+  thin line). Along the top, what changed things: each offer/answer after the first (a click
+  opens it in Offers/answers), music on hold and resume (which no SDP records), RTP timeouts and
+  RTCP BYEs, and the end. Labels take three rows and give way to a dot when there's no room;
+  ones a second or so apart share a label. A transfer's new session is a line through the lanes.
+- **Offers/answers**: each one in order, numbered, with its time into the call, a name for it
+  and the messages that carried it (*↑ re-INVITE · ↓ 200 Ok*). Names: Call, Added video / They
+  added video, Hold / Held by them, Resume / They resumed, Dropped video, *re-INVITE, no change*,
+  and for a new Call-ID *Transfer: called Carol*, *Replaced by Carol* (an INVITE with Replaces) or
+  *New session*. One turned down shows its status in red. Picked, the offer and the answer side by
+  side, each line marked against that side's last SDP in the same session: changed (with what it
+  was, *was sendrecv*), new or removed. Copy puts either SDP on the clipboard.
+
+Where it comes from:
+
+- The host records each call's offers and answers from the SIP transport's trace of every
+  message (`StreamLog.cs`): INVITEs, UPDATEs and their responses, and an ACK with SDP (the answer
+  to an INVITE without one). A call finds its messages by Call-ID; one that comes before the call
+  knows its Call-ID (our INVITE, before the 100 Trying) is held until it does. A 401 or 407 and
+  the INVITE it challenged are left out. Each change sends the page the whole call (`streams`), a
+  moment after the last message, so retransmissions make one update.
+- Once a second, for every connected call, the host counts each kind's RTP packets on the SIP
+  side (`stream-rates`), with each stream's sockets (its RTP channel's local RTP and RTCP
+  endpoints, the stream's destinations, the address the last packet came from, and ICE's
+  nominated pair): sent from RTCP's count (packets that actually went, not ones the session
+  held back), received as they arrive, and how long since the last one arrived.
+- An RTP timeout (no RTP or RTCP for 30 s) and an RTCP BYE are notes on the call. A text line's
+  timeout isn't: text is quiet most of the time. The user agent hangs up on an audio timeout, and
+  the call ends *No audio from them for 30 s* (before, *They hung up*).
+- The rest is the page's: whether the call's held and how (music, or SIP), muted, and what
+  camera or card it sends.
+
+The web softphone has the tab too: its host (`web/conndiag.js`, see
+[Connection](#connection-diagnostics-mode)) builds the offers and answers from the SIP messages
+on SIP.js's transport, with the same labels (*Call*, *Hold*, *Resume*, *Added video*, …) and each
+line's formats from the answer's `a=rtpmap`, and counts the packets each way from `getStats()`.
+A line's network is the page's own connection's: the ICE pair by type (*UDP · ICE host ⇄ host*),
+our candidate's address and theirs, RTCP on the same port. The foot says the packets are on the
+call's connection (there's no SIP side apart from it).
 
 ## Call quality (diagnostics mode)
 

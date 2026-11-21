@@ -111,11 +111,17 @@ internal sealed class MainForm : Form
         {
             var e = HistoryEntry.From(c);
             _history.Add(e);
+            // Its diagnostics, which the page sends as the call ends: before this, or after.
+            string? diag;
+            lock (_diagPending) { _diagEntry[c.Id] = e.Id; _diagPending.Remove(c.Id, out diag); }
+            if (diag != null) SaveDiagnostics(c.Id, e.Id, diag);
             LogLine($"{DateTime.Now:HH:mm:ss.fff} history: call {c.Id} {e.Dir} {e.Uri} {e.Note ?? (e.Duration > 0 ? $"{e.Duration / 1000} s" : "")}".TrimEnd());
             Post(HistoryMessage());
         };
         LibraryLog.Line += WriteLog;
-        _phone.Trace += LogLine;
+        // Whole SIP messages: to the log file, and to the page, whose debug log shows them under
+        // each message's line when "Full SIP messages" is on.
+        _phone.Trace += t => { LogLine(t); Post(new { type = "log", text = t, full = true }); };
         _phone.TxLostChanged += (c, lost) => Post(new { type = "media-health", id = c.Id, txLost = lost });
         _phone.Quality += (c, q) => Post(new { type = "quality", id = c.Id, q.Dir, q.Kind, q.LossPct, q.Lost, q.JitterMs, q.RttMs });
         _phone.DtmfReceived += (c, digit, via) => Post(new { type = "dtmf-in", id = c.Id, digit, via });
@@ -130,6 +136,11 @@ internal sealed class MainForm : Form
             type = "details", id = c.Id, d.Direction, d.Account, d.Signalling, d.TheirPhone, d.CallId, d.TheirMedia,
             d.MediaEncrypted, d.SignallingEncrypted, d.Audio, d.Video, d.MediaSecurity,
         });
+        // Diagnostics' Streams tab: each call's offers and answers as they change, and its RTP
+        // packets each way once a second.
+        _phone.StreamsChanged += (c, v) => { if (_pageReady) Post(StreamsMessage(c, v)); };
+        _phone.LateWire += (c, wire) => BeginInvoke(() => SaveLateWire(c.Id, wire));
+        _phone.StreamRates += rates => { if (_pageReady) Post(new { type = "stream-rates", rates }); };
         _phone.VideoRefused += c => Post(new { type = "video-refused", id = c.Id });
         _phone.MediaOffer += (c, sdp) =>
         {
@@ -143,6 +154,7 @@ internal sealed class MainForm : Form
         {
             WindowPlacement.Save(this, _settings.Profile);
             _phone.Dispose();
+            try { _history.DropRemovedDiagnostics(); } catch (Exception ex) { WriteLog($"history: {ex.Message}"); }
             // The library goes on logging from its own threads after this (TCP and TLS connections
             // dropping as the process ends), so stop listening and close the file under its lock;
             // a write after that is dropped rather than throwing on one of those threads, which
@@ -224,9 +236,16 @@ internal sealed class MainForm : Form
                     Post(HistoryMessage());
                     Post(StateMessage());
                     lock (_pendingOffers) { _pendingOffers.ForEach(Post); _pendingOffers.Clear(); }
+                    foreach (var c in _phone.Calls) Post(StreamsMessage(c, _phone.StreamsOf(c)));
                     if (_contacts.LoadNote != null) WriteLog(_contacts.LoadNote);
                     PostContacts();
                     if (!string.IsNullOrWhiteSpace(_settings.Dial)) DialAtStart();
+                    break;
+                case "dnd":
+                    // Do not disturb, the page's button: the page keeps the setting and sends it
+                    // with every change, and once it's loaded.
+                    _phone.DoNotDisturb = (bool?)msg["on"] ?? false;
+                    WriteLog($"do not disturb {(_phone.DoNotDisturb ? "on: new calls are answered 486 Busy Here" : "off")}");
                     break;
                 case "log":
                     LogLine($"{DateTime.Now:HH:mm:ss.fff} page: {msg["text"]}");
@@ -290,7 +309,7 @@ internal sealed class MainForm : Form
                     _phone.Hangup(Id(msg));
                     break;
                 case "hold":
-                    _phone.Hold(Id(msg), (bool?)msg["hold"] ?? true);
+                    _phone.Hold(Id(msg), (bool?)msg["hold"] ?? true, (bool?)msg["resumed"] ?? false);
                     break;
                 case "transfer":
                     // To another of our calls (attended, {target}), or to an address (blind, {address, label?}).
@@ -312,11 +331,62 @@ internal sealed class MainForm : Form
                     // Our blind transfer, ringing: hang up and leave it to their phone.
                     _phone.LeaveTransfer(Id(msg));
                     break;
+                case "diag-save":
+                {
+                    // A call's Call details, Streams and Call quality as it ended, for its history entry.
+                    var callId = Id(msg);
+                    var snapJson = msg["snapshot"]?.ToJsonString();
+                    if (snapJson == null) break;
+                    string? entryId;
+                    lock (_diagPending)
+                    {
+                        if (!_diagEntry.TryGetValue(callId, out entryId))
+                        {
+                            _diagPending[callId] = snapJson;
+                            if (_diagPending.Count > 16) _diagPending.Remove(_diagPending.Keys.First());
+                        }
+                    }
+                    if (entryId != null) SaveDiagnostics(callId, entryId, snapJson);
+                    break;
+                }
+                case "diag-get":
+                {
+                    var entryId = Id(msg);
+                    string? saved = null;
+                    try { saved = _history.ReadDiagnostics(entryId); } catch (Exception ex) { WriteLog($"history: couldn't read the diagnostics: {ex.Message}"); }
+                    Post(new { type = "diag-snapshot", id = entryId, snapshot = saved == null ? null : JsonNode.Parse(saved) });
+                    break;
+                }
+                case "save-png":
+                {
+                    // A picture the page drew (the SIP ladder): where to put it is asked here, the
+                    // page can't save a file.
+                    using var dlg = new SaveFileDialog
+                    {
+                        Title = (string?)msg["title"] ?? "Save the picture",
+                        Filter = "PNG image (*.png)|*.png",
+                        FileName = (string?)msg["name"] ?? "picture.png",
+                        DefaultExt = "png",
+                        AddExtension = true,
+                        InitialDirectory = _lastSaveDir ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+                    };
+                    if (dlg.ShowDialog(this) != DialogResult.OK) break;
+                    try
+                    {
+                        File.WriteAllBytes(dlg.FileName, Convert.FromBase64String((string)msg["data"]!));
+                        _lastSaveDir = Path.GetDirectoryName(dlg.FileName);
+                        WriteLog($"saved {dlg.FileName}");
+                    }
+                    catch (Exception ex) { WriteLog($"couldn't save {dlg.FileName}: {ex.Message}"); }
+                    break;
+                }
                 case "copy":
                     // The host's clipboard rather than the page's, which needs permissions the
                     // page may not have.
                     Clipboard.SetText((string)msg["text"]!);
-                    WriteLog($"copied {msg["text"]}");
+                    // An address says what it was; the debug log or an SDP, how much.
+                    var copied = (string)msg["text"]!;
+                    WriteLog(copied.Contains('\n') || copied.Length > 200 ? $"copied {copied.Split('\n').Length} lines" : $"copied {copied}");
                     break;
                 case "loss":
                     _phone.SetLoss((int?)msg["audio"] ?? 0, (int?)msg["video"] ?? 0);
@@ -399,6 +469,48 @@ internal sealed class MainForm : Form
         msg["ids"]?.AsArray().Select(n => (string?)n).OfType<string>().ToList() ?? new List<string>();
 
     /// <summary>Every past call, newest first, with the cap so the page can say when old ones go.</summary>
+    // Call id -> its history entry's id (this run's calls), and snapshots that came before their entry.
+    private readonly Dictionary<string, string> _diagEntry = new();
+    private string? _lastSaveDir;   // where the last picture went: the next one's asked there first
+    private readonly Dictionary<string, string> _diagPending = new();
+
+    private void SaveDiagnostics(string callId, string entryId, string json)
+    {
+        try
+        {
+            if (!_history.SaveDiagnostics(entryId, json)) return;
+            WriteLog($"history: call {callId}'s diagnostics saved ({json.Length / 1024} KB)");
+            Post(HistoryMessage());
+            // The page links to them from Diagnostics, as the call's just ended.
+            Post(new { type = "diag-saved", id = callId, entry = entryId });
+        }
+        catch (Exception ex) { WriteLog($"history: couldn't save call {callId}'s diagnostics: {ex.Message}"); }
+    }
+
+    /// <summary>
+    /// The SIP that came after a call ended (a BYE going again to a phone that's gone), into its saved
+    /// diagnostics: the page took them as it ended, so they'd stop short of it.
+    /// </summary>
+    private void SaveLateWire(string callId, IReadOnlyList<StreamLog.Wire> wire)
+    {
+        try
+        {
+            string? entryId, pending;
+            lock (_diagPending) { _diagEntry.TryGetValue(callId, out entryId); _diagPending.TryGetValue(callId, out pending); }
+            var json = pending ?? (entryId != null ? _history.ReadDiagnostics(entryId) : null);
+            if (json == null || JsonNode.Parse(json) is not JsonObject snap || snap["streams"] is not JsonObject streams) return;
+            streams["wire"] = JsonSerializer.SerializeToNode(WireOf(wire), JsonOpts);
+            var patched = snap.ToJsonString();
+            if (pending != null) lock (_diagPending) _diagPending[callId] = patched;
+            else if (entryId != null && _history.SaveDiagnostics(entryId, patched))
+                WriteLog($"history: call {callId}'s SIP ladder: {wire.Count} messages, with those after it ended");
+        }
+        catch (Exception ex) { WriteLog($"history: couldn't add call {callId}'s late SIP: {ex.Message}"); }
+    }
+
+    private static object WireOf(IEnumerable<StreamLog.Wire> wire) =>
+        wire.Select(w => new { at = PageTime(w.At), w.Out, w.Local, w.Remote, w.CallId, w.CSeq, w.CSeqMethod, w.Label, w.Uri, w.From, w.Response, w.Attempt, w.Text }).ToList();
+
     private object HistoryMessage() => new { type = "history", entries = _history.All, max = CallHistory.MaxEntries };
 
     /// <summary>--dial (testing): places its call, and remembers it for --dial-count.</summary>
@@ -455,7 +567,7 @@ internal sealed class MainForm : Form
                 text = c.TextState,
                 // A transfer on the call, ours or theirs: { role: out | in | replace, target, by,
                 // attended, partner, status: asking | calling | done | failed, detail (in words) }.
-                transfer = c.Transfer is { } t ? new { t.Role, t.Target, t.By, t.Attended, partner = t.PartnerId, t.Status, t.Detail, t.Reason, t.Rang, t.TransferorGone, t.CanCancel, t.CanLeave, t.CanAnswer } : null,
+                transfer = c.Transfer is { } t ? new { t.Role, t.Target, t.By, t.Attended, partner = t.PartnerId, t.Referred, t.Status, t.Detail, t.Reason, t.Rang, t.TransferorGone, t.CanCancel, t.CanLeave, t.CanAnswer } : null,
             }).ToList(),
             maxCalls = Phone.MaxCalls,
             // This host can transfer calls (the web softphone's doesn't, and the page hides Transfer).
@@ -487,6 +599,28 @@ internal sealed class MainForm : Form
     }
 
     private void PostContacts() => Post(new { type = "contacts", contacts = _contacts.All });
+
+    // Times as the page's clock has them (ms since 1970), so it can place them on its timeline.
+    private static long PageTime(DateTime t) => new DateTimeOffset(t).ToUnixTimeMilliseconds();
+
+    private static object StreamsMessage(Phone.Call c, StreamLog.View v) => new
+    {
+        type = "streams",
+        id = c.Id,
+        exchanges = v.Exchanges.Select(x => new
+        {
+            x.N, at = PageTime(x.At), x.ByUs, x.Label, x.OfferMsg, x.AnswerMsg, x.Status, x.Ok, x.Pending, x.Session, x.Offer, x.Answer, x.AnswerMs,
+        }),
+        v.Streams,
+        notes = v.Notes.Select(n => new { at = PageTime(n.At), n.Text, n.Level }),
+        sip = v.Sip.Select(s => new { at = PageTime(s.At), s.Out, s.Text, s.CSeq }),
+        events = v.Events.Select(e => new { at = PageTime(e.At), e.Layer, e.Text, e.Level }),
+        facts = v.Facts,
+        // The SIP ladder tab's (sipladder.js): every message of the call, whole.
+        wire = WireOf(v.Wire),
+        // Keypad tones each way, for the Streams tab's timeline (streams.js).
+        tones = v.Tones.Select(t => new { at = PageTime(t.At), t.Out, t.Digit, t.Via, t.Held }),
+    };
 
     private void Post(object message)
     {

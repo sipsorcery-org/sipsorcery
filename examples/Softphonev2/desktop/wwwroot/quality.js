@@ -5,6 +5,7 @@ import { contactMark } from "./contactmark.js";
 import { contactFor } from "./contacts.js";
 import { keypadOpen } from "./keypad.js";
 import { textOpen } from "./rtt.js";
+import { snap } from "./snapshots.js";
 import { $, ICON, log } from "./util.js";
 let detailsHtml = "";      // what Call details last drew
 
@@ -38,21 +39,26 @@ function codecLabel(c) {
   return `${pretty} ${rate % 1000 === 0 ? `${rate / 1000} kHz` : `${rate} Hz`}`;
 }
 
-// Call details, a tab in Diagnostics (F12): drawn while it shows, for the selected call.
+// Call details, a tab in Diagnostics (F12): drawn while it shows, for the selected call, or a
+// call's as it ended (snapshots.js).
 export function renderDetails() {
   if ($("paneDetails").hidden) return;
   const el = $("details");
-  const d = sel()?.details;
-  const on = !!(d && call && sel()?.h.call === "connected");
+  const live = !snap && call && sel()?.h.call === "connected" ? sel() : null;
+  const src = snap ? snap.details
+    : live?.details ? { d: live.details, codecs: live.codecs, remote: live.h.remote, hasVideo: call.hasVideo } : null;
+  const d = src?.d;
+  const on = !!d;
   el.hidden = !on;
   $("detailsEmpty").hidden = on;
+  $("detailsEmpty").textContent = snap ? "No call details were saved for this call: it didn't connect." : "Call details show here during a call.";
   if (!on) { el.innerHTML = ""; detailsHtml = ""; return; }
   const esc = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
   // Each way, as the page sees it. Audio shows one value when both ways match; video always shows
   // both, as its frame sizes change on their own (each side ramps up) and would otherwise flip
   // between one value and two.
   const codecs = (kind, agreed) => {
-    const c = sel()?.codecs?.[kind];
+    const c = src.codecs?.[kind];
     if (!c?.tx && !c?.rx) return agreed ? esc(agreed) : "–";
     if (kind !== "video" && c.tx === c.rx) return esc(c.tx);
     return `↑ ${esc(c.tx ?? "–")} &nbsp;↓ ${esc(c.rx ?? "–")}`;
@@ -64,15 +70,15 @@ export function renderDetails() {
     ? `<span class="enc">${ICON.lock}Encrypted: ${how} media, SIP over ${d.signalling?.startsWith("WSS") ? "WSS (TLS)" : "TLS"}</span>`
     : d.mediaEncrypted ? `<span class="enc">${ICON.lock}Media encrypted (${how}); SIP unencrypted (${esc(d.signalling?.split(" ")[0] ?? "UDP")})</span>`
     : `<span class="enc off">${ICON.unlock}Not encrypted: plain RTP${d.signallingEncrypted ? "" : `, SIP over ${esc(d.signalling?.split(" ")[0] ?? "UDP")}`}</span>`;
-  const contact = contactFor(sel()?.h.remote);
+  const contact = contactFor(src.remote);
   const rows = [
     ["Call", `${d.direction === "outgoing" ? "Outgoing" : "Incoming"} · ${d.account ? esc(d.account) : "no account"}`],
-    ["Address", sel()?.h.remote ? `<span class="mono">${esc(sel().h.remote)}</span>` : "–"],
+    ["Address", src.remote ? `<span class="mono">${esc(src.remote)}</span>` : "–"],
     ...(contact ? [["Contact", `<span class="info-contact">${contactMark(contact.name)}Saved contact: ${esc(contact.name)}</span>`]] : []),
     ["Their phone", d.theirPhone ? esc(d.theirPhone) : "Didn't say"],
     ["Security", enc],
     ["Audio", codecs("audio", d.audio)],
-    ["Video", call.hasVideo ? codecs("video", d.video) : "None"],
+    ["Video", src.hasVideo ? codecs("video", d.video) : "None"],
     ["SIP", d.signalling ? `<span class="mono">${esc(d.signalling)}</span>` : "–"],
     ["Media", d.theirMedia ? `<span class="mono">${esc(d.theirMedia)}</span>` : "–"],
     ["Call-ID", d.callId ? `<span class="mono">${esc(d.callId)}</span><button type="button" class="copy-id" id="copyCallId" title="Copy the Call-ID">Copy</button>` : "–"],
@@ -239,13 +245,16 @@ function drawMarks(g, x, y, w, h, values, colour, solid = false, points = Q_POIN
 }
 const Q_LABEL = { sent: "↑ Sent", recv: "↓ Received" };
 
+// For the selected call, or a call's as it ended (snapshots.js).
 export function renderQuality() {
   const el = $("quality");
-  el.hidden = !(state.call === "connected" && call);
+  const sq = snap?.quality;
+  el.hidden = snap ? !sq : !(state.call === "connected" && call);
   $("qEmpty").hidden = !el.hidden;
+  $("qEmpty").textContent = snap ? "No call quality was saved for this call: it didn't connect." : "Call quality shows here during a call.";
   if (el.hidden || $("paneQuality").hidden) return;
-  const q = sel()?.quality ?? newQuality();
-  const video = call.hasVideo;
+  const q = sq ? sq.q : sel()?.quality ?? newQuality();
+  const video = sq ? sq.hasVideo : call.hasVideo;
   const fmt = (v, unit = "", digits = 1) => (v == null ? "–" : `${v.toFixed(digits)}${unit}`);
   const esc = (t) => t.replace(/"/g, "&quot;");
 
@@ -280,8 +289,9 @@ export function renderQuality() {
   // belongs in a help or info section later.)
   const rtt = S.audio?.rttMs ?? S.video?.rttMs;
   const rttText = rtt == null ? "" : fmt(rtt, " ms", rtt < 10 ? 1 : 0);
-  const waited = performance.now() - q.startedAt;
+  const waited = sq ? sq.waitedMs : performance.now() - q.startedAt;
   $("qFoot").textContent = S.audio || S.video ? (rttText && `RTT ${rttText}`)
+    : sq ? "No RTCP reports came from them"
     : waited > NO_RTCP_MS ? "No RTCP reports from them: their phone may not send them"
     : "Waiting for their RTCP reports";
 

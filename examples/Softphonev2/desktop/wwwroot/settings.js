@@ -106,7 +106,7 @@ export function initSettings(app) {
       <section class="settings-section" aria-labelledby="setDiagHead">
         <h3 id="setDiagHead">Diagnostics</h3>
         <button type="button" class="btn" id="setDiag"></button>
-        <p class="settings-note">The SIP log and simulated network loss, with call quality and the test video sources. F12 opens and closes it too${web ? ", where the browser doesn't keep F12 for its own tools" : ""}.</p>
+        <p class="settings-note">The debug log and simulated network loss, with call quality and the test video sources. F12 opens and closes it too${web ? ", where the browser doesn't keep F12 for its own tools" : ""}.</p>
       </section>
     </div>
     <p class="settings-foot">${versionText(web)}</p>`;

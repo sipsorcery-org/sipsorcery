@@ -28,6 +28,9 @@ public sealed class HistoryEntry
     public string? Sip { get; set; }
     /// <summary>How it ended, in the phone's words ("They hung up", "Not answered: rang for 30 s, …").</summary>
     public string? Reason { get; set; }
+    /// <summary>Whether Diagnostics' Call details, Streams and Call quality were saved for it, as the
+    /// call ended (see <see cref="CallHistory.SaveDiagnostics"/>).</summary>
+    public bool Diag { get; set; }
 
     private static readonly Regex NameAddr = new(@"^\s*""?(?<name>[^""<]*?)""?\s*<(?<uri>[^>]+)>", RegexOptions.Compiled);
 
@@ -61,6 +64,8 @@ public sealed class HistoryEntry
         {
             // Declined here, or answering failed; otherwise they gave up (or the app closed) while it rang.
             if (c.EndReason == "Declined") { e.Dir = "in"; e.Note = "Declined"; }
+            // Turned away by Do not disturb (486 Busy Here): incoming, not missed, so no badge.
+            else if (c.EndReason == Phone.DoNotDisturbReason) { e.Dir = "in"; e.Note = Phone.DoNotDisturbReason; e.Sip = "486 Busy Here"; }
             else if (c.EndReason == "Couldn't answer") { e.Dir = "in"; e.Note = "Couldn't answer"; }
             else e.Dir = "missed";
         }
@@ -96,6 +101,10 @@ public sealed class HistoryEntry
 /// The call history, newest first, kept in history-&lt;profile&gt;.json beside the accounts. Capped at
 /// <see cref="MaxEntries"/>: the oldest go. Removed entries are kept in memory until the app
 /// closes, so the page's Undo can bring them back.
+/// Each call's diagnostics, saved as it ended, are a file of their own in
+/// diagnostics-&lt;profile&gt;\&lt;entry id&gt;.json, kept as long as the call is on the list: one
+/// that falls off the end goes with it, and one removed goes when the app closes (or at the next
+/// start), so Undo brings it back whole.
 /// </summary>
 public sealed class CallHistory
 {
@@ -109,6 +118,7 @@ public sealed class CallHistory
     private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     private readonly string _path;
+    private readonly string _diagDir;
     private readonly List<HistoryEntry> _entries;
     private readonly Dictionary<string, HistoryEntry> _removed = new();
     private readonly object _lock = new();
@@ -121,7 +131,57 @@ public sealed class CallHistory
         var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SIPSorcery", "Softphonev2");
         Directory.CreateDirectory(dir);
         _path = Path.Combine(dir, $"history-{profile}.json");
+        _diagDir = Path.Combine(dir, $"diagnostics-{profile}");
         _entries = Read();
+        lock (_lock) PruneDiagnostics();
+    }
+
+    /// <summary>Saves a call's diagnostics (the page's snapshot, as JSON) with its entry; false if the
+    /// entry's gone. A failure throws, for the caller to log.</summary>
+    public bool SaveDiagnostics(string id, string json)
+    {
+        lock (_lock)
+        {
+            var e = _entries.FirstOrDefault(x => x.Id == id);
+            if (e == null) return false;
+            Directory.CreateDirectory(_diagDir);
+            File.WriteAllText(DiagPath(id), json);
+            e.Diag = true;
+            Write();
+            return true;
+        }
+    }
+
+    /// <summary>A call's saved diagnostics, as JSON, or null if it has none.</summary>
+    public string? ReadDiagnostics(string id)
+    {
+        lock (_lock)
+        {
+            if (!_entries.Any(x => x.Id == id)) return null;
+            var path = DiagPath(id);
+            return File.Exists(path) ? File.ReadAllText(path) : null;
+        }
+    }
+
+    /// <summary>As the app closes: the diagnostics of the calls removed in this run (kept till now for Undo) go.</summary>
+    public void DropRemovedDiagnostics()
+    {
+        lock (_lock) { _removed.Clear(); PruneDiagnostics(); }
+    }
+
+    // An id is 12 hex digits (HistoryEntry.From); anything else isn't a file name to use.
+    private string DiagPath(string id) => Path.Combine(_diagDir, $"{(Regex.IsMatch(id, "^[0-9a-f]{1,32}$") ? id : "_")}.json");
+
+    // Deletes the diagnostics of calls no longer on the list (or removed and waiting for Undo). Under the lock.
+    private void PruneDiagnostics()
+    {
+        if (!Directory.Exists(_diagDir)) return;
+        var keep = _entries.Select(e => e.Id).Concat(_removed.Keys).ToHashSet();
+        foreach (var f in Directory.GetFiles(_diagDir, "*.json"))
+        {
+            if (keep.Contains(Path.GetFileNameWithoutExtension(f))) continue;
+            try { File.Delete(f); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
     }
 
     public string FilePath => _path;
@@ -175,7 +235,11 @@ public sealed class CallHistory
     private void Sort()
     {
         _entries.Sort((a, b) => b.At.CompareTo(a.At));
-        if (_entries.Count > MaxEntries) _entries.RemoveRange(MaxEntries, _entries.Count - MaxEntries);
+        if (_entries.Count > MaxEntries)
+        {
+            _entries.RemoveRange(MaxEntries, _entries.Count - MaxEntries);
+            PruneDiagnostics();
+        }
     }
 
     private List<HistoryEntry> Read()

@@ -1,11 +1,15 @@
 // Small helpers the page's modules share: elements by id, HTML escaping, messages to the host, the
 // log, names from addresses, and the icons.
 
+import { addLog } from "./logview.js";
+
 export const $ = (id) => document.getElementById(id);
 export const escHtml = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
 export const post = (msg) => chrome.webview.postMessage(msg);
 
 export const ICON = {
+  // Diagnostics' pulse: a call's saved diagnostics, on its row in Recent.
+  diag: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
   phone: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg>',
   video: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>',
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
@@ -14,6 +18,7 @@ export const ICON = {
   videoOff: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M2 2l20 20"/></svg>',
   mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>',
   // A hat over round glasses: privacy mode, as browsers show a private window.
+  dnd: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M7.5 12h9"/></svg>',
   incognito: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 11h20"/><path d="m5 11 2.1-6a1 1 0 0 1 1.3-.6L12 5.8l3.6-1.4a1 1 0 0 1 1.3.6L19 11"/><circle cx="7" cy="17" r="3"/><circle cx="17" cy="17" r="3"/><path d="M10 16.4a3.2 3.2 0 0 1 4 0"/></svg>',
   micOff: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/><path d="M3 3l18 18"/></svg>',
   chevronDown: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
@@ -34,14 +39,11 @@ export const ICON = {
   hangup: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7a2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91"/><path d="M22 2 2 22"/></svg>',
 };
 
-export function log(text, fromHost = false) {
+// A line for the debug log (logview.js, which tags it): the page's own, which also goes to the
+// host's log file, or one from the host (full: a whole SIP message).
+export function log(text, fromHost = false, full = false) {
   if (!fromHost) post({ type: "log", text });
-  const el = $("log");
-  // Follows the newest line, unless you've scrolled up to read something.
-  const atEnd = el.hidden || el.scrollHeight - el.scrollTop - el.clientHeight < 24;
-  el.textContent += text + "\n";
-  if (el.textContent.length > 60000) el.textContent = el.textContent.slice(-40000);
-  if (atEnd) el.scrollTop = el.scrollHeight;
+  addLog(text, full);
 }
 
 // "Alice <sip:alice@example.com>" → "Alice"; "sip:bob@host" → "Bob".

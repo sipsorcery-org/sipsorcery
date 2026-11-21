@@ -169,6 +169,15 @@ export const accountAor = (a) => aor(a);
 export const accountUri = (a) => uri(a);   // sip: (or sips: on TLS), for Copy address
 export const openAccounts = (page = null) => open(page);
 export function reRegister(id) { post({ type: "account-register", id }); log(`${byId(id)?.name}: re-register`); }
+// The account a call came in on, by name, for "Calling Carol": only with more than one account
+// enabled (with one, it can only be that one). aorOf is the host's Account.Aor (user@host, the
+// server without scheme, user part or parameters).
+export function calledAccountName(aorOf) {
+  const on = (accounts ?? []).filter((a) => a.enabled);
+  if (on.length < 2 || !aorOf) return null;
+  const host = (a) => a.server.trim().replace(/^sips?:/i, "").replace(/^.*@/, "").replace(/;.*$/, "");
+  return on.find((a) => `${a.username}@${host(a)}`.toLowerCase() === aorOf.toLowerCase())?.name ?? null;
+}
 export const accountName = (id) => (id === DIRECT ? "no account (direct)" : byId(id)?.name ?? null);
 
 let noteTimer = 0;

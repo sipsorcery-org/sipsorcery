@@ -1,6 +1,6 @@
-// Real-time text (RFC 4103): the text panel and the toast for a line that arrives.
+// Real-time text (RFC 4103): the text panel.
 
-import { entries, inGrid, liveEntries, nameOf, render, sel, selectCall, selectedId, setView, state, testSay } from "./app.js";
+import { entries, inGrid, render, sel, selectedId, setView, state, testSay } from "./app.js";
 import { openMenu } from "./menus.js";
 import { $, ICON, post, shortName } from "./util.js";
 
@@ -11,12 +11,10 @@ import { $, ICON, post, shortName } from "./util.js";
 // backspaces and all, dashed with a caret.
 const LINE_SEP = "\u2028";
 // Each call has its own conversation (entry.text): { lines: [{ me, text, open }], unread (they
-// typed while you weren't reading it: a dot on the Text button and in the call list), bomSent
+// typed while you weren't reading it: an alert in the header, a dot on the Text button, and the call list), bomSent
 // (T.140 starts with a byte order mark), said (--say, testing, typed once per call) }. The
 // text panel shows the selected call's.
 export let textOpen = false;        // the text panel, in the dock
-let toastTimer = 0;
-export let toastCallId = null;      // the call the toast is about
 
 export const openLine = (t, me, create = true) => {
   let l = t.lines.findLast((x) => x.me === me && x.open);
@@ -39,26 +37,11 @@ export function onTextReceived(id, chars) {
     else if (ch === LINE_SEP || ch === "\u2029" || ch === "\n" || ch === "\r") closeLine(t, false);
     else if (ch >= " ") openLine(t, false).text += ch;
   }
-  if (!textOpen || id !== selectedId) { t.unread = true; showToast(e); }
+  // Unread: the call on the stage has the header's alert (tonesin.js) and the Text button's dot;
+  // another call's text is on that call (its row, its tile).
+  if (!textOpen || id !== selectedId) t.unread = true;
   if (id === selectedId) renderText();
   render();
-}
-
-// With the text panel closed (or for another call), what they type shows in a toast for 6 s after
-// the last letter. Reply opens that call's text.
-function showToast(e) {
-  const l = openLine(e.text, false, false) ?? e.text.lines.findLast((x) => !x.me);
-  if (!l?.text) return;
-  toastCallId = e.id;
-  $("rttToastWho").textContent = nameOf(e) || "They";
-  $("rttToastText").textContent = l.text;
-  $("rttToast").hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(hideToast, 6000);
-}
-export function hideToast() {
-  clearTimeout(toastTimer);
-  $("rttToast").hidden = true;
 }
 
 // Sends what's in the box, with a line separator to finish it. Nothing goes until then.
@@ -76,12 +59,6 @@ function sendLine() {
 
 // Run by app.js at this point in its start-up, in the order it always ran.
 export function initRtt() {
-  $("rttToastIcon").innerHTML = ICON.text;
-  $("rttReply").onclick = () => {
-    if (toastCallId && entries.has(toastCallId)) selectCall(toastCallId);
-    setView("focus");   // the text panel is in Focus view only
-    setTextOpen(true);
-  };
   $("rttSend").innerHTML = ICON.send;
   $("rttSend").onclick = () => { sendLine(); $("rttInput").focus(); };
   $("rttInput").addEventListener("input", () => { $("rttSend").disabled = !$("rttInput").value.trim(); });
@@ -113,7 +90,7 @@ export function initRtt() {
 export function closeTextForGrid() { textOpen = false; }
 export function setTextOpen(open, focus = true) {
   textOpen = open;
-  if (open) { const e = sel(); if (e) e.text.unread = false; hideToast(); renderText(); }
+  if (open) { const e = sel(); if (e) e.text.unread = false; renderText(); }
   render();
   if (open && focus && !$("rttEntry").hidden) $("rttInput").focus();
   else if (!open && focus && document.activeElement && $("rtt").contains(document.activeElement)) $("textBtn").focus();
@@ -151,7 +128,6 @@ export function renderTextControls(phase) {
     : unread ? `Text: ${typing ? "they're typing" : "new message"} (T)` : textOpen ? "Close text (T)" : "Text (T)";
   btn.setAttribute("aria-label", unread ? "Text, new message" : "Text");
   $("rtt").hidden = !(live && textOpen);
-  if (!liveEntries().some((x) => x.h.call === "connected")) hideToast();
   // The compose area follows the text state: on, adding, refused, off or disabled.
   const t = state.text ?? "off";
   const name = shortName(state.remote) || "They";

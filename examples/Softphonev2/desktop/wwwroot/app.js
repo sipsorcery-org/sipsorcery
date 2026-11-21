@@ -12,8 +12,8 @@
 // Call and Video call beside the address place the kind of call; a call ringing in has Answer
 // (your camera stays closed, but you see them) and Answer with video. An audio call has no video
 // line; "Add video" asks the far end for one (a SIP re-INVITE), and the host then sends a new offer.
-// With no call, the stage is Home (home.js), and while you place one, the dial view; Your devices
-// (yourdevices.js) is on both and under a call ringing in.
+// With no call, the stage is Home (home.js): New call (the address bar's list) above Recent; Your
+// devices (yourdevices.js) is on it and under a call ringing in.
 //
 // Several calls at once, as in the prototype: each call the host reports has an entry here (see
 // entries), with its own peer connection, <video> element, quality, details and text. The stage
@@ -26,9 +26,10 @@
 // or Resume) resumes it and holds the live one. Call and Answer hold the live call when you press
 // them, not before: typing an address, or looking at a ringing call, History or Accounts, holds
 // nothing. When a call ends, nothing resumes on its own: a held call stays held, with Resume.
-// An incoming call while you're on one shows as a banner, with Answer & hold current or Decline.
+// An incoming call while you're on one shows as a banner, with Answer (which holds the call you're
+// on: its tooltip says so) or Decline.
 
-import { initAccounts, onAccountsState, onAccountMessage, closeAccounts, useAccount, accountName, accountList, takeAccounts } from "./accounts.js";
+import { initAccounts, onAccountsState, onAccountMessage, closeAccounts, useAccount, accountName, accountList, takeAccounts, calledAccountName } from "./accounts.js";
 import { initHistory, onHistoryMessage, onHistoryState, closeHistory, historyEntries, markSeen, openPeople, renderSide } from "./history.js";
 import { prefs, savePref, initSettings } from "./settings.js";
 import { initSelfView } from "./selfview.js";
@@ -39,19 +40,27 @@ import { addressHint, addressTip, dial, fieldText, fieldUri, initAddress, initAd
 import { callStatus, fmtElapsed, initCallList, renderCallTimes, renderCalls, sendsHtml } from "./calllist.js";
 import { initDiagnostics, renderInfoLock, setDiagnostics } from "./diagnostics.js";
 import { holdAudio, quietAudio, stopHoldMusic } from "./holdmusic.js";
-import { initKeypad, keypadOpen, onDtmfIn, renderKeypad, setKeypadOpen } from "./keypad.js";
+import { initKeypad, keypadOpen, renderKeypad, setKeypadOpen } from "./keypad.js";
+import { onDtmfIn, renderHeadAlerts } from "./tonesin.js";
 import { analyserFor, drawViz, initLevels, startTiles } from "./levels.js";
 import { closeMenu, initMenus, openMenu, pickDevice, pickMic, renderMore, selfViewOn, showLoss } from "./menus.js";
 import { closeDevices, initYourDevices, renderIndicator, renderYourDevices, stopTests } from "./yourdevices.js";
 import { dialDone, homeShown, initHome, renderHome } from "./home.js";
 import { initQuality, newQuality, onQuality, renderDetails, renderDock, renderQuality } from "./quality.js";
-import { closeTextForGrid, hideToast, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen, toastCallId } from "./rtt.js";
-import { initTransfer, renderTransfer, transferShort, xferBusy } from "./transfer.js";
+import { initStreams, noteStreamCalls, onStreamRates, onStreams, renderStreams } from "./streams.js";
+import { initConnection, renderConnection } from "./connection.js";
+import { initDnd } from "./dnd.js";
+import { initLadder, renderLadder } from "./sipladder.js";
+import { captureDiagnostics, closeSnapshot, onDiagSaved, onDiagnosticsSaved, onDiagSnapshot, openSnapshot, savedFor, snap } from "./snapshots.js";
+import { closeTextForGrid, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen } from "./rtt.js";
+import { cancelTransfer, initTransfer, renderTransfer, transferNotices, transferState } from "./transfer.js";
 import { $, ICON, initial, log, post, shortName } from "./util.js";
 import { cameraInUse, hasCamera, isTestTrack, openSources, placeholderTrack, retryCamera, sameSources, setHasCamera, showSelfVideo, sourceAvailable, sourceOf, stopPlaceholders, syncCamera, videoToSend, wantedSources } from "./video.js";
 
 const CAMERA_KBPS = 1500;
-const ENDED_CARD_MS = 3000;   // how long a call's "Call ended" card stays before Home, with no other call
+
+// A call's diagnostics saved: the link on its ended card, if it's the one on the stage.
+onDiagnosticsSaved((id) => { if (id === selectedId) render(); });
 const NO_FRAMES_MS = 2000;   // how long without video frames before saying their camera is off
 export const NO_AUDIO_MS = 2000;    // how long without audio packets before saying none is arriving
 
@@ -129,7 +138,6 @@ export function selectCall(id) {
   if (old?.gone) dropEntry(old);
   if (textOpen) sel().text.unread = false;
   closeMenu();
-  hideToast();
   log(`selected call ${id} (${nameOf(sel())})`);
   renderText();
   render();
@@ -147,10 +155,12 @@ function holdOthers(keep) {
 }
 // Makes a connected call the one you're talking to: the live one goes on hold, and this one comes
 // off hold if it's on it. Anything else (ringing, calling, ended) is only looked at.
-function goLive(e) {
+// resumed: Resume pressed (the bar's, a grid tile's), which is also the answer to a failed transfer
+// on the call (its note goes); switching to a call keeps the note, so its bar shows it.
+function goLive(e, resumed = false) {
   if (e?.h.call !== "connected") return;
   holdOthers(e);
-  holdCall(e, false);
+  holdCall(e, false, resumed);
 }
 
 // The most recent live call other than the selected one, for "Back to …".
@@ -170,7 +180,12 @@ export const gridCalls = () => [...entries.values()].filter((e) => (!e.gone && !
   .sort((a, b) => Number(a.id) - Number(b.id));
 export function inGrid() {
   const e = sel();
-  return view === "grid" && !!e && e.h.call !== "ringing" && gridCalls().length > 1;
+  return view === "grid" && !!e && e.h.call !== "ringing" && gridCalls().length + goneTiles().length > 1;
+}
+// Tiles of calls that have just ended on you, staying a few seconds (renderGrid):
+// the outcomes for their rows whose call had a tile. (Before those are set up at start-up: none.)
+function goneTiles() {
+  try { return outcomes.filter((o) => o.row && tiles.has(o.row.id)); } catch { return []; }
 }
 export function setView(v) {
   if (v === view) return;
@@ -499,6 +514,7 @@ async function onMediaAnswer(id, sdp) {
     e.videoRefused = true;
     syncCamera();
     log("they didn't take video");
+    onVideoRefused(e);
   }
   render();
 }
@@ -607,10 +623,9 @@ export function render() {
   // The selected call's source, or before a call the one it'll start with.
   const camAvailable = hasCamera || sourceOf(e) !== "camera";
   const videoAllowed = state.videoAllowed !== false;
-  // On a call, each says what happens to it: "Call & hold current", in the same words as a
-  // ringing call's "Answer & hold current" (its tooltip names who).
-  const tail = liveCall() ? '<span class="hold-tail"> &amp; hold current</span>' : "";
-  const callHtml = `${ICON.phone}<span>Call${tail}</span>`, videoHtml = `${ICON.video}<span>Video call${tail}</span>`;
+  // Just Call and Video call, on a call too: that the call you're on goes on hold is in the
+  // tooltip (syncCallBtn), and plain enough once you've done it.
+  const callHtml = `${ICON.phone}<span>Call</span>`, videoHtml = `${ICON.video}<span>Video call</span>`;
   if ($("callBtn").innerHTML !== callHtml) $("callBtn").innerHTML = callHtml;
   if ($("videoCallBtn").innerHTML !== videoHtml) $("videoCallBtn").innerHTML = videoHtml;
   $("videoCallBtn").hidden = !videoAllowed;
@@ -717,6 +732,9 @@ export function render() {
 
   renderTextControls(phase);
   renderKeypad();
+  // New keys (DTMF) or text on this call that you haven't seen, at the header's right: after the
+  // keypad and text panels, which may have just closed.
+  renderHeadAlerts();
   renderTransfer();
   renderMore();   // the ⋯ at phone width, from the four above
   renderDock();
@@ -726,21 +744,43 @@ export function render() {
   hold.setAttribute("aria-pressed", String(connected && state.held));
   setBtn(hold, state.held ? ICON.play : ICON.pause, state.held ? "Resume" : "Hold");
   hold.title = !connected ? "Hold, during a call" : state.held ? "Take the call off hold (H)" : "Put the call on hold (H)";
+  // The state card: what this call is doing now. On hold, at the bottom of the stage, how long
+  // (amber after a minute), sitting over Resume on the control bar and pointing down at it (that
+  // button is the one way back, and glows while held); or that they've put you on hold. A
+  // transfer under way, in the middle of the stage (.busy): how it's going, with × (ours) or Cancel (theirs), and On
+  // hold under it if it is (no pointer: that's the transfer's to settle). End on the bar still
+  // ends the call.
   const heldNote = $("heldNote");
-  heldNote.hidden = !(connected && (state.held || state.heldByThem)) || xferBusy(e);
+  // A transfer's card closed with × stays closed until that transfer is over (e.xferClosed).
+  for (const x of entries.values()) if (x.xferClosed && transferState(x)?.key !== x.xferClosed) delete x.xferClosed;
+  const xsAll = connected ? transferState(e) : null;
+  const xs = xsAll && e.xferClosed !== xsAll.key ? xsAll : null;
+  heldNote.hidden = !(connected && (state.held || state.heldByThem || xs));
+  const pointing = !heldNote.hidden && state.held && !xs;
+  const long = pointing && Date.now() - e.heldAt > 60000;
   if (!heldNote.hidden) {
-    $("heldText").textContent = state.held ? `On hold · ${fmtElapsed(Date.now() - e.heldAt)}` : `${name} put you on hold`;
-    heldNote.classList.toggle("long", state.held && Date.now() - e.heldAt > 60000);
-    $("heldResume").hidden = !state.held;
-    // Why it's on hold, when a transfer of yours failed (they declined it, say): the same words as
-    // the call header's note, where it's easy to miss, with Try again beside Resume.
-    const xt = e?.h.transfer;
-    const failed = state.held && xt?.role === "out" && xt.status === "failed" ? xt : null;
-    $("heldWhy").hidden = !failed;
-    if (failed) { $("heldWhy").textContent = transferShort(failed); $("heldWhy").title = failed.detail || ""; }
-    $("heldRetry").hidden = !failed;
-    if (failed) $("heldRetry").title = `Transfer ${name} again`;
+    const holdText = state.held ? `On hold · ${fmtElapsed(Date.now() - e.heldAt)}` : state.heldByThem ? `${name} put you on hold` : "";
+    $("heldText").textContent = xs ? xs.text : holdText;
+    $("heldText").title = xs?.title ?? "";
+    $("heldSub").hidden = !(xs && holdText);
+    $("heldSub").textContent = xs ? holdText : "";
+    heldNote.classList.toggle("long", long);
+    heldNote.classList.toggle("busy", !!xs);
+    // A transfer: in the notices' shape (icon, who, how it's going), like how it ends.
+    $("heldIcon").innerHTML = xs ? ICON.transfer : "";
+    $("heldWho").hidden = !xs;
+    $("heldWho").textContent = xs ? nameOf(e) : "";
+    $("heldCancel").hidden = !xs?.cancel;
+    $("heldCancel").title = xs?.cancel ?? "";
+    $("heldClose").hidden = !xs?.close;
+    $("heldClose").title = xs?.close ?? "";
   }
+  heldNote.classList.toggle("point", pointing);
+  // Resume on the bar glows while the call is held: a few pulses when it goes on hold, again at
+  // a minute, and a steady amber ring between.
+  hold.classList.toggle("attn", pointing);
+  hold.classList.toggle("attn-long", long);
+  placeHeldNote();
   // End is for a connected call. A call you're placing is cancelled from its card, beside who
   // you're calling, as a call ringing in is declined from its card.
   const hang = $("hangupBtn");
@@ -776,18 +816,20 @@ export function render() {
       }
       title.textContent = shown;
       markContact(title, remote);
-      sub.textContent = state.incomingVideo ? "Incoming video call" : "Incoming call";
+      sub.textContent = `${state.incomingVideo ? "Incoming video call" : "Incoming call"}${(() => { const n = calledAccountName(sel()?.h.account); return n ? ` to ${n}` : ""; })()}`;
       actions.append(button("btn-danger", "Decline", () => post({ type: "decline", id: selectedId })));
       // Answer: you see them (on a video call), your camera stays closed. Answer with video, only
-      // when they offered it, opens it too. With another call going, either holds it.
-      const holdTail = liveCall() ? " & hold current" : "";
+      // when they offered it, opens it too. With another call going, either holds it: the
+      // tooltips say so, as Call's does.
+      const live = liveCall();
+      const holdTail = live ? `, and put ${nameOf(live)} on hold` : "";
       const offered = state.incomingVideo && state.videoAllowed !== false;
-      setBtn(answerBtn, ICON.phone, `Answer${holdTail}`);
-      answerBtn.title = offered ? "Answer: you'll see them; your camera stays closed (A)" : "Answer (A)";
+      setBtn(answerBtn, ICON.phone, "Answer");
+      answerBtn.title = offered ? `Answer${holdTail}: you'll see them; your camera stays closed (A)` : `Answer${holdTail} (A)`;
       actions.append(answerBtn);
       if (offered) {
-        setBtn(answerVideoBtn, ICON.video, `Answer with video${holdTail}`);
-        answerVideoBtn.title = privacy ? "Answer with video: privacy mode is on, so they'll see your camera-off card" : "Answer with your camera on";
+        setBtn(answerVideoBtn, ICON.video, "Answer with video");
+        answerVideoBtn.title = privacy ? `Answer with video${holdTail}: privacy mode is on, so they'll see your camera-off card` : `Answer with your camera on${holdTail}`;
         actions.append(answerVideoBtn);
       }
       if (lastPhase !== "ringing" || lastSelected !== selectedId) answerBtn.focus();
@@ -801,6 +843,16 @@ export function render() {
     case "ended": {
       title.textContent = shown || "Call ended";
       sub.textContent = reason || "Call ended";
+      // In diagnostics mode, once they're saved (snapshots.js), a link to the call's diagnostics.
+      const saved = document.body.classList.contains("diag") ? savedFor(e.id) : null;
+      if (saved) {
+        const open = document.createElement("button");
+        open.type = "button";
+        open.className = "link-btn";
+        open.textContent = "Open diagnostics";
+        open.onclick = () => openSnapshot(saved.entryId, saved.name);
+        sub.append(" · ", open);
+      }
       // Back to the call you're on, or with none, Close: Home now, rather than in a few seconds.
       const back = otherLive();
       if (back) actions.append(button("", `Back to ${nameOf(back)}`, () => selectCall(back.id)));
@@ -820,14 +872,13 @@ export function render() {
   $("card").classList.toggle("with-devices", ringDevices || callingDevices);
   if (ringDevices) renderYourDevices($("cardDevices"), "ring");
   else if (callingDevices) renderYourDevices($("cardDevices"), "calling", e);
-  // No call: Home (or the dial view) in the card's place.
+  // No call: Home in the card's place.
   $("card").hidden = homeShown();
   // Privacy mode on a call: a note says what they get, with Turn off.
   const pn = $("privacyNote");
   pn.hidden = !(connected && privacy) || grid;
   if (!pn.hidden) $("privacyNoteText").textContent = `Privacy mode: ${name} hears silence${call.hasVideo ? " and sees your camera-off card" : ""}`;
-  renderIncoming();
-  renderOutgoing();
+  renderNotices();
   renderGrid(grid);
 
   // Answer or Answer with video is for that call only (onMediaOffer uses it, then clears it); one
@@ -836,6 +887,9 @@ export function render() {
   lastPhase = phase;
   lastSelected = selectedId;
   renderQuality();
+  renderStreams();
+  renderConnection();
+  renderLadder();
 
   renderCalls();
   renderPrivacy();
@@ -861,6 +915,28 @@ async function statsLine(e) {
   e.lastStats = now;
 }
 
+// The state card, on hold, sits over Resume on the control bar with its pointer on the button:
+// left where the button's middle is, kept inside the stage.
+function placeHeldNote() {
+  const note = $("heldNote");
+  const clear = () => { note.style.left = ""; note.style.removeProperty("--tail-x"); };
+  if (note.hidden || !note.classList.contains("point")) return clear();
+  const stage = $("stage").getBoundingClientRect(), btn = $("holdBtn").getBoundingClientRect();
+  if (!btn.width) return clear();
+  const w = note.offsetWidth, x = btn.left + btn.width / 2 - stage.left;
+  const left = Math.max(16, Math.min(stage.width - w - 16, x - w / 2));
+  note.style.left = `${left}px`;
+  note.style.setProperty("--tail-x", `${Math.max(14, Math.min(w - 14, x - left))}px`);
+}
+new ResizeObserver(placeHeldNote).observe($("stage"));
+// A click on the card pulses Resume again: "it's down there".
+$("heldNote").addEventListener("click", (ev) => {
+  if (ev.target.closest("button") || !$("heldNote").classList.contains("point")) return;
+  const b = $("holdBtn");
+  b.classList.remove("attn-again"); void b.offsetWidth; b.classList.add("attn-again");
+});
+$("holdBtn").addEventListener("animationend", (ev) => { if (ev.animationName === "attn-again") $("holdBtn").classList.remove("attn-again"); });
+
 // Once a second: the selected call's timer, every call's time in the list, and how long held
 // calls have been held.
 export function tick() {
@@ -872,7 +948,7 @@ export function tick() {
   }
   if (inGrid() || [...entries.values()].some((x) => x.h.held)) render();
   else renderCallTimes();
-  if (!$("incomingMore").hidden) renderIncoming();   // how long each ringing call has waited
+  if (!$("incoming").hidden) renderNotices();   // how long each ringing call has waited
 }
 setInterval(tick, 1000);
 
@@ -891,6 +967,8 @@ function onState(msg) {
     let e = entries.get(h.id);
     const isNew = !e;
     if (isNew) { e = newEntry(h.id); entries.set(h.id, e); }
+    // A new call (ringing in, or one you've placed) clears the call bar's notice: that's old news.
+    if (isNew && h.call !== "ended") clearHeadEnded();
     const was = e.h.call, wasHeld = !!e.h.held, wasWith = e.h.remote;
     e.h = h;
     if (h.call === "ringing") e.ringAt ||= Date.now();   // how long it's waited, in the ringing banner's list
@@ -957,13 +1035,16 @@ function closeEnded(e) {
 
 function onNewCall(e) {
   const s = sel();
+  // A call ringing in is seen whatever you're doing: anything modal closes.
+  if (!e.h.outgoing) for (const d of document.querySelectorAll("dialog[open]")) if (d.matches(":modal")) { log(`closing ${d.id || "a dialog"}: call ${e.id} ringing`); d.close(); }
   if (e.h.outgoing) e.placedVideo = placedVideo;
-  // A call you place while on another (now on hold) leaves the stage and the list alone: it shows
-  // as a "Calling…" banner, and only once it's answered does it join the list and take the stage.
-  // Unanswered, the banner says why, and the call you were on stays on hold: you may want to
-  // call someone else, or resume it, and that's your choice.
+  // A call you place while on another (now on hold) goes on the stage, as the first
+  // one does (Calling…, with its own card), and into the list. Unanswered, the stage goes back to
+  // the call you were on (still on hold: resuming it is your choice) and its row says why for a
+  // few seconds (onPlacedEnded).
   if (e.h.outgoing && isLive(s) && !s.gone) {
-    e.pending = true;
+    e.over = true;
+    selectedId = e.id;
     log(`calling ${nameOf(e)} (call ${e.id}) over call ${s.id}`);
   // A call you place goes on the stage. So does one ringing while the stage has no live call;
   // otherwise it rings as a banner over the call you're on.
@@ -981,10 +1062,10 @@ function onPhase(e) {
     closeAccounts();
     if (!e.pending && selectedId !== e.id) selectCall(e.id);
   }
-  if (e.h.call === "connected" && e.pending) {
+  if (e.h.call === "connected" && (e.pending || e.over)) {
     // The call placed over another is answered: now it's a call, in the list and on the stage
     // (in Focus), with the one you were on held.
-    e.pending = false;
+    e.pending = e.over = false;
     selectCall(e.id);
     goLive(e);
     setView("focus");
@@ -1002,13 +1083,15 @@ function onPhase(e) {
     }
     if (testAddVideo) setTimeout(() => { if (e.m && !e.m.hasVideo && e.id === selectedId) $("camBtn").click(); }, testAddVideo * 1000);
   } else if (e.h.call === "ended") {
+    // Its Call details, Streams and Call quality are kept with its history entry (snapshots.js),
+    // taken before its media goes; then the tabs clear.
+    captureDiagnostics(e);
     // Not while calling or ringing: in the web softphone the page's connection is the call's
     // own, and it's set up (offer or answer) before the call connects.
     closeMedia(e);
     if (audioId === e.id) audioId = null;
-    if (toastCallId === e.id) hideToast();
-    // With nothing else going, its "Call ended" card gives way to Home after a few seconds.
-    setTimeout(() => closeEnded(e), ENDED_CARD_MS);
+    // A call you placed over another, not answered (not cancelled: you know why): the notices say why.
+    if (e.pending && !e.cancelled) onPlacedEnded(e);
     // The call on the stage ended: its keypad and text panels close (docked or not), so the
     // stage is back to its full width for the ended call's card.
     if (e.id === selectedId && (keypadOpen || textOpen)) {
@@ -1016,6 +1099,13 @@ function onPhase(e) {
       if (textOpen) setTextOpen(false, false);
       log(`call ${e.id} ended: keypad and text closed`);
     }
+    // Said in the call bar whichever call it was (one in the background, or in Grid, too).
+    noticeEnded(e);
+    // A call you placed that didn't go through stays on the stage a few seconds, its
+    // card saying why (with Back to … or Close), before the stage goes on; cancelled, it just goes.
+    if (e.id === selectedId && placedFailed(e)) {
+      setTimeout(() => { if (selectedId === e.id && entries.get(e.id) === e) leaveEnded(e); }, PLACED_STAY_MS);
+    } else if (e.id === selectedId) leaveEnded(e);
   }
 }
 
@@ -1039,62 +1129,51 @@ function declineCall(id) { post({ type: "decline", id }); }
 // Holds or resumes a call. Compared with what was last asked for, not what the host has done
 // yet, so a quick switch back and forth still ends where you left it (the host sends the
 // re-INVITEs for a call one at a time).
-function holdCall(e, hold) {
-  if (e?.h.call !== "connected" || holdState(e) === hold) return;
+function holdCall(e, hold, resumed = false) {
+  if (e?.h.call !== "connected") return;
+  if (holdState(e) === hold) {
+    // Resume on a call that's already live (or on its way): still the answer to a failed transfer.
+    if (resumed && !hold && e.h.transfer?.status === "failed") post({ type: "hold", id: e.id, hold, resumed });
+    return;
+  }
   e.holdWanted = hold;
   e.holdAskedAt = Date.now();
   log(`${hold ? "holding" : "resuming"} call ${e.id} (${nameOf(e)})`);
-  post({ type: "hold", id: e.id, hold });
+  post({ type: "hold", id: e.id, hold, resumed });
   render();   // the audio moves now (syncAudio), and "Holding…" shows if the host queues it
   syncCamera();   // the "On hold" card, or the camera back
 }
 
-// A call you're placing while on another: a banner over the stage with who and Cancel, and if it
-// isn't answered, why (until the host lets it go, a few seconds later, or you close it).
-function renderOutgoing() {
-  const e = [...entries.values()].filter((x) => x.pending && !x.cancelled).sort((a, b) => Number(b.id) - Number(a.id))[0];
-  const el = $("outgoing");
-  el.hidden = !e;
-  if (!e) return;
-  const ended = e.h.call === "ended";
-  $("outgoingWho").textContent = nameOf(e);
-  $("outgoingWho").title = e.h.remote;
-  $("outgoingWhat").textContent = ended ? (e.h.reason || "Call ended") : "Calling…";
-  el.classList.toggle("ended", ended);
-  const b = $("outgoingCancel");
-  b.textContent = ended ? "Close" : "Cancel";
-  b.className = ended ? "btn" : "btn btn-danger";
-  b.onclick = () => {
-    // Cancelled, it just goes: you know why.
-    if (!ended) post({ type: "hangup", id: e.id });
-    if (ended) dropEntry(e); else e.cancelled = true;
-    render();
-  };
-}
-
-// Calls ringing while you're on another: a banner over the stage, the caller who has waited
-// longest first, with Answer & hold current and Decline. Clicking the name shows the full answer view.
-// More than one: "+N more" drops down a list of the others inside the banner (scrolling past a
-// few), each with how long it's waited and its own Decline and Answer, so you pick which.
+// ---- The notices ----
+// One stack, in the middle of the stage over a call (at the top over a ringing call's card), for
+// what needs your answer and what just happened, one at a time, the same way for each: icon,
+// who, what, then the buttons, the main one last, and × for what only needs seeing.
+// Decisions first, oldest first: a call ringing while you're on another, a transfer they're
+// asking you to take, a call you're placing over another (Calling… until it's answered: then it's
+// in the list and on the stage). Then outcomes: a call you placed over another that wasn't
+// answered (Call again, until you close it), a transfer that's over, video they
+// didn't take (it goes by itself). Clicking the name opens that call (a ringing one: the answer
+// view). More than one: "+N more" drops down a list of the rest inside it (scrolling past a few),
+// each with its own buttons, and Dismiss all declines every call and transfer waiting and clears
+// the outcomes, so you can stay on the call you're on (a call you're placing stays: it's yours).
 let incomingOpen = false;
 let answerPicked = null;   // a ringing call you picked (its name, row or tile): it gets the full answer view
 const allRinging = () => [...entries.values()].filter((e) => e.h.call === "ringing").sort((a, b) => Number(a.id) - Number(b.id));
 // One ringing call on the stage has it to itself (the full answer view). Several ringing, with
-// one of them on the stage, they're all in the banner, the same list as over a call, and stay
-// there as you switch between them: the banner is every call waiting, the stage the one you're
+// one of them on the stage, they're all in the notices, the same list as over a call, and stay
+// there as you switch between them: the notices are every call waiting, the stage the one you're
 // looking at. Until you pick one (its name, its row) the stage just says how many.
 const ringingInBanner = () => sel()?.h.call === "ringing" && allRinging().length > 1;
 const ringingUnpicked = () => ringingInBanner() && selectedId !== answerPicked;
-// The one in the answer view, picked, is marked in the banner (its name in the accent colour).
-const markShown = (who, id) => {
-  const shown = id === selectedId && !ringingUnpicked();
-  who.classList.toggle("shown", shown);
-  if (shown) who.setAttribute("aria-current", "true"); else who.removeAttribute("aria-current");
-};
 const pickRinging = (id) => { answerPicked = id; closeHistory(false); selectCall(id); render(); };
-const incomingRows = new Map();   // call id -> { li, who, what, decline, answer }
 const ringingWait = (e) => fmtElapsed(Date.now() - (e.ringAt ||= Date.now()));
-const ringingWhat = (e, many) => `${e.h.incomingVideo ? "Video call" : "Calling"}${many ? ` · ${ringingWait(e)}` : ""}`;
+// With more than one account, which one they're calling: "Calling Carol" (a transfer to an account
+// on this phone rings here too, and without it reads as some other call).
+const ringingWhat = (e, many) => {
+  const to = calledAccountName(e.h.account);
+  const kind = e.h.incomingVideo ? (to ? `Video call to ${to}` : "Video call") : (to ? `Calling ${to}` : "Calling");
+  return `${kind}${many ? ` · ${ringingWait(e)}` : ""}`;
+};
 // Two ringing with the same name but from different addresses: each says its address too, so
 // you can tell which is which (the same both ways, the waiting time is what tells them apart).
 const ringingAddr = (e) => (e.h.remote ?? "").replace(/^.*</, "").replace(/>.*$/, "").replace(/^sips?:/i, "");
@@ -1103,72 +1182,416 @@ const ringingWho = (e, ringing) => {
   return new Set(same.map(ringingAddr)).size > 1 ? `${n} · ${ringingAddr(e)}` : n;
 };
 
-function renderIncoming() {
+// Outcomes kept here (the host lets an unanswered call go after a few seconds; a refused video
+// is only a message): { key, callId, who, whoTitle, what, title, icon, tone, action, at }. One
+// with a button stays until you use it or close it; one without goes after OUTCOME_MS (a line
+// along its foot runs down meanwhile), the clock stopped while the pointer is on the notices.
+const OUTCOME_MS = 8000;
+// The call bar's notice (a call that ended on you, or one you placed that wasn't answered): there
+// for HEAD_MS, the last HEAD_FADE_MS of it fading out.
+const HEAD_MS = 4000, HEAD_FADE_MS = 2000;
+// A call in the background (or in Grid) that ended on you: its row in the calls panel stays this
+// long, amber, saying so, then fades and folds away (calllist.js). Not the call bar: that's the
+// call on the stage's.
+export const ROW_MS = 4000;
+const outcomes = [];
+let noticesHeldAt = null;   // the pointer's on the notices (or the call bar's), since then
+function pushOutcome(o) {
+  const i = outcomes.findIndex((x) => x.key === o.key);
+  if (i >= 0) outcomes.splice(i, 1);
+  const at = Date.now();
+  outcomes.push({ ...o, at, until: o.action ? null : at + (o.head ? HEAD_MS : o.row ? ROW_MS : OUTCOME_MS) });
+  render();
+}
+// The outcomes' clocks stop while the window is hidden (minimised), so one isn't gone before
+// you've seen it (back, the call bar's notice pulses once more), and while the pointer is on
+// the notices or the call bar's notice. Both are looked at afresh every tick (not kept from
+// mouseenter/mouseleave, which a notice closed under the pointer never gets, leaving every
+// clock stopped).
+let lastTick = Date.now(), wasAway = false;
+setInterval(() => {
+  const tickNow = Date.now(), step = tickNow - lastTick;
+  lastTick = tickNow;
+  const away = document.hidden;
+  const held = (!$("incoming").hidden && $("incoming").matches(":hover")) || (!$("headEnded").hidden && $("headEnded").matches(":hover"))
+    || !!document.querySelector("#callList .call-row.gone:hover, #tiles .tile.gone:hover, #callList .call-row.noted:hover, #tiles .tile.noted:hover");
+  noticesHeldAt = held ? noticesHeldAt ?? tickNow : null;
+  if (away || held) { for (const o of outcomes) if (o.until) o.until += step; }
+  if (!away && wasAway && !$("headEnded").hidden) {
+    const b = $("headEnded");
+    b.classList.remove("again"); void b.offsetWidth; b.classList.add("again");
+  }
+  wasAway = away;
+  fadeHeadEnded();
+  if (away || held) return;
+  const n = outcomes.length;
+  for (let j = outcomes.length - 1; j >= 0; j--) if (outcomes[j].until && outcomes[j].until <= tickNow) outcomes.splice(j, 1);
+  if (outcomes.length !== n) render();
+}, 250);
+// A new call: the call bar's notice goes.
+function clearHeadEnded() {
+  const n = outcomes.length;
+  for (let j = outcomes.length - 1; j >= 0; j--) if (outcomes[j].head) outcomes.splice(j, 1);
+  if (outcomes.length !== n) render();
+}
+// The calls panel's rows for calls that have just ended on you (calllist.js).
+export const goneRows = () => outcomes.filter((o) => o.row);
+// What just happened on a call that's still on (video they didn't take), for its row
+// and tile, shaped as a transfer's outcome is there: { row: call id, what, tone, dismiss }.
+export const callNotes = () => outcomes.filter((o) => o.note != null).map((o) => ({ ...o, row: o.note, dismiss: () => dropOutcome(o.key) }));
+export function dropOutcome(key) {
+  const i = outcomes.findIndex((x) => x.key === key);
+  if (i >= 0) { outcomes.splice(i, 1); render(); }
+}
+// Why a call you placed wasn't answered, in a few words after their name: the host's sentence,
+// with its SIP status, goes in the tooltip.
+const END_WORDS = {
+  404: "wasn't found", 604: "wasn't found", 486: "is busy", 600: "is busy", 603: "declined the call",
+  408: "didn't answer", 480: "didn't answer", 487: "didn't answer",
+  401: "· the call wasn't allowed", 403: "· the call wasn't allowed", 407: "· the call wasn't allowed",
+  488: "can't take this call's media", 606: "can't take this call's media",
+  502: "couldn't be reached", 503: "couldn't be reached", 504: "couldn't be reached",
+};
+function endWords(reason) {
+  const r = reason || "Call ended";
+  const rang = /^Not answered: rang for (\d+) s/.exec(r);
+  if (rang) return `didn't answer · rang ${rang[1]} s`;
+  const code = /(?:said|\()\s*(\d{3})\b/.exec(r)?.[1];
+  return END_WORDS[code] ?? (code ? "· the call failed" : `· ${r}`);
+}
+// The call on the stage ended: no "Call ended" card. The stage goes straight on to what's next
+// (another call you're on, a call still ringing, or Home). If they ended it (or it dropped), the
+// call's bar says so for a few seconds (× closes it sooner): who, why, and how long it lasted;
+// so does a call you placed that wasn't answered (declined, busy, no answer), with why. One you
+// hung up on, or declined, says nothing (you know), nor does a missed call (Recent has it). In diagnostics mode, once they're saved, its
+// diagnostics are a link on it.
+function noticeEnded(e) {
+  if (e.cancelled) return;
+  const reason = e.h.reason || "Call ended";
+  if (e.connectedAt) {
+    // A call you were on: said only if you didn't end it (you hung up, or your transfer of it
+    // went through: you know), in the call's bar at the top of the stage (renderHeadEnded).
+    const yours = reason === "You hung up" || (e.h.transfer?.role === "out" && e.h.transfer?.status === "done");
+    // The call on the stage, with nothing to go back to: its bar. One in the background, any in
+    // Grid, or the stage going back to another call: its row in the calls panel, where it was
+    // (the bar is the call on the stage's, and would read as that one).
+    const row = inGrid() || e.id !== selectedId || !!otherLive();
+    if (!yours) {
+      pushOutcome({
+        key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: `${reason} · ${fmtElapsed(Date.now() - e.connectedAt)}`,
+        icon: ICON.hangup, tone: /fail|closed|couldn't|no audio/i.test(reason) ? "bad" : "info", diagFor: e.id,
+        head: !row, row: row ? { id: e.id, remote: e.h.remote, reason } : null,
+      });
+    }
+  } else if (e.h.outgoing ? reason !== "You hung up" : reason !== "Declined") {
+    if (e.h.outgoing) onPlacedEnded(e);
+    // A missed call says nothing here: Recent has it (and its "N missed").
+    // The call on the stage: its bar; one in the background (or in Grid): its row.
+    else if (reason !== "Missed call") {
+      const row = inGrid() || e.id !== selectedId || !!otherLive();
+      pushOutcome({ key: `end-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: reason, icon: ICON.phone, tone: "bad", diagFor: e.id,
+        head: !row, row: row ? { id: e.id, remote: e.h.remote, reason } : null });
+    }
+  }
+}
+// The call on the stage ended: on to what's next.
+function leaveEnded(e) {
+  const back = otherLive();
+  if (back) selectCall(back.id);
+  else selectedId = null;
+  dropEntry(e);
+  render();
+}
+// A call you placed that wasn't answered (declined, busy, no answer, or it failed): who and why,
+// in the call's bar like a call that ended on you; amber, or red if it failed. No Call again:
+// Recent has it. The host's sentence, with its SIP status, is the tooltip.
+// A call you placed, on the stage, that wasn't answered and that you didn't cancel:
+// its card stays PLACED_STAY_MS saying why, instead of a notice.
+const PLACED_STAY_MS = 4000;
+const placedFailed = (e) => e.h.outgoing && !e.connectedAt && !e.cancelled && (e.h.reason || "") !== "You hung up" && !inGrid();
+function onPlacedEnded(e) {
+  if (e.id === selectedId && placedFailed(e)) return;   // its card says it
+  const what = endWords(e.h.reason);
+  const failed = what.startsWith("·") || /found|couldn't|can't/.test(what);
+  // With another call to go back to (or in Grid, or not on the stage), its row says
+  // why for a few seconds (goneRow), not the bar of the call the stage goes back to.
+  const row = inGrid() || e.id !== selectedId || !!otherLive();
+  pushOutcome({
+    key: `out-${e.id}`, who: nameOf(e), whoTitle: e.h.remote, what: row ? what.replace(/^· /, "") : what, text: `${nameOf(e)} ${what}`,
+    title: [e.h.remote, e.h.reason].filter(Boolean).join(": "), icon: ICON.hangup, tone: failed ? "bad" : "info", diagFor: e.id,
+    head: !row, row: row ? { id: e.id, remote: e.h.remote, reason: e.h.reason } : null,
+  });
+}
+function onVideoRefused(e) {
+  if (!e) return;
+  pushOutcome({
+    key: `video-${e.id}`, callId: e.id, who: nameOf(e), whoTitle: e.h.remote, what: "didn't take video",
+    title: "Their phone turned video down: the call carries on as audio", icon: ICON.videoOff, tone: "info",
+    // On the call: the stage's, its bar; one in the background (or in Grid), its row
+    // and tile, as a transfer's outcome is (noteRow).
+    ...(!inGrid() && e.id === selectedId ? { head: true } : { note: e.id }),
+  });
+}
+
+// Everything in the notices now, in order: { key, icon, who, whoTitle, onWho, ringId (marks the
+// ringing call on the stage), what, title, tone, actions: [{ label | icon, title, cls, fn }],
+// dismiss (×), bulk (what Dismiss all does with it) }.
+function noticeItems() {
   const all = ringingInBanner();
   const ringing = allRinging().filter((e) => all || e.id !== selectedId);
+  // Just "Answer": with a call going, it holds that one, and the tooltip says so.
+  const live = liveCall();
+  const holdTail = live ? `, and put ${nameOf(live)} on hold` : "";
+  const items = ringing.map((e) => ({
+    key: `ring-${e.id}`, icon: e.h.incomingVideo ? ICON.video : ICON.phone, ringId: e.id,
+    who: ringingWho(e, ringing), whoTitle: `${e.h.remote}: show the answer view`, onWho: () => pickRinging(e.id),
+    what: (many) => ringingWhat(e, many), tone: "warn",
+    actions: [
+      { label: "Decline", cls: "btn btn-danger", fn: () => declineCall(e.id) },
+      { label: "Answer", title: `Answer${holdTail}`, cls: "btn btn-primary", fn: () => { incomingOpen = false; answerCall(e.id); } },
+      ...(e.h.incomingVideo && state.videoAllowed !== false
+        ? [{ icon: ICON.video, title: `Answer with video${holdTail}`, cls: "btn btn-primary icon-btn", fn: () => { incomingOpen = false; answerCall(e.id, true); } }]
+        : []),
+    ],
+    bulk: () => declineCall(e.id),
+  }));
+  const open = (id) => () => { closeHistory(false); selectCall(id); setView("focus"); };
+  const xfer = transferNotices(open);
+  items.push(...xfer.decisions.filter((d) => !d.stage && !d.row));   // (on the call: its bar, or its lamp)
+  // A call you're placing over another: Cancel (cancelled, it just goes: you know why).
+  const placing = [...entries.values()].filter((x) => x.pending && !x.cancelled && x.h.call !== "ended").sort((a, b) => Number(a.id) - Number(b.id));
+  for (const e of placing) {
+    items.push({
+      key: `out-${e.id}`, icon: ICON.phone, who: nameOf(e), whoTitle: e.h.remote, what: "Calling…", tone: "muted",
+      actions: [{ label: "Cancel", cls: "btn btn-danger", fn: () => { post({ type: "hangup", id: e.id }); e.cancelled = true; render(); } }],
+    });
+  }
+  items.push(...xfer.outcomes.filter((o) => !o.row && !o.stage).map((o) => ({ ...o, outcome: true })));
+  for (const o of outcomes) {
+    if (o.head || o.row || o.note != null) continue;   // in the call's bar, or its row in the calls panel; the call's bar (renderHeadEnded); in Grid, floating over its top
+    const live = o.callId && entries.get(o.callId)?.h.call === "connected";
+    const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
+    items.push({
+      key: o.key, icon: o.icon, who: o.who, whoTitle: o.whoTitle, onWho: live ? open(o.callId) : null, what: o.what, title: o.title, tone: o.tone,
+      outcome: true, bar: !!o.head, until: o.until,
+      actions: [
+        ...(saved ? [{ label: "Diagnostics", title: "Open this call's saved diagnostics", cls: "btn", fn: () => openSnapshot(saved.entryId, saved.name) }] : []),
+        ...(o.action ? [{ label: o.action.label, title: o.action.title, cls: "btn", fn: o.action.fn }] : []),
+      ],
+      dismiss: () => dropOutcome(o.key), bulk: () => dropOutcome(o.key),
+    });
+  }
+  return items;
+}
+
+// The buttons on a notice, reused from one render to the next (it runs every second while one
+// is waiting), so the one under the pointer or with focus stays put. × goes last.
+function syncActions(span, it) {
+  const acts = [...it.actions, ...(it.dismiss ? [{ icon: ICON.close, title: "Dismiss", cls: "incoming-x", fn: it.dismiss }] : [])];
+  while (span.children.length > acts.length) span.lastElementChild.remove();
+  acts.forEach((a, i) => {
+    let b = span.children[i];
+    if (!b) { b = document.createElement("button"); b.type = "button"; span.append(b); }
+    if (b.className !== a.cls) b.className = a.cls;
+    if (a.icon) {
+      if (b.dataset.icon !== a.title) { b.innerHTML = a.icon; b.dataset.icon = a.title; }
+      b.setAttribute("aria-label", a.title);
+    } else {
+      if (b.textContent !== a.label || b.dataset.icon) { b.textContent = a.label; delete b.dataset.icon; }
+      b.removeAttribute("aria-label");
+    }
+    b.title = a.title ?? "";
+    b.onclick = a.fn;
+  });
+}
+// One notice into its parts (the top one's, or a row's).
+function fillNotice(p, it, many) {
+  if (p.icon.dataset.key !== it.key) { p.icon.innerHTML = it.icon ?? ""; p.icon.dataset.key = it.key; }
+  p.who.textContent = it.who;
+  p.who.title = it.whoTitle ?? "";
+  p.who.onclick = it.onWho ?? null;
+  p.who.classList.toggle("static", !it.onWho);
+  // The ringing call in the answer view, picked, is marked (its name in the accent colour).
+  const shown = it.ringId != null && it.ringId === selectedId && !ringingUnpicked();
+  p.who.classList.toggle("shown", shown);
+  if (shown) p.who.setAttribute("aria-current", "true"); else p.who.removeAttribute("aria-current");
+  p.what.textContent = typeof it.what === "function" ? it.what(many) : it.what;
+  p.what.title = it.title ?? "";
+  p.what.dataset.tone = it.tone ?? "";
+  syncActions(p.acts, it);
+}
+
+// A call that ended on you, in the bar at the top of the stage where the call's padlock, name
+// and timer are: at its right over the call you're back on, or the bar on its own (Home, or a
+// call's card). The latest one; × closes it, and it goes by itself as the notices' outcomes do.
+// Going, it fades out over HEAD_CLOSE_MS; the bar on its own (over Home) closes up as it does,
+// Home sliding up under it, rather than jumping.
+const HEAD_CLOSE_MS = 500;
+let headClosing = null;   // the timer that hides it once it's faded
+function renderHeadEnded() {
+  // The call on the stage being asked to transfer you: asked here, in its bar, with
+  // Decline and Accept, until it's answered (or the host lets it go). Before any outcome.
+  // Then how a transfer on it went (until it's closed, or the host clears it), then the latest outcome.
+  const xn = !inGrid() && sel()?.h.call === "connected" ? transferNotices(() => () => {}) : null;
+  const ask = xn?.decisions.find((d) => d.stage) ?? null;
+  // A head outcome is its call's: shown while that call is on the stage, or over
+  // Home once it's gone; not over another call you've switched to.
+  const ours = (x) => selectedId == null || (x.callId ?? x.diagFor) === selectedId;
+  const o = ask ?? xn?.outcomes.find((x) => x.stage) ?? outcomes.findLast((x) => x.head && ours(x));
+  const box = $("headEnded"), info = $("info"), stage = $("stage"), connected = !inGrid() && sel()?.h.call === "connected";
+  if (!o && !box.hidden) {
+    if (!headClosing) {
+      box.classList.add("closing");
+      if (info.classList.contains("ended-only") && !connected) { info.classList.add("closing"); stage.classList.add("head-closing"); }
+      // Over a call, the call's details come back as it goes.
+      if (info.classList.contains("covered")) { info.classList.add("uncovering"); info.style.setProperty("--cover", "0"); }
+      headClosing = setTimeout(() => {
+        headClosing = null;
+        box.hidden = true;
+        box.classList.remove("closing");
+        info.classList.remove("closing", "ended-only", "covered", "uncovering");
+        info.style.removeProperty("--cover");
+        stage.classList.remove("head-closing");
+        render();
+      }, HEAD_CLOSE_MS);
+    }
+    // Closing: the bar stays while it closes up (render() has just hidden it, and dropped the
+    // stage's head, which is what closes it up).
+    if (info.classList.contains("ended-only") && !connected) { info.hidden = false; stage.classList.remove("head"); }
+    return;
+  }
+  if (o && headClosing) {
+    clearTimeout(headClosing);
+    headClosing = null;
+    box.classList.remove("closing");
+    info.classList.remove("closing", "uncovering");
+    stage.classList.remove("head-closing");
+  }
+  box.hidden = !o;
+  info.classList.toggle("ended-only", !!o && !connected);
+  // Over a call it's where it always is, at the left, over the call's details (they fade out as
+  // it comes and back as it fades): × if you want them back sooner.
+  info.classList.toggle("covered", !!o && connected);
+  if (!o) info.style.removeProperty("--cover");
+  if (!connected) info.hidden = !o;
+  stage.classList.toggle("head", connected || !!o);
+  if (!o) return;
+  if (box.dataset.key !== o.key) { $("headEndedIcon").innerHTML = o.icon ?? ""; box.dataset.key = o.key; }
+  $("headEndedText").textContent = o.text ?? `${o.who} · ${o.what}`;
+  box.title = o.title || o.whoTitle || "";
+  box.dataset.tone = ask ? "ask" : o.tone ?? "";
+  $("headEndedX").onclick = o.dismiss ?? (() => dropOutcome(o.key));
+  $("headEndedX").hidden = !!ask;
+  let acts = box.querySelector(".head-ask");
+  if (ask && !acts) { acts = Object.assign(document.createElement("span"), { className: "head-ask" }); box.insertBefore(acts, $("headEndedX")); }
+  if (acts) {
+    acts.hidden = !ask;
+    if (ask && acts.dataset.key !== ask.key) {
+      acts.dataset.key = ask.key;
+      acts.replaceChildren(...ask.actions.map((a) => {
+        const b = Object.assign(document.createElement("button"), { type: "button", className: a.cls, textContent: a.label, title: a.title ?? "" });
+        b.onclick = (ev) => { ev.stopPropagation(); a.fn(); };
+        return b;
+      }));
+    }
+    if (!ask) delete acts.dataset.key;
+  }
+  fadeHeadEnded();
+  const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
+  $("headEndedDiag").hidden = !saved;
+  $("headEndedDiag").title = saved ? "Open this call's saved diagnostics" : "";
+  $("headEndedDiag").onclick = saved ? () => openSnapshot(saved.entryId, saved.name) : null;
+}
+// Its fade: full for the first HEAD_MS - HEAD_FADE_MS, then down to nothing as its time runs out;
+// full again while the pointer's on it (its clock stopped), and while you're away (so is that).
+function fadeHeadEnded() {
+  const box = $("headEnded");
+  if (headClosing) return;
+  const o = box.hidden ? null : outcomes.find((x) => x.key === box.dataset.key);
+  const left = o?.until ? o.until - Date.now() : HEAD_FADE_MS;
+  box.style.opacity = !o?.until || noticesHeldAt != null || wasAway ? "" : String(Math.max(0, Math.min(1, left / HEAD_FADE_MS)));
+  // The call's details under it, the other way.
+  $("info").style.setProperty("--cover", box.style.opacity || "1");
+}
+$("headEndedX").innerHTML = ICON.close;
+
+const noticeRows = new Map();   // key -> { li, icon, who, what, acts }
+function renderNotices() {
+  renderHeadEnded();
+  const items = noticeItems();
   const el = $("incoming");
-  el.hidden = !ringing.length;
-  const e = ringing[0], rest = ringing.slice(1), many = rest.length > 0;
+  el.hidden = !items.length;
+  const top = items[0], rest = items.slice(1), many = rest.length > 0;
+  // Over a call, in the middle of the stage; over a ringing call's card (or Home), at the top.
+  // What just happened (an outcome on top) is in the middle, wherever, over the stage dulled;
+  // a click on the dulled stage closes it.
+  // A call that ended on you is in the bar, where a call ringing in would be: no dulled stage.
+  const outcome = !!top?.outcome && !top.bar;
+  // The one event from another call that takes the middle of the stage: a call ringing
+  // in, over a call you're on (or Grid), bigger and pulsing; its row in the calls panel blinks too.
+  // Everything else about another call is on that call (its row, its tile).
+  const ringIn = top?.ringId != null && !outcome && sel()?.h.call === "connected";
+  el.classList.toggle("mid", outcome || ringIn);
+  el.classList.toggle("ring", ringIn);
+  el.classList.toggle("outcome", outcome);
+  el.classList.toggle("timed", !!top?.until);
+  const scrim = $("noticeScrim");
+  scrim.hidden = !outcome;
+  scrim.onclick = outcome && top.dismiss ? top.dismiss : null;
+  // The line running down along the foot of one that goes by itself (held still while the
+  // pointer's on it, as its clock is).
+  const drain = $("incomingDrain");
+  drain.hidden = !top?.until;
+  if (top?.until && noticesHeldAt == null && drain.dataset.key !== `${top.key}@${top.until}`) {
+    drain.dataset.key = `${top.key}@${top.until}`;
+    const left = Math.max(0, top.until - Date.now());
+    drain.style.animation = "none";
+    drain.style.setProperty("--from", String(left / OUTCOME_MS));
+    void drain.offsetWidth;
+    drain.style.animation = `drain ${left}ms linear forwards`;
+  }
   if (!many) incomingOpen = false;
   el.classList.toggle("open", incomingOpen);
-  const answerLabel = liveCall() ? "Answer & hold current" : "Answer";
-  if (e) {
-    $("incomingWho").textContent = ringingWho(e, ringing);
-    $("incomingWho").title = `${e.h.remote}: show the answer view`;
-    $("incomingWhat").textContent = ringingWhat(e, many);
-    $("incomingWho").onclick = () => pickRinging(e.id);
-    markShown($("incomingWho"), e.id);
-    $("incomingDecline").onclick = () => declineCall(e.id);
-    $("incomingAnswer").textContent = answerLabel;
-    $("incomingAnswer").onclick = () => { incomingOpen = false; answerCall(e.id); };
-    // A video call: Answer with video too, as an icon (the banner's short of room).
-    const iv = $("incomingVideoAnswer");
-    iv.hidden = !(e.h.incomingVideo && state.videoAllowed !== false);
-    iv.title = `${answerLabel} with video`;
-    iv.setAttribute("aria-label", iv.title);
-    iv.onclick = () => { incomingOpen = false; answerCall(e.id, true); };
-  }
+  if (top) fillNotice({ icon: $("incomingIcon"), who: $("incomingWho"), what: $("incomingWhat"), acts: $("incomingActions") }, top, many);
 
   const more = $("incomingMore");
   more.hidden = !many;
   more.textContent = `+${rest.length} more`;
   more.setAttribute("aria-expanded", String(incomingOpen));
-  more.title = incomingOpen ? "Hide the other calls" : `${rest.length} more ${rest.length > 1 ? "calls" : "call"} waiting: pick one`;
+  more.title = incomingOpen ? "Hide the others" : `${rest.length} more waiting: show ${rest.length > 1 ? "them" : "it"}`;
+  $("incomingFoot").hidden = !many || !items.some((it) => it.bulk);
 
   // The list's rows are kept from one render to the next (they're redrawn every second while
   // it's open, for the waiting times), so a row under the pointer or with focus stays put.
   const list = $("incomingList");
   list.hidden = !incomingOpen;
-  const ids = new Set(rest.map((r) => r.id));
-  for (const [id, row] of incomingRows) if (!ids.has(id)) { row.li.remove(); incomingRows.delete(id); }
-  for (const r of rest) {
-    let row = incomingRows.get(r.id);
+  const keys = new Set(rest.map((r) => r.key));
+  for (const [key, row] of noticeRows) if (!keys.has(key)) { row.li.remove(); noticeRows.delete(key); }
+  rest.forEach((it, i) => {
+    let row = noticeRows.get(it.key);
     if (!row) {
-      const mk = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls, textContent: text ?? "" });
-      row = { li: mk("li", "incoming-row"), who: mk("button", "incoming-who"), what: mk("span", "incoming-what"),
-        decline: mk("button", "btn btn-danger", "Decline"), answer: mk("button", "btn btn-primary") };
-      row.who.type = row.decline.type = row.answer.type = "button";
-      const acts = mk("span", "incoming-actions");
-      acts.append(row.decline, row.answer);
-      row.li.append(row.who, row.what, acts);
-      row.who.onclick = () => pickRinging(r.id);
-      row.decline.onclick = () => declineCall(r.id);
-      // Answered, you're talking to them: the list folds away (the rest still wait in the banner).
-      // Declined, it stays open, for the next.
-      row.answer.onclick = () => { incomingOpen = false; answerCall(r.id); };
-      incomingRows.set(r.id, row);
-      list.append(row.li);   // ids only go up, so a new one belongs at the bottom
+      const mk = (tag, cls) => Object.assign(document.createElement(tag), { className: cls });
+      row = { li: mk("li", "incoming-row"), icon: mk("span", "incoming-icon"), who: mk("button", "incoming-who"), what: mk("span", "incoming-what"), acts: mk("span", "incoming-actions") };
+      row.who.type = "button";
+      row.icon.setAttribute("aria-hidden", "true");
+      row.li.append(row.icon, row.who, row.what, row.acts);
+      noticeRows.set(it.key, row);
     }
-    row.who.textContent = ringingWho(r, ringing);
-    row.who.title = `${r.h.remote}: show the answer view`;
-    row.what.textContent = ringingWhat(r, true);
-    markShown(row.who, r.id);
-    row.answer.textContent = answerLabel;
-  }
+    if (list.children[i] !== row.li) list.insertBefore(row.li, list.children[i] ?? null);
+    fillNotice(row, it, true);
+  });
 }
-$("incomingMore").onclick = () => { incomingOpen = !incomingOpen; renderIncoming(); };
+$("incomingMore").onclick = () => { incomingOpen = !incomingOpen; renderNotices(); };
+$("incomingDismissAll").title = "Decline the calls and transfers waiting and clear the rest: stay on the call you're on";
+$("incomingDismissAll").onclick = () => {
+  const items = noticeItems().filter((it) => it.bulk);
+  log(`dismiss all: ${items.map((it) => it.key).join(", ")}`);
+  incomingOpen = false;
+  for (const it of items) it.bulk();
+  render();
+};
 $("incoming").addEventListener("keydown", (ev) => {
-  if (ev.key === "Escape" && incomingOpen) { ev.stopPropagation(); incomingOpen = false; renderIncoming(); $("incomingMore").focus(); }
+  if (ev.key === "Escape" && incomingOpen) { ev.stopPropagation(); incomingOpen = false; renderNotices(); $("incomingMore").focus(); }
 });
 
 // The grid's tiles, kept from one render to the next (each holds its call's <video>, which
@@ -1179,11 +1602,16 @@ function makeTile(e) {
   const t = { root: el("div", "tile"), feed: el("div", "tile-feed"), avatar: el("span", "avatar tile-avatar"), time: el("span", "tile-time"),
     name: el("span", "tile-name"), status: el("span", "tile-status"), media: el("span", "call-sends"), viz: el("canvas", "tile-viz"),
     self: Object.assign(el("video", "tile-self"), { autoplay: true, playsInline: true, muted: true, hidden: true }),
-    held: el("div", "held-note"), heldText: el("span", ""), resume: el("button", "btn") };
+    held: el("div", "held-note"), heldText: el("span", ""), resume: el("button", "btn"),
+    // How a transfer on the call went: the pill the call's bar has in Focus (renderHeadEnded), at
+    // the top of the tile, with × to close it.
+    alert: el("span", "head-ended tile-alert"), alertIcon: el("span", "head-ended-icon"), alertText: el("span", "head-ended-text"),
+    alertX: el("button", "head-ended-x") };
   t.root.dataset.call = e.id;
   t.root.tabIndex = 0;
   t.root.setAttribute("role", "button");
-  t.root.onclick = () => focusCall(e.id);
+  // (A tile that's staying after its call ended on you: a click closes it.)
+  t.root.onclick = () => t.root.classList.contains("gone") ? dropOutcome(`end-${e.id}`) : focusCall(e.id);
   t.root.onkeydown = (ev) => { if (ev.target === t.root && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); focusCall(e.id); } };
   t.avatar.setAttribute("aria-hidden", "true");
   const text = el("span", "tile-text");
@@ -1195,9 +1623,16 @@ function makeTile(e) {
   t.held.hidden = true;
   t.resume.type = "button";
   t.resume.innerHTML = `${ICON.play}<span>Resume</span>`;
-  t.resume.onclick = (ev) => { ev.stopPropagation(); selectCall(e.id); goLive(e); };
+  t.resume.onclick = (ev) => { ev.stopPropagation(); selectCall(e.id); goLive(e, true); };
   t.held.append(t.heldText, t.resume);
-  t.feed.append(t.avatar, t.viz, t.self, t.time, t.held);
+  t.alert.hidden = true;
+  t.alert.setAttribute("role", "status");
+  t.alertX.type = "button";
+  t.alertX.title = "Dismiss";
+  t.alertX.setAttribute("aria-label", "Dismiss");
+  t.alertX.innerHTML = ICON.close;
+  t.alert.append(t.alertIcon, t.alertText, t.alertX);
+  t.feed.append(t.avatar, t.viz, t.self, t.time, t.held, t.alert);
   t.root.append(t.feed, meta);
   return t;
 }
@@ -1209,8 +1644,18 @@ function renderGrid(grid) {
   $("controls").classList.toggle("grid", grid);
 
   const shown = grid ? gridCalls() : [];
-  const ids = new Set(shown.map((e) => e.id));
-  box.style.setProperty("--cols", stage.clientWidth < 560 ? 1 : shown.length > 4 ? 3 : 2);
+  // A call that's just ended on you keeps its tile, where it was, dulled, saying so,
+  // until its row goes (ROW_MS): then it fades and the grid closes up.
+  const gone = grid ? goneTiles().filter((o) => !shown.some((e) => e.id === o.row.id)) : [];
+  const ids = new Set([...shown.map((e) => e.id), ...gone.map((o) => o.row.id)]);
+  // How a transfer on a call went (done, failed, cancelled, declined): on its tile,
+  // as on its row in the calls panel (calllist.js noteRow), with × to close it.
+  const xn = grid ? transferNotices(() => () => {}) : { outcomes: [], decisions: [] };
+  const notes = new Map([...(grid ? callNotes() : []), ...xn.outcomes.filter((o) => o.row)].map((o) => [String(o.row), o]));
+  // A transfer you're asked to take: the tile blinks; a click switches to the call,
+  // where its bar asks.
+  const asks = new Map(xn.decisions.filter((d) => d.row).map((d) => [String(d.row), d]));
+  box.style.setProperty("--cols", stage.clientWidth < 560 ? 1 : ids.size > 4 ? 3 : 2);
   // Calls leaving the grid (or all of them, back in Focus): their <video> goes back on the stage.
   for (const [id, t] of tiles) {
     if (ids.has(id)) continue;
@@ -1229,7 +1674,8 @@ function renderGrid(grid) {
       t.feed.prepend(e.el);
       if (e.el.srcObject && e.el.paused) e.el.play().catch(() => {});
     }
-    if (box.children[i] !== t.root) box.insertBefore(t.root, box.children[i] ?? null);
+    const at = gone.length ? [...ids].map(Number).sort((a, b) => a - b).indexOf(Number(e.id)) : i;
+    if (box.children[at] !== t.root) box.insertBefore(t.root, box.children[at] ?? null);
     const c = callStatus(e);
     const name = nameOf(e);
     const m = e.m;
@@ -1237,14 +1683,27 @@ function renderGrid(grid) {
     // it keeps coming), and on an audio call the bars.
     const video = !!m?.hasVideo && performance.now() - m.lastFrameAt < NO_FRAMES_MS;
     const audio = !!m && !m.hasVideo && c.status === "connected";
-    t.root.className = `tile ${c.status}${video ? " video" : ""}${audio ? " audio" : ""}${e.id === selectedId ? " sel" : ""}${c.muted ? " muted" : ""}${c.held ? " held" : ""}${c.long ? " long" : ""}`;
+    const ask = asks.get(String(e.id));
+    const note = ask ? null : notes.get(String(e.id));
+    t.root.className = `tile ${c.status}${video ? " video" : ""}${audio ? " audio" : ""}${e.id === selectedId ? " sel" : ""}${c.muted ? " muted" : ""}${c.held ? " held" : ""}${c.long ? " long" : ""}${note ? ` noted${note.tone === "bad" ? " bad" : ""}` : ""}${ask ? " asking" : ""}`;
     t.root.title = [e.h.remote || name, c.statusText, i < 8 ? `${i + 1} opens it` : "Open this call"].join(" · ");
     t.root.setAttribute("aria-label", `${name}, ${c.statusText}`);
     setInitial(t.avatar, name, e.h.remote);
     t.name.textContent = name;
     const tc = contactFor(e.h.remote);
     if (tc) t.name.append(contactMarkEl(tc.name));
-    t.status.textContent = c.statusText;
+    t.status.textContent = ask ? `Transfer request · to ${ask.what.replace(/^wants to transfer you to /, "")}` : c.statusText;
+    if (note) t.root.title = [note.title || note.what, "click to open this call"].join(" · ");
+    if (ask) t.root.title = [`${ask.who} ${ask.what}`, "click to switch to this call and answer"].join(" · ");
+    // The note: at the top of the tile, as the call's bar has it in Focus.
+    t.alert.hidden = !note;
+    if (note) {
+      if (t.alert.dataset.key !== note.key) { t.alertIcon.innerHTML = note.icon ?? ""; t.alert.dataset.key = note.key; }
+      t.alertText.textContent = note.what;
+      t.alert.title = note.title || note.what;
+      t.alert.dataset.tone = note.tone ?? "";
+      t.alertX.onclick = (ev) => { ev.stopPropagation(); note.dismiss(); };
+    } else delete t.alert.dataset.key;
     t.time.textContent = c.since ? fmtElapsed(Date.now() - c.since) : "";
     const media = sendsHtml(c);
     if (t.media.innerHTML !== media) t.media.innerHTML = media;
@@ -1262,6 +1721,20 @@ function renderGrid(grid) {
       t.resume.hidden = !c.held;
     }
   });
+  for (const o of gone) {
+    const t = tiles.get(o.row.id);
+    const at = [...ids].map(Number).sort((a, b) => a - b).indexOf(Number(o.row.id));
+    if (box.children[at] !== t.root) box.insertBefore(t.root, box.children[at] ?? null);
+    const cls = `tile gone${o.tone === "bad" ? " bad" : ""}`;
+    if (t.root.className !== cls) t.root.className = cls;
+    t.root.title = [o.whoTitle, o.what, "click to close"].filter(Boolean).join(" · ");
+    t.root.setAttribute("aria-label", `${o.who}, ${o.what}`);
+    t.status.textContent = o.what;
+    t.time.textContent = "";
+    t.media.innerHTML = "";
+    t.held.hidden = true;
+    t.self.hidden = true;
+  }
   if (grid) startTiles();
 }
 initCallList();
@@ -1317,7 +1790,7 @@ export function placeCall(address, account = null, who = null, video = false) {
   const blocked = callBlocked();
   if (blocked) { log(`not calling ${address}: ${blocked}`); return; }
   closeHistory(false);
-  dialDone();   // the dial view's done, and Your devices' tests stop: the call takes the devices
+  dialDone();   // placing it is done, and Your devices' tests stop: the call takes the devices
   markSeen();   // missed calls count as seen once you next place a call
   renderSide();
   lastDialled = address;
@@ -1359,12 +1832,15 @@ navigator.mediaDevices.addEventListener?.("devicechange", refreshCameras);
 initMenus();
 let lossLoaded = false;   // the host's starting values (--loss-audio, --loss-video), taken from the first state
 initDiagnostics();
+initStreams();
+initConnection();
+initLadder();
 
 $("hangupBtn").onclick = () => post({ type: "hangup", id: selectedId });
-$("holdBtn").onclick = () => { const e = sel(); if (e && holdState(e)) goLive(e); else holdCall(e, true); };
-$("heldResume").onclick = () => goLive(sel());
-$("heldRetry").onclick = () => $("xferRetry").click();   // as the call header's Try again
-$("heldResume").innerHTML = `${ICON.play}<span>Resume</span>`;
+$("holdBtn").onclick = () => { const e = sel(); if (e && holdState(e)) goLive(e, true); else holdCall(e, true); };
+$("heldCancel").onclick = () => cancelTransfer(selectedId);
+$("heldClose").innerHTML = ICON.close;
+$("heldClose").onclick = () => { const e = sel(), xs = transferState(e); if (xs) { e.xferClosed = xs.key; render(); } };
 // Mute: the selected call's microphone, for that call only. Not in privacy mode: only its own
 // button turns that off.
 function toggleMute() {
@@ -1483,7 +1959,6 @@ $("camBtn").onclick = () => {
 };
 $("privacyNoteOff").onclick = togglePrivacy;
 $("privacyNote").insertAdjacentHTML("afterbegin", ICON.incognito);
-$("incomingVideoAnswer").innerHTML = ICON.video;
 
 chrome.webview.addEventListener("message", async (e) => {
   const msg = e.data;
@@ -1491,6 +1966,9 @@ chrome.webview.addEventListener("message", async (e) => {
     const e = msg.id != null ? entries.get(msg.id) : null;
     if (msg.type === "state") {
       onState(msg);
+      noteStreamCalls(msg.calls ?? []);
+      // A call's saved diagnostics give way to a call that's going.
+      if (snap && (msg.calls ?? []).some((c) => c.call !== "ended")) closeSnapshot();
       takeAccounts(msg);        // before render(): Home's accounts and registrations are this message's
       if (!lossLoaded) {
         lossLoaded = true;
@@ -1509,11 +1987,15 @@ chrome.webview.addEventListener("message", async (e) => {
     else if (msg.type === "media-remote-answer") await onMediaAnswer(msg.id, msg.sdp);
     else if (msg.type === "media-health") { if (e?.m) { e.m.txLost = !!msg.txLost; render(); } }
     else if (msg.type === "quality") onQuality(msg);
+    else if (msg.type === "streams") onStreams(msg);
+    else if (msg.type === "stream-rates") onStreamRates(msg);
+    else if (msg.type === "diag-snapshot") onDiagSnapshot(msg);
+    else if (msg.type === "diag-saved") { onDiagSaved(msg); render(); }
     else if (msg.type === "details") { if (e) { e.details = msg; if (e.id === selectedId) { renderDetails(); renderInfoLock(); } } }
     else if (msg.type === "text") onTextReceived(msg.id, msg.text);
-    else if (msg.type === "dtmf-in") onDtmfIn(msg.id, msg.digit);
-    else if (msg.type === "video-refused") { if (e) { e.addingVideo = false; e.videoRefused = true; } log("they didn't take video"); render(); }
-    else if (msg.type === "log") log(msg.text, true);
+    else if (msg.type === "dtmf-in") onDtmfIn(msg.id, msg.digit, msg.via);
+    else if (msg.type === "video-refused") { if (e) { e.addingVideo = false; e.videoRefused = true; } log("they didn't take video"); onVideoRefused(e); render(); }
+    else if (msg.type === "log") log(msg.text, true, !!msg.full);
     else if (msg.type === "contacts") onContacts(msg.contacts);
   } catch (err) {
     log(`${msg.type} failed: ${err.message}`);
@@ -1583,6 +2065,7 @@ export const settings = initSettings({
 });
 initYourDevices();
 initHome();
+initDnd();           // before "ready", so the host has it before anything rings
 
 render();            // the UI straight away, before the microphone is open
 await openDevices();
