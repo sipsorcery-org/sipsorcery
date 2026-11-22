@@ -1020,7 +1020,10 @@ shown, not dotted out: it's in the link anyway. Under it, **Watch at b.siobud.co
 with **Copy**, the link to send whoever's watching; clicking it opens it in your browser (the host
 opens only `https://b.siobud.com/` links). Live has the link too, while you are. Change the
 address to another server and the link goes (we don't know where that server shows a stream),
-the made-up key is taken out, and the field is dotted again; change it back and both return.
+the made-up key is taken out, and the field is dotted again; change it back and both return. The web
+softphone has all of this too: there the page itself POSTs the offer, so the server has to allow
+it (CORS), and b.siobud.com does, the Authorization header included (checked from Chrome); its
+host opens the link in a new tab. It has no Network input: a page can't listen for connections.
 
 While it's live, the button is red, the call header has a red **LIVE** and how long, the call's
 row in Active calls says LIVE, and the popover (from the button or LIVE) says where to and has
