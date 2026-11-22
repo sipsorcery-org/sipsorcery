@@ -125,6 +125,8 @@ public sealed class Phone : IDisposable
         internal string? SipCallId;
         /// <summary>An incoming call's caller and who it's to (user@host, From and To), for SelfCallPartner.</summary>
         internal string? CallerAor, CalledAor;
+        /// <summary>A call to yourself: its other leg, once paired (SelfCallPartner). It stays paired.</summary>
+        internal Call? Partner;
         /// <summary>A transfer of this call, ours or theirs, while it's under way and for a moment after; null if none.</summary>
         public TransferInfo? Transfer { get; internal set; }
         /// <summary>How a transferred call ended, for the history: "Transferred to Dave".</summary>
@@ -208,20 +210,38 @@ public sealed class Phone : IDisposable
     /// For a call to yourself (one of this softphone's accounts calling another, or its own address),
     /// the other leg of it: the call placed and the call that rang here for it. Null for any other
     /// call. The same SIP Call-ID (a direct call, or through a proxy); or, through a server that
-    /// starts a new call on the way (a B2BUA), the one placed from the account that called the
-    /// other, to the account it rang on. Live calls only, and each leg pairs with one other.
+    /// starts a new call on the way (a B2BUA, as sipsorcery.com is), the one placed from the account
+    /// the call came from, to the account it rang on (its To is our registered contact then, not the
+    /// account's address, so it's the account it came in on that counts). Several such calls between
+    /// the same two accounts pair off in order: a call that rings pairs with the oldest one placed
+    /// that isn't paired yet. Once paired, a leg stays paired for as long as both are live.
     /// </summary>
-    public static string? SelfCallPartner(Call c, IReadOnlyList<Call> calls)
+    public string? SelfCallPartner(Call c)
     {
-        if (!c.Live) return null;
-        static bool Same(string? a, string? b) => a != null && b != null && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
-        static bool Legs(Call placed, Call rang) => placed.Outgoing && !rang.Outgoing && placed.Live && rang.Live
-            && (Same(placed.SipCallId, rang.SipCallId)
-                || (Same(placed.Account?.Aor, rang.CallerAor) && Same(AorOf(placed.Remote), rang.CalledAor)));
-        Call? Match(Call x) => x.Outgoing ? calls.LastOrDefault(y => y != x && Legs(x, y)) : calls.LastOrDefault(y => y != x && Legs(y, x));
-        // The most recent match, and it has to match back (two calls to the same account: a pair each).
-        var other = Match(c);
-        return other != null && Match(other) == c ? other.Id : null;
+        lock (_lock)
+        {
+            if (!c.Live) return null;
+            if (c.Partner is { Live: true } p && p.Partner == c) return p.Id;
+            static bool Same(string? a, string? b) => a != null && b != null && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+            static bool SameCall(Call placed, Call rang) => Same(placed.SipCallId, rang.SipCallId);
+            // (Addresses without their ports: an account's server can have one, a URI's host doesn't.)
+            static string? Of(SipAccount? a) => a == null ? null : $"{a.Username}@{a.Domain}";
+            static bool SameAccounts(Call placed, Call rang) => Same(Of(placed.Account), rang.CallerAor)
+                && (Same(AorOf(placed.Remote), Of(rang.Account)) || Same(AorOf(placed.Remote), rang.CalledAor));
+            bool Free(Call x) => x.Live && x.Partner is not { Live: true };
+            var (placedLegs, rangLegs) = c.Outgoing
+                ? (new[] { c }, _calls.Where(x => !x.Outgoing && Free(x)).ToArray())
+                : (_calls.Where(x => x.Outgoing && Free(x)).ToArray(), new[] { c });
+            // The same Call-ID first (certain), then by accounts, oldest first.
+            var other = c.Outgoing
+                ? rangLegs.FirstOrDefault(r => SameCall(c, r)) ?? rangLegs.FirstOrDefault(r => SameAccounts(c, r))
+                : placedLegs.FirstOrDefault(o => SameCall(o, c)) ?? placedLegs.FirstOrDefault(o => SameAccounts(o, c));
+            if (other == null) return null;
+            c.Partner = other;
+            other.Partner = c;
+            Log?.Invoke($"call {c.Id} and call {other.Id} are the two ends of a call to yourself: neither holds the other");
+            return other.Id;
+        }
     }
 
     private static string? AorOf(SIPURI? uri) => uri == null || string.IsNullOrEmpty(uri.User) ? null : $"{uri.User}@{uri.HostAddress}";

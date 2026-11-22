@@ -620,7 +620,7 @@ internal sealed class MainForm : Form
                 reason = c.EndReason,
                 outgoing = c.Outgoing,
                 // A call to yourself: the other leg's id. Switching to or resuming one doesn't hold the other.
-                pair = Phone.SelfCallPartner(c, calls),
+                pair = _phone.SelfCallPartner(c),
                 incomingVideo = c.IncomingVideo,
                 held = c.Held,
                 heldByThem = c.HeldByThem,

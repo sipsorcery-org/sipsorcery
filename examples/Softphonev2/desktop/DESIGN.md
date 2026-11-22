@@ -402,8 +402,10 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   either brings the other back with it, unless you'd held that one yourself: *Hold* on one end
   is still the test of hold it was. The host pairs them (`Phone.SelfCallPartner`, the state's
   `pair`): the same SIP Call-ID (a direct call, or through a proxy), or, through a server that
-  starts a new call on the way (a B2BUA), the one placed from the account that called to the
-  account it rang on. Calling your own address with no server in between doesn't get that far:
+  starts a new call on the way (a B2BUA, as sipsorcery.com is), the one placed from the account
+  that called to the account it rang on: the account, not the call's To, which such a server sets
+  to our registered contact. Several calls between the same two accounts pair off in order, the
+  one that rings with the oldest placed one not yet paired, and a pair stays a pair. Calling your own address with no server in between doesn't get that far:
   the SIP transport takes its own INVITE coming back as a repeat of the one it sent.
 - **Hold** is the account's *Hold* setting (see [SIP accounts](#sip-accounts)), fixed when the
   call starts. A held call is never silent on the wire: media keeps flowing, so neither side's
