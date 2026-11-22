@@ -190,7 +190,9 @@ export function initNetInput() {
       // Turned off, or the host dropped the publisher (a new key): the connection goes too.
       const s = msg.netInput;
       if (feed && (!s?.on || (s.session && s.session !== feed.session))) feedGone(!s?.on ? "network input turned off" : "a new publisher");
-      settings?.refresh();
+      // Settings reads the state from app.js's hostState, which app.js's own listener sets after
+      // this one (it's added later): so Settings refreshes once that has run, not now.
+      setTimeout(() => settings?.refresh());
     }
   });
   // A track that ends on its own (the publisher's encoder stopped) is the feed going too.
