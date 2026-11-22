@@ -49,6 +49,7 @@ internal sealed class MainForm : Form
         MinimumSize = SizeFromClientSize(new Size((int)Math.Ceiling(MinPageSize.Width * scale), (int)Math.Ceiling(MinPageSize.Height * scale)));
     }
     private readonly LiveStreams _live;
+    private readonly NetInput _netInput;
     private readonly List<object> _pendingOffers = new();   // media offers made before the page was ready
     private bool _pageReady;
     private readonly Dictionary<string, Phone.CallState> _lastStates = new();   // each call's state at the last Changed
@@ -66,6 +67,11 @@ internal sealed class MainForm : Form
         _history = new CallHistory(settings.Profile);
         _contacts = new ContactStore(settings.Profile);
         _live = new LiveStreams(settings.Profile);
+        _netInput = new NetInput(settings.Profile, settings.WhipInputPort, settings.WhipToken);
+        _netInput.Log += WriteLog;
+        _netInput.Offer += (session, sdp) => Post(new { type = "net-offer", session, sdp });
+        _netInput.Ended += session => Post(new { type = "net-ended", session });
+        _netInput.Changed += () => Post(StateMessage());
         var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SIPSorcery", "Softphonev2");
         Directory.CreateDirectory(logDir);
         _logFile = new StreamWriter(Path.Combine(logDir, $"softphone-{settings.Profile}.log"), append: false) { AutoFlush = true };
@@ -159,6 +165,7 @@ internal sealed class MainForm : Form
             WindowPlacement.Save(this, _settings.Profile);
             _phone.Dispose();
             _live.Dispose();
+            _netInput.Dispose();
             try { _history.DropRemovedDiagnostics(); } catch (Exception ex) { WriteLog($"history: {ex.Message}"); }
             // The library goes on logging from its own threads after this (TCP and TLS connections
             // dropping as the process ends), so stop listening and close the file under its lock;
@@ -246,6 +253,11 @@ internal sealed class MainForm : Form
                     foreach (var c in _phone.Calls) Post(StreamsMessage(c, _phone.StreamsOf(c)));
                     if (_contacts.LoadNote != null) WriteLog(_contacts.LoadNote);
                     if (_live.LoadNote != null) WriteLog(_live.LoadNote);
+                    if (_netInput.LoadNote != null) WriteLog(_netInput.LoadNote);
+                    // Network input listens once there's a page to answer its publishers.
+                    _netInput.Start();
+                    if (_netInput.On) WriteLog(_netInput.Address != null ? $"network input: publish to {_netInput.Address}" : $"network input not listening: {_netInput.Error}");
+                    Post(StateMessage());
                     PostContacts();
                     if (!string.IsNullOrWhiteSpace(_settings.Dial)) DialAtStart();
                     break;
@@ -394,6 +406,8 @@ internal sealed class MainForm : Form
                     Clipboard.SetText((string)msg["text"]!);
                     // An address says what it was; the debug log or an SDP, how much.
                     var copied = (string)msg["text"]!;
+                    // A secret (network input's stream key, or a command line with it in): not logged.
+                    if ((bool?)msg["secret"] == true) { WriteLog("copied (a stream key: not logged)"); break; }
                     WriteLog(copied.Contains('\n') || copied.Length > 200 ? $"copied {copied.Split('\n').Length} lines" : $"copied {copied}");
                     break;
                 case "loss":
@@ -414,6 +428,22 @@ internal sealed class MainForm : Form
                     break;
                 case "live-start":
                     await GoLive(Id(msg), (string?)msg["url"] ?? "", (string?)msg["token"], (string)msg["sdp"]!);
+                    break;
+                case "net-input":
+                    _netInput.SetOn((bool?)msg["on"] ?? false);
+                    break;
+                case "net-new-key":
+                    _netInput.NewKey();
+                    break;
+                case "net-answer":
+                    _netInput.Answer((string?)msg["session"] ?? "", (string)msg["sdp"]!);
+                    break;
+                case "net-refused":
+                    WriteLog($"network input: the page couldn't take the stream: {(string?)msg["text"]}");
+                    _netInput.Closed((string?)msg["session"] ?? "");
+                    break;
+                case "net-closed":
+                    _netInput.Closed((string?)msg["session"] ?? "");
                     break;
                 case "live-stop":
                     await _live.StopAsync(Id(msg));
@@ -609,6 +639,9 @@ internal sealed class MainForm : Form
             canTransfer = true,
             // Go live: the endpoint last used, and whether it has a saved token (kept here).
             live = new { url = _live.SavedUrl, hasToken = _live.HasSavedToken },
+            // Network input (NetInput.cs): on, where publishers post and with what key, why it
+            // isn't listening, and the publisher sending now (its session) if there is one.
+            netInput = new { on = _netInput.On, address = _netInput.Address, token = _netInput.Token, error = _netInput.Error, session = _netInput.Session, from = _netInput.From },
             // The account calls go out from (Call from), and its registration.
             registration = selected == null ? "none" : registration,
             registrationDetail,

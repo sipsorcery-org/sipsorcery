@@ -77,6 +77,9 @@ public sealed class Settings
     /// <summary>Testing: once a call is connected, Go live to this WHIP address (with <see cref="LiveToken"/>).</summary>
     public string? GoLive { get; set; }
     public string? LiveToken { get; set; }
+    /// <summary>Testing: network input on for this run, on this port (nothing saved), with <see cref="WhipToken"/> as its key.</summary>
+    public int? WhipInputPort { get; set; }
+    public string? WhipToken { get; set; }
 
     /// <summary>Testing: calls and answers start with the camera off.</summary>
     public bool CameraOff { get; set; }
@@ -136,6 +139,8 @@ public sealed class Settings
                 case "--dtmf" when i + 1 < args.Length: settings.Dtmf = args[++i]; break;
                 case "--go-live" when i + 1 < args.Length: settings.GoLive = args[++i]; break;
                 case "--live-token" when i + 1 < args.Length: settings.LiveToken = args[++i]; break;
+                case "--whip-input" when i + 1 < args.Length: settings.WhipInputPort = int.Parse(args[++i]); break;
+                case "--whip-token" when i + 1 < args.Length: settings.WhipToken = args[++i]; break;
                 case "--camera-off": settings.CameraOff = true; break;
                 case "--video": settings.VideoCall = true; break;
                 case "--test-pattern": settings.TestPattern = true; break;

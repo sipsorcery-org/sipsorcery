@@ -6,6 +6,7 @@ import { avatarImage } from "./avatar.js";
 import { BANDS, FALL_MS, analyserFor, bands } from "./levels.js";
 import { $, fitText, initial, log } from "./util.js";
 import { previewOn } from "./yourdevices.js";
+import { NET_LABEL, netVideo } from "./netinput.js";
 
 // On a video call held with music on hold, they see this card instead of your camera: a pause
 // sign and "On hold", a few frames a second, like the camera-off placeholder.
@@ -64,6 +65,9 @@ export function wantedSources() {
     }
   }
   if (!sourceAvailable("camera")) want.delete("camera");
+  // Network input isn't opened here: it's there while a publisher sends (netinput.js). Left in,
+  // it would never match openSources(), and render() would call syncCamera() (which renders) forever.
+  want.delete("net");
   return want;
 }
 
@@ -193,6 +197,9 @@ const TEST_FPS = 30;
 // canvasSource's track and stop }. The camera, when open, is the video track in `local`.
 const sources = new Map();
 export const SOURCE_LABEL = { test: "Test pattern", bars: "Audio bars" };
+// Network input's video ("net", netinput.js) is a source too, but not one opened here: it's there
+// while a publisher is sending. Any source's name, for what's shown.
+export const sourceLabel = (kind) => (kind === "net" ? NET_LABEL : SOURCE_LABEL[kind] ?? "Camera");
 
 // A call's source; before its media is set up, once the call has ended (its card can stay on the
 // stage), or with no call, the one new calls start with. (An ended call keeps what it had, and a
@@ -206,10 +213,10 @@ export const cameraIdOf = (e) => (e?.m ? e.cameraId : null) ?? devices.camera;
 export let cameraOpenedFor = null;   // the device asked for when the open camera was opened
 // Whether a source can be opened: the test sources always; a camera if there is one and it
 // isn't in use elsewhere.
-export const sourceAvailable = (kind) => kind !== "camera" || (hasCamera && !cameraInUse);
+export const sourceAvailable = (kind) => (kind === "net" ? !!netVideo() : kind !== "camera" || (hasCamera && !cameraInUse));
 export const videoAvailable = () => sourceAvailable(nextVideo.source);
 export const isTestTrack = (track) => !!track && [...sources.values()].some((tp) => tp.track === track);
-const sourceTrack = (kind) => (kind === "camera" ? localTrack("video") : sources.get(kind)?.track ?? null);
+const sourceTrack = (kind) => (kind === "camera" ? localTrack("video") : kind === "net" ? netVideo() : sources.get(kind)?.track ?? null);
 // What Your devices' preview shows: the source new calls start with, once it's open, or with the
 // camera list's Camera off, the camera-off card they'll see (the selected account's).
 export const previewTrack = () => (nextVideo.camOn ? sourceTrack(nextVideo.source) : placeholderTrack(null));

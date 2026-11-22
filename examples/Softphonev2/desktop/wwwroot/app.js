@@ -55,6 +55,7 @@ import { captureDiagnostics, closeSnapshot, onDiagSaved, onDiagnosticsSaved, onD
 import { closeTextForGrid, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen } from "./rtt.js";
 import { cancelTransfer, initTransfer, renderTransfer, transferNotices, transferState } from "./transfer.js";
 import { initGoLive, renderLive } from "./golive.js";
+import { initNetInput, micToSend, netAudio, netState } from "./netinput.js";
 import { $, ICON, initial, log, post, shortName } from "./util.js";
 import { cameraInUse, hasCamera, isTestTrack, openSources, placeholderTrack, retryCamera, sameSources, setHasCamera, showSelfVideo, sourceAvailable, sourceOf, stopPlaceholders, syncCamera, videoToSend, wantedSources } from "./video.js";
 
@@ -210,12 +211,13 @@ export function focusCall(id) {
 // Moves the microphone and speaker to the audio call: its sender gets the microphone, its <video>
 // plays; every other call sends no audio and is silent. The selected call takes the audio when it's
 // connected and not on hold. A held call sends nothing at all.
-function syncAudio() {
+export function syncAudio() {
   const s = sel();
   if (s?.h.call === "connected" && !holdState(s) && s.m) audioId = s.id;
   const a = entries.get(audioId);
   if (!a || a.h.call !== "connected" || holdState(a)) audioId = null;
-  const mic = localTrack("audio");
+  // Your microphone, or network input's sound in its place (netinput.js).
+  const mic = micToSend();
   if (mic) mic.enabled = !(entries.get(audioId)?.m?.muted ?? startMuted());
   for (const e of entries.values()) {
     const on = e.id === audioId;
@@ -433,7 +435,7 @@ async function onMediaOffer(id, sdp, video = false, renegotiate = false) {
   // if nothing wants it. Not awaited: the answer doesn't depend on it.
   syncCamera();
   syncAudio();
-  if (localTrack("audio")) m.localAnalyser = analyserFor(localTrack("audio"));
+  if (micToSend()) m.localAnalyser = analyserFor(micToSend());
   await pc.setLocalDescription(sdp ? await pc.createAnswer() : await pc.createOffer());
   await iceGathered(pc);
   if (e.pc !== pc) return;   // ended meanwhile
@@ -472,7 +474,7 @@ async function setUpTransceivers(e) {
       m.audioSender = tr.sender;
       // With a microphone, sendrecv even while privacy mode has it closed (silence goes out),
       // so turning privacy mode off needs no renegotiation.
-      tr.direction = localTrack("audio") || hasMic ? "sendrecv" : "recvonly";
+      tr.direction = localTrack("audio") || hasMic || netAudio() ? "sendrecv" : "recvonly";
     }
   }
 }
@@ -547,6 +549,7 @@ initRtt();
 initKeypad();
 initTransfer();
 initGoLive();
+initNetInput();
 initQuality();
 
 // ---- Rendering the state ----
@@ -1199,7 +1202,7 @@ const HEAD_MS = 4000, HEAD_FADE_MS = 2000;
 export const ROW_MS = 4000;
 const outcomes = [];
 let noticesHeldAt = null;   // the pointer's on the notices (or the call bar's), since then
-function pushOutcome(o) {
+export function pushOutcome(o) {
   const i = outcomes.findIndex((x) => x.key === o.key);
   if (i >= 0) outcomes.splice(i, 1);
   const at = Date.now();
@@ -1874,7 +1877,7 @@ export function togglePrivacy() {
     if (liveEntries().length) {
       openMic().then((track) => {
         // The audio view's bars follow the new microphone (syncAudio puts it on the live call).
-        if (track) for (const e of entries.values()) if (e.m) { e.m.localAnalyser?.source.disconnect(); e.m.localAnalyser = analyserFor(track); }
+        if (micToSend()) for (const e of entries.values()) if (e.m) { e.m.localAnalyser?.source.disconnect(); e.m.localAnalyser = analyserFor(micToSend()); }
         render();
       });
     }
@@ -2065,6 +2068,8 @@ export const settings = initSettings({
   videoAllowed: () => state.videoAllowed !== false,
   diagnostics: () => !$("devPanel").hidden,
   setDiagnostics,
+  netInput: netState,   // network input's state from the host (null in the web build)
+  post,
 });
 initYourDevices();
 initHome();

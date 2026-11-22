@@ -25,11 +25,12 @@ export function setDiagnostics(on) {
   // But it isn't sent until you turn it on: the camera never starts by itself. (With no camera
   // the placeholder goes, as it would anyway.)
   if (!on) {
-    const onTest = [...entries.values()].filter((e) => e.m && sourceOf(e) !== "camera");
+    const isTest = (kind) => kind in SOURCE_LABEL;   // not the camera, nor network input
+    const onTest = [...entries.values()].filter((e) => e.m && isTest(sourceOf(e)));
     const sending = onTest.filter((e) => e.m.hasVideo && e.m.camOn);
     for (const e of sending) setCamera(false, e);
     for (const e of onTest) e.source = "camera";
-    if (onTest.length || nextVideo.source !== "camera") setVideoSource("camera");
+    if (onTest.length || isTest(nextVideo.source)) setVideoSource("camera");
   }
   // Simulated loss is a diagnostics thing too: leaving diagnostics turns it off, so it can't
   // quietly carry on spoiling calls with the sliders out of sight.

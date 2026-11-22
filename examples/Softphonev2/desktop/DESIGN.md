@@ -1029,6 +1029,59 @@ each side's peak level in the mix (*live mix level: them 0.094, you 0.012*).
 simulcast, and redirects beyond what .NET follows. A server can reject an offer with codecs or
 lines it doesn't expect; this one is OBS-like (one audio, one video, send-only).
 
+## Network input
+
+Video and sound from ffmpeg, OBS or any WHIP publisher on this PC, used by a call in place of your
+camera and microphone: a test pattern, a file playing, a capture card, OBS's scene. The softphone
+is the WHIP server (RFC 9725); the publisher pushes to it.
+
+**Turning it on.** Settings, *Network input*: *Accept video and sound from ffmpeg or OBS (WHIP)*.
+Under it, while it's on: whether a publisher is sending (*Waiting for a publisher*, *Receiving
+video and sound from [::1]:50265, in use*), the **WHIP address** (`http://localhost:8097/whip`)
+and the **Stream key**, each with Copy, **New key** (a publisher using the old one is cut off), and
+an ffmpeg command line that sends a test pattern and a tone, with Copy. It listens on localhost
+only, so only programs on this PC can publish, and with the key as a Bearer token: anything else
+gets 401. Off until turned on; whether it's on, its port and its key are kept per profile, the key
+encrypted as account passwords are. The next port up is used if 8097 is taken.
+
+**One source, not two devices.** A feed with sound is listed in both ▾ menus, Camera's and
+Mute's, as **Network input**, and picking it from either makes it your camera and your microphone
+together: a feed with sound almost always means *this is what I want them to see and hear*. A
+notice says so, *Network input · Callers now see and hear it*, with **Keep my microphone**, which
+takes the sound back and leaves its video. While both are in use, each menu says *Network input
+· camera and mic*, so it's plain that picking a camera (or a microphone) takes back only that half.
+While no publisher is sending, it's listed but can't be picked: *Network input: waiting for a
+publisher*. Your devices has it too, under *Network*, for the next call.
+
+**What callers get shows where your devices' does.** The self view shows the feed (not
+mirrored). The indicator at the top says your microphone is *Open, not sent: Bob hears Network
+input*; the call's row, *Bob hears Network input* and *Bob sees Network input*. Mute silences
+the feed's sound, Stop video sends your camera-off card, hold and privacy mode work on it as they
+do on your devices: privacy mode never sends it.
+
+**A publisher that starts on a call.** If you're on a call and not using it: *Network input ·
+Started: video and sound* with **Use it**.
+
+**When it stops**, with its DELETE, its connection failing, or nothing from it for 4 s (ffmpeg
+killed leaves the connection merely "disconnected"): whatever was using it goes back to your
+camera and microphone, and a notice says so, *Stopped: back to your camera and microphone*. A
+dead feed never silently mutes you, or freezes your picture. One publisher at a time: a second
+gets 409 until the first stops.
+
+**How.** The publisher's connection ends in C# (`NetInput.cs`), on a receive-only SIPSorcery
+peer connection (Opus; H264 or VP8) bound to 127.0.0.1, and a `MediaRelay` passes the media on to
+the page, as it does a SIP call's: the page answers the relay's offer (`net-offer`,
+`net-answer`) on a receive-only connection of its own, and the tracks it gets are the source
+(`netinput.js`). Video goes out on a call by swapping the sender's track, as a camera change
+does; sound by swapping what's sent as your microphone (`micToSend`). The page doesn't answer the
+publisher directly because ffmpeg's WHIP muxer (8.x) and the browser don't get on: the browser
+turns ffmpeg's own DTLS certificate down (*UNSUPPORTED_ALGORITHM*), ffmpeg's offer names an RTX
+SSRC it never declares, ffmpeg never answers the browser's consent checks once connected (so the
+browser drops it about 5 s in), and it only sends as fast as packets come back (0.1× real time).
+The library takes ffmpeg as it is: 30 fps, 1.0× real time.
+
+Desktop only: a browser page can't listen for connections. The web softphone has no Network input.
+
 ## The dock: keypad and text
 
 The keypad and the text panel open in a side panel (300 px) to the right of the selected call in

@@ -22,7 +22,8 @@ import { audioId, camOnDefault, chooseDevice, defaults, devices, entries, holdSt
 import { analyserFor, bands, BANDS } from "./levels.js";
 import { deviceOptions } from "./settings.js";
 import { $, escHtml, ICON, log } from "./util.js";
-import { cameraInUse, hasCamera, isTestTrack, previewTrack, retryCamera, setVideoSource, SOURCE_LABEL, sourceOf, syncCamera } from "./video.js";
+import { cameraInUse, hasCamera, isTestTrack, previewTrack, retryCamera, setVideoSource, SOURCE_LABEL, sourceLabel, sourceOf, syncCamera } from "./video.js";
+import { NET_LABEL, netAudio, netAudioInUse, netReady, netVideo, useNet } from "./netinput.js";
 
 // open: the panel's open; preview: the camera preview's on; mic: the mic test ({ track, analyser,
 // levels } once open); soundUntil: Play a sound is playing until then.
@@ -205,12 +206,12 @@ function callingHtml(e) {
   const camOn = !off && (e?.m ? e.m.camOn : nextVideo.camOn);
   const source = e?.m ? sourceOf(e) : nextVideo.source;
   const show = {
-    mic: off ? ["Off", "privacy mode: they'll hear silence"] : [mic?.label || o("mic").label, ""],
+    mic: off ? ["Off", "privacy mode: they'll hear silence"] : netAudioInUse() ? [NET_LABEL, "in place of your microphone"] : [mic?.label || o("mic").label, ""],
     speaker: [!canPickSpeaker ? "System default" : o("speaker").label, ""],
     camera: !video ? ["Not used", "it's an audio call"]
       : off ? ["Off", "privacy mode: your camera-off card"]
       : !camOn ? ["Off", "your camera-off card, until Start video"]
-      : source !== "camera" ? [SOURCE_LABEL[source], ""]
+      : source !== "camera" ? [sourceLabel(source), ""]
       : [cam?.label || o("camera").label, cam ? "" : "opens when they answer"],
   };
   const line = (k) => `<div class="yd-line static${(off && k !== "speaker") || (k === "camera" && video && !camOn) ? " off" : ""}">
@@ -235,7 +236,8 @@ function panelHtml(ctx, e) {
     const line = (k) => {
       const o = opt(k);
       const name = k === "camera" && !nextVideo.camOn ? "Off"
-        : k === "camera" && nextVideo.source !== "camera" ? SOURCE_LABEL[nextVideo.source]
+        : k === "camera" && nextVideo.source !== "camera" ? sourceLabel(nextVideo.source)
+        : k === "mic" && netAudioInUse() ? NET_LABEL
         : o.none ? "None found" : k === "speaker" && !canPickSpeaker ? "System default" : o.label;
       return `<button type="button" class="yd-line${isOff(k) ? " off" : ""}" data-yd="line" data-dev="${k}" title="${tip[k]}">
         <span class="yd-ico">${icon[k]}</span><span class="yd-label">${WORD[k]}</span>
@@ -256,12 +258,16 @@ function panelHtml(ctx, e) {
     const o = opt(k);
     const diag = k === "camera" && diagOn();
     const dis = (k === "speaker" && !canPickSpeaker) || (o.none && !diag);
-    const current = k === "camera" && !nextVideo.camOn ? "cam:off" : k === "camera" && nextVideo.source !== "camera" ? `src:${nextVideo.source}` : o.current;
+    const current = k === "camera" && !nextVideo.camOn ? "cam:off" : k === "camera" && nextVideo.source !== "camera" ? `src:${nextVideo.source}`
+      : k === "mic" && netAudioInUse() ? "src:net" : o.current;
     const option = ([id, label]) => `<option value="${escHtml(id)}"${id === current ? " selected" : ""}>${escHtml(label)}</option>`;
     const devs = o.none ? "" : o.opts.map(option).join("");
     const tests = diag ? `<optgroup label="Diagnostics">${Object.entries(SOURCE_LABEL).map(([kind, label]) => option([`src:${kind}`, label])).join("")}</optgroup>` : "";
+    // Network input, while a publisher is sending what this list is for (netinput.js).
+    const net = netReady() && (k === "camera" ? netVideo() : k === "mic" ? netAudio() : null)
+      ? `<optgroup label="Network">${option(["src:net", NET_LABEL])}</optgroup>` : "";
     const camOffOpt = k === "camera" && state.videoAllowed !== false ? `<optgroup label="Or">${option(["cam:off", "Camera off: send my camera-off card"])}</optgroup>` : "";
-    return `<select class="yd-pick" data-yd-pick="${k}" aria-label="${WORD[k]}" ${dis ? "disabled" : ""}>${(diag || camOffOpt) && devs ? `<optgroup label="Cameras">${devs}</optgroup>` : devs}${tests}${camOffOpt}</select>`;
+    return `<select class="yd-pick" data-yd-pick="${k}" aria-label="${WORD[k]}" ${dis ? "disabled" : ""}>${(diag || camOffOpt || net) && devs ? `<optgroup label="${k === "camera" ? "Cameras" : "Devices"}">${devs}</optgroup>` : devs}${net}${tests}${camOffOpt}</select>`;
   };
   const row = (k) => `<div class="yd-row${live[k] ? " live" : ""}${isOff(k) ? " off" : ""}">
       <span class="yd-ico">${icon[k]}</span><span class="yd-label">${WORD[k]}</span>${pick(k)}
@@ -312,7 +318,8 @@ function usage() {
   if (mic) {
     const talking = entries.get(audioId);
     if (talking?.m && !holdState(talking)) {
-      m = mic.enabled && !talking.m.muted ? { state: "live", why: `${nameOf(talking)} hears you` }
+      m = netAudioInUse() ? { state: "muted", why: `Open, not sent: ${nameOf(talking)} hears ${NET_LABEL}` }
+        : mic.enabled && !talking.m.muted ? { state: "live", why: `${nameOf(talking)} hears you` }
         : { state: "muted", why: `Open, muted on your call with ${nameOf(talking)}` };
     } else {
       // A call being placed or answered (its media not set up yet), or every call on hold.
@@ -393,7 +400,11 @@ export function initYourDevices() {
     const k = e.target.dataset?.ydPick;
     if (!k) return;
     const value = e.target.value;
-    if (k === "camera" && value === "cam:off") {
+    if (value === "src:net") {
+      // Network input: its video and its sound, whichever list it was picked from.
+      if (netVideo()) setStartCamera(true);
+      useNet(null);
+    } else if (k === "camera" && value === "cam:off") {
       // Camera off: the next video call sends your camera-off card, which the preview shows.
       setStartCamera(false);
     } else if (k === "camera" && value.startsWith("src:")) {

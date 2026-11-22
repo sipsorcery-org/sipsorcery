@@ -2162,3 +2162,17 @@ body:has(#incoming.mid:not([hidden])) #heldNote.busy { top: auto; bottom: 16px; 
 .live-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* Its row in Active calls. */
 .call-live { flex: none; padding: 1px 5px; border-radius: 4px; background: var(--danger-fill); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .05em; }
+
+/* ---- Network input (netinput.js): Settings' section ---- */
+.net-details { margin: 4px 0 0; }
+.net-details[hidden] { display: none; }
+.net-status { margin: 0 0 10px; font-size: 12.5px; color: var(--muted); }
+.net-status[data-tone="ok"] { color: var(--ok, var(--accent)); }
+.net-status[data-tone="bad"] { color: var(--danger); }
+.net-copy-row { display: flex; gap: 6px; align-items: flex-start; }
+.net-copy-row input, .net-copy-row textarea {
+  flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface-2); color: var(--text); font: 12px Consolas, monospace;
+}
+.net-copy-row textarea { resize: vertical; line-height: 1.4; }
+.net-copy-row .btn { flex: none; }
