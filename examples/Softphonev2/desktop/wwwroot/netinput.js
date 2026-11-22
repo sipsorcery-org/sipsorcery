@@ -183,11 +183,26 @@ export function netStatusText() {
   return "Waiting for a publisher";
 }
 
-// An ffmpeg command line that publishes a test pattern and tone, for Settings to copy.
+// Something nicer to hear than a sine tone, from any ffmpeg (no extra libraries): a plucked
+// arpeggio over C, Am, F and G, 2 s a chord, with a soft bass, as an aevalsrc expression. The
+// expression is quoted ('...'), so its commas need no escaping, and it pastes into PowerShell,
+// cmd or bash alike.
+function ffmpegTune() {
+  const bar = "mod(floor(t/2),4)", step = "mod(floor(t*4),8)";
+  const root = `(-3*eq(${bar},1)-7*eq(${bar},2)-5*eq(${bar},3))`;   // the chord's root, semitones from C
+  const third = `(4-eq(${bar},1))`;                                   // minor on Am
+  const note = `(${root}+${third}*(eq(${step},1)+eq(${step},7))+7*(eq(${step},2)+eq(${step},6))`
+    + `+12*(eq(${step},3)+eq(${step},5))+(12+${third})*eq(${step},4))`;   // up and down the chord
+  const lead = `0.22*sin(2*PI*261.63*pow(2,${note}/12)*t)*exp(-9*mod(t,0.25))*min(1,mod(t,0.25)*400)`;
+  const bass = `0.09*sin(2*PI*130.81*pow(2,${root}/12)*t)*sin(PI*mod(t,2)/2)`;
+  return `"aevalsrc=exprs='${lead}+${bass}':s=48000"`;
+}
+
+// An ffmpeg command line that publishes a test pattern and a tune, for Settings to copy.
 export function ffmpegExample() {
   const s = netState();
   if (!s?.address) return "";
-  return `ffmpeg -re -f lavfi -i testsrc2=size=1280x720:rate=30 -f lavfi -i sine=frequency=440 `
+  return `ffmpeg -re -f lavfi -i testsrc2=size=1280x720:rate=30 -f lavfi -i ${ffmpegTune()} `
     + `-c:v libx264 -profile:v baseline -tune zerolatency -g 30 -pix_fmt yuv420p -c:a libopus -ar 48000 -ac 2 `
     + `-f whip -authorization ${s.token} ${s.address}`;
 }

@@ -1010,6 +1010,18 @@ live broadcasts the other side as much as you, so it says so, as a call that's r
 host, encrypted with DPAPI as account passwords are, in `golive-<profile>.json`): left empty, the
 key field uses it.
 
+**Out of the box: Broadcast Box's public server.** Until another address has been used, the
+address is `https://b.siobud.com/api/whip` (Broadcast Box, github.com/Glimesh/broadcast-box),
+where any key will do and anyone can watch at `b.siobud.com/<key>`, so Go live works with nothing
+set up. The key there is made up once, easy to read out and type (*glad-pebble-182*:
+adjective-noun-number, about a million of them, so unlikely to be someone else's on a shared
+server), kept (the page's `liveKey` setting; one you type in its place is kept instead), and
+shown, not dotted out: it's in the link anyway. Under it, **Watch at b.siobud.com/glad-pebble-182**
+with **Copy**, the link to send whoever's watching; clicking it opens it in your browser (the host
+opens only `https://b.siobud.com/` links). Live has the link too, while you are. Change the
+address to another server and the link goes (we don't know where that server shows a stream),
+the made-up key is taken out, and the field is dotted again; change it back and both return.
+
 While it's live, the button is red, the call header has a red **LIVE** and how long, the call's
 row in Active calls says LIVE, and the popover (from the button or LIVE) says where to and has
 **Stop live**. The popover closes with its × or Esc, never a click away (copying an address or key
@@ -1052,7 +1064,10 @@ is the WHIP server (RFC 9725); the publisher pushes to it.
 Under it, while it's on: whether a publisher is sending (*Waiting for a publisher*, *Receiving
 video and sound from [::1]:50265, in use*), the **WHIP address** (`http://localhost:8097/whip`)
 and the **Stream key**, each with Copy, **New key** (a publisher using the old one is cut off), and
-an ffmpeg command line that sends a test pattern and a tone, with Copy. It listens on localhost
+an ffmpeg command line that sends a test pattern and a tune, with Copy. The tune is a plucked
+arpeggio over C, Am, F and G with a soft bass, made by ffmpeg's `aevalsrc` from an expression
+(`ffmpegTune` in `netinput.js`), so it needs nothing beyond a stock ffmpeg; the expression is in
+single quotes inside double, so the line pastes into PowerShell, cmd or bash alike. It listens on localhost
 only, so only programs on this PC can publish, and with the key as a Bearer token: anything else
 gets 401. Off until turned on; whether it's on, its port and its key are kept per profile, the key
 encrypted as account passwords are. The next port up is used if 8097 is taken.

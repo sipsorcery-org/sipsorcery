@@ -400,6 +400,15 @@ internal sealed class MainForm : Form
                     catch (Exception ex) { WriteLog($"couldn't save {dlg.FileName}: {ex.Message}"); }
                     break;
                 }
+                case "open-url":
+                    // Go live's watch link, in your browser: Broadcast Box's only, nothing else.
+                    if ((string?)msg["url"] is { } open && open.StartsWith("https://b.siobud.com/", StringComparison.OrdinalIgnoreCase)
+                        && Uri.TryCreate(open, UriKind.Absolute, out _))
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(open) { UseShellExecute = true });
+                        WriteLog($"opened {open}");
+                    }
+                    break;
                 case "copy":
                     // The host's clipboard rather than the page's, which needs permissions the
                     // page may not have.

@@ -110,7 +110,7 @@ export function initSettings(app) {
           <p class="net-status" id="setNetStatus" role="status"></p>
           <label class="settings-field"><span>WHIP address</span><span class="net-copy-row"><input type="text" readonly id="setNetAddr" spellcheck="false"><button type="button" class="btn btn-small" data-net-copy="setNetAddr">Copy</button></span></label>
           <label class="settings-field"><span>Stream key</span><span class="net-copy-row"><input type="text" readonly id="setNetKey" spellcheck="false"><button type="button" class="btn btn-small" data-net-copy="setNetKey">Copy</button><button type="button" class="btn btn-small" data-net="new-key" title="A new key: a publisher using the old one is cut off">New key</button></span></label>
-          <div class="settings-field"><span>Try it with ffmpeg: a test pattern and a tone</span><span class="net-copy-row"><textarea readonly id="setNetCmd" rows="4" spellcheck="false"></textarea><button type="button" class="btn btn-small" data-net-copy="setNetCmd">Copy</button></span></div>
+          <div class="settings-field"><span>Try it with ffmpeg: a test pattern and a tune</span><span class="net-copy-row"><textarea readonly id="setNetCmd" rows="4" spellcheck="false"></textarea><button type="button" class="btn btn-small" data-net-copy="setNetCmd">Copy</button></span></div>
         </div>
       </section>
       <section class="settings-section" aria-labelledby="setThemeHead">

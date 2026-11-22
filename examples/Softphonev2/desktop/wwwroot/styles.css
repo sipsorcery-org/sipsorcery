@@ -2150,6 +2150,11 @@ body:has(#incoming.mid:not([hidden])) #heldNote.busy { top: auto; bottom: 16px; 
 .live-error[hidden] { display: none; }
 .live-status { font-weight: 600; }
 .live-where { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Broadcast Box's watch link (golive.js), with Copy. */
+.live-watch { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); min-width: 0; }
+.live-watch[hidden] { display: none; }
+.live-watch a { color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.live-watch .btn { flex: none; }
 .live-actions { display: flex; justify-content: flex-end; }
 /* In the call header, by the timer: red, with how long. A click opens the popover. */
 .live-pill {
