@@ -92,6 +92,7 @@ export function renderLive() {
   const them = nameOf(e);
   $("liveTitle").textContent = here ? (live.phase === "live" ? "Live" : "Going live…") : `Go live with ${them}`;
   $("liveSetup").hidden = here;
+  $("liveClose").title = here ? "Close: the stream keeps going (Esc)" : "Close (Esc)";
   $("liveOn").hidden = !here;
   if (here) {
     $("liveStatus").textContent = live.phase === "live" ? `Live for ${fmtElapsed(Date.now() - live.startedAt)}` : "Connecting to the server…";
@@ -361,6 +362,7 @@ export function stopLive(why) {
 export function initGoLive() {
   $("liveBtn").onclick = () => setOpen(!liveOpen);
   $("livePill").onclick = () => setOpen(true);
+  $("liveClose").innerHTML = ICON.close;
   $("liveClose").onclick = () => setOpen(false);
   $("liveUrl").oninput = () => { failed = null; render(); };
   $("livePop").onsubmit = (ev) => { ev.preventDefault(); goLive(); };
@@ -372,14 +374,12 @@ export function initGoLive() {
   });
   // The timer on LIVE, and in the popover.
   setInterval(() => { if (live?.phase === "live") renderLive(); }, 1000);
-  // Esc closes it (before the other shortcuts), and so does a click away from it.
+  // Esc or the × closes it (before the other shortcuts). A click away doesn't: copying an
+  // address or key from another window clicks the softphone, and that mustn't lose the form.
   document.addEventListener("keydown", (ev) => {
     if (!liveOpen || ev.key !== "Escape" || openMenu) return;
     ev.preventDefault();
     ev.stopImmediatePropagation();
     setOpen(false);
-  }, true);
-  document.addEventListener("click", (ev) => {
-    if (liveOpen && !$("livePop").contains(ev.target) && !$("liveBtn").contains(ev.target) && !$("livePill").contains(ev.target) && !$("moreMenu").contains(ev.target)) setOpen(false);
   }, true);
 }

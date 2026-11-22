@@ -999,7 +999,8 @@ key field uses it.
 
 While it's live, the button is red, the call header has a red **LIVE** and how long, the call's
 row in Active calls says LIVE, and the popover (from the button or LIVE) says where to and has
-**Stop live**. It stops when the call ends, with Stop live, or if its connection to the server
+**Stop live**. The popover closes with its × or Esc, never a click away (copying an address or key
+from another window clicks the softphone); closing it while live leaves the stream going. It stops when the call ends, with Stop live, or if its connection to the server
 drops. A server that turns it down says why in the popover (*The server turned the stream key
 down (HTTP 401)*, *There's no WHIP endpoint at that address (HTTP 404)*, *The server didn't accept
 the call's media (HTTP 422: …)*).
