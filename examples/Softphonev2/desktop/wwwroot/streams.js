@@ -21,7 +21,7 @@ import { renderConnection } from "./connection.js";
 import { renderLadder } from "./sipladder.js";
 import { snap } from "./snapshots.js";
 import { $, escHtml as esc, post, shortName } from "./util.js";
-import { SOURCE_LABEL, sourceOf } from "./video.js";
+import { sourceLabel, sourceOf } from "./video.js";
 
 const ENDED_KEEP_MS = 5000;   // an ended call's record, kept till it's been saved (snapshots.js takes it sooner)
 const GONE_MS = 3000;      // agreed to arrive, but nothing for this long: shown as missing
@@ -373,7 +373,7 @@ function codecCell(r, s) {
 function sending(r, kind) {
   const e = entries.get(r.id);
   if (kind === "audio") return r.held ? (r.holdMode === "music" ? "Music" : "Silence") : r.heldByThem ? "Silence" : e?.m?.muted ? "Muted" : "Microphone";
-  if (kind === "video") return r.held ? (r.holdMode === "music" ? "Hold card" : "Nothing") : e?.m?.camOn ? (SOURCE_LABEL[sourceOf(e)] ?? "Camera") : "Camera-off card";
+  if (kind === "video") return r.held ? (r.holdMode === "music" ? "Hold card" : "Nothing") : e?.m?.camOn ? sourceLabel(sourceOf(e)) : "Camera-off card";
   return "Text";
 }
 

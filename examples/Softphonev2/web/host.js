@@ -1339,6 +1339,10 @@ async function onPageMessage(msg) {
     case "copy":
       navigator.clipboard?.writeText(msg.text).catch(() => {});
       break;
+    case "open-url":
+      // Go live's watch link, in a new tab: Broadcast Box's only, as the desktop's host has it.
+      if (/^https:\/\/b\.siobud\.com\//i.test(String(msg.url ?? ""))) window.open(msg.url, "_blank", "noopener");
+      break;
     case "save-png": savePng(msg.name, msg.data); break;
     case "loss":
       setLoss(msg.audio, msg.video);

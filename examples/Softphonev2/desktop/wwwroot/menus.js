@@ -7,6 +7,7 @@ import { analyserFor } from "./levels.js";
 import { initSelfView } from "./selfview.js";
 import { $, ICON, log, post } from "./util.js";
 import { SOURCE_LABEL, cameraIdOf, cameraOpenedFor, retryCamera, setVideoSource, sourceOf, syncCamera } from "./video.js";
+import { NET_LABEL, netAudio, netAudioInUse, netEnabled, netKinds, netReady, netVideo, stopNetAudio, useNet } from "./netinput.js";
 // ---- Device menus (the ▾ on Mute and Camera) ----
 // Mute's lists microphones and speakers; Camera's lists cameras, in diagnostics mode the test
 // pattern, and on a video call Camera off (your camera-off card, as Stop video). A pick takes effect straight away, mid-call too (a track swap, no renegotiation),
@@ -61,10 +62,16 @@ export async function showMenu(kind) {
   // or on a video call with your camera off, Camera off.
   const source = sourceOf(sel());
   const camOff = !!call?.hasVideo && !call.camOn;
+  // Network input (netinput.js), once it's turned on in Settings: in both menus, as one source.
+  // Waiting for a publisher, it's there but can't be picked. Its video and its sound both in use,
+  // each menu says so ("camera and mic"), so it's plain that picking another takes only that half.
+  const net = netEnabled() ? netItem(kind, source === "net" && !camOff) : null;
   const groups = kind === "mic"
-    ? [["mic", "Microphone", of("audioinput"), currentMicId()],
+    ? [["mic", "Microphone", of("audioinput"), netAudioInUse() ? null : currentMicId()],
+       ...(net ? [["net", "", [net.item], net.on ? "net" : null]] : []),
        ["speaker", "Speaker", of("audiooutput"), devices.speaker || "default"]]
-    : [["camera", "Camera", of("videoinput"), camOff || source !== "camera" ? null : currentCameraId(of("videoinput"), cameraIdOf(sel()))]];
+    : [["camera", "Camera", of("videoinput"), camOff || source !== "camera" ? null : currentCameraId(of("videoinput"), cameraIdOf(sel()))],
+       ...(net ? [["net", "", [net.item], net.on ? "net" : null]] : [])];
   if (kind !== "mic" && document.body.classList.contains("diag")) {
     groups.push(["test", "Diagnostics", Object.entries(SOURCE_LABEL).map(([deviceId, label]) => ({ deviceId, label })),
       !camOff && source !== "camera" ? source : null]);
@@ -78,7 +85,7 @@ export async function showMenu(kind) {
     if (!items.length) menu.append(Object.assign(document.createElement("div"), { className: "device-none", textContent: "None found" }));
     items.forEach((d, i) => {
       const on = d.deviceId === current;
-      const opt = Object.assign(document.createElement("button"), { type: "button", className: "device-option" });
+      const opt = Object.assign(document.createElement("button"), { type: "button", className: "device-option", disabled: !!d.disabled, title: d.title ?? "" });
       opt.setAttribute("role", "menuitemradio");
       opt.setAttribute("aria-checked", String(on));
       opt.innerHTML = `<span class="device-check">${on ? ICON.check : ""}</span><span></span>`;
@@ -139,6 +146,9 @@ export async function pickDevice(key, id) {
     setVideoSource("camera", target);
     await syncCamera();   // switches to it, if something is sending the camera
     await cameraOnForPick();
+  } else if (key === "net") {
+    useNet(target);   // its video and its sound, whichever menu it was picked from
+    if (netVideo()) await cameraOnForPick();
   } else if (key === "test") {
     setVideoSource(id, target);   // the test pattern or audio bars
     await cameraOnForPick();
@@ -146,6 +156,20 @@ export async function pickDevice(key, id) {
     if (call?.hasVideo && call.camOn) await setCamera(false, target);   // as Stop video
   }
   render();
+}
+
+// Network input's line in a ▾ menu: { item, on } (on: ticked, in use for this menu's half).
+function netItem(kind, videoOn) {
+  const on = kind === "mic" ? netAudioInUse() : videoOn;
+  const both = netAudioInUse() && videoOn;
+  if (!netReady()) return { item: { deviceId: "net", label: `${NET_LABEL}: waiting for a publisher`, disabled: true, title: "Start ffmpeg or OBS publishing to the address in Settings" }, on: false };
+  const has = kind === "mic" ? !!netAudio() : !!netVideo();
+  if (!has) return { item: { deviceId: "net", label: `${NET_LABEL}: no ${kind === "mic" ? "sound" : "video"} in it`, disabled: true }, on: false };
+  return {
+    item: { deviceId: "net", label: `${NET_LABEL}${both ? " · camera and mic" : on ? "" : ` (${netKinds()})`}`,
+      title: both ? "Its video and sound are what callers get" : `Use its ${netKinds()} in place of your devices` },
+    on,
+  };
 }
 
 // Picking a source from the Camera menu on a video call means you want to send it: if the camera
@@ -159,6 +183,7 @@ async function cameraOnForPick() {
 // sender just swaps tracks.
 export async function pickMic(id) {
   devices.mic = id;
+  stopNetAudio();   // your microphone again, if network input's sound was in its place
   if (!localTrack("audio")) { log(`microphone for the next call: ${id || "system default"}`); return; }   // opens with it
   let fresh;
   try {

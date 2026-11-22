@@ -15,13 +15,58 @@
 // heard, as a call that's recorded would say. While live, the header has a red LIVE with how long,
 // the call's row in Active calls says LIVE, and the popover has Stop live. The broadcast stops
 // when the call ends, with Stop live, or if its connection drops.
+//
+// Until you've used another, the address is Broadcast Box's public server, b.siobud.com, where
+// any stream key will do and anyone can watch it at b.siobud.com/<key>: so it works straight away,
+// with nothing to set up. The key there is made up for you once (brave-otter-427), kept, and shown
+// (it's in the link anyway), and the popover gives the link to send to whoever's watching, with
+// Copy and Open, as does Live while you are. Another server: no link (we don't know where it
+// shows it), and the key's hidden again.
 
 import { entries, hostState, inGrid, nameOf, params, render, sel, selectedId } from "./app.js";
 import { fmtElapsed } from "./calllist.js";
 import { openMenu } from "./menus.js";
+import { prefs, savePref } from "./settings.js";
 import { $, ICON, initial, log, post } from "./util.js";
 
 const WIDTH = 1280, HEIGHT = 720, FPS = 25;
+
+// Broadcast Box's public server (github.com/Glimesh/broadcast-box): WHIP at /api/whip with the
+// stream key as the Bearer token, watched at /<key>.
+const SIOBUD = "https://b.siobud.com/api/whip";
+const isSiobud = (url) => /^https:\/\/b\.siobud\.com\//i.test((url ?? "").trim());
+const watchLink = (url, key) => (isSiobud(url) && key ? `https://b.siobud.com/${encodeURIComponent(key)}` : null);
+// A key that's easy to read out and type, and unlikely to be someone else's on a shared server:
+// adjective-noun-number, about a million of them. Made once, and kept (prefs.liveKey).
+const ADJ = ["amber", "brave", "calm", "clever", "cosy", "crisp", "dapper", "eager", "fancy", "gentle", "glad", "golden", "happy", "jolly", "keen", "lively",
+  "lucky", "mellow", "merry", "nimble", "plucky", "proud", "quick", "quiet", "rosy", "shiny", "snappy", "sunny", "swift", "tidy", "witty", "zesty"];
+const NOUN = ["badger", "beacon", "comet", "cricket", "dolphin", "falcon", "ferret", "gecko", "heron", "kestrel", "koala", "lantern", "lemur", "lynx", "magpie", "marmot",
+  "meadow", "narwhal", "otter", "panda", "pebble", "pelican", "puffin", "quokka", "raven", "robin", "salmon", "sparrow", "tiger", "walrus", "willow", "wombat"];
+function newKey() {
+  const [a, b, c] = crypto.getRandomValues(new Uint32Array(3));
+  return `${ADJ[a % ADJ.length]}-${NOUN[b % NOUN.length]}-${100 + (c % 900)}`;
+}
+function siobudKey() {
+  if (!prefs.liveKey) savePref("liveKey", newKey());
+  return prefs.liveKey;
+}
+// The key field for the address: Broadcast Box's, filled with the key (and shown); another's, the
+// made-up key taken back out (and the field hidden again).
+function fitKey() {
+  const url = $("liveUrl").value, key = $("liveToken");
+  if (isSiobud(url)) { if (!key.value) key.value = siobudKey(); key.type = "text"; }
+  else { if (key.value === prefs.liveKey) key.value = ""; key.type = "password"; }
+}
+// A watch link: shown, with Copy and Open (the host opens it in your browser).
+function showWatch(box, link) {
+  box.hidden = !link;
+  if (!link) return;
+  const a = box.querySelector("a");
+  a.textContent = link.replace(/^https:\/\//, "");
+  a.href = link;
+  a.title = `Open ${link} in your browser`;
+  box.querySelector("button").onclick = () => { post({ type: "copy", text: link }); log("go live: watch link copied"); };
+}
 const ICE_WAIT_MS = 3000;
 
 // The broadcast, while there is one: { id (the call), url, phase: starting | live, startedAt,
@@ -49,8 +94,9 @@ function setOpen(open) {
   if (open && blocked() && !live) return;
   if (open && !liveOpen) {
     const saved = hostState.live ?? {};
-    if (!$("liveUrl").value) $("liveUrl").value = saved.url ?? "";
+    if (!$("liveUrl").value) $("liveUrl").value = saved.url ?? SIOBUD;
     $("liveToken").value = "";
+    fitKey();
     if (failed?.id !== selectedId) failed = null;
   }
   liveOpen = open;
@@ -98,6 +144,7 @@ export function renderLive() {
     $("liveStatus").textContent = live.phase === "live" ? `Live for ${fmtElapsed(Date.now() - live.startedAt)}` : "Connecting to the server…";
     $("liveWhere").textContent = hostOf(live.url);
     $("liveWhere").title = live.url;
+    showWatch($("liveWatchOn"), live.watch);
     return;
   }
   $("liveWhat").textContent = e?.m?.hasVideo
@@ -106,7 +153,8 @@ export function renderLive() {
   $("liveConsent").textContent = `Everyone watching will see and hear ${them}. Tell them before you go live.`;
   const saved = hostState.live ?? {};
   const sameUrl = saved.url && $("liveUrl").value.trim() === saved.url;
-  $("liveToken").placeholder = sameUrl && saved.hasToken ? "Saved (leave empty to use it)" : "If the server needs one";
+  $("liveToken").placeholder = sameUrl && saved.hasToken ? "Saved (leave empty to use it)" : isSiobud($("liveUrl").value) ? "Any key you like" : "If the server needs one";
+  showWatch($("liveWatch"), watchLink($("liveUrl").value, $("liveToken").value.trim()));
   $("liveError").hidden = !failed;
   $("liveError").textContent = failed?.text ?? "";
   $("liveGo").disabled = !/^https?:\/\/\S+$/i.test($("liveUrl").value.trim());
@@ -301,7 +349,9 @@ async function goLive() {
   // simulated loss or tones), as it's not a call.
   const pc = new RTCPeerConnection({ live: true });
   const mix = newMix(e);
-  live = { id: e.id, url, phase: "starting", startedAt: Date.now(), pc, mix };
+  // Broadcast Box's key, typed or made up, is kept for next time (and its link).
+  if (isSiobud(url) && typed.trim()) savePref("liveKey", typed.trim());
+  live = { id: e.id, url, phase: "starting", startedAt: Date.now(), pc, mix, watch: watchLink(url, typed.trim()) };
   render();
   log(`call ${e.id}: going live to ${hostOf(url)}`);
   try {
@@ -364,7 +414,11 @@ export function initGoLive() {
   $("livePill").onclick = () => setOpen(true);
   $("liveClose").innerHTML = ICON.close;
   $("liveClose").onclick = () => setOpen(false);
-  $("liveUrl").oninput = () => { failed = null; render(); };
+  $("liveUrl").oninput = () => { failed = null; fitKey(); render(); };
+  $("liveToken").oninput = () => render();   // the watch link follows the key
+  for (const id of ["liveWatch", "liveWatchOn"]) {
+    $(id).querySelector("a").onclick = (ev) => { ev.preventDefault(); post({ type: "open-url", url: ev.currentTarget.href }); };
+  }
   $("livePop").onsubmit = (ev) => { ev.preventDefault(); goLive(); };
   $("liveStop").onclick = () => { stopLive("you stopped it"); setOpen(false); };
   chrome.webview.addEventListener("message", (ev) => {

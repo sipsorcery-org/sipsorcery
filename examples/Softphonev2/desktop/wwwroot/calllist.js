@@ -1,6 +1,6 @@
 // The Active calls panel down the left, the grid of calls, and End all.
 
-import { ROW_MS, audioId, callNotes, dropOutcome, focusCall, goneRows, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, selectedId, setView, tiles, view } from "./app.js";
+import { ROW_MS, callNotes, dropOutcome, focusCall, getsAudio, partnerOf, goneRows, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, selectedId, setView, tiles, view } from "./app.js";
 import { setAvatar } from "./avatar.js";
 import { isLiveCall } from "./golive.js";
 import { contactMarkEl } from "./contactmark.js";
@@ -11,6 +11,7 @@ import { tonesStatus } from "./tonesin.js";
 import { transferNotices, transferShort } from "./transfer.js";
 import { $, ICON, escHtml, initial, log, post } from "./util.js";
 import { sourceAvailable, sourceOf } from "./video.js";
+import { NET_LABEL, netAudioInUse, netVideo } from "./netinput.js";
 
 // ---- Active calls panel, down the left ----
 // Every call, oldest at the top and new ones at the bottom, so a call never moves. Each row shows
@@ -44,7 +45,7 @@ export const fmtElapsed = (ms) => {
 
 // Whether a call gets your microphone: it's the live call, you haven't muted it, and neither
 // side has it on hold (held, it gets music or silence instead).
-export const getsMic = (e) => hasMic && !!e.m && !e.m.muted && e.id === audioId && !holdState(e) && !e.h.heldByThem;
+export const getsMic = (e) => (hasMic || netAudioInUse()) && !!e.m && !e.m.muted && getsAudio(e) && !holdState(e) && !e.h.heldByThem;
 
 // One call's status line, for the list (and grid tiles): its state, what it gets from you, and
 // text. { status (row class), statusText, since, muted, held, long (held over a minute), audioOff,
@@ -60,7 +61,7 @@ export function callStatus(e) {
     c.since = e.connectedAt;
     c.held = !!h.held;
     c.muted = hasMic && m.muted;
-    c.audioOff = !c.held && e.id !== audioId;
+    c.audioOff = !c.held && !getsAudio(e);
     c.typing = !!openLine(e.text, false, false);
     c.unread = e.text.unread;
     const pending = e.holdWanted !== undefined && e.holdWanted !== c.held;
@@ -80,7 +81,7 @@ export function callStatus(e) {
     else c.statusText = c.audioOff ? "Audio off" : c.muted ? "Muted" : m.hasVideo ? "Video call" : "Audio call";
     // What they get from you, at a glance: your mic and camera, or why not.
     const held = holdState(e), music = h.holdMode !== "sip";
-    const mic = getsMic(e) ? { on: true, label: `${nameOf(e)} hears you` }
+    const mic = getsMic(e) ? { on: true, label: `${nameOf(e)} hears ${netAudioInUse() ? NET_LABEL : "you"}` }
       : { on: false, muted: hasMic && m.muted,
           label: !hasMic ? "No mic"
             : m.muted ? "Muted: they don't hear you"
@@ -88,7 +89,7 @@ export function callStatus(e) {
             : h.heldByThem ? "They've put you on hold: they don't hear you"
             : "Your mic is on another call" };
     const camOn = m.hasVideo && m.camOn && !held && sourceAvailable(sourceOf(e));
-    const cam = !m.hasVideo ? null : camOn ? { on: true, label: `${nameOf(e)} sees your video` }
+    const cam = !m.hasVideo ? null : camOn ? { on: true, label: `${nameOf(e)} sees ${sourceOf(e) === "net" && netVideo() ? NET_LABEL : "your video"}` }
       : { on: false, muted: !m.camOn,
           label: held ? (music ? "On hold: they see the On hold card" : "On hold: they see nothing")
             : !m.camOn ? "Video stopped: they see your initial"
@@ -225,6 +226,9 @@ function callRow(e, i, collapsed = false) {
   if (contact) top.firstChild.append(contactMarkEl(contact.name));
   // Broadcast (Go live): a red LIVE after the name, while it is.
   if (isLiveCall(e.id)) top.append(Object.assign(el("span", "call-live", "LIVE"), { title: "This call is live (Go live)" }));
+  // A call to yourself: both legs say so, and that they stay off hold together.
+  const pair = partnerOf(e);
+  if (pair) top.append(Object.assign(el("span", "call-pair", "⇄ you"), { title: `A call to yourself: this and ${nameOf(pair)}'s call are its two ends, so neither puts the other on hold` }));
   // No mic and camera chips, and no timer: the call bar has the time, and only one
   // call ever has your mic. What matters about the call is a badge on its avatar (callBadge).
   const main = el("span", "call-main");

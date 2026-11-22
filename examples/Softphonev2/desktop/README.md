@@ -38,6 +38,7 @@ The host (C#: WinForms and WebView2):
 | `StreamLog.cs` | One per call: its offers and answers as they went over the wire, for Diagnostics' Streams tab. |
 | `TextPeerConnection.cs` | A WebRTC call's SIP leg, with real-time text on a data channel. |
 | `LiveStream.cs` | Go live: the WHIP exchange for a call's broadcast (POST the page's offer, DELETE to stop), and the endpoint last used. |
+| `NetInput.cs` | Network input: a WHIP endpoint on localhost for ffmpeg or OBS, the publisher's connection ended here and its media relayed to the page (a `MediaRelay`); its address, key and on/off kept per profile. |
 | `Accounts.cs`, `Contacts.cs`, `History.cs` | SIP accounts, contacts and call history, kept per profile in `%LOCALAPPDATA%\SIPSorcery\Softphonev2`. |
 | `Settings.cs` | `softphone.json` and the switches. |
 | `WindowPlacement.cs` | Where the window was, and how big, per profile. |
@@ -60,6 +61,7 @@ The page (`wwwroot`, shared with the web softphone in [../web](../web/README.md)
 | `levels.js` | Audio levels: the bars of the audio-only view and of the grid's tiles. |
 | `keypad.js`, `rtt.js`, `transfer.js` | The keypad (DTMF), real-time text, and transfer. |
 | `golive.js` | Go live: the call mixed into one audio and one video track, published to a WHIP endpoint; its popover and LIVE. |
+| `netinput.js` | Network input: the relayed feed as one source for a call, its video and its sound, in the ▾ menus and Your devices; its notices, and back to your devices when it stops. |
 | `quality.js` | Call details and Call quality. |
 | `sipladder.js` | SIP ladder: every SIP message of a call as it went, a lane per party and an arrow per message, as SIP Trace draws one; each opens whole; copies as Mermaid or text, or saves as a PNG. |
 | `connection.js` | Connection: a call's media, layer by layer (SDP, ICE, DTLS, SRTP, RTP, RTCP), each with its state and why, and a timeline of its setup. |
@@ -148,6 +150,7 @@ Switches, mostly for testing:
 | `--camera-off` | Video calls you place start with your camera off (your camera-off card until Start video). |
 | `--add-video <s>` | Press Add video this many seconds into an audio call. |
 | `--go-live <url>`, `--live-token <key>` | Two seconds after the first call connects, Go live to this WHIP address with this key. |
+| `--whip-input <port>`, `--whip-token <key>` | Network input on for this run, on this port, with this stream key (nothing saved). |
 | `--hangup-after <s>` | Hang up a call this many seconds after it connects. |
 | `--dial-count <n>` | With `--dial`, place `n` calls one after another, each 2 s after the last one ends. |
 

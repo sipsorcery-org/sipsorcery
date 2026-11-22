@@ -9,11 +9,18 @@
 // The self view (Self view, V) and the grid (Grid, G) are kept by their own buttons, so they aren't
 // settings. Gravatar is, though it has no button, because it's a choice about what's sent to
 // someone else's server.
+//  - Network input (desktop only): video and sound from ffmpeg or OBS on this PC, over WHIP, for
+//    a call to use in place of your camera and microphone (netinput.js). Turned on here, which
+//    starts the host listening; here too are the address and stream key to give the publisher,
+//    whether one is sending, and an ffmpeg command line to try it with. It's picked for a call
+//    from the ▾ on Camera or Mute, or Your devices, like a device.
 //  - Diagnostics: opens the panel F12 opens, handy where a browser keeps F12 for itself.
 // Every change applies straight away. They're kept in the page's storage: on the desktop that's
 // the WebView2 profile's (--profile), so each profile has its own; on the web, this browser's.
 // The prototype's ringtone and saved-transcript options have nothing behind them here yet, so
 // they're left out.
+
+import { ffmpegExample, netStatusText } from "./netinput.js";
 
 const KEY = "softphonev2.settings";
 // theme: "system", "light" or "dark". view: "focus"
@@ -95,6 +102,17 @@ export function initSettings(app) {
         <p class="settings-note" id="setDevCall" hidden>The call you're on keeps the devices it has.</p>
         <p class="settings-note">To use another device for one call, change it from Your devices, or the ▾ on Mute and Camera during the call. That lasts until the call ends; the next one starts with these again.</p>
       </section>
+      <section class="settings-section" aria-labelledby="setNetHead" id="setNet" hidden>
+        <h3 id="setNetHead">Network input</h3>
+        <label class="check-row"><input type="checkbox" data-net="on">Accept video and sound from ffmpeg or OBS (WHIP)</label>
+        <p class="settings-note">Only programs on this PC can send to it. During a call, pick <b>Network input</b> from the ▾ on Camera or Mute: callers then see and hear it in place of your camera and microphone.</p>
+        <div class="net-details" id="setNetDetails" hidden>
+          <p class="net-status" id="setNetStatus" role="status"></p>
+          <label class="settings-field"><span>WHIP address</span><span class="net-copy-row"><input type="text" readonly id="setNetAddr" spellcheck="false"><button type="button" class="btn btn-small" data-net-copy="setNetAddr">Copy</button></span></label>
+          <label class="settings-field"><span>Stream key</span><span class="net-copy-row"><input type="text" readonly id="setNetKey" spellcheck="false"><button type="button" class="btn btn-small" data-net-copy="setNetKey">Copy</button><button type="button" class="btn btn-small" data-net="new-key" title="A new key: a publisher using the old one is cut off">New key</button></span></label>
+          <div class="settings-field"><span>Try it with ffmpeg: a test pattern and a tune</span><span class="net-copy-row"><textarea readonly id="setNetCmd" rows="4" spellcheck="false"></textarea><button type="button" class="btn btn-small" data-net-copy="setNetCmd">Copy</button></span></div>
+        </div>
+      </section>
       <section class="settings-section" aria-labelledby="setThemeHead">
         <h3 id="setThemeHead">Appearance</h3>
         <div class="settings-seg" role="radiogroup" aria-labelledby="setThemeHead">
@@ -140,7 +158,22 @@ export function initSettings(app) {
     q("#setDevCall").hidden = !app.inCall();
   }
 
+  // Network input: shown only where the host has it (the desktop's), filled from its state.
+  function fillNet() {
+    const n = app.netInput?.();
+    q("#setNet").hidden = !n;
+    if (!n) return;
+    q('[data-net="on"]').checked = !!n.on;
+    q("#setNetDetails").hidden = !n.on;
+    q("#setNetStatus").textContent = netStatusText();
+    q("#setNetStatus").dataset.tone = !n.address ? "bad" : n.session ? "ok" : "";
+    q("#setNetAddr").value = n.address ?? "";
+    q("#setNetKey").value = n.token ?? "";
+    q("#setNetCmd").value = ffmpegExample();
+  }
+
   function fill() {
+    fillNet();
     q('[data-pref="gravatar"]').checked = prefs.gravatar !== false;
     for (const r of dlg.querySelectorAll('input[name="theme"]')) r.checked = r.value === (prefs.theme || "system");
     q("#setDiag").textContent = app.diagnostics() ? "Close diagnostics" : "Open diagnostics";
@@ -173,6 +206,9 @@ export function initSettings(app) {
       savePref("gravatar", t.checked);
       document.dispatchEvent(new CustomEvent("gravatar-changed"));
       app.log(`settings: Gravatar pictures ${t.checked ? "on" : "off"}`);
+    } else if (t.dataset.net === "on") {
+      app.post({ type: "net-input", on: t.checked });
+      app.log(`settings: network input ${t.checked ? "on" : "off"}`);
     } else if (t.name === "theme") {
       savePref("theme", t.value);
       applyTheme();
@@ -185,6 +221,9 @@ export function initSettings(app) {
     dlg.close();
     app.setDiagnostics(on);
   };
+
+  q('[data-net="new-key"]').onclick = () => app.post({ type: "net-new-key" });
+  for (const b of dlg.querySelectorAll("[data-net-copy]")) b.onclick = () => app.post({ type: "copy", text: q(`#${b.dataset.netCopy}`).value, secret: b.dataset.netCopy !== "setNetAddr" });
 
   return { refresh: () => { if (dlg.open) fill(); } };
 }

@@ -55,6 +55,7 @@ import { captureDiagnostics, closeSnapshot, onDiagSaved, onDiagnosticsSaved, onD
 import { closeTextForGrid, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen } from "./rtt.js";
 import { cancelTransfer, initTransfer, renderTransfer, transferNotices, transferState } from "./transfer.js";
 import { initGoLive, renderLive } from "./golive.js";
+import { initNetInput, micToSend, netAudio, netState } from "./netinput.js";
 import { $, ICON, initial, log, post, shortName } from "./util.js";
 import { cameraInUse, hasCamera, isTestTrack, openSources, placeholderTrack, retryCamera, sameSources, setHasCamera, showSelfVideo, sourceAvailable, sourceOf, stopPlaceholders, syncCamera, videoToSend, wantedSources } from "./video.js";
 
@@ -150,9 +151,22 @@ export const holdState = (e) => e.holdWanted ?? !!e.h.held;
 const talking = () => [...entries.values()].filter((e) => e.h.call === "connected" && !holdState(e));
 const liveCall = () => talking().find((e) => e.id === audioId) ?? talking()[0] ?? null;
 
-// Holds every call you're talking to but `keep`: before Call or Answer, and when switching calls.
+// A call to yourself (one of your accounts calling another here): the host pairs its two legs
+// (h.pair, the other's id). They're one call to you, so neither holds the other, and both have the
+// microphone and speaker: you hear each end as the other does.
+export const partnerOf = (e) => (e?.h.pair != null ? entries.get(String(e.h.pair)) ?? null : null);
+// The call has the microphone and speaker: the audio call, or its partner while that's on too.
+export const getsAudio = (e) => e.id === audioId
+  || (audioId != null && partnerOf(entries.get(audioId))?.id === e.id && e.h.call === "connected" && !holdState(e));
+
+// Holds every call you're talking to but `keep` (and its partner, a call to yourself): before
+// Call or Answer, and when switching calls.
 function holdOthers(keep) {
-  for (const e of talking()) if (e.id !== keep?.id) holdCall(e, true);
+  for (const e of talking()) {
+    if (e.id === keep?.id || (keep && partnerOf(e) === keep)) continue;
+    holdCall(e, true);
+    e.heldForOther = true;   // held for another call, not by you: its partner coming back brings it too
+  }
 }
 // Makes a connected call the one you're talking to: the live one goes on hold, and this one comes
 // off hold if it's on it. Anything else (ringing, calling, ended) is only looked at.
@@ -162,6 +176,9 @@ function goLive(e, resumed = false) {
   if (e?.h.call !== "connected") return;
   holdOthers(e);
   holdCall(e, false, resumed);
+  // A call to yourself: its other end comes back with it, if it was held only for another call.
+  const p = partnerOf(e);
+  if (p?.heldForOther && p.h.call === "connected" && holdState(p)) holdCall(p, false);
 }
 
 // The most recent live call other than the selected one, for "Back to …".
@@ -210,15 +227,16 @@ export function focusCall(id) {
 // Moves the microphone and speaker to the audio call: its sender gets the microphone, its <video>
 // plays; every other call sends no audio and is silent. The selected call takes the audio when it's
 // connected and not on hold. A held call sends nothing at all.
-function syncAudio() {
+export function syncAudio() {
   const s = sel();
   if (s?.h.call === "connected" && !holdState(s) && s.m) audioId = s.id;
   const a = entries.get(audioId);
   if (!a || a.h.call !== "connected" || holdState(a)) audioId = null;
-  const mic = localTrack("audio");
+  // Your microphone, or network input's sound in its place (netinput.js).
+  const mic = micToSend();
   if (mic) mic.enabled = !(entries.get(audioId)?.m?.muted ?? startMuted());
   for (const e of entries.values()) {
-    const on = e.id === audioId;
+    const on = getsAudio(e);
     e.el.muted = !on;
     // Played by script, not left to autoplay: Chrome pauses a muted autoplaying video while it
     // can't be seen (another call's, or an audio-only call's), and it stays paused when unmuted.
@@ -433,7 +451,7 @@ async function onMediaOffer(id, sdp, video = false, renegotiate = false) {
   // if nothing wants it. Not awaited: the answer doesn't depend on it.
   syncCamera();
   syncAudio();
-  if (localTrack("audio")) m.localAnalyser = analyserFor(localTrack("audio"));
+  if (micToSend()) m.localAnalyser = analyserFor(micToSend());
   await pc.setLocalDescription(sdp ? await pc.createAnswer() : await pc.createOffer());
   await iceGathered(pc);
   if (e.pc !== pc) return;   // ended meanwhile
@@ -472,7 +490,7 @@ async function setUpTransceivers(e) {
       m.audioSender = tr.sender;
       // With a microphone, sendrecv even while privacy mode has it closed (silence goes out),
       // so turning privacy mode off needs no renegotiation.
-      tr.direction = localTrack("audio") || hasMic ? "sendrecv" : "recvonly";
+      tr.direction = localTrack("audio") || hasMic || netAudio() ? "sendrecv" : "recvonly";
     }
   }
 }
@@ -547,6 +565,7 @@ initRtt();
 initKeypad();
 initTransfer();
 initGoLive();
+initNetInput();
 initQuality();
 
 // ---- Rendering the state ----
@@ -1140,6 +1159,7 @@ function holdCall(e, hold, resumed = false) {
     return;
   }
   e.holdWanted = hold;
+  e.heldForOther = false;   // (holdOthers sets it after)
   e.holdAskedAt = Date.now();
   log(`${hold ? "holding" : "resuming"} call ${e.id} (${nameOf(e)})`);
   post({ type: "hold", id: e.id, hold, resumed });
@@ -1189,6 +1209,9 @@ const ringingWho = (e, ringing) => {
 // is only a message): { key, callId, who, whoTitle, what, title, icon, tone, action, at }. One
 // with a button stays until you use it or close it; one without goes after OUTCOME_MS (a line
 // along its foot runs down meanwhile), the clock stopped while the pointer is on the notices.
+// { call: id } is one about that call (network input's): it shows with the call, in its bar while
+// it's on the stage and on its tile in Grid, not in the notices; { ttl } is how long it stays,
+// button or not.
 const OUTCOME_MS = 8000;
 // The call bar's notice (a call that ended on you, or one you placed that wasn't answered): there
 // for HEAD_MS, the last HEAD_FADE_MS of it fading out.
@@ -1199,11 +1222,11 @@ const HEAD_MS = 4000, HEAD_FADE_MS = 2000;
 export const ROW_MS = 4000;
 const outcomes = [];
 let noticesHeldAt = null;   // the pointer's on the notices (or the call bar's), since then
-function pushOutcome(o) {
+export function pushOutcome(o) {
   const i = outcomes.findIndex((x) => x.key === o.key);
   if (i >= 0) outcomes.splice(i, 1);
   const at = Date.now();
-  outcomes.push({ ...o, at, until: o.action ? null : at + (o.head ? HEAD_MS : o.row ? ROW_MS : OUTCOME_MS) });
+  outcomes.push({ ...o, at, until: o.ttl ? at + o.ttl : o.action ? null : at + (o.head ? HEAD_MS : o.row ? ROW_MS : OUTCOME_MS) });
   render();
 }
 // The outcomes' clocks stop while the window is hidden (minimised), so one isn't gone before
@@ -1371,7 +1394,7 @@ function noticeItems() {
   }
   items.push(...xfer.outcomes.filter((o) => !o.row && !o.stage).map((o) => ({ ...o, outcome: true })));
   for (const o of outcomes) {
-    if (o.head || o.row || o.note != null) continue;   // in the call's bar, or its row in the calls panel; the call's bar (renderHeadEnded); in Grid, floating over its top
+    if (o.head || o.row || o.note != null || o.call != null) continue;   // in the call's bar, or its row in the calls panel; the call's bar (renderHeadEnded); in Grid, floating over its top
     const live = o.callId && entries.get(o.callId)?.h.call === "connected";
     const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
     items.push({
@@ -1440,7 +1463,7 @@ function renderHeadEnded() {
   // A head outcome is its call's: shown while that call is on the stage, or over
   // Home once it's gone; not over another call you've switched to.
   const ours = (x) => selectedId == null || (x.callId ?? x.diagFor) === selectedId;
-  const o = ask ?? xn?.outcomes.find((x) => x.stage) ?? outcomes.findLast((x) => x.head && ours(x));
+  const o = ask ?? xn?.outcomes.find((x) => x.stage) ?? outcomes.findLast((x) => (x.head && ours(x)) || (x.call != null && x.call === selectedId && !inGrid()));
   const box = $("headEnded"), info = $("info"), stage = $("stage"), connected = !inGrid() && sel()?.h.call === "connected";
   if (!o && !box.hidden) {
     if (!headClosing) {
@@ -1485,19 +1508,21 @@ function renderHeadEnded() {
   box.dataset.tone = ask ? "ask" : o.tone ?? "";
   $("headEndedX").onclick = o.dismiss ?? (() => dropOutcome(o.key));
   $("headEndedX").hidden = !!ask;
+  // Its buttons: a transfer's ask's, or an outcome's one (network input's Keep my microphone).
+  const buttons = ask ? ask.actions : o.action ? [{ label: o.action.label, title: o.action.title, cls: "btn", fn: o.action.fn }] : null;
   let acts = box.querySelector(".head-ask");
-  if (ask && !acts) { acts = Object.assign(document.createElement("span"), { className: "head-ask" }); box.insertBefore(acts, $("headEndedX")); }
+  if (buttons && !acts) { acts = Object.assign(document.createElement("span"), { className: "head-ask" }); box.insertBefore(acts, $("headEndedX")); }
   if (acts) {
-    acts.hidden = !ask;
-    if (ask && acts.dataset.key !== ask.key) {
-      acts.dataset.key = ask.key;
-      acts.replaceChildren(...ask.actions.map((a) => {
+    acts.hidden = !buttons;
+    if (buttons && acts.dataset.key !== o.key) {
+      acts.dataset.key = o.key;
+      acts.replaceChildren(...buttons.map((a) => {
         const b = Object.assign(document.createElement("button"), { type: "button", className: a.cls, textContent: a.label, title: a.title ?? "" });
         b.onclick = (ev) => { ev.stopPropagation(); a.fn(); };
         return b;
       }));
     }
-    if (!ask) delete acts.dataset.key;
+    if (!buttons) delete acts.dataset.key;
   }
   fadeHeadEnded();
   const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
@@ -1654,7 +1679,9 @@ function renderGrid(grid) {
   // How a transfer on a call went (done, failed, cancelled, declined): on its tile,
   // as on its row in the calls panel (calllist.js noteRow), with × to close it.
   const xn = grid ? transferNotices(() => () => {}) : { outcomes: [], decisions: [] };
-  const notes = new Map([...(grid ? callNotes() : []), ...xn.outcomes.filter((o) => o.row)].map((o) => [String(o.row), o]));
+  // And one about a call (network input's): on its tile.
+  const about = grid ? outcomes.filter((o) => o.call != null).map((o) => ({ ...o, row: o.call, dismiss: () => dropOutcome(o.key) })) : [];
+  const notes = new Map([...(grid ? callNotes() : []), ...about, ...xn.outcomes.filter((o) => o.row)].map((o) => [String(o.row), o]));
   // A transfer you're asked to take: the tile blinks; a click switches to the call,
   // where its bar asks.
   const asks = new Map(xn.decisions.filter((d) => d.row).map((d) => [String(d.row), d]));
@@ -1874,7 +1901,7 @@ export function togglePrivacy() {
     if (liveEntries().length) {
       openMic().then((track) => {
         // The audio view's bars follow the new microphone (syncAudio puts it on the live call).
-        if (track) for (const e of entries.values()) if (e.m) { e.m.localAnalyser?.source.disconnect(); e.m.localAnalyser = analyserFor(track); }
+        if (micToSend()) for (const e of entries.values()) if (e.m) { e.m.localAnalyser?.source.disconnect(); e.m.localAnalyser = analyserFor(micToSend()); }
         render();
       });
     }
@@ -2065,6 +2092,8 @@ export const settings = initSettings({
   videoAllowed: () => state.videoAllowed !== false,
   diagnostics: () => !$("devPanel").hidden,
   setDiagnostics,
+  netInput: netState,   // network input's state from the host (null in the web build)
+  post,
 });
 initYourDevices();
 initHome();
