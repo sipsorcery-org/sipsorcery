@@ -2,11 +2,12 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- net10.0 because SIPSorcery.AV1 (and its av1rt dependency) only ship net10.0. -->
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Lets the net8.0 tool run on newer installed runtimes without a reinstall. -->
+    <!-- Lets the tool run on newer installed runtimes without a reinstall. -->
     <RollForward>Major</RollForward>
     <!-- The Wav2Lip avatar's per-pixel compositing loops use pointers. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -40,7 +41,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <PackageReference Include="System.CommandLine" />
     <!-- Used by the livekit: route edges (publish into / subscribe to a room) to mint access tokens and
-         for the protobuf signalling. Targets netstandard2.0 so it is compatible with the net8.0 tool. -->
+         for the protobuf signalling. Targets netstandard2.0 so it is compatible with the tool. -->
     <PackageReference Include="Livekit.Server.Sdk.Dotnet" />
     <!-- The OpenAI.Realtime library returns Either<Error, T>; this is the underlying type. -->
     <PackageReference Include="LanguageExt.Core" />
@@ -70,6 +71,9 @@
     <ProjectReference Include="..\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
     <!-- VP8 encoder for the test pattern video published via LibraryVideoPublisher (webrtc verbs). -->
     <ProjectReference Include="..\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
+    <!-- Managed AV1 encoder (av1rt, no native deps) for the route "video-encoder av1.net" test
+         pattern and the webrtc video-bench av1.net stage. -->
+    <ProjectReference Include="..\SIPSorcery.AV1\SIPSorcery.AV1.csproj" />
     <!-- WebRTC client for the OpenAI Realtime API, used by the "bridge web openai" agent endpoint.
          No longer published as its own NuGet package; the source lives with the OpenAI examples
          and is bundled into the CLI tool package. -->

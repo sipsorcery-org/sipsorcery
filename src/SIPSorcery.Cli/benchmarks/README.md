@@ -1,36 +1,56 @@
 # Video pipeline benchmarks
 
-[`run-video-bench.ps1`](run-video-bench.ps1) sweeps the SIPSorcery WebRTC video pipeline across
-resolution presets and encoders to find the **maximum sustainable frame rate** for the **encode** and
-**decode** stages, and writes a markdown table (with the machine's CPU/memory) and the raw JSON to
-`results/`.
+[`run-video-bench.ps1`](run-video-bench.ps1) measures the SIPSorcery video pipeline across resolution
+presets: the **maximum frame rate of each encoder and decoder alone**, and of a **real WebRTC
+session** sending, receiving, or both. It writes markdown tables (with the machine's CPU/memory) and
+the raw JSON to `results/`.
 
-It is meant to be run **locally** (not in CI) — the numbers are machine specific and the two stages
-share CPU on one box, so treat the output as a snapshot of that machine, not an absolute spec.
+It is meant to be run **locally** (not in CI): the numbers are machine specific, so treat the output
+as a snapshot of that machine, not an absolute spec.
 
 ## How it works
 
-Every measurement is one self-contained `webrtc loopback` run: it publishes a generated test pattern
-to an in-process WHIP receiver (using the same `LibraryVideoPublisher` as `webrtc whip`) and receives
-it back. No second terminal, no real network.
+Two CLI commands do the measuring, each for what it is built for:
 
-- **Encode ceiling** — publish flat out (a very high `--fps` the encoder cannot reach) with no
-  decode; the reported `publishedFps` is the encoder's max sustainable rate. Measured for the managed
-  `vp8.net` encoder and the `ffmpeg` encoder on **H264, VP8, VP9, H265 and AV1**.
-- **Decode breakpoint** — publish with `--decode --video null` (decode in-process, discard) and sweep
-  `--fps` upward until the receiver drops more than the threshold (default 10%) of frames. The frames
-  are **pre-encoded once** (`-PreEncodeFrames`, default 300) and the encoded bitstream is replayed, so
-  **no encoding runs during the window** — the breakpoint reflects the decoder alone, not encode and
-  decode sharing CPU. The codec columns:
-  - **Decode H264 / VP8 / VP9 / H265 / AV1 (ffmpeg)** — the SIPSorcery FFmpeg decoder, driven by the FFmpeg encoder.
-  - **Decode VP8 (vp8.net)** — the managed Vpx.Net VP8 decoder, driven by the **vp8.net** encoder. It
-    must use its own encoder's bitstream: the managed decoder crashes on FFmpeg-encoded VP8 (a Vpx.Net
-    inter-prediction bug). Because vp8.net encode is slow, this column is **capped at ≤1080p** (larger
-    presets show `n/a`); the decode measurement is still valid, only the one-time pre-encode would be too slow.
-- **Plumbing (no codec)** — publish flat out (`--max-rate`) with **neither encoder nor decoder**:
-  pre-encoded frames are replayed and the receiver discards them without decoding. The reported
-  `publishedFps` is the pure WebRTC transport ceiling (packetise → SRTP → socket → depacketise) — the
-  theoretical maximum the encode and decode stages sit under.
+- **`webrtc video-bench`** times one component alone, in-process, with no network, as fast as it
+  will go. It gives the codec columns.
+- **`webrtc loopback`** runs a real WebRTC session in one process: it publishes a generated test
+  pattern to an in-process WHIP receiver (the same `LibraryVideoPublisher` as `webrtc whip`) and
+  receives it back. It gives the WebRTC pipeline table.
+
+The encode and decode tables (`video-bench`):
+
+- **Encode** (`video-bench --encoder <e> --codec <c> --bitrate <preset bitrate>`): the encoder runs
+  flat out on a moving test pattern and the reported `achievedFps` is its maximum rate (RTP
+  packetisation included). Measured for the managed `vp8.net` and `av1.net` encoders and the `ffmpeg`
+  encoder on **H264, VP8, VP9, H265 and AV1**.
+- **Decode** (`video-bench --decoder <d> --encoder <clip encoder> --codec <c>`): a two-second clip is
+  encoded once, untimed, then the decoder alone decodes it in a loop flat out. The reported
+  `achievedFps` is its maximum rate.
+  - **Decode H264 / VP8 / VP9 / H265 / AV1 (ffmpeg)**: the SIPSorcery FFmpeg decoder, on clips from
+    the FFmpeg encoder. AV1 clips use a resolution based tile layout (1 tile up to 720p, 2×2 at
+    1080p, 4×4 at 4K) so the decoder can use more than one core, as it would with a browser's stream.
+  - **Decode VP8 (vp8.net)**: the managed Vpx.Net VP8 decoder, on a **vp8.net** clip. It must use its
+    own encoder's bitstream: the managed decoder crashes on FFmpeg-encoded VP8 (a Vpx.Net
+    inter-prediction bug).
+
+The WebRTC pipeline table (`loopback`, ffmpeg encoder and decoder, H264 by default):
+
+- **Transport (no codec)** (`--pre-encode 300 --max-rate`, no decode): pre-encoded frames replayed
+  flat out and discarded on receipt. The pure transport ceiling (packetise → SRTP → socket →
+  depacketise), the maximum everything else sits under.
+- **Send (encode)** (`--max-rate`, no decode): live encode sent flat out, frames discarded on
+  receipt. The most an app that only sends (a camera, a WHIP publisher, a bot) can publish.
+- **Receive (decode)** (`--pre-encode 300 --decode --video null`): a pre-encoded stream decoded on
+  receipt. The most an app that only receives (a viewer, a recorder) can decode.
+- **Full call (encode + decode)** (`--decode --video null`): live encode, send, receive and decode in
+  one process.
+
+Receive and full call are found by searching `--fps`, not by sending flat out: WebRTC has no
+backpressure, so a sender that outruns the decoder makes the receiver drop frames, which breaks the
+reference chain and stops later frames decoding. A rate passes when the sender delivers it and no
+more than 2% of the frames sent are lost, dropped or fail to decode; the search stops within 5% of
+the maximum.
 
 ## Run it
 
@@ -44,12 +64,13 @@ Useful parameters (all optional):
 | Parameter | Default | Notes |
 | --- | --- | --- |
 | `-Presets` | `480p 720p 1080p 1440p 4k` | Resolutions to test. |
-| `-FpsLadder` | `15 30 60 90 120` | Decode sweep points. **Extend above the expected max** — if decode never crosses the threshold the result is the ladder's top value (a "≥"). |
-| `-EncodeProbeFps` | `500` | The flat-out target for the encode ceiling probe. |
-| `-PreEncodeFrames` | `300` | Frames the decode probe pre-encodes once and replays, so no encoding runs during the decode measurement (isolates decode). `0` encodes live (encode + decode share CPU). Pre-encoding happens before connecting, so it does not eat the media window. |
-| `-PresetBitrate` | per-preset map | Realistic ffmpeg encoder bitrate (bps) per preset. Without it the encoder's auto-bitrate scales with the probe fps (hundreds of Mbps), making every measurement bitrate-bound instead of encoder-speed-bound. Ignored by `vp8.net`. |
-| `-DropThreshold` | `0.10` | Decode loss fraction that defines the breakpoint. |
-| `-DurationSeconds` | `6` | Seconds of media per run. |
+| `-TargetFps` | `30` | The nominal rate the encoders run their rate control at. The measured rates are maximums either way. |
+| `-PresetBitrate` | per-preset map | Realistic bitrate (bps) per preset for the `ffmpeg` and `av1.net` encoders and the decode clips. Ignored by `vp8.net`. |
+| `-PipelineCodec` | `h264` | The codec the pipeline table sends with (ffmpeg encoder and decoder). `''` skips the table. |
+| `-PipelinePreEncodeFrames` | `300` | Frames the transport and receive probes pre-encode and replay. |
+| `-PipelineLossThreshold` | `0.02` | Largest fraction of sent frames the receive and full-call searches may lose and still pass. |
+| `-PipelinePrecision` | `0.05` | The receive and full-call searches stop once the bounds are within this fraction. |
+| `-DurationSeconds` | `6` | Seconds per run. |
 | `-Runs` | `1` | Runs per point; the median is taken. Increase for less noise. |
 | `-FfmpegPath` | (PATH) | FFmpeg shared-library directory. |
 | `-OutputDir` | `./results` | Where `results.json` and `RESULTS.md` are written. |
@@ -57,19 +78,26 @@ Useful parameters (all optional):
 The CLI is published to a temp directory once at the start, then invoked per run, so build/JIT noise
 is out of the measurement loop.
 
+To measure one cell by hand, run the same command the script does, for example:
+
+```powershell
+dotnet run -c Release --project src/SIPSorcery.Cli -- webrtc video-bench --preset 1080p --decoder ffmpeg --codec av1 --json
+```
+
 ## Output
 
-`results/RESULTS.md` (the committable report — machine info + capacity table) and
-`results/results.json` (machine + raw results). A full sweep at the defaults (five codecs encode +
-decode across all presets) is roughly 25–40 minutes; narrow `-Presets` to shorten it.
+`results/RESULTS.md` (the committable report: machine info and the capacity table) and
+`results/results.json` (machine and raw results).
 
 ## Caveats
 
-- **One box.** Encode and decode are measured separately. With the default `-PreEncodeFrames`, the
-  decode probe replays a pre-encoded stream so the encoder is out of the loop and the breakpoint is
-  the decoder's own ceiling; set `-PreEncodeFrames 0` to instead encode live, in which case the
-  in-process encoder and decoder compete and the breakpoint is "combined" capacity.
-- **`vp8.net` is single-threaded managed** and caps low, especially at high resolutions — the
-  interesting high-rate numbers come from the `ffmpeg` encoder.
-- **Decode is FFmpeg for every codec**, so "Decode VP8" and "Decode H264" are the FFmpeg decoder on
-  those bitstreams, regardless of which encoder produced them.
+- **Codec columns are components alone.** A real call encodes, packetises, sends, receives and
+  decodes on the same machine, so the rates these tables show are not achievable together. The
+  pipeline table's full call column is what a whole stream manages.
+- **Both ends of the loopback run on one machine.** Send also pays for depacketising and receive for
+  replaying and encrypting. The transport column shows how small that cost is next to the codecs;
+  a true one-way figure needs two machines.
+- **Decode speed depends on the stream as well as the decoder.** The same decoder can run at very
+  different rates on clips from different encoders, AV1 tiling especially.
+- **`vp8.net` is single-threaded managed** and caps low, especially at high resolutions; the high
+  rates come from the `ffmpeg` encoder.

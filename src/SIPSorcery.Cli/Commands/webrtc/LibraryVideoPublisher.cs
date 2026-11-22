@@ -6,8 +6,9 @@
 // RTP packetise -> SRTP -> ICE/DTLS socket). Shared by the "webrtc whip" verb
 // (publish to any endpoint) and "webrtc whip-server --publish" (an in-process
 // self publish to the server's own listener). The encoder is selectable:
-// vp8.net (managed Vpx.Net VP8, no native deps) or ffmpeg (SIPSorceryMedia.FFmpeg:
-// h264, h265, vp8, vp9 or av1). Frames are sent paced to a target rate, or flat out
+// vp8.net (managed Vpx.Net VP8, no native deps), av1.net (managed SIPSorcery.AV1,
+// no native deps) or ffmpeg (SIPSorceryMedia.FFmpeg: h264, h265, vp8, vp9 or av1).
+// Frames are sent paced to a target rate, or flat out
 // (MaxRate) to find the send-pipeline ceiling.
 //
 // Two generated patterns: "texture", a shifting textured pattern that gives the
@@ -21,6 +22,7 @@
 // History:
 // 15 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
 // 24 Oct 2026	Aaron Clauson	Added the testcard pattern.
+// 21 Nov 2026	Aaron Clauson	Added the av1.net encoder.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -109,7 +111,14 @@ public static class LibraryVideoPublisher
         double EncodeMsAvg,
         string? Error);
 
-    private sealed record Config(int Width, int Height, VideoCodecsEnum Codec, VideoFormat VideoFormat, bool UseFfmpeg, string CodecName, bool TestCard);
+    /// <summary>The --encoder name of the managed SIPSorcery.AV1 (av1rt) encoder.</summary>
+    public const string ENCODER_AV1_NET = "av1.net";
+
+    private const string ENCODER_VP8_NET = "vp8.net";
+    private const string ENCODER_FFMPEG = "ffmpeg";
+
+    /// <summary>Encoder is one of the ENCODER_ names, lower case.</summary>
+    private sealed record Config(int Width, int Height, VideoCodecsEnum Codec, VideoFormat VideoFormat, string Encoder, string CodecName, bool TestCard);
 
     /// <summary>Validates the encoder/codec/frame rate/resolution settings without starting anything.</summary>
     public static bool TryValidate(Settings settings, out string? error) => TryResolveConfig(settings, out _, out error);
@@ -121,10 +130,22 @@ public static class LibraryVideoPublisher
             return Fail(ExitCodes.InvalidArgument, "new", cfgError, null);
         }
 
+        int effectiveBitrate = settings.Bitrate > 0 ? settings.Bitrate : (int)(cfg.Width * (long)cfg.Height * settings.Fps * BITS_PER_PIXEL_PER_FRAME);
         IVideoEncoder videoEncoder;
-        if (!cfg.UseFfmpeg)
+        if (cfg.Encoder == ENCODER_VP8_NET)
         {
             videoEncoder = new VP8Codec();
+        }
+        else if (cfg.Encoder == ENCODER_AV1_NET)
+        {
+            // Without a key frame interval the managed AV1 encoder only sends the first one; one a
+            // second, like the ffmpeg encoders' GOP, so a receiver that loses it recovers.
+            videoEncoder = new SIPSorcery.AV1.AV1VideoEncoder(new Av1rt.Av1EncoderOptions
+            {
+                FrameRate = settings.Fps,
+                TargetBitrateKbps = Math.Max(1, effectiveBitrate / 1000),
+                KeyFrameInterval = Math.Max(1, settings.Fps),
+            });
         }
         else
         {
@@ -139,7 +160,6 @@ public static class LibraryVideoPublisher
             }
 
             var ffmpegEncoder = new FFmpegVideoEncoder();
-            int effectiveBitrate = settings.Bitrate > 0 ? settings.Bitrate : (int)(cfg.Width * (long)cfg.Height * settings.Fps * BITS_PER_PIXEL_PER_FRAME);
             ffmpegEncoder.SetBitrate(effectiveBitrate, null, null, null);
             videoEncoder = ffmpegEncoder;
         }
@@ -404,9 +424,19 @@ public static class LibraryVideoPublisher
 
         VideoCodecsEnum codec;
         VideoFormat videoFormat;
-        bool useFfmpeg;
+        if (encoder == ENCODER_AV1_NET)
+        {
+            if (codecArg != null && codecArg != "av1")
+            {
+                error = "The av1.net encoder only supports --codec av1.";
+                return false;
+            }
 
-        if (encoder == "vp8.net")
+            (width, height) = (RoundUpToEven(width), RoundUpToEven(height));
+            codec = VideoCodecsEnum.AV1;
+            videoFormat = LibraryVideoFormat(codec);
+        }
+        else if (encoder == ENCODER_VP8_NET)
         {
             if (codecArg != null && codecArg != "vp8")
             {
@@ -418,9 +448,8 @@ public static class LibraryVideoPublisher
             (width, height) = (RoundUpTo16(width), RoundUpTo16(height));
             codec = VideoCodecsEnum.VP8;
             videoFormat = LibraryVideoFormat(codec);
-            useFfmpeg = false;
         }
-        else if (encoder == "ffmpeg")
+        else if (encoder == ENCODER_FFMPEG)
         {
             string wantCodec = codecArg ?? "h264";
             switch (wantCodec)
@@ -453,15 +482,14 @@ public static class LibraryVideoPublisher
 
             // The native encoders (libx264/libx265/libvpx/AV1) need even dimensions.
             (width, height) = (RoundUpToEven(width), RoundUpToEven(height));
-            useFfmpeg = true;
         }
         else
         {
-            error = $"Unknown --encoder \"{settings.Encoder}\". Expected vp8.net or ffmpeg.";
+            error = $"Unknown --encoder \"{settings.Encoder}\". Expected vp8.net, av1.net or ffmpeg.";
             return false;
         }
 
-        cfg = new Config(width, height, codec, videoFormat, useFfmpeg, codec.ToString().ToLowerInvariant(), pattern == PATTERN_TESTCARD);
+        cfg = new Config(width, height, codec, videoFormat, encoder, codec.ToString().ToLowerInvariant(), pattern == PATTERN_TESTCARD);
         return true;
     }
 

@@ -10,7 +10,9 @@
 // receiver, which reports the send-side and receive-side stats together.
 //
 // This is the one process equivalent of running "webrtc whip-server" and
-// "webrtc whip" side by side, and is what the video pipeline benchmark drives.
+// "webrtc whip" side by side. The video pipeline benchmark uses it for the
+// transport ceiling and the end-to-end check; codec speeds come from
+// "webrtc video-bench", which times the encoder or decoder alone.
 // Because the receiver only services a single session, this verb occupies it
 // with the in-process publisher; to receive from an external publisher (ffmpeg,
 // OBS, an SFU) use "webrtc whip-server" without this verb.
@@ -20,6 +22,7 @@
 //
 // History:
 // 15 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 22 Nov 2026	Aaron Clauson	Help points codec speed measurements at video-bench.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -87,7 +90,7 @@ public sealed class WebRtcLoopbackCommand : CommandBase
 
         var encoderOption = new Option<string>("--encoder")
         {
-            Description = "Video encoder: vp8.net (managed Vpx.Net VP8, no native deps) or ffmpeg (SIPSorceryMedia.FFmpeg).",
+            Description = "Video encoder: vp8.net (managed Vpx.Net VP8, no native deps), av1.net (managed SIPSorcery.AV1, no native deps) or ffmpeg (SIPSorceryMedia.FFmpeg).",
             DefaultValueFactory = _ => DEFAULT_ENCODER
         };
 
@@ -111,25 +114,26 @@ public sealed class WebRtcLoopbackCommand : CommandBase
         var codecOption = new Option<string?>("--codec", CodecSelection.VIDEO_OPTION)
         {
             Description = "Force the codec the ffmpeg encoder publishes, exactly one of: h264 (default), h265, vp8, vp9 or av1. " +
-                          "Ignored for vp8.net, which is always VP8. Also spelled --video-codec, as on the receiving verbs."
+                          "vp8.net is always VP8 and av1.net always AV1. Also spelled --video-codec, as on the receiving verbs."
         };
 
         var bitrateOption = new Option<int>("--bitrate")
         {
-            Description = "Target encoder bitrate in bits per second (ffmpeg encoder only). 0 (default) derives it from the resolution and frame rate."
+            Description = "Target encoder bitrate in bits per second (ffmpeg and av1.net encoders). 0 (default) derives it from the resolution and frame rate."
         };
 
         var preEncodeOption = new Option<int>("--pre-encode")
         {
-            Description = "Encode this many frames once before connecting and replay the encoded bitstream in a loop, so " +
-                          "no encoding runs during the send window. Use it to isolate the receive/decode stage (e.g. with " +
-                          "--decode) from the encoder. 0 (default) encodes live in the send loop."
+            Description = "Transport testing: encode this many frames once before connecting and replay the encoded bitstream " +
+                          "in a loop, so no encoding runs during the send window. 0 (default) encodes live in the send loop. " +
+                          "For decoder speed alone use \"webrtc video-bench --decoder\"."
         };
 
         var maxRateOption = new Option<bool>("--max-rate")
         {
-            Description = "Send as fast as the encoder/replay and transport allow (ignores --fps), to measure the pipeline " +
-                          "ceiling. Pair with --pre-encode and no --decode to get the pure transport (packetise/SRTP) ceiling."
+            Description = "Transport testing: send as fast as the encoder/replay and transport allow (ignores --fps). Pair " +
+                          "with --pre-encode and no --decode for the pure transport (packetise/SRTP) ceiling. The published " +
+                          "rate is not a codec speed: for that use \"webrtc video-bench\"."
         };
 
         var patternOption = new Option<string>("--pattern")
@@ -140,7 +144,8 @@ public sealed class WebRtcLoopbackCommand : CommandBase
         };
 
         var command = new Command("loopback",
-            "Publish a test pattern to an in-process WHIP receiver and report on it: a self-contained encode, network and decode loop in one process.");
+            "Publish a test pattern to an in-process WHIP receiver and report on it: a self-contained encode, network and decode loop in one process. " +
+            "Checks that a full WebRTC stream holds up at a rate; to measure how fast an encoder or decoder is, use \"webrtc video-bench\".");
         command.Options.Add(listenOption);
         command.Options.Add(tokenOption);
         command.Options.Add(durationOption);
