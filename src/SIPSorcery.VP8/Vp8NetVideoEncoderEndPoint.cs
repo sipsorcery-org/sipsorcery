@@ -14,7 +14,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
@@ -23,7 +22,7 @@ using SIPSorceryMedia.Abstractions;
 
 namespace Vpx.Net
 {
-    public class Vp8NetVideoEncoderEndPoint : IVideoSource, IVideoSink, IDisposable
+    public class Vp8NetVideoEncoderEndPoint : IVideoSource, IVideoSourceSpan, IVideoSink, IDisposable
     {
         private const int VIDEO_SAMPLING_RATE = 90000;
         private const int DEFAULT_FRAMES_PER_SECOND = 30;
@@ -50,7 +49,11 @@ namespace Vpx.Net
         /// <summary>
         /// This event will be fired whenever a video sample is encoded and is ready to transmit to the remote party.
         /// </summary>
-        public event EncodedSampleDelegate OnVideoSourceEncodedSample;
+        public event EncodedSampleDelegate OnVideoSourceEncodedSample
+        {
+            add => _encodedSamples.OnVideoSourceEncodedSample += value;
+            remove => _encodedSamples.OnVideoSourceEncodedSample -= value;
+        }
 
         /// <summary>
         /// Fired, like <see cref="OnVideoSourceEncodedSample"/>, for every encoded frame, but with the frame in a buffer
@@ -59,16 +62,14 @@ namespace Vpx.Net
         /// <c>OnVideoSourceEncodedSampleFaster += rtpSession.SendVideo</c>, sends each frame without copying it into an
         /// array first. If both events have subscribers, each frame is encoded once and raised on both.
         /// </summary>
-        public event EncodedSampleFasterDelegate OnVideoSourceEncodedSampleFaster;
+        public event EncodedSampleFasterDelegate OnVideoSourceEncodedSampleFaster
+        {
+            add => _encodedSamples.OnVideoSourceEncodedSampleFaster += value;
+            remove => _encodedSamples.OnVideoSourceEncodedSampleFaster -= value;
+        }
 
-        // The re-used destination for frames raised on OnVideoSourceEncodedSampleFaster, and the lock that keeps each
-        // frame in it until its handlers have returned.
-        private readonly ArrayBufferWriter<byte> _encodedFrame = new ArrayBufferWriter<byte>();
-        private readonly object _encodedFrameLock = new object();
-
-        // Set while a frame is being raised on the events, so a handler that pushes another frame meanwhile is
-        // noticed. Only used under _encodedFrameLock.
-        private bool _raisingEncodedFrame;
+        // Both encoded sample events, and the buffer frames are encoded into for the span event.
+        private readonly EncodedVideoSampleEvents _encodedSamples = new EncodedVideoSampleEvents();
 
         /// <summary>
         /// This event is fired after the sink decodes a video frame from the remote party.
@@ -139,7 +140,7 @@ namespace Vpx.Net
         public void ForceKeyFrame() => _vp8Codec.ForceKeyFrame();
         public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
             throw new ApplicationException("The VP8 Video End Point requires full video frames rather than individual RTP packets.");
-        public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null || OnVideoSourceEncodedSampleFaster != null;
+        public bool HasEncodedVideoSubscribers() => _encodedSamples.HasSubscribers;
         public bool IsVideoSourcePaused() => false;
         public Task PauseVideo() => Task.CompletedTask;
         public Task ResumeVideo() => Task.CompletedTask;
@@ -162,7 +163,7 @@ namespace Vpx.Net
         {
             if (!_isClosed)
             {
-                if (OnVideoSourceEncodedSampleFaster != null)
+                if (_encodedSamples.HasSpanSubscribers)
                 {
                     // The span overload would read a null sample as an empty one, so it is refused here, as the array
                     // overload refuses it.
@@ -171,40 +172,18 @@ namespace Vpx.Net
                         throw new ArgumentNullException(nameof(sample));
                     }
 
-                    lock (_encodedFrameLock)
-                    {
-                        // While a frame is raised the lock is held, so a frame pushed meanwhile comes from one of its
-                        // handlers, on this thread. It gets a buffer of its own, as the handlers still to run must get
-                        // the frame they are raised with.
-                        var output = _raisingEncodedFrame ? new ArrayBufferWriter<byte>() : _encodedFrame;
-                        output.ResetWrittenCount();
-                        _vp8Codec.EncodeVideo(width, height, sample, pixelFormat, VideoCodecsEnum.VP8, output);
-
-                        uint durationRtpTS = GetDurationRtpUnits(durationMilliseconds);
-                        bool wasRaising = _raisingEncodedFrame;
-                        _raisingEncodedFrame = true;
-
-                        try
-                        {
-                            // Note the event handlers can be removed while the encoding is in progress.
-                            OnVideoSourceEncodedSampleFaster?.Invoke(durationRtpTS, output.WrittenSpan);
-
-                            // Subscribers to the array event own what they are given, so they get a copy.
-                            OnVideoSourceEncodedSample?.Invoke(durationRtpTS, output.WrittenSpan.ToArray());
-                        }
-                        finally
-                        {
-                            _raisingEncodedFrame = wasRaising;
-                        }
-                    }
+                    // The lambda takes what it needs from the state rather than capturing it, so it does not allocate.
+                    _encodedSamples.EncodeAndRaise(GetDurationRtpUnits(durationMilliseconds),
+                        (Codec: _vp8Codec, Width: width, Height: height, Sample: sample, PixelFormat: pixelFormat),
+                        (frame, output) => frame.Codec.EncodeVideo(frame.Width, frame.Height, frame.Sample, frame.PixelFormat, VideoCodecsEnum.VP8, output) > 0);
                 }
-                else if (OnVideoSourceEncodedSample != null)
+                else if (_encodedSamples.HasSubscribers)
                 {
                     var encodedBuffer = _vp8Codec.EncodeVideo(width, height, sample, pixelFormat, VideoCodecsEnum.VP8);
 
                     if (encodedBuffer != null)
                     {
-                        OnVideoSourceEncodedSample.Invoke(GetDurationRtpUnits(durationMilliseconds), encodedBuffer);
+                        _encodedSamples.Raise(GetDurationRtpUnits(durationMilliseconds), encodedBuffer);
                     }
                 }
             }

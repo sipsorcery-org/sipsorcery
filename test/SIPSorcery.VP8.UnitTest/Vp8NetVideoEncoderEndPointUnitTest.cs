@@ -61,6 +61,16 @@ namespace Vpx.Net.UnitTest
         }
 
         /// <summary>
+        /// The end point implements IVideoSourceSpan, so sessions that check for it, such as VoIPMediaSession, send its
+        /// frames from the span event.
+        /// </summary>
+        [Fact]
+        public void ImplementsIVideoSourceSpan()
+        {
+            Assert.IsAssignableFrom<IVideoSourceSpan>(CreateEndPoint());
+        }
+
+        /// <summary>
         /// The span event on its own raises exactly the frames, and durations, that the array event raises on its own.
         /// </summary>
         [Fact]
