@@ -121,6 +121,10 @@ public sealed class Phone : IDisposable
         /// that failed): the user agent hangs up on it, and the call ends with this, not "They hung up".</summary>
         internal string? TimedOut;
         public bool Live => State is CallState.Calling or CallState.Ringing or CallState.Connected;
+        /// <summary>The call's SIP Call-ID (its latest, after a transfer), for SelfCallPartner.</summary>
+        internal string? SipCallId;
+        /// <summary>An incoming call's caller and who it's to (user@host, From and To), for SelfCallPartner.</summary>
+        internal string? CallerAor, CalledAor;
         /// <summary>A transfer of this call, ours or theirs, while it's under way and for a moment after; null if none.</summary>
         public TransferInfo? Transfer { get; internal set; }
         /// <summary>How a transferred call ended, for the history: "Transferred to Dave".</summary>
@@ -199,6 +203,36 @@ public sealed class Phone : IDisposable
 
     /// <summary>A snapshot of the calls, oldest first.</summary>
     public IReadOnlyList<Call> Calls { get { lock (_lock) return _calls.ToList(); } }
+
+    /// <summary>
+    /// For a call to yourself (one of this softphone's accounts calling another, or its own address),
+    /// the other leg of it: the call placed and the call that rang here for it. Null for any other
+    /// call. The same SIP Call-ID (a direct call, or through a proxy); or, through a server that
+    /// starts a new call on the way (a B2BUA), the one placed from the account that called the
+    /// other, to the account it rang on. Live calls only, and each leg pairs with one other.
+    /// </summary>
+    public static string? SelfCallPartner(Call c, IReadOnlyList<Call> calls)
+    {
+        if (!c.Live) return null;
+        static bool Same(string? a, string? b) => a != null && b != null && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+        static bool Legs(Call placed, Call rang) => placed.Outgoing && !rang.Outgoing && placed.Live && rang.Live
+            && (Same(placed.SipCallId, rang.SipCallId)
+                || (Same(placed.Account?.Aor, rang.CallerAor) && Same(AorOf(placed.Remote), rang.CalledAor)));
+        Call? Match(Call x) => x.Outgoing ? calls.LastOrDefault(y => y != x && Legs(x, y)) : calls.LastOrDefault(y => y != x && Legs(y, x));
+        // The most recent match, and it has to match back (two calls to the same account: a pair each).
+        var other = Match(c);
+        return other != null && Match(other) == c ? other.Id : null;
+    }
+
+    private static string? AorOf(SIPURI? uri) => uri == null || string.IsNullOrEmpty(uri.User) ? null : $"{uri.User}@{uri.HostAddress}";
+    // From an address as calls keep it ("Carol <sip:carol@example.com>", or the bare URI).
+    private static string? AorOf(string address)
+    {
+        var lt = address.IndexOf('<');
+        var gt = address.LastIndexOf('>');
+        var uri = lt >= 0 && gt > lt ? address[(lt + 1)..gt] : address;
+        return SIPURI.TryParse(uri, out var u) ? AorOf(u) : null;
+    }
     public Call? Find(string? id) { lock (_lock) return _calls.FirstOrDefault(c => c.Id == id); }
 
     /// <summary>Simulated loss on what we send, in percent (diagnostics); carries over to new calls and relays.</summary>
@@ -345,6 +379,7 @@ public sealed class Phone : IDisposable
     private void AttachStreams(Call c, string? callId)
     {
         if (string.IsNullOrEmpty(callId)) return;
+        c.SipCallId = callId;
         List<Action<StreamLog>>? pending;
         lock (_streamCalls)
         {
@@ -2447,6 +2482,8 @@ public sealed class Phone : IDisposable
             c.Remote = req.Header.From.FromURI.ToString();
             c.Outgoing = false;
             c.Account = AccountForIncoming(req);
+            c.CallerAor = AorOf(req.Header.From.FromURI);
+            c.CalledAor = AorOf(req.Header.To.ToURI);
             c.TheirPhone = req.Header.UserAgent;
             c.IncomingOffer = req.Body;
             AttachStreams(c, req.Header.CallId);

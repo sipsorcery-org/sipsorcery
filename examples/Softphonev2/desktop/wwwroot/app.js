@@ -151,9 +151,22 @@ export const holdState = (e) => e.holdWanted ?? !!e.h.held;
 const talking = () => [...entries.values()].filter((e) => e.h.call === "connected" && !holdState(e));
 const liveCall = () => talking().find((e) => e.id === audioId) ?? talking()[0] ?? null;
 
-// Holds every call you're talking to but `keep`: before Call or Answer, and when switching calls.
+// A call to yourself (one of your accounts calling another here): the host pairs its two legs
+// (h.pair, the other's id). They're one call to you, so neither holds the other, and both have the
+// microphone and speaker: you hear each end as the other does.
+export const partnerOf = (e) => (e?.h.pair != null ? entries.get(String(e.h.pair)) ?? null : null);
+// The call has the microphone and speaker: the audio call, or its partner while that's on too.
+export const getsAudio = (e) => e.id === audioId
+  || (audioId != null && partnerOf(entries.get(audioId))?.id === e.id && e.h.call === "connected" && !holdState(e));
+
+// Holds every call you're talking to but `keep` (and its partner, a call to yourself): before
+// Call or Answer, and when switching calls.
 function holdOthers(keep) {
-  for (const e of talking()) if (e.id !== keep?.id) holdCall(e, true);
+  for (const e of talking()) {
+    if (e.id === keep?.id || (keep && partnerOf(e) === keep)) continue;
+    holdCall(e, true);
+    e.heldForOther = true;   // held for another call, not by you: its partner coming back brings it too
+  }
 }
 // Makes a connected call the one you're talking to: the live one goes on hold, and this one comes
 // off hold if it's on it. Anything else (ringing, calling, ended) is only looked at.
@@ -163,6 +176,9 @@ function goLive(e, resumed = false) {
   if (e?.h.call !== "connected") return;
   holdOthers(e);
   holdCall(e, false, resumed);
+  // A call to yourself: its other end comes back with it, if it was held only for another call.
+  const p = partnerOf(e);
+  if (p?.heldForOther && p.h.call === "connected" && holdState(p)) holdCall(p, false);
 }
 
 // The most recent live call other than the selected one, for "Back to …".
@@ -220,7 +236,7 @@ export function syncAudio() {
   const mic = micToSend();
   if (mic) mic.enabled = !(entries.get(audioId)?.m?.muted ?? startMuted());
   for (const e of entries.values()) {
-    const on = e.id === audioId;
+    const on = getsAudio(e);
     e.el.muted = !on;
     // Played by script, not left to autoplay: Chrome pauses a muted autoplaying video while it
     // can't be seen (another call's, or an audio-only call's), and it stays paused when unmuted.
@@ -1143,6 +1159,7 @@ function holdCall(e, hold, resumed = false) {
     return;
   }
   e.holdWanted = hold;
+  e.heldForOther = false;   // (holdOthers sets it after)
   e.holdAskedAt = Date.now();
   log(`${hold ? "holding" : "resuming"} call ${e.id} (${nameOf(e)})`);
   post({ type: "hold", id: e.id, hold, resumed });

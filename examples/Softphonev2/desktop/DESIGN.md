@@ -394,6 +394,17 @@ text on the page. Messages about a call carry its `id`; the host's `state` lists
   its number key, or *Resume*) resumes it and holds the one you were on. Looking at a call
   without picking it (a ringing call, an ended one's *Back to …*, History, Accounts) holds
   nothing, and when a call ends nothing resumes on its own: a held call stays held, with Resume.
+- **A call to yourself is the exception.** One of your accounts calling another on this
+  softphone (for testing it against itself) makes two calls here, the one placed and the one
+  that rang, and they're one call to you: neither holds the other, and both have the
+  microphone and speaker, so you hear each end as the other does (a headset, or `--fake-media`,
+  or the speaker echoes). Both rows say *⇄ you*. Any other call still holds both, and picking
+  either brings the other back with it, unless you'd held that one yourself: *Hold* on one end
+  is still the test of hold it was. The host pairs them (`Phone.SelfCallPartner`, the state's
+  `pair`): the same SIP Call-ID (a direct call, or through a proxy), or, through a server that
+  starts a new call on the way (a B2BUA), the one placed from the account that called to the
+  account it rang on. Calling your own address with no server in between doesn't get that far:
+  the SIP transport takes its own INVITE coming back as a repeat of the one it sent.
 - **Hold** is the account's *Hold* setting (see [SIP accounts](#sip-accounts)), fixed when the
   call starts. A held call is never silent on the wire: media keeps flowing, so neither side's
   NAT binding times out and resuming doesn't depend on one being reopened.

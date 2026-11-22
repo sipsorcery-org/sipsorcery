@@ -1,6 +1,6 @@
 // The Active calls panel down the left, the grid of calls, and End all.
 
-import { ROW_MS, audioId, callNotes, dropOutcome, focusCall, goneRows, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, selectedId, setView, tiles, view } from "./app.js";
+import { ROW_MS, callNotes, dropOutcome, focusCall, getsAudio, partnerOf, goneRows, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, selectedId, setView, tiles, view } from "./app.js";
 import { setAvatar } from "./avatar.js";
 import { isLiveCall } from "./golive.js";
 import { contactMarkEl } from "./contactmark.js";
@@ -45,7 +45,7 @@ export const fmtElapsed = (ms) => {
 
 // Whether a call gets your microphone: it's the live call, you haven't muted it, and neither
 // side has it on hold (held, it gets music or silence instead).
-export const getsMic = (e) => (hasMic || netAudioInUse()) && !!e.m && !e.m.muted && e.id === audioId && !holdState(e) && !e.h.heldByThem;
+export const getsMic = (e) => (hasMic || netAudioInUse()) && !!e.m && !e.m.muted && getsAudio(e) && !holdState(e) && !e.h.heldByThem;
 
 // One call's status line, for the list (and grid tiles): its state, what it gets from you, and
 // text. { status (row class), statusText, since, muted, held, long (held over a minute), audioOff,
@@ -61,7 +61,7 @@ export function callStatus(e) {
     c.since = e.connectedAt;
     c.held = !!h.held;
     c.muted = hasMic && m.muted;
-    c.audioOff = !c.held && e.id !== audioId;
+    c.audioOff = !c.held && !getsAudio(e);
     c.typing = !!openLine(e.text, false, false);
     c.unread = e.text.unread;
     const pending = e.holdWanted !== undefined && e.holdWanted !== c.held;
@@ -226,6 +226,9 @@ function callRow(e, i, collapsed = false) {
   if (contact) top.firstChild.append(contactMarkEl(contact.name));
   // Broadcast (Go live): a red LIVE after the name, while it is.
   if (isLiveCall(e.id)) top.append(Object.assign(el("span", "call-live", "LIVE"), { title: "This call is live (Go live)" }));
+  // A call to yourself: both legs say so, and that they stay off hold together.
+  const pair = partnerOf(e);
+  if (pair) top.append(Object.assign(el("span", "call-pair", "⇄ you"), { title: `A call to yourself: this and ${nameOf(pair)}'s call are its two ends, so neither puts the other on hold` }));
   // No mic and camera chips, and no timer: the call bar has the time, and only one
   // call ever has your mic. What matters about the call is a badge on its avatar (callBadge).
   const main = el("span", "call-main");
