@@ -235,7 +235,9 @@ export function accountUi(on) {
       <form method="dialog" class="acct-form" id="acctCreate">
         <h2>Sign in to make calls</h2>
         <p class="acct-lead">A test account is free and takes a moment. It can call other SIPSorcery users and SIP addresses, but not phone numbers.</p>
+        <!-- Create a test account (the captcha way) is turned off for now: Sign in with GitHub only.
         <button type="submit" class="btn btn-primary acct-wide" id="acctCreateBtn">Create a test account</button>
+        -->
         <button type="button" class="btn acct-wide acct-github" id="acctGitHubBtn">${ICON.github}<span>Sign in with GitHub</span></button>
         <p class="acct-note">With GitHub, the account is named after you (your GitHub login), and signing in with GitHub again, in any browser, gets it back. No captcha.</p>
         <div class="acct-captcha" id="acctCaptcha" hidden></div>
@@ -269,33 +271,37 @@ export function accountUi(on) {
     const createErr = dlg.querySelector("#acctCreateErr");
     const showError = (message) => { createErr.textContent = message; createErr.hidden = !message; };
 
-    createForm.onsubmit = async (e) => {
-      e.preventDefault();
-      showError("");
-      createBtn.disabled = githubBtn.disabled = true;
-      createBtn.textContent = "Checking you're not a robot…";
-      try {
-        const token = await captcha(dlg.querySelector("#acctCaptcha"));
-        createBtn.textContent = "Creating your account…";
-        useGuest(await createGuest(token));
-      } catch (ex) {
-        showError(ex.message);
-        createBtn.disabled = githubBtn.disabled = false;
-        createBtn.textContent = "Create a test account";
-      }
-    };
+    // Create a test account is turned off for now (its button is commented out above).
+    // createForm.onsubmit = async (e) => {
+    //   e.preventDefault();
+    //   showError("");
+    //   createBtn.disabled = githubBtn.disabled = true;
+    //   createBtn.textContent = "Checking you're not a robot…";
+    //   try {
+    //     const token = await captcha(dlg.querySelector("#acctCaptcha"));
+    //     createBtn.textContent = "Creating your account…";
+    //     useGuest(await createGuest(token));
+    //   } catch (ex) {
+    //     showError(ex.message);
+    //     createBtn.disabled = githubBtn.disabled = false;
+    //     createBtn.textContent = "Create a test account";
+    //   }
+    // };
+    createForm.onsubmit = (e) => e.preventDefault();
+    // While it's off there's no createBtn; this keeps the GitHub button's code as it was.
+    const setBusy = (busy) => { githubBtn.disabled = busy; if (createBtn) createBtn.disabled = busy; };
 
     // The popup opens in this click (githubGuest's window.open), so it isn't blocked.
     githubBtn.onclick = async () => {
       showError("");
       const pending = githubGuest();
-      createBtn.disabled = githubBtn.disabled = true;
+      setBusy(true);
       githubBtn.querySelector("span").textContent = API ? "Waiting for GitHub…" : "Signing in…";
       try {
         useGuest(await pending);
       } catch (ex) {
         if (!ex.cancelled) showError(ex.message);
-        createBtn.disabled = githubBtn.disabled = false;
+        setBusy(false);
         githubBtn.querySelector("span").textContent = "Sign in with GitHub";
       }
     };
@@ -322,7 +328,7 @@ export function accountUi(on) {
     };
 
     if (!dlg.open) dlg.showModal();
-    dlg.querySelector(note ? "#acctGitHubBtn" : "#acctCreateBtn").focus();
+    (dlg.querySelector(note ? "#acctGitHubBtn" : "#acctCreateBtn") ?? githubBtn).focus();
   }
 
   // The captcha, in the dialog; resolves to its token.
