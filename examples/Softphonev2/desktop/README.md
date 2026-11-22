@@ -37,6 +37,7 @@ The host (C#: WinForms and WebView2):
 | `MediaRelay.cs` | One per call: passes its SIP media to and from the page's WebRTC connection without decoding it. |
 | `StreamLog.cs` | One per call: its offers and answers as they went over the wire, for Diagnostics' Streams tab. |
 | `TextPeerConnection.cs` | A WebRTC call's SIP leg, with real-time text on a data channel. |
+| `LiveStream.cs` | Go live: the WHIP exchange for a call's broadcast (POST the page's offer, DELETE to stop), and the endpoint last used. |
 | `Accounts.cs`, `Contacts.cs`, `History.cs` | SIP accounts, contacts and call history, kept per profile in `%LOCALAPPDATA%\SIPSorcery\Softphonev2`. |
 | `Settings.cs` | `softphone.json` and the switches. |
 | `WindowPlacement.cs` | Where the window was, and how big, per profile. |
@@ -58,6 +59,7 @@ The page (`wwwroot`, shared with the web softphone in [../web](../web/README.md)
 | `calllist.js` | The Active calls panel, the grid, and End all. |
 | `levels.js` | Audio levels: the bars of the audio-only view and of the grid's tiles. |
 | `keypad.js`, `rtt.js`, `transfer.js` | The keypad (DTMF), real-time text, and transfer. |
+| `golive.js` | Go live: the call mixed into one audio and one video track, published to a WHIP endpoint; its popover and LIVE. |
 | `quality.js` | Call details and Call quality. |
 | `sipladder.js` | SIP ladder: every SIP message of a call as it went, a lane per party and an arrow per message, as SIP Trace draws one; each opens whole; copies as Mermaid or text, or saves as a PNG. |
 | `connection.js` | Connection: a call's media, layer by layer (SDP, ICE, DTLS, SRTP, RTP, RTCP), each with its state and why, and a timeline of its setup. |
@@ -145,6 +147,7 @@ Switches, mostly for testing:
 | `--no-video` | No video at all: the switch is locked to Audio, and video offers or Add video from the other side are turned down. (Will be the per-account "Video calls" setting.) |
 | `--camera-off` | Video calls you place start with your camera off (your camera-off card until Start video). |
 | `--add-video <s>` | Press Add video this many seconds into an audio call. |
+| `--go-live <url>`, `--live-token <key>` | Two seconds after the first call connects, Go live to this WHIP address with this key. |
 | `--hangup-after <s>` | Hang up a call this many seconds after it connects. |
 | `--dial-count <n>` | With `--dial`, place `n` calls one after another, each 2 s after the last one ends. |
 

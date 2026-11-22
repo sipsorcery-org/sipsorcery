@@ -249,6 +249,12 @@ Query parameters (the page's own, like `diag=1`, `camera=off` or `call=video`, w
   frames with the call's `telephone-event` payload type and reports each event once, by its
   RTP timestamp. SIP INFO tones (`application/dtmf-relay` or `application/dtmf`) are answered
   200 and shown, other INFO 415. Like simulated loss, it needs `RTCRtpScriptTransform`.
+- **Go live** works as on the desktop (see its DESIGN.md), except that the page does the WHIP
+  POST and DELETE itself (`fetch`, in `host.js`). So the server has to allow the page's origin
+  (CORS), and expose `Location` (`Access-Control-Expose-Headers`), or Stop live can't end the
+  session there (it times out). The address and key are kept in this browser, as the account is.
+  `host.js`'s `RTCPeerConnection` wrapper leaves the broadcast's connection alone (`{ live: true }`):
+  no T.140 channel in its offer, no simulated loss or tones transforms.
 - **Not here:** call transfer (the page hides Transfer: the host says `canTransfer` only on the
   desktop) and *Manage accounts* / *Call from* (one account, the chip's).
 - **Being transferred** (a REFER on a call) is turned down at once, `603 Decline`, and the call

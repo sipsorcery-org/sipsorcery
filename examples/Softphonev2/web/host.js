@@ -126,7 +126,63 @@ function stateMessage() {
     account: acct ? `${acct.username}@${acct.domain}` : null, address: acct ? addressOf(acct) : null, me: displayName(),
     videoAllowed: true,
     lossAudio: loss.audio, lossVideo: loss.video,
+    // Go live: the endpoint last used, and whether there's a token kept for it (see goLive).
+    live: { url: liveSaved().url ?? null, hasToken: !!liveSaved().token },
   };
+}
+
+// ---- Go live (golive.js): the WHIP exchange, from this page ----
+// The desktop host does it in C#; here it's fetch, so the server has to allow this page's origin
+// (CORS), and let it read Location (Access-Control-Expose-Headers), or there's no stopping the
+// session but by letting it time out. The endpoint and token last used are kept in this browser,
+// as the account is.
+const LIVE_KEY = "softphone.golive";
+const liveSessions = new Map();   // call id -> { resource, token }
+function liveSaved() {
+  try { return JSON.parse(localStorage.getItem(LIVE_KEY) ?? "{}") ?? {}; } catch { return {}; }
+}
+async function goLive(msg) {
+  const url = String(msg.url ?? "").trim();
+  const saved = liveSaved();
+  const token = msg.token == null ? (saved.url === url ? saved.token ?? null : null) : msg.token.trim() || null;
+  const host = (() => { try { return new URL(url).host; } catch { return url; } })();
+  try {
+    await stopLive(msg.id);
+    let resp;
+    try {
+      resp = await fetch(url, { method: "POST", headers: { "Content-Type": "application/sdp", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: msg.sdp });
+    } catch (err) {
+      throw new Error(`Couldn't reach ${host}. If it's up, it may not allow this page's address (CORS).`);
+    }
+    const body = await resp.text();
+    if (!resp.ok) {
+      const what = resp.status === 401 || resp.status === 403 ? "The server turned the stream key down"
+        : resp.status === 404 ? "There's no WHIP endpoint at that address"
+        : resp.status === 409 ? "That stream is already live from somewhere else"
+        : [400, 406, 415, 422].includes(resp.status) ? "The server didn't accept the call's media"
+        : resp.status >= 500 ? "The server had a problem" : "The server said no";
+      const said = body.trim().replace(/\s+/g, " ").slice(0, 200);
+      throw new Error(`${what} (HTTP ${resp.status}${said ? `: ${said}` : ""})`);
+    }
+    if (!body.trimStart().startsWith("v=")) throw new Error(`${host} answered, but not with SDP: is it a WHIP endpoint?`);
+    const loc = resp.headers.get("Location");
+    liveSessions.set(String(msg.id), { resource: loc ? new URL(loc, url).href : null, token });
+    if (!loc) log(`go live: ${host} didn't say where the session is (no Location, or CORS hides it): Stop live can't end it there`);
+    try { localStorage.setItem(LIVE_KEY, JSON.stringify({ url, token })); } catch { /* this visit only */ }
+    log(`call ${msg.id}: live to ${url}`);
+    toPage({ type: "live-answer", id: msg.id, sdp: body });
+    sendState();
+  } catch (err) {
+    log(`call ${msg.id}: going live to ${url} failed: ${err.message}`);
+    toPage({ type: "live-failed", id: msg.id, text: err.message });
+  }
+}
+async function stopLive(id) {
+  const s = liveSessions.get(String(id));
+  if (!s) return;
+  liveSessions.delete(String(id));
+  if (!s.resource) return;
+  try { await fetch(s.resource, { method: "DELETE", headers: s.token ? { Authorization: `Bearer ${s.token}` } : {} }); } catch { /* it times out */ }
 }
 
 function setCall(c, phase, reason = null) {
@@ -614,6 +670,9 @@ let pcSeq = 0;
 window.RTCPeerConnection = class extends NativeRTCPeerConnection {
   constructor(config, ...rest) {
     super(config, ...rest);
+    // Go live's broadcast (golive.js), not a call: left as the browser makes it.
+    this.live = !!config?.live;
+    if (this.live) return;
     this.key = ++pcSeq;
     pcByKey.set(this.key, this);
     this.addEventListener("connectionstatechange", () => { if (this.connectionState === "closed") pcByKey.delete(this.key); });
@@ -635,6 +694,7 @@ window.RTCPeerConnection = class extends NativeRTCPeerConnection {
   // Our offer: a T.140 channel goes in it, so the browser writes an m=application line.
   // Video: H264 first, then VP8, as the desktop offers them (see preferH264).
   async createOffer(...args) {
+    if (this.live) return super.createOffer(...args);
     if (!this.t140) useT140(this, this.createDataChannel(T140, { negotiated: true, id: T140_OFFER_STREAM, protocol: T140 }));
     preferH264(this);
     return super.createOffer(...args);
@@ -644,12 +704,14 @@ window.RTCPeerConnection = class extends NativeRTCPeerConnection {
   // addTransceiver; answering, by the far end's offer.
   addTransceiver(...args) {
     const t = super.addTransceiver(...args);
+    if (this.live) return t;
     addLossTransform(t);
     addTonesTransform(this, t);
     return t;
   }
 
   async setRemoteDescription(...args) {
+    if (this.live) return super.setRemoteDescription(...args);
     // Their offer's T.140 channel, on the stream it says, before the answer is made.
     const desc = args[0];
     const theirs = findT140(desc?.sdp);
@@ -1263,6 +1325,8 @@ async function onPageMessage(msg) {
       console.log(`page: ${msg.text}`);
       break;
     case "dial": await dial(msg.address, !!msg.video); break;
+    case "live-start": await goLive(msg); break;
+    case "live-stop": await stopLive(msg.id); log(`call ${msg.id}: live broadcast stopped`); break;
     case "answer": await answer(c); break;
     case "decline": decline(c); break;
     case "hangup": hangup(c); break;

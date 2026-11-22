@@ -54,6 +54,7 @@ import { initLadder, renderLadder } from "./sipladder.js";
 import { captureDiagnostics, closeSnapshot, onDiagSaved, onDiagnosticsSaved, onDiagSnapshot, openSnapshot, savedFor, snap } from "./snapshots.js";
 import { closeTextForGrid, initRtt, onTextReceived, renderText, renderTextControls, setTextOpen, textOpen } from "./rtt.js";
 import { cancelTransfer, initTransfer, renderTransfer, transferNotices, transferState } from "./transfer.js";
+import { initGoLive, renderLive } from "./golive.js";
 import { $, ICON, initial, log, post, shortName } from "./util.js";
 import { cameraInUse, hasCamera, isTestTrack, openSources, placeholderTrack, retryCamera, sameSources, setHasCamera, showSelfVideo, sourceAvailable, sourceOf, stopPlaceholders, syncCamera, videoToSend, wantedSources } from "./video.js";
 
@@ -545,6 +546,7 @@ initLevels();
 initRtt();
 initKeypad();
 initTransfer();
+initGoLive();
 initQuality();
 
 // ---- Rendering the state ----
@@ -736,7 +738,8 @@ export function render() {
   // keypad and text panels, which may have just closed.
   renderHeadAlerts();
   renderTransfer();
-  renderMore();   // the ⋯ at phone width, from the four above
+  renderLive();
+  renderMore();   // the ⋯ at phone width, from the buttons above
   renderDock();
   // Hold: a re-INVITE. On hold the stage says so, with Resume.
   const hold = $("holdBtn");

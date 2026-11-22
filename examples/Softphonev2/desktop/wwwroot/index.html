@@ -105,7 +105,7 @@
            (#incoming); what the call is doing now is the state card at the bottom (#heldNote). -->
       <div class="call-info call-head" id="info" hidden>
         <button type="button" class="info-lock" id="infoLock" hidden></button>
-        <div class="info-text info-line"><span class="info-contact" id="infoContact" hidden></span><span class="info-name" id="infoName"></span><span class="info-addr" id="infoAddr" hidden></span><span class="timer" id="timer"></span><span class="muted-pill" id="mutedPill" hidden></span></div>
+        <div class="info-text info-line"><span class="info-contact" id="infoContact" hidden></span><span class="info-name" id="infoName"></span><span class="info-addr" id="infoAddr" hidden></span><span class="timer" id="timer"></span><span class="muted-pill" id="mutedPill" hidden></span><button type="button" class="live-pill" id="livePill" hidden></button></div>
         <!-- A call that ended on you (they hung up, or it dropped): a tinted pill at the left of
              this bar, over the details of the call you're back on, or the bar on its own over Home. In diagnostics
              mode, once they're saved (a moment later), "Diagnostics available" opens them. ×
@@ -294,6 +294,37 @@
       </div>
     </form>
 
+    <!-- Go live (golive.js): a popover over the stage, above the Go live button, like
+         Transfer's. Before: the WHIP address and stream key, a note that they'll be broadcast,
+         and Go live. While live: where to, how long, and Stop live. Esc or the × closes it; a click away doesn't. -->
+    <form class="xfer-pop live-pop" id="livePop" hidden aria-labelledby="liveTitle" autocomplete="off" novalidate>
+      <div class="rtt-head">
+        <span class="rtt-title" id="liveTitle">Go live</span>
+        <button type="button" class="rtt-close" id="liveClose" aria-label="Close" title="Close (Esc)"></button>
+      </div>
+      <div class="xfer-body live-body">
+        <div class="live-setup" id="liveSetup">
+          <p class="live-what" id="liveWhat"></p>
+          <label class="xfer-label" for="liveUrl">WHIP address</label>
+          <input type="url" class="xfer-input live-input" id="liveUrl" spellcheck="false" placeholder="https://…/whip/…">
+          <label class="xfer-label" for="liveToken">Stream key or token</label>
+          <input type="password" class="xfer-input live-input" id="liveToken" spellcheck="false" autocomplete="off">
+          <p class="live-consent" id="liveConsent"></p>
+          <p class="live-error" id="liveError" role="alert" hidden></p>
+          <div class="live-actions">
+            <button type="submit" class="btn btn-danger live-go" id="liveGo">Go live</button>
+          </div>
+        </div>
+        <div class="live-on" id="liveOn" hidden>
+          <p class="live-status" id="liveStatus" role="status"></p>
+          <p class="live-where" id="liveWhere"></p>
+          <div class="live-actions">
+            <button type="button" class="btn btn-danger" id="liveStop">Stop live</button>
+          </div>
+        </div>
+      </div>
+    </form>
+
     </div>
 
     <!-- The control bar, only once a call's been answered (app.js render), until the last one
@@ -317,6 +348,8 @@
       <button type="button" class="btn" id="holdBtn" aria-pressed="false" disabled></button>
       <button type="button" class="btn btn-danger" id="hangupBtn" disabled></button>
       <div class="controls-right">
+        <!-- Go live: broadcast the selected call to a WHIP endpoint (golive.js). Red while live. -->
+        <button type="button" class="btn icon-btn live-btn" id="liveBtn" aria-pressed="false" aria-expanded="false" aria-label="Go live" aria-controls="livePop" disabled></button>
         <!-- Transfer the selected call, in Focus view and only once it's connected: opens the
              transfer popover above it. Hidden where the host can't transfer (the web softphone). -->
         <button type="button" class="btn icon-btn xfer-btn" id="transferBtn" aria-pressed="false" aria-expanded="false" aria-label="Transfer" aria-controls="xferPop" disabled hidden></button>
@@ -330,7 +363,7 @@
              they're hidden, and this ⋯ menu has them instead (menus.js, fillMoreMenu). -->
         <div class="split more-wrap">
           <button type="button" class="btn icon-btn more-btn" id="moreBtn" aria-haspopup="menu" aria-expanded="false"
-            aria-label="More" title="More: transfer, keypad, text, self view"></button>
+            aria-label="More" title="More: go live, transfer, keypad, text, self view"></button>
           <div class="device-menu more-menu" id="moreMenu" role="menu" aria-label="More" hidden></div>
         </div>
       </div>

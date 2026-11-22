@@ -2,6 +2,7 @@
 
 import { ROW_MS, audioId, callNotes, dropOutcome, focusCall, goneRows, gridCalls, hasMic, holdState, inGrid, isLive, listed, liveEntries, nameOf, selectedId, setView, tiles, view } from "./app.js";
 import { setAvatar } from "./avatar.js";
+import { isLiveCall } from "./golive.js";
 import { contactMarkEl } from "./contactmark.js";
 import { contactFor } from "./contacts.js";
 import { closeMenu, openMenu, showMenu } from "./menus.js";
@@ -222,6 +223,8 @@ function callRow(e, i, collapsed = false) {
   top.append(el("span", "call-name", name));
   const contact = contactFor(e.h.remote);
   if (contact) top.firstChild.append(contactMarkEl(contact.name));
+  // Broadcast (Go live): a red LIVE after the name, while it is.
+  if (isLiveCall(e.id)) top.append(Object.assign(el("span", "call-live", "LIVE"), { title: "This call is live (Go live)" }));
   // No mic and camera chips, and no timer: the call bar has the time, and only one
   // call ever has your mic. What matters about the call is a badge on its avatar (callBadge).
   const main = el("span", "call-main");
