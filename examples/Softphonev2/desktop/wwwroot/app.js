@@ -1192,6 +1192,9 @@ const ringingWho = (e, ringing) => {
 // is only a message): { key, callId, who, whoTitle, what, title, icon, tone, action, at }. One
 // with a button stays until you use it or close it; one without goes after OUTCOME_MS (a line
 // along its foot runs down meanwhile), the clock stopped while the pointer is on the notices.
+// { call: id } is one about that call (network input's): it shows with the call, in its bar while
+// it's on the stage and on its tile in Grid, not in the notices; { ttl } is how long it stays,
+// button or not.
 const OUTCOME_MS = 8000;
 // The call bar's notice (a call that ended on you, or one you placed that wasn't answered): there
 // for HEAD_MS, the last HEAD_FADE_MS of it fading out.
@@ -1206,7 +1209,7 @@ export function pushOutcome(o) {
   const i = outcomes.findIndex((x) => x.key === o.key);
   if (i >= 0) outcomes.splice(i, 1);
   const at = Date.now();
-  outcomes.push({ ...o, at, until: o.action ? null : at + (o.head ? HEAD_MS : o.row ? ROW_MS : OUTCOME_MS) });
+  outcomes.push({ ...o, at, until: o.ttl ? at + o.ttl : o.action ? null : at + (o.head ? HEAD_MS : o.row ? ROW_MS : OUTCOME_MS) });
   render();
 }
 // The outcomes' clocks stop while the window is hidden (minimised), so one isn't gone before
@@ -1374,7 +1377,7 @@ function noticeItems() {
   }
   items.push(...xfer.outcomes.filter((o) => !o.row && !o.stage).map((o) => ({ ...o, outcome: true })));
   for (const o of outcomes) {
-    if (o.head || o.row || o.note != null) continue;   // in the call's bar, or its row in the calls panel; the call's bar (renderHeadEnded); in Grid, floating over its top
+    if (o.head || o.row || o.note != null || o.call != null) continue;   // in the call's bar, or its row in the calls panel; the call's bar (renderHeadEnded); in Grid, floating over its top
     const live = o.callId && entries.get(o.callId)?.h.call === "connected";
     const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
     items.push({
@@ -1443,7 +1446,7 @@ function renderHeadEnded() {
   // A head outcome is its call's: shown while that call is on the stage, or over
   // Home once it's gone; not over another call you've switched to.
   const ours = (x) => selectedId == null || (x.callId ?? x.diagFor) === selectedId;
-  const o = ask ?? xn?.outcomes.find((x) => x.stage) ?? outcomes.findLast((x) => x.head && ours(x));
+  const o = ask ?? xn?.outcomes.find((x) => x.stage) ?? outcomes.findLast((x) => (x.head && ours(x)) || (x.call != null && x.call === selectedId && !inGrid()));
   const box = $("headEnded"), info = $("info"), stage = $("stage"), connected = !inGrid() && sel()?.h.call === "connected";
   if (!o && !box.hidden) {
     if (!headClosing) {
@@ -1488,19 +1491,21 @@ function renderHeadEnded() {
   box.dataset.tone = ask ? "ask" : o.tone ?? "";
   $("headEndedX").onclick = o.dismiss ?? (() => dropOutcome(o.key));
   $("headEndedX").hidden = !!ask;
+  // Its buttons: a transfer's ask's, or an outcome's one (network input's Keep my microphone).
+  const buttons = ask ? ask.actions : o.action ? [{ label: o.action.label, title: o.action.title, cls: "btn", fn: o.action.fn }] : null;
   let acts = box.querySelector(".head-ask");
-  if (ask && !acts) { acts = Object.assign(document.createElement("span"), { className: "head-ask" }); box.insertBefore(acts, $("headEndedX")); }
+  if (buttons && !acts) { acts = Object.assign(document.createElement("span"), { className: "head-ask" }); box.insertBefore(acts, $("headEndedX")); }
   if (acts) {
-    acts.hidden = !ask;
-    if (ask && acts.dataset.key !== ask.key) {
-      acts.dataset.key = ask.key;
-      acts.replaceChildren(...ask.actions.map((a) => {
+    acts.hidden = !buttons;
+    if (buttons && acts.dataset.key !== o.key) {
+      acts.dataset.key = o.key;
+      acts.replaceChildren(...buttons.map((a) => {
         const b = Object.assign(document.createElement("button"), { type: "button", className: a.cls, textContent: a.label, title: a.title ?? "" });
         b.onclick = (ev) => { ev.stopPropagation(); a.fn(); };
         return b;
       }));
     }
-    if (!ask) delete acts.dataset.key;
+    if (!buttons) delete acts.dataset.key;
   }
   fadeHeadEnded();
   const saved = o.diagFor && document.body.classList.contains("diag") ? savedFor(o.diagFor) : null;
@@ -1657,7 +1662,9 @@ function renderGrid(grid) {
   // How a transfer on a call went (done, failed, cancelled, declined): on its tile,
   // as on its row in the calls panel (calllist.js noteRow), with × to close it.
   const xn = grid ? transferNotices(() => () => {}) : { outcomes: [], decisions: [] };
-  const notes = new Map([...(grid ? callNotes() : []), ...xn.outcomes.filter((o) => o.row)].map((o) => [String(o.row), o]));
+  // And one about a call (network input's): on its tile.
+  const about = grid ? outcomes.filter((o) => o.call != null).map((o) => ({ ...o, row: o.call, dismiss: () => dropOutcome(o.key) })) : [];
+  const notes = new Map([...(grid ? callNotes() : []), ...about, ...xn.outcomes.filter((o) => o.row)].map((o) => [String(o.row), o]));
   // A transfer you're asked to take: the tile blinks; a click switches to the call,
   // where its bar asks.
   const asks = new Map(xn.decisions.filter((d) => d.row).map((d) => [String(d.row), d]));

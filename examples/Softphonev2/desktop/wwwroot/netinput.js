@@ -25,6 +25,9 @@ export const NET_LABEL = "Network input";
 let feed = null;           // { session, pc, video, audio, connected }
 let netAudioOn = false;    // the feed's sound is your microphone
 let lastSource = "camera"; // the video source to go back to when the feed goes
+// Its notices about a call (Callers now see and hear it, Started: Use it) stay this long, in the
+// call's bar or on its tile, then go: the ▾ menus have it all the while.
+const USE_MS = 12000;
 
 export const netState = () => hostState.netInput ?? null;   // null: the web build, which has none
 export const netEnabled = () => !!netState()?.on;
@@ -73,8 +76,9 @@ export function useNet(e = sel()) {
   const both = !!netVideo() && !!netAudio();
   if (netAudio()) setNetAudio(true);
   if (e?.m) {
+    // With the call it's for: in its bar, or on its tile in Grid.
     pushOutcome({
-      key: "net-use", icon: ICON.video, who: NET_LABEL, tone: "info",
+      key: "net-use", call: e.id, ttl: USE_MS, icon: ICON.video, who: NET_LABEL, tone: "info",
       what: both ? "Callers now see and hear it" : netVideo() ? "Callers now see it" : "Callers now hear it",
       action: netAudio() && both ? { label: "Keep my microphone", title: "Send its video, with your microphone", fn: () => { dropOutcome("net-use"); setNetAudio(false); } } : null,
     });
@@ -92,6 +96,11 @@ function feedGone(why) {
   if (was) { try { was.pc.close(); } catch { /* closed */ } }
   dropOutcome("net-started");
   const used = inUse();
+  // The call to say so on: one sending its video (the one you're looking at, if it is), else, as
+  // its sound goes to every call, the one you're looking at.
+  const on = [...entries.values()].filter((e) => e.m && e.h.call === "connected");
+  const seen = on.filter((e) => e.source === "net");
+  const sayOn = seen.find((e) => e === sel()) ?? seen[0] ?? (netAudioOn ? on.find((e) => e === sel()) ?? on[0] : null);
   netAudioOn = false;
   const back = lastSource === "net" ? "camera" : lastSource;
   for (const e of entries.values()) if (e.m && e.source === "net") e.source = back;
@@ -100,8 +109,8 @@ function feedGone(why) {
   syncCamera();
   syncAudio();
   followMic();
-  if (used && [...entries.values()].some((e) => e.m && e.h.call === "connected")) {
-    pushOutcome({ key: "net-use", icon: ICON.video, who: NET_LABEL, tone: "warn", what: "Stopped: back to your camera and microphone" });
+  if (used && sayOn) {
+    pushOutcome({ key: "net-use", call: sayOn.id, icon: ICON.video, who: NET_LABEL, tone: "warn", what: "Stopped: back to your camera and microphone" });
   }
   settings?.refresh();
   render();
@@ -133,10 +142,13 @@ async function onOffer(session, sdp) {
       f.connected = true;
       log(`network input: ${netKinds() || "nothing yet"}`);
       // On a call, not in use: offered.
-      if (!inUse() && [...entries.values()].some((e) => e.m && e.h.call === "connected")) {
+      // Offered on the call you're looking at (or the first), in its bar or on its tile.
+      const on = [...entries.values()].filter((e) => e.m && e.h.call === "connected");
+      const call = on.find((e) => e === sel()) ?? on[0];
+      if (!inUse() && call) {
         pushOutcome({
-          key: "net-started", icon: ICON.video, who: NET_LABEL, tone: "info", what: `Started: ${netKinds()}`,
-          action: { label: "Use it", title: "Send it on this call in place of your camera and microphone", fn: () => { dropOutcome("net-started"); useNet(); } },
+          key: "net-started", call: call.id, ttl: USE_MS, icon: ICON.video, who: NET_LABEL, tone: "info", what: `Started: ${netKinds()}`,
+          action: { label: "Use it", title: "Send it on this call in place of your camera and microphone", fn: () => { dropOutcome("net-started"); useNet(call); } },
         });
       }
       syncCamera();

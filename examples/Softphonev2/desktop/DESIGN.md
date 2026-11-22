@@ -1059,6 +1059,11 @@ input*; the call's row, *Bob hears Network input* and *Bob sees Network input*. 
 the feed's sound, Stop video sends your camera-off card, hold and privacy mode work on it as they
 do on your devices: privacy mode never sends it.
 
+**Its notices are the call's.** Each is about one call, so it shows with that call: in its bar
+while it's on the stage (*Callers now see and hear it* and its Keep my microphone, for 12 s), on its
+tile in Grid, and not over another call you switch to. *Stopped* goes on the call that was sending
+its video.
+
 **A publisher that starts on a call.** If you're on a call and not using it: *Network input ·
 Started: video and sound* with **Use it**.
 
