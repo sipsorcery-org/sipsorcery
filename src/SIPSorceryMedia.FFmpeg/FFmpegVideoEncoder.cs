@@ -31,6 +31,9 @@ namespace SIPSorceryMedia.FFmpeg
             get => _supportedFormats;
         }
 
+        /// <summary>libsvtav1's ":"-separated key=value SVT-AV1 parameter list option.</summary>
+        public const string SVTAV1_PARAMS_OPTION = "svtav1-params";
+
         private readonly Dictionary<string, string> _codecOptions;
         private Dictionary<string, Dictionary<string, string>>? _codecOptionsByName;
 
@@ -493,8 +496,16 @@ namespace SIPSorceryMedia.FFmpeg
                                 // output. With no bitrate the default constant-quality mode is used, which
                                 // low-delay does support.
                                 ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "11", 0).ThrowExceptionIfError();
-                                ffmpeg.av_opt_set(_encoderContext->priv_data, "svtav1-params",
-                                    _encoderContext->bit_rate > 0 ? "lp=0:pred-struct=1:rc=2" : "lp=0:pred-struct=1", 0).ThrowExceptionIfError();
+                                // A caller's svtav1-params (e.g. tile-columns/tile-rows) are appended to these
+                                // defaults rather than replacing them: setting the option again would discard
+                                // the low-delay settings. Later keys win, so the caller can still override one.
+                                string svtParams = _encoderContext->bit_rate > 0 ? "lp=0:pred-struct=1:rc=2" : "lp=0:pred-struct=1";
+                                if (_codecOptions.TryGetValue(SVTAV1_PARAMS_OPTION, out var callerSvtParams)
+                                    && !string.IsNullOrWhiteSpace(callerSvtParams))
+                                {
+                                    svtParams += ":" + callerSvtParams;
+                                }
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, SVTAV1_PARAMS_OPTION, svtParams, 0).ThrowExceptionIfError();
                                 break;
                             case "librav1e":
                                 // rav1e exposes speed 0-10 (higher is faster); use a fast, low-latency setting.
@@ -513,6 +524,12 @@ namespace SIPSorceryMedia.FFmpeg
 
                     foreach (var option in _codecOptions)
                     {
+                        if (cdcname == "libsvtav1" && option.Key == SVTAV1_PARAMS_OPTION)
+                        {
+                            // Already merged into the encoder's defaults above.
+                            continue;
+                        }
+
                         var ok = ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, ffmpeg.AV_OPT_SEARCH_CHILDREN);
                         if (ok < 0)
                         {
@@ -645,6 +662,15 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     ffmpeg.av_hwdevice_ctx_create(&_decoderContext->hw_device_ctx, _HwDeviceType, null, null, 0).ThrowExceptionIfError();
                 }
+
+                // Use the cores without adding latency. FFmpeg's default is a single thread, which
+                // leaves e.g. libdav1d decoding 4K AV1 at a few frames a second. 0 lets FFmpeg pick
+                // the count. Slice threading only: frame threading holds frames back, so a frame sent
+                // would no longer come out of the same DecodeVideo call. LOW_DELAY does the same for
+                // libdav1d, which then still threads its tiles and post-filters but delays no frames.
+                _decoderContext->thread_count = 0;
+                _decoderContext->thread_type = ffmpeg.FF_THREAD_SLICE;
+                _decoderContext->flags |= ffmpeg.AV_CODEC_FLAG_LOW_DELAY;
 
                 foreach (var option in decOpts)
                 {
@@ -1057,18 +1083,19 @@ namespace SIPSorceryMedia.FFmpeg
 
                     try
                     {
-                        var paddedBuffer = new byte[buffer.Length + ffmpeg.AV_INPUT_BUFFER_PADDING_SIZE];
-                        Buffer.BlockCopy(buffer, 0, paddedBuffer, 0, buffer.Length);
-
-                        fixed (byte* pBuffer = paddedBuffer)
-                        {
-                            ffmpeg.av_packet_from_data(packet, pBuffer, paddedBuffer.Length).ThrowExceptionIfError();
-                            return DecodeFaster(codecID, packet, out width, out height);
-                        }
+                        // The packet data must be FFmpeg's own reference counted memory: a decoder may
+                        // keep a reference to it after avcodec_send_packet returns (libdav1d does, until
+                        // it has consumed the frame) and frees it with av_free when the last reference
+                        // goes. Wrapping a pinned managed array let it read memory the GC had since
+                        // moved, and free memory FFmpeg never allocated. av_new_packet also zeroes the
+                        // AV_INPUT_BUFFER_PADDING_SIZE bytes after the data, outside the packet size.
+                        ffmpeg.av_new_packet(packet, buffer.Length).ThrowExceptionIfError();
+                        Marshal.Copy(buffer, 0, (IntPtr)packet->data, buffer.Length);
+                        return DecodeFaster(codecID, packet, out width, out height);
                     }
                     finally
                     {
-                        ffmpeg.av_packet_from_data(packet, (byte*)IntPtr.Zero, 0);
+                        // Drops this reference; the decoder keeps its own for as long as it needs the data.
                         ffmpeg.av_packet_free(&packet);
                     }
                 }

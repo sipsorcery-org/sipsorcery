@@ -299,7 +299,10 @@ Video processing — and encoding in particular — is generally the bottleneck 
 
 In June 2026, the SIPSorcery command line tool (`dotnet tool install -g SIPSorcery.Cli`, the `sipsorcery` command) was conceived to test various SIP, ICE, WebRTC, and benchmarking scenarios. The benchmarking has revealed that, thanks to the capabilities of the [FFmpeg](https://ffmpeg.org/) project (and the various libraries it in turn wraps), the SIPSorcery library running on a typical Windows machine with the H264 video codec is capable of processing 4K video at over 30fps and 1080p at over 100fps.
 
-Sample test results are shown below.
+Sample test results are shown below. They were generated with [`run-video-bench.ps1`](src/SIPSorcery.Cli/benchmarks/run-video-bench.ps1), which drives two CLI commands (see the [benchmarks README](src/SIPSorcery.Cli/benchmarks/README.md) for the details):
+
+- `sipsorcery webrtc video-bench` times one encoder or decoder alone, in-process, as fast as it will go. It gives the encode and decode tables: each figure is the maximum rate of that component on its own, so they are not achievable together in one call.
+- `sipsorcery webrtc loopback` runs a real WebRTC session in one process. It gives the WebRTC pipeline table: the transport ceiling with no codec, and the maximum rate an app can send at (encode), receive at (decode), or do both in a full call.
 
 ### Machine
 
@@ -309,14 +312,38 @@ Sample test results are shown below.
 
 ### Results
 
-_All measurements are frames per second (FPS). For real-time communications a frame rate of 30 FPS is suitable._
+_All measurements are maximum frames per second (FPS). For real-time communications a frame rate of 30 FPS is suitable._
 
-| Preset | Encode vp8.net | Encode ffmpeg H264 | Encode ffmpeg VP8 | Decode H264 (ffmpeg) | Decode VP8 (ffmpeg) | Decode VP8 (vp8.net) | Plumbing (no codec) |
+**Encode** (the encoder alone):
+
+| Preset | vp8.net | av1.net | ffmpeg H264 | ffmpeg VP8 | ffmpeg VP9 | ffmpeg H265 | ffmpeg AV1 |
 |---|---|---|---|---|---|---|---|
-| 480p | 74.9 | 500.1 | 361.5 | 120 | 120 | 60 | 6435.4 |
-| 720p | 23.3 | 341.1 | 132.4 | 120 | 120 | 30 | 1735.5 |
-| 1080p | 9 | 174.3 | 52.8 | 120 | 120 | 15 | 1084.9 |
-| 1440p | 5.1 | 95.1 | 37.7 | 90 | 90 | n/a | 525.3 |
-| 4k | 1.9 | 48.7 | 31.6 | 30 | 30 | n/a | 367.3 |
+| 480p | 83.9 | 151.5 | 973.4 | 369.9 | 192.1 | 212.8 | 147.3 |
+| 720p | 29.6 | 57.1 | 365.9 | 129.3 | 98.6 | 92.2 | 65 |
+| 1080p | 12.6 | 34.5 | 191.4 | 56.4 | 51.8 | 49.3 | 30 |
+| 1440p | 6.9 | 20.7 | 109.3 | 41.2 | 32.3 | 31.2 | 16.4 |
+| 4k | 2.8 | 7.7 | 47.4 | 35.6 | 17.2 | 14.6 | 8.3 |
 
-_Generated 2026-06-16 09:31; duration 6s/run, 1 run(s)/point._
+**Decode** (the decoder alone, on a pre-encoded clip):
+
+| Preset | H264 (ffmpeg) | VP8 (ffmpeg) | VP9 (ffmpeg) | H265 (ffmpeg) | AV1 (ffmpeg) | VP8 (vp8.net) |
+|---|---|---|---|---|---|---|
+| 480p | 2209.1 | 948.1 | 844.3 | 1094.5 | 577.4 | 167.9 |
+| 720p | 861.2 | 301 | 391.8 | 435.3 | 208.8 | 58.2 |
+| 1080p | 389.4 | 136.8 | 200.7 | 241.5 | 213.5 | 25.7 |
+| 1440p | 221.2 | 74.2 | 119.9 | 155.5 | 118.4 | 14.5 |
+| 4k | 99.7 | 33.6 | 54.8 | 76.5 | 72.7 | 6.6 |
+
+**WebRTC pipeline** (H264 with the ffmpeg encoder and decoder, over a real WebRTC session in one process):
+
+| Preset | Transport (no codec) | Send (encode) | Receive (decode) | Full call (encode + decode) |
+|---|---|---|---|---|
+| 480p | 7177.7 | 944.4 | 949 | 885 |
+| 720p | 2539.4 | 318.4 | 680 | 298 |
+| 1080p | 1456.8 | 172.5 | 307 | 150 |
+| 1440p | 827.9 | 90.7 | 182 | 87 |
+| 4k | 485.3 | 46.2 | 91 | 41 |
+
+Transport sends pre-encoded frames flat out with no codec. Send encodes live and the receiver discards the frames, the case for an app that only sends. Receive decodes a pre-encoded stream, the case for an app that only receives. Full call does both. Receive and full call are the highest rates (to within 5%) at which no more than 2% of frames are lost or fail to decode. Both ends run on the one machine, so a one-way figure also carries the other end's (small) transport cost.
+
+_Generated 2026-11-22 11:29; duration 6s/run, 1 run(s)/point._

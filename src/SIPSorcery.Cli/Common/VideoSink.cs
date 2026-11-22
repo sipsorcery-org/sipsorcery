@@ -92,6 +92,9 @@ public sealed class VideoSink : IDisposable
     private bool _hasFirstTimestamp;
     private long _bytesWritten;
     private int _framesWritten;
+    private int _framesUndecoded;
+    private long _firstDecodedTicks;
+    private long _lastDecodedTicks;
     private int _rawWidth;
     private int _rawHeight;
     private string _rawPixelFormat = "bgr24";
@@ -102,6 +105,31 @@ public sealed class VideoSink : IDisposable
     // These counters are written only by the worker thread; read them after Dispose, which joins it.
     public long BytesWritten => _bytesWritten;
     public int FramesWritten => _framesWritten;
+
+    /// <summary>
+    /// With a decoder: frames handed to the decoder that produced no picture. A decoder cannot
+    /// output a frame whose reference was dropped (see <see cref="DroppedFrames"/>), so this climbs
+    /// with drops until the next key frame. Null without a decoder.
+    /// </summary>
+    public int? FramesUndecoded => _decoder != null ? _framesUndecoded : null;
+
+    /// <summary>
+    /// With a decoder: the rate decoded pictures came out of the decoder, first to last (decode and
+    /// conversion to RGB, which is what limits it when the sink is "null"). Unlike the received frame
+    /// rate this is what the decode stage sustained. Null without a decoder or under two pictures.
+    /// </summary>
+    public double? DecodedFps
+    {
+        get
+        {
+            if (_decoder == null || _framesWritten < 2 || _lastDecodedTicks <= _firstDecodedTicks)
+            {
+                return null;
+            }
+            double seconds = (_lastDecodedTicks - _firstDecodedTicks) / (double)System.Diagnostics.Stopwatch.Frequency;
+            return Math.Round((_framesWritten - 1) / seconds, 1);
+        }
+    }
     public int DroppedFrames { get { lock (_queueLock) { return _droppedFrames; } } }
 
     private VideoSink(SinkMode mode, string? filePath, ILogger logger, IVideoEncoder? decoder, int frameRate)
@@ -319,6 +347,16 @@ public sealed class VideoSink : IDisposable
             return;
         }
 
+        int written = _framesWritten;
+        WriteDecodedSamples(samples);
+        if (_framesWritten == written)
+        {
+            _framesUndecoded++;
+        }
+    }
+
+    private void WriteDecodedSamples(IEnumerable<VideoSample> samples)
+    {
         foreach (var sample in samples)
         {
             if (sample.Sample == null || sample.Sample.Length == 0 || sample.Width == 0 || sample.Height == 0)
@@ -328,6 +366,13 @@ public sealed class VideoSink : IDisposable
 
             int width = (int)sample.Width;
             int height = (int)sample.Height;
+
+            long decodedTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+            if (_framesWritten == 0)
+            {
+                _firstDecodedTicks = decodedTicks;
+            }
+            _lastDecodedTicks = decodedTicks;
 
             if (_out == null)
             {

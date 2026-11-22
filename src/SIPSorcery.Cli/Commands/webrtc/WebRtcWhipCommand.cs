@@ -85,19 +85,19 @@ public sealed class WebRtcWhipCommand : CommandBase
 
         var encoderOption = new Option<string>("--encoder")
         {
-            Description = "Video encoder: vp8.net (managed Vpx.Net VP8, no native deps) or ffmpeg (SIPSorceryMedia.FFmpeg).",
+            Description = "Video encoder: vp8.net (managed Vpx.Net VP8, no native deps), av1.net (managed SIPSorcery.AV1, no native deps) or ffmpeg (SIPSorceryMedia.FFmpeg).",
             DefaultValueFactory = _ => DEFAULT_ENCODER
         };
 
         var codecOption = new Option<string?>("--codec", CodecSelection.VIDEO_OPTION)
         {
             Description = "Force the codec the ffmpeg encoder publishes, exactly one of: h264 (default), h265, vp8, vp9 or av1. " +
-                          "Ignored for vp8.net, which is always VP8. Also spelled --video-codec, as on the receiving verbs."
+                          "vp8.net is always VP8 and av1.net always AV1. Also spelled --video-codec, as on the receiving verbs."
         };
 
         var bitrateOption = new Option<int>("--bitrate")
         {
-            Description = "Target encoder bitrate in bits per second (ffmpeg encoder only). 0 (default) derives it from the resolution and frame rate."
+            Description = "Target encoder bitrate in bits per second (ffmpeg and av1.net encoders). 0 (default) derives it from the resolution and frame rate."
         };
 
         var maxRateOption = new Option<bool>("--max-rate")

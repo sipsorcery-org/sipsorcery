@@ -40,6 +40,7 @@
 // 23 Jun 2026	Aaron Clauson	Added the sip: source, whip: sink and the --scope audio-scope video.
 // 24 Oct 2026	Aaron Clauson	Added --scope-mode hilbert.
 // 25 Oct 2026	Aaron Clauson	Folded in the bridge verb as two-way routes (--duplex).
+// 21 Nov 2026	Aaron Clauson	Added --video-encoder av1.net, the managed AV1 test pattern encoder.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -104,6 +105,7 @@ public sealed class RouteCommand : CommandBase
         string? Password,
         string AudioCodec,
         string? VideoCodec,
+        string VideoEncoder,
         bool NoOpen,
         string? Url,
         string? ApiKey,
@@ -236,6 +238,14 @@ public sealed class RouteCommand : CommandBase
                           "fails, which is what makes it useful for testing one codec end to end."
         };
 
+        var videoEncoderOption = new Option<string>(RouteVideo.ENCODER_OPTION)
+        {
+            Description = $"The encoder for the testpattern source's video: {RouteVideo.DEFAULT_ENCODER} (SIPSorceryMedia.FFmpeg, " +
+                          $"any codec, the default) or {RouteVideo.AV1_NET_ENCODER} (the managed SIPSorcery.AV1 encoder, no native " +
+                          $"deps). {RouteVideo.AV1_NET_ENCODER} only produces AV1, so it implies --video-codec av1.",
+            DefaultValueFactory = _ => RouteVideo.DEFAULT_ENCODER
+        };
+
         var noOpenOption = new Option<bool>("--no-open")
         {
             Description = "For a web edge, do not automatically open a browser at its page (it is also never opened with --json)."
@@ -335,6 +345,7 @@ public sealed class RouteCommand : CommandBase
         command.Options.Add(passwordOption);
         command.Options.Add(audioCodecOption);
         command.Options.Add(videoCodecOption);
+        command.Options.Add(videoEncoderOption);
         command.Options.Add(noOpenOption);
         command.Options.Add(urlOption);
         command.Options.Add(apiKeyOption);
@@ -368,6 +379,7 @@ public sealed class RouteCommand : CommandBase
                 parseResult.GetValue(passwordOption),
                 parseResult.GetValue(audioCodecOption)!,
                 parseResult.GetValue(videoCodecOption),
+                parseResult.GetValue(videoEncoderOption)!,
                 parseResult.GetValue(noOpenOption),
                 parseResult.GetValue(urlOption),
                 parseResult.GetValue(apiKeyOption),
@@ -493,6 +505,28 @@ public sealed class RouteCommand : CommandBase
     /// </summary>
     private static string? ResolveVideoCodecError(RouteArgs args)
     {
+        if (!RouteVideo.IsAv1Net(args.VideoEncoder) &&
+            !string.Equals(args.VideoEncoder?.Trim(), RouteVideo.DEFAULT_ENCODER, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Unknown {RouteVideo.ENCODER_OPTION} \"{args.VideoEncoder}\". Expected {RouteVideo.DEFAULT_ENCODER} or {RouteVideo.AV1_NET_ENCODER}.";
+        }
+
+        if (RouteVideo.IsAv1Net(args.VideoEncoder))
+        {
+            // Only the generated test pattern is encoded here; every other source relays its frames
+            // as they arrive, so the encoder would be silently ignored.
+            if (!string.Equals(args.From.Trim(), "testpattern", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"{RouteVideo.ENCODER_OPTION} {RouteVideo.AV1_NET_ENCODER} encodes the generated test pattern, so it needs --from testpattern.";
+            }
+            if (!string.IsNullOrWhiteSpace(args.VideoCodec) &&
+                !string.Equals(args.VideoCodec!.Trim(), "av1", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"{RouteVideo.ENCODER_OPTION} {RouteVideo.AV1_NET_ENCODER} only produces AV1, so it cannot be combined " +
+                       $"with --video-codec {args.VideoCodec.Trim()}.";
+            }
+        }
+
         if (string.IsNullOrWhiteSpace(args.VideoCodec))
         {
             return null;
@@ -510,9 +544,13 @@ public sealed class RouteCommand : CommandBase
         // A web sink auto-opens a browser for interactive use, but never when --json (a scripted run) or
         // --no-open is set.
         bool openBrowser = !args.NoOpen && !args.AsJson;
+        // The managed AV1 encoder only produces AV1, so it pins the codec when --video-codec was left out.
+        string? videoCodec = RouteVideo.IsAv1Net(args.VideoEncoder) && string.IsNullOrWhiteSpace(args.VideoCodec)
+            ? "av1"
+            : args.VideoCodec;
         var edgeOptions = new EdgeOptions(args.Fps, args.Token, args.TimeoutSeconds, args.Scope, args.ScopeMode, args.ScopeSize,
-            args.FfmpegPath, args.Username, args.Password, args.AudioCodec, args.VideoCodec, openBrowser, args.Url,
-            args.ApiKey, args.ApiSecret, args.AppId, args.BrowserSize);
+            args.FfmpegPath, args.Username, args.Password, args.AudioCodec, videoCodec, openBrowser, args.Url,
+            args.ApiKey, args.ApiSecret, args.AppId, args.BrowserSize, args.VideoEncoder);
 
         // Build the edges. A bad spec is an argument error before anything starts.
         ISourceNode source;

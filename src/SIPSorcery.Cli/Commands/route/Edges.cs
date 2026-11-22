@@ -21,6 +21,8 @@
 // 23 Jun 2026	Aaron Clauson	Wired the sip: source (with an optional ffmpeg audio-scope video)
 //                              and the whip: sink so a call can be bridged to a WebRTC endpoint.
 // 16 Nov 2026	Aaron Clauson	Wired the sip: sink, so a stream can be sent to a SIP phone.
+// 21 Nov 2026	Aaron Clauson	--video-encoder av1.net: the test pattern encoded by the managed
+//                              SIPSorcery.AV1 encoder instead of ffmpeg.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -31,6 +33,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.AV1;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorceryMedia.Abstractions;
@@ -59,7 +62,8 @@ public sealed record EdgeOptions(
     string? LiveKitApiKey = null,
     string? LiveKitApiSecret = null,
     string? CloudflareAppId = null,
-    string BrowserSize = "640x360");
+    string BrowserSize = "640x360",
+    string VideoEncoder = RouteVideo.DEFAULT_ENCODER);
 
 /// <summary>Resolves the --audio-codec name to the audio format a source produces and a sink offers.</summary>
 public static class RouteAudio
@@ -80,8 +84,40 @@ public static class RouteAudio
 /// </summary>
 public static class RouteVideo
 {
+    /// <summary>The --video-encoder option name.</summary>
+    public const string ENCODER_OPTION = "--video-encoder";
+
+    /// <summary>The native SIPSorceryMedia.FFmpeg encoder, any codec: the default.</summary>
+    public const string DEFAULT_ENCODER = "ffmpeg";
+
+    /// <summary>The managed SIPSorcery.AV1 (av1rt) encoder: AV1 only, no native dependencies.</summary>
+    public const string AV1_NET_ENCODER = "av1.net";
+
     public static bool TryResolveCodec(string? name, out VideoFormat format, out string? error) =>
         CodecSelection.TryResolveVideo(name, CodecSelection.VIDEO_OPTION, out format, out error);
+
+    /// <summary>True for the managed AV1 encoder's name.</summary>
+    public static bool IsAv1Net(string? encoder) =>
+        string.Equals(encoder?.Trim(), AV1_NET_ENCODER, StringComparison.OrdinalIgnoreCase);
+
+    // The managed AV1 encoder's own default is libwebrtc's 35 Mbps; the test pattern needs far less.
+    private const int AV1_NET_BITRATE_KBPS = 2000;
+
+    /// <summary>Creates the --video-encoder the test pattern source encodes with at <paramref name="fps"/>.</summary>
+    /// <remarks>
+    /// The managed AV1 encoder's own default is a key frame only on request, and the graph does not
+    /// carry a viewer's PLI back to the encoder, so a viewer joining after the first frame would never
+    /// get a picture. A key frame every second (as the ffmpeg encoders' GOP gives) lets one join.
+    /// </remarks>
+    public static IVideoEncoder CreateEncoder(string? encoder, int fps) =>
+        IsAv1Net(encoder)
+            ? new AV1VideoEncoder(new Av1rt.Av1EncoderOptions
+            {
+                FrameRate = fps,
+                TargetBitrateKbps = AV1_NET_BITRATE_KBPS,
+                KeyFrameInterval = Math.Max(1, fps),
+            })
+            : new FFmpegVideoEncoder();
 }
 
 /// <summary>
@@ -110,14 +146,14 @@ public sealed class TestPatternSourceNode : ISourceNode
 
     public long? ConnectTimeMs => null;
 
-    public TestPatternSourceNode(int fps, AudioFormat audioFormat, VideoFormat videoFormat, ILogger logger)
+    public TestPatternSourceNode(int fps, AudioFormat audioFormat, VideoFormat videoFormat, IVideoEncoder encoder, ILogger logger)
     {
         _fps = fps;
         _audioFormat = audioFormat;
         _format = videoFormat;
         _logger = logger;
 
-        _source = new VideoTestPatternSource(new FFmpegVideoEncoder());
+        _source = new VideoTestPatternSource(encoder);
         _source.RestrictFormats(f => f.Codec == _format.Codec);
         _source.SetFrameRate(fps);
         _source.OnVideoSourceEncodedSample += HandleEncoded;
@@ -217,7 +253,8 @@ public static class EdgeFactory
         switch (scheme)
         {
             case "testpattern":
-                return new TestPatternSourceNode(options.Fps, ResolveAudioFormat(options), ResolveSendVideoFormat(options), logger);
+                return new TestPatternSourceNode(options.Fps, ResolveAudioFormat(options), ResolveSendVideoFormat(options),
+                    RouteVideo.CreateEncoder(options.VideoEncoder, options.Fps), logger);
 
             case "whep":
                 if (string.IsNullOrWhiteSpace(rest))

@@ -82,7 +82,12 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         bool? VideoDecode = null,
         // Loopback only: the resolved encode frame dimensions (after preset/--size and codec rounding).
         int? VideoWidth = null,
-        int? VideoHeight = null);
+        int? VideoHeight = null,
+        // With --decode: the rate pictures came out of the decoder (VideoFps is the rate frames arrived,
+        // whether or not they were decoded), and the frames decoded without a picture, e.g. because a
+        // frame they reference was dropped.
+        double? VideoDecodedFps = null,
+        int? VideoFramesUndecoded = null);
 
     public WebRtcWhipServerCommand() : base(DEFAULT_TIMEOUT_SECONDS)
     { }
@@ -552,7 +557,9 @@ public sealed class WebRtcWhipServerCommand : CommandBase
                     videoEncode,
                     videoDecode,
                     videoWidth,
-                    videoHeight),
+                    videoHeight,
+                    videoSink.DecodedFps,
+                    videoSink.FramesUndecoded),
                 gotMedia ? ExitCodes.Ok : ExitCodes.Failed);
         }
         catch (HttpListenerException excp)
@@ -613,8 +620,16 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         else if (result.Success)
         {
             string dropped = result.VideoFramesDropped > 0 ? $", {result.VideoFramesDropped} dropped" : string.Empty;
+            if (result.VideoFramesUndecoded > 0)
+            {
+                dropped += $", {result.VideoFramesUndecoded} undecoded";
+            }
+            if (result.VideoDecodedFps != null)
+            {
+                dropped += $", decoded at {result.VideoDecodedFps} fps";
+            }
             string videoSink = result.VideoFrames != null ? $", {result.VideoFrames} video frames ({result.VideoBytesWritten} bytes) written{dropped}" : string.Empty;
-            string videoFps = result.VideoFps != null ? $" at {result.VideoFps} fps" : string.Empty;
+            string videoFps = result.VideoFps != null ? $" ({result.VideoFps} fps received)" : string.Empty;
             string published = result.PublishedFps != null ? $" Self-published {result.PublishedFrames} frames at {result.PublishedFps} fps." : string.Empty;
             output.WriteLine($"Publisher connected in {result.ConnectTimeMs}ms. " +
                 $"Received {result.AudioPackets} audio ({FormatAnomalies(result.AudioLost, result.AudioOutOfOrder, result.AudioDuplicates)}) and " +
