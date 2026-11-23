@@ -24,6 +24,7 @@
     <PackageVersion Include="Microsoft.Bcl.HashCode"                        Version="6.0.0" />
     <PackageVersion Include="Microsoft.CognitiveServices.Speech"            Version="1.51.1" />
     <PackageVersion Include="Microsoft.Extensions.Http"                     Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions"         Version="10.4.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging"                  Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions"     Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console"          Version="10.0.11" />
