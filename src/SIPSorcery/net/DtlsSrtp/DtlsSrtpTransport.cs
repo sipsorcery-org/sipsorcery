@@ -12,6 +12,7 @@
 // 02 Jul 2020  Aaron Clauson   Switched underlying transport from socket to
 //                              piped memory stream.
 // 30 Dec 2025  Lukas Volf      New DTLS/SRTP impl
+// 14 Oct 2026  Andy Ventura    Receive waits on the queue instead of polling it.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -19,6 +20,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using Org.BouncyCastle.Tls;
 using SIPSorcery.Net.SharpSRTP.DTLS;
 using SIPSorcery.Net.SharpSRTP.DTLSSRTP;
@@ -36,14 +38,23 @@ namespace SIPSorcery.Net
 
         private IDtlsSrtpPeer _connection;
 
-        private ConcurrentQueue<byte[]> _data = new ConcurrentQueue<byte[]>();
+        private readonly BlockingCollection<byte[]> _data = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
+
+        /// <summary>
+        /// Cancelled if the transport is closed before the DTLS handshake has completed. A handshake
+        /// waiting on <see cref="Receive(byte[], int, int, int)"/> for the remote peer's next flight is
+        /// then aborted instead of waiting out the handshake timeout.
+        /// </summary>
+        private readonly CancellationTokenSource _handshakeCancellation = new CancellationTokenSource();
+
+        private volatile bool _isHandshakeComplete;
         private Certificate _peerCertificate;
 
         public DatagramTransport Transport { get; internal set; }
         public bool IsClient { get { return _connection is DtlsSrtpClient; } }
-        public SrtpKeys Keys { get; private set; }
+        internal SrtpKeys Keys { get; private set; }
 
-        public ThreadSafeSrtpSessionContext Context { get; private set; }
+        internal ThreadSafeSrtpSessionContext Context { get; private set; }
 
         public int TimeoutMilliseconds { get { return _connection.TimeoutMilliseconds; } set { _connection.TimeoutMilliseconds = value; } }
 
@@ -51,7 +62,46 @@ namespace SIPSorcery.Net
 
         public event OnDtlsAlertEvent OnAlert;
 
-        public DtlsSrtpTransport(IDtlsSrtpPeer connection)
+        /// <summary>
+        /// The SRTP protection profile the handshake agreed, one of <see cref="Org.BouncyCastle.Tls.SrtpProtectionProfile"/>'s
+        /// values, or -1 until it has completed.
+        /// </summary>
+        public int SrtpProtectionProfile { get; private set; } = -1;
+
+        /// <summary>
+        /// The agreed SRTP protection profile's name as RFC 5764 and its successors give it, for example
+        /// "SRTP_AES128_CM_HMAC_SHA1_80" or "SRTP_AEAD_AES_128_GCM"; null until the handshake has completed.
+        /// </summary>
+        public string SrtpProtectionProfileName => ProfileName(SrtpProtectionProfile);
+
+        /// <summary>
+        /// The most recent alert, from either side, other than a close_notify: "fatal handshake_failure", say,
+        /// with its description if it had one. Null if there has been none. For diagnostics, as an alert is
+        /// often the only account of why a handshake failed.
+        /// </summary>
+        public string LastAlert { get; private set; }
+
+        private static readonly System.Collections.Generic.Dictionary<int, string> _profileNames = ProfileNames();
+
+        private static System.Collections.Generic.Dictionary<int, string> ProfileNames()
+        {
+            var names = new System.Collections.Generic.Dictionary<int, string>();
+            foreach (var field in typeof(Org.BouncyCastle.Tls.SrtpProtectionProfile).GetFields(
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
+            {
+                if (field.IsLiteral && field.FieldType == typeof(int) && field.GetValue(null) is int id && !names.ContainsKey(id))
+                {
+                    names[id] = field.Name;
+                }
+            }
+            return names;
+        }
+
+        /// <summary>The name of an SRTP protection profile (RFC 5764's), or null if it isn't one.</summary>
+        public static string ProfileName(int profile) =>
+            profile >= 0 && _profileNames.TryGetValue(profile, out var name) ? name : null;
+
+        internal DtlsSrtpTransport(IDtlsSrtpPeer connection)
         {
             this._connection = connection;
             this._connection.OnSessionStarted += DtlsSrtpTransport_OnSessionStarted;
@@ -62,10 +112,15 @@ namespace SIPSorcery.Net
         {
             this._peerCertificate = e.PeerCertificate;
             this.Context = new ThreadSafeSrtpSessionContext(e.Context);
+            this.SrtpProtectionProfile = e.ProtectionProfile;
         }
 
         private void DtlsSrtpTransport_OnAlert(object sender, DtlsAlertEventArgs args)
         {
+            if (args.AlertType != TlsAlertTypesEnum.CloseNotify)
+            {
+                LastAlert = $"{args.Level} {args.AlertType}{(string.IsNullOrEmpty(args.Description) ? "" : $": {args.Description}")}";
+            }
             OnAlert?.Invoke(args.Level, args.AlertType, args.Description);
         }
 
@@ -73,6 +128,7 @@ namespace SIPSorcery.Net
         {
             DtlsTransport transport = _connection.DoHandshake(out handshakeError, this, null);
             Transport = transport;
+            _isHandshakeComplete = transport != null;
             return string.IsNullOrEmpty(handshakeError);
         }
 
@@ -112,11 +168,16 @@ namespace SIPSorcery.Net
 
         public void WriteToRecvStream(byte[] buffer)
         {
-            _data.Enqueue(buffer);
+            _data.Add(buffer);
         }
 
         public void Close()
         {
+            if (!_isHandshakeComplete)
+            {
+                _handshakeCancellation.Cancel();
+            }
+
             var transport = Transport;
             if (transport != null)
             {
@@ -127,24 +188,26 @@ namespace SIPSorcery.Net
 
         public int Receive(byte[] buf, int off, int len, int waitMillis)
         {
-            long t = 0;
-            while(true)
+            // As per the BouncyCastle DatagramReceiver contract a wait of zero is an infinite timeout.
+            int timeout = waitMillis == 0 ? Timeout.Infinite : Math.Max(waitMillis, 0);
+
+            byte[] data;
+
+            try
             {
-                if (_data.TryDequeue(out var data))
+                if (!_data.TryTake(out data, timeout, _handshakeCancellation.Token))
                 {
-                    Buffer.BlockCopy(data, 0, buf, off, data.Length);
-                    return data.Length;
-                }
-                else
-                {
-                    System.Threading.Thread.Sleep(25);
-                    t += 25;
-                    if (t > waitMillis)
-                    {
-                        return -1;
-                    }
+                    return DTLS_RETRANSMISSION_CODE;
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Closed before the handshake completed, no further flights will be delivered.
+                throw new TlsFatalAlert(AlertDescription.user_canceled);
+            }
+
+            Buffer.BlockCopy(data, 0, buf, off, data.Length);
+            return data.Length;
         }
 
         public void Send(byte[] buf, int off, int len)

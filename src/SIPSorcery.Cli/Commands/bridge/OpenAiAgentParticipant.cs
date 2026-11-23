@@ -62,10 +62,8 @@ public sealed class OpenAiAgentParticipant : IBridgeParticipant, IGreetable, ITr
     private readonly string _greeting;
     private readonly ILogger _logger;
 
-    private readonly MaxHeadroomVideoSource? _avatar;       // null unless --avatar: the lip-synced face
-    private readonly VideoFormat _h264 = RouteVideoFormats.H264;
-    private readonly AudioEncoder _modelDecoder = new();    // decode the model OPUS -> PCM for the envelope
-    private uint _videoTimestamp;
+    private readonly AgentAvatar? _avatar;                  // null unless --avatar: the lip-synced face
+    private readonly AudioEncoder _modelDecoder = new();    // decode the model OPUS -> PCM for the mouth
     private float _envelope;                                // smoothed mouth level, audio thread only
 
     private readonly TaskCompletionSource _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -88,7 +86,7 @@ public sealed class OpenAiAgentParticipant : IBridgeParticipant, IGreetable, ITr
     public Task Completion => _completion.Task;
 
     public OpenAiAgentParticipant(
-        string apiKey, RealtimeVoicesEnum voice, string? instructions, string? greeting, bool avatar,
+        string apiKey, RealtimeVoicesEnum voice, string? instructions, string? greeting, string? avatar,
         ILoggerFactory loggerFactory, ILogger logger)
     {
         _logger = logger;
@@ -98,20 +96,16 @@ public sealed class OpenAiAgentParticipant : IBridgeParticipant, IGreetable, ITr
 
         _endpoint = new WebRTCEndPoint(apiKey, loggerFactory);
 
-        if (avatar)
+        if (avatar != null)
         {
-            // The Max Headroom face, lip-synced from the audio envelope (no visemes from OpenAI).
-            _avatar = new MaxHeadroomVideoSource(new FFmpegVideoEncoder()) { AudioDrivenMouth = true };
-            _avatar.RestrictFormats(vf => vf.Codec == VideoCodecsEnum.H264);
-            _avatar.OnVideoSourceEncodedSample += (durationRtpUnits, sample) =>
-            {
-                _videoTimestamp += durationRtpUnits;
-                OnFrame?.Invoke(MediaFrame.ForVideo(sample, _videoTimestamp, _h264, durationRtpUnits));
-            };
+            // The wav2lip head is lip-synced by its model from the voice itself; the max cartoon from the
+            // audio envelope (OpenAI sends no visemes).
+            _avatar = AgentAvatar.Create(avatar, audioDrivenMouth: true, logger);
+            _avatar.OnFrame += frame => OnFrame?.Invoke(frame);
         }
     }
 
-    public string Describe() => $"openai ({_voice}{(_avatar != null ? " + avatar" : "")})";
+    public string Describe() => $"openai ({_voice}{(_avatar != null ? $" + {_avatar.Name} avatar" : "")})";
 
     public async Task StartAsync(CancellationToken ct)
     {
@@ -124,8 +118,7 @@ public sealed class OpenAiAgentParticipant : IBridgeParticipant, IGreetable, ITr
         if (_avatar != null)
         {
             // The renderer runs continuously (idle face when silent), so video flows the whole session.
-            _avatar.SetVideoSourceFormat(_h264);
-            await _avatar.StartVideo().ConfigureAwait(false);
+            await _avatar.StartAsync().ConfigureAwait(false);
         }
 
         _stopwatch.Restart();
@@ -182,6 +175,16 @@ public sealed class OpenAiAgentParticipant : IBridgeParticipant, IGreetable, ITr
                 when !string.IsNullOrWhiteSpace(ai.Transcript):
                 OnTranscript?.Invoke("ai", ai.Transcript!.Trim());
                 break;
+
+            // Over WebRTC the server brackets each spoken reply with these, which mark the utterances
+            // the wav2lip face animates (it is fed the voice in between, see DriveMouth).
+            case RealtimeServerEventOutputAudioBufferStarted:
+                _avatar?.BeginSpeech();
+                break;
+            case RealtimeServerEventOutputAudioBufferStopped:
+            case RealtimeServerEventOutputAudioBufferCleared:
+                _avatar?.EndSpeech();
+                break;
         }
     }
 
@@ -204,7 +207,10 @@ public sealed class OpenAiAgentParticipant : IBridgeParticipant, IGreetable, ITr
         }
     }
 
-    /// <summary>Measures the frame's speech envelope and feeds it to the avatar's mouth openness.</summary>
+    /// <summary>
+    /// Drives the avatar's mouth from the model's voice: the wav2lip face is handed the decoded speech
+    /// for its model; the max cartoon gets the speech envelope as its mouth openness.
+    /// </summary>
     private void DriveMouth(EncodedAudioFrame frame)
     {
         try
@@ -212,6 +218,13 @@ public sealed class OpenAiAgentParticipant : IBridgeParticipant, IGreetable, ITr
             short[] pcm = _modelDecoder.DecodeAudio(frame.EncodedAudio, AudioCommonlyUsedFormats.OpusWebRTC);
             if (pcm.Length == 0)
             {
+                return;
+            }
+
+            var face = _avatar!.MaxFace;
+            if (face == null)
+            {
+                _avatar.PushSpeech(pcm, AudioCommonlyUsedFormats.OpusWebRTC.ClockRate);
                 return;
             }
 
@@ -227,8 +240,8 @@ public sealed class OpenAiAgentParticipant : IBridgeParticipant, IGreetable, ITr
             float coeff = target > _envelope ? ENVELOPE_ATTACK : ENVELOPE_DECAY;
             _envelope += (target - _envelope) * coeff;
 
-            _avatar!.AudioLevel = _envelope;
-            _avatar.IsSpeaking = _envelope > SPEAKING_LEVEL;
+            face.AudioLevel = _envelope;
+            face.IsSpeaking = _envelope > SPEAKING_LEVEL;
         }
         catch (Exception excp)
         {
@@ -279,7 +292,7 @@ public sealed class OpenAiAgentParticipant : IBridgeParticipant, IGreetable, ITr
         _completion.TrySetResult();
         if (_avatar != null)
         {
-            try { await _avatar.CloseVideo().ConfigureAwait(false); } catch { /* best effort */ }
+            try { await _avatar.CloseAsync().ConfigureAwait(false); } catch { /* best effort */ }
             _avatar.Dispose();
         }
         try { _endpoint.Close(); } catch { /* best effort */ }

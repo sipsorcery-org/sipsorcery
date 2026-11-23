@@ -25,8 +25,57 @@ public class SDPMediaTypes
 {
     public static SDPMediaTypesEnum GetSDPMediaType(string mediaType)
     {
-        return (SDPMediaTypesEnum)Enum.Parse(typeof(SDPMediaTypesEnum), mediaType, true);
+        if (mediaType is null)
+        {
+            // Let Enum.Parse reject null so the original ArgumentNullException, including its parameter name, is preserved.
+            return (SDPMediaTypesEnum)Enum.Parse(typeof(SDPMediaTypesEnum), mediaType, true);
+        }
+
+        return GetSDPMediaType(mediaType.AsSpan());
     }
+
+    public static SDPMediaTypesEnum GetSDPMediaType(ReadOnlySpan<char> mediaType)
+    {
+        if (mediaType.Equals(nameof(SDPMediaTypesEnum.audio).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.audio;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.video).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.video;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.application).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.application;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.data).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.data;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.control).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.control;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.image).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.image;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.message).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.message;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.text).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.text;
+        }
+        else if (mediaType.Equals(nameof(SDPMediaTypesEnum.invalid).AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return SDPMediaTypesEnum.invalid;
+        }
+
+        return (SDPMediaTypesEnum)Enum.Parse(typeof(SDPMediaTypesEnum), mediaType.ToString(), true);
+    }
+
     public static SDPMediaTypesEnum GetSDPMediaType(int mediaType)
     {
         return (SDPMediaTypesEnum)mediaType;
@@ -63,33 +112,39 @@ public class MediaStreamStatusType
     /// <param name="mediaStreamStatus">If the attribute was recognised as a media stream attribute this will hold it.</param>
     /// <returns>True if the attribute matched or false if not.</returns>
     public static bool IsMediaStreamStatusAttribute(string attributeString, out MediaStreamStatusEnum mediaStreamStatus)
+        => IsMediaStreamStatusAttribute(attributeString.AsSpan(), out mediaStreamStatus);
+
+    /// <summary>
+    /// Checks whether an SDP attribute is one of the four possible media stream attributes.
+    /// </summary>
+    /// <param name="attribute">The attribute characters to check.</param>
+    /// <param name="mediaStreamStatus">If the attribute was recognised as a media stream attribute this will hold it.</param>
+    /// <returns>True if the attribute matched or false if not.</returns>
+    public static bool IsMediaStreamStatusAttribute(ReadOnlySpan<char> attribute, out MediaStreamStatusEnum mediaStreamStatus)
     {
         mediaStreamStatus = MediaStreamStatusEnum.SendRecv;
 
-        if (string.IsNullOrEmpty(attributeString))
+        if (attribute.Equals(SEND_RECV_ATTRIBUTE.AsSpan(), StringComparison.OrdinalIgnoreCase))
         {
-            return false;
+            return true;
         }
-        else
+        else if (attribute.Equals(SEND_ONLY_ATTRIBUTE.AsSpan(), StringComparison.OrdinalIgnoreCase))
         {
-            switch (attributeString)
-            {
-                case var _ when SEND_RECV_ATTRIBUTE.Equals(attributeString, StringComparison.OrdinalIgnoreCase):
-                    mediaStreamStatus = MediaStreamStatusEnum.SendRecv;
-                    return true;
-                case var _ when SEND_ONLY_ATTRIBUTE.Equals(attributeString, StringComparison.OrdinalIgnoreCase):
-                    mediaStreamStatus = MediaStreamStatusEnum.SendOnly;
-                    return true;
-                case var _ when RECV_ONLY_ATTRIBUTE.Equals(attributeString, StringComparison.OrdinalIgnoreCase):
-                    mediaStreamStatus = MediaStreamStatusEnum.RecvOnly;
-                    return true;
-                case var _ when INACTIVE_ATTRIBUTE.Equals(attributeString, StringComparison.OrdinalIgnoreCase):
-                    mediaStreamStatus = MediaStreamStatusEnum.Inactive;
-                    return true;
-                default:
-                    return false;
-            }
+            mediaStreamStatus = MediaStreamStatusEnum.SendOnly;
+            return true;
         }
+        else if (attribute.Equals(RECV_ONLY_ATTRIBUTE.AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            mediaStreamStatus = MediaStreamStatusEnum.RecvOnly;
+            return true;
+        }
+        else if (attribute.Equals(INACTIVE_ATTRIBUTE.AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            mediaStreamStatus = MediaStreamStatusEnum.Inactive;
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -114,4 +169,30 @@ public class MediaStreamStatusType
                 return SEND_RECV_ATTRIBUTE;
         }
     }
+
+    /// <summary>
+    /// Gets the direction to answer a media stream with, as RFC 3264 section 6.1 has it: no more
+    /// than the answerer wants and no more than the offer allows. A sendonly offer is answered
+    /// recvonly or inactive, a recvonly offer sendonly or inactive and an inactive offer inactive.
+    /// </summary>
+    /// <param name="offered">The direction in the offer.</param>
+    /// <param name="local">The direction the answerer wants for the stream.</param>
+    /// <returns>The direction for the answer.</returns>
+    public static MediaStreamStatusEnum GetAnswerMediaStreamStatus(MediaStreamStatusEnum offered, MediaStreamStatusEnum local)
+    {
+        // We can send if we want to and they'll receive, and receive if we want to and they'll send.
+        bool send = IsSending(local) && IsReceiving(offered);
+        bool receive = IsReceiving(local) && IsSending(offered);
+
+        return send && receive ? MediaStreamStatusEnum.SendRecv :
+            send ? MediaStreamStatusEnum.SendOnly :
+            receive ? MediaStreamStatusEnum.RecvOnly :
+            MediaStreamStatusEnum.Inactive;
+    }
+
+    private static bool IsSending(MediaStreamStatusEnum status) =>
+        status == MediaStreamStatusEnum.SendRecv || status == MediaStreamStatusEnum.SendOnly;
+
+    private static bool IsReceiving(MediaStreamStatusEnum status) =>
+        status == MediaStreamStatusEnum.SendRecv || status == MediaStreamStatusEnum.RecvOnly;
 }

@@ -59,6 +59,12 @@ namespace Vpx.Net
           12,   10,   9,    7,    6,    4,    3,    1,    1
         };
 
+        /// <summary>
+        /// Starts the coder on an array. The coder keeps a pointer into <paramref name="source"/> after this returns,
+        /// so the array must not move while the coder writes to it: allocate it pinned, for example with
+        /// <see cref="System.GC.AllocateArray{T}(int, bool)"/>, or use the pointer overload inside a fixed block that
+        /// covers all the writing.
+        /// </summary>
         public unsafe static void vp8_start_encode(ref BOOL_CODER bc, byte[] source, int length)
         {
             fixed(byte* pSrc = source)

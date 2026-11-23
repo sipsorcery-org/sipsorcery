@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net.UnitTests.Helpers;
 using SIPSorcery.SIP.App;
@@ -304,6 +305,63 @@ a=sendrecv");
         }
 
         /// <summary>
+        /// An offer that lists a dynamic payload type (Opus) before static
+        /// ones (PCMU, PCMA) keeps that order through the answerer's parse:
+        /// the answerer's first negotiated format and the first format in
+        /// its answer are the offerer's first, even though the answerer's
+        /// own track lists PCMU first.
+        /// </summary>
+        [Fact]
+        public void OnOffer_DynamicPayloadTypeListedFirstLeadsNegotiation()
+        {
+            var offererTrack = new MediaStreamTrack(
+                SDPMediaTypesEnum.audio, false,
+                new List<SDPAudioVideoMediaFormat>
+                {
+                    new SDPAudioVideoMediaFormat(AudioCommonlyUsedFormats.OpusWebRTC),
+                    new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+                    new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMA),
+                });
+            var answererTrack = new MediaStreamTrack(
+                SDPMediaTypesEnum.audio, false,
+                new List<SDPAudioVideoMediaFormat>
+                {
+                    new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+                    new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMA),
+                    new SDPAudioVideoMediaFormat(AudioCommonlyUsedFormats.OpusWebRTC),
+                });
+
+            using (var offerer = new RtpSessionBuilder().WithTrack(offererTrack).Build())
+            using (var answerer = new RtpSessionBuilder().WithTrack(answererTrack).Build())
+            {
+                List<AudioFormat> answererNegotiated = null;
+                answerer.OnAudioFormatsNegotiated += formats => answererNegotiated = formats;
+
+                SDP offer = SDP.ParseSDPDescription(offerer.CreateOffer(IPAddress.Loopback).ToString());
+                Assert.Equal("111 0 8 101", offer.Media[0].GetFormatListToString());
+
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    answerer.SetRemoteDescription(SdpType.offer, offer));
+
+                Assert.NotNull(answererNegotiated);
+                Assert.Equal(new[] { 111, 0, 8 }, answererNegotiated.Select(f => f.FormatID));
+                Assert.Equal("OPUS", answererNegotiated[0].FormatName);
+
+                SDP answer = SDP.ParseSDPDescription(answerer.CreateAnswer(IPAddress.Loopback).ToString());
+                Assert.Equal(111, answer.Media[0].MediaFormats.Keys.First());
+
+                List<AudioFormat> offererNegotiated = null;
+                offerer.OnAudioFormatsNegotiated += formats => offererNegotiated = formats;
+
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    offerer.SetRemoteDescription(SdpType.answer, answer));
+
+                Assert.NotNull(offererNegotiated);
+                Assert.Equal(111, offererNegotiated[0].FormatID);
+            }
+        }
+
+        /// <summary>
         /// When remote offers a video codec the local doesn't support
         /// (e.g. local has VP8, remote offers H264 only), the answer
         /// returns VideoIncompatible.
@@ -357,6 +415,136 @@ a=sendrecv");
                 var result = session.SetRemoteDescription(SdpType.offer, offer);
 
                 Assert.Equal(SetDescriptionResultEnum.OK, result);
+            }
+        }
+
+        private static MediaStreamTrack PcmuAndTelephoneEvent101Track() =>
+            new MediaStreamTrack(
+                SDPMediaTypesEnum.audio, false,
+                new List<SDPAudioVideoMediaFormat>
+                {
+                    new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+                    new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 101, "telephone-event", 8000),
+                });
+
+        private static void ReceiveRtpEvent(MediaStream stream, int payloadType, byte eventID, ushort seq, uint timestamp)
+        {
+            var rtpEvent = new RTPEvent(eventID, true, RTPEvent.DEFAULT_VOLUME, 800, payloadType);
+            var wire = new RTPPacket(new ArraySegment<byte>(rtpEvent.GetEventPayload()), 0);
+            wire.Header.PayloadType = payloadType;
+            wire.Header.SequenceNumber = seq;
+            wire.Header.Timestamp = timestamp;
+            wire.Header.SyncSource = 0x5678;
+            wire.Header.MarkerBit = 1;
+            var remote = new IPEndPoint(IPAddress.Loopback, 20000);
+            var bytes = wire.GetBytes();
+            stream.OnReceiveRTPPacket(new RTPHeader(bytes), remote.Port, remote, bytes);
+        }
+
+        /// <summary>
+        /// When we offer telephone-event at PT 101 and the answer uses PT 100, we
+        /// keep sending on the answerer's PT 100 but, per RFC 3264, the answerer
+        /// sends its events to us on the PT 101 we offered, so those must still
+        /// be detected as RTP events.
+        /// </summary>
+        [Fact]
+        public void OfferedTelephoneEventPayloadId_StillReceivedWhenAnswerDiffers()
+        {
+            using (var session = new RtpSessionBuilder().WithTrack(PcmuAndTelephoneEvent101Track()).Build())
+            {
+                session.CreateOffer(IPAddress.Loopback);
+
+                SDP answer = SDP.ParseSDPDescription(
+@"v=0
+o=- 1000 0 IN IP4 192.0.2.10
+s=-
+c=IN IP4 192.0.2.10
+t=0 0
+m=audio 20000 RTP/AVP 0 100
+a=rtpmap:0 PCMU/8000
+a=rtpmap:100 telephone-event/8000
+a=fmtp:100 0-15
+a=sendrecv");
+
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    session.SetRemoteDescription(SdpType.answer, answer));
+
+                Assert.Equal(100, session.AudioStream.NegotiatedRtpEventPayloadID);
+                Assert.Equal(101, session.AudioStream.OfferedRtpEventPayloadID);
+
+                var received = new List<(int PayloadType, byte EventID)>();
+                session.OnRtpEvent += (ep, ev, hdr) => received.Add((hdr.PayloadType, ev.EventID));
+
+                ReceiveRtpEvent(session.AudioStream, 101, 5, 100, 8000);
+                ReceiveRtpEvent(session.AudioStream, 100, 7, 101, 16000);
+
+                Assert.Equal(new[] { (101, (byte)5), (100, (byte)7) }, received);
+            }
+        }
+
+        /// <summary>
+        /// The offered telephone-event PT is not treated as an RTP event if the
+        /// answer has reused that PT for a negotiated codec.
+        /// </summary>
+        [Fact]
+        public void OfferedTelephoneEventPayloadId_IgnoredWhenAnswerReusesItForACodec()
+        {
+            var localTrack = new MediaStreamTrack(
+                SDPMediaTypesEnum.audio, false,
+                new List<SDPAudioVideoMediaFormat>
+                {
+                    new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 111, "opus", 48000, 2),
+                    new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 101, "telephone-event", 8000),
+                });
+
+            using (var session = new RtpSessionBuilder().WithTrack(localTrack).Build())
+            {
+                session.CreateOffer(IPAddress.Loopback);
+
+                SDP answer = SDP.ParseSDPDescription(
+@"v=0
+o=- 1000 0 IN IP4 192.0.2.10
+s=-
+c=IN IP4 192.0.2.10
+t=0 0
+m=audio 20000 RTP/AVP 101 100
+a=rtpmap:101 opus/48000/2
+a=rtpmap:100 telephone-event/8000
+a=sendrecv");
+
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    session.SetRemoteDescription(SdpType.answer, answer));
+
+                Assert.Equal(100, session.AudioStream.NegotiatedRtpEventPayloadID);
+                Assert.Equal(0, session.AudioStream.OfferedRtpEventPayloadID);
+            }
+        }
+
+        /// <summary>
+        /// When we are the answerer we adopt the offerer's telephone-event PT,
+        /// so there is no separate offered PT to listen on.
+        /// </summary>
+        [Fact]
+        public void OfferedTelephoneEventPayloadId_NotSetWhenWeAnswer()
+        {
+            using (var session = new RtpSessionBuilder().WithTrack(PcmuAndTelephoneEvent101Track()).Build())
+            {
+                SDP offer = SDP.ParseSDPDescription(
+@"v=0
+o=- 1000 0 IN IP4 192.0.2.10
+s=-
+c=IN IP4 192.0.2.10
+t=0 0
+m=audio 20000 RTP/AVP 0 100
+a=rtpmap:0 PCMU/8000
+a=rtpmap:100 telephone-event/8000
+a=sendrecv");
+
+                Assert.Equal(SetDescriptionResultEnum.OK,
+                    session.SetRemoteDescription(SdpType.offer, offer));
+
+                Assert.Equal(100, session.AudioStream.NegotiatedRtpEventPayloadID);
+                Assert.Equal(0, session.AudioStream.OfferedRtpEventPayloadID);
             }
         }
     }

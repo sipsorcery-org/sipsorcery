@@ -42,6 +42,23 @@ namespace SIPSorcery.Net
 
         public static SDPAudioVideoMediaFormat Empty = new SDPAudioVideoMediaFormat() { _isEmpty = true };
 
+        private static readonly string[] s_wellKnownMediaFormatNames = CreateWellKnownMediaFormatNames();
+
+        internal static bool IsWellKnownFormat(int id)
+            => (uint)id < (uint)s_wellKnownMediaFormatNames.Length
+                && s_wellKnownMediaFormatNames[id] is not null;
+
+        private static string[] CreateWellKnownMediaFormatNames()
+        {
+            var names = new string[(int)SDPWellKnownMediaFormatsEnum.H263 + 1];
+            foreach (SDPWellKnownMediaFormatsEnum format in Enum.GetValues(typeof(SDPWellKnownMediaFormatsEnum)))
+            {
+                names[(int)format] = format.ToString();
+            }
+
+            return names;
+        }
+
         /// <summary>
         /// Indicates whether the format is for audio or video.
         /// </summary>
@@ -98,14 +115,55 @@ namespace SIPSorcery.Net
         /// </summary>
         public string Fmtp { get; }
 
-        public IEnumerable<string> SupportedRtcpFeedbackMessages
-        {
-            get
-            {
-                yield return "transport-cc";
-                //yield return "goog-remb";
-            }
-        }
+        /// <summary>
+        /// The RTCP feedback types (RFC 4585 "a=rtcp-fb" values) a locally created video format offers
+        /// when no explicit list has been set on it.
+        /// <list type="bullet">
+        /// <item>"nack": generic NACK, lets the receiver ask for lost packets to be sent again.</item>
+        /// <item>"nack pli": Picture Loss Indication, lets the receiver ask for a key frame.</item>
+        /// <item>"ccm fir": Full Intra Request (RFC 5104), the same request used by many SIP phones.</item>
+        /// <item>"transport-cc": transport wide congestion control feedback.</item>
+        /// </list>
+        /// Set this to change the default for the whole process, for example to an empty list to stop
+        /// advertising RTCP feedback.
+        /// </summary>
+        public static IReadOnlyList<string> DefaultVideoRtcpFeedbackMessages { get; set; } =
+            new[] { RTCP_FEEDBACK_NACK, RTCP_FEEDBACK_NACK_PLI, RTCP_FEEDBACK_CCM_FIR, RTCP_FEEDBACK_TRANSPORT_CC };
+
+        public const string RTCP_FEEDBACK_NACK = "nack";
+        public const string RTCP_FEEDBACK_NACK_PLI = "nack pli";
+        public const string RTCP_FEEDBACK_CCM_FIR = "ccm fir";
+        public const string RTCP_FEEDBACK_TRANSPORT_CC = "transport-cc";
+        public const string RTCP_FEEDBACK_GOOG_REMB = "goog-remb";
+
+        /// <summary>
+        /// Explicit RTCP feedback list for this format, or null to use the default for its kind.
+        /// Formats parsed from an SDP always carry an explicit (possibly empty) list.
+        /// </summary>
+        private string[] _rtcpFeedbackMessages;
+
+        /// <summary>
+        /// The empty list <see cref="WithUpdatedRtcpFeedbackMessages"/> sets when LINQ shares one (.NET 10 does),
+        /// or null when LINQ allocates a new empty array each time. Formats compare this list by reference, so
+        /// parsed formats share an empty list only when LINQ would.
+        /// </summary>
+        private static readonly string[] s_sharedEmptyRtcpFeedbackMessages = GetSharedEmptyRtcpFeedbackMessages();
+
+        /// <summary>
+        /// True if an explicit RTCP feedback list has been set, for example because the format was
+        /// parsed from a remote SDP or negotiated, rather than falling back to the defaults.
+        /// </summary>
+        public bool HasExplicitRtcpFeedbackMessages => _rtcpFeedbackMessages != null;
+
+        /// <summary>
+        /// The RTCP feedback types ("a=rtcp-fb" values, e.g. "nack pli", "ccm fir") supported for this format.
+        /// For a locally created video format this is <see cref="DefaultVideoRtcpFeedbackMessages"/>. For a
+        /// format parsed from an SDP it is the list the remote party advertised and, once negotiated, the
+        /// intersection of both parties' lists. Only written to SDP for video formats.
+        /// </summary>
+        public IEnumerable<string> SupportedRtcpFeedbackMessages =>
+            _rtcpFeedbackMessages ??
+            (Kind == SDPMediaTypesEnum.video ? (IEnumerable<string>)(DefaultVideoRtcpFeedbackMessages ?? Array.Empty<string>()) : Array.Empty<string>());
 
         /// <summary>
         /// The standard name of the media format.
@@ -178,42 +236,62 @@ namespace SIPSorcery.Net
             }
         }
 
+        public bool IsRed => MatchesCodecName("red");
+
+        public bool IsUlpfec => MatchesCodecName("ulpfec");
+
+        public bool IsFlexfec => MatchesCodecName("flexfec") || MatchesCodecName("flexfec-03");
+
+        public bool IsVideoMediaCodec =>
+            Kind == SDPMediaTypesEnum.video &&
+            !IsRed &&
+            !IsUlpfec &&
+            !IsFlexfec &&
+            !MatchesCodecName("rtx") &&
+            !_isEmpty;
+
+        internal static SDPAudioVideoMediaFormat CreateRedFormat(int id, int clockRate = 90000)
+            => new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, id, "red", clockRate);
+
+        internal static SDPAudioVideoMediaFormat CreateUlpfecFormat(int id, int clockRate = 90000)
+            => new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, id, "ulpfec", clockRate);
+
         public bool CheckCompatible()
         {
             if (IsH264 || IsMJPEG || isH265)
             {
-                var parameters = ParseWebRtcParameters(Fmtp);
-                if (parameters.TryGetValue("packetization-mode", out string packetizationMode))
+                if (TryGetWebRtcParameter(Fmtp, "packetization-mode", out var packetizationMode) &&
+                    !packetizationMode.SequenceEqual("1".AsSpan()))
                 {
-                    if (packetizationMode != "1")
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
             return true;
         }
 
-        private static Dictionary<string, string> ParseWebRtcParameters(string input)
+        private static bool TryGetWebRtcParameter(string input, ReadOnlySpan<char> name, out ReadOnlySpan<char> value)
         {
-            var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            value = default;
             if (string.IsNullOrEmpty(input))
             {
-                return parameters;
+                return false;
             }
 
+            var found = false;
             Span<Range> keyValueRange = stackalloc Range[3];
             var inputSpan = input.AsSpan();
             foreach (var pairRange in inputSpan.Split(';'))
             {
                 var pair = inputSpan[pairRange];
-                if (pair.Split(keyValueRange, '=') == 2)
+                if (pair.Split(keyValueRange, '=') == 2 &&
+                    pair[keyValueRange[0]].Trim().Equals(name, StringComparison.OrdinalIgnoreCase))
                 {
-                    parameters[pair[keyValueRange[0]].Trim().ToString()] = pair[keyValueRange[1]].Trim().ToString();
+                    value = pair[keyValueRange[1]].Trim();
+                    found = true;
                 }
             }
 
-            return parameters;
+            return found;
         }
 
         private bool MatchesCodecName(string codecName)
@@ -346,6 +424,28 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// The clock rate that this format's RTP timestamps are expressed in. This is the same as
+        /// <seealso cref="ClockRate"/> except for G722, where RFC3551 section 4.5.2 keeps the RTP
+        /// clock rate at 8000 even though the codec samples at 16000.
+        /// </summary>
+        /// <returns>The RTP timestamp clock rate in Hz.</returns>
+        public int RtpClockRate()
+        {
+            if (Kind == SDPMediaTypesEnum.video)
+            {
+                return ToVideoFormat().ClockRate;
+            }
+            else if (Kind == SDPMediaTypesEnum.text)
+            {
+                return ToTextFormat().ClockRate;
+            }
+            else
+            {
+                return ToAudioFormat().RtpClockRate;
+            }
+        }
+
         public int Channels() => Kind == SDPMediaTypesEnum.video || Kind == SDPMediaTypesEnum.text
                 ? 0
                 : TryParseRtpmap(Rtpmap, out _, out _, out var channels) ? channels : DEFAULT_AUDIO_CHANNEL_COUNT;
@@ -357,10 +457,10 @@ namespace SIPSorcery.Net
             {
                 return name;
             }
-            else if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), ID))
+            else if ((uint)ID < (uint)s_wellKnownMediaFormatNames.Length)
             {
                 // If no rtpmap available then it must be a well known format.
-                return Enum.ToObject(typeof(SDPWellKnownMediaFormatsEnum), ID).ToString();
+                return s_wellKnownMediaFormatNames[ID];
             }
             else
             {
@@ -376,13 +476,86 @@ namespace SIPSorcery.Net
         /// <param name="id">The ID to set on the new format.</param>
         /// <returns>A new format.</returns>
         public SDPAudioVideoMediaFormat WithUpdatedID(int id) =>
-            new SDPAudioVideoMediaFormat(Kind, id, Rtpmap, Fmtp);
+            new SDPAudioVideoMediaFormat(Kind, id, Rtpmap, Fmtp) { _rtcpFeedbackMessages = _rtcpFeedbackMessages };
 
         public SDPAudioVideoMediaFormat WithUpdatedRtpmap(string rtpmap) =>
-            new SDPAudioVideoMediaFormat(Kind, ID, rtpmap, Fmtp);
+            new SDPAudioVideoMediaFormat(Kind, ID, rtpmap, Fmtp) { _rtcpFeedbackMessages = _rtcpFeedbackMessages };
 
         public SDPAudioVideoMediaFormat WithUpdatedFmtp(string fmtp) =>
-            new SDPAudioVideoMediaFormat(Kind, ID, Rtpmap, fmtp);
+            new SDPAudioVideoMediaFormat(Kind, ID, Rtpmap, fmtp) { _rtcpFeedbackMessages = _rtcpFeedbackMessages };
+
+        /// <summary>
+        /// Creates a new format with an explicit list of RTCP feedback types ("a=rtcp-fb" values).
+        /// Duplicates are removed (case insensitive) and the order is preserved.
+        /// </summary>
+        /// <param name="rtcpFeedbackMessages">The feedback types, e.g. "nack pli". Null reverts to the defaults.</param>
+        public SDPAudioVideoMediaFormat WithUpdatedRtcpFeedbackMessages(IEnumerable<string> rtcpFeedbackMessages)
+        {
+            var copy = this;
+            copy._rtcpFeedbackMessages = rtcpFeedbackMessages?
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(NormaliseRtcpFeedback)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            return copy;
+        }
+
+        /// <summary>
+        /// Gets the RTCP feedback types listed by both formats, in the order of this format's list.
+        /// </summary>
+        public IEnumerable<string> GetCommonRtcpFeedbackMessages(SDPAudioVideoMediaFormat other)
+        {
+            var otherFeedback = other.SupportedRtcpFeedbackMessages.Select(NormaliseRtcpFeedback).ToList();
+            return SupportedRtcpFeedbackMessages
+                .Select(NormaliseRtcpFeedback)
+                .Where(x => otherFeedback.Contains(x, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        /// <summary>
+        /// Collapses internal white space so "nack  pli" and "nack pli" compare equal.
+        /// </summary>
+        private static string NormaliseRtcpFeedback(string feedback) =>
+            string.Join(" ", feedback.Split(new[] { ' ', '	' }, StringSplitOptions.RemoveEmptyEntries));
+
+        /// <summary>
+        /// Gets the same text as <see cref="NormaliseRtcpFeedback"/> for a feedback type parsed from an SDP, which
+        /// has no leading or trailing white space, without allocating for the common types.
+        /// </summary>
+        internal static string GetNormalisedRtcpFeedback(ReadOnlySpan<char> feedback) => feedback switch
+        {
+            RTCP_FEEDBACK_NACK => RTCP_FEEDBACK_NACK,
+            RTCP_FEEDBACK_NACK_PLI => RTCP_FEEDBACK_NACK_PLI,
+            RTCP_FEEDBACK_CCM_FIR => RTCP_FEEDBACK_CCM_FIR,
+            RTCP_FEEDBACK_TRANSPORT_CC => RTCP_FEEDBACK_TRANSPORT_CC,
+            RTCP_FEEDBACK_GOOG_REMB => RTCP_FEEDBACK_GOOG_REMB,
+
+            // Without a tab or a double space there is no white space to collapse.
+            _ when feedback.IndexOf('\t') < 0 && feedback.IndexOf("  ".AsSpan()) < 0 => feedback.ToString(),
+            _ => NormaliseRtcpFeedback(feedback.ToString()),
+        };
+
+        /// <summary>
+        /// Creates a new format with the feedback types parsed from an SDP, already normalised and with case
+        /// insensitive duplicates removed, giving the same result as <see cref="WithUpdatedRtcpFeedbackMessages"/>.
+        /// </summary>
+        internal SDPAudioVideoMediaFormat WithParsedRtcpFeedbackMessages(ReadOnlySpan<string> rtcpFeedbackMessages)
+        {
+            var copy = this;
+
+            // Span ToArray always returns a shared empty array, so a new one is created when LINQ would create one.
+            copy._rtcpFeedbackMessages = rtcpFeedbackMessages.IsEmpty
+                ? s_sharedEmptyRtcpFeedbackMessages ?? new string[0]
+                : rtcpFeedbackMessages.ToArray();
+            return copy;
+        }
+
+        private static string[] GetSharedEmptyRtcpFeedbackMessages()
+        {
+            var first = default(SDPAudioVideoMediaFormat).WithUpdatedRtcpFeedbackMessages(new List<string>())._rtcpFeedbackMessages;
+            var second = default(SDPAudioVideoMediaFormat).WithUpdatedRtcpFeedbackMessages(new List<string>())._rtcpFeedbackMessages;
+            return ReferenceEquals(first, second) ? first : null;
+        }
 
         /// <summary>
         /// Maps an audio SDP media type to a media abstraction layer audio format.
@@ -503,11 +676,18 @@ namespace SIPSorcery.Net
             {
                 foreach (var format in a)
                 {
-                    if (b.Any(x => AreMatch(format, x)))
+                    foreach (var match in b)
                     {
-                        if (format.CheckCompatible())
+                        if (AreMatch(format, match))
                         {
-                            compatible.Add(format);
+                            if (format.CheckCompatible())
+                            {
+                                // Only keep the RTCP feedback types both parties support (RFC 4585 section 4.2).
+                                compatible.Add(format.Kind == SDPMediaTypesEnum.video
+                                    ? format.WithUpdatedRtcpFeedbackMessages(format.GetCommonRtcpFeedbackMessages(match))
+                                    : format);
+                            }
+                            break;
                         }
                     }
                 }
@@ -620,7 +800,7 @@ namespace SIPSorcery.Net
         /// <returns>An SDP media format with a compatible RTP event format.</returns>
         public static SDPAudioVideoMediaFormat GetCommonRtpEventFormat(List<SDPAudioVideoMediaFormat> a, List<SDPAudioVideoMediaFormat> b)
         {
-            if (a == null || b == null || a.Count == 0 || b.Count() == 0)
+            if (a == null || b == null || a.Count == 0 || b.Count == 0)
             {
                 return Empty;
             }

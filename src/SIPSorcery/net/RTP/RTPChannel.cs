@@ -310,7 +310,7 @@ public class RTPChannel : IDisposable
                     m_rtpReceiver.BeginReceiveFrom();
                 }
 
-                sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
+                sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, new SendState(sendSocket, sendOn, dstEndPoint));
                 return SocketError.Success;
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
@@ -358,10 +358,11 @@ public class RTPChannel : IDisposable
     /// <param name="ar">The async result to complete the send with.</param>
     private void EndSendTo(IAsyncResult ar)
     {
+        var sendState = (SendState)ar.AsyncState;
+
         try
         {
-            Socket sendSocket = (Socket)ar.AsyncState;
-            int bytesSent = sendSocket.EndSendTo(ar);
+            int bytesSent = sendState.Socket.EndSendTo(ar);
         }
         catch (SocketException sockExcp)
         {
@@ -370,13 +371,32 @@ public class RTPChannel : IDisposable
             // - the RTP connection may start sending before the remote socket starts listening,
             // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
             //   or new socket during the transition.
-            logger.LogWarning(sockExcp, "SocketException RTPChannel EndSendTo ({SocketErrorCode}). {Message}", sockExcp.ErrorCode, sockExcp.Message);
+            logger.LogWarning(sockExcp, "SocketException RTPChannel EndSendTo ({SocketErrorCode}) on {SendOn} socket to {DestinationEndPoint}. {Message}",
+                sockExcp.ErrorCode, sendState.SendOn, sendState.DestinationEndPoint, sockExcp.Message);
         }
         catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
         { }
         catch (Exception excp)
         {
-            logger.LogError(excp, "Exception RTPChannel EndSendTo. {Message}", excp.Message);
+            logger.LogError(excp, "Exception RTPChannel EndSendTo on {SendOn} socket to {DestinationEndPoint}. {Message}",
+                sendState.SendOn, sendState.DestinationEndPoint, excp.Message);
+        }
+    }
+
+    /// <summary>
+    /// The state for an async send, kept so a send that fails can be reported with where it was going.
+    /// </summary>
+    private sealed class SendState
+    {
+        public Socket Socket { get; }
+        public RTPChannelSocketsEnum SendOn { get; }
+        public IPEndPoint DestinationEndPoint { get; }
+
+        public SendState(Socket socket, RTPChannelSocketsEnum sendOn, IPEndPoint destinationEndPoint)
+        {
+            Socket = socket;
+            SendOn = sendOn;
+            DestinationEndPoint = destinationEndPoint;
         }
     }
 
@@ -410,11 +430,37 @@ public class RTPChannel : IDisposable
 
                 // TURN data indication. Extract the data payload and adjust the end point.
                 var dataIndication = STUNMessage.ParseSTUNMessage(packet, packet.Length);
+
+                // The guard above admits anything from RTPHeader.MIN_HEADER_LEN bytes, which is short of
+                // the 20 a STUN header needs, so the indication itself may not be parseable.
+                if (dataIndication == null)
+                {
+                    logger.LogWarning("RTPChannel dropped a TURN data indication from {RemoteEndPoint} that was too short to parse.", remoteEndPoint);
+                    return;
+                }
+
                 var dataAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.Data).FirstOrDefault();
                 packet = dataAttribute?.Value;
 
                 var peerAddrAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress).FirstOrDefault();
                 remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
+
+                // The length guard above was applied to the original data indication, not to the relayed
+                // payload extracted from it, so it is re-applied here. The payload is multiplexed exactly
+                // like a packet arriving directly, so the same reasoning bounds it: anything shorter cannot
+                // be a valid packet of any of the types below. A data indication with no DATA attribute, or
+                // with a zero length one (STUNAttribute.ParseMessageAttributes leaves Value null in that
+                // case), leaves the payload null and the discriminator byte reads below would throw.
+                //
+                // Checking only for null or empty let a 1 to 19 byte payload through to a STUN re-parse it
+                // was too short for, which threw on the null header that came back. A relayed payload is
+                // something a peer sending to the client's allocation controls, and on the TURN over TLS
+                // read loop that throw ended the loop for good. See GHSA-6848-qmp4-652w.
+                if (packet == null || packet.Length < RTPHeader.MIN_HEADER_LEN)
+                {
+                    logger.LogWarning("RTPChannel dropped a TURN data indication from {RemoteEndPoint} with a missing, empty or too short DATA attribute.", remoteEndPoint);
+                    return;
+                }
             }
 
             LastRtpDestination = remoteEndPoint;
@@ -423,6 +469,16 @@ public class RTPChannel : IDisposable
             {
                 // STUN packet.
                 var stunMessage = STUNMessage.ParseSTUNMessage(packet, packet.Length);
+
+                // A packet between RTPHeader.MIN_HEADER_LEN and the 20 bytes a STUN header needs parses to
+                // null. Handlers read the header, so dispatching one would move the null reference rather
+                // than remove it.
+                if (stunMessage == null)
+                {
+                    logger.LogWarning("RTPChannel dropped a packet from {RemoteEndPoint} that was too short to parse as a STUN message.", remoteEndPoint);
+                    return;
+                }
+
                 OnStunMessageReceived?.Invoke(stunMessage, remoteEndPoint, wasRelayed);
             }
             else

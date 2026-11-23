@@ -363,8 +363,10 @@ namespace SIPSorcery.SIP.IntegrationTests
                 logger.LogDebug("Server Certificate loaded from file, Subject={Subject}, valid={Valid}.", serverCertificate.Subject, verifyCert);
 
                 var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.IPv6Loopback, 0);
+                serverChannel.BypassCertificateValidation = true;
                 serverChannel.DisableLocalTCPSocketsCheck = true;
                 var clientChannel = new SIPTLSChannel(new IPEndPoint(IPAddress.IPv6Loopback, 0));
+                clientChannel.BypassCertificateValidation = true;
                 clientChannel.DisableLocalTCPSocketsCheck = true;
 
                 var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); }, cancelServer.Token);
@@ -434,8 +436,10 @@ namespace SIPSorcery.SIP.IntegrationTests
                 logger.LogDebug("Server Certificate loaded from file, Subject={Subject}, valid={Valid}.", serverCertificate.Subject, verifyCert);
 
                 var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 0);
+                serverChannel.BypassCertificateValidation = true;
                 serverChannel.DisableLocalTCPSocketsCheck = true;
                 var clientChannel = new SIPTLSChannel(new IPEndPoint(IPAddress.Loopback, 0));
+                clientChannel.BypassCertificateValidation = true;
                 clientChannel.DisableLocalTCPSocketsCheck = true;
 
                 var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); }, cancelServer.Token);
@@ -687,6 +691,64 @@ namespace SIPSorcery.SIP.IntegrationTests
             logger.LogDebug("Test complete.");
         }
 
+        /// <summary>
+        /// Tests that a client web socket channel keeps servicing its connection after the server sends a
+        /// message with a Content-Length too large to be used.
+        /// </summary>
+        /// <remarks>
+        /// GHSA-j5j8-rhcm-7fp9. The oversized value threw out of the receive loop's parse, which ran before
+        /// the loop re-armed the connection's receive task. The completed task was left in place, so
+        /// Task.WaitAny returned it again immediately and the loop re-parsed the same bytes at 100% CPU for
+        /// as long as the process ran. Nothing sent after the bad message was ever processed, on this or on
+        /// any other connection the channel's single monitor task served, which is what this test asserts
+        /// against: the response sent straight after the bad message has to arrive.
+        /// </remarks>
+        [Fact]
+        public async Task WebSocketClientSurvivesOversizedContentLengthTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var serverChannel = new SIPWebSocketChannel(IPAddress.Loopback, 9002);
+            var clientChannel = new SIPClientWebSocketChannel();
+            var sipTransport = new SIPTransport();
+            sipTransport.AddSIPChannel(new List<SIPChannel> { serverChannel, clientChannel });
+
+            ManualResetEvent gotResponseMre = new ManualResetEvent(false);
+
+            sipTransport.SIPTransportRequestReceived += async (localSIPEndPoint, remoteEndPoint, sipRequest) =>
+            {
+                // Sent on the raw channel so that it reaches the client exactly as a hostile or on path
+                // web socket server would send it, ahead of anything the transport would produce.
+                byte[] oversizedMessage = Encoding.UTF8.GetBytes($"SIP/2.0 200 OK{SIPConstants.CRLF}Content-Length: 99999999999{SIPConstants.CRLF}{SIPConstants.CRLF}");
+                await serverChannel.SendAsync(remoteEndPoint, oversizedMessage, false, remoteEndPoint.ConnectionID);
+
+                SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                await sipTransport.SendResponseAsync(optionsResponse);
+            };
+
+            SIPResponse rtnResponse = null;
+
+            sipTransport.SIPTransportResponseReceived += (localSIPEndPoint, remoteEndPoint, sipResponse) =>
+            {
+                rtnResponse = sipResponse;
+                gotResponseMre.Set();
+                return Task.CompletedTask;
+            };
+
+            var serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, clientChannel.ListeningSIPEndPoint);
+            var optionsRequest = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
+            await sipTransport.SendRequestAsync(optionsRequest);
+
+            gotResponseMre.WaitOne(TRANSPORT_TEST_TIMEOUT, false);
+
+            Assert.NotNull(rtnResponse);
+
+            sipTransport.Shutdown();
+
+            logger.LogDebug("Test complete.");
+        }
+
         [Fact]
         public async Task TlsDoesNotGetStuckOnIncompleteTcpConnection()
         {
@@ -709,10 +771,12 @@ namespace SIPSorcery.SIP.IntegrationTests
             serverCertificate.Verify();
 
             var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 0);
+            serverChannel.BypassCertificateValidation = true;
             serverChannel.DisableLocalTCPSocketsCheck = true;
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); }, cancelServer.Token);
 
             var tlsClientChannel = new SIPTLSChannel(new IPEndPoint(IPAddress.Loopback, 0));
+            tlsClientChannel.BypassCertificateValidation = true;
             tlsClientChannel.DisableLocalTCPSocketsCheck = true;
 
             var tcpConnection = new TcpClient(new IPEndPoint(IPAddress.Loopback, 0));

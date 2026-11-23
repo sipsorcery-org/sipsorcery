@@ -23,7 +23,7 @@ using System;
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP
 {
-    public class SrtpKeys
+    internal class SrtpKeys
     {
         public SrtpProtectionProfileConfiguration ProtectionProfile { get; }
         public ReadOnlyMemory<byte> Mki { get; }

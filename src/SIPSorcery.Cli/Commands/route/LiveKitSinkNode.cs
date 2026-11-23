@@ -55,6 +55,7 @@ public sealed class LiveKitSinkNode : ISinkNode
     private readonly string _room;
     private readonly string _identity;
     private readonly AudioFormat _audioFormat;
+    private readonly VideoFormat _videoFormat;
     private readonly int _timeoutSeconds;
     private readonly ILogger _logger;
 
@@ -76,7 +77,7 @@ public sealed class LiveKitSinkNode : ISinkNode
     private int _dropped;
 
     public LiveKitSinkNode(string url, string apiKey, string apiSecret, string room, AudioFormat audioFormat,
-        int timeoutSeconds, ILogger logger)
+        VideoFormat videoFormat, int timeoutSeconds, ILogger logger)
     {
         _url = url;
         _apiKey = apiKey;
@@ -84,6 +85,7 @@ public sealed class LiveKitSinkNode : ISinkNode
         _room = room;
         _identity = $"cli-publisher-{Guid.NewGuid().ToString("N")[..8]}";
         _audioFormat = audioFormat;
+        _videoFormat = videoFormat;
         _timeoutSeconds = timeoutSeconds;
         _logger = logger;
     }
@@ -289,7 +291,7 @@ public sealed class LiveKitSinkNode : ISinkNode
         // The publisher peer connection carries the graph's encoded frames: send-only H264 video and the
         // (OPUS) audio the graph produces, relayed unchanged by Write (repacketise, not transcode).
         _publisherPc = new RTCPeerConnection();
-        _publisherPc.addTrack(new MediaStreamTrack(new List<VideoFormat> { RouteVideoFormats.H264 }, MediaStreamStatusEnum.SendOnly));
+        _publisherPc.addTrack(new MediaStreamTrack(new List<VideoFormat> { _videoFormat }, MediaStreamStatusEnum.SendOnly));
         _publisherPc.addTrack(new MediaStreamTrack(new List<AudioFormat> { _audioFormat }, MediaStreamStatusEnum.SendOnly));
 
         _publisherPc.onconnectionstatechange += (state) =>

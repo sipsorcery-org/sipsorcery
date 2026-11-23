@@ -29,7 +29,7 @@ using Bytes = byte[];
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP
 {
-    public interface ISrtpContext
+    internal interface ISrtpContext
     {
         int CalculateRequiredSrtpPayloadLength(int rtpLen);
         int ProtectRtp(ReadOnlyBytes input, Bytes output, out int outputBufferLength);
@@ -39,7 +39,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         int UnprotectRtcp(ReadOnlyBytes input, Bytes output, out int outputBufferLength);
     }
 
-    public static class SrtpContextExtensions
+    internal static class SrtpContextExtensions
     {
         public static int ProtectRtp(this ISrtpContext context, Bytes payload, int length, out int outputBufferLength)
             => context.ProtectRtp(payload.Slice(0, length), payload, out outputBufferLength);

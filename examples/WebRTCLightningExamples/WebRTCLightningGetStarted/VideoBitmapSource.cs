@@ -8,6 +8,7 @@
 //
 // History:
 // 26 Apr 2025	Aaron Clauson	Ported VideoBitmapSource to use fully managed ImageSharp library.
+// 21 Oct 2026	Aaron Clauson	Ported from ImageSharp to SkiaSharp.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -20,8 +21,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using SIPSorceryMedia.Abstractions;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp;
+using SkiaSharp;
 
 namespace SIPSorcery.Media;
 
@@ -160,7 +160,7 @@ public class VideoBitmapSource : IVideoSource, IDisposable
         return Task.CompletedTask;
     }
 
-    public void SetSourceBitmap(Image<Rgba32> image)
+    public void SetSourceBitmap(SKBitmap image)
     {
         var bitmapWidth = image.Width;
         var bitmapHeight = image.Height;
@@ -210,12 +210,24 @@ public class VideoBitmapSource : IVideoSource, IDisposable
         }
     }
 
-    private static byte[] ImageToI420(Image<Rgba32> image)
+    private static byte[] ImageToI420(SKBitmap image)
     {
+        // The pixel loop below assumes RGBA byte order. Decoded images are typically BGRA on Windows,
+        // so convert anything else first.
+        SKBitmap? converted = null;
+
         try
         {
+            if (image.ColorType != SKColorType.Rgba8888)
+            {
+                converted = image.Copy(SKColorType.Rgba8888)
+                    ?? throw new ApplicationException($"Failed to convert bitmap from {image.ColorType} to RGBA.");
+                image = converted;
+            }
+
             int width = image.Width;
             int height = image.Height;
+            int rowBytes = image.RowBytes;
 
             int yStride = width;
             int uvStride = width / 2;
@@ -225,46 +237,48 @@ public class VideoBitmapSource : IVideoSource, IDisposable
 
             byte[] i420Buffer = new byte[ySize + 2 * uvSize]; // I420 layout: Y plane, then U plane, then V plane.
 
-            image.ProcessPixelRows(accessor =>
+            ReadOnlySpan<byte> pixels = image.GetPixelSpan();
+
+            int yIndex = 0;
+            int uIndex = ySize;         // U plane starts after Y plane
+            int vIndex = uIndex + uvSize; // V plane starts after U plane
+
+            for (int j = 0; j < height; j++)
             {
-                int yIndex = 0;
-                int uIndex = ySize;         // U plane starts after Y plane
-                int vIndex = uIndex + uvSize; // V plane starts after U plane
+                ReadOnlySpan<byte> pixelRow = pixels.Slice(j * rowBytes, width * 4);
 
-                for (int j = 0; j < height; j++)
+                for (int i = 0; i < width; i++)
                 {
-                    Span<Rgba32> pixelRow = accessor.GetRowSpan(j);
+                    byte r = pixelRow[i * 4];
+                    byte g = pixelRow[i * 4 + 1];
+                    byte b = pixelRow[i * 4 + 2];
 
-                    for (int i = 0; i < width; i++)
+                    // Convert RGB to YUV (BT.601 standard)
+                    byte y = (byte)((0.299 * r) + (0.587 * g) + (0.114 * b));
+                    byte u = (byte)((-0.168736 * r) + (-0.331264 * g) + (0.5 * b) + 128);
+                    byte v = (byte)((0.5 * r) + (-0.418688 * g) + (-0.081312 * b) + 128);
+
+                    // Write Y plane
+                    i420Buffer[yIndex++] = y;
+
+                    // Subsample U & V (4:2:0 means one U & V sample for every 2x2 block)
+                    if (j % 2 == 0 && i % 2 == 0)
                     {
-                        Rgba32 pixel = pixelRow[i];
-                        byte r = pixel.R;
-                        byte g = pixel.G;
-                        byte b = pixel.B;
-
-                        // Convert RGB to YUV (BT.601 standard)
-                        byte y = (byte)((0.299 * r) + (0.587 * g) + (0.114 * b));
-                        byte u = (byte)((-0.168736 * r) + (-0.331264 * g) + (0.5 * b) + 128);
-                        byte v = (byte)((0.5 * r) + (-0.418688 * g) + (-0.081312 * b) + 128);
-
-                        // Write Y plane
-                        i420Buffer[yIndex++] = y;
-
-                        // Subsample U & V (4:2:0 means one U & V sample for every 2x2 block)
-                        if (j % 2 == 0 && i % 2 == 0)
-                        {
-                            i420Buffer[uIndex++] = u;
-                            i420Buffer[vIndex++] = v;
-                        }
+                        i420Buffer[uIndex++] = u;
+                        i420Buffer[vIndex++] = v;
                     }
                 }
-            });
+            }
 
             return i420Buffer;
         }
         catch (Exception)
         {
             return Array.Empty<byte>();
+        }
+        finally
+        {
+            converted?.Dispose();
         }
     }
 

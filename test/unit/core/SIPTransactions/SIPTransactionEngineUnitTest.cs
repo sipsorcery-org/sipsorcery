@@ -73,6 +73,98 @@ namespace SIPSorcery.SIP.UnitTests
         }
 
         /// <summary>
+        /// Tests that a non-INVITE transaction created for a RECEIVED request is added to the
+        /// transaction engine straight away, rather than when it first sends a response.
+        /// </summary>
+        /// <remarks>
+        /// This is what lets a retransmitted request be recognised as a duplicate. An application
+        /// handling something slow - a REFER being relayed to another leg, a MESSAGE being handed
+        /// off - can take seconds to produce a final response, and every retransmission arriving in
+        /// that window would otherwise be delivered to it as a brand new request.
+        ///
+        /// The equivalent registration for INVITE lives in the UASInviteTransaction constructor.
+        /// This one was lost in Dec 2019 when the SIPTransport.CreateNonInviteTransaction factory,
+        /// which used to do the adding, was removed in an async refactor.
+        /// </remarks>
+        [Fact]
+        public void NonInviteServerTransactionAddedToEngineOnCreationTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            SIPTransport sipTransport = new SIPTransport();
+            SIPTransactionEngine transactionEngine = sipTransport.m_transactionEngine;
+
+            SIPRequest referRequest = ReceivedReferRequest();
+
+            Assert.Null(transactionEngine.GetTransaction(referRequest));
+
+            SIPNonInviteTransaction tx = new SIPNonInviteTransaction(sipTransport, referRequest, null);
+
+            // Note what has deliberately NOT happened: no response of any kind has been sent.
+            var matched = transactionEngine.GetTransaction(referRequest);
+
+            Assert.NotNull(matched);
+            Assert.Equal(tx.TransactionId, matched.TransactionId);
+        }
+
+        /// <summary>
+        /// Tests that a non-INVITE transaction the application creates to SEND a request is not
+        /// added to the engine until it is sent.
+        /// </summary>
+        /// <remarks>
+        /// The other half of the rule, pinned so a change to one direction cannot quietly alter the
+        /// other. The same class serves both roles and the received end point is what separates
+        /// them, so an outbound transaction that registered on construction would put a transaction
+        /// into the engine for a request that may never be sent at all.
+        /// </remarks>
+        [Fact]
+        public void NonInviteClientTransactionNotAddedToEngineOnCreationTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            SIPTransport sipTransport = new SIPTransport();
+            SIPTransactionEngine transactionEngine = sipTransport.m_transactionEngine;
+
+            // Parsed from a string rather than from a receive buffer, so it carries no remote end
+            // point: this is a request the application is about to send.
+            SIPRequest referRequest = SIPRequest.ParseSIPRequest(ReferRequestText());
+
+            Assert.Null(referRequest.RemoteSIPEndPoint);
+
+            _ = new SIPNonInviteTransaction(sipTransport, referRequest, null);
+
+            Assert.Null(transactionEngine.GetTransaction(referRequest));
+        }
+
+        /// <summary>
+        /// A REFER as it arrives off the wire, with the end point it was received from set.
+        /// </summary>
+        private SIPRequest ReceivedReferRequest()
+        {
+            var buffer = SIPMessageBuffer.ParseSIPMessage(
+                System.Text.Encoding.UTF8.GetBytes(ReferRequestText()),
+                new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.Loopback, 5060),
+                new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.Loopback, 1234));
+
+            return SIPRequest.ParseSIPRequest(buffer);
+        }
+
+        private string ReferRequestText() =>
+            $"REFER sip:dummy@127.0.0.1:12014 SIP/2.0{m_CRLF}" +
+            $"Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK4e2f1c9d1b4a4f0d9a6e2c7b3f8a5d1e{m_CRLF}" +
+            $"To: <sip:dummy@127.0.0.1:12014>;tag=8675309{m_CRLF}" +
+            $"From: <sip:unittest@mysipswitch.com>;tag=2062917371{m_CRLF}" +
+            $"Call-ID: 4d8f2a1b6c3e4a7d9b0f5e8c2a1d6b3f{m_CRLF}" +
+            $"CSeq: 4 REFER{m_CRLF}" +
+            $"Contact: <sip:127.0.0.1:1234>{m_CRLF}" +
+            $"Refer-To: <sip:target@mysipswitch.com>{m_CRLF}" +
+            $"Max-Forwards: 70{m_CRLF}" +
+            $"User-Agent: unittest{m_CRLF}" +
+            $"Content-Length: 0{m_CRLF}{m_CRLF}";
+
+        /// <summary>
         /// Tests the production and recognition of an ACK request for this transaction engine.
         /// The test uses two different transaction engine instances with one acting as the client and one as the server.
         /// </summary>

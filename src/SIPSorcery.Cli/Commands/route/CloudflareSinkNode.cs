@@ -50,6 +50,7 @@ public sealed class CloudflareSinkNode : ISinkNode
     private readonly string _appId;
     private readonly string _token;
     private readonly AudioFormat _audioFormat;
+    private readonly VideoFormat _videoFormat;
     private readonly int _timeoutSeconds;
     private readonly ILogger _logger;
 
@@ -62,11 +63,13 @@ public sealed class CloudflareSinkNode : ISinkNode
     private long _bytesSent;
     private int _dropped;
 
-    public CloudflareSinkNode(string appId, string token, AudioFormat audioFormat, int timeoutSeconds, ILogger logger)
+    public CloudflareSinkNode(string appId, string token, AudioFormat audioFormat, VideoFormat videoFormat,
+        int timeoutSeconds, ILogger logger)
     {
         _appId = appId;
         _token = token;
         _audioFormat = audioFormat;
+        _videoFormat = videoFormat;
         _timeoutSeconds = timeoutSeconds;
         _logger = logger;
 
@@ -105,7 +108,7 @@ public sealed class CloudflareSinkNode : ISinkNode
         var config = new RTCConfiguration { iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } } };
         var pc = new RTCPeerConnection(config);
         _pc = pc;
-        pc.addTrack(new MediaStreamTrack(new List<VideoFormat> { RouteVideoFormats.H264 }, MediaStreamStatusEnum.SendOnly));
+        pc.addTrack(new MediaStreamTrack(new List<VideoFormat> { _videoFormat }, MediaStreamStatusEnum.SendOnly));
         pc.addTrack(new MediaStreamTrack(new List<AudioFormat> { _audioFormat }, MediaStreamStatusEnum.SendOnly));
 
         var connected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

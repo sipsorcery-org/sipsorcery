@@ -10,7 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
 
 # Install the required libraries for FFmpeg in the final image.
-# Additionally install fontconfig and the MS corefonts installer for te fonts used with ImageSharp.
+# Additionally install fontconfig and the MS corefonts installer for the fonts used with SkiaSharp.
 RUN apt-get update && apt-get install -y \
     libdrm2 \
     libsdl2-2.0-0 \

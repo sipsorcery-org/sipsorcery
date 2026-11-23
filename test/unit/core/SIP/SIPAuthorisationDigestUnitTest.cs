@@ -400,7 +400,7 @@ opaque=""FQhe/qaU925kfnzjCev0ciny7QMkPqMAFRtzCUYo5tdS""");
 
             var authResult = SIPRequestAuthenticator.AuthenticateSIPRequest(SIPEndPoint.Empty, SIPEndPoint.Empty, req, account);
 
-            var authReq = req.DuplicateAndAuthenticate(new List<SIPAuthenticationHeader> { authResult.AuthenticationRequiredHeader }, 
+            var authReq = req.DuplicateAndAuthenticate(new List<SIPAuthenticationHeader> { authResult.AuthenticationRequiredHeader },
                 account.SIPUsername, account.SIPPassword);
 
             logger.LogDebug("Auth req={authReq}", authReq);
@@ -425,13 +425,63 @@ opaque=""FQhe/qaU925kfnzjCev0ciny7QMkPqMAFRtzCUYo5tdS""");
             var authResult = SIPRequestAuthenticator.AuthenticateSIPRequest(SIPEndPoint.Empty, SIPEndPoint.Empty, req, account);
             authResult.AuthenticationRequiredHeader.SIPDigest.DigestAlgorithm = DigestAlgorithmsEnum.SHA256;
 
+            string ha1Digest = HTTPDigest.DigestCalcHA1(
+                account.SIPUsername,
+                authResult.AuthenticationRequiredHeader.SIPDigest.Realm,
+                account.SIPPassword,
+                DigestAlgorithmsEnum.SHA256);
+            GetHA1DigestDelegate getHA1Digest = (username, realm, digestAlgorithm) =>
+                username == account.SIPUsername &&
+                realm == authResult.AuthenticationRequiredHeader.SIPDigest.Realm &&
+                digestAlgorithm == DigestAlgorithmsEnum.SHA256
+                    ? ha1Digest
+                    : null;
+
             var authReq = req.DuplicateAndAuthenticate(new List<SIPAuthenticationHeader> { authResult.AuthenticationRequiredHeader },
-                account.SIPUsername, account.SIPPassword);
+                account.SIPUsername, getHA1Digest);
 
             logger.LogDebug("Auth req={authReq}", authReq);
 
             authResult = SIPRequestAuthenticator.AuthenticateSIPRequest(SIPEndPoint.Empty, SIPEndPoint.Empty, authReq, account);
 
+            Assert.True(authResult.Authenticated);
+        }
+
+        [Fact]
+        public void SIPRequestHA1ResolverFallsBackWhenPreferredChallengeHasNoCredential()
+        {
+            var account = new MockSIPAccount("user", "password");
+            var req = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, SIPURI.ParseSIPURI("sip:100@0.0.0.0"));
+            var authResult = SIPRequestAuthenticator.AuthenticateSIPRequest(SIPEndPoint.Empty, SIPEndPoint.Empty, req, account);
+            var md5Challenge = authResult.AuthenticationRequiredHeader;
+            var sha256Challenge = new SIPAuthenticationHeader(md5Challenge.SIPDigest.CopyOf());
+            sha256Challenge.SIPDigest.DigestAlgorithm = DigestAlgorithmsEnum.SHA256;
+
+            string md5HA1Digest = HTTPDigest.DigestCalcHA1(
+                account.SIPUsername,
+                md5Challenge.SIPDigest.Realm,
+                account.SIPPassword,
+                DigestAlgorithmsEnum.MD5);
+            var resolvedAlgorithms = new List<DigestAlgorithmsEnum>();
+            GetHA1DigestDelegate getHA1Digest = (username, realm, digestAlgorithm) =>
+            {
+                resolvedAlgorithms.Add(digestAlgorithm);
+                return username == account.SIPUsername &&
+                    realm == md5Challenge.SIPDigest.Realm &&
+                    digestAlgorithm == DigestAlgorithmsEnum.MD5
+                        ? md5HA1Digest
+                        : null;
+            };
+
+            var authReq = req.DuplicateAndAuthenticate(
+                new List<SIPAuthenticationHeader> { sha256Challenge, md5Challenge },
+                account.SIPUsername,
+                getHA1Digest);
+
+            Assert.Equal(new[] { DigestAlgorithmsEnum.SHA256, DigestAlgorithmsEnum.MD5 }, resolvedAlgorithms);
+            Assert.Equal(DigestAlgorithmsEnum.MD5, authReq.Header.AuthenticationHeaders[0].SIPDigest.DigestAlgorithm);
+
+            authResult = SIPRequestAuthenticator.AuthenticateSIPRequest(SIPEndPoint.Empty, SIPEndPoint.Empty, authReq, account);
             Assert.True(authResult.Authenticated);
         }
 

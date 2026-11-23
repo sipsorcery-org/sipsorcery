@@ -161,6 +161,11 @@ namespace SIPSorcery.UnitTests
         public event Action<SDPMediaTypesEnum> OnTimeout;
 #pragma warning restore 67
 
+        /// <summary>
+        /// Allows tests to simulate an RTP inactivity timeout on the media session.
+        /// </summary>
+        public void RaiseTimeout(SDPMediaTypesEnum mediaType) => OnTimeout?.Invoke(mediaType);
+
         public void Close(string reason)
         {
             IsClosed = true;

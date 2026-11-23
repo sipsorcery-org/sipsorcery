@@ -122,7 +122,7 @@ namespace SIPSorcery.Net.IntegrationTests
             Assert.NotEmpty(result.Answers?.AddressRecords());
             logger.LogDebug("Lookup result {FirstAddress}.", result.Answers.AddressRecords().First().Address);
 
-            Assert.Equal("67.222.131.148", result.Answers.AddressRecords().First().Address.ToString());
+            Assert.Equal("167.99.18.237", result.Answers.AddressRecords().First().Address.ToString());
 
             //result = DNSManager.Lookup("67.222.131.148", QType.A, 10, null, false, false);
             //result = await SIPDns.LookupClient.QueryAsync("67.222.131.148", QueryType.A);

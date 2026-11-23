@@ -5,7 +5,7 @@
 //
 // Remarks:
 // 
-// An example of an "application" type media announcement use is negotiating
+// An example of an "application" type media writer use is negotiating
 // SCTP-over-DTLS which acts as the transport for WebRTC data channels.
 // https://tools.ietf.org/html/rfc8841
 // "Session Description Protocol (SDP) Offer/Answer Procedures for Stream
@@ -27,12 +27,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Polyfills;
-using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Net
@@ -69,18 +68,31 @@ namespace SIPSorcery.Net
 
     public class SDPMediaAnnouncement
     {
-        public const string MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX = "a=extmap:";
-        public const string MEDIA_FORMAT_ATTRIBUTE_PREFIX = "a=rtpmap:";
-        public const string MEDIA_FORMAT_FEEDBACK_PREFIX = "a=rtcp-fb:";
-        public const string MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX = "a=fmtp:";
-        public const string MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX = "a=ssrc:";
-        public const string MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX = "a=ssrc-group:";
-        public const string MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX = "a=sctpmap:";
-        public const string MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX = "a=sctp-port:";
-        public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX = "a=max-message-size:";
-        public const string MEDIA_FORMAT_PATH_MSRP_PREFIX = "a=path:msrp:";
-        public const string MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX = "a=accept-types:";
-        public const string TIAS_BANDWIDTH_ATTRIBUE_PREFIX = "b=TIAS:";
+        public const string MEDIA_EXTENSION_MAP_ATTRIBUE_NAME = "extmap";
+        public const string MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX = "a=" + MEDIA_EXTENSION_MAP_ATTRIBUE_NAME + ":";
+        public const string MEDIA_FORMAT_ATTRIBUTE_NAME = "rtpmap";
+        public const string MEDIA_FORMAT_ATTRIBUTE_PREFIX = "a=" + MEDIA_FORMAT_ATTRIBUTE_NAME + ":";
+        public const string MEDIA_FORMAT_FEEDBACK_NAME = "rtcp-fb";
+        public const string MEDIA_FORMAT_FEEDBACK_PREFIX = "a=" + MEDIA_FORMAT_FEEDBACK_NAME + ":";
+        public const string MEDIA_FORMAT_PARAMETERS_ATTRIBUE_NAME = "fmtp";
+        public const string MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX = "a=" + MEDIA_FORMAT_PARAMETERS_ATTRIBUE_NAME + ":";
+        public const string MEDIA_FORMAT_SSRC_ATTRIBUE_NAME = "ssrc";
+        public const string MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX = "a=" + MEDIA_FORMAT_SSRC_ATTRIBUE_NAME + ":";
+        public const string MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_NAME = "ssrc-group";
+        public const string MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX = "a=" + MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_NAME + ":";
+        public const string MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_NAME = "sctpmap";
+        public const string MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX = "a=" + MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_NAME + ":";
+        public const string MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_NAME = "sctp-port";
+        public const string MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX = "a=" + MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_NAME + ":";
+        public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_NAME = "max-message-size";
+        public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX = "a=" + MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_NAME + ":";
+        public const string MEDIA_FORMAT_PATH_MSRP_NAME = "path";
+        public const string MEDIA_FORMAT_PATH_MSRP_SCHEME = "msrp";
+        public const string MEDIA_FORMAT_PATH_MSRP_PREFIX = "a=" + MEDIA_FORMAT_PATH_MSRP_NAME + ":" + MEDIA_FORMAT_PATH_MSRP_SCHEME + ":";
+        public const string MEDIA_FORMAT_PATH_ACCEPT_TYPES_NAME = "accept-types";
+        public const string MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX = "a=" + MEDIA_FORMAT_PATH_ACCEPT_TYPES_NAME + ":";
+        public const string TIAS_BANDWIDTH_ATTRIBUE_NAME = "TIAS";
+        public const string TIAS_BANDWIDTH_ATTRIBUE_PREFIX = "b=" + TIAS_BANDWIDTH_ATTRIBUE_NAME + ":";
 
         public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
 
@@ -242,40 +254,58 @@ namespace SIPSorcery.Net
             MessageMediaFormat = messageMediaFormat;
         }
 
-        public void ParseMediaFormats(string formatList)
-        {
-            if (!String.IsNullOrWhiteSpace(formatList))
-            {
-                var formatListSpan = formatList.AsSpan();
-                foreach (var formatIDRange in formatListSpan.SplitAny())
-                {
-                    var formatIDSpan = formatListSpan[formatIDRange];
+        public void ParseMediaFormats(string formatList) => ParseMediaFormats(formatList.AsSpan());
 
-                    if (Media == SDPMediaTypesEnum.application)
+        public void ParseMediaFormats(ReadOnlySpan<char> formatList)
+        {
+            if (formatList.IsWhiteSpace())
+            {
+                return;
+            }
+
+            if (Media is not (SDPMediaTypesEnum.application or SDPMediaTypesEnum.message))
+            {
+                // Every format takes at least one character and a separator, which bounds how many there can be.
+                ReserveParsedFormatOrder((formatList.Length + 1) / 2);
+            }
+
+            foreach (var formatIDRange in formatList.SplitAny())
+            {
+                var formatIDSpan = formatList[formatIDRange];
+
+                if (Media == SDPMediaTypesEnum.application)
+                {
+                    var formatID = formatIDSpan.ToString();
+                    ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID));
+                }
+                else if (Media == SDPMediaTypesEnum.message)
+                {
+                    //TODO
+                }
+                else
+                {
+                    if (!int.TryParse(formatIDSpan, out var id))
                     {
-                        var formatID = formatIDSpan.ToString();
-                        ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID));
+                        continue;
                     }
-                    else if (Media == SDPMediaTypesEnum.message)
+
+                    _parsedFormatOrder[_parsedFormatOrderCount++] = id;
+
+                    // The range check is cheaper than the lookup and rejects every dynamic payload type, which is
+                    // most of the formats a WebRTC offer lists, so it runs first.
+                    if (id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN
+                        && !MediaFormats.ContainsKey(id))
                     {
-                        //TODO
-                    }
-                    else
-                    {
-                        if (int.TryParse(formatIDSpan, out var id)
-                            && !MediaFormats.ContainsKey(id)
-                            && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
+                        if (SDPAudioVideoMediaFormat.IsWellKnownFormat(id))
                         {
-                            var formatID = formatIDSpan.ToString();
-                            if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), id) &&
-                                Enum.TryParse<SDPWellKnownMediaFormatsEnum>(formatID, out var wellKnown))
-                            {
-                                MediaFormats.Add(id, new SDPAudioVideoMediaFormat(wellKnown));
-                            }
-                            else
-                            {
-                                logger.LogWarning("Excluding unrecognised well known media format ID {FormatID}.", id);
-                            }
+                            MediaFormats.Add(id, new SDPAudioVideoMediaFormat((SDPWellKnownMediaFormatsEnum)id));
+                        }
+                        else
+                        {
+                            // Endpoints routinely list static payload types the library doesn't know (e.g. ones
+                            // in RFC 3551's unassigned range). Dropping them is the correct handling and needs
+                            // no action, so this is debug detail rather than a warning.
+                            logger.LogSdpExcludingUnrecognisedWellKnownFormat(id);
                         }
                     }
                 }
@@ -284,107 +314,124 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            var announcement = new StringBuilder();
-            announcement.Append("m=").Append(Media).Append(' ').Append(Port).Append(' ').Append(Transport).Append(' ')
-                .Append(GetFormatListToString()).Append(m_CRLF);
+            var builder = new StringBuilder();
+            WriteString(builder);
+            return builder.ToString();
+        }
+
+        public void WriteString(StringBuilder builder)
+        {
+            builder
+                .Append("m=")
+                .Append(GetMediaTypeName(Media))
+                .Append(' ')
+                .Append(Port)
+                .Append(' ')
+                .Append(Transport)
+                .Append(' ');
+            WriteFormatListString(builder);
+            builder.Append(m_CRLF);
 
             if (!string.IsNullOrWhiteSpace(MediaDescription))
             {
-                announcement.Append("i=").Append(MediaDescription).Append(m_CRLF);
+                builder.Append("i=").Append(MediaDescription).Append(m_CRLF);
             }
 
             if (Connection != null)
             {
-                announcement.Append(Connection);
+                Connection.WriteString(builder);
             }
 
             if (TIASBandwidth > 0)
             {
-                announcement.Append(TIAS_BANDWIDTH_ATTRIBUE_PREFIX).Append(TIASBandwidth).Append(m_CRLF);
+                builder.Append(TIAS_BANDWIDTH_ATTRIBUE_PREFIX).Append(TIASBandwidth).Append(m_CRLF);
             }
 
-            foreach (string bandwidthAttribute in BandwidthAttributes)
+            foreach (var bandwidthAttribute in BandwidthAttributes)
             {
-                announcement.Append("b=").Append(bandwidthAttribute).Append(m_CRLF);
+                builder.Append("b=").Append(bandwidthAttribute).Append(m_CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(IceUfrag))
             {
-                announcement.Append("a=").Append(SDP.ICE_UFRAG_ATTRIBUTE_PREFIX).Append(':').Append(IceUfrag).Append(m_CRLF);
+                builder.Append("a=" + SDP.ICE_UFRAG_ATTRIBUTE_PREFIX + ":").Append(IceUfrag).Append(m_CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(IcePwd))
             {
-                announcement.Append("a=").Append(SDP.ICE_PWD_ATTRIBUTE_PREFIX).Append(':').Append(IcePwd).Append(m_CRLF);
+                builder.Append("a=" + SDP.ICE_PWD_ATTRIBUTE_PREFIX + ":").Append(IcePwd).Append(m_CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(DtlsFingerprint))
             {
-                announcement.Append("a=").Append(SDP.DTLS_FINGERPRINT_ATTRIBUTE_PREFIX).Append(':').Append(DtlsFingerprint).Append(m_CRLF);
+                builder.Append("a=" + SDP.DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":").Append(DtlsFingerprint).Append(m_CRLF);
             }
 
-            if (IceRole != null)
+            if (IceRole is { } iceRole)
             {
-                announcement.Append("a=").Append(SDP.ICE_SETUP_ATTRIBUTE_PREFIX).Append(':').Append(IceRole).Append(m_CRLF);
+                builder.Append("a=" + SDP.ICE_SETUP_ATTRIBUTE_PREFIX + ":").Append(GetIceRoleName(iceRole)).Append(m_CRLF);
             }
 
-            if (IceCandidates?.Count() > 0)
+            if (IceCandidates?.Count > 0)
             {
                 foreach (var candidate in IceCandidates)
                 {
-                    announcement.Append("a=").Append(SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX).Append(':').Append(candidate).Append(m_CRLF);
+                    builder.Append("a=" + SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX + ":").Append(candidate).Append(m_CRLF);
                 }
             }
 
             if (IceOptions != null)
             {
-                announcement.Append("a=").Append(SDP.ICE_OPTIONS).Append(':').Append(IceOptions).Append(m_CRLF);
+                builder.Append("a=" + SDP.ICE_OPTIONS + ":").Append(IceOptions).Append(m_CRLF);
             }
 
             if (IceEndOfCandidates)
             {
-                announcement.Append("a=").Append(SDP.END_ICE_CANDIDATES_ATTRIBUTE).Append(m_CRLF);
+                builder.Append("a=" + SDP.END_ICE_CANDIDATES_ATTRIBUTE).Append(m_CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(MediaID))
             {
-                announcement.Append("a=").Append(SDP.MEDIA_ID_ATTRIBUTE_PREFIX).Append(':').Append(MediaID).Append(m_CRLF);
+                builder.Append("a=" + SDP.MEDIA_ID_ATTRIBUTE_PREFIX + ":").Append(MediaID).Append(m_CRLF);
             }
 
-            announcement.Append(GetFormatListAttributesToString());
+            WriteFormatListAttributesString(builder);
 
             foreach (var headerExtension in HeaderExtensions)
             {
-                announcement.Append(MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX).Append(headerExtension.Value.Id).Append(' ')
+                builder.Append(MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX).Append(headerExtension.Value.Id).Append(' ')
                     .Append(headerExtension.Value.Uri).Append(m_CRLF);
             }
 
-            foreach (string extra in ExtraMediaAttributes)
+            foreach (var extra in ExtraMediaAttributes)
             {
                 if (!string.IsNullOrWhiteSpace(extra))
                 {
-                    announcement.Append(extra).Append(m_CRLF);
+                    builder.Append(extra).Append(m_CRLF);
                 }
             }
 
-            foreach (SDPSecurityDescription desc in this.SecurityDescriptions)
+            foreach (var desc in this.SecurityDescriptions)
             {
-                announcement.Append(desc.ToString()).Append(m_CRLF);
+                if (desc.WriteString(builder))
+                {
+                    builder.Append(m_CRLF);
+                }
             }
 
             if (MediaStreamStatus != null)
             {
-                announcement.Append(MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus.Value)).Append(m_CRLF);
+                builder.Append(MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus.Value)).Append(m_CRLF);
             }
 
             if (SsrcGroupID != null && SsrcAttributes.Count > 0)
             {
-                announcement.Append(MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX).Append(SsrcGroupID);
+                builder.Append(MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX).Append(SsrcGroupID);
                 foreach (var ssrcAttr in SsrcAttributes)
                 {
-                    announcement.Append(' ').Append(ssrcAttr.SSRC);
+                    builder.Append(' ').Append(ssrcAttr.SSRC);
                 }
-                announcement.Append(m_CRLF);
+                builder.Append(m_CRLF);
             }
 
             if (SsrcAttributes.Count > 0)
@@ -393,12 +440,12 @@ namespace SIPSorcery.Net
                 {
                     if (!string.IsNullOrWhiteSpace(ssrcAttr.Cname))
                     {
-                        announcement.Append(MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX).Append(ssrcAttr.SSRC).Append(' ')
+                        builder.Append(MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX).Append(ssrcAttr.SSRC).Append(' ')
                             .Append(SDPSsrcAttribute.MEDIA_CNAME_ATTRIBUE_PREFIX).Append(':').Append(ssrcAttr.Cname).Append(m_CRLF);
                     }
                     else
                     {
-                        announcement.Append(MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX).Append(ssrcAttr.SSRC).Append(m_CRLF);
+                        builder.Append(MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX).Append(ssrcAttr.SSRC).Append(m_CRLF);
                     }
                 }
             }
@@ -408,157 +455,467 @@ namespace SIPSorcery.Net
             // an application sets it then it's likely to be for a specific reason.
             if (SctpMap != null)
             {
-                announcement.Append(MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX).Append(SctpMap).Append(m_CRLF);
+                builder.Append(MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX).Append(SctpMap).Append(m_CRLF);
             }
             else
             {
                 if (SctpPort != null)
                 {
-                    announcement.Append(MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX).Append(SctpPort).Append(m_CRLF);
+                    builder.Append(MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX).Append(SctpPort).Append(m_CRLF);
                 }
 
                 if (MaxMessageSize != 0)
                 {
-                    announcement.Append(MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX).Append(MaxMessageSize).Append(m_CRLF);
+                    builder.Append(MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX).Append(MaxMessageSize).Append(m_CRLF);
                 }
             }
 
-            return announcement.ToString();
+            // TODO: use https://www.nuget.org/packages/NetEscapades.EnumGenerators
+            static string GetMediaTypeName(SDPMediaTypesEnum media) => media switch
+            {
+                SDPMediaTypesEnum.invalid => nameof(SDPMediaTypesEnum.invalid),
+                SDPMediaTypesEnum.audio => nameof(SDPMediaTypesEnum.audio),
+                SDPMediaTypesEnum.video => nameof(SDPMediaTypesEnum.video),
+                SDPMediaTypesEnum.application => nameof(SDPMediaTypesEnum.application),
+                SDPMediaTypesEnum.data => nameof(SDPMediaTypesEnum.data),
+                SDPMediaTypesEnum.control => nameof(SDPMediaTypesEnum.control),
+                SDPMediaTypesEnum.image => nameof(SDPMediaTypesEnum.image),
+                SDPMediaTypesEnum.message => nameof(SDPMediaTypesEnum.message),
+                SDPMediaTypesEnum.text => nameof(SDPMediaTypesEnum.text),
+                _ => media.ToString()
+            };
+
+            // TODO: use https://www.nuget.org/packages/NetEscapades.EnumGenerators
+            static string GetIceRoleName(IceRolesEnum iceRole) => iceRole switch
+            {
+                IceRolesEnum.actpass => nameof(IceRolesEnum.actpass),
+                IceRolesEnum.passive => nameof(IceRolesEnum.passive),
+                IceRolesEnum.active => nameof(IceRolesEnum.active),
+                _ => iceRole.ToString()
+            };
         }
 
         public string GetFormatListToString()
         {
+            if (Media != SDPMediaTypesEnum.application &&
+                Media != SDPMediaTypesEnum.message &&
+                MediaFormats.Count == 0)
+            {
+                return null;
+            }
+
+            var builder = new StringBuilder();
+            WriteFormatListString(builder);
+            return builder.ToString();
+        }
+
+        public void WriteFormatListString(StringBuilder builder)
+        {
             if (Media == SDPMediaTypesEnum.application)
             {
-                StringBuilder sb = new StringBuilder();
+                var writeSparator = false;
                 foreach (var appFormat in ApplicationMediaFormats)
                 {
-                    sb.Append(appFormat.Key);
-                    sb.Append(" ");
-                }
+                    if (writeSparator)
+                    {
+                        builder.Append(' ');
+                    }
+                    writeSparator = true;
 
-                return sb.ToString().Trim();
+                    builder.Append(appFormat.Key);
+                }
             }
             else if (Media == SDPMediaTypesEnum.message)
             {
-                return "*";
+                builder.Append('*');
             }
             else
             {
-                var mediaFormatList = default(StringBuilder);
+                var writeSparator = false;
                 foreach (var mediaFormat in MediaFormats)
                 {
-                    mediaFormatList ??= new StringBuilder();
-                    mediaFormatList.Append(mediaFormat.Key).Append(' ');
-                }
+                    if (writeSparator)
+                    {
+                        builder.Append(' ');
+                    }
+                    writeSparator = true;
 
-                if (mediaFormatList == null)
-                {
-                    return null;
+                    builder.Append(mediaFormat.Key);
                 }
-
-                mediaFormatList.Length--;
-                return mediaFormatList.ToString();
             }
         }
 
         public string GetFormatListAttributesToString()
         {
+            if ((Media == SDPMediaTypesEnum.application && ApplicationMediaFormats.Count == 0) ||
+                (Media != SDPMediaTypesEnum.application && Media != SDPMediaTypesEnum.message &&
+                    (MediaFormats == null || MediaFormats.Count == 0)))
+            {
+                return null;
+            }
+
+            var builder = new StringBuilder();
+            WriteFormatListAttributesString(builder);
+            return builder.ToString();
+        }
+
+        public void WriteFormatListAttributesString(StringBuilder builder)
+        {
             if (Media == SDPMediaTypesEnum.application)
             {
-                if (ApplicationMediaFormats.Count > 0)
+                foreach (var appFormat in ApplicationMediaFormats)
                 {
-                    StringBuilder sb = new StringBuilder();
-                    foreach (var appFormat in ApplicationMediaFormats)
+                    if (appFormat.Value.Rtpmap != null)
                     {
-                        if (appFormat.Value.Rtpmap != null)
-                        {
-                            sb.Append(MEDIA_FORMAT_ATTRIBUTE_PREFIX).Append(appFormat.Key).Append(' ')
-                                .Append(appFormat.Value.Rtpmap).Append(m_CRLF);
-                        }
-
-                        if (appFormat.Value.Fmtp != null)
-                        {
-                            sb.Append(MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX).Append(appFormat.Key).Append(' ')
-                                .Append(appFormat.Value.Fmtp).Append(m_CRLF);
-                        }
+                        builder.Append(MEDIA_FORMAT_ATTRIBUTE_PREFIX).Append(appFormat.Key).Append(' ')
+                            .Append(appFormat.Value.Rtpmap).Append(m_CRLF);
                     }
 
-                    return sb.ToString();
-                }
-                else
-                {
-                    return null;
+                    if (appFormat.Value.Fmtp != null)
+                    {
+                        builder.Append(MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX).Append(appFormat.Key).Append(' ')
+                            .Append(appFormat.Value.Fmtp).Append(m_CRLF);
+                    }
                 }
             }
             else if (Media == SDPMediaTypesEnum.message)
             {
-                StringBuilder sb = new StringBuilder();
-
                 var mediaFormat = MessageMediaFormat;
                 var acceptTypes = mediaFormat.AcceptTypes;
                 if (acceptTypes != null && acceptTypes.Count > 0)
                 {
-                    sb.Append(MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX);
+                    builder.Append(MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX);
                     foreach (var type in acceptTypes)
                     {
-                        sb.Append(type).Append(' ');
+                        builder.Append(type).Append(' ');
                     }
 
-                    sb.Append(m_CRLF);
+                    builder.Append(m_CRLF);
                 }
 
                 if (mediaFormat.Endpoint != null)
                 {
-                    sb.Append(MEDIA_FORMAT_PATH_MSRP_PREFIX).Append("//").Append(Connection.ConnectionAddress).Append(':')
+                    builder.Append(MEDIA_FORMAT_PATH_MSRP_PREFIX).Append("//").Append(Connection.ConnectionAddress).Append(':')
                         .Append(Port).Append('/').Append(mediaFormat.Endpoint).Append(m_CRLF);
                 }
-
-                return sb.ToString();
             }
             else
             {
-                var formatAttributes = default(StringBuilder);
-
                 if (MediaFormats != null)
                 {
-                    foreach (var mediaFormat in MediaFormats.Select(y => y.Value))
+                    foreach (var entry in MediaFormats)
                     {
-                        formatAttributes ??= new StringBuilder();
+                        var mediaFormat = entry.Value;
                         if (mediaFormat.Rtpmap == null)
                         {
                             // Well known media formats are not required to add an rtpmap but we do so any way as some SIP
                             // stacks don't work without it.
-                            formatAttributes.Append(MEDIA_FORMAT_ATTRIBUTE_PREFIX).Append(mediaFormat.ID).Append(' ')
+                            builder.Append(MEDIA_FORMAT_ATTRIBUTE_PREFIX).Append(mediaFormat.ID).Append(' ')
                                 .Append(mediaFormat.Name()).Append('/').Append(mediaFormat.ClockRate()).Append(m_CRLF);
                         }
                         else
                         {
-                            formatAttributes.Append(MEDIA_FORMAT_ATTRIBUTE_PREFIX).Append(mediaFormat.ID).Append(' ')
+                            builder.Append(MEDIA_FORMAT_ATTRIBUTE_PREFIX).Append(mediaFormat.ID).Append(' ')
                                 .Append(mediaFormat.Rtpmap).Append(m_CRLF);
                         }
 
-                        // Leaving out the feedback attribute for now. It should only be added where it's present in a parsed SDP packet or
-                        // is opted in in a produced SDP packet. AC 7 Nov 2024, see also https://github.com/sipsorcery-org/sipsorcery/issues/1130.
-
+                        // RTCP feedback (RFC 4585). Local video formats offer SDPAudioVideoMediaFormat.DefaultVideoRtcpFeedbackMessages,
+                        // parsed formats carry what the remote party listed and negotiated formats the intersection of both.
+                        // See also https://github.com/sipsorcery-org/sipsorcery/issues/1130.
                         if (mediaFormat.Kind == SDPMediaTypesEnum.video)
                         {
                             foreach (var rtcpFeedbackMessage in mediaFormat.SupportedRtcpFeedbackMessages)
                             {
-                                formatAttributes.Append(MEDIA_FORMAT_FEEDBACK_PREFIX).Append(mediaFormat.ID).Append(' ')
+                                builder.Append(MEDIA_FORMAT_FEEDBACK_PREFIX).Append(mediaFormat.ID).Append(' ')
                                     .Append(rtcpFeedbackMessage).Append(m_CRLF);
                             }
                         }
 
                         if (mediaFormat.Fmtp != null)
                         {
-                            formatAttributes.Append(MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX).Append(mediaFormat.ID).Append(' ')
+                            builder.Append(MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX).Append(mediaFormat.ID).Append(' ')
                                 .Append(mediaFormat.Fmtp).Append(m_CRLF);
                         }
                     }
                 }
+            }
+        }
 
-                return formatAttributes?.ToString();
+        /// <summary>
+        /// RTCP feedback attributes ("a=rtcp-fb:pt type") collected while parsing, in document order. They are
+        /// applied to the media formats once the whole SDP has been parsed since they can appear before or after
+        /// the matching rtpmap attribute. FormatID is null for the "*" wildcard and for payload types that are not
+        /// numbers. Feedback is the normalised type, or null if it can never apply to a format. Line is the attribute
+        /// to keep as an extra attribute if no format ends up with the payload type.
+        /// </summary>
+        private List<(int? FormatID, string Feedback, string Line)> _parsedRtcpFeedback;
+
+        /// <summary>
+        /// Records an "a=rtcp-fb" attribute found while parsing an SDP.
+        /// </summary>
+        internal void AddParsedRtcpFeedback(ReadOnlySpan<char> formatID, ReadOnlySpan<char> feedback, ReadOnlySpan<char> line)
+        {
+            int? id = null;
+            string normalisedFeedback = null;
+            string extraLine = null;
+
+            if (formatID is "*")
+            {
+                normalisedFeedback = SDPAudioVideoMediaFormat.GetNormalisedRtcpFeedback(feedback);
+            }
+            else if (int.TryParse(formatID, out var parsedID))
+            {
+                id = parsedID;
+
+                // Payload types match format IDs as text, so for example "096" never applies to format 96.
+                if (formatID.SequenceEqual(parsedID.ToString().AsSpan()))
+                {
+                    normalisedFeedback = SDPAudioVideoMediaFormat.GetNormalisedRtcpFeedback(feedback);
+                }
+
+                // Formats are only ever added while parsing, so one that exists now will still exist when the
+                // feedback is applied and the attribute will not be needed as an extra attribute.
+                if (!MediaFormats.ContainsKey(parsedID))
+                {
+                    extraLine = line.ToString();
+                }
+                else if (normalisedFeedback is null)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                extraLine = line.ToString();
+            }
+
+            (_parsedRtcpFeedback ??= new List<(int?, string, string)>()).Add((id, normalisedFeedback, extraLine));
+        }
+
+        /// <summary>
+        /// Called at the end of parsing. Every video format gets an explicit feedback list,
+        /// empty if the remote party listed none for it, so parsed formats never pick up the local defaults.
+        /// Attributes for payload types that have no matching format are kept as extra attributes so
+        /// they still round trip.
+        /// </summary>
+        internal void ApplyParsedRtcpFeedback()
+        {
+            if (Media != SDPMediaTypesEnum.video)
+            {
+                return;
+            }
+
+            var parsed = _parsedRtcpFeedback;
+            _parsedRtcpFeedback = null;
+
+            // The IDs are copied since .NET Framework does not allow values to be replaced while enumerating.
+            var ids = MediaFormats.Keys.ToArray();
+
+            if (parsed is null)
+            {
+                foreach (var id in ids)
+                {
+                    MediaFormats[id] = MediaFormats[id].WithParsedRtcpFeedbackMessages(default);
+                }
+
+                return;
+            }
+
+            // Each format gets the feedback that applies to it in document order with case insensitive duplicates
+            // removed, as WithUpdatedRtcpFeedbackMessages does, collected in a buffer shared by all the formats.
+            // Rather than every format going through every attribute, the attributes for a payload type are sorted
+            // by payload type and then position, so each format only goes through its own attributes, merged in
+            // document order with the "*" ones.
+            var keys = ArrayPool<long>.Shared.Rent(parsed.Count);
+            var wildcards = ArrayPool<int>.Shared.Rent(parsed.Count);
+            var buffer = ArrayPool<string>.Shared.Rent(parsed.Count);
+            try
+            {
+                int keyCount = 0, wildcardCount = 0;
+                for (var i = 0; i < parsed.Count; i++)
+                {
+                    var (formatID, feedback, _) = parsed[i];
+                    if (feedback is null)
+                    {
+                        continue;
+                    }
+
+                    if (formatID is { } id)
+                    {
+                        // The payload type in the high half and the position in the low half, so negative payload
+                        // types sort first and the attributes for a payload type keep their document order.
+                        keys[keyCount++] = ((long)id << 32) | (uint)i;
+                    }
+                    else
+                    {
+                        wildcards[wildcardCount++] = i;
+                    }
+                }
+
+                Array.Sort(keys, 0, keyCount);
+
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var id in ids)
+                {
+                    var k = Array.BinarySearch(keys, 0, keyCount, (long)id << 32);
+                    k = k < 0 ? ~k : k;
+                    var w = 0;
+                    var count = 0;
+                    while (true)
+                    {
+                        // The position of the format's next attribute or the next "*" one, whichever comes first.
+                        var index = k < keyCount && keys[k] >> 32 == id ? (int)keys[k] : int.MaxValue;
+                        if (w < wildcardCount && wildcards[w] < index)
+                        {
+                            index = wildcards[w++];
+                        }
+                        else if (index == int.MaxValue)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            k++;
+                        }
+
+                        var feedback = parsed[index].Feedback;
+                        if (seen.Add(feedback))
+                        {
+                            buffer[count++] = feedback;
+                        }
+                    }
+
+                    seen.Clear();
+                    MediaFormats[id] = MediaFormats[id].WithParsedRtcpFeedbackMessages(buffer.AsSpan(0, count));
+                }
+            }
+            finally
+            {
+                ArrayPool<long>.Shared.Return(keys);
+                ArrayPool<int>.Shared.Return(wildcards);
+                ArrayPool<string>.Shared.Return(buffer, clearArray: true);
+            }
+
+            foreach (var (formatID, _, line) in parsed)
+            {
+                if (line is not null && !(formatID is { } id && MediaFormats.ContainsKey(id)))
+                {
+                    AddExtra(line);
+                }
+            }
+        }
+
+        /// <summary>
+        /// The payload types the media line lists, in its order, collected while parsing. Static payload types are
+        /// added to the media formats when the media line is parsed but dynamic ones only when their rtpmap attribute
+        /// is, so the formats are put back in the media line's order once the whole SDP has been parsed. Rented from
+        /// the shared pool and returned by <see cref="ApplyParsedFormatOrder"/>.
+        /// </summary>
+        private int[] _parsedFormatOrder;
+        private int _parsedFormatOrderCount;
+
+        /// <summary>
+        /// Makes room to record another <paramref name="additional"/> payload types from a media line.
+        /// </summary>
+        private void ReserveParsedFormatOrder(int additional)
+        {
+            var required = _parsedFormatOrderCount + additional;
+            if (_parsedFormatOrder is { } current && current.Length >= required)
+            {
+                return;
+            }
+
+            var order = ArrayPool<int>.Shared.Rent(required);
+            if (_parsedFormatOrder is { } previous)
+            {
+                Array.Copy(previous, order, _parsedFormatOrderCount);
+                ArrayPool<int>.Shared.Return(previous);
+            }
+
+            _parsedFormatOrder = order;
+        }
+
+        /// <summary>
+        /// Called at the end of parsing to put the media formats in the order the media line lists them, which is
+        /// the order of preference (RFC 3264 section 5.1). Formats the media line does not list but that have an
+        /// rtpmap attribute come after the listed ones, in the order they were parsed.
+        /// </summary>
+        internal void ApplyParsedFormatOrder()
+        {
+            var order = _parsedFormatOrder;
+            if (order is null)
+            {
+                return;
+            }
+
+            var orderCount = _parsedFormatOrderCount;
+            _parsedFormatOrder = null;
+            _parsedFormatOrderCount = 0;
+
+            try
+            {
+                if (MediaFormats.Count > 1)
+                {
+                    SortMediaFormats(order.AsSpan(0, orderCount));
+                }
+            }
+            finally
+            {
+                ArrayPool<int>.Shared.Return(order);
+            }
+        }
+
+        /// <summary>
+        /// Puts the media formats in the order of <paramref name="order"/>, with any it does not list last in
+        /// their current order. Does nothing if they are already in that order.
+        /// </summary>
+        private void SortMediaFormats(ReadOnlySpan<int> order)
+        {
+            var count = MediaFormats.Count;
+            var keys = ArrayPool<long>.Shared.Rent(count);
+            var formats = ArrayPool<KeyValuePair<int, SDPAudioVideoMediaFormat>>.Shared.Rent(count);
+            try
+            {
+                // Each format is ranked by where the order first lists it or, if it is not listed, after all the
+                // listed ones by its current position. Ranks are unique, so the current position is packed in the
+                // low half only to find the format again after sorting.
+                var position = 0;
+                var previousRank = -1;
+                var inOrder = true;
+                foreach (var entry in MediaFormats)
+                {
+                    var rank = order.IndexOf(entry.Key);
+                    if (rank < 0)
+                    {
+                        rank = order.Length + position;
+                    }
+
+                    inOrder &= rank > previousRank;
+                    previousRank = rank;
+                    keys[position] = ((long)rank << 32) | (uint)position;
+                    formats[position] = entry;
+                    position++;
+                }
+
+                if (inOrder)
+                {
+                    return;
+                }
+
+                Array.Sort(keys, 0, count);
+
+                // A dictionary with nothing removed since it was cleared enumerates in the order its entries were added.
+                MediaFormats.Clear();
+                for (var i = 0; i < count; i++)
+                {
+                    var entry = formats[(int)keys[i]];
+                    MediaFormats.Add(entry.Key, entry.Value);
+                }
+            }
+            finally
+            {
+                ArrayPool<long>.Shared.Return(keys);
+                ArrayPool<KeyValuePair<int, SDPAudioVideoMediaFormat>>.Shared.Return(formats, clearArray: true);
             }
         }
 
@@ -605,6 +962,11 @@ namespace SIPSorcery.Net
         }
 
         public void AddCryptoLine(string crypto)
+        {
+            this.SecurityDescriptions.Add(SDPSecurityDescription.Parse(crypto));
+        }
+
+        public void AddCryptoLine(ReadOnlySpan<char> crypto)
         {
             this.SecurityDescriptions.Add(SDPSecurityDescription.Parse(crypto));
         }

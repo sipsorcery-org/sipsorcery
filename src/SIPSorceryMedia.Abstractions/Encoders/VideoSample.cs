@@ -21,4 +21,10 @@ public struct VideoSample
     public uint Width;
     public uint Height;
     public byte[] Sample;
+
+    /// <summary>
+    /// The pixel format of <see cref="Sample"/>. Decoders set this to the format they actually
+    /// produced, which is not necessarily the format that was requested of them.
+    /// </summary>
+    public VideoPixelFormatsEnum PixelFormat;
 }

@@ -91,6 +91,14 @@ namespace SIPSorcery.Net
             Attributes.Add(xorAddressAttribute);
         }
 
+        /// <summary>
+        /// Parses a STUN message from the start of a buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to parse.</param>
+        /// <param name="bufferLength">The number of bytes in the buffer that belong to the message.</param>
+        /// <returns>The parsed message, or null if the buffer cannot hold one.</returns>
+        /// <exception cref="ApplicationException">The buffer is long enough to hold a header but does not
+        /// begin with the two zero bits every STUN message starts with.</exception>
         public static STUNMessage ParseSTUNMessage(byte[] buffer, int bufferLength)
         {
             if (buffer != null && buffer.Length > 0 && buffer.Length >= bufferLength)
@@ -98,6 +106,18 @@ namespace SIPSorcery.Net
                 STUNMessage stunMessage = new STUNMessage();
                 stunMessage._receivedBuffer = buffer.AsSpan(0, bufferLength).ToArray();
                 stunMessage.Header = STUNHeader.ParseSTUNHeader(buffer);
+
+                if (stunMessage.Header == null)
+                {
+                    // ParseSTUNHeader returns null for a buffer too short to hold the 20 byte header, and a
+                    // buffer whose first two bits are zero takes that null path rather than the "did not
+                    // begin with 0x00" throw. Dereferencing the null header raised a NullReferenceException
+                    // that callers had no way to tell apart from a bug in this class, and on the TURN over
+                    // TLS read loop it ended the loop for good. Report it the way the TURN server already
+                    // reads this method's result, as a message that could not be parsed.
+                    // See GHSA-6848-qmp4-652w.
+                    return null;
+                }
 
                 if (stunMessage.Header.MessageLength > 0)
                 {

@@ -9,6 +9,8 @@
 // History:
 // 27 Mar 2012	Aaron Clauson	Refactored, Hobart, Australia.
 // 03 Dec 2019  Aaron Clauson   Replace separate client and server user agents with full user agent.
+// 19 Sep 2026  Aaron Clauson   Allow the audio scope to act as the outgoing video source when the
+//                              remote party has video and this end has no camera.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -24,27 +26,31 @@ using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.Encoders;
+using SIPSorceryMedia.FFmpeg;
 using SIPSorceryMedia.Windows;
+using AudioScope;
 
 namespace SIPSorcery.SoftPhone
 {
-    public partial class SIPClient
+    public partial class SIPClient : IDisposable
     {
         private static string _sdpMimeContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
 
-        private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
-        private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
-        private string m_sipServer = SIPSoftPhoneState.SIPServer;
-        private string m_sipFromName = SIPSoftPhoneState.SIPFromName;
+        private string m_sipUsername = SIPSoftPhoneState.Settings.SIPUsername;
+        private string m_sipPassword = SIPSoftPhoneState.Settings.SIPPassword;
+        private string m_sipServer = SIPSoftPhoneState.Settings.SIPServer;
+        private string m_sipFromName = SIPSoftPhoneState.Settings.SIPFromName;
+        private bool m_useWebRTCMedia = SIPSoftPhoneState.Settings.UseWebRTCMedia;
 
         private SIPTransport m_sipTransport;
         private SIPUserAgent m_userAgent;
         private SIPServerUserAgent m_pendingIncomingCall;
         private CancellationTokenSource _cts = new CancellationTokenSource();
 
-        private int m_audioOutDeviceIndex = SIPSoftPhoneState.AudioOutDeviceIndex;
+        private int m_audioOutDeviceIndex = SIPSoftPhoneState.Settings.AudioOutDeviceIndex;
+
+        private SoftphoneVideoSourcesEnum _videoSource;
 
         [GeneratedRegex(@"^SIP/2\.0 (?<statusCode>\d{3})")]
         private static partial Regex SipFragStatusCodeRegex();
@@ -56,6 +62,12 @@ namespace SIPSorcery.SoftPhone
         public event Action<SIPClient> RemotePutOnHold;            // Fires when the remote call party puts us on hold.	
         public event Action<SIPClient> RemoteTookOffHold;          // Fires when the remote call party takes us off hold.
 
+        public event Action<EncodedAudioFrame> OnRemoteAudio;                        // Fires when a decoded audio sample from the remote peer is ready.
+        public event VideoSinkSampleDecodedDelegate OnRemoteVideo;    // Fires when a decoded video sample from the remote peer is ready.
+        public event VideoSinkSampleDecodedDelegate OnAudioScopeFrame; // Fires when an audio scope frame is ready to be drawn locally.
+
+        public event Action<SIPClient, TextEventArgs> TextReceived;// Fires when a realtime text block was received
+
         /// <summary>
         /// Once a call is established this holds the properties of the established SIP dialogue.
         /// </summary>
@@ -64,7 +76,7 @@ namespace SIPSorcery.SoftPhone
             get { return m_userAgent.Dialogue; }
         }
 
-        public VoIPMediaSession MediaSession { get; private set; }
+        private RTPSession MediaSession;
 
         /// <summary>
         /// Returns true of this SIP client is on an active call.
@@ -82,9 +94,20 @@ namespace SIPSorcery.SoftPhone
             get { return m_userAgent.IsOnLocalHold || m_userAgent.IsOnRemoteHold; }
         }
 
-        public SIPClient(SIPTransport sipTransport)
+        /// <summary>Endpoint for sending and receiving realtime text</summary>
+        public RttEndPoint RttEndPoint { get; set; }
+
+        /// <summary>
+        /// True once the call has negotiated a video stream from the remote party, which is what
+        /// decides whether the UI has remote video to display. Only meaningful after the call has
+        /// been answered, since until then there is no negotiated session to ask.
+        /// </summary>
+        public bool HasVideo => MediaSession?.VideoRemoteTrack != null;
+
+        public SIPClient(SIPTransport sipTransport, SoftphoneVideoSourcesEnum videoSource)
         {
             m_sipTransport = sipTransport;
+            _videoSource = videoSource;
 
             m_userAgent = new SIPUserAgent(m_sipTransport, null);
             m_userAgent.ClientCallTrying += CallTrying;
@@ -103,7 +126,11 @@ namespace SIPSorcery.SoftPhone
         /// <param name="destination">The SIP URI to place a call to. The destination can be a full SIP URI in which case the call will
         /// be placed anonymously directly to that URI. Alternatively it can be just the user portion of a URI in which case it will
         /// be sent to the configured SIP server.</param>
-        public async Task Call(string destination)
+        /// <param name="protocol">Choose protocol to be used for the media streams of this SIP call</param>
+        /// <param name="useAudio">Offer audio media type</param>
+        /// <param name="useVideo">Offer video media type</param>
+        /// <param name="useText">Offer text media type (RTT)</param>
+        public async Task Call(string destination, SIPProtocolsEnum protocol = SIPProtocolsEnum.udp, bool useAudio = true, bool useVideo = true, bool useText = false)
         {
             // Determine if this is a direct anonymous call or whether it should be placed using the pre-configured SIP server account. 
             SIPURI callURI = null;
@@ -126,6 +153,11 @@ namespace SIPSorcery.SoftPhone
                 fromHeader = (new SIPFromHeader(m_sipFromName, new SIPURI(m_sipUsername, m_sipServer, null), null)).ToString();
             }
 
+            if (!destination.Contains("transport"))
+            {
+                callURI.Protocol = protocol;
+            }
+
             StatusMessage(this, $"Starting call to {callURI}.");
 
             var dstEndpoint = await SIPDns.ResolveAsync(callURI, false, _cts.Token);
@@ -140,7 +172,9 @@ namespace SIPSorcery.SoftPhone
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {dstEndpoint}.");
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
-                MediaSession = CreateMediaSession();
+                // On an outgoing call there is no way to know whether the remote party has video
+                // until the answer arrives, so offer it and decide what to do with it afterwards.
+                MediaSession = !m_useWebRTCMedia ? CreateVoIPMediaSession(useAudio, useVideo, useText) : CreateWebRtcMediaSession(offerVideo: useVideo);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
@@ -186,15 +220,21 @@ namespace SIPSorcery.SoftPhone
                 // audio only call.
                 bool hasAudio = true;
                 bool hasVideo = false;
+                bool hasText = false;
 
                 if (sipRequest.Body != null)
                 {
                     SDP offerSDP = SDP.ParseSDPDescription(sipRequest.Body);
                     hasAudio = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
                     hasVideo = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
+                    hasText = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.text && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
+
+                    System.Diagnostics.Debug.WriteLine(sipRequest.Body);
                 }
 
-                MediaSession = CreateMediaSession();
+                // The offer already says whether the remote party has video, and an answer must not
+                // add an m-line the offer did not contain, so only take a video stream if it did.
+                MediaSession = !m_useWebRTCMedia ? CreateVoIPMediaSession(hasAudio, hasVideo, hasText) : CreateWebRtcMediaSession(offerVideo: hasVideo);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
@@ -219,7 +259,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public async Task PutOnHold()
         {
-            await MediaSession.PutOnHold();
+            //await MediaSession.PutOnHold();
             m_userAgent.PutOnHold();
             StatusMessage(this, "Local party put on hold");
         }
@@ -227,9 +267,9 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Takes the remote call party off hold.
         /// </summary>
-        public void TakeOffHold()
+        public async Task TakeOffHold()
         {
-            MediaSession.TakeOffHold();
+            //await MediaSession.TakeOffHold();
             m_userAgent.TakeOffHold();
             StatusMessage(this, "Local party taken off on hold");
         }
@@ -292,29 +332,220 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
+        /// Creates the frame producing video source for the configured option, or null when the
+        /// option doesn't use one. <see cref="SoftphoneVideoSourcesEnum.Webcam"/> returns null
+        /// because a webcam end point is its own source and sink and is created by the caller.
+        /// </summary>
+        /// <param name="encoder">Optional encoder for the source to raise encoded samples with.
+        /// Supply one when whatever consumes the source expects encoded frames, as
+        /// <see cref="VoIPMediaSession"/> does. Leave it null to take raw frames and encode them
+        /// elsewhere, which is what the WebRTC path does.</param>
+        private IVideoSource CreateRawVideoSource(IVideoEncoder encoder)
+        {
+            switch (_videoSource)
+            {
+                case SoftphoneVideoSourcesEnum.AudioScope:
+                    var audioScopeSource = new AudioScopeVideoSource(encoder);
+
+                    // The scope is also drawn locally. This is a separate event to the ones feeding
+                    // the encoder, so it works whether or not the remote party ended up with a video
+                    // stream for the scope to be sent on.
+                    audioScopeSource.OnVideoSourceRawSample += (duration, width, height, sample, pixelFormat) =>
+                        OnAudioScopeFrame?.Invoke(sample, (uint)width, (uint)height, AudioScopeRenderer.ROW_STRIDE, pixelFormat);
+
+                    audioScopeSource.OnVideoSourceError += (error) => StatusMessage(this, error);
+
+                    return audioScopeSource;
+
+                case SoftphoneVideoSourcesEnum.TestPattern:
+                    return new VideoTestPatternSource(encoder);
+
+                default:
+                    return null;
+            }
+        }
+
+        /// <summary>
         /// Creates the media session to use with the SIP call.
         /// </summary>
         /// <returns>A new media session object.</returns>
-        private VoIPMediaSession CreateMediaSession()
+        private VoIPMediaSession CreateVoIPMediaSession(bool hasAudio, bool hasVideo, bool hasText)
         {
-            var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), m_audioOutDeviceIndex);
-            var windowsVideoEndPoint = new WindowsVideoEndPoint(new VpxVideoEncoder());
+            var windowsAudioEndPoint = hasAudio ? new WindowsAudioEndPoint(new AudioEncoder(), m_audioOutDeviceIndex) : null;
+
+            if (hasText)
+            {
+                RttEndPoint = new RttEndPoint();
+                RttEndPoint.OnTextReceived += (e) => TextReceived?.Invoke(this, e);
+            }
+            else
+            {
+                RttEndPoint = null;
+            }
 
             MediaEndPoints mediaEndPoints = new MediaEndPoints
             {
                 AudioSink = windowsAudioEndPoint,
                 AudioSource = windowsAudioEndPoint,
-                VideoSink = windowsVideoEndPoint,
-                VideoSource = windowsVideoEndPoint,
+                TextSink = RttEndPoint,
+                TextSource = RttEndPoint,
             };
 
-            // Fallback video source if a Windows webcam cannot be accessed.
-            var testPatternSource = new VideoTestPatternSource(new VpxVideoEncoder());
+            IVideoSource rawVideoSource = null;
+            FFmpegVideoEndPoint videoSinkEndPoint = null;
+            if (hasVideo)
+            {
+                // VoIPMediaSession drives the lifecycle of whatever is in MediaEndPoints and sends its
+                // encoded samples, so a generated source goes in as the video source with an encoder of
+                // its own, and a separate end point decodes the remote party's video.
+                rawVideoSource = CreateRawVideoSource(new FFmpegVideoEncoder());
 
-            var voipMediaSession = new VoIPMediaSession(mediaEndPoints, testPatternSource);
-            voipMediaSession.AcceptRtpFromAny = true;
+                if (_videoSource is SoftphoneVideoSourcesEnum.Webcam)
+                {
+                    var windowsVideoEndPoint = new WindowsVideoEndPoint(new FFmpegVideoEncoder());
 
-            return voipMediaSession;
+                    mediaEndPoints.VideoSink = windowsVideoEndPoint;
+                    mediaEndPoints.VideoSource = windowsVideoEndPoint;
+                }
+                else if (rawVideoSource != null)
+                {
+                    videoSinkEndPoint = new FFmpegVideoEndPoint();
+
+                    mediaEndPoints.VideoSource = rawVideoSource;
+                    mediaEndPoints.VideoSink = videoSinkEndPoint;
+                } 
+            }
+
+            var mediaSession = new VoIPMediaSession(mediaEndPoints);
+            mediaSession.AcceptRtpFromAny = true;
+
+            mediaSession.OnAudioFrameReceived += (audioFrame) => OnRemoteAudio?.Invoke(audioFrame);
+
+            if (rawVideoSource is AudioScopeVideoSource audioScope)
+            {
+                mediaSession.OnAudioFrameReceived += (audioFrame) => audioScope.PushAudio(audioFrame?.EncodedAudio, audioFrame?.AudioFormat);
+            }
+
+            if (videoSinkEndPoint != null)
+            {
+                // VoIPMediaSession only pushes the negotiated format to the video source, which is
+                // enough when the source and sink are one object, as they are for a webcam. Here
+                // they are separate so the sink needs telling as well.
+                mediaSession.OnVideoFormatsNegotiated += (formats) => videoSinkEndPoint.SetVideoSinkFormat(formats.First());
+            }
+
+            if (mediaEndPoints.VideoSink != null)
+            {
+                mediaSession.OnVideoSinkSample += (sample, width, height, stride, pixelFormat) =>
+                    OnRemoteVideo?.Invoke(sample, width, height, stride, pixelFormat);
+            }
+
+            return mediaSession;
+        }
+
+        /// <summary>
+        /// Creates the media session to use with the SIP call.
+        /// </summary>
+        /// <returns>A new media session object.</returns>
+        private RTCPeerConnection CreateWebRtcMediaSession(bool offerVideo)
+        {
+            var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), m_audioOutDeviceIndex);
+            IVideoEndPoint videoEndPoint = null;
+
+            var pc = new RTCPeerConnection();
+            pc.AcceptRtpFromAny = true;
+
+            MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEndPoint.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            pc.addTrack(audioTrack);
+
+            pc.OnAudioFormatsNegotiated += (formats) => windowsAudioEndPoint.SetAudioSinkFormat(formats.First());
+            windowsAudioEndPoint.OnAudioSourceEncodedSample += pc.SendAudio;
+            pc.OnAudioFrameReceived += (audioFrame) => OnRemoteAudio?.Invoke(audioFrame);
+            pc.OnAudioFrameReceived += windowsAudioEndPoint.GotEncodedMediaFrame;
+
+            // The peer connection is wired up event by event rather than from a MediaEndPoints, so
+            // a generated source hands its raw frames to an end point that encodes them for sending
+            // and decodes the remote party's video for display.
+            var rawVideoSource = CreateRawVideoSource(encoder: null);
+
+            if (_videoSource is SoftphoneVideoSourcesEnum.Webcam)
+            {
+                videoEndPoint = new WindowsVideoEndPoint(new FFmpegVideoEncoder());
+                //videoEndPoint.RestrictFormats(f => f.Codec == VideoCodecsEnum.H265);
+            }
+            else if (rawVideoSource != null)
+            {
+                videoEndPoint = new FFmpegVideoEndPoint();
+                rawVideoSource.OnVideoSourceRawSampleFaster += videoEndPoint.ExternalVideoSourceRawSampleFaster;
+            }
+
+            if (rawVideoSource is AudioScopeVideoSource audioScope)
+            {
+                pc.OnAudioFrameReceived += (audioFrame) => audioScope.PushAudio(audioFrame?.EncodedAudio, audioFrame?.AudioFormat);
+            }
+
+            if (videoEndPoint != null)
+            {
+                var videoTrack = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats());
+                pc.addTrack(videoTrack);
+
+                pc.OnVideoFormatsNegotiated += (formats) => videoEndPoint.SetVideoSinkFormat(formats.First());
+                pc.OnVideoFormatsNegotiated += (formats) => videoEndPoint.SetVideoSourceFormat(formats.First());
+                videoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
+                pc.OnVideoFrameReceived += videoEndPoint.GotVideoFrame;
+                videoEndPoint.OnVideoSinkDecodedSample += (byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
+                    OnRemoteVideo?.Invoke(sample, width, height, stride, pixelFormat);
+            }
+
+            pc.onconnectionstatechange += async (state) =>
+            {
+                if (state == RTCPeerConnectionState.connected)
+                {
+                    await windowsAudioEndPoint.Start();
+
+                    if (videoEndPoint != null)
+                    {
+                        await videoEndPoint.StartVideo();
+                        await videoEndPoint.StartVideoSink();
+
+                        RequestPeerConnectionKeyFrame(pc);
+                    }
+
+                    if (rawVideoSource != null)
+                    {
+                        await rawVideoSource.StartVideo();
+                    }
+                }
+                else if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
+                {
+                    if (rawVideoSource != null)
+                    {
+                        await rawVideoSource.CloseVideo();
+                    }
+
+                    await windowsAudioEndPoint.Close();
+
+                    if (videoEndPoint != null)
+                    {
+                        await videoEndPoint.Close();
+                    }
+                }
+            };
+
+            return pc;
+        }
+
+        private void RequestPeerConnectionKeyFrame(RTCPeerConnection pc)
+        {
+            if (pc != null && pc.connectionState == RTCPeerConnectionState.connected &&
+                pc.VideoLocalTrack != null && pc.VideoRemoteTrack != null)
+            {
+                var localVideoSsrc = pc.VideoLocalTrack.Ssrc;
+                var remoteVideoSsrc = pc.VideoRemoteTrack.Ssrc;
+
+                RTCPFeedback pli = new RTCPFeedback(localVideoSsrc, remoteVideoSsrc, PSFBFeedbackTypesEnum.PLI);
+                pc.SendRtcpFeedback(SDPMediaTypesEnum.video, pli);
+            }
         }
 
         /// <summary>
@@ -435,6 +666,11 @@ namespace SIPSorcery.SoftPhone
             {
                 return Task.FromResult(0);
             }
+        }
+
+        public void Dispose()
+        {
+            //MediaSession?.VideoSink.OnVideoSinkDecodedSampleFaster -= OnVideoRemoteSampleReady;
         }
     }
 }

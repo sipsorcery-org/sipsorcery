@@ -38,6 +38,15 @@ namespace SIPSorcery.SIP
         //SHA512
     }
 
+    /// <summary>
+    /// Resolves the HA1 digest for a SIP authentication challenge. Return <c>null</c> when no
+    /// credential is available for the supplied username, realm and digest algorithm.
+    /// </summary>
+    public delegate string GetHA1DigestDelegate(
+        string username,
+        string realm,
+        DigestAlgorithmsEnum algorithm);
+
     public class SIPAuthorisationDigest
     {
         public const string METHOD = "Digest";
@@ -452,4 +461,5 @@ namespace SIPSorcery.SIP
 #pragma warning restore SYSLIB0021
         }
     }
+
 }

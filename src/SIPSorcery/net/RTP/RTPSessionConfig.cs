@@ -35,6 +35,17 @@ namespace SIPSorcery.Net
         /// Secure media negotiated with SDP crypto attributes.
         /// </summary>
         SdpCryptoNegotiation,
+
+        /// <summary>
+        /// Best-effort SRTP with SDP crypto attributes (SDES): offers are RTP/AVP with a=crypto
+        /// lines, so a far end without SRTP ignores them and answers plain RTP, while one with SRTP
+        /// answers with a crypto line of its own and the media is encrypted. Offers are accepted
+        /// with or without crypto: RTP/SAVP ones must have a usable suite (and are answered
+        /// RTP/SAVP), RTP/AVP ones with crypto are answered with crypto, and ones without are plain
+        /// RTP. Each media stream settles on SRTP or plain RTP on its own; see
+        /// <see cref="MediaStream.IsSecurityContextReady"/> for which one did.
+        /// </summary>
+        SdpCryptoBestEffort,
     }
 
     public sealed class RtpSessionConfig
@@ -81,5 +92,12 @@ namespace SIPSorcery.Net
         public bool IsSecure { get => RtpSecureMediaOption == RtpSecureMediaOptionEnum.DtlsSrtp; }
 
         public bool UseSdpCryptoNegotiation { get => RtpSecureMediaOption == RtpSecureMediaOptionEnum.SdpCryptoNegotiation; }
+
+        public bool UseSdpCryptoBestEffort { get => RtpSecureMediaOption == RtpSecureMediaOptionEnum.SdpCryptoBestEffort; }
+
+        /// <summary>
+        /// Whether SDP crypto attributes (SDES) are used at all: mandatory or best effort.
+        /// </summary>
+        public bool UsesSdpCrypto { get => UseSdpCryptoNegotiation || UseSdpCryptoBestEffort; }
     }
 }

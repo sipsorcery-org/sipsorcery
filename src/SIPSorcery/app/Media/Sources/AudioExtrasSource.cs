@@ -233,6 +233,14 @@ namespace SIPSorcery.Media
             }
         }
 
+        /// <summary>
+        /// Stops this source generating audio until <see cref="ResumeAudio"/> is called. The
+        /// timer keeps running; each tick simply produces nothing.
+        /// </summary>
+        /// <remarks>
+        /// Useful while the session is not able to send - held by the far end, or mid transfer -
+        /// where offering samples achieves nothing and produces a warning per packet.
+        /// </remarks>
         public Task PauseAudio()
         {
             _isPaused = true;
@@ -415,7 +423,7 @@ namespace SIPSorcery.Media
         {
             try
             {
-                if (!_isClosed && !_streamSendInProgress && _musicStreamReader != null)
+                if (!_isClosed && !_isPaused && !_streamSendInProgress && _musicStreamReader != null)
                 {
                     lock (_musicStreamReader)
                     {
@@ -446,7 +454,7 @@ namespace SIPSorcery.Media
         {
             try
             {
-                if (!_isClosed && !_streamSendInProgress && _sendSampleTimer != null)
+                if (!_isClosed && !_isPaused && !_streamSendInProgress && _sendSampleTimer != null)
                 {
                     lock (_sendSampleTimer)
                     {
@@ -468,7 +476,7 @@ namespace SIPSorcery.Media
         {
             try
             {
-                if (!_isClosed && !_streamSendInProgress && _sendSampleTimer != null)
+                if (!_isClosed && !_isPaused && !_streamSendInProgress && _sendSampleTimer != null)
                 {
                     lock (_sendSampleTimer)
                     {
@@ -496,7 +504,7 @@ namespace SIPSorcery.Media
         {
             try
             {
-                if (!_isClosed && !_streamSendInProgress && _sendSampleTimer != null)
+                if (!_isClosed && !_isPaused && !_streamSendInProgress && _sendSampleTimer != null)
                 {
                     lock (_sendSampleTimer)
                     {

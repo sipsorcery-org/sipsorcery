@@ -202,6 +202,57 @@ Render a still frame without a call (sanity check):
 dotnet run -- --snapshot      # writes maxheadroom_visemeN.png files
 ```
 
+## Docker
+
+The image publishes the application for Linux x64 and includes its native runtime
+dependencies: .NET 8, FFmpeg 8 shared libraries (including the OpenH264 encoder),
+SkiaSharp dependencies, the CPU ONNX runtime, sherpa-onnx and the LLamaSharp CPU
+backend. Model weights and the Wav2Lip persona are data rather than image layers;
+mount them read-only at `/models` so they can be updated without rebuilding a
+multi-gigabyte image.
+
+Build from the repository root (the project references other projects in this repo):
+
+```powershell
+docker build `
+  -f examples/WebRTCExamples/WebRTCMaxHeadroom/Dockerfile `
+  -t sipsorcery/webrtc-max-headroom:local .
+```
+
+The supplied Compose file maps the conventional `C:\tools` model tree into the
+container and configures all of the Linux model paths. From this directory:
+
+```powershell
+Copy-Item .env.example .env       # optional; edit MAX_MODELS_ROOT for another location
+docker compose up --build
+```
+
+Open <http://localhost:8080>. As in `WebRTCGetStartedFFmpeg`, SIPSorcery binds an
+OS-selected port and gathers all interface ICE candidates. Compose uses host networking,
+which makes the complete ephemeral UDP range available without a fixed WebRTC port, SDP
+candidate rewriting, or tens of thousands of Docker NAT mappings. Docker Desktop users
+must enable host networking in Docker Desktop settings.
+
+To run without Compose (the cartoon renderer works without model files):
+
+```powershell
+docker run --rm --network host `
+  sipsorcery/webrtc-max-headroom:local
+```
+
+For a full local instance, mount the model root explicitly:
+
+```powershell
+docker run --rm --network host `
+  --mount type=bind,source=C:\tools,target=/models,readonly `
+  sipsorcery/webrtc-max-headroom:local
+```
+
+The image exposes `/healthz` and has a Docker health check. For access from another
+machine, allow the host's ephemeral UDP range and terminate HTTPS in a reverse proxy
+(browser microphone access requires a secure context). Internet/NAT deployment will
+generally require a STUN/TURN configuration appropriate to that network.
+
 ## Notes / next steps
 
 - The CARTOON renderer's lip-sync maps audio loudness onto a handful of the 22 viseme
@@ -216,9 +267,6 @@ dotnet run -- --snapshot      # writes maxheadroom_visemeN.png files
   Opus (wideband) would improve recognition.
 - The demo drives a single connected viewer; the most recent peer connection
   receives `/say`, `/ask` and the microphone.
-- Everything runs in one process with no cloud dependency, so the demo containerises as
-  a single service: `dotnet publish` plus the model folders baked into the image. Use a
-  glibc base image (e.g. `mcr.microsoft.com/dotnet/aspnet:8.0`, not Alpine) — the native
-  runtimes (onnxruntime, sherpa, llama.cpp) are glibc-built — and `libfontconfig1` for
-  SkiaSharp. Speech and LLM run on CPU; the Wav2Lip renderer uses DirectML on Windows
-  and needs the CUDA onnxruntime (or a beefy CPU, unverified) in a Linux container.
+- Everything runs in one process with no cloud dependency. The Linux container uses CPU
+  execution for speech, LLM and Wav2Lip; DirectML remains the Windows execution provider.
+  Wav2Lip on CPU is functional but may not sustain 25 fps on all hosts.

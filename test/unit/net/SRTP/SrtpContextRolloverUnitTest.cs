@@ -25,6 +25,7 @@
 //
 // History:
 // 27 Apr 2026  Claude          Created.
+// 09 Nov 2026  Claude          Added issue #1886 tests: outbound ROC estimated from the highest sent index.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -88,7 +89,104 @@ namespace SIPSorcery.Net.UnitTests
                 $"Per-SSRC outbound ROC: SSRC B's encryption was corrupted by SSRC A's sequence wrap. UnprotectRtp returned {decryptResult} (-3 = ERROR_HMAC_CHECK_FAILED).  Per RFC 3711 section 3.2.1 each SRTP stream maintains its own ROC; the SrtpContext must not share Roc across SSRCs.");
         }
 
+        /// <summary>
+        /// Issue #1886: 0xFFFF retransmitted after the wrap (a NACK response with an explicit
+        /// sequence number) must not advance the outbound ROC a second time.
+        /// </summary>
+        [Fact]
+        public void OutboundRollover_RetransmitOfLastSeqAfterWrap_KeepsRocInSync()
+        {
+            var (sender, receiver) = CreatePair();
+            const uint ssrc = 0x33333333u;
+
+            for (int step = 0; step < 6; step++)
+            {
+                RoundTripOnePacket(sender, receiver, ssrc, (ushort)(65530 + step));   // 65530..65535
+            }
+            RoundTripOnePacket(sender, receiver, ssrc, 0);
+            RoundTripOnePacket(sender, receiver, ssrc, 1);
+
+            // NACK retransmission of 65535: the receiver already has it, so it is a replay there,
+            // but the sender must protect it with its original ROC (0) and not count a second wrap.
+            var rtx = MakeRtpPacket(ssrc, 65535, payloadType: 96, payload: new byte[16]);
+            var rtxOut = new byte[sender.CalculateRequiredSrtpPayloadLength(rtx.Length)];
+            Assert.Equal(0, Protect(sender, rtx, rtxOut, out _));
+
+            for (int seq = 2; seq < 10; seq++)
+            {
+                RoundTripOnePacket(sender, receiver, ssrc, (ushort)seq);
+            }
+        }
+
+        /// <summary>
+        /// Issue #1886: 0xFFFF never sent (lost upstream of an SFU) must still advance the ROC
+        /// once the sequence number wraps.
+        /// </summary>
+        [Fact]
+        public void OutboundRollover_LastSeqNeverSent_StillWraps()
+        {
+            var (sender, receiver) = CreatePair();
+            const uint ssrc = 0x44444444u;
+
+            for (int seq = 64900; seq < 65535; seq += 50)
+            {
+                RoundTripOnePacket(sender, receiver, ssrc, (ushort)seq);
+            }
+            RoundTripOnePacket(sender, receiver, ssrc, 65534);
+
+            // 65535 is skipped.
+            for (int seq = 0; seq < 10; seq++)
+            {
+                RoundTripOnePacket(sender, receiver, ssrc, (ushort)seq);
+            }
+        }
+
+        /// <summary>
+        /// Issue #1886: a late (reordered or retransmitted) packet from before the wrap that the
+        /// receiver has not yet seen must be protected with the pre-wrap ROC.
+        /// </summary>
+        [Fact]
+        public void OutboundRollover_LatePacketFromBeforeWrap_UsesPreviousRoc()
+        {
+            var (sender, receiver) = CreatePair();
+            const uint ssrc = 0x55555555u;
+
+            RoundTripOnePacket(sender, receiver, ssrc, 65530);
+            RoundTripOnePacket(sender, receiver, ssrc, 65531);
+            // 65532 is held back and sent after the wrap.
+            for (int seq = 65533; seq <= 65535; seq++)
+            {
+                RoundTripOnePacket(sender, receiver, ssrc, (ushort)seq);
+            }
+            RoundTripOnePacket(sender, receiver, ssrc, 0);
+            RoundTripOnePacket(sender, receiver, ssrc, 1);
+
+            RoundTripOnePacket(sender, receiver, ssrc, 65532);
+            RoundTripOnePacket(sender, receiver, ssrc, 2);
+        }
+
         // ---- helpers ----
+
+        private static (SrtpContext sender, SrtpContext receiver) CreatePair()
+        {
+            var profile = new SrtpProtectionProfileConfiguration(
+                SrtpCiphers.AES_128_CM,
+                cipherKeyLength:  128,
+                cipherSaltLength: 112,
+                maximumLifetime:  int.MaxValue,
+                auth:             SrtpAuth.HMAC_SHA1,
+                authKeyLength:    160,
+                authTagLength:    80);
+
+            var key = new byte[16];
+            var salt = new byte[14];
+            for (int i = 0; i < key.Length;  i++) { key[i]  = (byte)(0x10 + i); }
+            for (int i = 0; i < salt.Length; i++) { salt[i] = (byte)(0x80 + i); }
+
+            return (new SrtpContext(SrtpContextType.RTP, profile, key, salt),
+                    new SrtpContext(SrtpContextType.RTP, profile, key, salt));
+        }
+
 
         private static void RoundTripOnePacket(SrtpContext sender, SrtpContext receiver, uint ssrc, ushort seq)
         {

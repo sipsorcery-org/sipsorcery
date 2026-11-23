@@ -67,6 +67,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Security;
@@ -119,7 +120,11 @@ namespace SIPSorcery.Net
         private const int ICE_PASSWORD_LENGTH = 24;
         private const int MAX_CHECKLIST_ENTRIES = 25;       // Maximum number of entries that can be added to the checklist of candidate pairs.
         private const string MDNS_TLD = ".local";           // Top Level Domain name for multicast lookups as per RFC6762.
-        private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected. 
+        private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected.
+        private const int RENOMINATION_CHECK_INTERVAL_MS = 500; // Minimum spacing of the checks that verify an entry the remote peer nominates once connected.
+        private const int RENOMINATION_CHECK_GRACE_MS = 1000;   // How long an entry that has answered before keeps its claim while a check on it is unanswered.
+        private const int RENOMINATION_FIRST_CHECK_GRACE_MS = 250; // The same for an entry that never has: a working path answers well within it.
+        private const int RENOMINATION_FRESH_MS = CONNECTED_CHECK_PERIOD * 1000; // How recently a candidate must have answered to be moved to.
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
 
@@ -240,6 +245,14 @@ namespace SIPSorcery.Net
         internal List<ChecklistEntry> _checklist = new List<ChecklistEntry>();
 
         /// <summary>
+        /// Whether the OS routing table has a route to an IPv6 remote candidate's address. A host with
+        /// IPv6 enabled but no IPv6 Internet access (for example only unique local addresses) would otherwise
+        /// pair every remote IPv6 candidate and every check sent on those pairs would fail with a network
+        /// unreachable error. Settable for unit tests.
+        /// </summary>
+        internal Func<IPAddress, bool> HasRouteToIPv6 = destination => NetServices.GetLocalAddressForRemote(destination) != null;
+
+        /// <summary>
         /// Lock to co-ordinate access to the _checklist.
         /// </summary>
         private readonly object _checklistLock = new object();
@@ -270,6 +283,21 @@ namespace SIPSorcery.Net
         /// nominated by the connection check process.
         /// </summary>
         public ChecklistEntry NominatedEntry { get; private set; }
+
+        /// <summary>
+        /// A copy of the ICE checklist as it is now: each candidate pair, its state, and the checks
+        /// each way on it. For diagnostics, such as saying which of the remote peer's candidates
+        /// answered and which never did when ICE fails. The pairs are copied under the checklist's
+        /// lock, so the list does not change as it is read; it is empty once the channel is closed.
+        /// </summary>
+        /// <returns>The candidate pairs, in the checklist's priority order.</returns>
+        public IReadOnlyList<IceCandidatePairStats> GetChecklistSnapshot()
+        {
+            lock (_checklistLock)
+            {
+                return _checklist.Select(x => new IceCandidatePairStats(x, x == NominatedEntry)).ToList();
+            }
+        }
 
         /// <summary>
         /// Retransmission timer for STUN transactions, measured in milliseconds.
@@ -574,6 +602,14 @@ namespace SIPSorcery.Net
                     CloseTcp(pair.Value, reason);
                 }
             }
+
+            foreach (var pair in RtpTcpSocketByUri)
+            {
+                if (pair.Key.Scheme == STUNSchemesEnum.turns || pair.Key.Scheme == STUNSchemesEnum.stuns)
+                {
+                    pair.Value.Close();
+                }
+            }
         }
 
         protected void CloseTcp(IceTcpReceiver target, string reason)
@@ -661,9 +697,19 @@ namespace SIPSorcery.Net
                 // This implementation currently only supports audio and video multiplexed on a single channel.
                 OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate only supports multiplexed media, excluding remote candidate with non-zero sdpMLineIndex of {candidate.sdpMLineIndex}.");
             }
+            else if (candidate.protocol == RTCIceProtocol.tcp && candidate.tcpType == RTCIceTcpCandidateType.active)
+            {
+                // Active TCP candidates (RFC 6544) only make outbound connections and advertise the discard
+                // port 9 as a placeholder, so there is never anything to connect to. Browsers, e.g. Chrome,
+                // send these alongside their UDP candidates. Even with TCP support they could only be paired
+                // with a local passive candidate.
+                logger.LogDebug("RTP ICE Channel ignoring remote active TCP candidate {Candidate}.", candidate);
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate is an active TCP candidate, which has no listening port that can be connected to.");
+            }
             else if (candidate.protocol != RTCIceProtocol.udp)
             {
                 // This implementation currently only supports UDP for RTP communications.
+                logger.LogDebug("RTP ICE Channel ignoring remote {Protocol} candidate {Candidate}.", candidate.protocol, candidate);
                 OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported transport protocol {candidate.protocol}.");
             }
             else if (IPAddress.TryParse(candidate.address, out var addr) &&
@@ -1130,7 +1176,7 @@ namespace SIPSorcery.Net
         /// <param name="localCandidate">The local candidate for the checklist entry.</param>
         /// <param name="remoteCandidate">The remote candidate to attempt to create a new checklist
         /// entry for.</param>
-        private async Task UpdateChecklist(RTCIceCandidate localCandidate, RTCIceCandidate remoteCandidate)
+        internal async Task UpdateChecklist(RTCIceCandidate localCandidate, RTCIceCandidate remoteCandidate)
         {
             if (localCandidate == null)
             {
@@ -1212,6 +1258,17 @@ namespace SIPSorcery.Net
                     {
                         supportsIPv4 = base.RtpSocket.AddressFamily == AddressFamily.InterNetwork || base.IsDualMode;
                         supportsIPv6 = base.RtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || base.IsDualMode;
+
+                        if (supportsIPv6 &&
+                            remoteCandidateIPAddr.AddressFamily == AddressFamily.InterNetworkV6 &&
+                            !remoteCandidateIPAddr.IsIPv4MappedToIPv6 &&
+                            !HasRouteToIPv6(remoteCandidateIPAddr))
+                        {
+                            // An IPv6 socket alone doesn't mean the remote IPv6 address can be reached. Without a route
+                            // every check on the pair fails with a network unreachable error, so don't create it.
+                            logger.LogDebug("RTP ICE Channel not pairing remote candidate {RemoteCandidate}, no route to its IPv6 address.", remoteCandidate.ToShortString());
+                            supportsIPv6 = false;
+                        }
                     }
 
                     lock (_checklistLock)
@@ -1517,6 +1574,77 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Once connected, moves the nominated entry to the highest priority entry the remote peer
+        /// has nominated and our own check has verified, if that is better than the one in use.
+        /// The entry in use is kept while it is verified and no verified nomination outranks it.
+        /// </summary>
+        private void SelectRemoteNominatedEntry()
+        {
+            ChecklistEntry best;
+
+            lock (_checklistLock)
+            {
+                best = _checklist
+                    .Where(x => x.RemoteNominated && IsFresh(x) && IsStillAnswering(x))
+                    .OrderByDescending(x => x.Priority)
+                    .FirstOrDefault();
+            }
+
+            var current = NominatedEntry;
+
+            if (best == null || current == null ||
+                best.RemoteCandidate.ToString() == current.RemoteCandidate.ToString() ||
+                (IsStillAnswering(current) && best.Priority <= current.Priority))
+            {
+                return;
+            }
+
+            logger.LogDebug("ICE RTP channel remote peer nominated a new candidate: {RemoteCandidate}.", best.RemoteCandidate.ToShortString());
+            SetNominatedEntry(best);
+        }
+
+        /// <summary>
+        /// Whether the entry has not stopped answering our checks: none is unanswered,
+        /// or the first unanswered one is still within its grace. An entry nobody has checked yet
+        /// keeps its benefit of the doubt; one that answered and has since died loses it
+        /// <see cref="RENOMINATION_CHECK_GRACE_MS"/> after the first check it leaves unanswered.
+        /// One that has never answered loses it sooner, <see cref="RENOMINATION_FIRST_CHECK_GRACE_MS"/>:
+        /// the first nomination is taken unchecked, and a dead one held for the full grace delays
+        /// DTLS by a retransmit (2.5 s, measured with Chrome on the Android emulator).
+        /// </summary>
+        private static bool IsStillAnswering(ChecklistEntry entry) =>
+            entry.UnansweredSince == DateTime.MinValue ||
+            entry.LastResponseAt >= entry.UnansweredSince ||
+            DateTime.Now.Subtract(entry.UnansweredSince).TotalMilliseconds <
+                (entry.LastResponseAt == DateTime.MinValue ? RENOMINATION_FIRST_CHECK_GRACE_MS : RENOMINATION_CHECK_GRACE_MS);
+
+        /// <summary>
+        /// Whether a candidate answered a check of ours recently enough to move to. One that
+        /// answered once and has not been checked since may have died meanwhile: a phone's
+        /// mobile-data path, verified before it went back to Wi-Fi and turned mobile data off,
+        /// was moved to again and swallowed 5 s of audio, measured with Chrome on the Android
+        /// emulator. An entry the peer is nominating is checked on each nomination, so stays fresh.
+        /// </summary>
+        private static bool IsFresh(ChecklistEntry entry) =>
+            entry.LastResponseAt != DateTime.MinValue &&
+            DateTime.Now.Subtract(entry.LastResponseAt).TotalMilliseconds < RENOMINATION_FRESH_MS;
+
+        /// <summary>
+        /// Checks an entry that takes part in a renomination, at most every
+        /// <see cref="RENOMINATION_CHECK_INTERVAL_MS"/>.
+        /// </summary>
+        private void RecheckForRenomination(ChecklistEntry entry)
+        {
+            if (DateTime.Now.Subtract(entry.LastCheckSentAt).TotalMilliseconds < RENOMINATION_CHECK_INTERVAL_MS)
+            {
+                return;
+            }
+
+            logger.LogDebug("ICE RTP channel checking candidate for a renomination: {RemoteCandidate}.", entry.RemoteCandidate.ToShortString());
+            SendConnectivityCheck(entry, false);
+        }
+
+        /// <summary>
         /// Performs a connectivity check for a single candidate pair entry.
         /// </summary>
         /// <param name="candidatePair">The candidate pair to perform a connectivity check for.</param>
@@ -1544,7 +1672,7 @@ namespace SIPSorcery.Net
                 candidatePair.State = ChecklistEntryState.InProgress;
             }
 
-            candidatePair.LastCheckSentAt = DateTime.Now;
+            candidatePair.MarkCheckSent();
             candidatePair.ChecksSent++;
             candidatePair.RequestTransactionID = Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
 
@@ -1682,7 +1810,7 @@ namespace SIPSorcery.Net
                     }
 
                     candidatePair.RequestTransactionID = candidatePair.RequestTransactionID ?? Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
-                    candidatePair.LastCheckSentAt = DateTime.Now;
+                    candidatePair.MarkCheckSent();
                     candidatePair.ChecksSent++;
 
                     SendSTUNBindingRequest(candidatePair, false);
@@ -1752,6 +1880,14 @@ namespace SIPSorcery.Net
                     else
                     {
                         matchingChecklistEntry.GotStunResponse(stunMessage, remoteEndPoint);
+
+                        if (matchingChecklistEntry.RemoteNominated &&
+                            IceConnectionState == RTCIceConnectionState.connected &&
+                            stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
+                        {
+                            // The check that verifies an entry the remote peer nominated after connecting.
+                            SelectRemoteNominatedEntry();
+                        }
 
                         if (_checklistState == ChecklistState.Running &&
                             stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
@@ -1922,11 +2058,8 @@ namespace SIPSorcery.Net
                         // - The entry that has a remote candidate with an end point that matches the endpoint this STUN request came from,
                         // - And if the STUN request was relayed through a TURN server then only match is the checklist local candidate is
                         //   also a relay type. It is possible for the same remote end point to send STUN requests directly and via a TURN server.
-                        matchingChecklistEntry = _checklist.Where(x =>
-                            (x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint) ||
-                             x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, canonicalEndPoint)) &&
-                         (!wasRelayed || x.LocalCandidate.type == RTCIceCandidateType.relay)
-                         ).FirstOrDefault();
+                        matchingChecklistEntry = FindChecklistEntryForBindingRequest(
+                            remoteEndPoint, canonicalEndPoint, wasRelayed);
                     }
 
                     if (matchingChecklistEntry == null &&
@@ -1959,33 +2092,31 @@ namespace SIPSorcery.Net
 
                         matchingChecklistEntry = entry;
                     }
-                    else if (matchingChecklistEntry == null && !ReferenceEquals(canonicalEndPoint, remoteEndPoint))
+                    else if (matchingChecklistEntry == null)
                     {
-                        // The canonical endpoint (post-translation) matches a remote candidate
-                        // but no checklist entry exists for it yet against this local candidate.
-                        // Find or create one so the nomination/connectivity check has somewhere
-                        // to live without inventing a prflx.
+                        // A resolved known candidate can be visible before UpdateChecklist inserts its pair.
+                        // Reuse or create the pair for both untranslated and translated sources.
                         var canonicalCandidate = _remoteCandidates.First(
-                            x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, canonicalEndPoint));
+                            x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, canonicalEndPoint) ||
+                                 x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint));
 
                         ChecklistEntry entry;
                         lock (_checklistLock)
                         {
-                            entry = _checklist.FirstOrDefault(
-                                x => ReferenceEquals(x.RemoteCandidate, canonicalCandidate)
-                                     && (!wasRelayed || x.LocalCandidate.type == RTCIceCandidateType.relay));
-                        }
-                        if (entry == null)
-                        {
-                            entry = new ChecklistEntry(wasRelayed ? _relayChecklistCandidate : _localChecklistCandidate,
-                                canonicalCandidate, IsController);
-                            entry.State = ChecklistEntryState.Waiting;
-                            if (wasRelayed)
+                            entry = FindChecklistEntryForBindingRequest(
+                                remoteEndPoint, canonicalEndPoint, wasRelayed);
+                            if (entry == null)
                             {
-                                entry.TurnPermissionsRequestSent = 1;
-                                entry.TurnPermissionsResponseAt = DateTime.Now;
+                                entry = new ChecklistEntry(wasRelayed ? _relayChecklistCandidate : _localChecklistCandidate,
+                                    canonicalCandidate, IsController);
+                                entry.State = ChecklistEntryState.Waiting;
+                                if (wasRelayed)
+                                {
+                                    entry.TurnPermissionsRequestSent = 1;
+                                    entry.TurnPermissionsResponseAt = DateTime.Now;
+                                }
+                                AddChecklistEntry(entry);
                             }
-                            AddChecklistEntry(entry);
                         }
                         matchingChecklistEntry = entry;
                     }
@@ -2011,17 +2142,30 @@ namespace SIPSorcery.Net
                                 // If we are the "controlled" agent and get a "use candidate" attribute that sets the matching candidate as nominated 
                                 // as per https://tools.ietf.org/html/rfc8445#section-7.3.1.5.
                                 logger.LogDebug("ICE RTP channel remote peer nominated entry from binding request: {RemoteCandidate}.", matchingChecklistEntry.RemoteCandidate.ToShortString());
+                                matchingChecklistEntry.RemoteNominated = true;
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
-                            else if (matchingChecklistEntry.RemoteCandidate.ToString() != NominatedEntry.RemoteCandidate.ToString())
+                            else if (!matchingChecklistEntry.RemoteCandidate.IsEquivalent(NominatedEntry.RemoteCandidate))
                             {
-                                // The remote peer is changing the nominated candidate.
-                                logger.LogDebug("ICE RTP channel remote peer nominated a new candidate: {RemoteCandidate}.", matchingChecklistEntry.RemoteCandidate.ToShortString());
-                                SetNominatedEntry(matchingChecklistEntry);
+                                // The remote peer nominates another entry. A controlling peer may nominate several
+                                // (Chrome keeps nominating every pair it rates at least as good as its selected one),
+                                // so switching on each nomination flips the destination between them, and switching
+                                // to one we cannot reach loses the media. Only entries verified by our own check
+                                // qualify, and the highest priority of those is used, as per
+                                // https://tools.ietf.org/html/rfc8445#section-8.1.1.
+                                //
+                                // Both ends of the choice are checked: the entry nominated, and the one in use,
+                                // which may be why the peer moved (a network change). One that stops answering
+                                // loses its claim (IsStillAnswering), so the peer's next nomination moves us off it.
+                                matchingChecklistEntry.RemoteNominated = true;
+                                RecheckForRenomination(matchingChecklistEntry);
+                                RecheckForRenomination(NominatedEntry);
+                                SelectRemoteNominatedEntry();
                             }
                         }
 
                         matchingChecklistEntry.LastBindingRequestReceivedAt = DateTime.Now;
+                        matchingChecklistEntry.BindingRequestsReceived++;
 
                         STUNMessage stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
                         stunResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
@@ -2042,6 +2186,16 @@ namespace SIPSorcery.Net
                     }
                 }
             }
+        }
+
+        // The caller holds _checklistLock so lookup and conditional insertion share one critical section.
+        private ChecklistEntry FindChecklistEntryForBindingRequest(
+            IPEndPoint remoteEndPoint, IPEndPoint canonicalEndPoint, bool wasRelayed)
+        {
+            return _checklist.FirstOrDefault(x =>
+                (x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint) ||
+                 x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, canonicalEndPoint)) &&
+                (!wasRelayed || x.LocalCandidate.type == RTCIceCandidateType.relay));
         }
 
         /// <summary>
@@ -2367,6 +2521,28 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
+                        m_rtpTcpReceiverByUri.TryGetValue(iceServer?._uri, out IceTcpReceiver rtpTcpReceiver);
+
+                        // Socket.Connected reports the state as of the last I/O operation and stays true
+                        // after the remote end closes the connection gracefully, so it cannot detect a half
+                        // closed connection on its own. The receiver can: a zero byte receive on a stream
+                        // socket is the end of stream.
+                        //
+                        // The connection cannot be recovered in place. A connected socket cannot be reused
+                        // once disconnected (Socket.Connect throws InvalidOperationException after
+                        // Socket.Disconnect regardless of the endpoint), and for a TURN server a new
+                        // connection is a new 5-tuple, so the allocation is gone with the old one and would
+                        // have to be re-established from scratch anyway. Reporting the failure is therefore
+                        // the correct outcome: the caller records it against the ICE server, which takes that
+                        // server out of the running and lets the checklist move to the next one. Without this
+                        // the send below is issued into a dead connection and the failure is only noticed
+                        // indirectly, once the retry and timeout heuristics happen to give up.
+                        if (rtpTcpReceiver != null && rtpTcpReceiver.IsEndOfStream)
+                        {
+                            logger.LogWarning("SendOverTCP the connection to ICE server {Uri} was closed by the remote party.", iceServer?._uri);
+                            return SocketError.NotConnected;
+                        }
+
                         if (!sendSocket.Connected || !(sendSocket.RemoteEndPoint is IPEndPoint) || !equals(sendSocket.RemoteEndPoint as IPEndPoint, dstEndPoint))
                         {
                             if (sendSocket.Connected)
@@ -2380,7 +2556,6 @@ namespace SIPSorcery.Net
                         }
 
                         //Fix ReceiveFrom logic if any previous exception happens
-                        m_rtpTcpReceiverByUri.TryGetValue(iceServer?._uri, out IceTcpReceiver rtpTcpReceiver);
                         if (rtpTcpReceiver != null && !rtpTcpReceiver.IsRunningReceive && !rtpTcpReceiver.IsClosed)
                         {
                             rtpTcpReceiver.BeginReceiveFrom();
@@ -2413,7 +2588,12 @@ namespace SIPSorcery.Net
         /// 0x4000-0x7FFF channel-number range. We accumulate bytes until we have a full
         /// message and then dispatch it via OnRTPPacketReceived (inherited from RTPChannel).
         /// </summary>
-        private async Task StartTlsReadLoop(STUNUri uri, SslStream sslStream, IPEndPoint remoteEndPoint)
+        /// <remarks>
+        /// Takes a Stream rather than the SslStream it is called with, and is internal rather than
+        /// private, so the loop's drop-and-continue behaviour can be tested over a plain stream.
+        /// Nothing in here needs TLS: the caller owns the handshake.
+        /// </remarks>
+        internal async Task StartTlsReadLoop(STUNUri uri, Stream sslStream, IPEndPoint remoteEndPoint)
         {
             byte[] receiveBuffer = new byte[4096];
             List<byte> streamBuffer = new List<byte>();
@@ -2450,7 +2630,22 @@ namespace SIPSorcery.Net
                         {
                             byte[] packetBytes = streamBuffer.GetRange(0, totalPacketLength).ToArray();
                             streamBuffer.RemoveRange(0, totalPacketLength);
-                            OnRTPPacketReceived(null, 0, remoteEndPoint, packetBytes);
+
+                            // The framing above has already consumed exactly this packet's bytes, so one
+                            // that can't be processed can be dropped without losing the stream position.
+                            // Letting it unwind instead ended this loop for good: the catch below is the
+                            // only handler, the finally drops the TLS stream, and nothing restarts a loop
+                            // that was started fire and forget, so every relayed packet after it was lost
+                            // and the media session went with it. Drop and continue, the way the other ICE
+                            // receive loops do. See GHSA-6848-qmp4-652w.
+                            try
+                            {
+                                OnRTPPacketReceived(null, 0, remoteEndPoint, packetBytes);
+                            }
+                            catch (Exception packetExcp)
+                            {
+                                logger.LogWarning(packetExcp, "RTPIceChannel dropped a packet received over TLS from {Uri} that could not be processed. {ErrorMessage}", uri, packetExcp.Message);
+                            }
                         }
                         else
                         {
@@ -2470,10 +2665,7 @@ namespace SIPSorcery.Net
             finally
             {
                 _tlsStreams.TryRemove(uri, out _);
-                if (_tlsWriteLocks.TryRemove(uri, out var removedLock))
-                {
-                    removedLock.Dispose();
-                }
+                _tlsWriteLocks.TryRemove(uri, out _);
             }
         }
 
@@ -2571,7 +2763,7 @@ namespace SIPSorcery.Net
             }
 
 
-            // Default fallback: do an actual mDNS query via Makaretu.Dns.Multicast.
+            // Default fallback: do an actual mDNS query via MdnsResolver.
             // Dns.GetHostAddressesAsync delegates to the OS resolver which on Windows
             // does not reliably handle .local lookups (depends on whether the OS-level
             // mDNS resolver is enabled, the multicast packet round-trips through the

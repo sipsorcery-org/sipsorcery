@@ -58,6 +58,7 @@ public class RouteAudioTests
 
         Assert.False(ok);
         Assert.NotNull(error);
-        Assert.Contains("opus (default)", error);
+        Assert.Contains("--audio-codec", error);
+        Assert.Contains("exactly one of: opus, pcmu, pcma", error);
     }
 }

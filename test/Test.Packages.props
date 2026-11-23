@@ -1,0 +1,30 @@
+<Project>
+
+  <!-- Shared central package versions for the SIPSorcery test projects that use Central Package
+       Management. This file only declares versions; it is not auto-imported. Each participating
+       project has its own Directory.Packages.props that enables CPM and imports this file, so the
+       participants stay on identical dependency versions (see issue #1605).
+
+       Participating projects are exactly those with a Directory.Packages.props of their own under
+       test/ — currently all of them import this file. To add another, give it the same two-line
+       Directory.Packages.props and drop the Version attributes from its PackageReference items. -->
+  <PropertyGroup>
+    <!-- Lets the security pins at the bottom of this file lift *transitive* versions, which is
+         the only way to reach them: nothing here references them directly. -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <PackageVersion Include="MartinCostello.Logging.XUnit" Version="0.7.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk"     Version="18.9.0" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console"      Version="6.1.1" />
+    <PackageVersion Include="Serilog.Sinks.XUnit"        Version="3.0.19" />
+	<PackageVersion Include="System.Drawing.Common"      Version="10.0.11" />
+    <PackageVersion Include="xunit"                      Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.console"       Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio"  Version="4.0.0" />
+  </ItemGroup>
+
+</Project>

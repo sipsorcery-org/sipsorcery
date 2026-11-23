@@ -20,6 +20,9 @@
 // 18 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
 // 23 Jun 2026	Aaron Clauson	Wired the sip: source (with an optional ffmpeg audio-scope video)
 //                              and the whip: sink so a call can be bridged to a WebRTC endpoint.
+// 16 Nov 2026	Aaron Clauson	Wired the sip: sink, so a stream can be sent to a SIP phone.
+// 21 Nov 2026	Aaron Clauson	--video-encoder av1.net: the test pattern encoded by the managed
+//                              SIPSorcery.AV1 encoder instead of ffmpeg.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -30,6 +33,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.AV1;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorceryMedia.Abstractions;
@@ -52,35 +56,68 @@ public sealed record EdgeOptions(
     string? SipUsername = null,
     string? SipPassword = null,
     string AudioCodec = "opus",
+    string? VideoCodec = null,
     bool OpenBrowser = false,
     string? LiveKitUrl = null,
     string? LiveKitApiKey = null,
     string? LiveKitApiSecret = null,
-    string? CloudflareAppId = null);
+    string? CloudflareAppId = null,
+    string BrowserSize = "640x360",
+    string VideoEncoder = RouteVideo.DEFAULT_ENCODER);
 
 /// <summary>Resolves the --audio-codec name to the audio format a source produces and a sink offers.</summary>
 public static class RouteAudio
 {
-    public static bool TryResolveCodec(string? name, out AudioFormat format, out string? error)
-    {
-        error = null;
-        switch ((string.IsNullOrWhiteSpace(name) ? "opus" : name).Trim().ToLowerInvariant())
-        {
-            case "opus":
-                format = AudioCommonlyUsedFormats.OpusWebRTC;
-                return true;
-            case "pcmu":
-                format = new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU);
-                return true;
-            case "pcma":
-                format = new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA);
-                return true;
-            default:
-                format = AudioFormat.Empty;
-                error = $"Unknown --audio-codec '{name}'. Use opus (default), pcmu or pcma.";
-                return false;
-        }
-    }
+    /// <summary>The codec a route uses when --audio-codec is not given: the universal WebRTC codec.</summary>
+    public const string DEFAULT_CODEC = "opus";
+
+    public static bool TryResolveCodec(string? name, out AudioFormat format, out string? error) =>
+        CodecSelection.TryResolveAudio(string.IsNullOrWhiteSpace(name) ? DEFAULT_CODEC : name,
+            CodecSelection.AUDIO_OPTION, out format, out error);
+}
+
+/// <summary>
+/// Resolves the --video-codec name to the single video format the graph's edges send and receive.
+/// Unset (null) leaves each edge on its own default: H264 for a send-only edge, the full supported
+/// list for a receive-only one. Set, it pins exactly that codec on every edge, so a run that cannot
+/// negotiate it fails rather than quietly using something else.
+/// </summary>
+public static class RouteVideo
+{
+    /// <summary>The --video-encoder option name.</summary>
+    public const string ENCODER_OPTION = "--video-encoder";
+
+    /// <summary>The native SIPSorceryMedia.FFmpeg encoder, any codec: the default.</summary>
+    public const string DEFAULT_ENCODER = "ffmpeg";
+
+    /// <summary>The managed SIPSorcery.AV1 (av1rt) encoder: AV1 only, no native dependencies.</summary>
+    public const string AV1_NET_ENCODER = "av1.net";
+
+    public static bool TryResolveCodec(string? name, out VideoFormat format, out string? error) =>
+        CodecSelection.TryResolveVideo(name, CodecSelection.VIDEO_OPTION, out format, out error);
+
+    /// <summary>True for the managed AV1 encoder's name.</summary>
+    public static bool IsAv1Net(string? encoder) =>
+        string.Equals(encoder?.Trim(), AV1_NET_ENCODER, StringComparison.OrdinalIgnoreCase);
+
+    // The managed AV1 encoder's own default is libwebrtc's 35 Mbps; the test pattern needs far less.
+    private const int AV1_NET_BITRATE_KBPS = 2000;
+
+    /// <summary>Creates the --video-encoder the test pattern source encodes with at <paramref name="fps"/>.</summary>
+    /// <remarks>
+    /// The managed AV1 encoder's own default is a key frame only on request, and the graph does not
+    /// carry a viewer's PLI back to the encoder, so a viewer joining after the first frame would never
+    /// get a picture. A key frame every second (as the ffmpeg encoders' GOP gives) lets one join.
+    /// </remarks>
+    public static IVideoEncoder CreateEncoder(string? encoder, int fps) =>
+        IsAv1Net(encoder)
+            ? new AV1VideoEncoder(new Av1rt.Av1EncoderOptions
+            {
+                FrameRate = fps,
+                TargetBitrateKbps = AV1_NET_BITRATE_KBPS,
+                KeyFrameInterval = Math.Max(1, fps),
+            })
+            : new FFmpegVideoEncoder();
 }
 
 /// <summary>
@@ -95,7 +132,7 @@ public sealed class TestPatternSourceNode : ISourceNode
 {
     private readonly VideoTestPatternSource _source;
     private readonly AudioExtrasSource _audioSource;
-    private readonly VideoFormat _format = RouteVideoFormats.H264;
+    private readonly VideoFormat _format;
     private readonly AudioFormat _audioFormat;
     private readonly int _fps;
     private readonly ILogger _logger;
@@ -109,14 +146,15 @@ public sealed class TestPatternSourceNode : ISourceNode
 
     public long? ConnectTimeMs => null;
 
-    public TestPatternSourceNode(int fps, AudioFormat audioFormat, ILogger logger)
+    public TestPatternSourceNode(int fps, AudioFormat audioFormat, VideoFormat videoFormat, IVideoEncoder encoder, ILogger logger)
     {
         _fps = fps;
         _audioFormat = audioFormat;
+        _format = videoFormat;
         _logger = logger;
 
-        _source = new VideoTestPatternSource(new FFmpegVideoEncoder());
-        _source.RestrictFormats(f => f.Codec == VideoCodecsEnum.H264);
+        _source = new VideoTestPatternSource(encoder);
+        _source.RestrictFormats(f => f.Codec == _format.Codec);
         _source.SetFrameRate(fps);
         _source.OnVideoSourceEncodedSample += HandleEncoded;
 
@@ -145,10 +183,11 @@ public sealed class TestPatternSourceNode : ISourceNode
         _audioSource.SetAudioSourceFormat(_audioFormat);
         await _source.StartVideo().ConfigureAwait(false);
         await _audioSource.StartAudio().ConfigureAwait(false);
-        _logger.LogDebug("Test pattern source started: H264 @ {Fps}fps + {Codec} music.", _fps, _audioFormat.Codec);
+        _logger.LogDebug("Test pattern source started: {VideoCodec} @ {Fps}fps + {Codec} music.", _format.Codec, _fps, _audioFormat.Codec);
     }
 
-    public string Describe() => $"testpattern h264 @ {_fps}fps + music ({_audioFormat.Codec.ToString().ToLowerInvariant()})";
+    public string Describe() =>
+        $"testpattern {_format.Codec.ToString().ToLowerInvariant()} @ {_fps}fps + music ({_audioFormat.Codec.ToString().ToLowerInvariant()})";
 
     public async ValueTask DisposeAsync()
     {
@@ -214,14 +253,22 @@ public static class EdgeFactory
         switch (scheme)
         {
             case "testpattern":
-                return new TestPatternSourceNode(options.Fps, ResolveAudioFormat(options), logger);
+                return new TestPatternSourceNode(options.Fps, ResolveAudioFormat(options), ResolveSendVideoFormat(options),
+                    RouteVideo.CreateEncoder(options.VideoEncoder, options.Fps), logger);
 
             case "whep":
                 if (string.IsNullOrWhiteSpace(rest))
                 {
                     throw new EdgeException("The whep source needs a URL, e.g. --from whep:https://host/api/whep.");
                 }
-                return new WhepSourceNode(rest!, options.Token, options.TimeoutSeconds, logger);
+                return new WhepSourceNode(rest!, ResolveReceiveVideoFormats(options), options.Token, options.TimeoutSeconds, logger);
+
+            case "browser":
+                // A browser tab as the publisher: the demand-driven mirror of whep: (that one dials
+                // out, this one waits to be dialled). The spec is an optional port, as for the web
+                // sink. Frames entering the graph were packetised by libwebrtc, so a sink downstream
+                // is carrying genuinely external RTP that our depacketisers reassembled.
+                return CreateBrowserSource(rest, options, logger);
 
             case "sip":
             case "sips":
@@ -239,9 +286,17 @@ public static class EdgeFactory
             case "cloudflare":
                 return CreateCloudflareSource(rest, options, logger);
 
+            case "term":
+            case "web":
+                // Only meaningful two-way (a microphone + speaker); the one-way form of these is a sink.
+                throw new EdgeException(
+                    $"'{scheme}' as a --from source captures your microphone, so it needs a two-way route: add --duplex " +
+                    "(it is two-way automatically when the other end is an agent). For a browser publishing a " +
+                    "generated video test pattern one-way, use --from browser.");
+
             case "whip":
                 throw new EdgeException(
-                    $"'{scheme}' as a --from source is not wired into route yet (sources: testpattern, whep:<url>, sip:<uri>, livekit[:room], cloudflare:<sessionId>). " +
+                    $"'{scheme}' as a --from source is not wired into route yet (sources: testpattern, browser[:port], whep:<url>, sip:<uri>, livekit[:room], cloudflare:<sessionId>). " +
                     "Use whep:<url> to receive a WHIP/WHEP stream today.");
 
             default:
@@ -250,7 +305,7 @@ public static class EdgeFactory
                 {
                     return CreateSipSource(spec, options, logger);
                 }
-                throw new EdgeException($"Unknown --from edge '{spec}'. Sources: testpattern, whep:<url>, sip:<uri>, livekit[:room], cloudflare:<sessionId>.");
+                throw new EdgeException($"Unknown --from edge '{spec}'. Sources: testpattern, browser[:port], whep:<url>, sip:<uri>, livekit[:room], cloudflare:<sessionId>.");
         }
     }
 
@@ -271,16 +326,7 @@ public static class EdgeFactory
         // Offer OPUS first then a G.711 fallback when the graph is OPUS, so the call is carried in OPUS
         // end to end whenever the far end supports it and only falls back to (and transcodes) G.711 when
         // that is all there is. When the user forced a G.711 graph (--audio-codec pcmu/pcma) offer just it.
-        List<AudioFormat> offered = graphFormat.Codec == AudioCodecsEnum.OPUS
-            ? new List<AudioFormat>
-              {
-                  AudioCommonlyUsedFormats.OpusWebRTC,
-                  new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-                  new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA)
-              }
-            : new List<AudioFormat> { graphFormat };
-
-        ISourceNode source = new SipSourceNode(uri, offered, options.SipUsername, options.SipPassword, options.TimeoutSeconds, logger);
+        ISourceNode source = new SipSourceNode(uri, SipAudioOffer(graphFormat), options.SipUsername, options.SipPassword, options.TimeoutSeconds, logger);
 
         // The scope decodes the call audio for its waveform; it sits inside the transcode so it sees the
         // negotiated codec directly (it decodes by the frame's format, so it handles G.711 or OPUS).
@@ -296,6 +342,38 @@ public static class EdgeFactory
 
         return source;
     }
+
+    /// <summary>
+    /// Builds a sip: sink: a SIP call that the graph's media is sent down, send-only. It offers the
+    /// graph's codecs so the frames relay unchanged. With an Opus graph a G.711 fallback follows, as
+    /// the sip: source offers, and the sink transcodes to it if that's what the phone takes. Video is
+    /// the graph's single send codec; when --video-codec pinned it, a call without it fails the run.
+    /// </summary>
+    private static ISinkNode CreateSipSink(string sipSpec, EdgeOptions options, ILogger logger)
+    {
+        if (!SipDestination.TryParse(sipSpec, out SIPURI uri, out string? error))
+        {
+            throw new EdgeException(error!);
+        }
+
+        return new SipSinkNode(uri, SipAudioOffer(ResolveAudioFormat(options)), ResolveSendVideoFormat(options),
+            videoRequired: ResolveVideoFormat(options) != null, options.SipUsername, options.SipPassword, options.TimeoutSeconds, logger);
+    }
+
+    /// <summary>
+    /// What a sip: edge offers for a graph codec: Opus first then a G.711 fallback when the graph is
+    /// Opus, so the call is carried in Opus whenever the far end supports it; just the codec when the
+    /// user forced a G.711 graph (--audio-codec pcmu/pcma).
+    /// </summary>
+    private static List<AudioFormat> SipAudioOffer(AudioFormat graphFormat) =>
+        graphFormat.Codec == AudioCodecsEnum.OPUS
+            ? new List<AudioFormat>
+              {
+                  AudioCommonlyUsedFormats.OpusWebRTC,
+                  new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+                  new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA)
+              }
+            : new List<AudioFormat> { graphFormat };
 
     /// <summary>
     /// Builds a livekit: sink: publish the graph's media into a LiveKit room. The room is the edge's
@@ -324,7 +402,7 @@ public static class EdgeFactory
 
         string room = string.IsNullOrWhiteSpace(rest) ? $"cli-{Guid.NewGuid().ToString("N")[..8]}" : rest!;
 
-        return new LiveKitSinkNode(url!, apiKey!, apiSecret!, room, audioFormat, options.TimeoutSeconds, logger);
+        return new LiveKitSinkNode(url!, apiKey!, apiSecret!, room, audioFormat, ResolveSendVideoFormat(options), options.TimeoutSeconds, logger);
     }
 
     /// <summary>
@@ -345,7 +423,7 @@ public static class EdgeFactory
                 "CLOUDFLARE_APPID/CLOUDFLARE_API_TOKEN).");
         }
 
-        return new CloudflareSinkNode(appId!, token!, ResolveAudioFormat(options), options.TimeoutSeconds, logger);
+        return new CloudflareSinkNode(appId!, token!, ResolveAudioFormat(options), ResolveSendVideoFormat(options), options.TimeoutSeconds, logger);
     }
 
     /// <summary>
@@ -370,7 +448,7 @@ public static class EdgeFactory
                 "CLOUDFLARE_APPID/CLOUDFLARE_API_TOKEN).");
         }
 
-        return new CloudflareSourceNode(appId!, token!, rest!, options.TimeoutSeconds, logger);
+        return new CloudflareSourceNode(appId!, token!, rest!, ResolveReceiveVideoFormats(options), options.TimeoutSeconds, logger);
     }
 
     /// <summary>
@@ -396,13 +474,83 @@ public static class EdgeFactory
                 "LIVEKIT_WEBSOCKET_URL/LIVEKIT_API_KEY/LIVEKIT_API_SECRET).");
         }
 
-        return new LiveKitSourceNode(url!, apiKey!, apiSecret!, rest!, options.TimeoutSeconds, logger);
+        return new LiveKitSourceNode(url!, apiKey!, apiSecret!, rest!, ResolveReceiveVideoFormats(options), options.TimeoutSeconds, logger);
+    }
+
+    /// <summary>
+    /// Builds a browser: source. The "rest" is an optional port (as for the web sink); the canvas
+    /// resolution comes from --browser-size and the frame rate from --fps. When --video-codec pins a
+    /// codec it is pinned on BOTH ends - our answer offers only it, and the page pins it with
+    /// setCodecPreferences - so the graph carries that codec or the run fails rather than quietly
+    /// negotiating something else.
+    /// </summary>
+    private static ISourceNode CreateBrowserSource(string? rest, EdgeOptions options, ILogger logger)
+    {
+        int port = 8080;
+        if (!string.IsNullOrWhiteSpace(rest))
+        {
+            if (!int.TryParse(rest, out port) || port < 1 || port > 65535)
+            {
+                throw new EdgeException($"The browser source port '{rest}' is not a valid port number (1-65535), e.g. --from browser:8080.");
+            }
+        }
+
+        if (!VideoPresets.TryResolveSize(options.BrowserSize, options.BrowserSize, out int width, out int height,
+                out string? sizeError, "--browser-size"))
+        {
+            throw new EdgeException(sizeError!);
+        }
+
+        // Pinning only our end would let the browser pick a different codec and make the result
+        // meaningless, so a codec the page cannot name to the browser has to be an error here.
+        string? browserMimeType = null;
+        if (!string.IsNullOrWhiteSpace(options.VideoCodec))
+        {
+            browserMimeType = BrowserTestPage.TryGetMimeType(options.VideoCodec);
+            if (browserMimeType == null)
+            {
+                throw new EdgeException(
+                    $"The browser source cannot pin {CodecSelection.VIDEO_OPTION} '{options.VideoCodec!.Trim()}' in the browser. " +
+                    "Use one of: vp8, vp9, h264, h265, av1.");
+            }
+        }
+
+        return new BrowserSourceNode(port, width, height, options.Fps, browserMimeType,
+            ResolveReceiveVideoFormats(options), options.OpenBrowser, options.TimeoutSeconds, logger);
     }
 
     /// <summary>Resolves the verb's --audio-codec to a format, throwing <see cref="EdgeException"/> if invalid.</summary>
     private static AudioFormat ResolveAudioFormat(EdgeOptions options)
     {
         if (!RouteAudio.TryResolveCodec(options.AudioCodec, out var format, out string? error))
+        {
+            throw new EdgeException(error!);
+        }
+        return format;
+    }
+
+    /// <summary>
+    /// The single video format a send-only edge offers: the verb's --video-codec when it was given,
+    /// otherwise H264, the codec these edges have always sent.
+    /// </summary>
+    private static VideoFormat ResolveSendVideoFormat(EdgeOptions options)
+        => ResolveVideoFormat(options) ?? RouteVideoFormats.H264;
+
+    /// <summary>
+    /// What a receive-only edge offers: just the --video-codec when it was given, so negotiating
+    /// anything else fails the run, otherwise every codec the library supports.
+    /// </summary>
+    private static List<VideoFormat> ResolveReceiveVideoFormats(EdgeOptions options)
+        => ResolveVideoFormat(options) is { } format ? new List<VideoFormat> { format } : RouteVideoFormats.All();
+
+    /// <summary>Resolves the verb's --video-codec, null when it was not given, throwing if invalid.</summary>
+    private static VideoFormat? ResolveVideoFormat(EdgeOptions options)
+    {
+        if (string.IsNullOrWhiteSpace(options.VideoCodec))
+        {
+            return null;
+        }
+        if (!RouteVideo.TryResolveCodec(options.VideoCodec, out var format, out string? error))
         {
             throw new EdgeException(error!);
         }
@@ -425,7 +573,7 @@ public static class EdgeFactory
                 {
                     throw new EdgeException($"Could not parse the whip sink '{rest}' as an HTTP or HTTPS URL.");
                 }
-                return new WhipSinkNode(rest!, ResolveAudioFormat(options), options.Token, options.TimeoutSeconds, logger);
+                return new WhipSinkNode(rest!, ResolveAudioFormat(options), ResolveSendVideoFormat(options), options.Token, options.TimeoutSeconds, logger);
 
             case "web":
                 // Self-hosting WHEP server: bind a local HTTP listener that serves a player page and
@@ -438,7 +586,7 @@ public static class EdgeFactory
                         throw new EdgeException($"The web sink port '{rest}' is not a valid port number (1-65535), e.g. --to web:8080.");
                     }
                 }
-                return new WebSinkNode(port, ResolveAudioFormat(options), options.Token, options.OpenBrowser, logger);
+                return new WebSinkNode(port, ResolveAudioFormat(options), ResolveSendVideoFormat(options), options.Token, options.OpenBrowser, logger);
 
             case "livekit":
                 return CreateLiveKitSink(rest, options, logger);
@@ -448,11 +596,26 @@ public static class EdgeFactory
 
             case "sip":
             case "sips":
-                throw new EdgeException(
-                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, whip:<url>, web[:port], livekit[:room], cloudflare). " +
-                    "A sip: call sink becomes a route sink in a later version.");
+                if (string.IsNullOrWhiteSpace(rest))
+                {
+                    throw new EdgeException("The sip sink needs a destination, e.g. --to sip:bob@192.168.0.10:5060.");
+                }
+                // Unlike a source, a sink needs the scheme: a bare user@host is too easily a file name.
+                return CreateSipSink(spec, options, logger);
+
+            case "-:mkv":
+            case "term":
+                // Video + audio muxed into a live Matroska stream on stdout, e.g. | mpv -. One-way, "term"
+                // is the same thing: it only opens the microphone in a two-way route.
+                return new MatroskaSinkNode(null, spec, logger);
 
             default:
+                // A .mkv file gets video + audio in Matroska rather than the raw video bitstream.
+                if (spec.EndsWith(".mkv", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new MatroskaSinkNode(spec, spec, logger);
+                }
+
                 // Anything else is a VideoSink spec: a file path, "play", "null" or "-".
                 var sink = VideoSink.Create(spec, logger, out string? error);
                 if (error != null)

@@ -28,6 +28,7 @@
 
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -119,7 +120,24 @@ namespace SIPSorcery.Net
         }
 
         public uint[] FeedbackSSRCs=[0]; // Packet Senders
-        
+
+        /// <summary>
+        /// For a Full Intra Request (RFC 5104 section 4.3.1) the command sequence number of each FCI entry.
+        /// The target SSRC of each entry is held in <see cref="FeedbackSSRCs"/> at the same index.
+        /// </summary>
+        public byte[] FirSequenceNumbers = Array.Empty<byte>();
+
+        private const int FIR_FCI_ENTRY_LENGTH = 8;
+
+        /// <summary>
+        /// For a parsed generic NACK (RFC 4585 section 6.2.1) the sequence numbers of the RTP packets reported lost
+        /// by all of its FCI entries, in the order reported. <see cref="PID"/> and <see cref="BLP"/> hold only the first entry.
+        /// </summary>
+        public IReadOnlyList<ushort> LostSequenceNumbers { get; private set; } = Array.Empty<ushort>();
+
+        private const int NACK_FCI_ENTRY_LENGTH = 4;
+        private const int NACK_BITMASK_BIT_COUNT = 16;
+
 
         public RTCPFeedback(uint senderSsrc, uint mediaSsrc, RTCPFeedbackTypesEnum feedbackMessageType, ushort sequenceNo, ushort bitMask)
         {
@@ -159,6 +177,23 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Creates a Full Intra Request (RFC 5104 section 4.3.1). The media source SSRC is set to 0 as
+        /// the RFC requires and the SSRC of the stream that should send a key frame goes in the FCI.
+        /// </summary>
+        /// <param name="senderSsrc">The SSRC of the party sending the request.</param>
+        /// <param name="targetSsrc">The SSRC of the media sender that should send a key frame.</param>
+        /// <param name="sequenceNumber">The command sequence number, incremented for each new request.</param>
+        public static RTCPFeedback CreateFullIntraRequest(uint senderSsrc, uint targetSsrc, byte sequenceNumber)
+        {
+            return new RTCPFeedback(senderSsrc, 0, PSFBFeedbackTypesEnum.FIR)
+            {
+                FeedbackSSRCs = new[] { targetSsrc },
+                FirSequenceNumbers = new[] { sequenceNumber },
+                SENDER_PAYLOAD_SIZE = 8 + FIR_FCI_ENTRY_LENGTH
+            };
+        }
+
+        /// <summary>
         /// Create a new RTCP Report from a serialised byte array.
         /// </summary>
         /// <param name="packet">The byte array holding the serialised feedback report.</param>
@@ -180,10 +215,53 @@ namespace SIPSorcery.Net
                     SENDER_PAYLOAD_SIZE = 12;
                     PID = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(payloadIndex + 8));
                     BLP = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(payloadIndex + 10));
+                    if (h.FeedbackMessageType == RTCPFeedbackTypesEnum.NACK)
+                    {
+                        // RFC 4585 section 6.2.1: one or more FCI entries of a packet ID (16 bits) and a
+                        // bitmask of the 16 packets after it.
+                        int fciEnd = Math.Min((h.Length + 1) * 4, packet.Length);
+                        if (h.PaddingFlag == 1)
+                        {
+                            fciEnd -= packet[fciEnd - 1];
+                        }
+                        var lost = new List<ushort>();
+                        for (int entryIndex = payloadIndex + 8; entryIndex + NACK_FCI_ENTRY_LENGTH <= fciEnd; entryIndex += NACK_FCI_ENTRY_LENGTH)
+                        {
+                            ushort pid = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(entryIndex));
+                            ushort blp = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(entryIndex + 2));
+                            lost.Add(pid);
+                            for (int bit = 0; bit < NACK_BITMASK_BIT_COUNT; bit++)
+                            {
+                                if ((blp & (1 << bit)) != 0)
+                                {
+                                    lost.Add((ushort)(pid + bit + 1));
+                                }
+                            }
+                        }
+                        LostSequenceNumbers = lost.ToArray();
+                    }
                     break;
 
                 case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
                     SENDER_PAYLOAD_SIZE = 8;
+                    break;
+
+                case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.FIR:
+                    {
+                        // RFC 5104 section 4.3.1: one or more FCI entries of target SSRC (32 bits),
+                        // command sequence number (8 bits) and 24 reserved bits.
+                        int fciLength = Math.Min((h.Length + 1) * 4, packet.Length) - payloadIndex - 8;
+                        int entryCount = Math.Max(fciLength, 0) / FIR_FCI_ENTRY_LENGTH;
+                        FeedbackSSRCs = new uint[entryCount];
+                        FirSequenceNumbers = new byte[entryCount];
+                        for (int i = 0; i < entryCount; i++)
+                        {
+                            int entryIndex = payloadIndex + 8 + i * FIR_FCI_ENTRY_LENGTH;
+                            FeedbackSSRCs[i] = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(entryIndex));
+                            FirSequenceNumbers[i] = packet[entryIndex + 4];
+                        }
+                        SENDER_PAYLOAD_SIZE = 8 + entryCount * FIR_FCI_ENTRY_LENGTH;
+                    }
                     break;
 
                 // We have a lot of different kind of extension messages
@@ -276,6 +354,14 @@ namespace SIPSorcery.Net
                     break;
 
                 case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
+                    break;
+                case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.FIR:
+                    for (int i = 0; i < FeedbackSSRCs.Length && payloadIndex + 8 + (i + 1) * FIR_FCI_ENTRY_LENGTH <= buffer.Length; i++)
+                    {
+                        int entryIndex = payloadIndex + 8 + i * FIR_FCI_ENTRY_LENGTH;
+                        BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(entryIndex), FeedbackSSRCs[i]);
+                        buffer[entryIndex + 4] = i < FirSequenceNumbers.Length ? FirSequenceNumbers[i] : (byte)0;
+                    }
                     break;
                 case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
 

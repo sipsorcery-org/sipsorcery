@@ -232,6 +232,68 @@ namespace SIPSorcery.Net
         public DateTime LastBindingRequestReceivedAt { get; set; }
 
         /// <summary>
+        /// Set when the remote peer has sent a binding request with the USE-CANDIDATE attribute
+        /// for this entry. Distinct from <see cref="Nominated"/>, which marks the entry in use:
+        /// a controlling peer may nominate several entries, and only verified ones are used.
+        /// </summary>
+        public bool RemoteNominated { get; set; }
+
+        /// <summary>
+        /// When a check of ours on this entry was last answered, whether the entry is
+        /// nominated or not. Compared with <see cref="LastCheckSentAt"/> it tells whether
+        /// the entry still answers.
+        /// </summary>
+        public DateTime LastResponseAt { get; set; } = DateTime.MinValue;
+
+        /// <summary>
+        /// When the first of our checks still unanswered was sent, the periodic ones on the
+        /// nominated entry included: later checks do not move it, so an entry that has
+        /// stopped answering cannot stay in grace by being checked again.
+        /// </summary>
+        public DateTime UnansweredSince { get; set; } = DateTime.MinValue;
+
+        /// <summary>
+        /// Every connectivity check sent on this entry, the periodic ones on a nominated entry
+        /// included. Unlike <see cref="ChecksSent"/>, which goes back to zero when a check is
+        /// answered, this only ever counts up. For diagnostics.
+        /// </summary>
+        public int TotalChecksSent { get; private set; }
+
+        /// <summary>
+        /// The success responses received to our connectivity checks on this entry. For diagnostics.
+        /// </summary>
+        public int ResponsesReceived { get; private set; }
+
+        /// <summary>
+        /// The connectivity checks (binding requests) the remote peer has sent on this entry. For
+        /// diagnostics: checks arriving with none of ours answered points at a firewall on our side
+        /// of the path, or theirs letting nothing in.
+        /// </summary>
+        public int BindingRequestsReceived { get; internal set; }
+
+        /// <summary>
+        /// The round trip time of the most recent connectivity check on this entry to be answered,
+        /// or null if none has been. Only a response to the latest check counts, so a late answer to
+        /// an earlier check (which would be timed from the wrong send) is not measured.
+        /// </summary>
+        public TimeSpan? RoundTripTime { get; private set; }
+
+        /// <summary>
+        /// Records a check sent on this entry: <see cref="LastCheckSentAt"/>, and
+        /// <see cref="UnansweredSince"/> unless a check is already outstanding.
+        /// </summary>
+        internal void MarkCheckSent()
+        {
+            var now = DateTime.Now;
+            TotalChecksSent++;
+            if (UnansweredSince == DateTime.MinValue || LastResponseAt >= UnansweredSince)
+            {
+                UnansweredSince = now;
+            }
+            LastCheckSentAt = now;
+        }
+
+        /// <summary>
         /// Creates a new entry for the ICE session checklist.
         /// </summary>
         /// <param name="localCandidate">The local candidate for the checklist pair.</param>
@@ -320,6 +382,15 @@ namespace SIPSorcery.Net
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
             {
+                LastResponseAt = DateTime.Now;
+                ResponsesReceived++;
+
+                if (LastCheckSentAt != DateTime.MinValue && stunResponse.Header.TransactionId != null &&
+                    Encoding.ASCII.GetString(stunResponse.Header.TransactionId) == RequestTransactionID)
+                {
+                    RoundTripTime = LastResponseAt - LastCheckSentAt;
+                }
+
                 if (Nominated)
                 {
                     // If the candidate has been nominated then this is a response to a periodic

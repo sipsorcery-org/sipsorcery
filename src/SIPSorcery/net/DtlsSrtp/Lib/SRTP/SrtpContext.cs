@@ -41,13 +41,13 @@ using Bytes = byte[];
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP
 {
-    public enum SrtpContextType
+    internal enum SrtpContextType
     {
         RTP,
         RTCP
     }
 
-    public class SsrcSrtpContext
+    internal class SsrcSrtpContext
     {
         public const int REPLAY_WINDOW_SIZE = 64; // Minumum is 64 according to the RFC, our current implmentation is using a bit mask, so it won't allow more than 64.
 
@@ -72,11 +72,10 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         /// <remarks>https://datatracker.ietf.org/doc/html/rfc2401 Appendix C</remarks>
         public bool CheckReplayWindow(uint sequenceNumber)
         {
-            if (sequenceNumber == 0)
-            {
-                return !S_l_set; /* index 0 only acceptable as the very first packet */
-            }
-
+            // Index 0 is not special: an RTP stream may start at sequence number 0 - its first is random - and an SRTCP
+            // stream's first index is 0. UnprotectRtp sets s_l to the first sequence number before this is asked, so a
+            // special case of "0 only before s_l is set" refused every stream starting at 0; the window below takes it as
+            // any other index, once.
             if (sequenceNumber > S_l)
             {
                 return true; /* new larger index */
@@ -105,12 +104,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         /// <param name="sequenceNumber">The 32-bit packet index that was authenticated.</param>
         public void UpdateReplayWindow(uint sequenceNumber)
         {
-            if (sequenceNumber == 0)
-            {
-                S_l_set = true;
-                return;
-            }
-
+            // index 0 is marked as seen as any other: returning before it is let a replay of it through again
             if (sequenceNumber > S_l)
             {
                 var diff = (int)(sequenceNumber - S_l);
@@ -133,6 +127,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
             {
                 Bitmap |= ((ulong)1 << d); /* mark as seen */
             }
+            S_l_set = true;
         }
 
         public void SetInitialSequence(uint sequenceNumber)
@@ -151,21 +146,74 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         }
 
         /// <summary>
-        /// Sender only -- current rollover counter (ROC) for this SSRC.
-        /// Per RFC 3711 section 3.2.1 each SRTP stream maintains its own ROC;
-        /// SSRCs that share the same SrtpContext (e.g. audio + video
-        /// bundled on the same DTLS-SRTP transport) MUST track ROC
-        /// independently. Incremented from 0 each time the 16-bit
-        /// RTP sequence number wraps from 0xFFFF to 0x0000 on this
-        /// SSRC.
+        /// Sender only -- the highest 32-bit packet index (ROC * 65536 + SEQ) protected so far on
+        /// this SSRC. Per RFC 3711 section 3.2.1 each SRTP stream keeps its own ROC; SSRCs sharing an
+        /// SrtpContext (e.g. audio + video bundled on one DTLS-SRTP transport) are tracked apart.
         /// </summary>
-        public uint OutboundRoc { get; set; } = 0;
+        public uint OutboundHighestIndex { get; private set; }
+
+        /// <summary>
+        /// Sender only -- whether <see cref="OutboundHighestIndex"/> holds a packet index yet.
+        /// </summary>
+        public bool OutboundHighestIndexSet { get; private set; }
+
+        /// <summary>
+        /// Sender only -- the rollover counter (ROC) of the highest packet index protected so far on
+        /// this SSRC. Setting it keeps the low 16 bits (the sequence number) of that index.
+        /// </summary>
+        public uint OutboundRoc
+        {
+            get => OutboundHighestIndex >> 16;
+            set => OutboundHighestIndex = (value << 16) | (OutboundHighestIndex & 0xFFFF);
+        }
+
+        /// <summary>
+        /// Sender only -- the 32-bit packet index to protect an RTP packet with sequence number
+        /// <paramref name="sequenceNumber"/>. The ROC is estimated from the highest index sent so far,
+        /// the same way the receiver estimates it (RFC 3711 section 3.3.1 and Appendix A), rather than
+        /// incremented when 0xFFFF is sent. Packets sent with explicit sequence numbers can skip 0xFFFF
+        /// or send it again (a NACK retransmission after the wrap); counting 0xFFFF put the ROC one
+        /// behind or one ahead of the receiver's, and nothing authenticated after the wrap.
+        /// Does not change any state; call <see cref="UpdateOutboundIndex"/> once the packet is protected.
+        /// </summary>
+        public uint GetOutboundIndex(ushort sequenceNumber)
+        {
+            if (!OutboundHighestIndexSet)
+            {
+                // The first packet starts the stream at ROC 0, whatever its sequence number.
+                return (uint)SrtpContext.GenerateRtpIndex(OutboundRoc, sequenceNumber);
+            }
+
+            var highestSeq = (ushort)(OutboundHighestIndex & 0xFFFF);
+            var highestRoc = OutboundHighestIndex >> 16;
+
+            if (highestRoc == 0 && (long)sequenceNumber - highestSeq > 32768)
+            {
+                // A packet from "before" the start of the stream: there is no ROC -1, so keep ROC 0.
+                return sequenceNumber;
+            }
+
+            return SrtpContext.DetermineRtpIndex(highestSeq, sequenceNumber, highestRoc);
+        }
+
+        /// <summary>
+        /// Sender only -- records that <paramref name="index"/> has been protected. The highest index
+        /// only moves forward, so a retransmission of an older packet keeps the ROC it was sent with.
+        /// </summary>
+        public void UpdateOutboundIndex(uint index)
+        {
+            if (!OutboundHighestIndexSet || index > OutboundHighestIndex)
+            {
+                OutboundHighestIndex = index;
+                OutboundHighestIndexSet = true;
+            }
+        }
     }
 
     /// <summary>
     /// SRTP context used for protecting/unprotecting RTP/RTCP packets as defined in RFC 3711.
     /// </summary>
-    public class SrtpContext : ISrtpContext
+    internal class SrtpContext : ISrtpContext
     {
         public Dictionary<uint, SsrcSrtpContext> ReplayProtection { get; } = new Dictionary<uint, SsrcSrtpContext>();
 
@@ -554,8 +602,11 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 outboundCtx = new SsrcSrtpContext();
                 context.ReplayProtection.Add(ssrc, outboundCtx);
             }
-            var roc = outboundCtx.OutboundRoc;
-            var index = SrtpContext.GenerateRtpIndex(roc, sequenceNumber);
+            // Estimate the ROC from the highest index sent, as the receiver does, so packets sent with
+            // explicit sequence numbers (gaps, NACK retransmissions) keep the receiver's ROC.
+            var packetIndex = outboundCtx.GetOutboundIndex(sequenceNumber);
+            var roc = packetIndex >> 16;
+            var index = (ulong)packetIndex;
 
             // copy header from input to output
             input.Slice(0, offset).CopyTo(output.Slice(0, offset));
@@ -695,13 +746,8 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 length += context.N_tag;
             }
 
-            // Increment the per-SSRC ROC when the RTP sequence wraps
-            // from 0xFFFF to 0x0000. Per RFC 3711 section 3.3.1 the next packet
-            // (with sequence 0) belongs to the next epoch.
-            if (sequenceNumber == 0xFFFF)
-            {
-                outboundCtx.OutboundRoc++;
-            }
+            // The packet is protected: advance the highest sent index (RFC 3711 section 3.3.1).
+            outboundCtx.UpdateOutboundIndex(packetIndex);
 
             outputBufferLength = length;
 
@@ -946,6 +992,9 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                                 // copy header without extensions
                                 output.Slice(0, rtpHeaderLength).CopyTo(syntheticRtpPacket.AsSpan(0, rtpHeaderLength));
 
+                                // preserve incoming x bit
+                                byte outerFirstByte = output[0];
+
                                 // set X bit to 0
                                 syntheticRtpPacket[0] &= 0xEF;
 
@@ -984,6 +1033,9 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
                                 // copy the synthetic header back to the output buffer
                                 syntheticRtpPacket.AsSpan(0, rtpHeaderLength).CopyTo(output.Slice(0, rtpHeaderLength));
+
+                                // restore preserved incoming x bit value
+                                output[0] = outerFirstByte;
 
                                 // update the output buffer length
                                 outputBufferLength = offset + syntheticRtpPacketLen - rtpHeaderLength - context.N_tag / 2;
@@ -1233,6 +1285,15 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
             {
                 index = index & ~E_FLAG;
                 isEncrypted = true;
+            }
+            else if (context.PayloadAEAD != null)
+            {
+                // An AEAD profile authenticates only in the decrypt below, which an unencrypted packet (E flag
+                // clear) skips. Such a packet would be taken with no check at all, and its index would move the
+                // replay window: one corrupted or forged packet with a high index then has every genuine one
+                // refused as a replay. Unencrypted SRTCP isn't used with AEAD profiles, so refuse it.
+                outputBufferLength = 0;
+                return ERROR_HMAC_CHECK_FAILED;
             }
 
             if (context.Auth != SrtpAuth.NONE)

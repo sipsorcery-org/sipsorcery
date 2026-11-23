@@ -15,7 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using SixLabors.ImageSharp;
+using SkiaSharp;
 
 namespace demo;
 
@@ -23,7 +23,7 @@ public record PaidVideoFrameConfig(
     DateTimeOffset StartTime,
     string? LightningPaymentRequest,
     int Opacity,
-    Color BorderColour,
+    SKColor BorderColour,
     string Title,
     bool IsPaid,
     string ImagePath,

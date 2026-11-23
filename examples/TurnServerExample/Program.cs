@@ -26,6 +26,13 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
 
+// TurnServer is marked experimental because it is intended for development, testing and small scale or
+// embedded scenarios rather than production use, so referencing it is a compile error until this
+// diagnostic is suppressed. This example is exactly that sort of scenario. A project using TurnServer
+// can suppress it the same way, or add <NoWarn>$(NoWarn);SIPSORCERY001</NoWarn> to its csproj. See
+// docs/diagnostics/SIPSORCERY001.md for what the limitations are.
+#pragma warning disable SIPSORCERY001
+
 namespace TurnServerExample
 {
     class Program

@@ -36,10 +36,11 @@ namespace Vpx.Net.UnitTest
     {
         // ---------- Helpers ----------
 
-        /// <summary>Initialises a bool coder over a fresh 64-byte buffer.</summary>
+        /// <summary>Initialises a bool coder over a fresh 64-byte buffer, pinned because the coder keeps a
+        /// pointer into it after vp8_start_encode returns.</summary>
         private static byte[] NewCoderBuffer(out BOOL_CODER bc)
         {
-            byte[] buf = new byte[64];
+            byte[] buf = System.GC.AllocateArray<byte>(64, pinned: true);
             bc = default;
             // boolhuff.vp8_start_encode requires a byte[] overload; use that.
             boolhuff.vp8_start_encode(ref bc, buf, buf.Length);
@@ -52,7 +53,9 @@ namespace Vpx.Net.UnitTest
         {
             boolhuff.vp8_stop_encode(ref bc);
             int n = (int)bc.pos;
-            byte[] copy = new byte[n + 16];   // padding for decoder lookahead
+            // Padding for decoder lookahead. Pinned because the decoder keeps a pointer into it after
+            // vp8dx_start_decode returns.
+            byte[] copy = System.GC.AllocateArray<byte>(n + 16, pinned: true);
             System.Array.Copy(buf, 0, copy, 0, n);
             return copy;
         }
@@ -174,7 +177,8 @@ namespace Vpx.Net.UnitTest
         [Fact]
         public void WriteInterMbRefAndMode_ThrowsForIntraRefFrame()
         {
-            byte[] buf = new byte[64];
+            // Pinned because the coder keeps a pointer into it after vp8_start_encode returns.
+            byte[] buf = System.GC.AllocateArray<byte>(64, pinned: true);
             BOOL_CODER bc = default;
             boolhuff.vp8_start_encode(ref bc, buf, buf.Length);
             byte[] modeProbs = new byte[4] { 7, 1, 1, 143 };

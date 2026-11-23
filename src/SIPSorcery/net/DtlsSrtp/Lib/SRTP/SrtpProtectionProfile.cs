@@ -21,7 +21,7 @@
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP
 {
-    public enum SrtpCiphers
+    internal enum SrtpCiphers
     {
         NULL = 0,
         AES_128_CM = 1,
@@ -43,13 +43,13 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         DOUBLE_AEAD_AES_256_GCM_AEAD_AES_256_GCM = 129,
     }
 
-    public enum SrtpAuth
+    internal enum SrtpAuth
     {
         NONE = 0,
         HMAC_SHA1 = 1
     }
 
-    public class SrtpProtectionProfileConfiguration
+    internal class SrtpProtectionProfileConfiguration
     {
         public SrtpCiphers Cipher { get; set; }
         public int CipherKeyLength { get; set; }

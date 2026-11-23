@@ -18,8 +18,7 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.FFmpeg;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 using System;
 using System.Linq;
 using System.Threading;
@@ -61,26 +60,26 @@ public class PaidWebRtcConnection : IPaidWebRtcConnection, IDisposable
     {
         var pc = new RTCPeerConnection(config);
 
-        var sourceImage = Image.Load<Rgba32>(PaymentStateMachine.FREE_IMAGE_PATH);
+        using var sourceImage = SKBitmap.Decode(PaymentStateMachine.FREE_IMAGE_PATH);
 
-        var imageSharpBitmapSource = new VideoBitmapSource(new FFmpegVideoEncoder());
-        imageSharpBitmapSource.SetFrameRate(FRAMES_PER_SECOND);
-        imageSharpBitmapSource.SetSourceBitmap(sourceImage);
+        var videoBitmapSource = new VideoBitmapSource(new FFmpegVideoEncoder());
+        videoBitmapSource.SetFrameRate(FRAMES_PER_SECOND);
+        videoBitmapSource.SetSourceBitmap(sourceImage);
 
-        MediaStreamTrack track = new MediaStreamTrack(imageSharpBitmapSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
+        MediaStreamTrack track = new MediaStreamTrack(videoBitmapSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
         pc.addTrack(track);
 
-        imageSharpBitmapSource.OnVideoSourceEncodedSample += pc.SendVideo;
-        pc.OnVideoFormatsNegotiated += (formats) => imageSharpBitmapSource.SetVideoSourceFormat(formats.First());
+        videoBitmapSource.OnVideoSourceEncodedSample += pc.SendVideo;
+        pc.OnVideoFormatsNegotiated += (formats) => videoBitmapSource.SetVideoSourceFormat(formats.First());
 
-        HandlePeerConnectionStateChange(pc, imageSharpBitmapSource);
+        HandlePeerConnectionStateChange(pc, videoBitmapSource);
 
         SetDiagnosticLogging(pc);
 
         return Task.FromResult(pc);
     }
 
-    private Timer ImageSharpCreateGenerateBitmapTimer(VideoBitmapSource bitmapSource)
+    private Timer CreateGenerateBitmapTimer(VideoBitmapSource bitmapSource)
     {
         return new Timer(_ =>
         {
@@ -124,7 +123,7 @@ public class PaidWebRtcConnection : IPaidWebRtcConnection, IDisposable
                 if (_setBitmapSourceTimer == null)
                 {
                     _logger.LogDebug($"Starting bitmap create bitmap frame.");
-                    _setBitmapSourceTimer = ImageSharpCreateGenerateBitmapTimer(videoSource);
+                    _setBitmapSourceTimer = CreateGenerateBitmapTimer(videoSource);
                 }
             }
         };

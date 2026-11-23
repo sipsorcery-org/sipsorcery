@@ -61,6 +61,7 @@ namespace test
 
         private static Form _form;
         private static PictureBox _picBox;
+        private static Bitmap _displayBmp;
 
         static async Task Main()
         {
@@ -143,8 +144,45 @@ namespace test
                                         uint capacity;
                                         reference.As<IMemoryBufferByteAccess>().GetBuffer(out dataInBytes, out capacity);
 
-                                        Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(capacity / height), PixelFormat.Format32bppArgb, (IntPtr)dataInBytes);
-                                        _picBox.Image = bmpImage;
+                                        int stride = (int)(capacity / height);
+
+                                        // Re-use the display bitmap rather than allocating one per frame, which
+                                        // costs several times more than the copy below and churns the GC.
+                                        if (_displayBmp == null || _displayBmp.Width != width || _displayBmp.Height != height)
+                                        {
+                                            _displayBmp?.Dispose();
+                                            _displayBmp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+                                            _picBox.Image = _displayBmp;
+                                        }
+
+                                        // Copy rather than wrap: the frame buffer is only valid while the
+                                        // reference above is held, but the picture box keeps its image well
+                                        // beyond that.
+                                        var bmpData = _displayBmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+
+                                        try
+                                        {
+                                            // A 32bpp row is always a multiple of four bytes, so the strides
+                                            // normally agree and the frame goes in a single copy. The row loop
+                                            // covers a capture buffer that pads its rows further.
+                                            if (stride == bmpData.Stride)
+                                            {
+                                                Buffer.MemoryCopy(dataInBytes, (byte*)bmpData.Scan0, (long)bmpData.Stride * height, (long)stride * height);
+                                            }
+                                            else
+                                            {
+                                                for (int row = 0; row < height; row++)
+                                                {
+                                                    Buffer.MemoryCopy(dataInBytes + row * stride, (byte*)bmpData.Scan0 + row * bmpData.Stride, bmpData.Stride, width * 4);
+                                                }
+                                            }
+                                        }
+                                        finally
+                                        {
+                                            _displayBmp.UnlockBits(bmpData);
+                                        }
+
+                                        _picBox.Invalidate();
                                     }
                                 }
                             }

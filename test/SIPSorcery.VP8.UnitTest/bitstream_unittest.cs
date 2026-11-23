@@ -170,8 +170,9 @@ namespace Vpx.Net.UnitTest
             // Start the existing decoder bool reader at byte 10, feeding it
             // the bytes produced by our encoder bool coder.
             BOOL_DECODER br = new BOOL_DECODER();
-            // Take a copy because vp8dx_start_decode pins the input pointer.
-            byte[] partition = new byte[total - 10 + 8];  // pad for the decoder's lookahead
+            // Take a copy from byte 10, padded for the decoder's lookahead. It is pinned because the decoder keeps a
+            // pointer into it after vp8dx_start_decode returns.
+            byte[] partition = System.GC.AllocateArray<byte>(total - 10 + 8, pinned: true);
             System.Array.Copy(buf, 10, partition, 0, total - 10);
 
             dboolhuff.vp8dx_start_decode(ref br, partition, (uint)partition.Length);

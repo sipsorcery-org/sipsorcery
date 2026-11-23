@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.3.11512.155 d18.3
+VisualStudioVersion = 18.3.11512.155
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.SoftPhone", "SIPSorcery.SoftPhone.csproj", "{286D90B8-C7A6-43ED-9C8A-423B4A681F7D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery", "..\..\src\SIPSorcery\SIPSorcery.csproj", "{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorceryMedia.Windows", "..\..\src\SIPSorceryMedia.Windows\SIPSorceryMedia.Windows.csproj", "{0F41AE61-8342-2D75-418B-1F522102D16E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorceryMedia.FFmpeg", "..\..\src\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj", "{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +57,18 @@ Global
 		{0F41AE61-8342-2D75-418B-1F522102D16E}.Release|x64.Build.0 = Release|Any CPU
 		{0F41AE61-8342-2D75-418B-1F522102D16E}.Release|x86.ActiveCfg = Release|Any CPU
 		{0F41AE61-8342-2D75-418B-1F522102D16E}.Release|x86.Build.0 = Release|Any CPU
+		{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}.Debug|x64.Build.0 = Debug|Any CPU
+		{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}.Debug|x86.Build.0 = Debug|Any CPU
+		{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}.Release|x64.ActiveCfg = Release|Any CPU
+		{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}.Release|x64.Build.0 = Release|Any CPU
+		{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}.Release|x86.ActiveCfg = Release|Any CPU
+		{ABDED2E1-30A6-9535-D92F-481BC7CCBB87}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

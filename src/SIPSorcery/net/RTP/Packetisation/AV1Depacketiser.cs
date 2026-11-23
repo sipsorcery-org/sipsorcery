@@ -24,13 +24,12 @@ namespace SIPSorcery.Net;
 
 public class AV1Depacketiser
 {
-    private const byte Z_MASK = 0x80;
-    private const byte Y_MASK = 0x40;
-    private const byte N_MASK = 0x08;
+    private const byte OBU_ELEMENT_COUNT_MASK = 0x30; // W field.
+    private const int OBU_ELEMENT_COUNT_SHIFT = 4;
+    private const int SEQUENCE_NUMBER_WRAP_WINDOW = 2000;
 
     private uint _previousTimestamp;
     private readonly List<KeyValuePair<int, byte[]>> _temporaryRtpPayloads = new List<KeyValuePair<int, byte[]>>();
-    private readonly MemoryStream _fragmentedObu = new MemoryStream();
 
     public virtual MemoryStream ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markerBit, out bool isKeyFrame)
     {
@@ -38,7 +37,6 @@ public class AV1Depacketiser
         {
             _temporaryRtpPayloads.Clear();
             _previousTimestamp = 0;
-            _fragmentedObu.SetLength(0);
         }
 
         _temporaryRtpPayloads.Add(new KeyValuePair<int, byte[]>(seqNum, rtpPayload));
@@ -48,23 +46,19 @@ public class AV1Depacketiser
             if (_temporaryRtpPayloads.Count > 1)
             {
                 _temporaryRtpPayloads.Sort((a, b) =>
-                    (Math.Abs(b.Key - a.Key) > (0xFFFF - 2000)) ? -a.Key.CompareTo(b.Key) : a.Key.CompareTo(b.Key));
+                    (Math.Abs(b.Key - a.Key) > (ushort.MaxValue - SEQUENCE_NUMBER_WRAP_WINDOW)) ? -a.Key.CompareTo(b.Key) : a.Key.CompareTo(b.Key));
             }
 
             byte[] frame = ProcessAV1PayloadFrame(_temporaryRtpPayloads, out isKeyFrame);
             _temporaryRtpPayloads.Clear();
             _previousTimestamp = 0;
-            _fragmentedObu.SetLength(0);
 
             if (frame == null)
             {
                 return null;
             }
 
-            var frameStream = new MemoryStream(frame.Length);
-            frameStream.Write(frame, 0, frame.Length);
-            frameStream.Position = 0;
-            return frameStream;
+            return new MemoryStream(frame);
         }
 
         isKeyFrame = false;
@@ -74,7 +68,10 @@ public class AV1Depacketiser
 
     protected virtual byte[] ProcessAV1PayloadFrame(List<KeyValuePair<int, byte[]>> rtpPayloads, out bool isKeyFrame)
     {
-        var obuElements = new List<byte[]>();
+        var fragments = new List<ReadOnlyMemory<byte>>();
+        var completedObus = new List<CompletedObu>();
+        var packetElements = new List<ReadOnlyMemory<byte>>();
+        int pendingObuStart = 0;
         isKeyFrame = false;
 
         foreach (var rtpPayload in rtpPayloads)
@@ -85,153 +82,168 @@ public class AV1Depacketiser
                 continue;
             }
 
-            bool z = (payload[0] & Z_MASK) != 0;
-            bool y = (payload[0] & Y_MASK) != 0;
-            int w = (payload[0] >> 4) & 0x03;
-            bool n = (payload[0] & N_MASK) != 0;
+            var header = (AV1AggregationHeaderFlags)payload[0];
+            bool firstObuIsContinuation = header.HasFlag(AV1AggregationHeaderFlags.FirstObuIsContinuation);
+            bool lastObuContinues = header.HasFlag(AV1AggregationHeaderFlags.LastObuContinues);
+            int obuElementCount = (payload[0] & OBU_ELEMENT_COUNT_MASK) >> OBU_ELEMENT_COUNT_SHIFT;
 
-            if (n)
+            if (header.HasFlag(AV1AggregationHeaderFlags.NewCodedVideoSequence))
             {
                 isKeyFrame = true;
             }
 
-            var packetElements = ParseObuElements(payload, w);
-            AddPacketElements(packetElements, z, y, obuElements);
+            packetElements.Clear();
+            ParseObuElements(payload, obuElementCount, packetElements);
+            AddPacketElements(packetElements, firstObuIsContinuation, lastObuContinues,
+                fragments, ref pendingObuStart, completedObus);
         }
 
-        if (_fragmentedObu.Length > 0)
-        {
-            _fragmentedObu.SetLength(0);
-        }
-
-        if (obuElements.Count == 0)
+        if (completedObus.Count == 0)
         {
             return null;
         }
 
         int totalLength = 0;
-        for (int i = 0; i < obuElements.Count; i++)
+        for (int i = 0; i < completedObus.Count; i++)
         {
-            totalLength += obuElements[i].Length;
+            totalLength = checked(totalLength + completedObus[i].OutputLength);
         }
 
         var frame = new byte[totalLength];
         int offset = 0;
-        for (int i = 0; i < obuElements.Count; i++)
+        for (int i = 0; i < completedObus.Count; i++)
         {
-            Buffer.BlockCopy(obuElements[i], 0, frame, offset, obuElements[i].Length);
-            offset += obuElements[i].Length;
+            var obu = completedObus[i];
+            obu.CopyTo(fragments, frame.AsSpan(offset, obu.OutputLength));
+            offset += obu.OutputLength;
         }
 
         return frame;
     }
 
-    private List<byte[]> ParseObuElements(byte[] payload, int w)
+    private static void ParseObuElements(ReadOnlyMemory<byte> payload, int obuElementCount,
+        List<ReadOnlyMemory<byte>> elements)
     {
-        var obuElements = new List<byte[]>();
-        int offset = 1;
-
-        if (w == 0)
+        int offset = AV1Packetiser.AV1_AGGREGATION_HEADER_LENGTH;
+        for (int elementIndex = 0; offset < payload.Length && (obuElementCount == 0 || elementIndex < obuElementCount); elementIndex++)
         {
-            while (offset < payload.Length)
+            int length;
+            if (obuElementCount != 0 && elementIndex == obuElementCount - 1)
             {
-                if (!AV1Packetiser.TryReadLeb128(payload, ref offset, out int obuElementLength, out _))
-                {
-                    break;
-                }
-
-                if (offset + obuElementLength > payload.Length)
-                {
-                    break;
-                }
-
-                var obuElement = new byte[obuElementLength];
-                Buffer.BlockCopy(payload, offset, obuElement, 0, obuElementLength);
-                offset += obuElementLength;
-                obuElements.Add(obuElement);
+                length = payload.Length - offset;
             }
-        }
-        else
-        {
-            for (int elementIndex = 0; elementIndex < w && offset < payload.Length; elementIndex++)
+            else if (!AV1Packetiser.TryReadLeb128(payload.Span, ref offset, out length, out _))
             {
-                int obuElementLength;
-                if (elementIndex == w - 1)
-                {
-                    obuElementLength = payload.Length - offset;
-                }
-                else if (!AV1Packetiser.TryReadLeb128(payload, ref offset, out obuElementLength, out _))
-                {
-                    break;
-                }
-
-                if (offset + obuElementLength > payload.Length)
-                {
-                    break;
-                }
-
-                var obuElement = new byte[obuElementLength];
-                Buffer.BlockCopy(payload, offset, obuElement, 0, obuElementLength);
-                offset += obuElementLength;
-                obuElements.Add(obuElement);
+                break;
             }
-        }
 
-        return obuElements;
+            if (length > payload.Length - offset)
+            {
+                break;
+            }
+
+            elements.Add(payload.Slice(offset, length));
+            offset += length;
+        }
     }
 
-    private void AddPacketElements(List<byte[]> packetElements, bool z, bool y, List<byte[]> completedObus)
+    private static void AddPacketElements(List<ReadOnlyMemory<byte>> elements,
+        bool firstObuIsContinuation, bool lastObuContinues, List<ReadOnlyMemory<byte>> fragments,
+        ref int pendingObuStart, List<CompletedObu> completedObus)
     {
-        if (packetElements.Count == 0)
+        for (int i = 0; i < elements.Count; i++)
+        {
+            if (!(i == 0 && firstObuIsContinuation))
+            {
+                // A new OBU cannot continue an unfinished OBU from an earlier packet.
+                pendingObuStart = fragments.Count;
+            }
+
+            fragments.Add(elements[i]);
+            if (i < elements.Count - 1 || !lastObuContinues)
+            {
+                AddCompletedObu(fragments, pendingObuStart, completedObus);
+                pendingObuStart = fragments.Count;
+            }
+        }
+    }
+
+    private static void AddCompletedObu(List<ReadOnlyMemory<byte>> fragments, int firstFragment,
+        List<CompletedObu> completedObus)
+    {
+        int fragmentCount = fragments.Count - firstFragment;
+        int length = 0;
+        ReadOnlySpan<byte> header = default;
+        for (int i = firstFragment; i < fragments.Count; i++)
+        {
+            var fragment = fragments[i];
+            if (header.IsEmpty && !fragment.IsEmpty)
+            {
+                header = fragment.Span;
+            }
+            length = checked(length + fragment.Length);
+        }
+
+        if (length == 0)
         {
             return;
         }
 
-        int startIndex = 0;
-        int endExclusive = packetElements.Count;
-
-        if (z)
-        {
-            _fragmentedObu.Write(packetElements[0], 0, packetElements[0].Length);
-
-            if (!(y && packetElements.Count == 1))
-            {
-                AddCompletedObu(_fragmentedObu.ToArray(), completedObus);
-                _fragmentedObu.SetLength(0);
-            }
-
-            startIndex = 1;
-        }
-
-        if (y && packetElements.Count > startIndex)
-        {
-            endExclusive = packetElements.Count - 1;
-        }
-
-        for (int i = startIndex; i < endExclusive; i++)
-        {
-            AddCompletedObu(packetElements[i], completedObus);
-        }
-
-        if (y && packetElements.Count > startIndex)
-        {
-            byte[] lastElement = packetElements[packetElements.Count - 1];
-            _fragmentedObu.Write(lastElement, 0, lastElement.Length);
-        }
-    }
-
-    private static void AddCompletedObu(byte[] obu, List<byte[]> completedObus)
-    {
-        if (obu == null || obu.Length == 0)
+        var obuType = AV1Packetiser.GetObuType(header);
+        if (obuType is AV1Packetiser.AV1ObuType.TemporalDelimiter or AV1Packetiser.AV1ObuType.TileList)
         {
             return;
         }
 
-        var obuType = AV1Packetiser.GetObuType(obu);
-        if (obuType != AV1Packetiser.AV1ObuType.TemporalDelimiter &&
-            obuType != AV1Packetiser.AV1ObuType.TileList)
+        var obuHeader = (AV1ObuHeaderFlags)header[0];
+        int headerLength = AV1Packetiser.OBU_HEADER_LENGTH +
+            (obuHeader.HasFlag(AV1ObuHeaderFlags.Extension) ? AV1Packetiser.OBU_EXTENSION_HEADER_LENGTH : 0);
+        if (length < headerLength)
         {
-            completedObus.Add(obu);
+            return;
+        }
+
+        int sizeFieldLength = obuHeader.HasFlag(AV1ObuHeaderFlags.HasSizeField)
+            ? 0 : AV1Packetiser.GetLeb128Size(length - headerLength);
+        completedObus.Add(new CompletedObu(firstFragment, fragmentCount, length, headerLength, sizeFieldLength));
+    }
+
+    private readonly struct CompletedObu
+    {
+        private int FirstFragment { get; }
+        private int FragmentCount { get; }
+        private int Length { get; }
+        private int HeaderLength { get; }
+        private int SizeFieldLength { get; }
+        public int OutputLength => checked(Length + SizeFieldLength);
+
+        public CompletedObu(int firstFragment, int fragmentCount, int length, int headerLength, int sizeFieldLength)
+        {
+            FirstFragment = firstFragment;
+            FragmentCount = fragmentCount;
+            Length = length;
+            HeaderLength = headerLength;
+            SizeFieldLength = sizeFieldLength;
+        }
+
+        public void CopyTo(List<ReadOnlyMemory<byte>> fragments, Span<byte> destination)
+        {
+            int sourceOffset = 0;
+            for (int i = FirstFragment; i < FirstFragment + FragmentCount; i++)
+            {
+                var source = fragments[i].Span;
+                int headerBytes = Math.Min(source.Length, Math.Max(0, HeaderLength - sourceOffset));
+                source.Slice(0, headerBytes).CopyTo(destination.Slice(sourceOffset));
+                source.Slice(headerBytes).CopyTo(destination.Slice(sourceOffset + headerBytes + SizeFieldLength));
+                sourceOffset += source.Length;
+            }
+
+            if (SizeFieldLength > 0)
+            {
+                // Restore obu_size directly in the final low-overhead bitstream.
+                destination[0] = (byte)((AV1ObuHeaderFlags)destination[0] | AV1ObuHeaderFlags.HasSizeField);
+                AV1Packetiser.WriteLeb128(Length - HeaderLength, destination.Slice(HeaderLength, SizeFieldLength));
+            }
         }
     }
 }

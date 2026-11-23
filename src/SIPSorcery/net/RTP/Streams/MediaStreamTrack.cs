@@ -34,6 +34,49 @@ namespace SIPSorcery.Net
         /// </summary>
         public SDPMediaTypesEnum Kind { get; private set; }
 
+        private RtpRedundancyOptions _redundancy;
+
+        /// <summary>
+        /// Optional RTP redundancy for this local video track. Set before SDP negotiation;
+        /// changing this value takes effect on the next negotiation. Only None or Red | Ulpfec
+        /// is supported. The default is None.
+        /// </summary>
+        public RtpRedundancyOptions Redundancy
+        {
+            get => _redundancy;
+            set
+            {
+                ValidateRedundancy(value);
+                _redundancy = value;
+            }
+        }
+
+        /// <summary>
+        /// Optional FEC policy for this track. Null uses the library defaults. Assigning a
+        /// policy does not enable redundancy; configure Redundancy before negotiating.
+        /// Policy changes take effect on the next negotiation.
+        /// </summary>
+        public RtpUlpfecConfig FecConfig { get; set; }
+
+        internal void ValidateRedundancy() => ValidateRedundancy(_redundancy);
+
+        private void ValidateRedundancy(RtpRedundancyOptions value)
+        {
+            const RtpRedundancyOptions supported = RtpRedundancyOptions.Red | RtpRedundancyOptions.Ulpfec;
+            if ((value & ~supported) != 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown RTP redundancy options.");
+            }
+            if (value != RtpRedundancyOptions.None && value != supported)
+            {
+                throw new ArgumentException("RED and ULPFEC must be enabled together.", nameof(value));
+            }
+            if (value != RtpRedundancyOptions.None && (Kind != SDPMediaTypesEnum.video || IsRemote))
+            {
+                throw new InvalidOperationException("RTP redundancy can only be enabled on a local video track.");
+            }
+        }
+
         /// <summary>
         /// The value used in the RTP Synchronisation Source header field for media packets
         /// sent using this media stream.
@@ -93,10 +136,69 @@ namespace SIPSorcery.Net
         /// </summary>
         public MediaStreamStatusEnum DefaultStreamStatus { get; private set; }
 
+        private MediaStreamStatusEnum _streamStatus;
+
         /// <summary>
         /// Holds the stream state of the track.
         /// </summary>
-        public MediaStreamStatusEnum StreamStatus { get; internal set; }
+        /// <remarks>
+        /// Changes are logged because this is what decides whether the track will send, and it is
+        /// set from several places - an on hold request, an answer arriving, an application asking
+        /// directly. When a call goes one way the question is always which of those last touched
+        /// it, and a track that silently refuses to send is otherwise only visible as a warning
+        /// per packet with nothing to say why.
+        /// </remarks>
+        public MediaStreamStatusEnum StreamStatus
+        {
+            get => _streamStatus;
+
+            internal set
+            {
+                if (_streamStatus != value)
+                {
+                    logger.LogDebug(
+                        "{Kind} {MediaType} track stream status {Previous} -> {Current}.",
+                        IsRemote ? "Remote" : "Local", Kind, _streamStatus, value);
+                }
+
+                _streamStatus = value;
+            }
+        }
+
+        /// <summary>
+        /// The stream status the track had before answering an offer narrowed it (RFC 3264
+        /// section 6.1), for example sendrecv for a track that answered a sendonly offer recvonly.
+        /// The next offer is answered from this rather than from the narrowed status, so a call the
+        /// far end takes off hold goes back to sending. Null when no answer has narrowed the track
+        /// since the application last set its status.
+        /// </summary>
+        internal MediaStreamStatusEnum? StreamStatusBeforeAnswer { get; set; }
+
+        /// <summary>
+        /// Narrows the stream status for an answer to an offer, keeping what it was before in
+        /// <see cref="StreamStatusBeforeAnswer"/> (the first time, if it's narrowed more than once).
+        /// </summary>
+        /// <param name="status">The status for the answer.</param>
+        internal void NarrowStreamStatusForAnswer(MediaStreamStatusEnum status)
+        {
+            if (status != StreamStatus)
+            {
+                StreamStatusBeforeAnswer ??= StreamStatus;
+                StreamStatus = status;
+            }
+        }
+
+        /// <summary>
+        /// Puts back the stream status an earlier answer narrowed, ready to answer a new offer.
+        /// </summary>
+        internal void RestoreStreamStatusBeforeAnswer()
+        {
+            if (StreamStatusBeforeAnswer.HasValue)
+            {
+                StreamStatus = StreamStatusBeforeAnswer.Value;
+                StreamStatusBeforeAnswer = null;
+            }
+        }
 
         /// <summary>
         /// If the SDP remote the remote party provides "a=ssrc" attributes, as specified
@@ -203,6 +305,19 @@ namespace SIPSorcery.Net
             TextFormat format,
             MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
             this (SDPMediaTypesEnum.text, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(format)}, streamStatus)
+        { }
+
+        /// <summary>
+        /// Add a local text track.
+        /// </summary>
+        /// <param name="formats">The text formats that the local application supports, e.g. RED and the
+        /// t140 format it carries.</param>
+        /// <param name="streamStatus">Optional. The stream status for the text track, e.g. whether
+        /// send and receive or only one of.</param>
+        public MediaStreamTrack(
+            List<TextFormat> formats,
+            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
+            this(SDPMediaTypesEnum.text, false, formats.Select(x => new SDPAudioVideoMediaFormat(x)).ToList(), streamStatus)
         { }
 
         /// <summary>
@@ -370,5 +485,6 @@ namespace SIPSorcery.Net
             } while (expectedSeqNum != actualSeqNum); // Try as long as compare-exchange was not successful; in most cases, only one iteration should be needed
             return (ushort)expectedSeqNum;
         }
+
     }
 }

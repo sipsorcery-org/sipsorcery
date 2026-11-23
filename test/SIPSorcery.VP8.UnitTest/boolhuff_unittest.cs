@@ -56,7 +56,9 @@ namespace Vpx.Net.UnitTest
                     const int kBufferSize = 10000;
                     rnd = new Random(random_seed);
                     BOOL_CODER bw = new BOOL_CODER();
-                    byte[] bw_buffer = new byte[kBufferSize];
+                    // Pinned: the coder and the decoder keep a pointer into the buffer after vp8_start_encode and
+                    // vp8dx_start_decode return, so the GC must not move it while they use it.
+                    byte[] bw_buffer = GC.AllocateArray<byte>(kBufferSize, pinned: true);
                     boolhuff.vp8_start_encode(ref bw, bw_buffer, kBufferSize);
 
                     int bit = (bit_method == 0) ? 0 : (bit_method == 1) ? 1 : 0;

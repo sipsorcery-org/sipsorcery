@@ -12,6 +12,13 @@ namespace SIPSorcery.Net
     {
         protected static readonly ILogger logger = LogFactory.CreateLogger<TextStream>();
 
+        /// <summary>
+        /// A gap in sending longer than this is treated as an idle period, after which the marker
+        /// bit is set on the next packet (RFC 4103 section 3). Senders transmit every 300ms, at most
+        /// 500ms, while there is text or redundancy to send.
+        /// </summary>
+        private const int IDLE_PERIOD_MILLISECONDS = 1000;
+
         private DateTime _lastSendTime = DateTime.MinValue;
 
         protected bool rtpEventInProgress = false;
@@ -79,7 +86,7 @@ namespace SIPSorcery.Net
                         int payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
 
                         // Set the marker bit for the first packet after idle or session start
-                        int markerBit = _lastSendTime == DateTime.MinValue ? 1 : 0;
+                        int markerBit = index == 0 && (_lastSendTime == DateTime.MinValue || elapsedMilliseconds > IDLE_PERIOD_MILLISECONDS) ? 1 : 0;
 
                         byte[] payload = new byte[payloadLength];
                         Buffer.BlockCopy(buffer, offset, payload, 0, payloadLength);

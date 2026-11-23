@@ -18,6 +18,7 @@
 //   o=line   session-id and version  -> <SID> <SVER>
 //   m=line   port                    -> <PORT>
 //   c=line   address                 -> <IP>
+//   a=rtcp   port and address        -> <PORT> <IP>
 //   a=ice-ufrag                      -> <UFRAG>
 //   a=ice-pwd                        -> <PWD>
 //   a=fingerprint  hash bytes        -> <HASH>
@@ -54,6 +55,9 @@ namespace SIPSorcery.Net.UnitTests.Helpers
 
         private const string CLinePattern = @"^c=(?<net>\S+)\s+(?<addr>\S+)\s+(?<host>\S+)$";
 
+        // a=rtcp:<port> [<nettype> <addrtype> <address>]: with rtcp-mux, the default candidate's.
+        private const string RtcpPattern = @"^a=rtcp:\d+(?:\s+(?<net>\S+)\s+(?<addr>\S+)\s+\S+)?$";
+
         private const string IceUfragPattern = @"^a=ice-ufrag:\S+$";
 
         private const string IcePwdPattern = @"^a=ice-pwd:\S+$";
@@ -87,6 +91,9 @@ namespace SIPSorcery.Net.UnitTests.Helpers
         [GeneratedRegex(CLinePattern, RegexOptions.Multiline)]
         private static partial Regex CLineRegex();
 
+        [GeneratedRegex(RtcpPattern, RegexOptions.Multiline)]
+        private static partial Regex RtcpRegex();
+
         [GeneratedRegex(IceUfragPattern, RegexOptions.Multiline)]
         private static partial Regex IceUfragRegex();
 
@@ -117,6 +124,7 @@ namespace SIPSorcery.Net.UnitTests.Helpers
         private static readonly Regex s_oLine = new Regex(OLinePattern, RegexOptions.Multiline | RegexOptions.Compiled);
         private static readonly Regex s_mLine = new Regex(MLinePattern, RegexOptions.Multiline | RegexOptions.Compiled);
         private static readonly Regex s_cLine = new Regex(CLinePattern, RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex s_rtcp = new Regex(RtcpPattern, RegexOptions.Multiline | RegexOptions.Compiled);
         private static readonly Regex s_iceUfrag = new Regex(IceUfragPattern, RegexOptions.Multiline | RegexOptions.Compiled);
         private static readonly Regex s_icePwd = new Regex(IcePwdPattern, RegexOptions.Multiline | RegexOptions.Compiled);
         private static readonly Regex s_fingerprint = new Regex(FingerprintPattern, RegexOptions.Multiline | RegexOptions.Compiled);
@@ -132,6 +140,8 @@ namespace SIPSorcery.Net.UnitTests.Helpers
         private static Regex MLineRegex() => s_mLine;
 
         private static Regex CLineRegex() => s_cLine;
+
+        private static Regex RtcpRegex() => s_rtcp;
 
         private static Regex IceUfragRegex() => s_iceUfrag;
 
@@ -172,6 +182,10 @@ namespace SIPSorcery.Net.UnitTests.Helpers
 
             s = CLineRegex().Replace(s, m =>
                 $"c={m.Groups["net"].Value} {m.Groups["addr"].Value} <IP>");
+
+            s = RtcpRegex().Replace(s, m => m.Groups["net"].Success
+                ? $"a=rtcp:<PORT> {m.Groups["net"].Value} {m.Groups["addr"].Value} <IP>"
+                : "a=rtcp:<PORT>");
 
             s = IceUfragRegex().Replace(s, "a=ice-ufrag:<UFRAG>");
             s = IcePwdRegex().Replace(s, "a=ice-pwd:<PWD>");

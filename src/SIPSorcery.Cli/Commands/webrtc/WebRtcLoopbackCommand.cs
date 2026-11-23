@@ -1,0 +1,206 @@
+//-----------------------------------------------------------------------------
+// Filename: WebRtcLoopbackCommand.cs
+//
+// Description: The "sipsorcery webrtc loopback" verb. Runs a self-contained
+// WHIP encode -> network -> decode loop in a single process: it starts the same
+// WHIP receive engine as "webrtc whip-server" and, in-process, publishes a
+// generated test pattern to that listener with the shared LibraryVideoPublisher
+// (the same publisher "webrtc whip" uses). No second terminal, no external
+// network: the media goes out over the loopback transport and back into the
+// receiver, which reports the send-side and receive-side stats together.
+//
+// This is the one process equivalent of running "webrtc whip-server" and
+// "webrtc whip" side by side. The video pipeline benchmark uses it for the
+// transport ceiling and the end-to-end check; codec speeds come from
+// "webrtc video-bench", which times the encoder or decoder alone.
+// Because the receiver only services a single session, this verb occupies it
+// with the in-process publisher; to receive from an external publisher (ffmpeg,
+// OBS, an SFU) use "webrtc whip-server" without this verb.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 15 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 22 Nov 2026	Aaron Clauson	Help points codec speed measurements at video-bench.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System.CommandLine;
+
+namespace SIPSorcery.Cli.Commands;
+
+public sealed class WebRtcLoopbackCommand : CommandBase
+{
+    private const int DEFAULT_TIMEOUT_SECONDS = 60;
+    private const int DEFAULT_MEDIA_DURATION_SECONDS = 10;
+    private const string DEFAULT_LISTEN_URL = "http://localhost:8080/whip";
+    private const string DEFAULT_ENCODER = "ffmpeg";
+    private const string DEFAULT_PRESET = "720p";
+    private const int DEFAULT_FPS = 30;
+
+    public WebRtcLoopbackCommand() : base(DEFAULT_TIMEOUT_SECONDS)
+    { }
+
+    public override Command Build()
+    {
+        var listenOption = new Option<string>("--listen")
+        {
+            Description = $"The local HTTP URL the in-process receiver binds and the publisher targets. Defaults to {DEFAULT_LISTEN_URL}.",
+            DefaultValueFactory = _ => DEFAULT_LISTEN_URL
+        };
+
+        var tokenOption = new Option<string?>("--token")
+        {
+            Description = "Optional bearer token shared between the in-process publisher and receiver."
+        };
+
+        var durationOption = new Option<int>("--duration", "-d")
+        {
+            Description = "The number of seconds to run the loop for after the connection is established.",
+            DefaultValueFactory = _ => DEFAULT_MEDIA_DURATION_SECONDS
+        };
+
+        var videoOption = new Option<string?>("--video")
+        {
+            Description = "Where to send the received video: \"play\" to render in an ffplay window, a file path " +
+                          "(H264 is written as Annex B, VP8 in an IVF container), \"-\" for the bitstream on stdout " +
+                          "(the result then moves to stderr), or \"null\" to discard it (headless throughput measurement, e.g. with --decode)."
+        };
+
+        var decodeOption = new Option<bool>("--decode")
+        {
+            Description = "Decode the received frames in-process (see --decoder) and send raw RGB to the --video sink, " +
+                          "instead of passing the encoded bitstream through for the consumer to decode (the default). " +
+                          "Requires a --video sink."
+        };
+
+        var decoderOption = new Option<string>("--decoder")
+        {
+            Description = "With --decode: the decoder, ffmpeg (SIPSorceryMedia.FFmpeg, any codec) or vp8.net (managed Vpx.Net, VP8 only).",
+            DefaultValueFactory = _ => "ffmpeg"
+        };
+
+        var ffmpegPathOption = new Option<string?>("--ffmpeg-path")
+        {
+            Description = "Directory containing the FFmpeg shared libraries for the ffmpeg encoder and/or ffmpeg --decoder. Defaults to the system path."
+        };
+
+        var encoderOption = new Option<string>("--encoder")
+        {
+            Description = "Video encoder: vp8.net (managed Vpx.Net VP8, no native deps), av1.net (managed SIPSorcery.AV1, no native deps) or ffmpeg (SIPSorceryMedia.FFmpeg).",
+            DefaultValueFactory = _ => DEFAULT_ENCODER
+        };
+
+        var presetOption = new Option<string>("--preset")
+        {
+            Description = $"Resolution preset ({VideoPresets.Names}). Ignored if --size is given.",
+            DefaultValueFactory = _ => DEFAULT_PRESET
+        };
+
+        var sizeOption = new Option<string?>("--size", "-s")
+        {
+            Description = "Explicit frame size WxH (e.g. 1280x720), overriding --preset."
+        };
+
+        var fpsOption = new Option<int>("--fps")
+        {
+            Description = "Frame rate to publish at.",
+            DefaultValueFactory = _ => DEFAULT_FPS
+        };
+
+        var codecOption = new Option<string?>("--codec", CodecSelection.VIDEO_OPTION)
+        {
+            Description = "Force the codec the ffmpeg encoder publishes, exactly one of: h264 (default), h265, vp8, vp9 or av1. " +
+                          "vp8.net is always VP8 and av1.net always AV1. Also spelled --video-codec, as on the receiving verbs."
+        };
+
+        var bitrateOption = new Option<int>("--bitrate")
+        {
+            Description = "Target encoder bitrate in bits per second (ffmpeg and av1.net encoders). 0 (default) derives it from the resolution and frame rate."
+        };
+
+        var preEncodeOption = new Option<int>("--pre-encode")
+        {
+            Description = "Transport testing: encode this many frames once before connecting and replay the encoded bitstream " +
+                          "in a loop, so no encoding runs during the send window. 0 (default) encodes live in the send loop. " +
+                          "For decoder speed alone use \"webrtc video-bench --decoder\"."
+        };
+
+        var maxRateOption = new Option<bool>("--max-rate")
+        {
+            Description = "Transport testing: send as fast as the encoder/replay and transport allow (ignores --fps). Pair " +
+                          "with --pre-encode and no --decode for the pure transport (packetise/SRTP) ceiling. The published " +
+                          "rate is not a codec speed: for that use \"webrtc video-bench\"."
+        };
+
+        var patternOption = new Option<string>("--pattern")
+        {
+            Description = LibraryVideoPublisher.PatternDescription + " Here auto picks testcard when --video shows or saves " +
+                          "the video and texture when there is no --video or it is \"null\", so benchmark runs are unchanged.",
+            DefaultValueFactory = _ => LibraryVideoPublisher.PATTERN_AUTO
+        };
+
+        var command = new Command("loopback",
+            "Publish a test pattern to an in-process WHIP receiver and report on it: a self-contained encode, network and decode loop in one process. " +
+            "Checks that a full WebRTC stream holds up at a rate; to measure how fast an encoder or decoder is, use \"webrtc video-bench\".");
+        command.Options.Add(listenOption);
+        command.Options.Add(tokenOption);
+        command.Options.Add(durationOption);
+        command.Options.Add(videoOption);
+        command.Options.Add(decodeOption);
+        command.Options.Add(decoderOption);
+        command.Options.Add(ffmpegPathOption);
+        command.Options.Add(encoderOption);
+        command.Options.Add(presetOption);
+        command.Options.Add(sizeOption);
+        command.Options.Add(fpsOption);
+        command.Options.Add(codecOption);
+        command.Options.Add(bitrateOption);
+        command.Options.Add(preEncodeOption);
+        command.Options.Add(maxRateOption);
+        command.Options.Add(patternOption);
+        AddCommonOptions(command);
+
+        command.SetAction((parseResult, cancellationToken) => WebRtcWhipServerCommand.RunReceiverAsync(
+            parseResult.GetValue(listenOption)!,
+            parseResult.GetValue(tokenOption),
+            parseResult.GetValue(durationOption),
+            parseResult.GetValue(videoOption),
+            parseResult.GetValue(decodeOption),
+            parseResult.GetValue(decoderOption)!,
+            parseResult.GetValue(ffmpegPathOption),
+            // The receiver offers every supported codec: the in-process publisher already sends exactly
+            // one (--codec), so the loop is a single-codec test without pinning the receive side too.
+            audioCodec: null,
+            videoCodec: null,
+            // DurationSeconds 0: the publisher runs until the receiver stops it at the end of the media window.
+            new LibraryVideoPublisher.Settings(
+                parseResult.GetValue(presetOption)!,
+                parseResult.GetValue(sizeOption),
+                parseResult.GetValue(fpsOption),
+                parseResult.GetValue(encoderOption)!,
+                parseResult.GetValue(codecOption),
+                parseResult.GetValue(bitrateOption),
+                parseResult.GetValue(maxRateOption),
+                parseResult.GetValue(ffmpegPathOption),
+                0,
+                parseResult.GetValue(preEncodeOption),
+                LibraryVideoPublisher.ResolvePattern(parseResult.GetValue(patternOption), IsVideoShown(parseResult.GetValue(videoOption)))),
+            parseResult.GetValue(TimeoutOption),
+            parseResult.GetValue(JsonOption),
+            parseResult.GetValue(VerboseOption),
+            cancellationToken));
+
+        return command;
+    }
+
+    /// <summary>
+    /// True when the received video goes somewhere a person will look at it: an ffplay window, a
+    /// file or stdout. No --video, or "null", is a headless measurement.
+    /// </summary>
+    private static bool IsVideoShown(string? video) =>
+        !string.IsNullOrWhiteSpace(video) && !video.Equals("null", StringComparison.OrdinalIgnoreCase);
+}

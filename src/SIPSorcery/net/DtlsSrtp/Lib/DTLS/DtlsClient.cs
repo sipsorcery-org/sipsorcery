@@ -32,7 +32,7 @@ using System.Collections.Generic;
 
 namespace SIPSorcery.Net.SharpSRTP.DTLS
 {
-    public class DtlsClient : DefaultTlsClient, IDtlsPeer
+    internal class DtlsClient : DefaultTlsClient, IDtlsPeer
     {
         private readonly object _syncRoot = new object();
         private static readonly ILogger _logger = LogFactory.CreateLogger<DtlsClient>();

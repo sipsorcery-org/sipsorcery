@@ -14,12 +14,15 @@
 //
 // History:
 // 08 Jun 2026  Aaron Clauson   Added the missing IVideoSource interface and implementation.
+// 19 Sep 2026  Aaron Clauson   Added full IVideoEndPoint implementation and wired up the
+//                              OnVideoSinkDecodedSample event.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
@@ -29,44 +32,92 @@ using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorceryMedia.FFmpeg;
 
-public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
+public class FFmpegVideoEndPoint : IVideoEndPoint, IVideoSourceSpan, IDisposable
 {
     public static ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEndPoint>();
 
     public static readonly List<VideoFormat> _supportedFormats = Helper.GetSupportedVideoFormats();
 
-    private FFmpegVideoEncoder _ffmpegEncoder;
+    private readonly FFmpegVideoEncoder _ffmpegEncoder;
 
-    private MediaFormatManager<VideoFormat> _videoFormatManager;
+    private readonly MediaFormatManager<VideoFormat> _videoFormatManager;
     private bool _isStarted;
     private bool _isPaused;
     private bool _isClosed;
 
-    // ---- Sink (decode) events ----
+    // The sink (decode) side has its own pause/close state so that controlling one direction does not affect
+    // the other. Note the encoder instance is shared, so closing the source also stops the sink.
+    private bool _isSinkPaused;
+    private bool _isSinkClosed;
 
-#pragma warning disable CS0067
-    // Decoded frames are delivered via the faster RawImage event below. The byte[] variant is part of
-    // the IVideoSink contract but is not currently raised by this endpoint.
+    /// <summary>
+    /// Fires when an encoded frame has been decoded and is ready for the caller. This event differs
+    /// from <see cref="OnVideoSinkDecodedSampleFaster"/> by handing over a new byte buffer for every event. This
+    /// makes it safe to hold on to the sample after the handler returns but less performant due to the extra
+    /// allocation and copy.
+    /// </summary>
     public event VideoSinkSampleDecodedDelegate? OnVideoSinkDecodedSample;
-#pragma warning restore CS0067
 
+    /// <summary>
+    /// Fires when an encoded frame has been decoded and is ready for the caller. The supplied
+    /// <see cref="RawImage"/> points at memory owned by the decoder that is re-used for the next frame, so it
+    /// is only valid for the duration of the handler. Copy it, for example with <see cref="RawImage.GetBuffer"/>,
+    /// if it is needed after the handler returns.
+    /// </summary>
     public event VideoSinkSampleDecodedFasterDelegate? OnVideoSinkDecodedSampleFaster;
-
-    // ---- Source (encode) events ----
 
     /// <summary>
     /// Fired when a raw sample supplied via <see cref="ExternalVideoSourceRawSample"/> or
     /// <see cref="ExternalVideoSourceRawSampleFaster"/> has been encoded and is ready to transmit.
     /// </summary>
-    public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
+    public event EncodedSampleDelegate? OnVideoSourceEncodedSample
+    {
+        add => _encodedSamples.OnVideoSourceEncodedSample += value;
+        remove => _encodedSamples.OnVideoSourceEncodedSample -= value;
+    }
+
+    /// <summary>
+    /// Fired, like <see cref="OnVideoSourceEncodedSample"/>, for every encoded frame, but with the frame written by the
+    /// encoder straight from FFmpeg's packet into a buffer this end point re-uses, rather than copied into a new array.
+    /// The sample is only valid for the duration of the handler. Subscribing an RTP session's span based send,
+    /// <c>OnVideoSourceEncodedSampleFaster += rtpSession.SendVideo</c>, sends each frame without copying it into an
+    /// array first. If both events have subscribers, each frame is encoded once and raised on both.
+    /// </summary>
+    public event EncodedSampleFasterDelegate? OnVideoSourceEncodedSampleFaster
+    {
+        add => _encodedSamples.OnVideoSourceEncodedSampleFaster += value;
+        remove => _encodedSamples.OnVideoSourceEncodedSampleFaster -= value;
+    }
+
+    // Both encoded sample events, and the buffer frames are encoded into for the span event.
+    private readonly EncodedVideoSampleEvents _encodedSamples = new EncodedVideoSampleEvents();
 
 #pragma warning disable CS0067
     // This endpoint only produces ENCODED video samples (it encodes raw input supplied via the
-    // ExternalVideoSourceRawSample* methods). It never emits raw source samples or source errors.
+    // ExternalVideoSourceRawSample* methods). It never emits raw source samples.
+
+    /// <summary>
+    /// Not raised by this endpoint. It is part of the <see cref="IVideoSource"/> contract but this endpoint only
+    /// encodes raw frames supplied to it via <see cref="ExternalVideoSourceRawSample"/>, it does not produce them.
+    /// For a local preview subscribe to the raw sample event on the source that is supplying those frames, for
+    /// example a capture device or test pattern source.
+    /// </summary>
     public event RawVideoSampleDelegate? OnVideoSourceRawSample;
+
+    /// <summary>
+    /// Not raised by this endpoint. It is part of the <see cref="IVideoSource"/> contract but this endpoint only
+    /// encodes raw frames supplied to it via <see cref="ExternalVideoSourceRawSampleFaster"/>, it does not produce
+    /// them. For a local preview subscribe to the raw sample event on the source that is supplying those frames,
+    /// for example a capture device or test pattern source.
+    /// </summary>
     public event RawVideoSampleFasterDelegate? OnVideoSourceRawSampleFaster;
-    public event SourceErrorDelegate? OnVideoSourceError;
 #pragma warning restore CS0067
+
+    /// <summary>
+    /// Fired when encoding a raw sample supplied via <see cref="ExternalVideoSourceRawSample"/> or
+    /// <see cref="ExternalVideoSourceRawSampleFaster"/> fails.
+    /// </summary>
+    public event SourceErrorDelegate? OnVideoSourceError;
 
     public FFmpegVideoEndPoint(Dictionary<string, string>? decoderOptions = null)
     {
@@ -90,46 +141,30 @@ public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
     public List<VideoFormat> GetVideoSourceFormats() => _videoFormatManager.GetSourceFormats();
     public void SetVideoSourceFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
     public void ForceKeyFrame() => _ffmpegEncoder.ForceKeyFrame();
-    public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
+    public bool HasEncodedVideoSubscribers() => _encodedSamples.HasSubscribers;
     public bool IsVideoSourcePaused() => _isPaused;
     public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
         throw new ApplicationException("The FFmpeg Video End Point requires full video frames rather than individual RTP packets.");
 
-    public void SetDecoderWrapper(string wrapperName)
-    {
-        if (_ffmpegEncoder != null)
-        {
-            _ffmpegEncoder.SetCodec(wrapperName);
-        }
-        else
-        {
-            logger.LogError("Video Decoder is not yet initialized.");
-            throw new InvalidOperationException("Video Decoder is not yet initialized.");
-        }
-    }
+    public void SetDecoderWrapper(string wrapperName) => _ffmpegEncoder.SetCodec(wrapperName);
 
     public bool SetDecoderForCodec(VideoCodecsEnum codec, string name, Dictionary<string, string>? opts = null)
     {
-        if (_ffmpegEncoder != null)
+        AVCodecID? codecID = FFmpegConvert.GetAVCodecID(codec);
+
+        if (codecID == null)
         {
-            if (FFmpegConvert.GetAVCodecID(codec) is var cdc && cdc is not null)
-                return _ffmpegEncoder.SetCodec((AVCodecID)cdc, name, opts);
-            else
-            {
-                logger.LogError("Codec {codec} is not supported by this endpoint.", codec);
-                throw new InvalidOperationException($"Codec {codec} is not supported by this endpoint.");
-            }
+            logger.LogError("Codec {codec} is not supported by this endpoint.", codec);
+            throw new InvalidOperationException($"Codec {codec} is not supported by this endpoint.");
         }
-        else
-        {
-            logger.LogError("Video Encoder is not yet initialized.");
-            throw new InvalidOperationException("Video Decoder is not yet initialized.");
-        }
+
+        return _ffmpegEncoder.SetCodec(codecID.Value, name, opts);
     }
 
     public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] payload, VideoFormat format)
     {
-        if ( (!_isClosed) && (payload != null) && (OnVideoSinkDecodedSampleFaster != null) )
+        if (!_isClosed && !_isSinkClosed && !_isSinkPaused && payload != null &&
+            (OnVideoSinkDecodedSampleFaster != null || OnVideoSinkDecodedSample != null))
         {
             if (_videoFormatManager.SelectedFormat.Codec != format.Codec)
             {
@@ -159,6 +194,19 @@ public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
                     foreach (var imageRawSample in imageRawSamples)
                     {
                         OnVideoSinkDecodedSampleFaster?.Invoke(imageRawSample);
+
+                        if (OnVideoSinkDecodedSample != null)
+                        {
+                            // The RawImage points at decoder owned memory that is re-used for the next frame, so the
+                            // byte[] event needs a copy. GetBuffer keeps the decoder's row layout, which means the
+                            // stride passed alongside it is the RawImage's own stride.
+                            var sample = imageRawSample.GetBuffer();
+
+                            if (sample != null)
+                            {
+                                OnVideoSinkDecodedSample(sample, (uint)imageRawSample.Width, (uint)imageRawSample.Height, imageRawSample.Stride, imageRawSample.PixelFormat);
+                            }
+                        }
                     }
                 }
             }
@@ -192,77 +240,183 @@ public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
         if (!_isClosed)
         {
             _isClosed = true;
-            _ffmpegEncoder?.Dispose();
+            _ffmpegEncoder.Dispose();
         }
 
         return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Encodes a raw video frame supplied by the application and raises <see cref="OnVideoSourceEncodedSample"/>
-    /// with the result, ready for the RTP transport.
+    /// Encodes a raw video frame supplied by the application and raises <see cref="OnVideoSourceEncodedSampleFaster"/>
+    /// and <see cref="OnVideoSourceEncodedSample"/> with the result, ready for the RTP transport.
     /// </summary>
     public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
     {
-        if (!_isClosed && OnVideoSourceEncodedSample != null)
+        if (!_isClosed && !_isPaused && _encodedSamples.HasSpanSubscribers)
         {
-            var encodedBuffer = _ffmpegEncoder.EncodeVideo(width, height, sample, pixelFormat, _videoFormatManager.SelectedFormat.Codec);
+            _encodedSamples.EncodeAndRaise(GetDurationRtpUnits(durationMilliseconds), (EndPoint: this, Width: width, Height: height, Sample: sample, PixelFormat: pixelFormat),
+                static (frame, output) => frame.EndPoint.EncodeToWriter(output, frame.Width, frame.Height, frame.Sample, frame.PixelFormat));
+        }
+        else if (!_isClosed && !_isPaused && _encodedSamples.HasSubscribers)
+        {
+            byte[]? encodedBuffer;
+
+            try
+            {
+                encodedBuffer = _ffmpegEncoder.EncodeVideo(width, height, sample, pixelFormat, _videoFormatManager.SelectedFormat.Codec);
+            }
+            catch (Exception excp)
+            {
+                RaiseEncodeError(excp);
+                return;
+            }
+
             RaiseEncodedSample(durationMilliseconds, encodedBuffer);
         }
     }
 
     /// <summary>
     /// Encodes a raw video frame supplied by the application (zero-copy RawImage variant) and raises
-    /// <see cref="OnVideoSourceEncodedSample"/> with the result.
+    /// <see cref="OnVideoSourceEncodedSampleFaster"/> and <see cref="OnVideoSourceEncodedSample"/> with the result.
     /// </summary>
     public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage)
     {
-        if (!_isClosed && OnVideoSourceEncodedSample != null)
+        if (!_isClosed && !_isPaused && _encodedSamples.HasSpanSubscribers)
         {
-            var encodedBuffer = _ffmpegEncoder.EncodeVideoFaster(rawImage, _videoFormatManager.SelectedFormat.Codec);
+            _encodedSamples.EncodeAndRaise(GetDurationRtpUnits(durationMilliseconds), (EndPoint: this, Image: rawImage),
+                static (frame, output) => frame.EndPoint.EncodeToWriter(output, frame.Image));
+        }
+        else if (!_isClosed && !_isPaused && _encodedSamples.HasSubscribers)
+        {
+            byte[]? encodedBuffer;
+
+            try
+            {
+                encodedBuffer = _ffmpegEncoder.EncodeVideoFaster(rawImage, _videoFormatManager.SelectedFormat.Codec);
+            }
+            catch (Exception excp)
+            {
+                RaiseEncodeError(excp);
+                return;
+            }
+
             RaiseEncodedSample(durationMilliseconds, encodedBuffer);
         }
+    }
+
+    /// <summary>
+    /// Reports an encode failure to <see cref="OnVideoSourceError"/> rather than throwing it back into the
+    /// caller that pushed the frame, which is typically a capture or timer callback. If nothing is subscribed
+    /// the exception is rethrown so the failure is not silently lost.
+    /// </summary>
+    private void RaiseEncodeError(Exception excp)
+    {
+        logger.LogWarning(excp, "Exception encoding video sample. {ErrorMessage}", excp.Message);
+
+        var onError = OnVideoSourceError;
+
+        if (onError == null)
+        {
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(excp).Throw();
+        }
+
+        onError!.Invoke($"FFmpeg video encode failed. {excp.Message}");
     }
 
     private void RaiseEncodedSample(uint durationMilliseconds, byte[]? encodedBuffer)
     {
         if (encodedBuffer != null)
         {
-            uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : (uint)Helper.DEFAULT_VIDEO_FRAME_RATE;
-            if (fps == 0)
-            {
-                fps = 1;
-            }
-
-            uint durationRtpTS = (uint)_videoFormatManager.SelectedFormat.ClockRate / fps;
-
-            // Note the event handler can be removed while the encoding is in progress.
-            OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encodedBuffer);
+            _encodedSamples.Raise(GetDurationRtpUnits(durationMilliseconds), encodedBuffer);
         }
+    }
+
+    /// <summary>
+    /// Encodes a frame passed as an array into the writer it is raised from. A failed encode is reported on
+    /// <see cref="OnVideoSourceError"/>, and raises nothing.
+    /// </summary>
+    /// <returns>True if the encoder produced a frame.</returns>
+    private bool EncodeToWriter(IBufferWriter<byte> output, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
+    {
+        try
+        {
+            // The span overload would read a null sample as an empty one, so it is refused here, as the array
+            // overload refuses it.
+            return _ffmpegEncoder.EncodeVideo(width, height, sample ?? throw new ArgumentNullException(nameof(sample)), pixelFormat,
+                _videoFormatManager.SelectedFormat.Codec, output) > 0;
+        }
+        catch (Exception excp)
+        {
+            RaiseEncodeError(excp);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Encodes a frame passed as a <see cref="RawImage"/> into the writer it is raised from. A failed encode is
+    /// reported on <see cref="OnVideoSourceError"/>, and raises nothing.
+    /// </summary>
+    /// <returns>True if the encoder produced a frame.</returns>
+    private bool EncodeToWriter(IBufferWriter<byte> output, RawImage rawImage)
+    {
+        try
+        {
+            return _ffmpegEncoder.EncodeVideoFaster(rawImage, _videoFormatManager.SelectedFormat.Codec, output) > 0;
+        }
+        catch (Exception excp)
+        {
+            RaiseEncodeError(excp);
+            return false;
+        }
+    }
+
+    private uint GetDurationRtpUnits(uint durationMilliseconds)
+    {
+        uint clockRate = (uint)_videoFormatManager.SelectedFormat.ClockRate;
+
+        // Scale the duration straight to RTP clock units rather than going via an integer frame rate, which
+        // truncates twice, e.g. a 17ms frame would come out as 1551 ticks at 90kHz instead of 1530.
+        return (durationMilliseconds > 0) ?
+            (uint)((ulong)clockRate * durationMilliseconds / 1000) :
+            clockRate / (uint)Helper.DEFAULT_VIDEO_FRAME_RATE;
     }
 
     public void Dispose()
     {
-        _ffmpegEncoder?.Dispose();
+        // Mark both directions closed so no further encode or decode calls reach the disposed encoder.
+        _isSinkClosed = true;
+        CloseVideo();
     }
 
     public Task PauseVideoSink()
     {
+        _isSinkPaused = true;
         return Task.CompletedTask;
     }
 
     public Task ResumeVideoSink()
     {
+        _isSinkPaused = false;
         return Task.CompletedTask;
     }
 
-    public Task StartVideoSink()
-    {
-        return Task.CompletedTask;
-    }
+    public Task StartVideoSink() => Task.CompletedTask;
 
+    /// <summary>
+    /// Stops decoding incoming frames. The encoder is shared with the source side so it is only disposed
+    /// when the source is closed.
+    /// </summary>
     public Task CloseVideoSink()
     {
+        _isSinkClosed = true;
         return Task.CompletedTask;
     }
+
+    public Task Start() => Task.WhenAll(StartVideo(), StartVideoSink());
+
+    public Task Close() => Task.WhenAll(CloseVideoSink(), CloseVideo());
+
+    public Task Pause() => Task.WhenAll(PauseVideo(), PauseVideoSink());
+
+    public Task Resume() => Task.WhenAll(ResumeVideo(), ResumeVideoSink());
 }

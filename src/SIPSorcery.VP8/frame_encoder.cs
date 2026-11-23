@@ -164,8 +164,27 @@ namespace Vpx.Net
         public byte[] MbU = new byte[64];
         public byte[] MbV = new byte[64];
 
-        // Output buffer.
+        // Output buffer. The encoded frame is built here and then either copied to a new array or written straight to
+        // the caller's destination. It is allocated pinned because the boolean coders hold raw pointers into it for
+        // the whole encode, including the stretches between the fixed blocks that set them up, and an unpinned
+        // array could be moved by the GC in between.
         public byte[] OutBuf;
+
+        // The quantizer for QuantizerQIndex. Its tables are only ever read while encoding, so it is built once per
+        // Q index rather than for every frame.
+        public FrameQuantizer Quantizer;
+        public int QuantizerQIndex = -1;
+
+        public FrameQuantizer GetQuantizer(int qIndex)
+        {
+            if (Quantizer == null || QuantizerQIndex != qIndex)
+            {
+                Quantizer = quantizer_init.BuildForQIndex(qIndex);
+                QuantizerQIndex = qIndex;
+            }
+
+            return Quantizer;
+        }
 
         // Reference-frame storage. After every successful encode,
         // EncodeKeyframe / future EncodeInterFrame copies the
@@ -220,9 +239,11 @@ namespace Vpx.Net
                 AboveVRow = new byte[chromaW];
             }
 
+            // Allocated pinned: the boolean coders keep raw pointers into OutBuf outside the fixed blocks that set them
+            // up, so the GC must not move it while a frame is being encoded.
             int bufLen = System.Math.Max(4096, width * height * 2 + 1024);
             if (OutBuf == null || OutBuf.Length < bufLen)
-                OutBuf = new byte[bufLen];
+                OutBuf = System.GC.AllocateArray<byte>(bufLen, pinned: true);
 
             int ySize = width * height;
             int cSize = chromaW * (height / 2);
@@ -285,24 +306,36 @@ namespace Vpx.Net
         internal static byte[] EncodeKeyframeWithBuffers(byte[] srcY, byte[] srcU, byte[] srcV,
             int width, int height, int qIndex, FrameEncoderBuffers buffers)
         {
+            int length = EncodeKeyframeInto(srcY, srcU, srcV, width, height, qIndex, buffers);
+            return buffers.OutBuf.AsSpan(0, length).ToArray();
+        }
+
+        /// <summary>
+        /// Encodes a keyframe into <see cref="FrameEncoderBuffers.OutBuf"/> of <paramref name="buffers"/> without
+        /// allocating a result array. The frame is valid until the next encode that uses the same buffers.
+        /// </summary>
+        /// <returns>The length of the encoded frame at the start of <see cref="FrameEncoderBuffers.OutBuf"/>.</returns>
+        internal static int EncodeKeyframeInto(ReadOnlySpan<byte> srcY, ReadOnlySpan<byte> srcU, ReadOnlySpan<byte> srcV,
+            int width, int height, int qIndex, FrameEncoderBuffers buffers)
+        {
             if (buffers == null) throw new System.ArgumentNullException(nameof(buffers));
             if (width <= 0 || width % 16 != 0)
                 throw new ArgumentException("width must be a positive multiple of 16", nameof(width));
             if (height <= 0 || height % 16 != 0)
                 throw new ArgumentException("height must be a positive multiple of 16", nameof(height));
-            if (srcY == null || srcY.Length != width * height)
+            if (srcY.Length != width * height)
                 throw new ArgumentException("srcY size mismatch");
             int chromaW = width / 2, chromaH = height / 2;
-            if (srcU == null || srcU.Length != chromaW * chromaH)
+            if (srcU.Length != chromaW * chromaH)
                 throw new ArgumentException("srcU size mismatch");
-            if (srcV == null || srcV.Length != chromaW * chromaH)
+            if (srcV.Length != chromaW * chromaH)
                 throw new ArgumentException("srcV size mismatch");
 
             int mbCols = width / 16;
             int mbRows = height / 16;
 
-            // Build the quantizer for this Q index.
-            FrameQuantizer fq = quantizer_init.BuildForQIndex(qIndex);
+            // The quantizer for this Q index, cached on the buffers.
+            FrameQuantizer fq = buffers.GetQuantizer(qIndex);
 
             // Use the caller-supplied per-codec scratch buffers.
             var buf = buffers;
@@ -590,10 +623,7 @@ namespace Vpx.Net
                 boolhuff.vp8_stop_encode(ref bc1);
             }
 
-            int totalBytes = totalThroughP0 + (int)bc1.pos;
-            byte[] result = new byte[totalBytes];
-            Array.Copy(outBuf, result, totalBytes);
-            return result;
+            return totalThroughP0 + (int)bc1.pos;
         }
 
         /// <summary>
@@ -626,23 +656,35 @@ namespace Vpx.Net
         internal static byte[] EncodeInterFrameWithBuffers(byte[] srcY, byte[] srcU, byte[] srcV,
             int width, int height, int qIndex, FrameEncoderBuffers buffers, bool intraFallback = true)
         {
+            int length = EncodeInterFrameInto(srcY, srcU, srcV, width, height, qIndex, buffers, intraFallback);
+            return buffers.OutBuf.AsSpan(0, length).ToArray();
+        }
+
+        /// <summary>
+        /// Encodes an inter frame into <see cref="FrameEncoderBuffers.OutBuf"/> of <paramref name="buffers"/> without
+        /// allocating a result array. The frame is valid until the next encode that uses the same buffers.
+        /// </summary>
+        /// <returns>The length of the encoded frame at the start of <see cref="FrameEncoderBuffers.OutBuf"/>.</returns>
+        internal static int EncodeInterFrameInto(ReadOnlySpan<byte> srcY, ReadOnlySpan<byte> srcU, ReadOnlySpan<byte> srcV,
+            int width, int height, int qIndex, FrameEncoderBuffers buffers, bool intraFallback = true)
+        {
             if (buffers == null) throw new System.ArgumentNullException(nameof(buffers));
             if (width <= 0 || width % 16 != 0)
                 throw new ArgumentException("width must be a positive multiple of 16", nameof(width));
             if (height <= 0 || height % 16 != 0)
                 throw new ArgumentException("height must be a positive multiple of 16", nameof(height));
-            if (srcY == null || srcY.Length != width * height)
+            if (srcY.Length != width * height)
                 throw new ArgumentException("srcY size mismatch");
             int chromaW = width / 2, chromaH = height / 2;
-            if (srcU == null || srcU.Length != chromaW * chromaH)
+            if (srcU.Length != chromaW * chromaH)
                 throw new ArgumentException("srcU size mismatch");
-            if (srcV == null || srcV.Length != chromaW * chromaH)
+            if (srcV.Length != chromaW * chromaH)
                 throw new ArgumentException("srcV size mismatch");
 
             int mbCols = width / 16;
             int mbRows = height / 16;
 
-            FrameQuantizer fq = quantizer_init.BuildForQIndex(qIndex);
+            FrameQuantizer fq = buffers.GetQuantizer(qIndex);
 
             var buf = buffers;
             buf.EnsureForFrame(width, height);
@@ -967,13 +1009,7 @@ namespace Vpx.Net
             //
             // For intra MBs we write is_inter=0 then the DC_PRED Y/UV mode
             // bits (matching the decoder's intra branch).
-            byte[][] modeProbRows = new byte[6][];
-            for (int row = 0; row < 6; row++)
-            {
-                modeProbRows[row] = new byte[4];
-                for (int j = 0; j < 4; j++)
-                    modeProbRows[row][j] = (byte)modecont.vp8_mode_contexts[row, j];
-            }
+            byte[][] modeProbRows = s_modeProbRows;
 
             for (int mbRow = 0; mbRow < mbRows; mbRow++)
             {
@@ -1041,10 +1077,25 @@ namespace Vpx.Net
 
             LastInterFrameIntraMbCount = intraCount;
 
-            int totalBytes = totalThroughP0 + (int)bc1.pos;
-            byte[] result = new byte[totalBytes];
-            Array.Copy(outBuf, result, totalBytes);
-            return result;
+            return totalThroughP0 + (int)bc1.pos;
+        }
+
+        /// <summary>
+        /// The six possible inter mode probability rows (see the per-MB mode bits above), built once from the
+        /// constant vp8_mode_contexts table instead of for every inter frame. Only ever read.
+        /// </summary>
+        private static readonly byte[][] s_modeProbRows = BuildModeProbRows();
+
+        private static byte[][] BuildModeProbRows()
+        {
+            byte[][] modeProbRows = new byte[6][];
+            for (int row = 0; row < 6; row++)
+            {
+                modeProbRows[row] = new byte[4];
+                for (int j = 0; j < 4; j++)
+                    modeProbRows[row][j] = (byte)modecont.vp8_mode_contexts[row, j];
+            }
+            return modeProbRows;
         }
 
         /// <summary>
@@ -1142,16 +1193,15 @@ namespace Vpx.Net
             return c;
         }
 
-        private static void ExtractPlaneInto(byte[] src, int srcStride, int x, int y, int w, int h, byte[] dst)
+        private static void ExtractPlaneInto(ReadOnlySpan<byte> src, int srcStride, int x, int y, int w, int h, byte[] dst)
         {
             for (int r = 0; r < h; r++)
-                for (int c = 0; c < w; c++)
-                    dst[r * w + c] = src[(y + r) * srcStride + (x + c)];
+                src.Slice((y + r) * srcStride + x, w).CopyTo(dst.AsSpan(r * w, w));
         }
 
         private static void ExtractRowInto(byte[] src, int offset, int count, byte[] dst)
         {
-            for (int i = 0; i < count; i++) dst[i] = src[offset + i];
+            src.AsSpan(offset, count).CopyTo(dst);
         }
 
         private static void ExtractColumnInto(byte[] src, int srcStride, int columnIndex, int rows, byte[] dst)
@@ -1162,7 +1212,7 @@ namespace Vpx.Net
         private static void CopyRowOut(byte[] src, int srcStride, int srcRow,
             byte[] dst, int dstOffset, int count)
         {
-            for (int i = 0; i < count; i++) dst[dstOffset + i] = src[srcRow * srcStride + i];
+            src.AsSpan(srcRow * srcStride, count).CopyTo(dst.AsSpan(dstOffset));
         }
     }
 }

@@ -22,6 +22,14 @@ namespace SIPSorceryMedia.FFmpeg
 
         private readonly AVFrame *_dstFrame;
 
+        // The sws_scale binding takes arrays, and passing it the fixed size structs converts each of them to a new
+        // array on every call. Convert(byte*), which runs for every raw frame encoded from a non-I420 format, passes
+        // these instead: the destination ones never change, the source ones are refilled for each frame.
+        private readonly byte*[] _srcDataArray = new byte*[4];
+        private readonly int[] _srcStrideArray = new int[4];
+        private readonly byte*[] _dstDataArray;
+        private readonly int[] _dstLinesizeArray;
+
         public int SourceWidth => _srcWidth;
         public int SourceHeight => _srcHeight;
         public AVPixelFormat SourcePixelFormat => _srcPixelFormat;
@@ -64,7 +72,10 @@ namespace SIPSorceryMedia.FFmpeg
 
             ffmpeg.av_image_fill_arrays(ref _dstData, ref _dstLinesize, (byte*)_convertedFrameBufferPtr, destinationPixelFormat, dstWidth, dstHeight, 1)
                 .ThrowExceptionIfError();
-            
+
+            _dstDataArray = _dstData.ToArray();
+            _dstLinesizeArray = _dstLinesize.ToArray();
+
             _dstFrame = ffmpeg.av_frame_alloc();
             _dstFrame->width = _dstWidth;
             _dstFrame->height = _dstHeight;
@@ -116,12 +127,22 @@ namespace SIPSorceryMedia.FFmpeg
 
             ffmpeg.av_image_fill_arrays(ref src, ref srcStride, pSrcData, _srcPixelFormat, _srcWidth, _srcHeight, 1).ThrowExceptionIfError();
 
-            ffmpeg.sws_scale(_pConvertContext, src, srcStride, 0, _srcHeight, _dstData, _dstLinesize).ThrowExceptionIfError();
+            for (uint i = 0; i < 4; i++)
+            {
+                _srcDataArray[i] = src[i];
+                _srcStrideArray[i] = srcStride[i];
+            }
 
+            ffmpeg.sws_scale(_pConvertContext, _srcDataArray, _srcStrideArray, 0, _srcHeight, _dstDataArray, _dstLinesizeArray).ThrowExceptionIfError();
+
+            // Element by element: UpdateFrom takes an array, so passing it the fixed size structs would allocate.
             var data = new byte_ptrArray8();
-            data.UpdateFrom(_dstData);
             var linesize = new int_array8();
-            linesize.UpdateFrom(_dstLinesize);
+            for (uint i = 0; i < 4; i++)
+            {
+                data[i] = _dstData[i];
+                linesize[i] = _dstLinesize[i];
+            }
 
             return new AVFrame
             {

@@ -19,9 +19,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using SIPSorcery.Cli.Commands.Route;
+using SIPSorceryMedia.Abstractions;
 using Xunit;
 
 namespace SIPSorcery.Cli.UnitTest;
@@ -38,6 +40,45 @@ public class EdgeFactoryTests
     [Fact]
     public void Source_whep_requires_a_url()
         => AssertEdgeError(() => EdgeFactory.CreateSource("whep:", Options(), Log), "whep source needs a URL");
+
+    [Theory]
+    [InlineData("browser")]
+    [InlineData("browser:9100")]
+    public void Source_browser_builds_with_an_optional_port(string spec)
+    {
+        // Constructing the node must not bind the listener: StartAsync does that, so a spec check
+        // stays free of side effects and these tests touch no sockets.
+        var node = EdgeFactory.CreateSource(spec, Options(), Log);
+
+        Assert.IsType<BrowserSourceNode>(node);
+        Assert.Contains(spec.Contains(':') ? "9100" : "8080", node.Describe());
+    }
+
+    [Theory]
+    [InlineData("browser:0")]
+    [InlineData("browser:70000")]
+    [InlineData("browser:eighty")]
+    public void Source_browser_rejects_a_bad_port(string spec)
+        => AssertEdgeError(() => EdgeFactory.CreateSource(spec, Options(), Log), "is not a valid port number");
+
+    [Fact]
+    public void Source_browser_rejects_a_size_that_is_not_a_usable_WxH()
+        => AssertEdgeError(() => EdgeFactory.CreateSource("browser", Options() with { BrowserSize = "1280" }, Log),
+            "--browser-size");
+
+    [Fact]
+    public void Source_browser_pins_the_video_codec_on_both_ends()
+    {
+        // Pinning only our end would let the browser pick a different codec, so a --video-codec the
+        // page cannot name to the browser has to fail rather than half-apply.
+        var node = EdgeFactory.CreateSource("browser", Options() with { VideoCodec = "vp9" }, Log);
+
+        Assert.IsType<BrowserSourceNode>(node);
+    }
+
+    [Fact]
+    public void Source_web_points_at_the_browser_source_for_a_one_way_route()
+        => AssertEdgeError(() => EdgeFactory.CreateSource("web", Options(), Log), "--from browser");
 
     [Fact]
     public void Source_livekit_requires_a_room()
@@ -78,9 +119,66 @@ public class EdgeFactoryTests
     public void Sink_web_rejects_a_bad_port()
         => AssertEdgeError(() => EdgeFactory.CreateSink("web:99999", Options(), Log), "not a valid port number");
 
+    [Theory]
+    [InlineData("sip:bob@host")]
+    [InlineData("sips:bob@host:5061")]
+    public async Task Sink_sip_builds_a_call_sink_offering_opus_then_g711(string spec)
+    {
+        // Constructing the node places no call: StartAsync does that, so this touches no network.
+        var sink = Assert.IsType<SipSinkNode>(EdgeFactory.CreateSink(spec, Options(), Log));
+        try
+        {
+            Assert.Contains("bob@host", sink.Describe());
+            Assert.Equal(new[] { AudioCodecsEnum.OPUS, AudioCodecsEnum.PCMU, AudioCodecsEnum.PCMA },
+                sink.OfferedAudio.Select(f => f.Codec));
+            Assert.Equal(VideoCodecsEnum.H264, sink.OfferedVideo.Codec);
+        }
+        finally
+        {
+            await sink.DisposeAsync();
+        }
+    }
+
     [Fact]
-    public void Sink_sip_is_not_wired_yet()
-        => AssertEdgeError(() => EdgeFactory.CreateSink("sip:bob@host", Options(), Log), "not wired into route");
+    public async Task Sink_sip_with_a_g711_graph_offers_just_that_codec()
+    {
+        var sink = Assert.IsType<SipSinkNode>(EdgeFactory.CreateSink("sip:bob@host", Options() with { AudioCodec = "pcma" }, Log));
+        try
+        {
+            Assert.Equal(new[] { AudioCodecsEnum.PCMA }, sink.OfferedAudio.Select(f => f.Codec));
+        }
+        finally
+        {
+            await sink.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task Sink_sip_offers_the_pinned_video_codec()
+    {
+        var sink = Assert.IsType<SipSinkNode>(EdgeFactory.CreateSink("sip:bob@host", Options() with { VideoCodec = "vp8" }, Log));
+        try
+        {
+            Assert.Equal(VideoCodecsEnum.VP8, sink.OfferedVideo.Codec);
+        }
+        finally
+        {
+            await sink.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public void Sink_sip_requires_a_destination()
+        => AssertEdgeError(() => EdgeFactory.CreateSink("sip:", Options(), Log), "sip sink needs a destination");
+
+    [Fact]
+    public void Sink_bare_user_at_host_is_a_file_not_a_call()
+    {
+        // As a source a bare user@host is a SIP destination; as a sink it would be too easily a file name.
+        var sink = EdgeFactory.CreateSink("bob@host.h264", Options(), Log);
+
+        Assert.IsType<VideoSinkNode>(sink);
+    }
 
     [Fact]
     public void Sink_cloudflare_requires_credentials()

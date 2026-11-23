@@ -139,7 +139,7 @@ namespace SIPSorcery.Net
         /// <returns>A new DCEP open message instance.</returns>
         public static DataChannelOpenMessage Parse(byte[] buffer, int posn)
         {
-            if (buffer.Length < DCEP_OPEN_FIXED_PARAMETERS_LENGTH)
+            if (buffer.Length - posn < DCEP_OPEN_FIXED_PARAMETERS_LENGTH)
             {
                 throw new ApplicationException("The buffer did not contain the minimum number of bytes for a DCEP open message.");
             }
@@ -154,14 +154,25 @@ namespace SIPSorcery.Net
             ushort labelLength = NetConvert.ParseUInt16(buffer, posn + 8);
             ushort protocolLength = NetConvert.ParseUInt16(buffer, posn + 10);
 
+            // The label and protocol lengths are supplied by the remote party. Check they fit in the
+            // buffer before using them, otherwise the string conversions below throw an argument
+            // exception instead of the application exception used to signal a malformed message.
+            int variableLength = labelLength + protocolLength;
+            if (variableLength > buffer.Length - posn - DCEP_OPEN_FIXED_PARAMETERS_LENGTH)
+            {
+                throw new ApplicationException("The buffer was not big enough for the label and protocol lengths in the DCEP open message.");
+            }
+
+            int labelPosn = posn + DCEP_OPEN_FIXED_PARAMETERS_LENGTH;
+
             if (labelLength > 0)
             {
-                dcepOpen.Label = Encoding.UTF8.GetString(buffer, 12, labelLength);
+                dcepOpen.Label = Encoding.UTF8.GetString(buffer, labelPosn, labelLength);
             }
 
             if (protocolLength > 0)
             {
-                dcepOpen.Protocol = Encoding.UTF8.GetString(buffer, 12 + labelLength, protocolLength);
+                dcepOpen.Protocol = Encoding.UTF8.GetString(buffer, labelPosn + labelLength, protocolLength);
             }
 
             return dcepOpen;

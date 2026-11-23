@@ -43,10 +43,12 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -65,6 +67,7 @@ namespace demo;
 class Program
 {
     private static Microsoft.Extensions.Logging.ILogger _logger = NullLogger.Instance;
+    private static readonly ConcurrentDictionary<Guid, Channel<string>> _uiEventClients = new();
 
     // The demo drives a single connected viewer.
     private static IAvatarRenderer _videoSource;
@@ -81,6 +84,8 @@ class Program
     private static string _elevenLabsSttRealtimeModel;
     private static bool _elevenLabsStreaming;
     private static int _visemeLeadMs = 0;
+    private static bool _waitForIceGatheringToSendAnswer;
+    private static string _stunUrl = string.Empty;
 
     static async Task Main()
     {
@@ -129,6 +134,8 @@ class Program
         _elevenLabsSttRealtimeModel = Environment.GetEnvironmentVariable("ELEVENLABS_STT_REALTIME_MODEL") ?? "scribe_v2_realtime";
         _elevenLabsStreaming = string.Equals(Environment.GetEnvironmentVariable("ELEVENLABS_STREAMING"), "true", StringComparison.OrdinalIgnoreCase);
         if (int.TryParse(Environment.GetEnvironmentVariable("VISEME_LEAD_MS"), out var lead)) { _visemeLeadMs = lead; }
+        bool.TryParse(Environment.GetEnvironmentVariable("WAIT_FOR_ICE_GATHERING_TO_SEND_ANSWER"), out _waitForIceGatheringToSendAnswer);
+        _stunUrl = Environment.GetEnvironmentVariable("STUN_URL");
 
         // Synthesise a phrase to a WAV and exit - validates a TTS engine without a browser.
         var argv = Environment.GetCommandLineArgs();
@@ -226,6 +233,8 @@ class Program
         app.UseDefaultFiles();
         app.UseStaticFiles();
 
+        app.MapGet("/healthz", () => Results.Ok(new { status = "healthy" }));
+        app.MapGet("/events", StreamUiEvents);
         app.MapPost("/offer", HandleOffer);
 
         app.MapPost("/say", async (HttpRequest request) =>
@@ -317,10 +326,76 @@ class Program
         return text;
     }
 
+    /// <summary>
+    /// Handles microphone input separately from typed /ask requests so the browser activity
+    /// drawer can show the STT result followed by the reply generated for that utterance.
+    /// </summary>
+    private static async Task HandleRecognizedSpeechAsync(string text)
+    {
+        PublishUiEvent("stt", text);
+        try
+        {
+            var reply = await AskAsync(text);
+            if (!string.IsNullOrWhiteSpace(reply))
+            {
+                PublishUiEvent("llm", reply);
+            }
+        }
+        catch (Exception excp)
+        {
+            _logger.LogError(excp, "Error handling recognized speech.");
+        }
+    }
+
+    /// <summary>Streams speech activity to each open browser using server-sent events.</summary>
+    private static async Task StreamUiEvents(HttpContext context)
+    {
+        context.Response.ContentType = "text/event-stream";
+        context.Response.Headers.CacheControl = "no-cache";
+        context.Response.Headers.Append("X-Accel-Buffering", "no");
+
+        var clientId = Guid.NewGuid();
+        var channel = Channel.CreateUnbounded<string>(new UnboundedChannelOptions
+        {
+            SingleReader = true,
+            SingleWriter = false,
+        });
+        _uiEventClients[clientId] = channel;
+
+        try
+        {
+            await context.Response.WriteAsync(": connected\n\n", context.RequestAborted);
+            await context.Response.Body.FlushAsync(context.RequestAborted);
+            await foreach (var message in channel.Reader.ReadAllAsync(context.RequestAborted))
+            {
+                await context.Response.WriteAsync($"data: {message}\n\n", context.RequestAborted);
+                await context.Response.Body.FlushAsync(context.RequestAborted);
+            }
+        }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            // The browser closed or refreshed the page.
+        }
+        finally
+        {
+            _uiEventClients.TryRemove(clientId, out _);
+            channel.Writer.TryComplete();
+        }
+    }
+
+    private static void PublishUiEvent(string type, string text)
+    {
+        var message = JsonSerializer.Serialize(new { type, text });
+        foreach (var client in _uiEventClients.Values)
+        {
+            client.Writer.TryWrite(message);
+        }
+    }
+
     private static async Task<IResult> HandleOffer(HttpRequest request)
     {
         var sdpOffer = await ReadBody(request);
-        _logger.LogDebug("Received SDP offer.");
+        _logger.LogDebug("Received SDP offer:\n{offer}", sdpOffer);
 
         var pc = CreatePeerConnection();
 
@@ -331,7 +406,8 @@ class Program
             return Results.BadRequest(result.ToString());
         }
 
-        var answer = pc.createAnswer();
+        var answer = pc.createAnswer(new RTCAnswerOptions { X_WaitForIceGatheringToComplete= _waitForIceGatheringToSendAnswer });
+        _logger.LogDebug("Created SDP answer (wait for ICE gathering was {WaitForIceGathering}):\n{answer}", _waitForIceGatheringToSendAnswer, answer.sdp);
         await pc.setLocalDescription(answer);
 
         return Results.Text(pc.localDescription.sdp.ToString());
@@ -339,7 +415,18 @@ class Program
 
     private static RTCPeerConnection CreatePeerConnection()
     {
-        var pc = new RTCPeerConnection(null);
+        var config = new RTCConfiguration
+        {
+            X_ICEIncludeAllInterfaceAddresses = true
+        };
+
+        if (!string.IsNullOrWhiteSpace(_stunUrl))
+        {
+            config.iceServers = new List<RTCIceServer>();
+            config.iceServers.Add(_stunUrl.ParseStunServer());
+        }
+
+        var pc = new RTCPeerConnection(config);
 
         IAvatarRenderer videoSource = CreateRenderer(new FFmpegVideoEncoder());
         var videoTrack = new MediaStreamTrack(videoSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
@@ -371,7 +458,7 @@ class Program
             recognizer = CreateRecognizer();
             if (recognizer != null)
             {
-                recognizer.OnRecognized += text => _ = AskAsync(text);
+                recognizer.OnRecognized += text => _ = HandleRecognizedSpeechAsync(text);
 
                 var micDecoder = new AudioEncoder();
                 var pcmuFormat = new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU);
@@ -682,5 +769,21 @@ class Program
     {
         using var reader = new StreamReader(request.Body);
         return await reader.ReadToEndAsync();
+    }
+}
+
+public static class StunServerExtensions
+{
+    public static RTCIceServer ParseStunServer(this string stunServer)
+    {
+        var fields = stunServer.Split(';');
+
+        return new RTCIceServer
+        {
+            urls = fields[0],
+            username = fields.Length > 1 ? fields[1] : null,
+            credential = fields.Length > 2 ? fields[2] : null,
+            credentialType = RTCIceCredentialType.password
+        };
     }
 }

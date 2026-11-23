@@ -28,6 +28,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net.UnitTests.Helpers;
 using SIPSorcery.SIP.App;
@@ -354,6 +355,121 @@ a=sendrecv");
                 Assert.Equal(SetDescriptionResultEnum.OK, result);
                 Assert.Equal(MediaStreamStatusEnum.SendRecv, session.AudioStream.LocalTrack.StreamStatus);
                 Assert.Equal(MediaStreamStatusEnum.Inactive, session.VideoStream.LocalTrack.StreamStatus);
+            }
+        }
+
+        /// <summary>
+        /// A phone without real-time text declines the text stream with port
+        /// zero, as SEMS (iptel.org) does: "m=text 0 RTP/AVP 100" with no
+        /// rtpmap. That's a valid answer (RFC 3264 section 6), so the call
+        /// goes ahead on audio rather than failing with TextIncompatible. Text
+        /// is inactive both ways and isn't reported as negotiated. Our text
+        /// formats are kept, so a later offer (a re-INVITE) can offer text
+        /// again.
+        /// </summary>
+        [Fact]
+        public void Answer_TextDeclinedByPortZeroWithoutRtpmap_AudioContinuesAndTextInactive()
+        {
+            using (var session = new RtpSessionBuilder()
+                .WithAudioTrack()
+                .WithTrack(new MediaStreamTrack(new TextFormat(TextCodecsEnum.T140, 98)))
+                .Build())
+            {
+                bool textNegotiated = false;
+                session.OnTextFormatsNegotiated += _ => textNegotiated = true;
+
+                session.CreateOffer(IPAddress.Loopback);
+                SDP answer = SDP.ParseSDPDescription(
+@"v=0
+o=sems 1 1 IN IP4 192.0.2.10
+s=session
+c=IN IP4 192.0.2.10
+t=0 0
+m=audio 21068 RTP/AVP 0 8
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=sendrecv
+m=text 0 RTP/AVP 100
+a=inactive");
+
+                var result = session.SetRemoteDescription(SdpType.answer, answer);
+
+                Assert.Equal(SetDescriptionResultEnum.OK, result);
+                Assert.Equal(MediaStreamStatusEnum.SendRecv, session.AudioStream.LocalTrack.StreamStatus);
+                Assert.Equal(MediaStreamStatusEnum.Inactive, session.TextStream.LocalTrack.StreamStatus);
+                Assert.Equal(MediaStreamStatusEnum.Inactive, session.TextStream.RemoteTrack.StreamStatus);
+                Assert.False(textNegotiated);
+
+                SDP reOffer = SDP.ParseSDPDescription(session.CreateOffer(IPAddress.Loopback).ToString());
+                var text = Assert.Single(reOffer.Media, m => m.Media == SDPMediaTypesEnum.text);
+                Assert.Contains(98, text.MediaFormats.Keys);
+            }
+        }
+
+        /// <summary>
+        /// The same for video: a port-zero video line whose payload type has
+        /// no rtpmap declines video, rather than failing the call with
+        /// VideoIncompatible.
+        /// </summary>
+        [Fact]
+        public void Answer_VideoDeclinedByPortZeroWithoutRtpmap_AudioContinuesAndVideoInactive()
+        {
+            using (var session = new RtpSessionBuilder()
+                .WithAudioTrack()
+                .WithVideoTrack()
+                .Build())
+            {
+                bool videoNegotiated = false;
+                session.OnVideoFormatsNegotiated += _ => videoNegotiated = true;
+
+                session.CreateOffer(IPAddress.Loopback);
+                SDP answer = SDP.ParseSDPDescription(
+@"v=0
+o=- 1 1 IN IP4 192.0.2.10
+s=-
+c=IN IP4 192.0.2.10
+t=0 0
+m=audio 21068 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=sendrecv
+m=video 0 RTP/AVP 120");
+
+                var result = session.SetRemoteDescription(SdpType.answer, answer);
+
+                Assert.Equal(SetDescriptionResultEnum.OK, result);
+                Assert.Equal(MediaStreamStatusEnum.SendRecv, session.AudioStream.LocalTrack.StreamStatus);
+                Assert.Equal(MediaStreamStatusEnum.Inactive, session.VideoStream.LocalTrack.StreamStatus);
+                Assert.False(videoNegotiated);
+            }
+        }
+
+        /// <summary>
+        /// A text line that isn't declined but shares no format with ours is
+        /// still incompatible: the port-zero rule mustn't hide a real mismatch.
+        /// </summary>
+        [Fact]
+        public void Answer_TextOnRealPortWithNoCommonFormat_StillTextIncompatible()
+        {
+            using (var session = new RtpSessionBuilder()
+                .WithAudioTrack()
+                .WithTrack(new MediaStreamTrack(new TextFormat(TextCodecsEnum.T140, 98)))
+                .Build())
+            {
+                session.CreateOffer(IPAddress.Loopback);
+                SDP answer = SDP.ParseSDPDescription(
+@"v=0
+o=- 1 1 IN IP4 192.0.2.10
+s=-
+c=IN IP4 192.0.2.10
+t=0 0
+m=audio 21068 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=sendrecv
+m=text 21070 RTP/AVP 100
+a=rtpmap:100 x-unknown/1000");
+
+                Assert.Equal(SetDescriptionResultEnum.TextIncompatible,
+                    session.SetRemoteDescription(SdpType.answer, answer));
             }
         }
     }

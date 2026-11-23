@@ -27,7 +27,7 @@ namespace SIPSorcery.Net
         private List<SDPSecurityDescription> _localSecurityDescriptions;
         private List<SDPSecurityDescription> _remoteSecurityDescriptions;
 
-        public ThreadSafeSrtpSessionContext Context { get; private set; }
+        internal ThreadSafeSrtpSessionContext Context { get; private set; }
 
         public bool IsNegotiationComplete { get; private set; }
         public SDPSecurityDescription LocalSecurityDescription { get; private set; }

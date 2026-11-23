@@ -2,7 +2,6 @@
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-ubuntu.yml/badge.svg) 
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-mac.yml/badge.svg) 
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/examples-core-win.yml/badge.svg) 
-![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/unity-smoke-test.yml/badge.svg)
 
 ## License
 
@@ -26,7 +25,6 @@ This repository is the home of the **SIPSorcery** project - a comprehensive real
 | **SIPSorceryMedia.Abstractions** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | Interfaces for audio/video encoders and device access | [README](src/SIPSorceryMedia.Abstractions/README.md) |
 | **SIPSorceryMedia.Windows** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | Windows-specific audio capture and playback and video capture | [README](src/SIPSorceryMedia.Windows/README.md) |
 | **SIPSorceryMedia.FFmpeg** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | Cross-platform media support using FFmpeg | [README](src/SIPSorceryMedia.FFmpeg/README.md) |
-| **SIPSorcery.OpenAI.Realtime** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.OpenAI.Realtime.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.Realtime) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.OpenAI.Realtime.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.Realtime) | Support for OpenAI's Realtime WebRTC and SIP end points | [README](src/SIPSorcery.OpenAI.Realtime/README.md) |
 | **SIPSorcery.VP8** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | Pure C# VP8 video codec implementation | [README](src/SIPSorcery.VP8/README.md) |
 
 
@@ -38,7 +36,7 @@ This repository includes **[70+ example projects](examples/)** demonstrating var
 - **[WebRTC Examples](examples/WebRTCExamples/)** - Video streaming, data channels, signaling patterns ([README](examples/WebRTCExamples/README.md))
 - **[SIP Scenarios](examples/SIPScenarios/)** - Call transfers, load testing, complex call flows ([README](examples/SIPScenarios/README.md))
 - **[WebRTC Scenarios](examples/WebRTCScenarios/)** - Advanced WebRTC use cases ([README](examples/WebRTCScenarios/README.md))
-- **[Softphone](examples/Softphone/)** - Full-featured Windows Forms softphone application ([README](examples/Softphone/README.md))
+- **[Softphone](examples/Softphonev2)** - Full-featured Windows and Web softphone application ([README](examples/Softphonev2/desktop/README.md)). Web version available for GitHub users to experiment with [here](https://www.sipsorcery.com/softphone/)
 - **[OpenAI](examples/OpenAIExamples/)** - Example applications for interacting with OpenAI's Realtime WebRTC and SIP end points ([README](examples/OpenAIExamples/GetStarted/README.md))
 
 ---
@@ -94,32 +92,6 @@ For Windows the easiest option is:
 ````ps1
 winget install "FFmpeg (Shared)" --version 8.1
 ````
-
-## Video Pipeline Capacity
-
-Video processing — and encoding in particular — is generally the bottleneck in most real-time communications libraries. The original goal of the SIPSorcery library was to support 1080p video at 30 frames per second.
-
-In June 2026, the new SIPSorcery.Diagnostics tool (the `sipsorcery-diags` command) was conceived to test various SIP, ICE, WebRTC, and benchmarking scenarios. The benchmarking has revealed that, thanks to the capabilities of the [FFmpeg](https://ffmpeg.org/) project (and the various libraries it in turn wraps), the SIPSorcery library running on a typical Windows machine with the H264 video codec is capable of processing 4K video at over 30fps and 1080p at over 100fps.
-
-Sample test results are shown below.
-
-### Machine
-
-| CPU | Cores | Logical processors | Memory |
-| --- | --- | --- | --- |
-| Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz | 10 | 20 | 31.8 GB |
-
-### Results
-
-| Preset | Encode vp8.net | Encode ffmpeg H264 | Encode ffmpeg VP8 | Decode H264 (ffmpeg) | Decode VP8 (ffmpeg) | Decode VP8 (vp8.net) | Plumbing (no codec) |
-|---|---|---|---|---|---|---|---|
-| 480p | 74.9 | 500.1 | 361.5 | 120 | 120 | 60 | 6435.4 |
-| 720p | 23.3 | 341.1 | 132.4 | 120 | 120 | 30 | 1735.5 |
-| 1080p | 9 | 174.3 | 52.8 | 120 | 120 | 15 | 1084.9 |
-| 1440p | 5.1 | 95.1 | 37.7 | 90 | 90 | n/a | 525.3 |
-| 4k | 1.9 | 48.7 | 31.6 | 30 | 30 | n/a | 367.3 |
-
-_Generated 2026-06-16 09:31; duration 6s/run, 1 run(s)/point._
 
 ## Documentation
 
@@ -321,3 +293,57 @@ If successful the browser should display a test pattern image.
 
 The [examples folder](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples) contains sample code to demonstrate other common WebRTC cases.
 
+## Video Pipeline Capacity
+
+Video processing — and encoding in particular — is generally the bottleneck in most real-time communications libraries. The original goal of the SIPSorcery library was to support 1080p video at 30 frames per second.
+
+In June 2026, the SIPSorcery command line tool (`dotnet tool install -g SIPSorcery.Cli`, the `sipsorcery` command) was conceived to test various SIP, ICE, WebRTC, and benchmarking scenarios. The benchmarking has revealed that, thanks to the capabilities of the [FFmpeg](https://ffmpeg.org/) project (and the various libraries it in turn wraps), the SIPSorcery library running on a typical Windows machine with the H264 video codec is capable of processing 4K video at over 30fps and 1080p at over 100fps.
+
+Sample test results are shown below. They were generated with [`run-video-bench.ps1`](src/SIPSorcery.Cli/benchmarks/run-video-bench.ps1), which drives two CLI commands (see the [benchmarks README](src/SIPSorcery.Cli/benchmarks/README.md) for the details):
+
+- `sipsorcery webrtc video-bench` times one encoder or decoder alone, in-process, as fast as it will go. It gives the encode and decode tables: each figure is the maximum rate of that component on its own, so they are not achievable together in one call.
+- `sipsorcery webrtc loopback` runs a real WebRTC session in one process. It gives the WebRTC pipeline table: the transport ceiling with no codec, and the maximum rate an app can send at (encode), receive at (decode), or do both in a full call.
+
+### Machine
+
+| CPU | Cores | Logical processors | Memory |
+| --- | --- | --- | --- |
+| Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz | 10 | 20 | 31.8 GB |
+
+### Results
+
+_All measurements are maximum frames per second (FPS). For real-time communications a frame rate of 30 FPS is suitable._
+
+**Encode** (the encoder alone):
+
+| Preset | vp8.net | av1.net | ffmpeg H264 | ffmpeg VP8 | ffmpeg VP9 | ffmpeg H265 | ffmpeg AV1 |
+|---|---|---|---|---|---|---|---|
+| 480p | 83.9 | 151.5 | 973.4 | 369.9 | 192.1 | 212.8 | 147.3 |
+| 720p | 29.6 | 57.1 | 365.9 | 129.3 | 98.6 | 92.2 | 65 |
+| 1080p | 12.6 | 34.5 | 191.4 | 56.4 | 51.8 | 49.3 | 30 |
+| 1440p | 6.9 | 20.7 | 109.3 | 41.2 | 32.3 | 31.2 | 16.4 |
+| 4k | 2.8 | 7.7 | 47.4 | 35.6 | 17.2 | 14.6 | 8.3 |
+
+**Decode** (the decoder alone, on a pre-encoded clip):
+
+| Preset | H264 (ffmpeg) | VP8 (ffmpeg) | VP9 (ffmpeg) | H265 (ffmpeg) | AV1 (ffmpeg) | VP8 (vp8.net) |
+|---|---|---|---|---|---|---|
+| 480p | 2209.1 | 948.1 | 844.3 | 1094.5 | 577.4 | 167.9 |
+| 720p | 861.2 | 301 | 391.8 | 435.3 | 208.8 | 58.2 |
+| 1080p | 389.4 | 136.8 | 200.7 | 241.5 | 213.5 | 25.7 |
+| 1440p | 221.2 | 74.2 | 119.9 | 155.5 | 118.4 | 14.5 |
+| 4k | 99.7 | 33.6 | 54.8 | 76.5 | 72.7 | 6.6 |
+
+**WebRTC pipeline** (H264 with the ffmpeg encoder and decoder, over a real WebRTC session in one process):
+
+| Preset | Transport (no codec) | Send (encode) | Receive (decode) | Full call (encode + decode) |
+|---|---|---|---|---|
+| 480p | 7177.7 | 944.4 | 949 | 885 |
+| 720p | 2539.4 | 318.4 | 680 | 298 |
+| 1080p | 1456.8 | 172.5 | 307 | 150 |
+| 1440p | 827.9 | 90.7 | 182 | 87 |
+| 4k | 485.3 | 46.2 | 91 | 41 |
+
+Transport sends pre-encoded frames flat out with no codec. Send encodes live and the receiver discards the frames, the case for an app that only sends. Receive decodes a pre-encoded stream, the case for an app that only receives. Full call does both. Receive and full call are the highest rates (to within 5%) at which no more than 2% of frames are lost or fail to decode. Both ends run on the one machine, so a one-way figure also carries the other end's (small) transport cost.
+
+_Generated 2026-11-22 11:29; duration 6s/run, 1 run(s)/point._

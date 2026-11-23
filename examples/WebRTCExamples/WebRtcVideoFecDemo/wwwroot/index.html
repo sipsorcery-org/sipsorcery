@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIPSorcery WebRTC Video FEC Demonstration</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      margin: 0;
+      padding: 24px;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+      color: #38bdf8;
+    }
+    p.subtitle {
+      color: #94a3b8;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+    .video-wrapper {
+      position: relative;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+      max-width: 640px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    button.danger {
+      background: #dc2626;
+    }
+    button.danger:hover {
+      background: #b91c1c;
+    }
+    button.active {
+      background: #16a34a;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .card h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin: 0 0 6px 0;
+    }
+    .card .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f8fafc;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .card .value.highlight {
+      color: #4ade80;
+    }
+    .card .value.warn {
+      color: #fbbf24;
+    }
+    .card .value.danger {
+      color: #f87171;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: #334155;
+      color: #cbd5e1;
+    }
+    .status-badge.connected {
+      background: #166534;
+      color: #4ade80;
+    }
+    pre {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SIPSorcery WebRTC Video FEC (RFC 5109 + RFC 2198)</h1>
+    <p class="subtitle">Interoperable H.264 RTP Forward Error Correction with browser packet recovery</p>
+
+    <div class="controls">
+      <button id="btnStart" onclick="startStream()">Start Stream</button>
+      <button id="btnStop" onclick="stopStream()">Stop</button>
+      <button id="btnImpairment" class="danger" onclick="toggleImpairment()">Inject 10% Media Loss</button>
+      <span id="connStatus" class="status-badge">Idle</span>
+    </div>
+
+    <div class="video-wrapper">
+      <video id="videoElement" autoplay playsinline controls></video>
+    </div>
+
+    <h2>Browser WebRTC Metrics (from getStats())</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>FEC Packets Received</h3>
+        <div id="statFecReceived" class="value highlight">0</div>
+      </div>
+      <div class="card">
+        <h3>Packets Received</h3>
+        <div id="statPacketsReceived" class="value">0</div>
+      </div>
+      <div class="card">
+        <h3>Packets Lost</h3>
+        <div id="statPacketsLost" class="value">0</div>
+      </div>
+      <div class="card">
+        <h3>Frames Decoded</h3>
+        <div id="statFramesDecoded" class="value">0</div>
+      </div>
+      <div class="card">
+        <h3>Frames Dropped</h3>
+        <div id="statFramesDropped" class="value">0</div>
+      </div>
+      <div class="card">
+        <h3>Jitter (ms)</h3>
+        <div id="statJitter" class="value">0.0</div>
+      </div>
+    </div>
+
+    <h2>Sender Server Metrics</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Media Packets Sent</h3>
+        <div id="srvMediaSent" class="value">0</div>
+      </div>
+      <div class="card">
+        <h3>Repair Packets Sent</h3>
+        <div id="srvFecSent" class="value highlight">0</div>
+      </div>
+      <div class="card">
+        <h3>Overhead Ratio</h3>
+        <div id="srvOverhead" class="value">0.0%</div>
+      </div>
+      <div class="card">
+        <h3>Impairment Drops (Wire)</h3>
+        <div id="srvDropped" class="value danger">0</div>
+      </div>
+    </div>
+
+    <h2>Negotiated SDP Answer</h2>
+    <pre id="sdpLog">No active session.</pre>
+  </div>
+
+  <script>
+    let pc = null;
+    let statsInterval = null;
+    let metricsInterval = null;
+
+    async function startStream() {
+      if (pc) {
+        stopStream();
+      }
+
+      updateStatus('Connecting...', false);
+
+      pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }]
+      });
+
+      pc.ontrack = (event) => {
+        const video = document.getElementById('videoElement');
+        video.srcObject = event.streams[0] || new MediaStream([event.track]);
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        const state = pc.iceConnectionState;
+        updateStatus(state, state === 'connected' || state === 'completed');
+      };
+
+      // Request recvonly video transceiver
+      pc.addTransceiver('video', { direction: 'recvonly' });
+
+      // Create browser offer
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      // Post offer to backend
+      const response = await fetch('/offer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/sdp' },
+        body: offer.sdp
+      });
+
+      if (!response.ok) {
+        const err = await response.text();
+        alert('SDP negotiation failed: ' + err);
+        updateStatus('Failed', false);
+        return;
+      }
+
+      const answerSdp = await response.text();
+      document.getElementById('sdpLog').textContent = answerSdp;
+
+      await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+
+      // Poll WebRTC browser stats
+      statsInterval = setInterval(updateBrowserStats, 1000);
+      // Poll server metrics
+      metricsInterval = setInterval(updateServerMetrics, 1000);
+    }
+
+    function stopStream() {
+      if (statsInterval) clearInterval(statsInterval);
+      if (metricsInterval) clearInterval(metricsInterval);
+      if (pc) {
+        pc.close();
+        pc = null;
+      }
+      const video = document.getElementById('videoElement');
+      video.srcObject = null;
+      updateStatus('Disconnected', false);
+    }
+
+    async function toggleImpairment() {
+      const resp = await fetch('/impairment/toggle', { method: 'POST' });
+      const data = await resp.json();
+      const btn = document.getElementById('btnImpairment');
+      if (data.active) {
+        btn.textContent = 'Impairment Loss ACTIVE (Click to Disable)';
+        btn.classList.add('active');
+        btn.classList.remove('danger');
+      } else {
+        btn.textContent = 'Inject 10% Media Loss';
+        btn.classList.remove('active');
+        btn.classList.add('danger');
+      }
+    }
+
+    async function updateBrowserStats() {
+      if (!pc) return;
+      const stats = await pc.getStats();
+      stats.forEach(report => {
+        if (report.type === 'inbound-rtp' && report.kind === 'video') {
+          document.getElementById('statPacketsReceived').textContent = report.packetsReceived || 0;
+          document.getElementById('statPacketsLost').textContent = report.packetsLost || 0;
+          document.getElementById('statFramesDecoded').textContent = report.framesDecoded || 0;
+          document.getElementById('statFramesDropped').textContent = report.framesDropped || 0;
+          document.getElementById('statJitter').textContent = ((report.jitter || 0) * 1000).toFixed(1);
+
+          // Standard WebRTC FEC statistics!
+          if (report.fecPacketsReceived !== undefined) {
+            document.getElementById('statFecReceived').textContent = report.fecPacketsReceived;
+          }
+        }
+      });
+    }
+
+    async function updateServerMetrics() {
+      try {
+        const resp = await fetch('/metrics');
+        if (!resp.ok) return;
+        const m = await resp.json();
+        document.getElementById('srvMediaSent').textContent = m.mediaPacketsSent;
+        document.getElementById('srvFecSent').textContent = m.repairPacketsSent;
+        document.getElementById('srvOverhead').textContent = m.packetOverheadPercent.toFixed(1) + '%';
+        document.getElementById('srvDropped').textContent = m.packetsDroppedByImpairment;
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    function updateStatus(text, isConnected) {
+      const badge = document.getElementById('connStatus');
+      badge.textContent = text;
+      if (isConnected) {
+        badge.classList.add('connected');
+      } else {
+        badge.classList.remove('connected');
+      }
+    }
+  </script>
+</body>
+</html>

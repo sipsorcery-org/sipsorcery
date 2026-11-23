@@ -52,6 +52,11 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
     public const int WIDTH = 640;
     public const int HEIGHT = 480;
 
+    // SkiaSharp 3 removed SKPaint.FilterQuality and SKFilterQuality; sampling is chosen per
+    // draw/resize call instead. These are the documented equivalents of the old quality levels.
+    private static readonly SKSamplingOptions LowSampling = new(SKFilterMode.Linear, SKMipmapMode.None);
+    private static readonly SKSamplingOptions MediumSampling = new(SKFilterMode.Linear, SKMipmapMode.Linear);
+
     private const int VIDEO_SAMPLING_RATE = 90000;
     private const int FPS = 25;
     private const int IMG_SIZE = 96;               // Wav2Lip face crop.
@@ -75,16 +80,23 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
     private static InferenceSession GetSharedSession(string modelPath) =>
         _sessions.GetOrAdd(Path.GetFullPath(modelPath), path =>
         {
-            // DirectML (any DX12 GPU) with CPU fallback.
+            // DirectML (any DX12 GPU) on Windows; the Linux container uses CPU onnxruntime.
             var so = new SessionOptions { EnableMemoryPattern = false, ExecutionMode = ExecutionMode.ORT_SEQUENTIAL };
-            try
+            if (OperatingSystem.IsWindows())
             {
-                so.AppendExecutionProvider_DML(0);
-                logger.LogInformation("Wav2Lip (in-process) using the DirectML execution provider.");
+                try
+                {
+                    so.AppendExecutionProvider_DML(0);
+                    logger.LogInformation("Wav2Lip (in-process) using the DirectML execution provider.");
+                }
+                catch (Exception)
+                {
+                    logger.LogWarning("DirectML unavailable; Wav2Lip runs on CPU (may not hold 25fps).");
+                }
             }
-            catch (Exception)
+            else
             {
-                logger.LogWarning("DirectML unavailable; Wav2Lip runs on CPU (may not hold 25fps).");
+                logger.LogInformation("Wav2Lip (in-process) using the CPU execution provider.");
             }
             return new InferenceSession(path, so);
         });
@@ -210,7 +222,7 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
         using var raw = SKBitmap.Decode(personaPath)
             ?? throw new FileNotFoundException($"Could not read persona image {personaPath}.");
         var personaOpaque = raw.Resize(new SKImageInfo(WIDTH, HEIGHT, SKColorType.Bgra8888, SKAlphaType.Premul),
-            SKFilterQuality.Medium);
+            MediumSampling);
 
         _faceInput = BuildFaceInput(personaOpaque, _faceBox);
         _idleMouth = Infer(new float[MelSpectrogram.NMels, MEL_STEP], 0);   // silence mel window.
@@ -490,9 +502,9 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
 
         using var frame = new SKBitmap(new SKImageInfo(WIDTH, HEIGHT, SKColorType.Bgra8888, SKAlphaType.Premul));
         using (var canvas = new SKCanvas(frame))
-        using (var paint = new SKPaint { FilterQuality = SKFilterQuality.Low })
+        using (var paint = new SKPaint())
         {
-            canvas.DrawBitmap(_bgCache, SKRect.Create(WIDTH, HEIGHT), paint);
+            canvas.DrawBitmap(_bgCache, SKRect.Create(WIDTH, HEIGHT), LowSampling, paint);
 
             // Figure layer: persona copy + live mouth + blink, drawn through zoom*pose so the
             // matte alpha warps with it (one SrcOver draw = the whole blend).
@@ -537,7 +549,7 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
         using var scaled = new SKBitmap(new SKImageInfo(bw, bh, SKColorType.Bgra8888, SKAlphaType.Premul));
         using (var c = new SKCanvas(scaled))
         {
-            c.DrawBitmap(mouthBmp, SKRect.Create(bw, bh), new SKPaint { FilterQuality = SKFilterQuality.Medium });
+            c.DrawBitmap(mouthBmp, SKRect.Create(bw, bh), MediumSampling);
         }
         unsafe
         {
@@ -565,7 +577,7 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
     /// <summary>Blink: stretch the lid skin just above each eye down over it (per the sidecar).</summary>
     private void DrawBlink(SKCanvas fgCanvas, double amount)
     {
-        using var paint = new SKPaint { FilterQuality = SKFilterQuality.Low, BlendMode = SKBlendMode.Src };
+        using var paint = new SKPaint { BlendMode = SKBlendMode.Src };
         foreach (var (x, y, w, h) in _eyes)
         {
             int cover = (int)(h * amount);
@@ -756,7 +768,7 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
         using (var c = new SKCanvas(crop))
         {
             c.DrawBitmap(persona, SKRect.Create(x1, y1, x2 - x1, y2 - y1), SKRect.Create(IMG_SIZE, IMG_SIZE),
-                new SKPaint { FilterQuality = SKFilterQuality.Medium });
+                MediumSampling);
         }
 
         var tensor = new DenseTensor<float>(new[] { 1, 6, IMG_SIZE, IMG_SIZE });
@@ -791,7 +803,7 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
         {
             using var raw = SKBitmap.Decode(mattePath);
             using var resized = raw.Resize(new SKImageInfo(WIDTH, HEIGHT, SKColorType.Bgra8888, SKAlphaType.Premul),
-                SKFilterQuality.Medium);
+                MediumSampling);
             unsafe
             {
                 var px = (byte*)resized.GetPixels().ToPointer();

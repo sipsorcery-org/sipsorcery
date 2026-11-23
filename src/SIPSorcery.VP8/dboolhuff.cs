@@ -61,6 +61,12 @@ namespace Vpx.Net
         /// </summary>
         public const int VP8_LOTS_OF_BITS = 0x40000000;
 
+        /// <summary>
+        /// Starts the decoder on an array. The decoder keeps a pointer into <paramref name="source"/> after this
+        /// returns, so the array must not move while the decoder reads it: allocate it pinned, for example with
+        /// <see cref="System.GC.AllocateArray{T}(int, bool)"/>, or use the pointer overload inside a fixed block that
+        /// covers all the reading.
+        /// </summary>
         public unsafe static int vp8dx_start_decode(ref BOOL_DECODER br, in byte[] source, uint source_sz)
         {
             fixed (byte* pSrc = source)

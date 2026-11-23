@@ -2,66 +2,87 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- net10.0 because SIPSorcery.AV1 (and its av1rt dependency) only ship net10.0. -->
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Lets the net8.0 tool run on newer installed runtimes without a reinstall. -->
+    <!-- Lets the tool run on newer installed runtimes without a reinstall. -->
     <RollForward>Major</RollForward>
+    <!-- The Wav2Lip avatar's per-pixel compositing loops use pointers. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup>
     <PackAsTool>true</PackAsTool>
-    <!-- The flagship/application tool installs as the bare "sipsorcery" command (the diagnostics
-         tool is "sipsorcery-diags"). -->
+    <!-- Installs as the bare "sipsorcery" command. The probe/test verbs that used to ship as the
+         separate SIPSorcery.Diagnostics ("sipsorcery-diags") tool are now part of this one. -->
     <ToolCommandName>sipsorcery</ToolCommandName>
     <PackageId>SIPSorcery.Cli</PackageId>
-    <Version>0.1.0-beta</Version>
+    <Version>0.9.0-beta</Version>
     <Authors>Aaron Clauson</Authors>
-    <Description>SIPSorcery CLI: route and bridge live media streams between SIP, WebRTC and the major realtime fabrics (Cloudflare Realtime, LiveKit) and AI agents (OpenAI Realtime), built on the SIPSorcery library. A stream is the primitive; verbs attach edges to it. Human and agent friendly with JSON output and meaningful exit codes.</Description>
-    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <Description>SIPSorcery CLI, built on the SIPSorcery library. Diagnostics and benchmarking for SIP and WebRTC: OPTIONS pings, test calls, registration and load, STUN/TURN/ICE connectivity probes, WHEP/WHIP and echo-test peers, and video pipeline benchmarks. Plus routing and bridging of live media streams between SIP, WebRTC, the major realtime fabrics (Cloudflare Realtime, LiveKit) and AI agents (OpenAI Realtime). Human and agent friendly with JSON output and meaningful exit codes.</Description>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>SIP;VoIP;WebRTC;streams;routing;Cloudflare;LiveKit;OpenAI;CLI</PackageTags>
+    <PackageTags>SIP;VoIP;WebRTC;STUN;TURN;ICE;diagnostics;streams;routing;Cloudflare;LiveKit;OpenAI;CLI</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
-  <!-- Make the shared CommandBase/ExitCodes/CloudflareTurn/AudioSink/VideoSink visible to every
+  <!-- Make the Common CommandBase/ExitCodes/CloudflareTurn/AudioSink/VideoSink visible to every
        verb without a per-file using (ImplicitUsings turns this into a global using). -->
   <ItemGroup>
     <Using Include="SIPSorcery.Cli.Common" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <PackageReference Include="System.CommandLine" />
     <!-- Used by the livekit: route edges (publish into / subscribe to a room) to mint access tokens and
-         for the protobuf signalling. Targets netstandard2.0 so it is compatible with the net8.0 tool. -->
-    <PackageReference Include="Livekit.Server.Sdk.Dotnet" Version="1.2.2" />
+         for the protobuf signalling. Targets netstandard2.0 so it is compatible with the tool. -->
+    <PackageReference Include="Livekit.Server.Sdk.Dotnet" />
     <!-- The OpenAI.Realtime library returns Either<Error, T>; this is the underlying type. -->
-    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
+    <PackageReference Include="LanguageExt.Core" />
     <!-- Speech-to-text and text-to-speech for the "bridge ... agent" voice agent. Same package the
          WebRTCMaxHeadroom example uses; a heavy native dependency, a candidate to move behind an
          optional agent plugin later so the core tool stays lean. -->
-    <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.40.0" />
+    <PackageReference Include="Microsoft.CognitiveServices.Speech" />
+    <!-- FFT for the Hilbert (analytic signal) audio scope, the route scope-mode hilbert video. -->
+    <PackageReference Include="MathNet.Numerics" />
+    <!-- Runs the Wav2Lip model for the default photoreal agent avatar (Wav2LipAvatarRenderer). The
+         DirectML build: ~30fps on any DX12 GPU (CPU fallback on Windows without one) against ~16fps
+         for the CPU-only build. It ships Windows natives only, so on Linux/macOS the agent avatar
+         falls back to the SkiaSharp max face. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" />
     <!-- Renders the bridge agent avatar (the Max Headroom face, MaxHeadroomVideoSource). Another
          heavy/native dependency, reinforcing the future optional-avatar-plugin direction. -->
-    <PackageReference Include="SkiaSharp" Version="2.88.8" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SIPSorcery.Cli.Common\SIPSorcery.Cli.Common.csproj" />
-    <ProjectReference Include="..\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
     <ProjectReference Include="..\SIPSorcery\SIPSorcery.csproj" />
-    <!-- WebRTC client for the OpenAI Realtime API, used by the "bridge web openai" agent endpoint. -->
-    <ProjectReference Include="..\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
+    <!-- VideoSink uses the IVideoEncoder / VideoFormat abstractions directly. -->
+    <ProjectReference Include="..\SIPSorceryMedia.Abstractions\SIPSorceryMedia.Abstractions.csproj" />
+    <!-- Native (FFmpeg.AutoGen) IVideoEncoder for the route edges, the webrtc video-bench ffmpeg
+         stage and whep decode. -->
+    <ProjectReference Include="..\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
+    <!-- VP8 encoder for the test pattern video published via LibraryVideoPublisher (webrtc verbs). -->
+    <ProjectReference Include="..\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
+    <!-- Managed AV1 encoder (av1rt, no native deps) for the route "video-encoder av1.net" test
+         pattern and the webrtc video-bench av1.net stage. -->
+    <ProjectReference Include="..\SIPSorcery.AV1\SIPSorcery.AV1.csproj" />
+    <!-- WebRTC client for the OpenAI Realtime API, used by the "bridge web openai" agent endpoint.
+         No longer published as its own NuGet package; the source lives with the OpenAI examples
+         and is bundled into the CLI tool package. -->
+    <ProjectReference Include="..\..\examples\OpenAIExamples\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
     <None Include="..\SIPSorcery\icon.png" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 

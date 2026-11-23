@@ -64,9 +64,7 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable, ITra
     private readonly AudioFormat _opus16k;                  // OPUS at 16 kHz, for encoding the TTS reply
     private readonly AudioFormat _opus48k;                  // OPUS at native 48 kHz, for decoding the mic
 
-    private readonly MaxHeadroomVideoSource? _avatar;       // null unless --avatar: the lip-synced face
-    private readonly VideoFormat _h264 = RouteVideoFormats.H264;
-    private uint _videoTimestamp;
+    private readonly AgentAvatar? _avatar;                  // null unless --avatar: the lip-synced face
 
     private readonly SemaphoreSlim _speakLock = new(1, 1);  // one utterance (greeting/reply) at a time
     private readonly TaskCompletionSource _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -94,7 +92,7 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable, ITra
 
     public AzureAgentParticipant(
         string azureKey, string azureRegion, string voice, string? persona,
-        string? llmEndpoint, string? llmModel, string? llmApiKey, string? greeting, bool avatar, ILogger logger)
+        string? llmEndpoint, string? llmModel, string? llmApiKey, string? greeting, string? avatar, ILogger logger)
     {
         _logger = logger;
         _greeting = string.IsNullOrWhiteSpace(greeting) ? DEFAULT_GREETING : greeting!;
@@ -114,23 +112,17 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable, ITra
         // down to the 16 kHz the recogniser wants.
         _opus48k = AudioCommonlyUsedFormats.OpusWebRTC;    // ClockRate is already 48000
 
-        if (avatar)
+        if (avatar != null)
         {
-            // The Max Headroom face: rendered + H264-encoded continuously, lip-synced from the TTS
-            // visemes during SpeakAsync. FFmpegVideoEncoder needs no explicit init in the CLI (the route
-            // testpattern source uses it the same way).
-            _avatar = new MaxHeadroomVideoSource(new FFmpegVideoEncoder());
-            _avatar.RestrictFormats(vf => vf.Codec == VideoCodecsEnum.H264);
-            _avatar.OnVideoSourceEncodedSample += (durationRtpUnits, sample) =>
-            {
-                _videoTimestamp += durationRtpUnits;
-                OnFrame?.Invoke(MediaFrame.ForVideo(sample, _videoTimestamp, _h264, durationRtpUnits));
-            };
+            // The face: rendered + H264-encoded continuously. During SpeakAsync the wav2lip head is
+            // handed each utterance's TTS audio for its model; the max cartoon follows the TTS visemes.
+            _avatar = AgentAvatar.Create(avatar, audioDrivenMouth: false, logger);
+            _avatar.OnFrame += frame => OnFrame?.Invoke(frame);
         }
     }
 
     public string Describe() =>
-        $"agent (azure stt -> llm{(_llm.IsConfigured ? "" : " (echo)")} -> azure tts{(_avatar != null ? " + avatar" : "")})";
+        $"agent (azure stt -> llm{(_llm.IsConfigured ? "" : " (echo)")} -> azure tts{(_avatar != null ? $" + {_avatar.Name} avatar" : "")})";
 
     public async Task StartAsync(CancellationToken ct)
     {
@@ -138,8 +130,7 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable, ITra
         if (_avatar != null)
         {
             // The renderer runs continuously (idle face when silent), so video flows the whole session.
-            _avatar.SetVideoSourceFormat(_h264);
-            await _avatar.StartVideo().ConfigureAwait(false);
+            await _avatar.StartAsync().ConfigureAwait(false);
         }
         await _recognizer.StartAsync().ConfigureAwait(false);
         _logger.LogDebug("Voice agent started{Avatar}.", _avatar != null ? " with avatar" : "");
@@ -248,9 +239,19 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable, ITra
 
             var visemes = synthesis.Visemes;
             int visemeIndex = 0;
-            if (_avatar != null)
+            var face = _avatar?.MaxFace;
+            if (face != null)
             {
-                _avatar.IsSpeaking = true;
+                face.IsSpeaking = true;
+            }
+            else if (_avatar != null)
+            {
+                // The wav2lip head paces its mouth itself, so it is given the whole utterance up front
+                // and follows it on its own clock from here, as the audio below is paced out.
+                var speech = new short[pcm.Length / sizeof(short)];
+                Buffer.BlockCopy(pcm, 0, speech, 0, speech.Length * sizeof(short));
+                _avatar.BeginSpeech();
+                _avatar.PushSpeech(speech, AzureTts.SampleRate);
             }
 
             var sw = Stopwatch.StartNew();
@@ -265,9 +266,9 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable, ITra
 
                 // Drive the avatar mouth from the viseme timeline, leading/lagging the audio by
                 // VISEME_LEAD_MS so the rendered mouth lands on the sound once both reach the viewer.
-                while (_avatar != null && visemeIndex < visemes.Count && visemes[visemeIndex].OffsetMs - VISEME_LEAD_MS <= sw.ElapsedMilliseconds)
+                while (face != null && visemeIndex < visemes.Count && visemes[visemeIndex].OffsetMs - VISEME_LEAD_MS <= sw.ElapsedMilliseconds)
                 {
-                    _avatar.CurrentViseme = visemes[visemeIndex].VisemeId;
+                    face.CurrentViseme = visemes[visemeIndex].VisemeId;
                     visemeIndex++;
                 }
 
@@ -309,11 +310,12 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable, ITra
         }
         finally
         {
-            if (_avatar != null)
+            if (_avatar?.MaxFace is { } restFace)
             {
-                _avatar.CurrentViseme = 0;     // mouth back to rest
-                _avatar.IsSpeaking = false;
+                restFace.CurrentViseme = 0;     // mouth back to rest
+                restFace.IsSpeaking = false;
             }
+            _avatar?.EndSpeech();
             // Keep the mic gated for a short echo tail so the speaker's decay doesn't get recognised.
             Interlocked.Exchange(ref _gateUntilTicks, DateTime.UtcNow.AddMilliseconds(ECHO_TAIL_MS).Ticks);
             _speaking = false;
@@ -328,7 +330,7 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable, ITra
         _completion.TrySetResult();
         if (_avatar != null)
         {
-            try { await _avatar.CloseVideo().ConfigureAwait(false); } catch { /* best effort */ }
+            try { await _avatar.CloseAsync().ConfigureAwait(false); } catch { /* best effort */ }
             _avatar.Dispose();
         }
         try { _recognizer.Dispose(); } catch { /* best effort */ }

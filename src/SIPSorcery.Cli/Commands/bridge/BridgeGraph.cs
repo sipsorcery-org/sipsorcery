@@ -1,12 +1,12 @@
 //-----------------------------------------------------------------------------
 // Filename: BridgeGraph.cs
 //
-// Description: The execution model for the "bridge" verb. Where "route" is one-way
-// (a source fanned to N sinks), a bridge connects TWO duplex participants both
-// ways: each participant both produces frames (ISourceNode.OnFrame) and consumes
+// Description: The execution model for a two-way route ("route --duplex", or any
+// route with an agent at one end). Where a one-way route fans a source to N sinks,
+// a bridge connects TWO duplex participants both ways: each participant both produces frames (ISourceNode.OnFrame) and consumes
 // them (ISinkNode.Write), and the graph cross-wires them - a.OnFrame -> b.Write and
-// b.OnFrame -> a.Write. So "bridge web agent" is browser.mic -> agent and
-// agent.voice -> browser, full duplex.
+// b.OnFrame -> a.Write. So "route --from web --to agent" is browser.mic -> agent
+// and agent.voice -> browser, full duplex.
 //
 // Reuses the route graph's MediaFrame / ISourceNode / ISinkNode so a participant is
 // just a node that is both; no new frame type is introduced.
@@ -16,6 +16,7 @@
 //
 // History:
 // 26 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 25 Oct 2026	Aaron Clauson	The bridge verb folded into route; counts frames by kind.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -65,6 +66,8 @@ public sealed class BridgeGraph
     private readonly IBridgeParticipant _b;
     private long _aToB;
     private long _bToA;
+    private long _video;
+    private long _audio;
 
     public BridgeGraph(IBridgeParticipant a, IBridgeParticipant b)
     {
@@ -74,6 +77,11 @@ public sealed class BridgeGraph
 
     public long AToBFrames => Interlocked.Read(ref _aToB);
     public long BToAFrames => Interlocked.Read(ref _bToA);
+    public long VideoFrames => Interlocked.Read(ref _video);
+    public long AudioFrames => Interlocked.Read(ref _audio);
+
+    private void CountKind(MediaFrame frame) =>
+        Interlocked.Increment(ref frame.Kind == MediaKind.Video ? ref _video : ref _audio);
 
     /// <summary>
     /// Starts both participants, wires the two directions, and runs until either participant ends
@@ -86,12 +94,14 @@ public sealed class BridgeGraph
         void AToB(MediaFrame frame)
         {
             Interlocked.Increment(ref _aToB);
+            CountKind(frame);
             _b.Write(frame);
         }
 
         void BToA(MediaFrame frame)
         {
             Interlocked.Increment(ref _bToA);
+            CountKind(frame);
             _a.Write(frame);
         }
 

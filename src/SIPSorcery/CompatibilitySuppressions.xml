@@ -1,0 +1,366 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- https://learn.microsoft.com/dotnet/fundamentals/package-validation/diagnostic-ids -->
+<!--
+  Package validation suppressions for the SIPSorcery package.
+
+  EnablePackageValidation in SIPSorcery.csproj makes "dotnet pack" diff the packed
+  assemblies against PackageValidationBaselineVersion (the last package published to
+  nuget.org) so that an accidental binary-breaking change fails the build. Every entry
+  in this file is a deliberate change that was already shipped or is inherent to
+  multi-targeting; each group below says which, and why it is safe to suppress.
+
+  Adding an entry here is a decision to break binary compatibility. Do not regenerate
+  this file wholesale (-p:ApiCompatGenerateSuppressionFile=true) just to get a green
+  build: that silently blesses whatever the diff found and discards these comments.
+  After each publish to nuget.org, bump PackageValidationBaselineVersion to the version
+  just published and delete the entries the new baseline makes unnecessary.
+-->
+<Suppressions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <!-- NOTE: making the SharpSRTP types internal (see the section further down) also
+       made the within-package BouncyCastleExtensions and SIPSorcery.Net.SharpSRTP.*
+       entries that used to live here redundant, because those types are no longer
+       compared across frameworks at all. Package validation treats an unnecessary
+       suppression as an error, so they were deleted rather than left behind.
+  -->
+
+  <!-- ==========================================================================
+       Baseline validation (new package vs. the published baseline).
+
+       The RTSP client, server, message, header and URL classes were removed as
+       unmaintained in #1863 (commit 8148557). That removal is a real binary break
+       for anyone who used SIPSorcery.Net.RTSP*, and it was made knowingly; these
+       types are gone for good, so the break is recorded here rather than reverted.
+
+       The removal applies to all nine target frameworks. <Left>/<Right> are omitted
+       so that one entry per type covers every framework instead of nine copies.
+       ========================================================================== -->
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPConstants</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPEntityHeaders</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPHeader</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPHeaderError</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPHeaderParserError</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPHeaders</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPMessage</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPMessageTypesEnum</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPMethods</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPMethodsEnum</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPRequest</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPRequestParserError</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPResponse</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPResponseParserError</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPResponseStatusCodes</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPResponseStatusCodesEnum</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPTransportHeader</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.RTSPURL</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+
+  <!-- ==========================================================================
+       Compatible-framework validation inside the package (NOT baseline-related).
+
+       These fire between lib/net6.0/SIPSorcery.dll and lib/net8.0/SIPSorcery.dll in
+       the package being built: the DTLS/SRTP code is written against Span<byte> under
+       "#if NET8_0_OR_GREATER" and against ArraySegment<byte>/byte[] otherwise, so the
+       two assets genuinely expose different members. These signatures already differ
+       this way in every published 8.x and 10.x package; nothing in this commit changed
+       them, and the types involved are low-level SRTP plumbing rather than part of the
+       documented API. They are suppressed so the baseline check above is usable.
+
+       Narrowing the split (keeping the pre-net8.0 overloads on net8.0+ as shims) is a
+       library change, not a packaging one, and is left for the maintainer to judge.
+       ========================================================================== -->
+
+  <!-- BouncyCastle cipher extension methods: span overloads on net8.0+, ArraySegment/byte[] overloads below it. -->
+
+  <!-- ISrtpContext and its implementations: the protect/unprotect members take spans on net8.0+. -->
+
+  <!-- SRTP authentication/encryption primitives (HMAC, AEAD, CTR, F8): same span-vs-ArraySegment split. -->
+
+  <!-- ==========================================================================
+       The vendored DTLS-SRTP implementation under net/DtlsSrtp/Lib was made
+       internal. Every type in it had been declared public, so 32 types formed
+       part of this package's API without having been designed as such. Nothing
+       outside the library used them: no example, no SIPSorcery.Cli, no other
+       project in src. BouncyCastleExtensions is in the list for a related but
+       separate reason: it was a public static class in the GLOBAL namespace, so
+       every consumer of the package picked up its extension methods on
+       BouncyCastle types in global scope.
+
+       These removals are real binary breaks and were made knowingly. As with the
+       RTSP entries above, <Left>/<Right> are omitted so one entry per type covers
+       all nine target frameworks rather than nine copies each.
+       ========================================================================== -->
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:BouncyCastleExtensions</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLS.DtlsAlertEventArgs</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLS.DtlsCertificateUtils</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLS.DtlsClient</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLS.DtlsHandshakeCompletedEventArgs</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLS.DtlsServer</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLS.IDtlsPeer</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLSSRTP.DtlsSessionStartedEventArgs</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLSSRTP.DtlsSrtpClient</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLSSRTP.DtlsSrtpKeys</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLSSRTP.DtlsSrtpProtocol</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLSSRTP.DtlsSrtpServer</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.DTLSSRTP.IDtlsSrtpPeer</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.Authentication.HMAC</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.Encryption.AEAD</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.Encryption.CTR</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.Encryption.F8</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.ISrtpContext</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.Readers.RtcpReader</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.Readers.RtpReader</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpAuth</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpCiphers</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContext</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContextExtensions</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpContextType</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpCryptoSuites</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpKeys</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpProtectionProfileConfiguration</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpProtocol</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SrtpSessionContext</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.SsrcSrtpContext</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:SIPSorcery.Net.SharpSRTP.SRTP.ThreadSafeSrtpSessionContext</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+
+  <!-- ==========================================================================
+       Four members had to be demoted with the types they expose, which the C#
+       compiler requires (CS0051/CS0053). DtlsSrtpTransport.Keys and the two
+       Context properties had no readers anywhere in the library; they were public
+       surface and nothing more.
+       ========================================================================== -->
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:SIPSorcery.Net.DtlsSrtpTransport.#ctor(SIPSorcery.Net.SharpSRTP.DTLSSRTP.IDtlsSrtpPeer)</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:SIPSorcery.Net.DtlsSrtpTransport.get_Context</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:SIPSorcery.Net.DtlsSrtpTransport.get_Keys</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:SIPSorcery.Net.SrtpHandler.get_Context</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+
+  <!-- ==========================================================================
+       A consequence of internalising the IDtlsSrtpPeer constructor parameter:
+       DtlsSrtpTransport's only constructor is now internal, so to a consumer the
+       type is effectively sealed. It can no longer be constructed OR subclassed
+       from outside this assembly. If that extension point turns out to be needed,
+       the fix is to keep IDtlsSrtpPeer, DtlsSrtpClient and DtlsSrtpServer public
+       and delete this entry along with the CP0002 constructor entry above.
+       ========================================================================== -->
+  <Suppression>
+    <DiagnosticId>CP0009</DiagnosticId>
+    <Target>T:SIPSorcery.Net.DtlsSrtpTransport</Target>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+
+</Suppressions>

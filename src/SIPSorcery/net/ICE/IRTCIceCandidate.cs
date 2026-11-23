@@ -13,6 +13,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Globalization;
+using System.Text;
+using SIPSorcery.Sys;
+
 namespace SIPSorcery.Net
 {
     /// <summary>
@@ -110,35 +114,85 @@ namespace SIPSorcery.Net
 
         public string toJSON()
         {
-            //return "{" +
-            //     $"  \"sdpMid\": \"{sdpMid ?? sdpMLineIndex.ToString()}\"," +
-            //     $"  \"sdpMLineIndex\": {sdpMLineIndex}," +
-            //     $"  \"usernameFragment\": \"{usernameFragment}\"," +
-            //     $"  \"candidate\": \"{candidate}\"" +
-            //     "}";
+            var builder = new StringBuilder(256);
 
-            return TinyJson.JSONWriter.ToJson(this);
+            var writer = new JsonObjectWriter(builder);
+
+            if (candidate != null)
+            {
+                writer.WriteString(nameof(candidate), candidate);
+            }
+
+            if (sdpMid != null)
+            {
+                writer.WriteString(nameof(sdpMid), sdpMid);
+            }
+
+            writer.WriteNumber(nameof(sdpMLineIndex), sdpMLineIndex);
+
+            if (usernameFragment != null)
+            {
+                writer.WriteString(nameof(usernameFragment), usernameFragment);
+            }
+
+            writer.End();
+
+            return builder.ToString();
         }
 
         public static bool TryParse(string json, out RTCIceCandidateInit init)
         {
-            //init = JsonSerializer.Deserialize< RTCIceCandidateInit>(json);
-
             init = null;
 
-            if (string.IsNullOrWhiteSpace(json))
+            if (string.IsNullOrWhiteSpace(json) || !JsonObjectParser.TryCreate(json, out var parser))
             {
                 return false;
             }
-            else
-            {
-                init = TinyJson.JSONParser.FromJson<RTCIceCandidateInit>(json);
 
-                // To qualify as parsed all required fields must be set.
-                return init != null &&
-                init.candidate != null &&
-                init.sdpMid != null;
+            var parsed = new RTCIceCandidateInit();
+
+            while (parser.TryReadMember(out var name, out var kind, out var value))
+            {
+                if (JsonObjectParser.IsMember(name, nameof(candidate)))
+                {
+                    parsed.candidate = kind == JsonValueKind.String ? value.ToString() : null;
+                }
+                else if (JsonObjectParser.IsMember(name, nameof(sdpMid)))
+                {
+                    parsed.sdpMid = kind == JsonValueKind.String ? value.ToString() : null;
+                }
+                else if (JsonObjectParser.IsMember(name, nameof(sdpMLineIndex)))
+                {
+                    // Browsers send this as a JSON number but some stacks quote it. A null
+                    // leaves it at the default. Anything else that is not a valid index fails
+                    // the parse rather than silently becoming 0.
+                    if (kind != JsonValueKind.Null)
+                    {
+                        if ((kind != JsonValueKind.Number && kind != JsonValueKind.String) ||
+                            !ushort.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var index))
+                        {
+                            return false;
+                        }
+
+                        parsed.sdpMLineIndex = index;
+                    }
+                }
+                else if (JsonObjectParser.IsMember(name, nameof(usernameFragment)))
+                {
+                    parsed.usernameFragment = kind == JsonValueKind.String ? value.ToString() : null;
+                }
             }
+
+            if (parser.Failed)
+            {
+                return false;
+            }
+
+            init = parsed;
+
+            // To qualify as parsed all required fields must be set.
+            return init.candidate != null &&
+                init.sdpMid != null;
         }
     }
 

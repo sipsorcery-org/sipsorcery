@@ -3,16 +3,21 @@
 //
 // Description: A source decorator that adds a generated "audio scope" video to a
 // stream: it passes the wrapped source's audio frames through unchanged AND, in
-// parallel, turns that audio into a video visualisation (a waveform or spectrum)
-// that it also emits into the graph. So "route --from sip:... --to whip:... --scope"
-// forwards the call audio and adds a second, synthesised video track of it.
+// parallel, turns that audio into a video visualisation (a waveform, a spectrum or
+// the Hilbert audio scope) that it also emits into the graph. So
+// "route --from sip:... --to whip:... --scope" forwards the call audio and adds a
+// second, synthesised video track of it.
 //
-// The visualisation and its H264 encoding are delegated to an external ffmpeg
-// process (the showwaves / showspectrum filters + libx264), in keeping with the
-// rule that per-sample / DSP work belongs to ffmpeg, never a managed node - the
-// same way AudioSink and VideoSink shell out to ffplay. The decoded PCM is piped
-// to ffmpeg's stdin; ffmpeg renders, encodes H264 and writes an Annex B stream to
-// stdout. x264 is told to emit Access Unit Delimiters (aud=1), so a reader thread
+// The H264 encoding is always delegated to an external ffmpeg process (libx264),
+// the same way AudioSink and VideoSink shell out to ffplay. What ffmpeg is fed
+// depends on the mode:
+//  - waves / spectrum: the decoded PCM is piped to ffmpeg's stdin and its
+//    showwaves / showspectrum filters render the video.
+//  - hilbert: the audio scope from the Softphone and WebRTCAudioScope examples
+//    (AudioScope + AudioScopeRenderer). It has no ffmpeg filter equivalent, so it
+//    is rendered here on a frame clock from the most recent audio and the raw
+//    bgr24 frames are piped to ffmpeg.
+// Either way ffmpeg encodes H264 and writes an Annex B stream to stdout. x264 is told to emit Access Unit Delimiters (aud=1), so a reader thread
 // can split the stream back into one encoded frame (access unit) per AUD for the
 // graph. H264 (not VP8) because the public Broadcast Box test endpoint rejects VP8.
 //
@@ -22,6 +27,7 @@
 // History:
 // 23 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
 // 23 Jun 2026	Aaron Clauson	Switched the scope video from VP8/IVF to H264/Annex B for Broadcast Box.
+// 24 Oct 2026	Aaron Clauson	Added the hilbert mode (the examples' audio scope).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -31,6 +37,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -41,6 +49,13 @@ namespace SIPSorcery.Cli.Commands.Route;
 
 public sealed class AudioScopeTransform : ISourceNode
 {
+    public const string MODE_WAVES = "waves";
+    public const string MODE_SPECTRUM = "spectrum";
+    public const string MODE_HILBERT = "hilbert";
+
+    /// <summary>The accepted --scope-mode values.</summary>
+    public static readonly string[] Modes = { MODE_WAVES, MODE_SPECTRUM, MODE_HILBERT };
+
     private const uint VIDEO_CLOCK_RATE = 90000;
     private const int READ_CHUNK_SIZE = 16 * 1024;
 
@@ -58,6 +73,14 @@ public sealed class AudioScopeTransform : ISourceNode
     private uint _videoTimestamp;
     private readonly uint _frameDurationRtpUnits;
 
+    // hilbert mode only: the scope is rendered here, on a frame clock, from the most recent audio.
+    private readonly bool _renderLocally;
+    private readonly AudioScopeRenderer? _renderer;
+    private readonly object _pcmLock = new();
+    private short[]? _latestPcm;
+    private Timer? _frameTimer;
+    private int _renderInProgress;
+
     public event Action<MediaFrame>? OnFrame;
 
     public Task Completion => _inner.Completion;
@@ -70,6 +93,43 @@ public sealed class AudioScopeTransform : ISourceNode
         _options = options;
         _logger = logger;
         _frameDurationRtpUnits = VIDEO_CLOCK_RATE / (uint)Math.Max(1, options.Fps);
+
+        if (options.ScopeMode.Equals(MODE_HILBERT, StringComparison.OrdinalIgnoreCase))
+        {
+            if (!TryParseSize(options.ScopeSize, out int width, out int height, out string? error))
+            {
+                throw new EdgeException(error!);
+            }
+
+            _renderLocally = true;
+            _renderer = new AudioScopeRenderer(width, height);
+        }
+    }
+
+    /// <summary>
+    /// Parses a --scope-size WxH value. Both sides must be positive and even, because the H264
+    /// encode is 4:2:0 and libx264 rejects an odd width or height.
+    /// </summary>
+    public static bool TryParseSize(string size, out int width, out int height, out string? error)
+    {
+        width = height = 0;
+        error = null;
+
+        var parts = size.Split('x', 'X');
+        if (parts.Length != 2 || !int.TryParse(parts[0], out width) || !int.TryParse(parts[1], out height) ||
+            width <= 0 || height <= 0)
+        {
+            error = $"Invalid --scope-size {size}, use WxH, e.g. 640x360.";
+            return false;
+        }
+
+        if (width % 2 != 0 || height % 2 != 0)
+        {
+            error = $"Invalid --scope-size {size}, the width and height must be even.";
+            return false;
+        }
+
+        return true;
     }
 
     public string Describe() => $"{_inner.Describe()} +scope({_options.ScopeMode} {_options.ScopeSize})";
@@ -112,6 +172,15 @@ public sealed class AudioScopeTransform : ISourceNode
             return;
         }
 
+        if (_renderLocally)
+        {
+            // The frame clock renders from whatever audio arrived most recently.
+            lock (_pcmLock)
+            {
+                _latestPcm = pcm;
+            }
+        }
+
         lock (_ffmpegLock)
         {
             if (_stopping || _failed)
@@ -120,6 +189,11 @@ public sealed class AudioScopeTransform : ISourceNode
             }
 
             if (_ffmpeg == null && !StartFfmpeg(audioFrame.AudioFormat.ClockRate))
+            {
+                return;
+            }
+
+            if (_renderLocally)
             {
                 return;
             }
@@ -140,12 +214,15 @@ public sealed class AudioScopeTransform : ISourceNode
     }
 
     /// <summary>
-    /// Starts ffmpeg reading s16le mono PCM on stdin, rendering the scope and writing an H264 Annex B
-    /// stream (with Access Unit Delimiters) to stdout. Assumes <see cref="_ffmpegLock"/> is held.
+    /// Starts ffmpeg writing an H264 Annex B stream (with Access Unit Delimiters) to stdout. For
+    /// waves/spectrum it reads s16le mono PCM on stdin and renders the scope with a filter; for
+    /// hilbert it reads the bgr24 frames rendered here. Assumes <see cref="_ffmpegLock"/> is held.
     /// </summary>
     private bool StartFfmpeg(int sampleRate)
     {
-        string filter = BuildFilter();
+        string input = _renderLocally
+            ? $"-f rawvideo -pix_fmt bgr24 -s {_renderer!.Width}x{_renderer.Height} -r {Math.Max(1, _options.Fps)} -i - "
+            : $"-f s16le -ar {sampleRate} -ac 1 -i - -filter_complex \"[0:a]{BuildFilter()}[v]\" -map \"[v]\" ";
         string fileName = string.IsNullOrWhiteSpace(_options.FfmpegPath)
             ? "ffmpeg"
             : Path.Combine(_options.FfmpegPath, OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg");
@@ -155,8 +232,7 @@ public sealed class AudioScopeTransform : ISourceNode
         // a ~1s keyframe interval lets a receiver that joins late sync quickly (no PLI handling here).
         var startInfo = new ProcessStartInfo(fileName)
         {
-            Arguments = $"-hide_banner -loglevel error -f s16le -ar {sampleRate} -ac 1 -i - " +
-                        $"-filter_complex \"[0:a]{filter}[v]\" -map \"[v]\" " +
+            Arguments = $"-hide_banner -loglevel error {input}" +
                         $"-c:v libx264 -profile:v baseline -tune zerolatency -pix_fmt yuv420p " +
                         $"-g {Math.Max(1, _options.Fps)} -x264-params aud=1 -f h264 -",
             UseShellExecute = false,
@@ -193,9 +269,64 @@ public sealed class AudioScopeTransform : ISourceNode
         _reader = new Thread(ReadAnnexBLoop) { IsBackground = true, Name = "audio-scope-h264" };
         _reader.Start();
 
+        if (_renderLocally)
+        {
+            int frameIntervalMs = Math.Max(1, 1000 / Math.Max(1, _options.Fps));
+            _frameTimer = new Timer(RenderFrame, null, 0, frameIntervalMs);
+        }
+
         _logger.LogDebug("Audio scope ffmpeg started: {Mode} {Size} @ {Fps}fps H264 from {Rate}Hz audio.",
             _options.ScopeMode, _options.ScopeSize, _options.Fps, sampleRate);
         return true;
+    }
+
+    /// <summary>
+    /// hilbert mode frame clock: renders the scope from the most recent audio and pipes the bgr24
+    /// frame to ffmpeg. A tick that lands while the previous one is still rendering or writing is
+    /// dropped rather than queued, so a slow encode can never build a backlog.
+    /// </summary>
+    private void RenderFrame(object? state)
+    {
+        if (Interlocked.CompareExchange(ref _renderInProgress, 1, 0) != 0)
+        {
+            return;
+        }
+
+        try
+        {
+            short[]? pcm;
+            lock (_pcmLock)
+            {
+                pcm = _latestPcm;
+            }
+
+            if (pcm == null)
+            {
+                return;
+            }
+
+            byte[] frame = _renderer!.ProcessAudioSample(pcm.Select(s => new Complex(s / 32768f, 0f)).ToArray());
+
+            lock (_ffmpegLock)
+            {
+                if (_stopping || _failed || _ffmpeg == null)
+                {
+                    return;
+                }
+
+                _ffmpeg.StandardInput.BaseStream.Write(frame, 0, frame.Length);
+                _ffmpeg.StandardInput.BaseStream.Flush();
+            }
+        }
+        catch (Exception excp)
+        {
+            _logger.LogWarning("Audio scope render failed, no further scope video will be produced: {Error}", excp.Message);
+            _failed = true;
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _renderInProgress, 0);
+        }
     }
 
     private string BuildFilter()
@@ -205,7 +336,7 @@ public sealed class AudioScopeTransform : ISourceNode
 
         // Both filters convert audio to video; normalise to the target fps and the 4:2:0 pixel format
         // H264 baseline needs. showwaves is a moving waveform; showspectrum is a scrolling spectrum.
-        return _options.ScopeMode.Equals("spectrum", StringComparison.OrdinalIgnoreCase)
+        return _options.ScopeMode.Equals(MODE_SPECTRUM, StringComparison.OrdinalIgnoreCase)
             ? $"showspectrum=s={size}:slide=scroll:color=intensity,fps={fps},format=yuv420p"
             : $"showwaves=s={size}:mode=cline:colors=0x33CC33,fps={fps},format=yuv420p";
     }
@@ -335,6 +466,16 @@ public sealed class AudioScopeTransform : ISourceNode
         }
 
         _inner.OnFrame -= HandleInnerFrame;
+
+        if (_frameTimer != null)
+        {
+            // Wait for an in-flight tick so it cannot write to stdin after it is closed below.
+            using var timerDone = new ManualResetEvent(false);
+            if (_frameTimer.Dispose(timerDone))
+            {
+                timerDone.WaitOne(2000);
+            }
+        }
 
         Process? ffmpeg;
         lock (_ffmpegLock)
