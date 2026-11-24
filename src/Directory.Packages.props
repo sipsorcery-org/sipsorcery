@@ -23,10 +23,6 @@
     <PackageVersion Include="MathNet.Numerics"                              Version="5.0.0" />
     <PackageVersion Include="Microsoft.Bcl.HashCode"                        Version="6.0.0" />
     <PackageVersion Include="Microsoft.CognitiveServices.Speech"            Version="1.51.1" />
-    <PackageVersion Include="Microsoft.Extensions.Http"                     Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.Logging"                  Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions"     Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Console"          Version="10.0.11" />
     <PackageVersion Include="Microsoft.ML.OnnxRuntime.DirectML"             Version="1.24.4" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub"                   Version="10.0.400" />
     <PackageVersion Include="NAudio"                                        Version="3.0.0" />
@@ -37,7 +33,6 @@
          it directly restores those types without forcing every consumer up to 19041. -->
     <PackageVersion Include="NAudio.WinMM"                                  Version="3.0.0" />
     <PackageVersion Include="Polyfill"                                      Version="11.4.5" />
-    <PackageVersion Include="Serilog.Extensions.Logging"                    Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console"                         Version="6.1.1" />
     <PackageVersion Include="SIPSorcery.WebSocketSharp"                     Version="0.0.1" />
     <PackageVersion Include="SIPSorceryMedia.Encoders"                      Version="10.0.4" />
@@ -50,16 +45,27 @@
 
   </ItemGroup>
 
-  <ItemGroup Condition="('$(TargetFramework)' == 'net9.0') OR $(TargetFramework.StartsWith('net9.0-windows'))">
-
-  <!-- Add net9.0 specific versions here -->
-
+  <!-- Microsoft.Extensions.Logging.Abstractions is a public dependency of SIPSorcery and
+       SIPSorceryMedia.Abstractions, so its version flows to every consumer. Only net10 takes
+       the 10.x line; older TFMs (including the net8.0 asset that net9.0 apps resolve) stay on
+       8.0.x so .NET 8/9 apps aren't forced onto .NET 10 logging/DiagnosticSource (issue #1933).
+       The rest of the Microsoft.Extensions logging family, and Serilog.Extensions.Logging which
+       depends on it, must follow the same split: their 10.x versions require Abstractions
+       >= 10.0.11 and would otherwise fail restore with NU1109 (downgrade) on older TFMs. -->
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net10'))">
+    <PackageVersion Include="Microsoft.Extensions.Http"                     Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Logging"                  Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions"     Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console"          Version="10.0.11" />
+    <PackageVersion Include="Serilog.Extensions.Logging"                    Version="10.0.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="('$(TargetFramework)' != 'net10.0') AND !$(TargetFramework.StartsWith('net10.0-windows')) AND ('$(TargetFramework)' != 'net9.0') AND !$(TargetFramework.StartsWith('net9.0-windows'))">
-    
-  <!-- Add net8.0 specific versions here -->
-
+  <ItemGroup Condition="!$(TargetFramework.StartsWith('net10'))">
+    <PackageVersion Include="Microsoft.Extensions.Http"                     Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Logging"                  Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions"     Version="8.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console"          Version="8.0.1" />
+    <PackageVersion Include="Serilog.Extensions.Logging"                    Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
