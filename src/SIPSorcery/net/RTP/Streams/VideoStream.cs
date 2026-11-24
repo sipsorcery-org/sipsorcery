@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.net.RTP.Packetisation;
 using SIPSorcery.Sys;
@@ -416,22 +417,38 @@ namespace SIPSorcery.Net
 
         private void SendVp9FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, byte[] buffer)
         {
+            // A null frame is sent as no packets, as an empty one is.
+            SendVp9FrameCore(rtpTimestamp, duration, payloadTypeID, new ReadOnlySpan<byte>(buffer));
+        }
+
+        private void SendVp9FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, ReadOnlySpan<byte> buffer)
+        {
             if (CheckIfCanSendRtpRaw())
             {
                 try
                 {
                     bool isKeyFrame = Vp9Packetiser.IsKeyFrame(buffer);
-                    var packets = Vp9Packetiser.Packetize(buffer, RTPSession.RTP_MAX_PAYLOAD, isKeyFrame, _vp9PictureId);
 
-                    for (int i = 0; i < packets.Count; i++)
+                    // The payloads Vp9Packetiser.Packetize makes, but each packet is built straight from its descriptor
+                    // and its slice of the frame, so the frame is only copied into the packets themselves.
+                    int capacity = RTPSession.RTP_MAX_PAYLOAD - Vp9Packetiser.DESCRIPTOR_LENGTH;
+                    Span<byte> descriptor = stackalloc byte[Vp9Packetiser.DESCRIPTOR_LENGTH];
+
+                    for (int offset = 0; offset < buffer.Length;)
                     {
-                        int markerBit = (i == packets.Count - 1) ? 1 : 0; // Marker bit set on the last packet of the frame.
+                        int chunk = Math.Min(capacity, buffer.Length - offset);
+                        bool isLast = offset + chunk >= buffer.Length;
+                        int markerBit = isLast ? 1 : 0; // Marker bit set on the last packet of the frame.
+
+                        Vp9Packetiser.WritePayloadDescriptor(descriptor, isKeyFrame, offset == 0, isLast, _vp9PictureId);
 
                         SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
-                        SendRtpRaw(packets[i], rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        SendRtpRaw(descriptor, buffer.Slice(offset, chunk), rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID);
+
+                        offset += chunk;
                     }
 
-                    if (packets.Count > 0)
+                    if (!buffer.IsEmpty)
                     {
                         AdvanceTimestamp(rtpTimestamp, duration);
                         _vp9PictureId = (_vp9PictureId + 1) & Vp9Packetiser.MAX_PICTURE_ID;
@@ -458,22 +475,34 @@ namespace SIPSorcery.Net
 
         private void SendAv1FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, byte[] temporalUnit)
         {
+            // A null temporal unit is sent as no packets, as an empty one is.
+            SendAv1FrameCore(rtpTimestamp, duration, payloadTypeID, new ReadOnlySpan<byte>(temporalUnit));
+        }
+
+        private void SendAv1FrameCore(uint? rtpTimestamp, uint duration, int payloadTypeID, ReadOnlySpan<byte> temporalUnit)
+        {
             if (CheckIfCanSendRtpRaw())
             {
                 try
                 {
-                    bool sentPacket = false;
+                    // An AV1 payload is not a slice of the temporal unit: OBU size fields are left out and element
+                    // lengths added. So the payloads are written one after another into a buffer rented from the
+                    // shared array pool, and each packet is built from its slice of that buffer.
+                    var payloadLengths = new List<int>(temporalUnit.Length / RTPSession.RTP_MAX_PAYLOAD + 2);
+                    using var payloads = new ArrayPoolBufferWriter<byte>(temporalUnit.Length + 2 * RTPSession.RTP_MAX_PAYLOAD);
+                    AV1Packetiser.Packetize(temporalUnit, RTPSession.RTP_MAX_PAYLOAD, payloads, payloadLengths);
 
-                    foreach (var packet in AV1Packetiser.Packetize(temporalUnit.AsSpan(), RTPSession.RTP_MAX_PAYLOAD))
+                    ReadOnlySpan<byte> remaining = payloads.WrittenSpan;
+                    for (int i = 0; i < payloadLengths.Count; i++)
                     {
-                        int markerBit = packet.IsLast ? 1 : 0;
+                        int markerBit = (i == payloadLengths.Count - 1) ? 1 : 0; // Marker bit set on the last packet of the temporal unit.
 
                         SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
-                        SendRtpRaw(packet.Payload, rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID, true);
-                        sentPacket = true;
+                        SendRtpRaw(ReadOnlySpan<byte>.Empty, remaining.Slice(0, payloadLengths[i]), rtpTimestamp ?? LocalTrack.Timestamp, markerBit, payloadTypeID);
+                        remaining = remaining.Slice(payloadLengths[i]);
                     }
 
-                    if (sentPacket)
+                    if (payloadLengths.Count > 0)
                     {
                         AdvanceTimestamp(rtpTimestamp, duration);
                     }
@@ -634,10 +663,11 @@ namespace SIPSorcery.Net
         /// it is sent, so the memory behind <paramref name="sample"/> can be re-used as soon as this returns.
         /// </para>
         /// <para>
-        /// For VP8, H264 and H265 each packet is built directly from its slice of the sample, which is copied once, into
-        /// the packet. The exception is H265 NALs small enough to share an aggregation packet, which are gathered in a
-        /// buffer on the stack first. For the other codecs the sample is copied into an array and sent as the array
-        /// overload sends it.
+        /// For VP8, VP9, H264 and H265 each packet is built directly from its slice of the sample, which is copied once,
+        /// into the packet. The exception is H265 NALs small enough to share an aggregation packet, which are gathered
+        /// in a buffer on the stack first. AV1 payloads, whose OBUs lose their size fields, are written into a buffer
+        /// rented from the shared array pool, and each packet is built from its slice of it. For MJPEG the sample is
+        /// copied into an array and sent as the array overload sends it.
         /// </para>
         /// </remarks>
         public void SendVideo(uint durationRtpUnits, ReadOnlySpan<byte> sample)
@@ -673,9 +703,17 @@ namespace SIPSorcery.Net
             {
                 SendH265FrameCore(rtpTimestamp, durationRtpUnits, sendingFormat.FormatID, sample);
             }
+            else if (sendingFormat.Codec == VideoCodecsEnum.VP9)
+            {
+                SendVp9FrameCore(rtpTimestamp, durationRtpUnits, sendingFormat.FormatID, sample);
+            }
+            else if (sendingFormat.Codec == VideoCodecsEnum.AV1)
+            {
+                SendAv1FrameCore(rtpTimestamp, durationRtpUnits, sendingFormat.FormatID, sample);
+            }
             else if (rtpTimestamp.HasValue)
             {
-                // The other codecs' packetisers work on arrays.
+                // The MJPEG packetiser works on arrays.
                 SendVideoAt(rtpTimestamp.Value, sample.ToArray());
             }
             else

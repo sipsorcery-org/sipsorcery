@@ -11,7 +11,9 @@
 // API that existed then, so it can be re-run there. The exceptions are the
 // scenarios marked "packetisation fix": their output changed on purpose with the
 // H264/H265 fragmentation, H265 aggregation and Annex B parsing fixes, which
-// H26XPacketiserUnitTest checks in detail.
+// H26XPacketiserUnitTest checks in detail. The VP9 and AV1 scenarios other than
+// VP9_KeyAndInterFrames and AV1_TemporalUnits were produced at commit e774801c5,
+// before the VP9 and AV1 send paths changed.
 //
 // Author(s):
 // SIPSorcery contributors
@@ -183,6 +185,65 @@ namespace SIPSorcery.Net.UnitTests
                     Au(Obu(2, 0, 120), Obu(1, 12, 121), Obu(6, 3000, 122)),
                     Au(Obu(2, 0, 123), Obu(6, 900, 124))),
                 ExpectedDigest = "D83367407A14AC689402D2E804FC00BE80CA68A976FBBBF857D42154891ABCBF" },
+
+            new VideoRtpGoldenScenario { Name = "VP9_Sizes", Codec = "VP9", PayloadType = 98,
+                // Either side of the 1197 byte fragment that fits a packet with its 3 byte descriptor, an empty frame (no
+                // packets, the timestamp and picture ID unchanged), a frame that is not a valid VP9 frame, and a large
+                // key frame.
+                CreateFrames = () => Frames(Vp9Frame(true, 1, 140), Vp9Frame(false, 1196, 141), Vp9Frame(false, 1197, 142), Vp9Frame(false, 1198, 143),
+                    new byte[0], Vp9Frame(false, 2394, 144), Vp9Frame(false, 2395, 145), Random(3000, 146), Vp9Frame(true, 60_000, 147)),
+                ExpectedDigest = "71865AE390F633DD1CF13A68BC69834A4A0BDBC5402A54278BA8880C9396C42C" },
+            new VideoRtpGoldenScenario { Name = "VP9_ExplicitTimestamps", Codec = "VP9", PayloadType = 98,
+                CreateFrames = () => Frames(Vp9Frame(true, 3000, 150), Vp9Frame(false, 800, 151), Vp9Frame(false, 5000, 152)),
+                ExplicitTimestamps = new uint[] { 1_000, 7_000, 7_001 },
+                ExpectedDigest = "D5EB8A71A06869D71C50F147F3BA7661DF6D2787D76670985099BF01031FD729" },
+            new VideoRtpGoldenScenario { Name = "VP9_HeaderExtensions_Srtp", Codec = "VP9", PayloadType = 98, HeaderExtensions = true, Srtp = true,
+                CreateFrames = () => Frames(Vp9Frame(true, 4000, 153), Vp9Frame(false, 900, 154), Vp9Frame(false, 1197, 155)),
+                ExpectedDigest = "0B43A418A4C4A041D0346A58BA853171729CA33C05CD14C2AD506F2EAC05DBE7" },
+            new VideoRtpGoldenScenario { Name = "VP9_Ulpfec", Codec = "VP9", PayloadType = 98, Ulpfec = true,
+                CreateFrames = () => Frames(Vp9Frame(true, 6000, 156), Vp9Frame(false, 700, 157), Vp9Frame(false, 2500, 158)),
+                ExpectedDigest = "5E2687FA45391DF9A32959A14561B7C873927475BFC91136594AB075B647866A" },
+
+            new VideoRtpGoldenScenario { Name = "AV1_FragmentationAndAggregation", Codec = "AV1", PayloadType = 45,
+                CreateFrames = () => Frames(
+                    // A sequence header sharing the first packet with a large frame.
+                    Au(Obu(2, 0, 160), Obu(1, 12, 161), Obu(6, 60_000, 162)),
+                    // Forty small metadata OBUs aggregated over two packets, then a frame.
+                    Au(new[] { Obu(2, 0, 163) }.Concat(Enumerable.Range(1, 40).Select(i => Obu(5, i * 3, 164 + (uint)i))).Concat(new[] { Obu(6, 500, 205) }).ToArray()),
+                    // A frame header and tile groups, the second ending close to a packet boundary.
+                    Au(Obu(3, 30, 206), Obu(4, 2500, 207), Obu(4, 1180, 208)),
+                    // Element lengths either side of the one and two byte leb128 boundaries.
+                    Au(Obu(6, 126, 209), Obu(6, 127, 210), Obu(6, 128, 211)),
+                    Au(Obu(6, 16_382, 212)),
+                    Au(Obu(6, 16_383, 213)),
+                    // Frames that fill one packet exactly, and either side of it.
+                    Au(Obu(6, 1195, 214)),
+                    Au(Obu(6, 1196, 215)),
+                    Au(Obu(6, 1197, 216))),
+                ExpectedDigest = "E72F7F3497A946E9CF3824DA3F57B242C4C2132159DF8AE38851DB2C20BE30CE" },
+            new VideoRtpGoldenScenario { Name = "AV1_ObuForms", Codec = "AV1", PayloadType = 45,
+                CreateFrames = () => Frames(
+                    // OBUs with an extension header.
+                    Au(Obu(2, 0, 220), ObuWithExtension(6, 2000, 221), ObuWithExtension(5, 10, 222)),
+                    // A last OBU without a size field, which runs to the end of the temporal unit.
+                    Au(Obu(2, 0, 223), Obu(3, 20, 224), ObuWithoutSize(4, 1500, 225)),
+                    // Padding and tile list OBUs, which are not sent.
+                    Au(Obu(2, 0, 226), Obu(15, 50, 227), Obu(8, 20, 228), Obu(6, 300, 229)),
+                    // Nothing to send: no packets and the timestamp unchanged.
+                    Au(Obu(2, 0, 230)),
+                    new byte[0],
+                    Au(Obu(6, 400, 231))),
+                ExpectedDigest = "1A7689C7440F7B2AA5FDD4EEB92269FEE756882BFD0BE21C9EA28752909FB847" },
+            new VideoRtpGoldenScenario { Name = "AV1_ExplicitTimestamps", Codec = "AV1", PayloadType = 45,
+                CreateFrames = () => Frames(Au(Obu(2, 0, 232), Obu(6, 3000, 233)), Au(Obu(6, 800, 234)), Au(Obu(6, 5000, 235))),
+                ExplicitTimestamps = new uint[] { 1_000, 7_000, 7_001 },
+                ExpectedDigest = "6DC26BFF0E6C47F9BC4B4DF5092840CF2A7A1D4E69209A2326904D029B81BDA2" },
+            new VideoRtpGoldenScenario { Name = "AV1_HeaderExtensions_Srtp", Codec = "AV1", PayloadType = 45, HeaderExtensions = true, Srtp = true,
+                CreateFrames = () => Frames(Au(Obu(2, 0, 236), Obu(1, 12, 237), Obu(6, 4000, 238)), Au(Obu(6, 900, 239))),
+                ExpectedDigest = "1D85025FE7D9404EF9B11FAE1B9D0CBDB0E2FFE663CDA14E976D38261C2F2BF3" },
+            new VideoRtpGoldenScenario { Name = "AV1_Ulpfec", Codec = "AV1", PayloadType = 45, Ulpfec = true,
+                CreateFrames = () => Frames(Au(Obu(2, 0, 240), Obu(1, 12, 241), Obu(6, 6000, 242)), Au(Obu(6, 700, 243)), Au(Obu(6, 2500, 244))),
+                ExpectedDigest = "78E8A8D3F00ED12D21F21218763741382586C931780DA846F826F9D9A0F50E09" },
 
             new VideoRtpGoldenScenario { Name = "MJPEG_Frames", Codec = "JPEG", PayloadType = 26,
                 CreateFrames = () => Frames(Jpeg(100, 130), Jpeg(2500, 131)),
@@ -367,6 +428,25 @@ namespace SIPSorcery.Net.UnitTests
         {
             byte header = (byte)((type << 3) | 0x02);
             return new[] { header }.Concat(AV1Packetiser.WriteLeb128(payloadLength)).Concat(Random(payloadLength, seed)).ToArray();
+        }
+
+        /// <summary>
+        /// An AV1 OBU with an extension header and a size field.
+        /// </summary>
+        private static byte[] ObuWithExtension(int type, int payloadLength, uint seed)
+        {
+            byte header = (byte)((type << 3) | 0x04 | 0x02);
+            byte extension = 0x28; // temporal_id 1, spatial_id 1.
+            return new[] { header, extension }.Concat(AV1Packetiser.WriteLeb128(payloadLength)).Concat(Random(payloadLength, seed)).ToArray();
+        }
+
+        /// <summary>
+        /// An AV1 OBU without a size field, so it runs to the end of the temporal unit.
+        /// </summary>
+        private static byte[] ObuWithoutSize(int type, int payloadLength, uint seed)
+        {
+            byte header = (byte)(type << 3);
+            return new[] { header }.Concat(Random(payloadLength, seed)).ToArray();
         }
 
         /// <summary>

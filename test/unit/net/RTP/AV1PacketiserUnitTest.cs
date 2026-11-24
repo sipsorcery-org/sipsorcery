@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
@@ -466,6 +467,121 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(payloadLength, size);
             Assert.Equal(expectedSizeBytes, sizeBytes);
             Assert.Equal(payload, reconstructedFrame.Skip(offset).ToArray());
+        }
+
+        public static IEnumerable<object[]> BufferWriterCases()
+        {
+            var sequenceHeader = CreateObu(AV1Packetiser.AV1ObuType.SequenceHeader, new byte[] { 1, 2, 3 });
+            var frame1500 = CreateObu(AV1Packetiser.AV1ObuType.Frame, Enumerable.Range(0, 1500).Select(x => (byte)x).ToArray());
+            var extendedFrame = new byte[] { 0x36, 0x28, 0x05, 1, 2, 3, 4, 5 }; // Frame with an extension header.
+            var smallObus = Enumerable.Range(1, 30).SelectMany(i => CreateObu(AV1Packetiser.AV1ObuType.Metadata, new byte[i])).ToArray();
+            var padding = CreateObu(AV1Packetiser.AV1ObuType.Padding, new byte[20]);
+            var unsized = new byte[] { 0x30 }.Concat(new byte[700]).ToArray(); // Frame without a size field.
+
+            yield return new object[] { "SequenceHeaderAndFrame", sequenceHeader.Concat(frame1500).ToArray(), 200 };
+            yield return new object[] { "Leb128Boundary", CreateObu(AV1Packetiser.AV1ObuType.Frame, new byte[127]), 130 };
+            yield return new object[] { "ExtensionHeaderSmallestPayload", sequenceHeader.Concat(extendedFrame).ToArray(), 4 };
+            yield return new object[] { "ExtensionHeader", sequenceHeader.Concat(extendedFrame).ToArray(), 7 };
+            yield return new object[] { "SmallObus", smallObus, 64 };
+            yield return new object[] { "SkippedObus", padding.Concat(frame1500).ToArray(), 1200 };
+            yield return new object[] { "UnsizedLastObu", sequenceHeader.Concat(unsized).ToArray(), 100 };
+        }
+
+        /// <summary>
+        /// The buffer writer overload writes exactly the payloads the list overload returns, one after another, and
+        /// their lengths in order.
+        /// </summary>
+        [Theory]
+        [MemberData(nameof(BufferWriterCases))]
+        public void BufferWriterPayloadsAreTheListPayloads(string name, byte[] temporalUnit, int maxPayloadSize)
+        {
+            var expected = AV1Packetiser.Packetize(temporalUnit.AsSpan(), maxPayloadSize);
+            var output = new RecordingBufferWriter();
+            var payloadLengths = new List<int>();
+
+            AV1Packetiser.Packetize(temporalUnit, maxPayloadSize, output, payloadLengths);
+
+            Assert.True(expected.Count > 0, name);
+            Assert.Equal(expected.Select(p => p.Payload.Length), payloadLengths);
+            Assert.Equal(expected.SelectMany(p => p.Payload).ToArray(), output.WrittenSpan.ToArray());
+            Assert.All(payloadLengths, length => Assert.InRange(length, 1, maxPayloadSize));
+        }
+
+        /// <summary>
+        /// Each payload is written with one GetSpan of the maximum payload size and one Advance of its length.
+        /// </summary>
+        [Theory]
+        [MemberData(nameof(BufferWriterCases))]
+        public void BufferWriterIsAskedForOneFullPayloadPerPacket(string name, byte[] temporalUnit, int maxPayloadSize)
+        {
+            var output = new RecordingBufferWriter();
+            var payloadLengths = new List<int>();
+
+            AV1Packetiser.Packetize(temporalUnit, maxPayloadSize, output, payloadLengths);
+
+            Assert.True(payloadLengths.Count > 0, name);
+            Assert.Equal(Enumerable.Repeat(maxPayloadSize, payloadLengths.Count), output.SizeHints);
+            Assert.Equal(payloadLengths, output.Advances);
+        }
+
+        /// <summary>
+        /// The payloads go after what the writer already holds, and their lengths after those already in the list.
+        /// </summary>
+        [Fact]
+        public void BufferWriterOutputIsAppendedToWhatIsAlreadyThere()
+        {
+            var temporalUnit = CreateObu(AV1Packetiser.AV1ObuType.Frame, new byte[300]);
+            var expected = AV1Packetiser.Packetize(temporalUnit.AsSpan(), 128);
+            var output = new RecordingBufferWriter();
+            new byte[] { 9, 9, 9 }.CopyTo(output.GetSpan(3));
+            output.Advance(3);
+            var payloadLengths = new List<int> { 42 };
+
+            AV1Packetiser.Packetize(temporalUnit, 128, output, payloadLengths);
+
+            Assert.Equal(new[] { 42 }.Concat(expected.Select(p => p.Payload.Length)), payloadLengths);
+            Assert.Equal(new byte[] { 9, 9, 9 }.Concat(expected.SelectMany(p => p.Payload)).ToArray(), output.WrittenSpan.ToArray());
+        }
+
+        [Fact]
+        public void BufferWriterNullArgumentsAreRejected()
+        {
+            var temporalUnit = CreateObu(AV1Packetiser.AV1ObuType.Frame, new byte[10]);
+
+            var noOutput = Assert.Throws<ArgumentNullException>(() => AV1Packetiser.Packetize(temporalUnit, 1200, null, new List<int>()));
+            var noLengths = Assert.Throws<ArgumentNullException>(() => AV1Packetiser.Packetize(temporalUnit, 1200, new RecordingBufferWriter(), null));
+
+            Assert.Equal("output", noOutput.ParamName);
+            Assert.Equal("payloadLengths", noLengths.ParamName);
+        }
+
+        /// <summary>
+        /// An empty temporal unit, or one with nothing to send, writes nothing. Only a temporal unit with something in
+        /// it has its maximum payload size checked, as with the list overload.
+        /// </summary>
+        [Fact]
+        public void BufferWriterTemporalUnitWithNothingToSendWritesNothing()
+        {
+            var output = new RecordingBufferWriter();
+            var payloadLengths = new List<int>();
+            var delimiterAndPadding = CreateObu(AV1Packetiser.AV1ObuType.TemporalDelimiter, new byte[0])
+                .Concat(CreateObu(AV1Packetiser.AV1ObuType.Padding, new byte[8])).ToArray();
+
+            AV1Packetiser.Packetize(ReadOnlySpan<byte>.Empty, 1, output, payloadLengths);
+            AV1Packetiser.Packetize(delimiterAndPadding, 1200, output, payloadLengths);
+
+            Assert.Equal(0, output.WrittenCount);
+            Assert.Empty(payloadLengths);
+            Assert.Throws<ArgumentException>(() => AV1Packetiser.Packetize(delimiterAndPadding, 3, output, payloadLengths));
+        }
+
+        [Theory]
+        [InlineData(new byte[] { 0x36 })] // Missing extension header.
+        [InlineData(new byte[] { 0x32 })] // Missing size.
+        [InlineData(new byte[] { 0x32, 0x02, 0x01 })] // Truncated payload.
+        public void BufferWriterMalformedObusAreRejected(byte[] temporalUnit)
+        {
+            Assert.Throws<FormatException>(() => AV1Packetiser.Packetize(temporalUnit, 1200, new RecordingBufferWriter(), new List<int>()));
         }
 
         private static byte[] CreateObu(AV1Packetiser.AV1ObuType obuType, byte[] payload)

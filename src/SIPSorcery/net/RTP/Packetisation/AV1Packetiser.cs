@@ -17,7 +17,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using CommunityToolkit.HighPerformance.Buffers;
 
 namespace SIPSorcery.Net;
 
@@ -123,29 +125,74 @@ public class AV1Packetiser
         }
     }
 
-    private readonly struct ObuFragment
-    {
-        public Obu Obu { get; }
-        public int Offset { get; }
-        public int Length { get; }
-
-        public ObuFragment(Obu obu, int offset, int length)
-        {
-            Obu = obu;
-            Offset = offset;
-            Length = length;
-        }
-    }
-
     [Obsolete("Use Packetize(ReadOnlySpan<byte>, int) instead. Pass array.AsSpan() for byte arrays.")]
     public static List<AV1RtpPacket> Packetize(byte[] temporalUnit, int maxPayloadSize)
         => Packetize(temporalUnit.AsSpan(), maxPayloadSize);
 
+    /// <summary>
+    /// Packetises an AV1 temporal unit into RTP payloads, each in an array of its own.
+    /// </summary>
+    /// <param name="temporalUnit">The temporal unit, a sequence of OBUs.</param>
+    /// <param name="maxPayloadSize">The maximum RTP payload size.</param>
+    /// <returns>The payloads the <see cref="IBufferWriter{T}"/> overload writes, the last one marked.</returns>
     public static List<AV1RtpPacket> Packetize(ReadOnlySpan<byte> temporalUnit, int maxPayloadSize)
     {
+        var packets = new List<AV1RtpPacket>();
         if (temporalUnit.IsEmpty)
         {
-            return new List<AV1RtpPacket>();
+            return packets;
+        }
+
+        var payloadLengths = new List<int>();
+        using (var payloads = new ArrayPoolBufferWriter<byte>(temporalUnit.Length))
+        {
+            Packetize(temporalUnit, maxPayloadSize, payloads, payloadLengths);
+
+            ReadOnlySpan<byte> remaining = payloads.WrittenSpan;
+            for (int i = 0; i < payloadLengths.Count; i++)
+            {
+                packets.Add(new AV1RtpPacket(remaining.Slice(0, payloadLengths[i]).ToArray(), i == payloadLengths.Count - 1));
+                remaining = remaining.Slice(payloadLengths[i]);
+            }
+        }
+
+        return packets;
+    }
+
+    /// <summary>
+    /// Packetises an AV1 temporal unit, writing the RTP payloads one after another into a buffer writer. Each payload
+    /// is an aggregation header followed by OBU elements, every one preceded by its length: whole OBUs, or fragments
+    /// of an OBU too large for the rest of the payload, with their size fields left out. Temporal delimiter, tile
+    /// list and padding OBUs are not sent.
+    /// </summary>
+    /// <param name="temporalUnit">The temporal unit, a sequence of OBUs. Only read during the call.</param>
+    /// <param name="maxPayloadSize">The maximum RTP payload size.</param>
+    /// <param name="output">The payloads are written to it one after another, each with one
+    /// <see cref="IBufferWriter{T}.GetSpan(int)"/> of <paramref name="maxPayloadSize"/> bytes and one
+    /// <see cref="IBufferWriter{T}.Advance(int)"/>.</param>
+    /// <param name="payloadLengths">The length of each payload written is added to it, in order. The last one
+    /// ends the temporal unit, so its packet takes the RTP marker bit.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="output"/> or <paramref name="payloadLengths"/> is
+    /// null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="maxPayloadSize"/> is too small for AV1 packetisation. An
+    /// empty temporal unit writes nothing and is not refused.</exception>
+    /// <exception cref="FormatException">An OBU in the temporal unit is malformed. The payloads before the one that
+    /// would have held it are already written.</exception>
+    public static void Packetize(ReadOnlySpan<byte> temporalUnit, int maxPayloadSize, IBufferWriter<byte> output, ICollection<int> payloadLengths)
+    {
+        if (output == null)
+        {
+            throw new ArgumentNullException(nameof(output));
+        }
+
+        if (payloadLengths == null)
+        {
+            throw new ArgumentNullException(nameof(payloadLengths));
+        }
+
+        if (temporalUnit.IsEmpty)
+        {
+            return;
         }
 
         if (maxPayloadSize < MIN_RTP_PAYLOAD_LENGTH)
@@ -153,38 +200,28 @@ public class AV1Packetiser
             throw new ArgumentException("The maximum RTP payload size is too small for AV1 packetisation.", nameof(maxPayloadSize));
         }
 
-        var packets = new List<AV1RtpPacket>();
-        var transmittedObus = new List<Obu>();
-
+        // Each OBU is parsed when the payloads reach it, rather than all of them first.
         int parseOffset = 0;
-        while (TryParseObu(temporalUnit, ref parseOffset, out var obu))
+        if (!TryParseNextTransmittedObu(temporalUnit, ref parseOffset, out var obu))
         {
-            if (!ShouldSkipObu(obu.Type))
-            {
-                transmittedObus.Add(obu);
-            }
+            return;
         }
 
-        if (transmittedObus.Count == 0)
-        {
-            return packets;
-        }
-
-        bool startsCodedVideoSequence = transmittedObus[0].Type == AV1ObuType.SequenceHeader;
-        int obuIndex = 0;
+        bool startsCodedVideoSequence = obu.Type == AV1ObuType.SequenceHeader;
+        bool hasObu = true;
         int obuOffset = 0;
-        var elements = new List<ObuFragment>();
+        bool isFirstPayload = true;
 
-        while (obuIndex < transmittedObus.Count)
+        while (hasObu)
         {
-            elements.Clear();
+            Span<byte> payload = output.GetSpan(maxPayloadSize);
+            int length = AV1_AGGREGATION_HEADER_LENGTH;
             int capacity = maxPayloadSize - AV1_AGGREGATION_HEADER_LENGTH;
             bool firstObuIsContinuation = obuOffset > 0;
             bool lastObuContinues = false;
 
-            while (obuIndex < transmittedObus.Count && capacity >= MIN_OBU_ELEMENT_LENGTH)
+            while (hasObu && capacity >= MIN_OBU_ELEMENT_LENGTH)
             {
-                var obu = transmittedObus[obuIndex];
                 int fragmentLength = GetMaxFragmentLength(obu.Length - obuOffset, capacity);
                 if (obuOffset == 0 && fragmentLength < obu.HeaderLength)
                 {
@@ -192,7 +229,9 @@ public class AV1Packetiser
                     break;
                 }
 
-                elements.Add(new ObuFragment(obu, obuOffset, fragmentLength));
+                length += WriteLeb128(fragmentLength, payload.Slice(length));
+                obu.CopyFragmentTo(temporalUnit, obuOffset, payload.Slice(length, fragmentLength));
+                length += fragmentLength;
                 capacity -= GetLeb128Size(fragmentLength) + fragmentLength;
                 obuOffset += fragmentLength;
                 lastObuContinues = obuOffset < obu.Length;
@@ -201,17 +240,45 @@ public class AV1Packetiser
                     break;
                 }
 
-                obuIndex++;
+                // Fill the remaining space with the next OBU's first fragment, rather
+                // than sending a sequence header separately from a large frame OBU.
+                hasObu = TryParseNextTransmittedObu(temporalUnit, ref parseOffset, out obu);
                 obuOffset = 0;
             }
 
-            // Fill the remaining space with the next OBU's first fragment, rather
-            // than sending a sequence header separately from a large frame OBU.
-            packets.Add(CreatePacket(temporalUnit, elements, firstObuIsContinuation, lastObuContinues, startsCodedVideoSequence && packets.Count == 0,
-                obuIndex == transmittedObus.Count));
+            var header = AV1AggregationHeaderFlags.None;
+            if (firstObuIsContinuation)
+            {
+                header |= AV1AggregationHeaderFlags.FirstObuIsContinuation;
+            }
+            if (lastObuContinues)
+            {
+                header |= AV1AggregationHeaderFlags.LastObuContinues;
+            }
+            if (startsCodedVideoSequence && isFirstPayload)
+            {
+                header |= AV1AggregationHeaderFlags.NewCodedVideoSequence;
+            }
+            payload[0] = (byte)header;
+
+            output.Advance(length);
+            payloadLengths.Add(length);
+            isFirstPayload = false;
+        }
+    }
+
+    // Parses OBUs from offset until one that is sent, skipping those that are not.
+    private static bool TryParseNextTransmittedObu(ReadOnlySpan<byte> temporalUnit, ref int offset, out Obu obu)
+    {
+        while (TryParseObu(temporalUnit, ref offset, out obu))
+        {
+            if (!ShouldSkipObu(obu.Type))
+            {
+                return true;
+            }
         }
 
-        return packets;
+        return false;
     }
 
     public static IEnumerable<byte[]> ParseObus(byte[] temporalUnit)
@@ -348,43 +415,6 @@ public class AV1Packetiser
         } while (remainder > 0);
 
         return written;
-    }
-
-    private static AV1RtpPacket CreatePacket(ReadOnlySpan<byte> temporalUnit, List<ObuFragment> obuElements,
-        bool firstObuIsContinuation, bool lastObuContinues, bool startsCodedVideoSequence, bool isLast)
-    {
-        int payloadLength = AV1_AGGREGATION_HEADER_LENGTH;
-        for (int i = 0; i < obuElements.Count; i++)
-        {
-            payloadLength += GetLeb128Size(obuElements[i].Length) + obuElements[i].Length;
-        }
-
-        var payload = new byte[payloadLength];
-        var header = AV1AggregationHeaderFlags.None;
-        if (firstObuIsContinuation)
-        {
-            header |= AV1AggregationHeaderFlags.FirstObuIsContinuation;
-        }
-        if (lastObuContinues)
-        {
-            header |= AV1AggregationHeaderFlags.LastObuContinues;
-        }
-        if (startsCodedVideoSequence)
-        {
-            header |= AV1AggregationHeaderFlags.NewCodedVideoSequence;
-        }
-        payload[0] = (byte)header;
-
-        int dstOffset = AV1_AGGREGATION_HEADER_LENGTH;
-        for (int i = 0; i < obuElements.Count; i++)
-        {
-            var element = obuElements[i];
-            dstOffset += WriteLeb128(element.Length, payload.AsSpan(dstOffset));
-            element.Obu.CopyFragmentTo(temporalUnit, element.Offset, payload.AsSpan(dstOffset, element.Length));
-            dstOffset += element.Length;
-        }
-
-        return new AV1RtpPacket(payload, isLast);
     }
 
     private static bool ShouldSkipObu(AV1ObuType obuType) =>
