@@ -146,6 +146,7 @@
   <Folder Name="/examples/WebRTCScenarios/">
     <Project Path="examples/WebRTCScenarios/DataChannelBandwidth/DataChannelBandwidth.csproj" />
     <Project Path="examples/WebRTCScenarios/DataChannelStressTest/DataChannelStressTest.csproj" />
+    <Project Path="examples/WebRTCScenarios/TranscodeLoop/TranscodeLoop.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/SIPSorcery.AV1/SIPSorcery.AV1.csproj" />

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TranscodeLoop</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">
+      <span class="name">TranscodeLoop</span>
+      <span class="sub">browser → SIPSorcery decode + encode → browser</span>
+    </div>
+    <div class="chips">
+      <span class="chip leg" id="chipA" data-state="idle"><i></i>Leg A <b>idle</b></span>
+      <span class="chip leg" id="chipB" data-state="idle"><i></i>Leg B <b>idle</b></span>
+      <span class="chip" id="chipCpu">CPU –</span>
+      <span class="chip verdict" id="chipVerdict">Not running</span>
+    </div>
+    <button id="startBtn" class="primary">Start</button>
+  </header>
+
+  <section class="config">
+    <div class="group">
+      <span class="group-label">Source</span>
+      <label>Picture
+        <select id="source">
+          <option value="card">Test card</option>
+          <option value="fake">Chromium fake camera</option>
+        </select>
+      </label>
+      <label>Size <select id="size"></select></label>
+      <label>Frame rate
+        <select id="fps"><option value="15">15 fps</option><option value="30" selected>30 fps</option></select>
+      </label>
+      <label>Browser bitrate
+        <select id="kbps">
+          <option value="500">500 kbit/s</option>
+          <option value="1000">1 Mbit/s</option>
+          <option value="1500" selected>1.5 Mbit/s</option>
+          <option value="2500">2.5 Mbit/s</option>
+          <option value="4000">4 Mbit/s</option>
+        </select>
+      </label>
+    </div>
+    <div class="group">
+      <span class="group-label">SIPSorcery</span>
+      <label>Pipeline
+        <select id="mode">
+          <option value="transcode">Decode + encode</option>
+          <option value="relay">Relay (no codecs)</option>
+        </select>
+      </label>
+      <label>In <select id="codecIn"></select></label>
+      <label>Decoder <select id="decoder"></select></label>
+      <label>Out <select id="codecOut"></select></label>
+      <label>Encoder <select id="encoder"></select></label>
+      <label>Encoder bitrate
+        <select id="encKbps">
+          <option value="0">default</option>
+          <option value="500">500 kbit/s</option>
+          <option value="1000" selected>1 Mbit/s</option>
+          <option value="2000">2 Mbit/s</option>
+          <option value="4000">4 Mbit/s</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <div class="error-bar" id="errorBar" hidden></div>
+
+  <main class="loop">
+    <article class="tile">
+      <header><h2><span class="step">1</span>Source</h2><p>Page A: the picture before the browser encodes it</p></header>
+      <div class="screen"><video id="srcVideo" muted playsinline autoplay></video><div class="overlay" id="ovSource"></div></div>
+      <canvas class="strip" id="stripSource"></canvas>
+    </article>
+
+    <div class="hop" id="hopA" data-state="idle">
+      <span class="hop-leg">Leg A</span>
+      <span class="hop-codec" id="hopACodec">–</span>
+      <span class="hop-arrow"></span>
+      <span class="hop-rate" id="hopARate"></span>
+      <span class="hop-impl" id="hopAImpl"></span>
+    </div>
+
+    <article class="tile">
+      <header><h2><span class="step">2</span>Decoded</h2><p>SIPSorcery: what its decoder made of leg A, before it encodes again</p></header>
+      <div class="screen">
+        <canvas id="decCanvas" class="picture" width="640" height="480"></canvas>
+        <div class="screen-note" id="decNote" hidden></div>
+        <div class="overlay" id="ovDecoded"></div>
+      </div>
+      <canvas class="strip" id="stripDecoded"></canvas>
+    </article>
+
+    <div class="hop" id="hopB" data-state="idle">
+      <span class="hop-leg">Leg B</span>
+      <span class="hop-codec" id="hopBCodec">–</span>
+      <span class="hop-arrow"></span>
+      <span class="hop-rate" id="hopBRate"></span>
+      <span class="hop-impl" id="hopBImpl"></span>
+    </div>
+
+    <article class="tile">
+      <header><h2><span class="step">3</span>Output</h2><p>Page B: what the browser decoded from SIPSorcery's stream</p></header>
+      <div class="screen"><video id="outVideo" muted playsinline autoplay></video><div class="overlay" id="ovOutput"></div></div>
+      <canvas class="strip" id="stripOutput"></canvas>
+    </article>
+  </main>
+
+  <div class="legend">
+    <span class="legend-title">Last 30 s, newest on the right. Top row keyframes, middle keyframe requests and NACKs, bottom trouble. Hover for details; click a picture to zoom all three.</span>
+    <span><i style="background: var(--ok)"></i>keyframe</span>
+    <span><i style="background: var(--key-out)"></i>keyframe out (SIPSorcery)</span>
+    <span><i style="background: var(--warn)"></i>keyframe request</span>
+    <span><i style="background: var(--nack)"></i>NACK</span>
+    <span><i style="background: var(--bad)"></i>freeze / error</span>
+    <span><i style="background: var(--gap)"></i>frames missing</span>
+    <span><i style="background: var(--unread)"></i>frame unreadable</span>
+    <span><i style="background: var(--muted)"></i>loss / drop (simulated)</span>
+  </div>
+
+  <section class="tools">
+    <fieldset>
+      <legend>Leg A, into SIPSorcery</legend>
+      <label class="slider">Drop frames before decode <input type="range" id="dropA" min="0" max="20" value="0"><output id="dropAOut">0%</output></label>
+      <label class="check"><input type="checkbox" id="pliOnDrop" checked> Ask page A for a keyframe after a drop</label>
+      <button id="keyA" title="SIPSorcery sends a PLI on leg A">Keyframe from browser</button>
+    </fieldset>
+    <fieldset>
+      <legend>Leg B, out of SIPSorcery</legend>
+      <label class="slider">Packet loss <input type="range" id="lossB" min="0" max="20" value="0"><output id="lossBOut">0%</output></label>
+      <button id="keyB" title="Forces a keyframe from SIPSorcery's encoder (in relay mode, asks page A)">Keyframe from SIPSorcery</button>
+    </fieldset>
+    <fieldset>
+      <legend>View</legend>
+      <label class="check"><input type="checkbox" id="showDecoded" checked> Decoded tile</label>
+      <label class="check"><input type="checkbox" id="showOverlay" checked> Stats overlays</label>
+      <label class="check"><input type="checkbox" id="listen"> Listen to the output</label>
+      <span class="level" title="Level of the audio coming back on leg B"><span id="levelBar"></span></span>
+    </fieldset>
+  </section>
+
+  <details class="logs" id="logs">
+    <summary>Log <span id="version"></span></summary>
+    <pre id="logText"></pre>
+  </details>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
