@@ -196,6 +196,12 @@ internal struct InlineArray24<T> where T : unmanaged
     private T _e0;
 }
 
+[InlineArray(30)]
+internal struct InlineArray30<T> where T : unmanaged
+{
+    private T _e0;
+}
+
 [InlineArray(32)]
 internal struct InlineArray32<T> where T : unmanaged
 {

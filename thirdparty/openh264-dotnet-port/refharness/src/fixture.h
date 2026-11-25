@@ -75,5 +75,7 @@ void KernelsMc();
 void KernelsDeblock();
 void KernelsSad();
 void KernelsDecoderTables();
+void KernelsDecodeMbAux();
+void KernelsIntraPredDec();
 
 #endif  // H264REF_FIXTURE_H

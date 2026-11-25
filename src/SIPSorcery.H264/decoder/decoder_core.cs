@@ -9,13 +9,18 @@
 // (pred weight table, ref pic list reordering, dec ref pic marking, SVC
 // extension), the bitstream buffers, and the access unit list management that
 // ParseNalHeader and the AU start/end path use. Upstream defines LONG_TERM_REF
-// for the decoder, so UpdateAccessUnit uses bParamSetsLostFlag.
+// for the decoder, so UpdateAccessUnit uses bParamSetsLostFlag. D2 adds the DQ
+// layer memory (InitialDqLayersContext, UninitialDqLayersContext) and the
+// per-slice layer setup DecodeCurrentAccessUnit does before WelsDecodeSlice
+// (InitDqLayerInfo, WelsDqLayerDecodeStart, InitCurDqLayerData);
+// DecodeCurrentAccessUnit itself comes with reconstruction.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 25 Nov 2026  Claude          Created.
+// 25 Nov 2026  Claude          D2: DQ layer memory and per-slice layer setup.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -1370,6 +1375,349 @@ internal static unsafe partial class WelsDec
         return ERR_NONE;
     }
 
+    // uiMbCount stands for C's repeated pCtx->sMb.iMbWidth * pCtx->sMb.iMbHeight.
+    public static int32_t InitialDqLayersContext(SWelsDecoderContext* pCtx, int32_t kiMaxWidth, int32_t kiMaxHeight)
+    {
+        int32_t i = 0;
+        if (null == pCtx || kiMaxWidth <= 0 || kiMaxHeight <= 0)
+            return ERR_INFO_INVALID_PARAM;
+        pCtx->sMb.iMbWidth = (uint32_t)((kiMaxWidth + 15) >> 4);
+        pCtx->sMb.iMbHeight = (uint32_t)((kiMaxHeight + 15) >> 4);
+
+        if (pCtx->bInitialDqLayersMem && kiMaxWidth <= pCtx->iPicWidthReq
+            && kiMaxHeight <= pCtx->iPicHeightReq) // have same dimension memory, skipped
+            return ERR_NONE;
+
+        CMemoryAlign* pMa = pCtx->pMemAlign;
+
+        UninitialDqLayersContext(pCtx);
+
+        uint32_t uiMbCount = pCtx->sMb.iMbWidth * pCtx->sMb.iMbHeight;
+        do
+        {
+            SDqLayer* pDq = (SDqLayer*)pMa->WelsMallocz((uint32_t)sizeof(SDqLayer), "PDqLayer");
+
+            if (pDq == null)
+                return ERR_INFO_OUT_OF_MEMORY;
+
+            pCtx->pDqLayersList[i] = pDq; //to keep consistence with in UninitialDqLayersContext()
+            memset(pDq, 0, sizeof(SDqLayer));
+
+            pCtx->sMb.pMbType[i] = (uint32_t*)pMa->WelsMallocz(uiMbCount * sizeof(uint32_t),
+                                   "pCtx->sMb.pMbType[]");
+            pCtx->sMb.pMv[i][(int32_t)LIST_0] = (InlineArray16<InlineArray2<int16_t>>*)pMa->WelsMallocz((uint32_t)(uiMbCount * sizeof(
+                                         int16_t) * (int32_t)MV_A * MB_BLOCK4x4_NUM), "pCtx->sMb.pMv[][]");
+            pCtx->sMb.pMv[i][(int32_t)LIST_1] = (InlineArray16<InlineArray2<int16_t>>*)pMa->WelsMallocz((uint32_t)(uiMbCount * sizeof(
+                                         int16_t) * (int32_t)MV_A * MB_BLOCK4x4_NUM), "pCtx->sMb.pMv[][]");
+
+            pCtx->sMb.pRefIndex[i][(int32_t)LIST_0] = (InlineArray16<int8_t>*)pMa->WelsMallocz((uint32_t)(uiMbCount *
+                                             sizeof(
+                                               int8_t) * MB_BLOCK4x4_NUM), "pCtx->sMb.pRefIndex[][]");
+            pCtx->sMb.pRefIndex[i][(int32_t)LIST_1] = (InlineArray16<int8_t>*)pMa->WelsMallocz((uint32_t)(uiMbCount *
+                                             sizeof(
+                                               int8_t) * MB_BLOCK4x4_NUM), "pCtx->sMb.pRefIndex[][]");
+            pCtx->sMb.pDirect[i] = (InlineArray16<int8_t>*)pMa->WelsMallocz((uint32_t)(uiMbCount *
+                                   sizeof(
+                                     int8_t) * MB_BLOCK4x4_NUM), "pCtx->sMb.pDirect[]");
+            pCtx->sMb.pLumaQp[i] = (int8_t*)pMa->WelsMallocz(uiMbCount * sizeof(int8_t),
+                                   "pCtx->sMb.pLumaQp[]");
+            pCtx->sMb.pNoSubMbPartSizeLessThan8x8Flag[i] = (bool*)pMa->WelsMallocz(uiMbCount *
+                sizeof(
+                  bool),
+                "pCtx->sMb.pNoSubMbPartSizeLessThan8x8Flag[]");
+            pCtx->sMb.pTransformSize8x8Flag[i] = (bool*)pMa->WelsMallocz(uiMbCount * sizeof(
+                                                   bool),
+                                                 "pCtx->sMb.pTransformSize8x8Flag[]");
+            pCtx->sMb.pChromaQp[i] = (InlineArray2<int8_t>*)pMa->WelsMallocz(uiMbCount * sizeof(
+                                       int8_t) * 2,
+                                     "pCtx->sMb.pChromaQp[]");
+            pCtx->sMb.pMvd[i][(int32_t)LIST_0] = (InlineArray16<InlineArray2<int16_t>>*)pMa->WelsMallocz((uint32_t)(uiMbCount * sizeof(
+                                          int16_t) * (int32_t)MV_A * MB_BLOCK4x4_NUM), "pCtx->sMb.pMvd[][]");
+            pCtx->sMb.pMvd[i][(int32_t)LIST_1] = (InlineArray16<InlineArray2<int16_t>>*)pMa->WelsMallocz((uint32_t)(uiMbCount * sizeof(
+                                          int16_t) * (int32_t)MV_A * MB_BLOCK4x4_NUM), "pCtx->sMb.pMvd[][]");
+            pCtx->sMb.pCbfDc[i] = (uint16_t*)pMa->WelsMallocz(uiMbCount * sizeof(uint16_t),
+                                  "pCtx->sMb.pCbfDc[]");
+            pCtx->sMb.pNzc[i] = (InlineArray24<int8_t>*)pMa->WelsMallocz(uiMbCount * sizeof(
+                                  int8_t) * 24,
+                                "pCtx->sMb.pNzc[]");
+            pCtx->sMb.pNzcRs[i] = (InlineArray24<int8_t>*)pMa->WelsMallocz(uiMbCount * sizeof(
+                                    int8_t) * 24,
+                                  "pCtx->sMb.pNzcRs[]");
+            pCtx->sMb.pScaledTCoeff[i] = (InlineArray384<int16_t>*)pMa->WelsMallocz((uint32_t)(uiMbCount *
+                                         sizeof(int16_t) * MB_COEFF_LIST_SIZE), "pCtx->sMb.pScaledTCoeff[]");
+            pCtx->sMb.pIntraPredMode[i] = (InlineArray8<int8_t>*)pMa->WelsMallocz(uiMbCount * sizeof(
+                                            int8_t) * 8,
+                                          "pCtx->sMb.pIntraPredMode[]");
+            pCtx->sMb.pIntra4x4FinalMode[i] = (InlineArray16<int8_t>*)pMa->WelsMallocz((uint32_t)(uiMbCount *
+                                              sizeof(int8_t) * MB_BLOCK4x4_NUM), "pCtx->sMb.pIntra4x4FinalMode[]");
+            pCtx->sMb.pIntraNxNAvailFlag[i] = (uint8_t*)pMa->WelsMallocz(uiMbCount * sizeof(
+                                                int8_t),
+                                              "pCtx->sMb.pIntraNxNAvailFlag");
+            pCtx->sMb.pChromaPredMode[i] = (int8_t*)pMa->WelsMallocz(uiMbCount * sizeof(int8_t),
+                                           "pCtx->sMb.pChromaPredMode[]");
+            pCtx->sMb.pCbp[i] = (int8_t*)pMa->WelsMallocz(uiMbCount * sizeof(int8_t),
+                                "pCtx->sMb.pCbp[]");
+            pCtx->sMb.pSubMbType[i] = (InlineArray4<uint32_t>*)pMa->WelsMallocz((uint32_t)(uiMbCount *
+                                      sizeof(
+                                        uint32_t) * MB_PARTITION_SIZE), "pCtx->sMb.pSubMbType[]");
+            pCtx->sMb.pSliceIdc[i] = (int32_t*)pMa->WelsMallocz(uiMbCount * sizeof(int32_t),
+                                     "pCtx->sMb.pSliceIdc[]"); // using int32_t for slice_idc, 4/21/2010
+            pCtx->sMb.pResidualPredFlag[i] = (int8_t*)pMa->WelsMallocz(uiMbCount * sizeof(
+                                               int8_t),
+                                             "pCtx->sMb.pResidualPredFlag[]");
+            pCtx->sMb.pInterPredictionDoneFlag[i] = (int8_t*)pMa->WelsMallocz(uiMbCount *
+                                                    sizeof(
+                                                        int8_t), "pCtx->sMb.pInterPredictionDoneFlag[]");
+
+            pCtx->sMb.pMbCorrectlyDecodedFlag[i] = (bool*)pMa->WelsMallocz(uiMbCount * sizeof(
+                bool),
+                                                   "pCtx->sMb.pMbCorrectlyDecodedFlag[]");
+            pCtx->sMb.pMbRefConcealedFlag[i] = (bool*)pMa->WelsMallocz(uiMbCount * sizeof(
+                                                 bool),
+                                               "pCtx->pMbRefConcealedFlag[]");
+
+            // check memory block valid due above allocated..
+            if ((null == pCtx->sMb.pMbType[i].p) ||
+                (null == pCtx->sMb.pMv[i][(int32_t)LIST_0].p) ||
+                (null == pCtx->sMb.pMv[i][(int32_t)LIST_1].p) ||
+                (null == pCtx->sMb.pRefIndex[i][(int32_t)LIST_0].p) ||
+                (null == pCtx->sMb.pRefIndex[i][(int32_t)LIST_1].p) ||
+                (null == pCtx->sMb.pDirect[i].p) ||
+                (null == pCtx->sMb.pLumaQp[i].p) ||
+                (null == pCtx->sMb.pNoSubMbPartSizeLessThan8x8Flag[i].p) ||
+                (null == pCtx->sMb.pTransformSize8x8Flag[i].p) ||
+                (null == pCtx->sMb.pChromaQp[i].p) ||
+                (null == pCtx->sMb.pMvd[i][(int32_t)LIST_0].p) ||
+                (null == pCtx->sMb.pMvd[i][(int32_t)LIST_1].p) ||
+                (null == pCtx->sMb.pCbfDc[i].p) ||
+                (null == pCtx->sMb.pNzc[i].p) ||
+                (null == pCtx->sMb.pNzcRs[i].p) ||
+                (null == pCtx->sMb.pScaledTCoeff[i].p) ||
+                (null == pCtx->sMb.pIntraPredMode[i].p) ||
+                (null == pCtx->sMb.pIntra4x4FinalMode[i].p) ||
+                (null == pCtx->sMb.pIntraNxNAvailFlag[i].p) ||
+                (null == pCtx->sMb.pChromaPredMode[i].p) ||
+                (null == pCtx->sMb.pCbp[i].p) ||
+                (null == pCtx->sMb.pSubMbType[i].p) ||
+                (null == pCtx->sMb.pSliceIdc[i].p) ||
+                (null == pCtx->sMb.pResidualPredFlag[i].p) ||
+                (null == pCtx->sMb.pInterPredictionDoneFlag[i].p) ||
+                (null == pCtx->sMb.pMbRefConcealedFlag[i].p) ||
+                (null == pCtx->sMb.pMbCorrectlyDecodedFlag[i].p)
+               )
+                return ERR_INFO_OUT_OF_MEMORY;
+
+            memset(pCtx->sMb.pSliceIdc[i], 0xff, (int32_t)(uiMbCount * sizeof(int32_t)));
+
+            ++i;
+        } while (i < LAYER_NUM_EXCHANGEABLE);
+
+        pCtx->bInitialDqLayersMem = true;
+        pCtx->iPicWidthReq = kiMaxWidth;
+        pCtx->iPicHeightReq = kiMaxHeight;
+
+        return ERR_NONE;
+    }
+
+
+
+    public static void UninitialDqLayersContext(SWelsDecoderContext* pCtx)
+    {
+        int32_t i = 0;
+        CMemoryAlign* pMa = pCtx->pMemAlign;
+
+        do
+        {
+            SDqLayer* pDq = pCtx->pDqLayersList[i];
+            if (pDq == null)
+            {
+                ++i;
+                continue;
+            }
+
+            if (pCtx->sMb.pMbType[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pMbType[i], "pCtx->sMb.pMbType[]");
+
+                pCtx->sMb.pMbType[i] = null;
+            }
+
+            for (int32_t listIdx = (int32_t)LIST_0; listIdx < (int32_t)LIST_A; ++listIdx)
+            {
+                if (pCtx->sMb.pMv[i][listIdx].p != null)
+                {
+                    pMa->WelsFree(pCtx->sMb.pMv[i][listIdx], "pCtx->sMb.pMv[][]");
+                    pCtx->sMb.pMv[i][listIdx] = null;
+                }
+
+                if (pCtx->sMb.pRefIndex[i][listIdx].p != null)
+                {
+                    pMa->WelsFree(pCtx->sMb.pRefIndex[i][listIdx], "pCtx->sMb.pRefIndex[][]");
+                    pCtx->sMb.pRefIndex[i][listIdx] = null;
+                }
+
+                if (pCtx->sMb.pDirect[i].p != null)
+                {
+                    pMa->WelsFree(pCtx->sMb.pDirect[i], "pCtx->sMb.pDirect[]");
+                    pCtx->sMb.pDirect[i] = null;
+                }
+
+                if (pCtx->sMb.pMvd[i][listIdx].p != null)
+                {
+                    pMa->WelsFree(pCtx->sMb.pMvd[i][listIdx], "pCtx->sMb.pMvd[][]");
+                    pCtx->sMb.pMvd[i][listIdx] = null;
+                }
+            }
+
+            if (pCtx->sMb.pNoSubMbPartSizeLessThan8x8Flag[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pNoSubMbPartSizeLessThan8x8Flag[i], "pCtx->sMb.pNoSubMbPartSizeLessThan8x8Flag[]");
+
+                pCtx->sMb.pNoSubMbPartSizeLessThan8x8Flag[i] = null;
+            }
+
+            if (pCtx->sMb.pTransformSize8x8Flag[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pTransformSize8x8Flag[i], "pCtx->sMb.pTransformSize8x8Flag[]");
+
+                pCtx->sMb.pTransformSize8x8Flag[i] = null;
+            }
+
+            if (pCtx->sMb.pLumaQp[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pLumaQp[i], "pCtx->sMb.pLumaQp[]");
+
+                pCtx->sMb.pLumaQp[i] = null;
+            }
+
+            if (pCtx->sMb.pChromaQp[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pChromaQp[i], "pCtx->sMb.pChromaQp[]");
+
+                pCtx->sMb.pChromaQp[i] = null;
+            }
+
+            if (pCtx->sMb.pCbfDc[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pCbfDc[i], "pCtx->sMb.pCbfDc[]");
+                pCtx->sMb.pCbfDc[i] = null;
+            }
+
+            if (pCtx->sMb.pNzc[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pNzc[i], "pCtx->sMb.pNzc[]");
+
+                pCtx->sMb.pNzc[i] = null;
+            }
+
+            if (pCtx->sMb.pNzcRs[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pNzcRs[i], "pCtx->sMb.pNzcRs[]");
+
+                pCtx->sMb.pNzcRs[i] = null;
+            }
+
+            if (pCtx->sMb.pScaledTCoeff[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pScaledTCoeff[i], "pCtx->sMb.pScaledTCoeff[]");
+
+                pCtx->sMb.pScaledTCoeff[i] = null;
+            }
+
+            if (pCtx->sMb.pIntraPredMode[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pIntraPredMode[i], "pCtx->sMb.pIntraPredMode[]");
+
+                pCtx->sMb.pIntraPredMode[i] = null;
+            }
+
+            if (pCtx->sMb.pIntra4x4FinalMode[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pIntra4x4FinalMode[i], "pCtx->sMb.pIntra4x4FinalMode[]");
+
+                pCtx->sMb.pIntra4x4FinalMode[i] = null;
+            }
+
+            if (pCtx->sMb.pIntraNxNAvailFlag[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pIntraNxNAvailFlag[i], "pCtx->sMb.pIntraNxNAvailFlag");
+
+                pCtx->sMb.pIntraNxNAvailFlag[i] = null;
+            }
+
+            if (pCtx->sMb.pChromaPredMode[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pChromaPredMode[i], "pCtx->sMb.pChromaPredMode[]");
+
+                pCtx->sMb.pChromaPredMode[i] = null;
+            }
+
+            if (pCtx->sMb.pCbp[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pCbp[i], "pCtx->sMb.pCbp[]");
+
+                pCtx->sMb.pCbp[i] = null;
+            }
+
+            //      if (pCtx->sMb.pMotionPredFlag[i])
+            //{
+            //  pMa->WelsFree( pCtx->sMb.pMotionPredFlag[i], "pCtx->sMb.pMotionPredFlag[]" );
+
+            //  pCtx->sMb.pMotionPredFlag[i] = NULL;
+            //}
+
+            if (pCtx->sMb.pSubMbType[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pSubMbType[i], "pCtx->sMb.pSubMbType[]");
+
+                pCtx->sMb.pSubMbType[i] = null;
+            }
+
+            if (pCtx->sMb.pSliceIdc[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pSliceIdc[i], "pCtx->sMb.pSliceIdc[]");
+
+                pCtx->sMb.pSliceIdc[i] = null;
+            }
+
+            if (pCtx->sMb.pResidualPredFlag[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pResidualPredFlag[i], "pCtx->sMb.pResidualPredFlag[]");
+
+                pCtx->sMb.pResidualPredFlag[i] = null;
+            }
+
+            if (pCtx->sMb.pInterPredictionDoneFlag[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pInterPredictionDoneFlag[i], "pCtx->sMb.pInterPredictionDoneFlag[]");
+
+                pCtx->sMb.pInterPredictionDoneFlag[i] = null;
+            }
+
+            if (pCtx->sMb.pMbCorrectlyDecodedFlag[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pMbCorrectlyDecodedFlag[i], "pCtx->sMb.pMbCorrectlyDecodedFlag[]");
+                pCtx->sMb.pMbCorrectlyDecodedFlag[i] = null;
+            }
+
+            if (pCtx->sMb.pMbRefConcealedFlag[i].p != null)
+            {
+                pMa->WelsFree(pCtx->sMb.pMbRefConcealedFlag[i], "pCtx->sMb.pMbRefConcealedFlag[]");
+                pCtx->sMb.pMbRefConcealedFlag[i] = null;
+            }
+            pMa->WelsFree(pDq, "pDq");
+
+            pDq = null;
+            pCtx->pDqLayersList[i] = null;
+
+            ++i;
+        } while (i < LAYER_NUM_EXCHANGEABLE);
+
+        pCtx->iPicWidthReq = 0;
+        pCtx->iPicHeightReq = 0;
+        pCtx->bInitialDqLayersMem = false;
+    }
+
     public static void ResetCurrentAccessUnit(SWelsDecoderContext* pCtx)
     {
         SAccessUnit* pCurAu = pCtx->pAccessUnitList;
@@ -1949,5 +2297,102 @@ internal static unsafe partial class WelsDec
         pCtx->pPps = pCurAu->pNalUnitsList[pCurAu->uiStartPos]->sNalData.sVclNal.sSliceHeaderExt.sSliceHeader.pPps;
 
         return iErr;
+    }
+
+    // static inline in C. internal here (the class is) so the slice-parse
+    // test driver can call it, as DecodeCurrentAccessUnit does.
+    public static void InitDqLayerInfo(SDqLayer* pDqLayer, SLayerInfo* pLayerInfo, SNalUnit* pNalUnit, SPicture* pPicDec)
+    {
+        SNalUnitHeaderExt* pNalHdrExt = &pNalUnit->sNalHeaderExt;
+        SSliceHeaderExt* pShExt = &pNalUnit->sNalData.sVclNal.sSliceHeaderExt;
+        SSliceHeader* pSh = &pShExt->sSliceHeader;
+        uint8_t kuiQualityId = pNalHdrExt->uiQualityId;
+
+        memcpy(&pDqLayer->sLayerInfo, pLayerInfo, sizeof(SLayerInfo)); //confirmed_safe_unsafe_usage
+
+        pDqLayer->pDec = pPicDec;
+        pDqLayer->iMbWidth = pSh->iMbWidth;        // MB width of this picture
+        pDqLayer->iMbHeight = pSh->iMbHeight;// MB height of this picture
+
+        pDqLayer->iSliceIdcBackup = (pSh->iFirstMbInSlice << 7) | (pNalHdrExt->uiDependencyId << 4) | (pNalHdrExt->uiQualityId);
+
+        /* Common syntax elements across all slices of a DQLayer */
+        pDqLayer->uiPpsId = (uint32_t)pLayerInfo->pPps->iPpsId;
+        pDqLayer->uiDisableInterLayerDeblockingFilterIdc = pShExt->uiDisableInterLayerDeblockingFilterIdc;
+        pDqLayer->iInterLayerSliceAlphaC0Offset = pShExt->iInterLayerSliceAlphaC0Offset;
+        pDqLayer->iInterLayerSliceBetaOffset = pShExt->iInterLayerSliceBetaOffset;
+        pDqLayer->iSliceGroupChangeCycle = pSh->iSliceGroupChangeCycle;
+        pDqLayer->bStoreRefBasePicFlag = pShExt->bStoreRefBasePicFlag;
+        pDqLayer->bTCoeffLevelPredFlag = pShExt->bTCoeffLevelPredFlag;
+        pDqLayer->bConstrainedIntraResamplingFlag = pShExt->bConstrainedIntraResamplingFlag;
+        pDqLayer->uiRefLayerDqId = pShExt->uiRefLayerDqId;
+        pDqLayer->uiRefLayerChromaPhaseXPlus1Flag = pShExt->uiRefLayerChromaPhaseXPlus1Flag;
+        pDqLayer->uiRefLayerChromaPhaseYPlus1 = pShExt->uiRefLayerChromaPhaseYPlus1;
+        pDqLayer->bUseWeightPredictionFlag = false;
+        pDqLayer->bUseWeightedBiPredIdc = false;
+        //memcpy(&pDqLayer->sScaledRefLayer, &pShExt->sScaledRefLayer, sizeof(SPosOffset));//confirmed_safe_unsafe_usage
+
+        if (kuiQualityId == BASE_QUALITY_ID)
+        {
+            pDqLayer->pRefPicListReordering = &pSh->pRefPicListReordering;
+            pDqLayer->pRefPicMarking = &pSh->sRefMarking;
+
+            pDqLayer->bUseWeightPredictionFlag = pSh->pPps->bWeightedPredFlag;
+            pDqLayer->bUseWeightedBiPredIdc = pSh->pPps->uiWeightedBipredIdc != 0;
+            if (pSh->pPps->bWeightedPredFlag || pSh->pPps->uiWeightedBipredIdc != 0)
+            {
+                pDqLayer->pPredWeightTable = &pSh->sPredWeightTable;
+            }
+            pDqLayer->pRefPicBaseMarking = &pShExt->sRefBasePicMarking;
+        }
+
+        pDqLayer->uiLayerDqId = pNalHdrExt->uiLayerDqId;      // dq_id of current layer
+        pDqLayer->bUseRefBasePicFlag = pNalHdrExt->bUseRefBasePicFlag;
+    }
+
+    public static void WelsDqLayerDecodeStart(SWelsDecoderContext* pCtx, SNalUnit* pCurNal, SSps* pSps, SPps* pPps)
+    {
+        SSliceHeader* pSh = &pCurNal->sNalData.sVclNal.sSliceHeaderExt.sSliceHeader;
+
+        pCtx->eSliceType = pSh->eSliceType;
+        pCtx->pSliceHeader = pSh;
+        pCtx->bUsedAsRef = false;
+
+        pCtx->iFrameNum = pSh->iFrameNum;
+        UpdateDecoderStatisticsForActiveParaset(pCtx->pDecoderStatistics, pSps, pPps);
+    }
+
+    public static void InitCurDqLayerData(SWelsDecoderContext* pCtx, SDqLayer* pCurDq)
+    {
+        if (null != pCtx && null != pCurDq)
+        {
+            pCurDq->pMbType = pCtx->sMb.pMbType[0];
+            pCurDq->pSliceIdc = pCtx->sMb.pSliceIdc[0];
+            pCurDq->pMv[(int32_t)LIST_0] = pCtx->sMb.pMv[0][(int32_t)LIST_0];
+            pCurDq->pMv[(int32_t)LIST_1] = pCtx->sMb.pMv[0][(int32_t)LIST_1];
+            pCurDq->pRefIndex[(int32_t)LIST_0] = pCtx->sMb.pRefIndex[0][(int32_t)LIST_0];
+            pCurDq->pRefIndex[(int32_t)LIST_1] = pCtx->sMb.pRefIndex[0][(int32_t)LIST_1];
+            pCurDq->pDirect = pCtx->sMb.pDirect[0];
+            pCurDq->pNoSubMbPartSizeLessThan8x8Flag = pCtx->sMb.pNoSubMbPartSizeLessThan8x8Flag[0];
+            pCurDq->pTransformSize8x8Flag = pCtx->sMb.pTransformSize8x8Flag[0];
+            pCurDq->pLumaQp = pCtx->sMb.pLumaQp[0];
+            pCurDq->pChromaQp = pCtx->sMb.pChromaQp[0];
+            pCurDq->pMvd[(int32_t)LIST_0] = pCtx->sMb.pMvd[0][(int32_t)LIST_0];
+            pCurDq->pMvd[(int32_t)LIST_1] = pCtx->sMb.pMvd[0][(int32_t)LIST_1];
+            pCurDq->pCbfDc = pCtx->sMb.pCbfDc[0];
+            pCurDq->pNzc = pCtx->sMb.pNzc[0];
+            pCurDq->pNzcRs = pCtx->sMb.pNzcRs[0];
+            pCurDq->pScaledTCoeff = pCtx->sMb.pScaledTCoeff[0];
+            pCurDq->pIntraPredMode = pCtx->sMb.pIntraPredMode[0];
+            pCurDq->pIntra4x4FinalMode = pCtx->sMb.pIntra4x4FinalMode[0];
+            pCurDq->pIntraNxNAvailFlag = pCtx->sMb.pIntraNxNAvailFlag[0];
+            pCurDq->pChromaPredMode = pCtx->sMb.pChromaPredMode[0];
+            pCurDq->pCbp = pCtx->sMb.pCbp[0];
+            pCurDq->pSubMbType = pCtx->sMb.pSubMbType[0];
+            pCurDq->pInterPredictionDoneFlag = pCtx->sMb.pInterPredictionDoneFlag[0];
+            pCurDq->pResidualPredFlag = pCtx->sMb.pResidualPredFlag[0];
+            pCurDq->pMbCorrectlyDecodedFlag = pCtx->sMb.pMbCorrectlyDecodedFlag[0];
+            pCurDq->pMbRefConcealedFlag = pCtx->sMb.pMbRefConcealedFlag[0];
+        }
     }
 }

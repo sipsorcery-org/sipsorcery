@@ -7,6 +7,10 @@
 //   h264ref hash <file.264>         SHA1 of the decoded output, as upstream hashes it.
 //   h264ref info <file.264>         Coding tools the stream uses.
 //   h264ref yuv <file.264> <out>    Write the decoded frames (cropped I420) to <out>.
+//   h264ref headers / headers-damaged <res-dir>, headerdump[-damaged] <file> [variant]
+//                                   D1 parser header dumps (headers.cpp).
+//   h264ref mbs / mbs-damaged <res-dir>, mbdump[-damaged] <file> [variant]
+//                                   D2 macroblock parse dumps (headers.cpp).
 //   h264ref kernels                 Fixture hashes for the ported kernels and
 //                                   tables (reference/kernels.tsv), see fixture.h.
 //
@@ -321,6 +325,61 @@ int HeadersDamaged (const std::string& resDir) {
   return missing ? 1 : 0;
 }
 
+// One row per decoder vector: the macroblock parse dump (MbDump in headers.cpp).
+int Mbs (const std::string& resDir) {
+  BinaryStdout();
+  printf ("# %s, C-only reference build. Macroblock parse dumps, see refharness/src/headers.cpp.\n", g_strCodecVer);
+  printf ("# file\tslices\tmbs\tbytes\tsha1\n");
+  int missing = 0;
+  for (const Vector& vec : kDecoderVectors) {
+    std::vector<uint8_t> s;
+    if (!ReadFile (resDir + "/" + vec.file, s)) {
+      printf ("%s\t-\t-\t-\tMISSING\n", vec.file);
+      ++missing;
+      continue;
+    }
+    std::string d;
+    int slices = 0, mbs = 0;
+    if (!MbDump (s, d, slices, mbs)) {
+      printf ("%s\t-\t-\t-\tINITFAIL\n", vec.file);
+      ++missing;
+      continue;
+    }
+    printf ("%s\t%d\t%d\t%zu\t%s\n", vec.file, slices, mbs, d.size(), Sha1Hex (d).c_str());
+  }
+  return missing ? 1 : 0;
+}
+
+// The macroblock parse dumps of the same damaged copies as headers-damaged.
+int MbsDamaged (const std::string& resDir) {
+  BinaryStdout();
+  printf ("# %s, C-only reference build. Macroblock parse dumps of damaged streams, see refharness/src/headers.cpp.\n",
+          g_strCodecVer);
+  printf ("# file\tvariant\tchunks\tslices\tmbs\tbytes\tsha1\n");
+  int missing = 0;
+  for (const Vector& vec : kDecoderVectors) {
+    std::vector<uint8_t> s;
+    if (!ReadFile (resDir + "/" + vec.file, s)) {
+      printf ("%s\t-\t-\t-\t-\t-\tMISSING\n", vec.file);
+      ++missing;
+      continue;
+    }
+    Chunks clean = SplitChunks (s);
+    for (int v = 0; v < kDamagedVariants; ++v) {
+      Chunks c = DamageChunks (clean, (uint32_t)s.size(), v);
+      std::string d;
+      int slices = 0, mbs = 0;
+      if (!MbDumpChunks (c, d, slices, mbs)) {
+        printf ("%s\t%d\t-\t-\t-\t-\tINITFAIL\n", vec.file, v);
+        ++missing;
+        continue;
+      }
+      printf ("%s\t%d\t%zu\t%d\t%d\t%zu\t%s\n", vec.file, v, c.size(), slices, mbs, d.size(), Sha1Hex (d).c_str());
+    }
+  }
+  return missing ? 1 : 0;
+}
+
 int Usage() {
   fprintf (stderr,
            "usage: h264ref conformance <res-dir>\n"
@@ -331,6 +390,10 @@ int Usage() {
            "       h264ref headerdump <file>\n"
            "       h264ref headers-damaged <res-dir>\n"
            "       h264ref headerdump-damaged <file> <variant>\n"
+           "       h264ref mbs <res-dir>\n"
+           "       h264ref mbdump <file>\n"
+           "       h264ref mbs-damaged <res-dir>\n"
+           "       h264ref mbdump-damaged <file> <variant>\n"
            "       h264ref kernels\n");
   return 2;
 }
@@ -347,6 +410,8 @@ int Kernels() {
   KernelsDeblock();
   KernelsSad();
   KernelsDecoderTables();
+  KernelsDecodeMbAux();
+  KernelsIntraPredDec();
   return 0;
 }
 
@@ -359,6 +424,8 @@ int main (int argc, char** argv) {
   if (cmd == "conformance") return Conformance (argv[2]);
   if (cmd == "headers") return Headers (argv[2]);
   if (cmd == "headers-damaged") return HeadersDamaged (argv[2]);
+  if (cmd == "mbs") return Mbs (argv[2]);
+  if (cmd == "mbs-damaged") return MbsDamaged (argv[2]);
 
   std::vector<uint8_t> s;
   if (!ReadFile (argv[2], s)) {
@@ -383,6 +450,22 @@ int main (int argc, char** argv) {
     std::string d;
     int nals = 0, aus = 0;
     if (!HeaderDumpChunks (DamageChunks (SplitChunks (s), (uint32_t)s.size(), atoi (argv[3])), d, nals, aus)) return 1;
+    BinaryStdout();
+    fwrite (d.data(), 1, d.size(), stdout);
+    return 0;
+  }
+  if (cmd == "mbdump") {
+    std::string d;
+    int slices = 0, mbs = 0;
+    if (!MbDump (s, d, slices, mbs)) return 1;
+    BinaryStdout();
+    fwrite (d.data(), 1, d.size(), stdout);
+    return 0;
+  }
+  if (cmd == "mbdump-damaged" && argc >= 4) {
+    std::string d;
+    int slices = 0, mbs = 0;
+    if (!MbDumpChunks (DamageChunks (SplitChunks (s), (uint32_t)s.size(), atoi (argv[3])), d, slices, mbs)) return 1;
     BinaryStdout();
     fwrite (d.data(), 1, d.size(), stdout);
     return 0;

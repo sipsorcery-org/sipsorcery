@@ -35,6 +35,10 @@ refharness/build/Release/h264ref headers <openh264>/res > reference/headers.tsv 
 refharness/build/Release/h264ref headers-damaged <openh264>/res > reference/headers-damaged.tsv  # same, damaged streams
 refharness/build/Release/h264ref headerdump <file.264>                 # one parser dump, in full
 refharness/build/Release/h264ref headerdump-damaged <file.264> <0-2>   # one damaged variant's dump
+refharness/build/Release/h264ref mbs <openh264>/res > reference/mbs.tsv                  # macroblock parse dumps
+refharness/build/Release/h264ref mbs-damaged <openh264>/res > reference/mbs-damaged.tsv  # same, damaged streams
+refharness/build/Release/h264ref mbdump <file.264>                     # one macroblock dump, in full
+refharness/build/Release/h264ref mbdump-damaged <file.264> <0-2>       # one damaged variant's dump
 ```
 
 `conformance` copies upstream's `test/api/BaseDecoderTest.cpp` decode loop and
@@ -62,6 +66,18 @@ damaged copies of each vector (dropped, truncated and bit-flipped NALs, from
 `fixture.h`'s generator). `headerdump` prints one dump in full, for diffing
 against the C# dump the test writes on a mismatch.
 
+`mbs` is the same driver, also parsing each access unit's slices as
+`DecodeCurrentAccessUnit` does up to and including `WelsDecodeSlice` (a fixed
+stand-in reference list, one picture as `pDec`), then reconstructing the
+slice's intra macroblocks as `WelsTargetSliceConstruction` does, without
+deblocking (inter reconstruction is not ported yet). For each parsed slice it
+adds a line with the parser's end state, the SHA1 of a binary record of every
+macroblock the slice reached (type, QPs, CBP, non-zero counts, coefficients,
+intra modes, sub-MB types, motion vectors, reference indices, flags), and the
+reconstruction's return code, macroblock count and sample SHA1; for each access
+unit, the SHA1 of the picture. CABAC and B slices are skipped (not ported yet).
+`mbs-damaged` and `mbdump` work as their `headers` counterparts.
+
 ## Reference results (`reference/`)
 
 - **`decoder-conformance.tsv`** is the output of `h264ref conformance` on the
@@ -75,9 +91,15 @@ against the C# dump the test writes on a mismatch.
   predictors, the `mc.cpp` C kernels, the `deblocking_common` edge kernels and
   the `sad_common` kernels (1250 rows: 675 motion compensation, 382
   deblocking, 56 SAD). D1 added the 15 decoder tables (`dectable` rows,
-  1265 in all).
+  1265 in all), and D2 the other 68 (the CAVLC VLC, scan and CBP tables; 1333
+  rows). D3 added the decoder's `get_intra_predictor` (504 rows) and
+  `decode_mb_aux` (132) kernels: 1969 rows.
 - **`headers.tsv`** and **`headers-damaged.tsv`** are the outputs of `h264ref
   headers` and `headers-damaged`: the size and SHA1 of each vector's parser
   dump, clean (51 rows) and damaged (153 rows). Read by
   `test/SIPSorcery.H264.TestVectors` (`HeaderDumpTests`). The 16 vectors that
   aren't committed are checked when `OPENH264_RES` points at openh264's `res/`.
+- **`mbs.tsv`** and **`mbs-damaged.tsv`** are the outputs of `h264ref mbs` and
+  `mbs-damaged`: slices parsed, macroblock records, and the size and SHA1 of
+  each vector's macroblock and intra reconstruction dump. Read by
+  `MbDumpTests`, the same way.

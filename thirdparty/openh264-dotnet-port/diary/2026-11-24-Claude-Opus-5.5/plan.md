@@ -16,7 +16,9 @@ was kept for the VP8 encoder.
 | C2 Intra prediction (common), motion compensation | **Done** (24 Nov) | `intra_pred_common` (the two 16x16 luma predictors) and the C paths of `mc.cpp`: every luma quarter-pel and chroma eighth-pel position at each block size, the three half-pel filters at sizes 4 to 17, and sample averaging, all reached through `InitMcFunc`. `kernels.tsv` now has 812 rows (683 new); all match. UnitTest: 839 tests. |
 | C3 Deblocking kernels, SAD | **Done** (25 Nov) | `deblocking_common` (the 12 luma, chroma and interleaved-chroma edge kernels and `WelsNonZeroCount_c`) and `sad_common` (7 SAD sizes and 7 "four neighbours" variants). `kernels.tsv` now has 1250 rows (438 new); all match. UnitTest: 1277 tests. This completes phase 1, except `crt_util_safe_x`, whose only decoder caller is `welsDecoderExt`, so it comes with D6. |
 | D1 Bitstream reader, NAL/AU parsing | **Done** (25 Nov) | `bit_stream`, `dec_golomb`/`golomb_common`, `memmgr_nal_unit`, `au_parser` (start codes, NAL headers, SPS/subset SPS/PPS, VUI, scaling lists, SEI skip, prefix NAL) and the parsing half of `decoder_core` (slice header, reordering, weight table, ref pic marking, AU boundaries and AU start/end), plus the decoder's type graph (`decoder_context.h` and the headers it pulls in). ~7.9k lines. New `h264ref headers` and `headers-damaged` modes: a WelsDecodeBs-shaped driver dumps every NAL, slice header, parameter set change and AU on both sides. All 51 vectors match, clean and in 3 damaged forms each (`reference/headers.tsv`, `headers-damaged.tsv`), and the 15 decoder tables match (`dectable` rows in `kernels.tsv`). UnitTest: 1293. TestVectors: 123 + 1 skipped. |
-| D2 | Next | CAVLC macroblock syntax: `parse_mb_syn_cavlc`, `decode_mb_aux`, `decoder_data_tables`. Acceptance: the per-MB syntax dumps match. |
+| D2 CAVLC macroblock syntax | **Done** (25 Nov) | `parse_mb_syn_cavlc` (CAVLC paths), the rest of `decoder_data_tables` and `fmo`, `InitVlcTable`, `pic_queue`, the P-slice half of `mv_pred`, the DQ layer setup in `decoder_core`, and the parse half of `decode_slice` (`WelsDecodeSlice`, the I/P macroblock parsers, intra mode parsing, the two DC transforms the residual parser calls). ~5.2k lines. `decode_mb_aux` moved to D3: nothing in the parse calls it. New `h264ref mbs` and `mbs-damaged` modes: the D1 driver also parses each AU's slices and hashes every macroblock's parse results. All 51 vectors match, clean and in 3 damaged forms each (`reference/mbs.tsv`, `mbs-damaged.tsv`), and the 68 new decoder tables match (83 `dectable` rows). UnitTest: 1361. TestVectors: 211 + 1 skipped. |
+| D3 I-slice reconstruction | **Done** (25 Nov) | `get_intra_predictor` (all 42 C predictors), `decode_mb_aux` (the 4x4 and 8x8 residual IDCTs, the block offset table), `InitPredFunc`, the intra half of `rec_mb`, and `WelsMbIntraPredictionConstruction`/`WelsTargetMbConstruction` in `decode_slice`. ~2k lines. `mbs` mode now also reconstructs every intra macroblock of each parsed slice (no deblocking) and hashes its samples: 167.8k intra MBs over the clean vectors, all matching, clean and damaged. `kernels.tsv`: 1969 rows (636 new). UnitTest: 1999. TestVectors: 211 + 1 skipped. |
+| D4 | Next | P-slice reconstruction: `manage_dec_ref`, the inter half of `rec_mb` (reference fetch, MC, weighted prediction) and `WelsMbInterPrediction`; the harness swaps its stand-in reference list for the real one. Acceptance: the planes before deblocking match on every macroblock. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -155,6 +157,108 @@ Notes from D1:
   (damaged only). One control survived and was expected to:
   `CheckAccessUnitBoundaryExt` is ported here but upstream calls it only from
   `DecodeCurrentAccessUnit`, so it is first exercised in D6.
+
+Notes from D2:
+
+- **Scope moved forward.** The parse needs more than the three files the plan
+  listed: `WelsDecodeSlice` and the MB parsers live in `decode_slice` (D6 in
+  the plan), P-slice MV prediction in `mv_pred` (D4), the picture's per-MB
+  arrays in `pic_queue` (D4), and `FmoNextMb`/`FmoParamUpdate` in `fmo`
+  (deferred, but `FmoParamUpdate` runs for every slice). Those parts came
+  now. `decode_mb_aux` (IDCT) went the other way, to D3.
+- **Not ported yet, and fail loudly.** CABAC: `WelsDecodeSlice` logs and
+  returns `ERR_INFO_UNSUPPORTED_CABAC_EL` for a CABAC PPS, and the CABAC
+  branches of the intra mode parsers return the same. B slices:
+  `WelsDecodeMbCavlcBSlice` logs and returns `ERR_INFO_UNSUPPORTED_BIPRED`.
+  The B-slice parts of `mv_pred` are left out with a comment. 8x8 transform
+  CAVLC (`WelsResidualBlockCavlc8x8`, `ParseIntra8x8Mode`) is ported, since
+  it shares the CAVLC code, and the High-profile CAVLC vectors exercise it.
+- **Uninitialised C stack arrays.** The MB parsers' `ENFORCE_STACK_ALIGN`
+  caches (`pNonZeroCount[48]`, `pIntraPredMode[48]`) and
+  `iMotionVector[2][30][2]`/`iRefIndex[2][30]` are uninitialised in C and
+  zero-filled `stackalloc` here. Every entry the parse reads is written
+  first. The dumps would show it otherwise, since C's garbage would differ
+  from C#'s zeros. Arrays C zero-initialises (`iSampleAvail`, `iRefIdx`)
+  are memset explicitly.
+- **Macroblock-dump oracle.** `mbs` mode runs the D1 driver and, before
+  `WelsDecodeAccessUnitEnd`, does what `DecodeCurrentAccessUnit` does up to
+  `WelsDecodeSlice`: DQ layer memory on a new sequence, `InitCurDqLayerData`,
+  the per-picture memsets, and per slice the layer info, `FmoParamUpdate`,
+  `WelsDqLayerDecodeStart` and `InitDqLayerInfo` (static upstream, so the
+  harness carries a verbatim copy). The reference list is a stand-in: entry
+  i of list 0 is a complete picture, an incomplete one or missing, from a
+  fixed pattern over the AU number, so the missing and incomplete reference
+  paths run. Each parsed slice dumps its end state (return code, MB count,
+  bit position, QP, skip run, concealment flag, error code) and the SHA1 of
+  a 935-byte record per macroblock reached (everything the CAVLC parsers
+  write, coefficients included). Each AU dumps the SHA1 of `pDec`, which only
+  I_PCM writes during the parse. Header lines stay in, so the parse's side
+  effects on the context are checked too. Over the clean vectors that is
+  5.5k slices and 1.46M macroblock records, and over the damaged copies 10.2k
+  slices and 2.16M records. In the damaged copies sampled, about 1 in 5 parsed
+  slices fails with an error code, spread over the parser's error returns.
+- **Whole-table fixtures.** The dumps only check table entries a vector
+  hits, so the 68 tables new in D2 also get `dectable` rows. All match,
+  sizes included.
+- **Negative controls.** Two were run together, in code paths no vector
+  shares: the I_PCM Cr copy offset by one byte, and every P-skip reference
+  treated as complete. 51 of the 88 CB tests failed. CVPCMNL1, the only
+  I_PCM vector, failed clean and damaged, and only on its picture-hash lines.
+  The other 26 clean and 23 damaged failures were the skip flag; in
+  BA_MW_D's diff, only the per-slice MB hashes of AUs with an incomplete
+  stand-in reference changed. Then alone: the P-slice "bitstream
+  incomplete" bound loosened by one bit passed every clean vector and failed
+  7 damaged ones.
+
+Notes from D3:
+
+- **Scope.** `get_intra_predictor` (14 I4x4, 14 I8x8, 7 chroma and 7 I16x16
+  predictors), `decode_mb_aux` and `InitPredFunc` from `decoder`, with its
+  `IdctFourResAddPred_` helper. From `rec_mb`, the intra half:
+  `WelsFillRecNeededMbInfo`, `RecI4x4Mb`/`Luma`/`Chroma`, `RecI8x8Mb`/`Luma`,
+  `RecI16x16Mb` and `RecChroma`. The inter half (`sMCRefMember`, `GetRefPic`,
+  `BaseMC`, weighted and bi-prediction, `GetInterPred`) comes with D4. In
+  `decode_slice`, `WelsMbIntraPredictionConstruction` and
+  `WelsTargetMbConstruction`; the latter's inter branch logs and returns
+  `ERR_INFO_MB_RECON_FAIL` until D4. `WelsTargetSliceConstruction` waits for
+  D5, since most of it is deblocking and the MB-correct bookkeeping around it.
+- **Kernel fixtures.** Two new `kernels.tsv` groups, `decode_mb_aux` (132
+  rows) and `get_intra_predictor` (504). Each predictor runs over random
+  planes at three strides, the 8x8 ones with every top-left and top-right
+  availability. The IDCTs run at several strides over coefficient ranges up
+  to the full `int16_t`, so the wrapping casts are exercised.
+- **A fixture for a skip condition has to make the condition decide.** The
+  first `IdctFourResAddPred_` fixture drew each block's coefficients from the
+  seed alone, so nearly every block had a non-zero DC and ran whatever its
+  `pNzc` flag said; a control that read `pNzc[2]` for `pNzc[4]` passed. The
+  fixture now sets each block's coefficients explicitly (`modes`: all zero,
+  zero DC only, or random) over all 16 flag combinations, and the same
+  control fails exactly the 8 cases it should.
+- **Oracle: `mbs` mode extended in place.** After each parsed slice of the
+  target layer, the harness runs `ReconSlice`, a copy of
+  `WelsTargetSliceConstruction`'s macroblock loop that calls
+  `WelsTargetMbConstruction` for intra macroblocks only (I_PCM included,
+  which returns at once since the parse already wrote its samples) and skips
+  deblocking. The slice line gains the return code, the number of
+  macroblocks reconstructed and the SHA1 of each one's 16x16 Y and 8x8 Cb/Cr
+  samples. On a failure the driver does what `DecodeCurrentAccessUnit` does
+  after a failed construction (reference lost at T0, `dsBitstreamError`,
+  picture incomplete) and ends the AU. Inter macroblocks keep whatever the
+  picture held, the same on both sides, so intra macroblocks that predict
+  from them still compare. The per-AU picture hash now covers intra
+  reconstruction as well as I_PCM. The driver also fills
+  `iDecBlockOffsetArray` per AU and clears `iTotalNumMbRec` at its end, as
+  `DecodeFrameConstruction` does. Over the clean vectors, 167,814 intra
+  macroblocks are reconstructed; every reconstruction returns 0, clean and
+  in the 10.2k damaged slices. `mbs.tsv` and `mbs-damaged.tsv` were
+  regenerated: slice and record counts unchanged, dump sizes and SHA1s new.
+- **Negative controls.** Three, each alone, each failing all 35 clean CB
+  tests: `RecChroma` adding the chroma residual only for `uiCbpC == 2`
+  (dropping the DC-only case), the chroma DC-left and DC-top predictors
+  swapped in `InitPredFunc`, and `RecI4x4Luma` taking the 4x4 modes in raster
+  rather than scan order. In the first one's diff only the new reconstruction
+  fields and the picture hash changed. In the kernels, a rounding change in a
+  horizontal-up predictor and the `pNzc` index above were both caught.
 
 ## 1. Goal
 
@@ -361,11 +465,13 @@ merges. Approximate C# sizes are in brackets.
 - **D1** Bitstream reader and NAL/AU parsing: `bit_stream`, `memmgr_nal_unit`
   and `au_parser` (emulation prevention, SPS/PPS/subset SPS, VUI, slice header).
   Acceptance: the header dumps match native for every vector. *[~2.5k]*
-- **D2** CAVLC macroblock syntax: `parse_mb_syn_cavlc`, `decode_mb_aux`,
-  `decoder_data_tables`. Acceptance: the per-MB syntax dumps match. *[~2k]*
-- **D3** I-slice reconstruction: `get_intra_predictor` and the intra/IDCT/
-  dequant/PCM parts of `rec_mb`. Acceptance: the planes before deblocking match
-  on intra-only content. *[~2k]*
+- **D2** CAVLC macroblock syntax: `parse_mb_syn_cavlc`, `decoder_data_tables`,
+  and the parse parts of `decode_slice`, `mv_pred`, `pic_queue` and `fmo`.
+  Acceptance: the per-MB syntax dumps match. *[~2k; was ~5.2k, see the D2
+  notes]*
+- **D3** I-slice reconstruction: `get_intra_predictor`, `decode_mb_aux` and
+  the intra/IDCT/dequant/PCM parts of `rec_mb`. Acceptance: the planes before
+  deblocking match on intra-only content. *[~2k]*
 - **D4** P-slices: `mv_pred`, `manage_dec_ref`, `pic_queue` and the MC path in
   `rec_mb`. Acceptance: the planes before deblocking match on P vectors. *[~2.5k]*
 - **D5** Deblocking (`decoder/deblocking.cpp`). Acceptance: the first SHA1

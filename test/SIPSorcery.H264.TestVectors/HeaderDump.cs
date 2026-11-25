@@ -1,18 +1,24 @@
 //-----------------------------------------------------------------------------
 // Filename: HeaderDump.cs
 //
-// Description: The C# side of the D1 header-dump oracle. A line-for-line
-// mirror of thirdparty/openh264-dotnet-port/refharness/src/headers.cpp: it
-// drives the ported NAL and access-unit parsers the way WelsDecodeBs does
-// (without reconstruction) and writes the same text dump, which the tests
-// compare with the native build's (reference/headers.tsv). Keep the two in
-// step: same fields, same order, same names.
+// Description: The C# side of the D1 header-dump and D2 macroblock-dump
+// oracles. A line-for-line mirror of
+// thirdparty/openh264-dotnet-port/refharness/src/headers.cpp: it drives the
+// ported NAL and access-unit parsers the way WelsDecodeBs does (without
+// reconstruction) and writes the same text dump, which the tests compare with
+// the native build's (reference/headers.tsv). In mbs mode it also parses each
+// access unit's slices as DecodeCurrentAccessUnit does up to WelsDecodeSlice
+// and dumps every macroblock's parse results (reference/mbs.tsv), and since D3
+// reconstructs each slice's intra macroblocks (ReconSlice) and dumps their
+// samples. Keep the two in step: same fields, same order, same names.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 25 Nov 2026  Claude          Created.
+// 25 Nov 2026  Claude          D2: the macroblock dump (mbs mode).
+// 25 Nov 2026  Claude          D3: intra reconstruction in mbs mode.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -25,9 +31,12 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using SIPSorcery.H264.Decoder;
+using static SIPSorcery.H264.CRuntime;
 using static SIPSorcery.H264.DECODING_STATE;
 using static SIPSorcery.H264.Decoder.WelsDec;
+using static SIPSorcery.H264.EListIndex;
 using static SIPSorcery.H264.EWelsNalUnitType;
+using static SIPSorcery.H264.EWelsSliceType;
 using static SIPSorcery.H264.WelsCommon;
 
 namespace SIPSorcery.H264.TestVectors;
@@ -178,10 +187,90 @@ internal static unsafe class HeaderDump
         }
     }
 
+    /// <summary>Runs the driver in mbs mode over the chunks, as MbDumpChunks in headers.cpp.</summary>
+    public static bool RunMbChunks(List<byte[]> chunks, out string dump, out int slices, out int mbs)
+    {
+        var drv = new Driver { mbs = true };
+        try
+        {
+            if (!drv.Init())
+            {
+                dump = null;
+                slices = mbs = 0;
+                return false;
+            }
+            int i = 0;
+            foreach (byte[] c in chunks)
+            {
+                drv.Chunk(c, i++);
+            }
+            drv.Flush();
+            dump = drv.d.ToString();
+            slices = drv.slices;
+            mbs = drv.mbRecs;
+            return true;
+        }
+        finally
+        {
+            drv.Close();
+        }
+    }
+
     public static string Sha1Hex(string s)
     {
         byte[] h = SHA1.HashData(Encoding.ASCII.GetBytes(s));
         return Convert.ToHexString(h).ToLowerInvariant();
+    }
+
+    private static string Sha1Hex(ReadOnlySpan<byte> b) => Convert.ToHexString(SHA1.HashData(b)).ToLowerInvariant();
+
+    /// <summary>A growable byte buffer: the std::string the native side appends records to.</summary>
+    private sealed class ByteBuf
+    {
+        private byte[] _a = new byte[1 << 16];
+        private int _n;
+
+        public void Clear() => _n = 0;
+
+        public void Put(void* p, int len)
+        {
+            if (_n + len > _a.Length)
+            {
+                Array.Resize(ref _a, Math.Max(_a.Length * 2, _n + len));
+            }
+            new ReadOnlySpan<byte>(p, len).CopyTo(_a.AsSpan(_n));
+            _n += len;
+        }
+
+        public ReadOnlySpan<byte> Span => _a.AsSpan(0, _n);
+    }
+
+    // One macroblock's parse results, the D2 record (Record in headers.cpp).
+    private static void Record(ByteBuf b, SDqLayer* dq, SPicture* pic, int xy)
+    {
+        b.Put(&xy, 4);
+        b.Put(&pic->pMbType[xy], 4);
+        b.Put(&dq->pSliceIdc[xy], 4);
+        byte* f = stackalloc byte[11];
+        f[0] = *(byte*)&dq->pNoSubMbPartSizeLessThan8x8Flag[xy];
+        f[1] = *(byte*)&dq->pTransformSize8x8Flag[xy];
+        f[2] = (byte)dq->pLumaQp[xy];
+        f[3] = (byte)dq->pChromaQp[xy][0];
+        f[4] = (byte)dq->pChromaQp[xy][1];
+        f[5] = (byte)dq->pCbp[xy];
+        f[6] = (byte)dq->pResidualPredFlag[xy];
+        f[7] = (byte)dq->pInterPredictionDoneFlag[xy];
+        f[8] = *(byte*)&dq->pMbRefConcealedFlag[xy];
+        f[9] = dq->pIntraNxNAvailFlag[xy];
+        f[10] = (byte)dq->pChromaPredMode[xy];
+        b.Put(f, 11);
+        b.Put(&dq->pNzc[xy], 24);
+        b.Put(&dq->pIntraPredMode[xy], 8);
+        b.Put(&dq->pIntra4x4FinalMode[xy], 16);
+        b.Put(&dq->pSubMbType[xy], 4 * sizeof(uint));
+        b.Put(&pic->pMv[(int)LIST_0].p[xy], 16 * 2 * sizeof(short));
+        b.Put(&pic->pRefIndex[(int)LIST_0].p[xy], 16);
+        b.Put(&dq->pScaledTCoeff[xy], MB_COEFF_LIST_SIZE * sizeof(short));
     }
 
     private sealed class Dump
@@ -773,6 +862,15 @@ internal static unsafe class HeaderDump
         public readonly Dump d = new Dump();
         public int nals, aus;
 
+        // The D2 macroblock dump (mbs mode), see MbParse.
+        public bool mbs;
+        private SVlcTable* vlc;
+        private SPicture* pic;              // the one pDec
+        private SPicture* refOk, refBad;    // the stand-in reference pictures
+        public int slices, mbRecs;          // slices parsed, macroblock records written
+        private readonly ByteBuf rec = new ByteBuf();
+        private readonly ByteBuf recon = new ByteBuf(); // ReconSlice's samples
+
         public bool Init()
         {
             ctx = (SWelsDecoderContext*)NativeMemory.AllocZeroed((nuint)sizeof(SWelsDecoderContext));
@@ -804,6 +902,18 @@ internal static unsafe class HeaderDump
             ctx->bPrintFrameErrorTraceFlag = true;
             ctx->iSeqNum = 0;
             TakeSnap(ctx, snap);
+            if (mbs)
+            {
+                // CWelsDecoder's VLC tables (welsDecoderExt.cpp).
+                vlc = (SVlcTable*)NativeMemory.AllocZeroed((nuint)sizeof(SVlcTable));
+                InitVlcTable(vlc);
+                ctx->pVlcTable = vlc;
+                refOk = (SPicture*)NativeMemory.AllocZeroed((nuint)sizeof(SPicture));
+                refBad = (SPicture*)NativeMemory.AllocZeroed((nuint)sizeof(SPicture));
+                refOk->bIsComplete = true;
+                // InitDecFuncs' share that the intra reconstruction uses (WelsInitDecoder).
+                InitPredFunc(ctx, 0);
+            }
             return true;
         }
 
@@ -812,6 +922,17 @@ internal static unsafe class HeaderDump
             if (ctx != null)
             {
                 CMemoryAlign* pMa = ctx->pMemAlign;
+                if (mbs)
+                {
+                    // WelsFreeDynamicMemory's share of what the parse allocates.
+                    ResetFmoList(ctx);
+                    UninitialDqLayersContext(ctx);
+                    if (pic != null)
+                    {
+                        FreePicture(pic, pMa);
+                    }
+                    pic = null;
+                }
                 if (ctx->pParam != null)
                 {
                     WelsFreeStaticMemory(ctx);
@@ -822,6 +943,21 @@ internal static unsafe class HeaderDump
                 }
                 NativeMemory.Free(ctx);
                 ctx = null;
+            }
+            if (vlc != null)
+            {
+                NativeMemory.Free(vlc);
+                vlc = null;
+            }
+            if (refOk != null)
+            {
+                NativeMemory.Free(refOk);
+                refOk = null;
+            }
+            if (refBad != null)
+            {
+                NativeMemory.Free(refBad);
+                refBad = null;
             }
             if (stats != null)
             {
@@ -925,9 +1061,357 @@ internal static unsafe class HeaderDump
                 d.Kv("poc", s->iPicOrderCntLsb);
                 d.End();
             }
+            if (mbs)
+            {
+                if (!MbAlloc())
+                {
+                    return; // ConstructAccessUnit returns without WelsDecodeAccessUnitEnd
+                }
+                MbParse();
+            }
             ctx->bParamSetsLostFlag = false;
             WelsDecodeAccessUnitEnd(ctx);
             Ctx("e");
+        }
+
+        // InitConstructAccessUnit's AllocPicBuffOnNewSeqBegin, minus the DPB:
+        // SyncPictureResolutionExt's InitialDqLayersContext, and the one picture
+        // (re)allocated at the sequence size. Returns false on failure.
+        private bool MbAlloc()
+        {
+            if (!ctx->bNewSeqBegin)
+            {
+                return true;
+            }
+            int w = (int)(ctx->pSps->iMbWidth << 4), h = (int)(ctx->pSps->iMbHeight << 4);
+            int iErr = InitialDqLayersContext(ctx, w, h);
+            if (iErr == ERR_NONE && (pic == null || pic->iWidthInPixel != w || pic->iHeightInPixel != h))
+            {
+                if (pic != null)
+                {
+                    FreePicture(pic, ctx->pMemAlign);
+                }
+                pic = AllocPicture(ctx, w, h);
+                if (pic == null)
+                {
+                    iErr = ERR_INFO_OUT_OF_MEMORY;
+                }
+            }
+            d.Tag("Z");
+            d.Kv("w", w);
+            d.Kv("h", h);
+            d.Kv("ret", iErr);
+            d.End();
+            return iErr == ERR_NONE;
+        }
+
+        // The reference list stand-in for InitRefPicList (RefList in headers.cpp).
+        private void RefList(int au, SSliceHeader* pSh)
+        {
+            memset(&ctx->sRefPic.pRefList, 0, sizeof(InlineArray2<PtrArray17<SPicture>>));
+            uint n = (uint)pSh->uiRefCount[(int)LIST_0];
+            if (n > MAX_DPB_COUNT)
+            {
+                n = MAX_DPB_COUNT;
+            }
+            for (uint i = 0; i < n; ++i)
+            {
+                uint k = unchecked((uint)au * 7 + i);
+                if (k % 5 != 4)
+                {
+                    ctx->sRefPic.pRefList[(int)LIST_0][(int)i] = k % 3 == 2 ? refBad : refOk;
+                }
+            }
+            ctx->sRefPic.uiRefCount[(int)LIST_0] = (byte)n;
+        }
+
+        // What DecodeCurrentAccessUnit does with the access unit before and in
+        // WelsDecodeSlice (MbParse in headers.cpp).
+        private void MbParse()
+        {
+            SAccessUnit* pCurAu = ctx->pAccessUnitList;
+            int au = aus - 1;
+            // GetTargetDqId.
+            byte kuiTargetLayerDqId = Math.Min(ctx->uiTargetDqId, ctx->pParam->uiTargetDqLayer);
+            short iLastIdD = -1, iLastIdQ = -1;
+            ctx->uiNalRefIdc = 0;
+            if (ctx->bInitialDqLayersMem || ctx->pCurDqLayer == null)
+            {
+                ctx->pCurDqLayer = ctx->pDqLayersList[0];
+            }
+            InitCurDqLayerData(ctx, ctx->pCurDqLayer);
+            if (pic == null || (ctx->pSps->iMbWidth << 4) > (uint)pic->iWidthInPixel || (ctx->pSps->iMbHeight << 4) > (uint)pic->iHeightInPixel)
+            {
+                d.Tag("D");
+                d.Kv("au", au);
+                d.Kv("skip", 3);
+                d.End();
+                return;
+            }
+            ctx->pDec = pic; // PrefetchPic
+            for (int i = 0; i < LAYER_NUM_EXCHANGEABLE; ++i)
+            {
+                memset(ctx->sMb.pSliceIdc[i].p, 0xff, (nint)(ctx->sMb.iMbWidth * ctx->sMb.iMbHeight * sizeof(int)));
+            }
+            memset(ctx->pCurDqLayer->pMbCorrectlyDecodedFlag, 0, (nint)(ctx->pSps->iMbWidth * ctx->pSps->iMbHeight * sizeof(bool)));
+            memset(ctx->pCurDqLayer->pMbRefConcealedFlag, 0, (nint)(ctx->pSps->iMbWidth * ctx->pSps->iMbHeight * sizeof(bool)));
+            ctx->bRPLRError = false;
+            GetI4LumaIChromaAddrTable(ctx->iDecBlockOffsetArray, ctx->pDec->iLinesize[0], ctx->pDec->iLinesize[1]);
+
+            SLayerInfo pLayerInfo = default;
+            bool parsed = false;
+            for (uint iIdx = pCurAu->uiStartPos; iIdx <= pCurAu->uiEndPos; ++iIdx)
+            {
+                SNalUnit* pNalCur = pCurAu->pNalUnitsList[iIdx];
+                SDqLayer* dq_cur = ctx->pCurDqLayer;
+                SSliceHeader* pSh = &pNalCur->sNalData.sVclNal.sSliceHeaderExt.sSliceHeader;
+                SSliceHeaderExt* pShExt = &pNalCur->sNalData.sVclNal.sSliceHeaderExt;
+                d.Tag("D");
+                d.Kv("au", au);
+                d.Kv("i", iIdx);
+                d.Kv("first", pSh->iFirstMbInSlice);
+                d.Kv("st", (long)pSh->eSliceType);
+                if (pNalCur->sNalHeaderExt.uiLayerDqId > kuiTargetLayerDqId)
+                {
+                    d.Kv("skip", 4);
+                    d.End();
+                    break;
+                }
+                short iCurrIdQ = pNalCur->sNalHeaderExt.uiQualityId;
+                short iCurrIdD = pNalCur->sNalHeaderExt.uiDependencyId;
+                ctx->bRPLRError = false;
+                pLayerInfo.sNalHeaderExt = pNalCur->sNalHeaderExt;
+                pLayerInfo.sSliceInLayer.sSliceHeaderExt = *pShExt;
+                pLayerInfo.sSliceInLayer.bSliceHeaderExtFlag = pNalCur->sNalData.sVclNal.bSliceHeaderExtFlag;
+                pLayerInfo.sSliceInLayer.eSliceType = (byte)pSh->eSliceType;
+                pLayerInfo.sSliceInLayer.iLastMbQp = pSh->iSliceQp;
+                dq_cur->pBitStringAux = &pNalCur->sNalData.sVclNal.sSliceBitsRead;
+                ctx->uiNalRefIdc = pNalCur->sNalHeaderExt.sNalUnitHeader.uiNalRefIdc;
+                pLayerInfo.pPps = pSh->pPps;
+                pLayerInfo.pSps = pSh->pSps;
+                pLayerInfo.pSubsetSps = pShExt->pSubsetSps;
+                ctx->pFmo = &ctx->sFmoList[pSh->iPpsId];
+                int iRet = FmoParamUpdate(ctx->pFmo, pLayerInfo.pSps, pLayerInfo.pPps, &ctx->iActiveFmoNum, ctx->pMemAlign);
+                if (iRet != ERR_NONE)
+                {
+                    d.Kv("fmo", iRet);
+                    d.End();
+                    break;
+                }
+                bool bFreshSliceAvailable = iCurrIdD != iLastIdD || iCurrIdQ != iLastIdQ;
+                WelsDqLayerDecodeStart(ctx, pNalCur, pLayerInfo.pSps, pLayerInfo.pPps);
+                if ((iLastIdD < 0) || (iLastIdD == iCurrIdD))
+                {
+                    InitDqLayerInfo(dq_cur, &pLayerInfo, pNalCur, ctx->pDec);
+                    int skip = 0;
+                    if (ctx->pPps->bEntropyCodingModeFlag || pSh->pPps->bEntropyCodingModeFlag)
+                    {
+                        skip = 1;
+                    }
+                    else if (pSh->eSliceType == B_SLICE)
+                    {
+                        skip = 2;
+                    }
+                    else if ((pSh->iMbWidth << 4) > pic->iWidthInPixel || (pSh->iMbHeight << 4) > pic->iHeightInPixel)
+                    {
+                        skip = 3;
+                    }
+                    if (skip != 0)
+                    {
+                        d.Kv("skip", skip);
+                    }
+                    else
+                    {
+                        RefList(au, pSh);
+                        iRet = WelsDecodeSlice(ctx, bFreshSliceAvailable, pNalCur);
+                        DumpSlice(iRet);
+                        parsed = true;
+                        // CheckSliceNeedReconstruct, then WelsDecodeConstructSlice (with its
+                        // HandleReferenceLostL0); a reconstruction error ends
+                        // DecodeCurrentAccessUnit.
+                        if (pNalCur->sNalHeaderExt.uiLayerDqId == kuiTargetLayerDqId && ReconSlice() != ERR_NONE)
+                        {
+                            if (0 == pNalCur->sNalHeaderExt.uiTemporalId)
+                            {
+                                ctx->bReferenceLostAtT0Flag = true;
+                            }
+                            ctx->iErrorCode |= (int)dsBitstreamError;
+                            ctx->pDec->bIsComplete = false;
+                            d.End();
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    d.Kv("skip", 5);
+                }
+                d.End();
+                iLastIdD = iCurrIdD;
+                iLastIdQ = iCurrIdQ;
+            }
+            if (parsed)
+            {
+                using var c = IncrementalHash.CreateHash(HashAlgorithmName.SHA1);
+                for (int p = 0; p < 3; ++p)
+                {
+                    int w = p != 0 ? pic->iWidthInPixel >> 1 : pic->iWidthInPixel;
+                    int h = p != 0 ? pic->iHeightInPixel >> 1 : pic->iHeightInPixel;
+                    for (int r = 0; r < h; ++r)
+                    {
+                        c.AppendData(new ReadOnlySpan<byte>(pic->pData[p].p + r * pic->iLinesize[p], w));
+                    }
+                }
+                d.Tag("Y");
+                d.Kv("au", au);
+                d.Raw(" sha=");
+                d.Raw(Convert.ToHexString(c.GetHashAndReset()).ToLowerInvariant());
+                d.End();
+            }
+            ctx->iTotalNumMbRec = 0; // as DecodeFrameConstruction leaves it
+            ctx->pDec = null;
+        }
+
+        // WelsTargetSliceConstruction up to its deblocking, intra macroblocks only
+        // (ReconSlice in headers.cpp).
+        private int ReconSlice()
+        {
+            SDqLayer* pCurDqLayer = ctx->pCurDqLayer;
+            SSlice* pCurSlice = &pCurDqLayer->sLayerInfo.sSliceInLayer;
+            SSliceHeader* pSliceHeader = &pCurSlice->sSliceHeaderExt.sSliceHeader;
+            int iTotalMbTargetLayer = (int)pSliceHeader->pSps->uiTotalMbCount;
+            int iCurLayerWidth = pCurDqLayer->iMbWidth << 4;
+            int iCurLayerHeight = pCurDqLayer->iMbHeight << 4;
+            SFmo* pFmo = ctx->pFmo;
+            int iTotalNumMb = pCurSlice->iTotalMbInCurSlice;
+            int iCountNumMb = 0;
+            int iRet = ERR_NONE;
+            recon.Clear();
+            int n = 0;
+
+            if (!ctx->sSpsPpsCtx.bAvcBasedFlag && iCurLayerWidth != ctx->iCurSeqIntervalMaxPicWidth)
+            {
+                iRet = ERR_INFO_WIDTH_MISMATCH;
+            }
+            else
+            {
+                int iNextMbXyIndex = pSliceHeader->iFirstMbInSlice;
+                pCurDqLayer->iMbX = iNextMbXyIndex % pCurDqLayer->iMbWidth;
+                pCurDqLayer->iMbY = iNextMbXyIndex / pCurDqLayer->iMbWidth;
+                pCurDqLayer->iMbXyIndex = iNextMbXyIndex;
+                if (0 == iNextMbXyIndex)
+                {
+                    pCurDqLayer->pDec->iSpsId = ctx->pSps->iSpsId;
+                    pCurDqLayer->pDec->iPpsId = ctx->pPps->iPpsId;
+                    pCurDqLayer->pDec->uiQualityId = pCurDqLayer->sLayerInfo.sNalHeaderExt.uiQualityId;
+                }
+                do
+                {
+                    if (iCountNumMb >= iTotalNumMb)
+                    {
+                        break;
+                    }
+                    if (IS_INTRA(pCurDqLayer->pDec->pMbType[pCurDqLayer->iMbXyIndex]))
+                    {
+                        if (WelsTargetMbConstruction(ctx) != 0)
+                        {
+                            iRet = ERR_INFO_MB_RECON_FAIL;
+                            break;
+                        }
+                        RecordSamples(recon, pCurDqLayer->pDec, pCurDqLayer->iMbX, pCurDqLayer->iMbY);
+                        ++n;
+                    }
+                    ++iCountNumMb;
+                    if (!pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex])
+                    {
+                        pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex] = true;
+                        ctx->pDec->iMbEcedPropNum += pCurDqLayer->pMbRefConcealedFlag[iNextMbXyIndex] ? 1 : 0;
+                        ++ctx->iTotalNumMbRec;
+                    }
+                    if (ctx->iTotalNumMbRec > iTotalMbTargetLayer)
+                    {
+                        iRet = ERR_INFO_MB_NUM_EXCEED_FAIL;
+                        break;
+                    }
+                    if (pSliceHeader->pPps->uiNumSliceGroups > 1)
+                    {
+                        iNextMbXyIndex = FmoNextMb(pFmo, iNextMbXyIndex);
+                    }
+                    else
+                    {
+                        ++iNextMbXyIndex;
+                    }
+                    if (-1 == iNextMbXyIndex || iNextMbXyIndex >= iTotalMbTargetLayer)
+                    {
+                        break;
+                    }
+                    pCurDqLayer->iMbX = iNextMbXyIndex % pCurDqLayer->iMbWidth;
+                    pCurDqLayer->iMbY = iNextMbXyIndex / pCurDqLayer->iMbWidth;
+                    pCurDqLayer->iMbXyIndex = iNextMbXyIndex;
+                } while (true);
+                if (iRet == ERR_NONE)
+                {
+                    ctx->pDec->iWidthInPixel = iCurLayerWidth;
+                    ctx->pDec->iHeightInPixel = iCurLayerHeight;
+                }
+            }
+            d.Kv("rec", iRet);
+            d.Kv("rmbs", n);
+            d.Raw(" rsha=");
+            d.Raw(Sha1Hex(recon.Span));
+            return iRet;
+        }
+
+        // One macroblock's samples: 16x16 luma, 8x8 Cb, 8x8 Cr.
+        private static void RecordSamples(ByteBuf b, SPicture* pic, int iMbX, int iMbY)
+        {
+            for (int p = 0; p < 3; ++p)
+            {
+                int n = p != 0 ? 8 : 16;
+                int s = pic->iLinesize[p];
+                byte* q = pic->pData[p].p + (iMbY * n) * s + iMbX * n;
+                for (int r = 0; r < n; ++r)
+                {
+                    b.Put(q + r * s, n);
+                }
+            }
+        }
+
+        // The rest of a parsed slice's "D" line (DumpSlice in headers.cpp).
+        private void DumpSlice(int iRet)
+        {
+            SDqLayer* dq = ctx->pCurDqLayer;
+            SSlice* pSlice = &dq->sLayerInfo.sSliceInLayer;
+            SSliceHeader* pSh = &pSlice->sSliceHeaderExt.sSliceHeader;
+            SBitStringAux* pBs = dq->pBitStringAux;
+            d.Kv("ret", iRet);
+            d.Kv("tot", pSlice->iTotalMbInCurSlice);
+            d.Kv("end", dq->iMbXyIndex);
+            d.Kv("cur", (long)(pBs->pCurBuf - pBs->pStartBuf));
+            d.Kv("left", pBs->iLeftBits);
+            d.Kv("cb", pBs->uiCurBits);
+            d.Kv("qp", pSlice->iLastMbQp);
+            d.Kv("run", pSlice->iMbSkipRun);
+            d.Kv("conc", ctx->bMbRefConcealed);
+            d.Kv("err", ctx->iErrorCode);
+            int kiTotal = (int)pSh->pSps->uiTotalMbCount;
+            rec.Clear();
+            int n = 0;
+            for (int xy = pSh->iFirstMbInSlice; xy >= 0 && xy < kiTotal && n < kiTotal;)
+            {
+                Record(rec, dq, pic, xy);
+                ++n;
+                if (xy == dq->iMbXyIndex)
+                {
+                    break;
+                }
+                xy = pSh->pPps->uiNumSliceGroups > 1 ? FmoNextMb(ctx->pFmo, xy) : xy + 1;
+            }
+            d.Kv("mbs", n);
+            d.Raw(" sha=");
+            d.Raw(Sha1Hex(rec.Span));
+            slices++;
+            mbRecs += n;
         }
 
         // One NAL, from ParseNalHeader to the error handling, as WelsDecodeBs.

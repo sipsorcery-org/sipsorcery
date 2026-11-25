@@ -1,4 +1,4 @@
-// headers.h: the D1 header-dump oracle, see headers.cpp.
+// headers.h: the D1 header-dump and D2 macroblock-dump oracles, see headers.cpp.
 #ifndef REFHARNESS_HEADERS_H
 #define REFHARNESS_HEADERS_H
 
@@ -20,6 +20,14 @@ bool HeaderDumpChunks (const Chunks& chunks, std::string& out, int& nals, int& a
 
 // HeaderDumpChunks (SplitChunks (stream), ...).
 bool HeaderDump (const std::vector<uint8_t>& stream, std::string& out, int& nals, int& aus);
+
+// The D2 macroblock dump: the same driver, also parsing each access unit's
+// slices (see headers.cpp). Fills out with the dump text and returns the
+// number of slices parsed and macroblock records written.
+bool MbDumpChunks (const Chunks& chunks, std::string& out, int& slices, int& mbs);
+
+// MbDumpChunks (SplitChunks (stream), ...).
+bool MbDump (const std::vector<uint8_t>& stream, std::string& out, int& slices, int& mbs);
 
 // SHA-1 of a string, lower-case hex.
 std::string Sha1Hex (const std::string& s);

@@ -13,7 +13,7 @@ small PRs, each one checked bit-exact against a C-only build of OpenH264 (see
 
 | Path | State |
 |---|---|
-| **Decoder** (Constrained Baseline) | In progress. Scaffolding, API types, memory, logging, and the shared code (tables, macros, block copy, picture padding, 16x16 luma prediction, motion compensation, deblocking edge filters, SAD) are in, each verified bit-exact against the C build. The bitstream reader and NAL, parameter set, slice header and access unit parsing are in too, and match the C build on every conformance vector, clean and damaged. Macroblock decoding is next. |
+| **Decoder** (Constrained Baseline) | In progress. Scaffolding, API types, memory, logging, and the shared code (tables, macros, block copy, picture padding, 16x16 luma prediction, motion compensation, deblocking edge filters, SAD) are in, each verified bit-exact against the C build. The bitstream reader and NAL, parameter set, slice header and access unit parsing are in too, and so is CAVLC macroblock parsing for I and P slices (macroblock types, intra modes, motion vectors, residual coefficients), followed by intra macroblock reconstruction (intra prediction, inverse transform); all of it matches the C build on every conformance vector, clean and damaged. P-slice reconstruction (motion compensation, reference management) is next, then deblocking. |
 | **Encoder** (Constrained Baseline, WebRTC realtime) | Not started; follows the decoder. |
 
 The target throughout is the profile WebRTC uses, Constrained Baseline

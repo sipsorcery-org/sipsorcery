@@ -8,9 +8,9 @@
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // The tables the header only declares extern (g_kuiScan8 and the other scan
-// index tables) are defined in decoder_data_tables.cpp and come with it. The
-// SHIFT_BUFFER/POP_BUFFER macros work on the CAVLC bit cache
-// (parse_mb_syn_cavlc.h) and come with that file.
+// index tables) are defined in decoder_data_tables.cs. The SHIFT_BUFFER and
+// POP_BUFFER macros work on the CAVLC bit cache and live in
+// parse_mb_syn_cavlc.cs.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson

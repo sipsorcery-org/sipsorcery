@@ -5,7 +5,7 @@
 // availability.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
-// g_kuiScan4 is defined in decoder_data_tables.cpp and comes with it.
+// g_kuiScan4 is defined in decoder_data_tables.cs.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson

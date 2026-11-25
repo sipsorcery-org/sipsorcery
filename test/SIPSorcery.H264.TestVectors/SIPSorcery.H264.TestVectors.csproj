@@ -30,6 +30,9 @@
     <!-- Size and SHA1 of each vector's parser header dump (h264ref headers), see HeaderDump.cs. -->
     <None Include="..\..\thirdparty\openh264-dotnet-port\reference\headers.tsv" Link="headers.tsv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\thirdparty\openh264-dotnet-port\reference\headers-damaged.tsv" Link="headers-damaged.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Size and SHA1 of each vector's macroblock parse dump (h264ref mbs), see HeaderDump.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\mbs.tsv" Link="mbs.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\mbs-damaged.tsv" Link="mbs-damaged.tsv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
