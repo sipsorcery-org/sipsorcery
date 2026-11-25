@@ -33,6 +33,8 @@
     <!-- Size and SHA1 of each vector's macroblock parse dump (h264ref mbs), see HeaderDump.cs. -->
     <None Include="..\..\thirdparty\openh264-dotnet-port\reference\mbs.tsv" Link="mbs.tsv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\thirdparty\openh264-dotnet-port\reference\mbs-damaged.tsv" Link="mbs-damaged.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Decoded output of the same damaged streams through the full decoder API (h264ref decode-damaged), see DecodeDamagedTests.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\decode-damaged.tsv" Link="decode-damaged.tsv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

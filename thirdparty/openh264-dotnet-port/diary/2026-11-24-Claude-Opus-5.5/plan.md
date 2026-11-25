@@ -20,7 +20,8 @@ was kept for the VP8 encoder.
 | D3 I-slice reconstruction | **Done** (25 Nov) | `get_intra_predictor` (all 42 C predictors), `decode_mb_aux` (the 4x4 and 8x8 residual IDCTs, the block offset table), `InitPredFunc`, the intra half of `rec_mb`, and `WelsMbIntraPredictionConstruction`/`WelsTargetMbConstruction` in `decode_slice`. ~2k lines. `mbs` mode now also reconstructs every intra macroblock of each parsed slice (no deblocking) and hashes its samples: 167.8k intra MBs over the clean vectors, all matching, clean and damaged. `kernels.tsv`: 1969 rows (636 new). UnitTest: 1999. TestVectors: 211 + 1 skipped. |
 | D4 P-slice reconstruction | **Done** (25 Nov) | `manage_dec_ref` (list init and reordering, sliding window, MMCO, long-term references), the inter half of `rec_mb` (`GetRefPic`, `BaseMC`, `WeightPrediction`, `GetInterPred`), `WelsMbInterPrediction`/`WelsMbInterConstruction` and `WelsBlockFuncInit` in `decode_slice`, the DPB memory in `decoder` (`CreatePicBuff`/`IncreasePicBuff`/`DecreasePicBuff`, `WelsRequestMem`, `SyncPictureResolutionExt`, `WelsFreeDynamicMemory`), and `AllocPicBuffOnNewSeqBegin`, `InitConstructAccessUnit`, `InitRefPicList` and `CheckRefPicturesComplete` in `decoder_core`. B-slice and CABAC reference paths fail loudly. ~2.3k lines. `mbs` mode drops its stand-ins for the real reference flow (DPB, `InitRefPicList`, `WelsMarkAsRef`, padding) and reconstructs every macroblock: 1.41M P-slice MBs over the clean vectors, 4,501 pictures marked, all matching, clean and damaged. On the 7 vectors with deblocking off, the C harness's pictures equal the real decoder's output, all 191 frames. UnitTest: 1999. TestVectors: 211 + 1 skipped. |
 | D5 Deblocking | **Done** (25 Nov) | `deblocking` (boundary strengths for P slices with 4x4 and 8x8 transforms, the alpha/beta/tc0 tables, the edge filters, the intra and inter macroblock filters, the slice loop, the per-MB entry points, `DeblockingInit`) and `WelsTargetSliceConstruction` in `decode_slice`. B-slice strengths throw; they can't be reached. ~1.35k lines. `mbs` mode now calls the real `WelsTargetSliceConstruction`, so every slice is deblocked: 5,196 slices and 1.43M macroblocks over the clean vectors (2.06M with the damaged ones, which also reach filter mode 2), all matching, clean and damaged. On the 33 clean Constrained Baseline vectors without cropping, every picture equals the real decoder's output frame, 4,196 of 4,196. UnitTest: 1999. TestVectors: 211 + 1 skipped. |
-| D6 Decoder API | Next | The rest of `decoder_core` (`DecodeCurrentAccessUnit`, `ConstructAccessUnit`, `DecodeFrameConstruction`), `decoder` (`WelsInitDecoder`, `InitDecFuncs`, `ResetDecoder`, `WelsDecodeBs`), `error_concealment` and `welsDecoderExt` (`CWelsDecoder`, `DecodeFrame2`/`DecodeFrameNoDelay`). Acceptance: the 35 Constrained Baseline vectors pass their upstream hashes (the skipped decode test), and a stream that exhausts the DPB recovers through `ResetDecoder`. |
+| D6 Decoder API | **Done** (25 Nov) | The rest of `decoder_core` (`ConstructAccessUnit`, `DecodeCurrentAccessUnit`, `WelsDecodeConstructSlice`, `DecodeFrameConstruction`), of `decoder` (`WelsDecoderDefaults`, `WelsOpenDecoder`/`WelsCloseDecoder`, `DecoderConfigParam`, `WelsInitDecoder`/`WelsEndDecoder`, `InitDecFuncs`, `WelsDecodeBs`, the statistics updates), `error_concealment` (frame copy, slice copy, slice MV copy), `welsDecoderExt` (`CWelsDecoder`, `WelsCreateDecoder`/`WelsDestroyDecoder`, `WelsGetDecoderCapability`) and `measure_time` (`WelsTime`). Single threaded; parse-only mode is rejected. ~3.2k lines. The upstream-hash decode test is on: **all 35 Constrained Baseline vectors decode to upstream's SHA1 and frame count** (4,256 frames, no failed call). New `h264ref decode-damaged` mode (`reference/decode-damaged.tsv`): the decoder API over the 153 damaged variants. The 105 Constrained Baseline ones match in every column but one, which is the B-slice exception noted below. That includes the 3 that run the DPB out and recover through `ResetDecoder`. The other 16 vectors decode clean and damaged without crashing. UnitTest: 1999. TestVectors: 299. |
+| D7 SIPSorcery wire-up | Next | `H264Codec.DecodeVideo` (Annex B access units from `H264Depacketiser` to I420/BGR `VideoSample`) on top of `CWelsDecoder`, and a `WebRTCClientH264Net` example that decodes Chrome's stream. This could ship as the first `-pre` package. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -372,6 +373,85 @@ Notes from D5:
   transform's inner-edge skip survives: no vector this port decodes uses the
   8x8 transform (it needs CABAC or High profile CAVLC with
   `transform_8x8_mode_flag`), so that path is unverified until Main/High.
+
+Notes from D6:
+
+- **Scope.** The single-threaded decoder end to end. `CWelsDecoder` ports
+  `Initialize`/`Uninitialize`, `DecodeFrame`, `DecodeFrame2`,
+  `DecodeFrameNoDelay`, `FlushFrame`, `DecodeFrameEx` (a no-op upstream too),
+  `SetOption`/`GetOption` and the reordering buffer (`BufferingReadyPicture`,
+  the two `ReleaseBufferedReadyPicture` variants, `ReorderPicturesInDisplay`).
+  Not ported, each spot marked where it was:
+  - The threaded decoder. `m_iThreadCount` stays 0, `GetThreadCount` is 0 and
+    `DECODER_OPTION_NUM_OF_THREADS` logs a warning and is ignored.
+  - Parse-only mode. `Initialize` rejects `bParseOnly` with
+    `cmInitParaError`, so `DecodeParser` stops at its guard, and the
+    parse-only branch of `DecodeFrameConstruction` throws.
+  - `OUTPUT_BIT_STREAM`, which upstream builds with off. `crt_util_safe_x` was
+    only needed for that, so it isn't needed at all.
+  - `GetCPUCount`. `m_iCpuCount` stays 1; it only bounds the thread count.
+  - `WelsCPUFeatureDetect`. `uiCpuFlag` stays 0, since only the C kernels are
+    ported.
+  Upstream defines `LONG_TERM_REF` for the decoder, so the LTR branches are
+  the ones ported.
+- **Port details.** `CWelsDecoder` is a struct in native memory, like
+  `welsCodecTrace`, because the decoder context keeps pointers into it
+  (`pLastDecPicInfo`, `pVlcTable`, `pPictInfoList`, `pPictReoderingStatus`,
+  `pStreamSeqNum`). `New`/`Delete` run the constructor and destructor, and the
+  methods take member addresses through a `This` pointer. `m_sPictInfoList[16]`
+  is an `InlineArray16<SPictInfo>`, and `pCsDecoder` is null (the mutex is
+  threads only). Four other details:
+  - `VERSION_NUMBER` is version.h's non-generated "openh264 default: 1.4", as
+    the reference build has it.
+  - `WelsTime` uses `Stopwatch`, the same QueryPerformanceCounter formula. It
+    only feeds `dDecTime`.
+  - The statistics arithmetic keeps C's unsigned wrap with `(uint32_t)` casts.
+  - For profile 66, `ReorderPicturesInDisplay` does nothing: Constrained
+    Baseline output is immediate, and `FlushFrame` never has a picture.
+- **Oracle.** `test/SIPSorcery.H264.TestVectors/DecoderHash.cs` drives the
+  port the way the harness's `DecodeStream` drives upstream: split on 4-byte
+  start codes, `DecodeFrame2` each chunk, end of stream, one more empty
+  `DecodeFrame2`, then `FlushFrame` for what's left, all frames hashed as
+  upstream's `decoder_test.cpp` does. The 35 vectors matched on the first run.
+  For the error paths, the harness's `DecodeStream` became `DecodeChunks` over
+  pre-split chunks (`conformance` output byte-identical afterwards) and gained
+  four modes:
+  - `decode-damaged`, the table.
+  - `hash-damaged` and `yuv-damaged`, for one variant.
+  - `trace-damaged`, one line per call: length, NAL type, state, buffer
+    status, frame SHA1.
+  `H264REF_TRACE_LEVEL` routes the decoder's own logs into the trace. The C#
+  side has the same trace (`DecoderHash.TraceChunks`) and writes the YUV and
+  trace on a mismatch when `H264_DUMP_DIR` is set.
+- **The one damaged divergence, and why.** NRF_MW_E variant 2 matched in
+  chunk, frame and error counts but not output. The YUV diff showed one output
+  frame (16 of 93) that the port emitted as an exact copy of frame 15. The
+  trace diff put the first difference at call 19, `0x24` against `0x26`
+  (`dsRefLost`). With the logs on, the port says "B slice reference lists are
+  not supported": the bit flips turn chunk 19's slice_type into B. Upstream
+  decodes it as a B slice even in a Baseline stream; the port rejects it and
+  conceals the whole picture. It is a non-reference picture, so nothing after
+  it differs. It is listed in `DecodeDamagedTests.KnownDivergences`. The test
+  still requires the chunk and frame counts to match, and requires the hash to
+  differ, so the entry has to go when B slices are ported.
+- **Coverage.**
+  - Clean: 4,256 Constrained Baseline frames, including the two cropped
+    vectors D5 couldn't compare (CVFC1_Sony_C, Static).
+  - Damaged Constrained Baseline: 105 variants, 7,313 frames, with error
+    concealment (slice copy), `dsBitstreamError`/`dsRefLost`/`dsNoParamSets`
+    returns, and `ResetDecoder` on LS_SVA_D variant 1 and SVA_CL1_E variants 1
+    and 2. Eight variants reset in all; the others are CABAC or B vectors.
+  - Out of scope: test_scalinglist_jm (High profile CAVLC with scaling
+    matrices and weighted prediction) and sps_subsetsps_bothVUI match
+    upstream, clean and damaged. The CABAC and B vectors fail their slices as
+    designed, and none crash.
+- **Negative controls.** Two, each alone:
+  - `ResetDecoder` not re-creating the context. The exhausted-DPB variants
+    then crash the test host (access violation), so the run aborts.
+    `ResetDecoder` is required, not just exercised.
+  - `ImplementErrorCon` using frame copy instead of slice copy. 30 of the 35
+    damaged-vector tests fail; the 35 clean hash tests still pass, as they
+    should, since no clean vector conceals.
 
 ## 1. Goal
 

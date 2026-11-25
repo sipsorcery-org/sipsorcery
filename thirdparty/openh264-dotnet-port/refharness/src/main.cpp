@@ -11,6 +11,10 @@
 //                                   D1 parser header dumps (headers.cpp).
 //   h264ref mbs / mbs-damaged <res-dir>, mbdump[-damaged] <file> [variant]
 //                                   D2 macroblock parse dumps (headers.cpp).
+//   h264ref decode-damaged <res-dir>, hash-damaged <file> <variant>,
+//   yuv-damaged <file> <variant> <out>, trace-damaged <file> <variant>
+//                                   D6: the full decoder API over the damaged
+//                                   copies (error concealment, ResetDecoder).
 //   h264ref kernels                 Fixture hashes for the ported kernels and
 //                                   tables (reference/kernels.tsv), see fixture.h.
 //
@@ -121,6 +125,7 @@ struct DecodeResult {
   int chunks = 0;
   int errorChunks = 0;  // DecodeFrame2 returned something other than dsErrorFree
   int firstErrorState = 0;
+  int errorStates = 0;  // OR of every failing state, so a dsOutOfMemory (ResetDecoder) shows up
   bool ok = true;
 };
 
@@ -134,8 +139,16 @@ void EmitFrame (const SBufferInfo& bi, uint8_t* data[3], const FrameCallback& cb
   cb (y, u, v);
 }
 
-// Mirrors BaseDecoderTest::SetUp / DecodeFile / DecodeFrame / FlushFrame.
-DecodeResult DecodeStream (const std::vector<uint8_t>& s, const FrameCallback& cb) {
+// Mirrors BaseDecoderTest::SetUp / DecodeFile / DecodeFrame / FlushFrame. The
+// input is already split as BaseDecoderTest's ReadFrame splits it (SplitChunks
+// in headers.cpp: 4-byte start codes 00 00 00 01, each chunk running from its
+// start code to just before the next one).
+// Called after every DecodeFrame2 / FlushFrame (call index, input length, state,
+// buffer info, output planes), for the trace-damaged mode.
+using CallTrace = std::function<void (int call, int len, DECODING_STATE st, const SBufferInfo& bi, uint8_t* data[3])>;
+
+DecodeResult DecodeChunks (const Chunks& chunks, const FrameCallback& cb, const CallTrace* trace = nullptr) {
+  int call = 0;
   DecodeResult r;
   ISVCDecoder* dec = nullptr;
   if (WelsCreateDecoder (&dec) != 0 || dec == nullptr) {
@@ -143,6 +156,13 @@ DecodeResult DecodeStream (const std::vector<uint8_t>& s, const FrameCallback& c
     return r;
   }
   int32_t quiet = WELS_LOG_QUIET;
+  if (const char* lv = getenv ("H264REF_TRACE_LEVEL")) {
+    // Debugging aid, e.g. 8 for WELS_LOG_DEBUG: the decoder's log lines go to
+    // stdout, between trace-damaged's per-call lines.
+    quiet = atoi (lv);
+    WelsTraceCallback logToStdout = [] (void*, int, const char* m) { printf ("log\t%s\n", m); };
+    dec->SetOption (DECODER_OPTION_TRACE_CALLBACK, &logToStdout);
+  }
   dec->SetOption (DECODER_OPTION_TRACE_LEVEL, &quiet);
 
   SDecodingParam p;
@@ -156,43 +176,25 @@ DecodeResult DecodeStream (const std::vector<uint8_t>& s, const FrameCallback& c
     return r;
   }
 
+  auto noteError = [&] (DECODING_STATE st) {
+    if (st == dsErrorFree) return;
+    if (r.errorChunks++ == 0) r.firstErrorState = st;
+    r.errorStates |= st;
+  };
   auto decode = [&] (const uint8_t* src, int len) {
     uint8_t* data[3] = {nullptr, nullptr, nullptr};
     SBufferInfo bi;
     memset (&bi, 0, sizeof bi);
     DECODING_STATE st = dec->DecodeFrame2 (src, len, data, &bi);
-    if (st != dsErrorFree) {
-      if (r.errorChunks++ == 0) r.firstErrorState = st;
-    }
+    noteError (st);
+    if (trace) (*trace) (call, len, st, bi, data);
+    ++call;
     EmitFrame (bi, data, cb, r);
   };
 
-  // BaseDecoderTest's ReadFrame: split on 4-byte start codes 00 00 00 01, each
-  // chunk running from its start code to just before the next one.
-  size_t pos = 0, n = s.size();
-  std::vector<uint8_t> buf;
-  for (;;) {
-    buf.clear();
-    int zeroCount = 0;
-    while (pos < n) {
-      uint8_t b = s[pos++];
-      buf.push_back (b);
-      if (buf.size() <= 4) continue;
-      if (zeroCount < 3) {
-        zeroCount = b != 0 ? 0 : zeroCount + 1;
-      } else if (b == 1) {
-        pos -= 4;
-        buf.resize (buf.size() - 4);
-        break;
-      } else if (b == 0) {
-        zeroCount = 3;
-      } else {
-        zeroCount = 0;
-      }
-    }
-    if (buf.empty()) break;
+  for (const std::vector<uint8_t>& c : chunks) {
     ++r.chunks;
-    decode (buf.data(), (int)buf.size());
+    decode (c.data(), (int)c.size());
   }
 
   int32_t eos = 1;
@@ -205,7 +207,9 @@ DecodeResult DecodeStream (const std::vector<uint8_t>& s, const FrameCallback& c
     SBufferInfo bi;
     memset (&bi, 0, sizeof bi);
     DECODING_STATE st = dec->FlushFrame (data, &bi);
-    if (st != dsErrorFree && r.errorChunks++ == 0) r.firstErrorState = st;
+    noteError (st);
+    if (trace) (*trace) (call, -1, st, bi, data);
+    ++call;
     EmitFrame (bi, data, cb, r);
   }
 
@@ -214,14 +218,18 @@ DecodeResult DecodeStream (const std::vector<uint8_t>& s, const FrameCallback& c
   return r;
 }
 
-std::string HashStream (const std::vector<uint8_t>& s, DecodeResult* result) {
+DecodeResult DecodeStream (const std::vector<uint8_t>& s, const FrameCallback& cb) {
+  return DecodeChunks (SplitChunks (s), cb);
+}
+
+std::string HashChunks (const Chunks& chunks, DecodeResult* result) {
   SHA1Context ctx;
   SHA1Reset (&ctx);
   auto addPlane = [&] (const Plane& p) {
     const uint8_t* row = p.data;
     for (int i = 0; i < p.height; ++i, row += p.stride) SHA1Input (&ctx, row, p.width);
   };
-  DecodeResult r = DecodeStream (s, [&] (const Plane& y, const Plane& u, const Plane& v) {
+  DecodeResult r = DecodeChunks (chunks, [&] (const Plane& y, const Plane& u, const Plane& v) {
     addPlane (y);
     addPlane (u);
     addPlane (v);
@@ -232,6 +240,10 @@ std::string HashStream (const std::vector<uint8_t>& s, DecodeResult* result) {
   char hex[SHA_DIGEST_LENGTH * 2 + 1];
   for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) snprintf (&hex[i * 2], 3, "%02x", digest[i]);
   return hex;
+}
+
+std::string HashStream (const std::vector<uint8_t>& s, DecodeResult* result) {
+  return HashChunks (SplitChunks (s), result);
 }
 
 int Conformance (const std::string& resDir) {
@@ -380,6 +392,41 @@ int MbsDamaged (const std::string& resDir) {
   return missing ? 1 : 0;
 }
 
+// The full decoder API over the same damaged copies as headers-damaged and
+// mbs-damaged: error concealment, the error returns and ResetDecoder, which no
+// clean vector reaches. One row per variant: output SHA1, frame count, how many
+// DecodeFrame2/FlushFrame calls failed, the first failing state and the OR of
+// all of them.
+int DecodeDamaged (const std::string& resDir) {
+  BinaryStdout();
+  printf ("# %s, C-only reference build. Decoded output of damaged streams (DamageChunks in headers.cpp).\n",
+          g_strCodecVer);
+  printf ("# file\tvariant\tchunks\tframes\terrors\tfirst\tstates\tsha1\n");
+  int missing = 0;
+  for (const Vector& vec : kDecoderVectors) {
+    std::vector<uint8_t> s;
+    if (!ReadFile (resDir + "/" + vec.file, s)) {
+      printf ("%s\t-\t-\t-\t-\t-\t-\tMISSING\n", vec.file);
+      ++missing;
+      continue;
+    }
+    Chunks clean = SplitChunks (s);
+    for (int v = 0; v < kDamagedVariants; ++v) {
+      Chunks c = DamageChunks (clean, (uint32_t)s.size(), v);
+      DecodeResult r;
+      std::string h = HashChunks (c, &r);
+      if (!r.ok) {
+        printf ("%s\t%d\t-\t-\t-\t-\t-\tINITFAIL\n", vec.file, v);
+        ++missing;
+        continue;
+      }
+      printf ("%s\t%d\t%zu\t%d\t%d\t0x%x\t0x%x\t%s\n", vec.file, v, c.size(), r.frames, r.errorChunks,
+              r.firstErrorState, r.errorStates, h.c_str());
+    }
+  }
+  return missing ? 1 : 0;
+}
+
 int Usage() {
   fprintf (stderr,
            "usage: h264ref conformance <res-dir>\n"
@@ -394,6 +441,10 @@ int Usage() {
            "       h264ref mbdump <file>\n"
            "       h264ref mbs-damaged <res-dir>\n"
            "       h264ref mbdump-damaged <file> <variant>\n"
+           "       h264ref decode-damaged <res-dir>\n"
+           "       h264ref hash-damaged <file> <variant>\n"
+           "       h264ref trace-damaged <file> <variant>\n"
+           "       h264ref yuv-damaged <file> <variant> <out.yuv>\n"
            "       h264ref kernels\n");
   return 2;
 }
@@ -426,6 +477,7 @@ int main (int argc, char** argv) {
   if (cmd == "headers-damaged") return HeadersDamaged (argv[2]);
   if (cmd == "mbs") return Mbs (argv[2]);
   if (cmd == "mbs-damaged") return MbsDamaged (argv[2]);
+  if (cmd == "decode-damaged") return DecodeDamaged (argv[2]);
 
   std::vector<uint8_t> s;
   if (!ReadFile (argv[2], s)) {
@@ -436,6 +488,35 @@ int main (int argc, char** argv) {
     DecodeResult r;
     std::string h = HashStream (s, &r);
     printf ("%s\tframes=%d\terrors=%d\n", h.c_str(), r.frames, r.errorChunks);
+    return 0;
+  }
+  if (cmd == "trace-damaged" && argc >= 4) {
+    // One line per DecodeFrame2/FlushFrame call: index, input length (-1 for
+    // FlushFrame), NAL type of the chunk, state, iBufferStatus and the SHA1 of the
+    // output frame. Diff it with DecoderHash.TraceChunks on the C# side.
+    Chunks chunks = DamageChunks (SplitChunks (s), (uint32_t)s.size(), atoi (argv[3]));
+    BinaryStdout();
+    CallTrace t = [&] (int call, int len, DECODING_STATE st, const SBufferInfo& bi, uint8_t* data[3]) {
+      int nal = (call < (int)chunks.size() && chunks[call].size() > 4) ? (chunks[call][4] & 0x1f) : -1;
+      std::string h = "-";
+      if (bi.iBufferStatus == 1) {
+        const SSysMEMBuffer& sb = bi.UsrData.sSystemBuffer;
+        std::string f;
+        for (int i = 0; i < sb.iHeight; ++i) f.append ((const char*)data[0] + (size_t)i * sb.iStride[0], sb.iWidth);
+        for (int c = 1; c < 3; ++c)
+          for (int i = 0; i < sb.iHeight / 2; ++i) f.append ((const char*)data[c] + (size_t)i * sb.iStride[1], sb.iWidth / 2);
+        h = Sha1Hex (f);
+      }
+      printf ("%d\t%d\t%d\t0x%x\t%d\t%s\n", call, len, nal, (int)st, bi.iBufferStatus, h.c_str());
+    };
+    DecodeChunks (chunks, [] (const Plane&, const Plane&, const Plane&) {}, &t);
+    return 0;
+  }
+  if (cmd == "hash-damaged" && argc >= 4) {
+    DecodeResult r;
+    std::string h = HashChunks (DamageChunks (SplitChunks (s), (uint32_t)s.size(), atoi (argv[3])), &r);
+    printf ("%s\tframes=%d\terrors=%d\tfirst=0x%x\tstates=0x%x\n", h.c_str(), r.frames, r.errorChunks,
+            r.firstErrorState, r.errorStates);
     return 0;
   }
   if (cmd == "headerdump") {
@@ -475,17 +556,20 @@ int main (int argc, char** argv) {
     printf ("CB=%s\t%s\n", info.IsConstrainedBaseline() ? "yes" : "no", info.Describe().c_str());
     return 0;
   }
-  if (cmd == "yuv" && argc >= 4) {
-    FILE* out = fopen (argv[3], "wb");
+  bool damagedYuv = cmd == "yuv-damaged" && argc >= 5;
+  if ((cmd == "yuv" && argc >= 4) || damagedYuv) {
+    const char* outPath = damagedYuv ? argv[4] : argv[3];
+    FILE* out = fopen (outPath, "wb");
     if (!out) {
-      fprintf (stderr, "cannot write %s\n", argv[3]);
+      fprintf (stderr, "cannot write %s\n", outPath);
       return 1;
     }
     auto writePlane = [&] (const Plane& p) {
       const uint8_t* row = p.data;
       for (int i = 0; i < p.height; ++i, row += p.stride) fwrite (row, 1, p.width, out);
     };
-    DecodeResult r = DecodeStream (s, [&] (const Plane& y, const Plane& u, const Plane& v) {
+    Chunks chunks = damagedYuv ? DamageChunks (SplitChunks (s), (uint32_t)s.size(), atoi (argv[3])) : SplitChunks (s);
+    DecodeResult r = DecodeChunks (chunks, [&] (const Plane& y, const Plane& u, const Plane& v) {
       writePlane (y);
       writePlane (u);
       writePlane (v);

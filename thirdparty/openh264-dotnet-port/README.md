@@ -39,6 +39,10 @@ refharness/build/Release/h264ref mbs <openh264>/res > reference/mbs.tsv         
 refharness/build/Release/h264ref mbs-damaged <openh264>/res > reference/mbs-damaged.tsv  # same, damaged streams
 refharness/build/Release/h264ref mbdump <file.264>                     # one macroblock dump, in full
 refharness/build/Release/h264ref mbdump-damaged <file.264> <0-2>       # one damaged variant's dump
+refharness/build/Release/h264ref decode-damaged <openh264>/res > reference/decode-damaged.tsv  # full decoder, damaged streams
+refharness/build/Release/h264ref hash-damaged <file.264> <0-2>         # one damaged variant's output SHA1
+refharness/build/Release/h264ref yuv-damaged <file.264> <0-2> <out.yuv>  # one damaged variant's frames
+refharness/build/Release/h264ref trace-damaged <file.264> <0-2>        # one line per DecodeFrame2/FlushFrame call
 ```
 
 `conformance` copies upstream's `test/api/BaseDecoderTest.cpp` decode loop and
@@ -86,6 +90,19 @@ vectors, whose output can't be compared with the uncropped picture hash).
 `mbs-damaged` and
 `mbdump` work as their `headers` counterparts.
 
+`decode-damaged` runs the real decoder API, the same `BaseDecoderTest` loop as
+`conformance` (error concealment `ERROR_CON_SLICE_COPY`), over the same damaged
+copies, so it reaches what no clean vector does: concealment, the
+`DECODING_STATE` error returns and `ResetDecoder` (eight variants run the DPB
+out of pictures, three of them on committed vectors). Each row has the chunk,
+frame and failed-call counts, the first failing state, the OR of all of them
+and the output SHA1. When a variant differs, `yuv-damaged` writes its frames and
+`trace-damaged` prints one line per `DecodeFrame2`/`FlushFrame` call (input
+length, NAL type, state, buffer status, frame SHA1); with
+`H264REF_TRACE_LEVEL=8` the decoder's own log lines go in between. The C#
+tests write the same files on a mismatch when `H264_DUMP_DIR` is set, so the
+two can be diffed directly.
+
 ## Reference results (`reference/`)
 
 - **`decoder-conformance.tsv`** is the output of `h264ref conformance` on the
@@ -111,3 +128,7 @@ vectors, whose output can't be compared with the uncropped picture hash).
   `mbs-damaged`: slices parsed, macroblock records, and the size and SHA1 of
   each vector's macroblock, reference and reconstruction dump. Read by
   `MbDumpTests`, the same way.
+- **`decode-damaged.tsv`** is the output of `h264ref decode-damaged`: the
+  decoder API over the 153 damaged variants. Read by `DecodeDamagedTests`: the
+  committed vectors must match in every column, the others (CABAC, B slices,
+  High profile, none of them ported) only have to decode without crashing.

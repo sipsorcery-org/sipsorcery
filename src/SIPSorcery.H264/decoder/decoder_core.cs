@@ -16,7 +16,12 @@
 // DecodeCurrentAccessUnit itself comes with the orchestration step (D6).
 // D4 adds what reference handling needs from here: AllocPicBuffOnNewSeqBegin,
 // InitConstructAccessUnit, InitRefPicList (whose B slice and non-Baseline
-// CABAC paths fail loudly) and CheckRefPicturesComplete.
+// CABAC paths fail loudly) and CheckRefPicturesComplete. D6 completes the
+// access unit path: ConstructAccessUnit, DecodeCurrentAccessUnit (single
+// threaded; every thread branch is left out and marked),
+// WelsDecodeConstructSlice, the reference-lost handlers,
+// DecodeFrameConstruction (whose parse-only branch throws, as parse-only mode
+// is not ported) and CheckAndFinishLastPic.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
@@ -25,6 +30,7 @@
 // 25 Nov 2026  Claude          Created.
 // 25 Nov 2026  Claude          D2: DQ layer memory and per-slice layer setup.
 // 25 Nov 2026  Claude          D4: picture buffer setup, reference list init.
+// 25 Nov 2026  Claude          D6: access unit decode and frame output.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -2543,5 +2549,699 @@ internal static unsafe partial class WelsDec
         }
 
         return bAllRefComplete;
+    }
+
+    // DecodeFrameConstruction's parse-only branch (bParseOnly), which rewrites
+    // the access unit into pParserBsInfo, is not ported: CWelsDecoder.Initialize
+    // rejects parse-only mode, so it fails loudly here. The thread branches are
+    // the threaded decoder's, not ported (GetThreadCount is 0).
+    public static int32_t DecodeFrameConstruction(SWelsDecoderContext* pCtx, uint8_t** ppDst, SBufferInfo* pDstInfo)
+    {
+        SDqLayer* pCurDq = pCtx->pCurDqLayer;
+        SPicture* pPic = pCtx->pDec;
+
+        int32_t kiWidth = pCurDq->iMbWidth << 4;
+        int32_t kiHeight = pCurDq->iMbHeight << 4;
+
+        int32_t kiTotalNumMbInCurLayer = pCurDq->iMbWidth * pCurDq->iMbHeight;
+        bool bFrameCompleteFlag = true;
+
+        if (pPic->bNewSeqBegin)
+        {
+            pCtx->sFrameCrop = pCurDq->sLayerInfo.sSliceInLayer.sSliceHeaderExt.sSliceHeader.pSps->sFrameCrop; //confirmed_safe_unsafe_usage
+            // LONG_TERM_REF
+            pCtx->bParamSetsLostFlag = false;
+            if (pCtx->iTotalNumMbRec == kiTotalNumMbInCurLayer)
+            {
+                pCtx->bPrintFrameErrorTraceFlag = true;
+                WelsLog(&(pCtx->sLogCtx), WELS_LOG_INFO,
+                         $"DecodeFrameConstruction(): will output first frame of new sequence, {kiWidth} x {kiHeight}, crop_left:{pCtx->sFrameCrop.iLeftOffset}, crop_right:{pCtx->sFrameCrop.iRightOffset}, crop_top:{pCtx->sFrameCrop.iTopOffset}, crop_bottom:{pCtx->sFrameCrop.iBottomOffset}, ignored error packet:{pCtx->iIgnoredErrorInfoPacketCount}.");
+                pCtx->iIgnoredErrorInfoPacketCount = 0;
+            }
+        }
+
+        int32_t kiActualWidth = kiWidth - (pCtx->sFrameCrop.iLeftOffset + pCtx->sFrameCrop.iRightOffset) * 2;
+        int32_t kiActualHeight = kiHeight - (pCtx->sFrameCrop.iTopOffset + pCtx->sFrameCrop.iBottomOffset) * 2;
+
+
+        if (pCtx->pParam->eEcActiveIdc == ERROR_CON_DISABLE)
+        {
+            if ((pCtx->pDecoderStatistics->uiWidth != (uint32_t)kiActualWidth)
+                || (pCtx->pDecoderStatistics->uiHeight != (uint32_t)kiActualHeight))
+            {
+                pCtx->pDecoderStatistics->uiResolutionChangeTimes++;
+                pCtx->pDecoderStatistics->uiWidth = (uint32_t)kiActualWidth;
+                pCtx->pDecoderStatistics->uiHeight = (uint32_t)kiActualHeight;
+            }
+            UpdateDecStatNoFreezingInfo(pCtx);
+        }
+
+        if (pCtx->pParam->bParseOnly)
+        { //should exit for parse only to prevent access NULL pDstInfo
+            throw new NotSupportedException("DecodeFrameConstruction(): parse-only decoding is not supported by this port.");
+        }
+
+        if (pCtx->iTotalNumMbRec != kiTotalNumMbInCurLayer)
+        {
+            WelsLog(&(pCtx->sLogCtx), WELS_LOG_DEBUG,
+                     $"DecodeFrameConstruction(): iTotalNumMbRec:{pCtx->iTotalNumMbRec}, total_num_mb_sps:{kiTotalNumMbInCurLayer}, cur_layer_mb_width:{pCurDq->iMbWidth}, cur_layer_mb_height:{pCurDq->iMbHeight} ");
+            bFrameCompleteFlag = false; //return later after output buffer is done
+            if (pCtx->bInstantDecFlag)
+            { //no-delay decoding, wait for new slice
+                return ERR_INFO_MB_NUM_INADEQUATE;
+            }
+        }
+        else if (pCurDq->sLayerInfo.sNalHeaderExt.bIdrFlag
+                 && (pCtx->iErrorCode == (int32_t)dsErrorFree))
+        { //complete non-ECed IDR frame done
+            pCtx->pDec->bIsComplete = true;
+            pCtx->bFreezeOutput = false;
+        }
+
+        pCtx->iTotalNumMbRec = 0;
+
+        //////output:::normal path
+        pDstInfo->uiOutYuvTimeStamp = pPic->uiTimeStamp;
+        ppDst[0] = pPic->pData[0];
+        ppDst[1] = pPic->pData[1];
+        ppDst[2] = pPic->pData[2];
+
+        pDstInfo->UsrData.sSystemBuffer.iFormat = (int)videoFormatI420;
+
+        pDstInfo->UsrData.sSystemBuffer.iWidth = kiActualWidth;
+        pDstInfo->UsrData.sSystemBuffer.iHeight = kiActualHeight;
+        pDstInfo->UsrData.sSystemBuffer.iStride[0] = pPic->iLinesize[0];
+        pDstInfo->UsrData.sSystemBuffer.iStride[1] = pPic->iLinesize[1];
+        ppDst[0] = ppDst[0] + pCtx->sFrameCrop.iTopOffset * 2 * pPic->iLinesize[0] + pCtx->sFrameCrop.iLeftOffset * 2;
+        ppDst[1] = ppDst[1] + pCtx->sFrameCrop.iTopOffset * pPic->iLinesize[1] + pCtx->sFrameCrop.iLeftOffset;
+        ppDst[2] = ppDst[2] + pCtx->sFrameCrop.iTopOffset * pPic->iLinesize[1] + pCtx->sFrameCrop.iLeftOffset;
+        for (int i = 0; i < 3; ++i)
+        {
+            pDstInfo->pDst[i] = ppDst[i];
+        }
+        pDstInfo->iBufferStatus = 1;
+        // GetThreadCount (pCtx) > 1: marks the picture complete and sets its
+        // pReadyEvent rows (threaded decoder, not ported).
+        bool bOutResChange = false;
+        if (GetThreadCount(pCtx) <= 1 || pCtx->pLastThreadCtx == null)
+        {
+            bOutResChange = (pCtx->iLastImgWidthInPixel != pDstInfo->UsrData.sSystemBuffer.iWidth)
+                            || (pCtx->iLastImgHeightInPixel != pDstInfo->UsrData.sSystemBuffer.iHeight);
+        }
+        // else: the last thread context's size (threaded decoder, not ported).
+        pCtx->iLastImgWidthInPixel = pDstInfo->UsrData.sSystemBuffer.iWidth;
+        pCtx->iLastImgHeightInPixel = pDstInfo->UsrData.sSystemBuffer.iHeight;
+        if (pCtx->pParam->eEcActiveIdc == ERROR_CON_DISABLE) //no buffer output if EC is disabled and frame incomplete
+            pDstInfo->iBufferStatus = (bFrameCompleteFlag
+                                       && pPic->bIsComplete) ? 1 : 0; // When EC disable, ECed picture not output
+        else if ((pCtx->pParam->eEcActiveIdc == ERROR_CON_SLICE_COPY_CROSS_IDR_FREEZE_RES_CHANGE
+                  || pCtx->pParam->eEcActiveIdc == ERROR_CON_SLICE_MV_COPY_CROSS_IDR_FREEZE_RES_CHANGE)
+                 && pCtx->iErrorCode != 0 && bOutResChange)
+            pCtx->bFreezeOutput = true;
+
+        if (pDstInfo->iBufferStatus == 0)
+        {
+            if (!bFrameCompleteFlag)
+                pCtx->iErrorCode |= (int32_t)dsBitstreamError;
+            return ERR_INFO_MB_NUM_INADEQUATE;
+        }
+        if (pCtx->bFreezeOutput)
+        {
+            pDstInfo->iBufferStatus = 0;
+            if (pPic->bNewSeqBegin)
+            {
+                WelsLog(&(pCtx->sLogCtx), WELS_LOG_INFO,
+                         $"DecodeFrameConstruction():New sequence detected, but freezed, correct MBs ({kiTotalNumMbInCurLayer - pCtx->iMbEcedNum}) out of whole MBs ({kiTotalNumMbInCurLayer}).");
+            }
+        }
+        pCtx->iMbEcedNum = pPic->iMbEcedNum;
+        pCtx->iMbNum = pPic->iMbNum;
+        pCtx->iMbEcedPropNum = pPic->iMbEcedPropNum;
+        if (pCtx->pParam->eEcActiveIdc != ERROR_CON_DISABLE)
+        {
+            if (pDstInfo->iBufferStatus != 0 && ((pCtx->pDecoderStatistics->uiWidth != (uint32_t)kiActualWidth)
+                                                 || (pCtx->pDecoderStatistics->uiHeight != (uint32_t)kiActualHeight)))
+            {
+                pCtx->pDecoderStatistics->uiResolutionChangeTimes++;
+                pCtx->pDecoderStatistics->uiWidth = (uint32_t)kiActualWidth;
+                pCtx->pDecoderStatistics->uiHeight = (uint32_t)kiActualHeight;
+            }
+            UpdateDecStat(pCtx, pDstInfo->iBufferStatus != 0);
+        }
+        return ERR_NONE;
+    }
+
+    public static bool CheckSliceNeedReconstruct(uint8_t uiLayerDqId, uint8_t uiTargetDqId)
+    {
+        return (uiLayerDqId == uiTargetDqId); // target layer
+    }
+
+    public static uint8_t GetTargetDqId(uint8_t uiTargetDqId, SDecodingParam* psParam)
+    {
+        uint8_t uiRequiredDqId = psParam != null ? psParam->uiTargetDqLayer : (uint8_t)255;
+
+        return WELS_MIN(uiTargetDqId, uiRequiredDqId);
+    }
+
+
+    public static void HandleReferenceLostL0(SWelsDecoderContext* pCtx, SNalUnit* pCurNal)
+    {
+        if (0 == pCurNal->sNalHeaderExt.uiTemporalId)
+        {
+            pCtx->bReferenceLostAtT0Flag = true;
+        }
+        pCtx->iErrorCode |= (int32_t)dsBitstreamError;
+    }
+
+    public static void HandleReferenceLost(SWelsDecoderContext* pCtx, SNalUnit* pCurNal)
+    {
+        if ((0 == pCurNal->sNalHeaderExt.uiTemporalId) || (1 == pCurNal->sNalHeaderExt.uiTemporalId))
+        {
+            pCtx->bReferenceLostAtT0Flag = true;
+        }
+        pCtx->iErrorCode |= (int32_t)dsRefLost;
+    }
+
+    public static int32_t WelsDecodeConstructSlice(SWelsDecoderContext* pCtx, SNalUnit* pCurNal)
+    {
+        int32_t iRet = WelsTargetSliceConstruction(pCtx);
+
+        if (iRet != 0)
+        {
+            HandleReferenceLostL0(pCtx, pCurNal);
+        }
+
+        return iRet;
+    }
+
+    // CreateImplicitWeightTable (B slices, weighted bi-prediction) is not ported:
+    // its only caller is InitRefPicList's B slice path, which fails loudly.
+
+    /*
+     * ConstructAccessUnit
+     * construct an access unit for given input bitstream, maybe partial NAL Unit, one or more Units are involved to
+     * joint a collective access unit.
+     * parameter\
+     *  buf:        bitstream data buffer
+     *  bit_len:    size in bit length of data
+     *  buf_len:    size in byte length of data
+     *  coded_au:   mark an Access Unit decoding finished
+     * return:
+     *  0 - success; otherwise returned error_no defined in error_no.h
+     */
+    public static int32_t ConstructAccessUnit(SWelsDecoderContext* pCtx, uint8_t** ppDst, SBufferInfo* pDstInfo)
+    {
+        int32_t iErr = ERR_NONE;
+        if (GetThreadCount(pCtx) <= 1)
+        {
+            iErr = InitConstructAccessUnit(pCtx, pDstInfo);
+            if (ERR_NONE != iErr)
+            {
+                return iErr;
+            }
+        }
+        if (pCtx->pCabacDecEngine == null)
+        {
+            pCtx->pCabacDecEngine = (SWelsCabacDecEngine*)pCtx->pMemAlign->WelsMallocz((uint32_t)sizeof(SWelsCabacDecEngine),
+                                    "pCtx->pCabacDecEngine");
+            if (null == pCtx->pCabacDecEngine)
+                return ERR_INFO_OUT_OF_MEMORY; // WELS_VERIFY_RETURN_IF
+        }
+
+        iErr = DecodeCurrentAccessUnit(pCtx, ppDst, pDstInfo);
+
+        WelsDecodeAccessUnitEnd(pCtx);
+
+        if (ERR_NONE != iErr)
+        {
+            WelsLog(&(pCtx->sLogCtx), WELS_LOG_DEBUG, $"returned error from decoding:[0x{iErr:x}]");
+            return iErr;
+        }
+
+        return ERR_NONE;
+    }
+
+    /*
+     * DecodeCurrentAccessUnit
+     * Decode current access unit when current AU is completed.
+     *
+     * Single-threaded only: the threaded decoder's thread contexts
+     * (pCtx->pThreadCtx, pCtx->pLastThreadCtx) are not ported and stay NULL,
+     * so iThreadCount is 0 and the thread branches are left out, each marked
+     * where it was. B slices: ComputeColocatedTemporalScaling is not ported;
+     * a B slice's reference lists fail in InitRefPicList and WelsDecodeSlice
+     * rejects the slice.
+     */
+    public static int32_t DecodeCurrentAccessUnit(SWelsDecoderContext* pCtx, uint8_t** ppDst, SBufferInfo* pDstInfo)
+    {
+        SNalUnit* pNalCur = pCtx->pNalCur = null;
+        SAccessUnit* pCurAu = pCtx->pAccessUnitList;
+
+        int32_t iIdx = (int32_t)pCurAu->uiStartPos;
+        int32_t iEndIdx = (int32_t)pCurAu->uiEndPos;
+
+        //get current thread ctx, get last thread ctx: threaded decoder, not ported.
+        int32_t iThreadCount = GetThreadCount(pCtx);
+        int32_t iPpsId = 0;
+        int32_t iRet = ERR_NONE;
+
+        bool bAllRefComplete = true; // Assume default all ref picutres are complete
+
+        uint8_t kuiTargetLayerDqId = GetTargetDqId(pCtx->uiTargetDqId, pCtx->pParam);
+        uint8_t kuiDependencyIdMax = (uint8_t)((kuiTargetLayerDqId & 0x7F) >> 4);
+        int16_t iLastIdD = -1, iLastIdQ = -1;
+        int16_t iCurrIdD = 0, iCurrIdQ = 0;
+        pCtx->uiNalRefIdc = 0;
+        bool bFreshSliceAvailable =
+            true; // Another fresh slice comingup for given dq layer, for multiple slices in case of header parts of slices sometimes loss over error-prone channels, 8/14/2008
+
+        //update pCurDqLayer at the starting of AU decoding
+        if (pCtx->bInitialDqLayersMem || pCtx->pCurDqLayer == null)
+        {
+            pCtx->pCurDqLayer = pCtx->pDqLayersList[0];
+        }
+
+        InitCurDqLayerData(pCtx, pCtx->pCurDqLayer);
+
+        pNalCur = pCurAu->pNalUnitsList[iIdx];
+        while (iIdx <= iEndIdx)
+        {
+            SDqLayer* dq_cur = pCtx->pCurDqLayer;
+            SLayerInfo pLayerInfo;
+            SSliceHeaderExt* pShExt = null;
+            SSliceHeader* pSh = null;
+            bool isNewFrame = true;
+            if (iThreadCount > 1)
+            {
+                isNewFrame = pCtx->pDec == null;
+            }
+            if (pCtx->pDec == null)
+            {
+                //make call PrefetchPic first before updating reference lists in threaded mode
+                //this prevents from possible thread-decoding hanging
+                pCtx->pDec = PrefetchPic(pCtx->pPicBuff);
+                // pLastThreadCtx != NULL: takes the reference lists over from the
+                // last thread context (threaded decoder, not ported).
+
+                //WelsResetRefPic needs to be called when a new sequence is encountered
+                //Otherwise artifacts is observed in decoded yuv in couple of unit tests with multiple-slice frame
+                if (GetThreadCount(pCtx) > 1 && pCtx->bNewSeqBegin)
+                {
+                    WelsResetRefPic(pCtx);
+                }
+                if (pCtx->iTotalNumMbRec != 0)
+                    pCtx->iTotalNumMbRec = 0;
+
+                if (null == pCtx->pDec)
+                {
+                    WelsLog(&(pCtx->sLogCtx), WELS_LOG_ERROR,
+                             $"DecodeCurrentAccessUnit()::::::PrefetchPic ERROR, pSps->iNumRefFrames:{pCtx->pSps->iNumRefFrames}.");
+                    // The error code here need to be separated from the dsOutOfMemory
+                    pCtx->iErrorCode |= (int32_t)dsOutOfMemory;
+                    return ERR_INFO_REF_COUNT_OVERFLOW;
+                }
+                // pThreadCtx != NULL: the thread context's picture and its
+                // pReadyEvent rows (threaded decoder, not ported).
+                pCtx->pDec->bNewSeqBegin = pCtx->bNewSeqBegin; //set flag for start decoding
+            }
+            else if (pCtx->iTotalNumMbRec == 0)
+            { //pDec != NULL, already start
+                pCtx->pDec->bNewSeqBegin = pCtx->bNewSeqBegin; //set flag for start decoding
+            }
+            pCtx->pDec->uiTimeStamp = pNalCur->uiTimeStamp;
+            pCtx->pDec->uiDecodingTimeStamp = pCtx->uiDecodingTimeStamp;
+            // pThreadCtx != NULL: iPicBuffIdx and the per-picture
+            // pMbCorrectlyDecodedFlag (threaded decoder, not ported).
+
+            if (pCtx->iTotalNumMbRec == 0)
+            { //Picture start to decode
+                for (int32_t i = 0; i < LAYER_NUM_EXCHANGEABLE; ++i)
+                    memset(pCtx->sMb.pSliceIdc[i].p, 0xff, (nint)(pCtx->sMb.iMbWidth * pCtx->sMb.iMbHeight * sizeof(int32_t)));
+                memset(pCtx->pCurDqLayer->pMbCorrectlyDecodedFlag, 0, (nint)(pCtx->pSps->iMbWidth * pCtx->pSps->iMbHeight * sizeof(bool)));
+                memset(pCtx->pCurDqLayer->pMbRefConcealedFlag, 0, (nint)(pCtx->pSps->iMbWidth * pCtx->pSps->iMbHeight * sizeof(bool)));
+                memset(&pCtx->pDec->pRefPic[(int32_t)LIST_0], 0, sizeof(nint) * MAX_DPB_COUNT);
+                memset(&pCtx->pDec->pRefPic[(int32_t)LIST_1], 0, sizeof(nint) * MAX_DPB_COUNT);
+                pCtx->pDec->iMbNum = (int32_t)(pCtx->pSps->iMbWidth * pCtx->pSps->iMbHeight);
+                pCtx->pDec->iMbEcedNum = 0;
+                pCtx->pDec->iMbEcedPropNum = 0;
+            }
+            pCtx->bRPLRError = false;
+            GetI4LumaIChromaAddrTable(pCtx->iDecBlockOffsetArray, pCtx->pDec->iLinesize[0], pCtx->pDec->iLinesize[1]);
+
+            if (pNalCur->sNalHeaderExt.uiLayerDqId > kuiTargetLayerDqId)
+            { // confirmed pNalCur will never be NULL
+                break; // Per formance it need not to decode the remaining bits any more due to given uiLayerDqId required, 9/2/2009
+            }
+
+            pLayerInfo = default; // memset (&pLayerInfo, 0, sizeof (SLayerInfo))
+
+            /*
+             *  Loop decoding for slices (even FMO and/ multiple slices) within a dq layer
+             */
+            while (iIdx <= iEndIdx)
+            {
+                bool bReconstructSlice;
+                iCurrIdQ = pNalCur->sNalHeaderExt.uiQualityId;
+                iCurrIdD = pNalCur->sNalHeaderExt.uiDependencyId;
+                pSh = &pNalCur->sNalData.sVclNal.sSliceHeaderExt.sSliceHeader;
+                pShExt = &pNalCur->sNalData.sVclNal.sSliceHeaderExt;
+                pCtx->bRPLRError = false;
+                bReconstructSlice = CheckSliceNeedReconstruct(pNalCur->sNalHeaderExt.uiLayerDqId, kuiTargetLayerDqId);
+
+                pLayerInfo.sNalHeaderExt = pNalCur->sNalHeaderExt; //confirmed_safe_unsafe_usage
+
+                pCtx->pDec->iFrameNum = pSh->iFrameNum;
+                pCtx->pDec->iFramePoc = pSh->iPicOrderCntLsb; // still can not obtain correct, because current do not support POCtype 2
+                pCtx->pDec->bIdrFlag = pNalCur->sNalHeaderExt.bIdrFlag;
+                pCtx->pDec->eSliceType = pSh->eSliceType;
+
+                pLayerInfo.sSliceInLayer.sSliceHeaderExt = *pShExt; //confirmed_safe_unsafe_usage
+                pLayerInfo.sSliceInLayer.bSliceHeaderExtFlag = pNalCur->sNalData.sVclNal.bSliceHeaderExtFlag;
+                pLayerInfo.sSliceInLayer.eSliceType = (uint8_t)pSh->eSliceType;
+                pLayerInfo.sSliceInLayer.iLastMbQp = pSh->iSliceQp;
+                dq_cur->pBitStringAux = &pNalCur->sNalData.sVclNal.sSliceBitsRead;
+
+                pCtx->uiNalRefIdc = pNalCur->sNalHeaderExt.sNalUnitHeader.uiNalRefIdc;
+
+                iPpsId = pSh->iPpsId;
+
+                pLayerInfo.pPps = pSh->pPps;
+                pLayerInfo.pSps = pSh->pSps;
+                pLayerInfo.pSubsetSps = pShExt->pSubsetSps;
+
+                pCtx->pFmo = &pCtx->sFmoList[iPpsId];
+                iRet = FmoParamUpdate(pCtx->pFmo, pLayerInfo.pSps, pLayerInfo.pPps, &pCtx->iActiveFmoNum, pCtx->pMemAlign);
+                if (ERR_NONE != iRet)
+                {
+                    if (iRet == ERR_INFO_OUT_OF_MEMORY)
+                    {
+                        pCtx->iErrorCode |= (int32_t)dsOutOfMemory;
+                        WelsLog(&(pCtx->sLogCtx), WELS_LOG_ERROR, "DecodeCurrentAccessUnit(), Fmo param alloc failed");
+                    }
+                    else
+                    {
+                        pCtx->iErrorCode |= (int32_t)dsBitstreamError;
+                        WelsLog(&(pCtx->sLogCtx), WELS_LOG_WARNING,
+                                 $"DecodeCurrentAccessUnit(), FmoParamUpdate failed, eSliceType: {(int32_t)pSh->eSliceType}.");
+                    }
+                    return GENERATE_ERROR_NO(ERR_LEVEL_SLICE_HEADER, ERR_INFO_FMO_INIT_FAIL);
+                }
+
+                bFreshSliceAvailable = (iCurrIdD != iLastIdD
+                                        || iCurrIdQ != iLastIdQ);        // do not need condition of (first_mb == 0) due multiple slices might be disorder
+
+
+                WelsDqLayerDecodeStart(pCtx, pNalCur, pLayerInfo.pSps, pLayerInfo.pPps);
+
+
+                if ((iLastIdD < 0) ||  //case 1: first layer
+                    (iLastIdD == iCurrIdD))
+                { //case 2: same uiDId
+                    InitDqLayerInfo(dq_cur, &pLayerInfo, pNalCur, pCtx->pDec);
+
+                    if (!dq_cur->sLayerInfo.pSps->bGapsInFrameNumValueAllowedFlag)
+                    {
+                        bool kbIdrFlag = dq_cur->sLayerInfo.sNalHeaderExt.bIdrFlag
+                                         || (dq_cur->sLayerInfo.sNalHeaderExt.sNalUnitHeader.eNalUnitType == NAL_UNIT_CODED_SLICE_IDR);
+                        // Subclause 8.2.5.2 Decoding process for gaps in frame_num
+                        int32_t iPrevFrameNum = pCtx->pLastDecPicInfo->iPrevFrameNum;
+                        // pLastThreadCtx != NULL: GetPrevFrameNum (threaded decoder, not ported).
+                        if (!kbIdrFlag &&
+                            pSh->iFrameNum != iPrevFrameNum &&
+                            pSh->iFrameNum != ((iPrevFrameNum + 1) & ((1 << (int32_t)dq_cur->sLayerInfo.pSps->uiLog2MaxFrameNum) -
+                                               1)))
+                        {
+                            WelsLog(&(pCtx->sLogCtx), WELS_LOG_WARNING,
+                                     $"referencing pictures lost due frame gaps exist, prev_frame_num: {iPrevFrameNum}, curr_frame_num: {pSh->iFrameNum}");
+
+                            bAllRefComplete = false;
+                            pCtx->iErrorCode |= (int32_t)dsRefLost;
+                            if (pCtx->pParam->eEcActiveIdc == ERROR_CON_DISABLE)
+                            {
+                                // LONG_TERM_REF
+                                pCtx->bParamSetsLostFlag = true;
+                                return GENERATE_ERROR_NO(ERR_LEVEL_SLICE_HEADER, ERR_INFO_REFERENCE_PIC_LOST);
+                            }
+                        }
+                    }
+
+                    if (iCurrIdD == kuiDependencyIdMax && iCurrIdQ == BASE_QUALITY_ID && isNewFrame)
+                    {
+                        iRet = InitRefPicList(pCtx, pCtx->uiNalRefIdc, pSh->iPicOrderCntLsb);
+                        if (iRet != 0)
+                        {
+                            pCtx->bRPLRError = true;
+                            bAllRefComplete = false; // RPLR error, set ref pictures complete flag false
+                            HandleReferenceLost(pCtx, pNalCur);
+                            WelsLog(&(pCtx->sLogCtx), WELS_LOG_DEBUG,
+                                     $"reference picture introduced by this frame is lost during transmission! uiTId: {pNalCur->sNalHeaderExt.uiTemporalId}");
+                            if (pCtx->pParam->eEcActiveIdc == ERROR_CON_DISABLE)
+                            {
+                                if (pCtx->iTotalNumMbRec == 0)
+                                    pCtx->pDec = null;
+                                return iRet;
+                            }
+                        }
+                    }
+                    //calculate Colocated mv scaling factor for temporal direct prediction
+                    // B_SLICE && !iDirectSpatialMvPredFlag: ComputeColocatedTemporalScaling
+                    // (B slices, not ported; WelsDecodeSlice rejects the slice).
+
+                    // iThreadCount > 1: WelsDecodeAndConstructSlice (threaded decoder, not ported).
+                    iRet = WelsDecodeSlice(pCtx, bFreshSliceAvailable, pNalCur);
+
+                    //Output good store_base reconstruction when enhancement quality layer occurred error for MGS key picture case
+                    if (iRet != ERR_NONE)
+                    {
+                        WelsLog(&(pCtx->sLogCtx), WELS_LOG_WARNING,
+                                 $"DecodeCurrentAccessUnit() failed ({iRet}) in frame: {pSh->iFrameNum} uiDId: {iCurrIdD} uiQId: {iCurrIdQ}");
+                        bAllRefComplete = false;
+                        HandleReferenceLostL0(pCtx, pNalCur);
+                        if (pCtx->pParam->eEcActiveIdc == ERROR_CON_DISABLE)
+                        {
+                            if (pCtx->iTotalNumMbRec == 0)
+                                pCtx->pDec = null;
+                            return iRet;
+                        }
+                    }
+
+                    if (iThreadCount <= 1 && bReconstructSlice)
+                    {
+                        if ((iRet = WelsDecodeConstructSlice(pCtx, pNalCur)) != ERR_NONE)
+                        {
+                            pCtx->pDec->bIsComplete = false; // reconstruction error, directly set the flag false
+                            return iRet;
+                        }
+                    }
+                    if (bAllRefComplete && pCtx->eSliceType != I_SLICE)
+                    {
+                        if (iThreadCount <= 1)
+                        {
+                            if (pCtx->sRefPic.uiRefCount[(int32_t)LIST_0] > 0)
+                            {
+                                bAllRefComplete &= CheckRefPicturesComplete(pCtx);
+                            }
+                            else
+                            {
+                                bAllRefComplete = false;
+                            }
+                        }
+                    }
+                }
+                // _DEBUG && !CODEC_FOR_TESTBED: a debug log, not ported.
+                iLastIdD = iCurrIdD;
+                iLastIdQ = iCurrIdQ;
+
+                //pNalUnitsList overflow.
+                ++iIdx;
+                if (iIdx <= iEndIdx)
+                {
+                    pNalCur = pCurAu->pNalUnitsList[iIdx];
+                }
+                else
+                {
+                    pNalCur = null;
+                }
+
+                if (pNalCur == null ||
+                    iLastIdD != pNalCur->sNalHeaderExt.uiDependencyId ||
+                    iLastIdQ != pNalCur->sNalHeaderExt.uiQualityId)
+                    break;
+            }
+
+            // Set the current dec picture complete flag. The flag will be reset when current picture need do ErrorCon.
+            pCtx->pDec->bIsComplete = bAllRefComplete;
+            if (!pCtx->pDec->bIsComplete)
+            {  // Ref pictures ECed, result in ECed
+                pCtx->iErrorCode |= (int32_t)dsDataErrorConcealed;
+            }
+
+            // A dq layer decoded here
+            // _DEBUG && !CODEC_FOR_TESTBED: a debug log, not ported.
+
+            if (dq_cur->uiLayerDqId == kuiTargetLayerDqId)
+            {
+                if (!pCtx->bInstantDecFlag)
+                {
+                    if (!pCtx->pParam->bParseOnly)
+                    {
+                        //Do error concealment here
+                        if ((NeedErrorCon(pCtx)) && (pCtx->pParam->eEcActiveIdc != ERROR_CON_DISABLE))
+                        {
+                            ImplementErrorCon(pCtx);
+                            pCtx->iTotalNumMbRec = (int32_t)(pCtx->pSps->iMbWidth * pCtx->pSps->iMbHeight);
+                            pCtx->pDec->iSpsId = pCtx->pSps->iSpsId;
+                            pCtx->pDec->iPpsId = pCtx->pPps->iPpsId;
+                        }
+                    }
+                }
+
+                // iThreadCount >= 1: waits for the earlier pictures' workers (threaded
+                // decoder, not ported).
+                iRet = DecodeFrameConstruction(pCtx, ppDst, pDstInfo);
+                if (iRet != 0)
+                {
+                    // iThreadCount > 1: SET_EVENT (&pThreadCtx->sSliceDecodeFinish).
+                    return iRet;
+                }
+
+                pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb = pCtx->pDec; //store latest decoded picture for EC
+                // iThreadCount > 1: the per-thread snapshot (threaded decoder, not ported).
+                pCtx->bUsedAsRef = pCtx->uiNalRefIdc > 0;
+                if (iThreadCount <= 1)
+                {
+                    if (pCtx->bUsedAsRef)
+                    {
+                        for (int32_t listIdx = (int32_t)LIST_0; listIdx < (int32_t)LIST_A; ++listIdx)
+                        {
+                            int32_t i = 0;
+                            while (i < MAX_DPB_COUNT && pCtx->sRefPic.pRefList[listIdx][i].p != null)
+                            {
+                                pCtx->pDec->pRefPic[listIdx][i] = pCtx->sRefPic.pRefList[listIdx][i];
+                                ++i;
+                            }
+                        }
+                        iRet = WelsMarkAsRef(pCtx);
+                        if (iRet != ERR_NONE)
+                        {
+                            if (iRet == ERR_INFO_DUPLICATE_FRAME_NUM)
+                                pCtx->iErrorCode |= (int32_t)dsBitstreamError;
+                            if (pCtx->pParam->eEcActiveIdc == ERROR_CON_DISABLE)
+                            {
+                                pCtx->pDec = null;
+                                return iRet;
+                            }
+                        }
+                        if (!pCtx->pParam->bParseOnly)
+                            ExpandReferencingPicture((uint8_t**)&pCtx->pDec->pData, pCtx->pDec->iWidthInPixel, pCtx->pDec->iHeightInPixel,
+                                                     pCtx->pDec->iLinesize,
+                                                     pCtx->sExpandPicFunc.pfExpandLumaPicture, pCtx->sExpandPicFunc.pfExpandChromaPicture);
+                    }
+                }
+                // else if (iThreadCount > 1): SET_EVENT (&pThreadCtx->sImageReady).
+                pCtx->pDec = null; //after frame decoding, always set to NULL
+            }
+
+            // need update frame_num due current frame is well decoded
+            if (pCurAu->pNalUnitsList[pCurAu->uiStartPos]->sNalHeaderExt.sNalUnitHeader.uiNalRefIdc > 0)
+                pCtx->pLastDecPicInfo->iPrevFrameNum = pSh->iFrameNum;
+            if (pCtx->pLastDecPicInfo->bLastHasMmco5)
+                pCtx->pLastDecPicInfo->iPrevFrameNum = 0;
+            // iThreadCount > 1: hands newer parameter sets between the workers and
+            // signals sSliceDecodeFinish (threaded decoder, not ported).
+        }
+        return ERR_NONE;
+    }
+
+    // Upstream returns ERR_NONE (that is, false) from this bool function on the
+    // normal path, so callers ignore the result; kept as is.
+    public static bool CheckAndFinishLastPic(SWelsDecoderContext* pCtx, uint8_t** ppDst, SBufferInfo* pDstInfo)
+    {
+        SAccessUnit* pAu = pCtx->pAccessUnitList;
+        bool bAuBoundaryFlag = false;
+        if (IS_VCL_NAL(pCtx->sCurNalHead.eNalUnitType, 1))
+        { //VCL data, AU list should have data
+            SNalUnit* pCurNal = pAu->pNalUnitsList[pAu->uiEndPos];
+            bAuBoundaryFlag = (pCtx->iTotalNumMbRec != 0)
+                              && (CheckAccessUnitBoundaryExt(&pCtx->pLastDecPicInfo->sLastNalHdrExt, &pCurNal->sNalHeaderExt,
+                                  &pCtx->pLastDecPicInfo->sLastSliceHeader,
+                                  &pCurNal->sNalData.sVclNal.sSliceHeaderExt.sSliceHeader));
+        }
+        else
+        { //non VCL
+            if (pCtx->sCurNalHead.eNalUnitType == NAL_UNIT_AU_DELIMITER)
+            {
+                bAuBoundaryFlag = true;
+            }
+            else if (pCtx->sCurNalHead.eNalUnitType == NAL_UNIT_SEI)
+            {
+                bAuBoundaryFlag = true;
+            }
+            else if (pCtx->sCurNalHead.eNalUnitType == NAL_UNIT_SPS)
+            {
+                bAuBoundaryFlag = (pCtx->sSpsPpsCtx.iOverwriteFlags & OVERWRITE_SPS) != 0;
+            }
+            else if (pCtx->sCurNalHead.eNalUnitType == NAL_UNIT_SUBSET_SPS)
+            {
+                bAuBoundaryFlag = (pCtx->sSpsPpsCtx.iOverwriteFlags & OVERWRITE_SUBSETSPS) != 0;
+            }
+            else if (pCtx->sCurNalHead.eNalUnitType == NAL_UNIT_PPS)
+            {
+                bAuBoundaryFlag = (pCtx->sSpsPpsCtx.iOverwriteFlags & OVERWRITE_PPS) != 0;
+            }
+            if (bAuBoundaryFlag && pCtx->pAccessUnitList->uiAvailUnitsNum != 0)
+            { //Construct remaining data first
+                ConstructAccessUnit(pCtx, ppDst, pDstInfo);
+            }
+        }
+
+        //Do Error Concealment here
+        if (bAuBoundaryFlag && (pCtx->iTotalNumMbRec != 0) && NeedErrorCon(pCtx))
+        { //AU ready but frame not completely reconed
+            if (pCtx->pParam->eEcActiveIdc != ERROR_CON_DISABLE)
+            {
+                ImplementErrorCon(pCtx);
+                pCtx->iTotalNumMbRec = (int32_t)(pCtx->pSps->iMbWidth * pCtx->pSps->iMbHeight);
+                pCtx->pDec->iSpsId = pCtx->pSps->iSpsId;
+                pCtx->pDec->iPpsId = pCtx->pPps->iPpsId;
+
+                DecodeFrameConstruction(pCtx, ppDst, pDstInfo);
+                pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb = pCtx->pDec; //save ECed pic for future use
+                // pThreadCtx != NULL && GetThreadCount (pCtx) > 1: the per-thread
+                // snapshot (threaded decoder, not ported).
+                if (pCtx->pLastDecPicInfo->sLastNalHdrExt.sNalUnitHeader.uiNalRefIdc > 0)
+                {
+                    if (MarkECFrameAsRef(pCtx) == ERR_INFO_INVALID_PTR)
+                    {
+                        pCtx->iErrorCode |= (int32_t)dsRefListNullPtrs;
+                        return false;
+                    }
+                }
+            }
+            else if (pCtx->pParam->bParseOnly)
+            { //clear parse only internal data status
+                pCtx->pParserBsInfo->iNalNum = 0;
+                pCtx->bFrameFinish = true; //clear frame pending status here!
+            }
+            else
+            {
+                if (DecodeFrameConstruction(pCtx, ppDst, pDstInfo) != 0)
+                {
+                    if ((pCtx->pLastDecPicInfo->sLastNalHdrExt.sNalUnitHeader.uiNalRefIdc > 0)
+                        && (pCtx->pLastDecPicInfo->sLastNalHdrExt.uiTemporalId == 0))
+                        pCtx->iErrorCode |= (int32_t)dsNoParamSets;
+                    else
+                        pCtx->iErrorCode |= (int32_t)dsBitstreamError;
+                    pCtx->pDec = null;
+                    return false;
+                }
+            }
+            pCtx->pDec = null;
+            if (pAu->pNalUnitsList[pAu->uiStartPos]->sNalHeaderExt.sNalUnitHeader.uiNalRefIdc > 0)
+                pCtx->pLastDecPicInfo->iPrevFrameNum = pCtx->pLastDecPicInfo->sLastSliceHeader.iFrameNum; //save frame_num
+            if (pCtx->pLastDecPicInfo->bLastHasMmco5)
+                pCtx->pLastDecPicInfo->iPrevFrameNum = 0;
+        }
+        return false; // ERR_NONE
     }
 }

@@ -1,15 +1,17 @@
 //-----------------------------------------------------------------------------
 // Filename: DecoderConformanceTests.cs
 //
-// Description: Decoder conformance against openh264's upstream SHA1 table. The
-// decode test is skipped until the decoder orchestration lands (D6 in the port
-// plan); the table checks run now.
+// Description: Decoder conformance against openh264's upstream SHA1 table: each
+// Constrained Baseline vector is decoded through the ported CWelsDecoder API,
+// driven as upstream's BaseDecoderTest drives it (DecoderHash.cs), and its
+// frame count and output SHA1 must match the table.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 24 Nov 2026  Claude          Created.
+// 25 Nov 2026  Claude          Decode test enabled (D6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -39,10 +41,14 @@ public class DecoderConformanceTests
         Assert.True(File.Exists(DecoderConformanceVectors.PathOf(vector)), $"{vector.FileName} is missing from {DecoderConformanceVectors.VectorDirectory}.");
     }
 
-    [Theory(Skip = "The decoder is not ported yet (D6 in the port plan).")]
+    [Theory]
     [MemberData(nameof(DecoderConformanceVectors.ConstrainedBaselineData), MemberType = typeof(DecoderConformanceVectors))]
     public void ConstrainedBaselineVector_DecodesToUpstreamHash(DecoderVector vector)
     {
-        Assert.Fail($"Not implemented: decode {vector.FileName} and compare with {vector.Sha1}.");
+        byte[] stream = File.ReadAllBytes(DecoderConformanceVectors.PathOf(vector));
+        DecodeResult r = DecoderHash.HashChunks(HeaderDump.SplitChunks(stream));
+        Assert.True(r.ErrorChunks == 0, $"{vector.FileName}: {r.ErrorChunks} DecodeFrame2/FlushFrame calls failed, the first with 0x{r.FirstErrorState:x}.");
+        Assert.Equal(vector.Frames, r.Frames);
+        Assert.Equal(vector.Sha1, r.Sha1);
     }
 }

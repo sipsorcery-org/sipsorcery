@@ -10,9 +10,13 @@
 // its IdctFourResAddPred_ helper (D3), and the picture buffer (DPB) memory:
 // CreatePicBuff, IncreasePicBuff, DecreasePicBuff, DestroyPicBuff,
 // ResetReorderingPictureBuffers, GetTargetRefListSize, WelsRequestMem,
-// WelsFreeDynamicMemory and SyncPictureResolutionExt (D4). InitPredFunc fills
-// only the C kernels; the SIMD branches are not ported, so uiCpuFlag is
-// unused. The threaded decoder is not ported.
+// WelsFreeDynamicMemory and SyncPictureResolutionExt (D4). D6 adds the rest
+// the API layer needs: WelsDecoderDefaults, WelsOpenDecoder/WelsCloseDecoder,
+// DecoderConfigParam, WelsInitDecoder/WelsEndDecoder, InitDecFuncs,
+// WelsDecodeBs and the decoder statistics updates. InitPredFunc and
+// InitDecFuncs fill only the C kernels; the SIMD branches and
+// WelsCPUFeatureDetect are not ported, so uiCpuFlag stays 0. The threaded
+// decoder and parse-only mode are not ported.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
@@ -21,6 +25,7 @@
 // 25 Nov 2026  Claude          Created.
 // 25 Nov 2026  Claude          D3: InitPredFunc.
 // 25 Nov 2026  Claude          D4: picture buffer memory.
+// 25 Nov 2026  Claude          D6: decoder init/teardown, WelsDecodeBs, statistics.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -371,6 +376,55 @@ internal static unsafe partial class WelsDec
     }
 
     /*
+     * fill data fields in default for decoder context
+     */
+    public static void WelsDecoderDefaults(SWelsDecoderContext* pCtx, SLogContext* pLogCtx)
+    {
+        pCtx->sLogCtx = *pLogCtx;
+
+        pCtx->pArgDec = null;
+
+        pCtx->bHaveGotMemory = false;              // not ever request memory blocks for decoder context related
+        pCtx->uiCpuFlag = 0;
+
+        pCtx->bAuReadyFlag = false;                  // au data is not ready
+        pCtx->bCabacInited = false;
+
+        // pCtx->uiCpuFlag = WelsCPUFeatureDetect (&iCpuCores): cpu.cpp is not
+        // ported and only the C kernels are, so no CPU features are reported.
+
+        pCtx->iImgWidthInPixel = 0;
+        pCtx->iImgHeightInPixel = 0;                  // alloc picture data when picture size is available
+        pCtx->iLastImgWidthInPixel = 0;
+        pCtx->iLastImgHeightInPixel = 0;
+        pCtx->bFreezeOutput = true;
+
+        pCtx->iFrameNum = -1;
+        pCtx->pLastDecPicInfo->iPrevFrameNum = -1;
+        pCtx->iErrorCode = ERR_NONE;
+
+        pCtx->pDec = null;
+
+        pCtx->pTempDec = null;
+
+        WelsResetRefPic(pCtx);
+
+        pCtx->iActiveFmoNum = 0;
+
+        pCtx->pPicBuff = null;
+
+        //pCtx->sSpsPpsCtx.bAvcBasedFlag             = true;
+        pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb = null;
+        pCtx->pDecoderStatistics->iAvgLumaQp = -1;
+        pCtx->pDecoderStatistics->iStatisticsLogInterval = 1000;
+        pCtx->bUseScalingList = false;
+        pCtx->iFeedbackNalRefIdc = -1; //initialize
+        pCtx->pLastDecPicInfo->iPrevPicOrderCntMsb = 0;
+        pCtx->pLastDecPicInfo->iPrevPicOrderCntLsb = 0;
+
+    }
+
+    /*
     * fill data fields in SPS and PPS default for decoder context
     */
     public static void WelsDecoderSpsPpsDefaults(SWelsDecoderSpsPpsCTX* sSpsPpsCtx)
@@ -589,6 +643,128 @@ internal static unsafe partial class WelsDec
         pMa->WelsFree(pCtx->pCabacDecEngine, "pCtx->pCabacDecEngine");
     }
 
+    /*!
+     * \brief   Open decoder
+     */
+    public static int32_t WelsOpenDecoder(SWelsDecoderContext* pCtx, SLogContext* pLogCtx)
+    {
+        int iRet = ERR_NONE;
+        // function pointers
+        InitDecFuncs(pCtx, pCtx->uiCpuFlag);
+
+        // vlc tables
+        InitVlcTable(pCtx->pVlcTable);
+
+        // static memory
+        iRet = WelsInitStaticMemory(pCtx);
+        if (ERR_NONE != iRet)
+        {
+            pCtx->iErrorCode |= (int32_t)dsOutOfMemory;
+            WelsLog(pLogCtx, WELS_LOG_ERROR, "WelsInitStaticMemory() failed in WelsOpenDecoder().");
+            return iRet;
+        }
+
+        // LONG_TERM_REF
+        pCtx->bParamSetsLostFlag = true;
+        pCtx->bNewSeqBegin = true;
+        pCtx->bPrintFrameErrorTraceFlag = true;
+        pCtx->iIgnoredErrorInfoPacketCount = 0;
+        pCtx->bFrameFinish = true;
+        pCtx->iSeqNum = 0;
+        return iRet;
+    }
+
+    /*!
+     * \brief   Close decoder
+     */
+    public static void WelsCloseDecoder(SWelsDecoderContext* pCtx)
+    {
+        WelsFreeDynamicMemory(pCtx);
+
+        WelsFreeStaticMemory(pCtx);
+
+        // LONG_TERM_REF
+        pCtx->bParamSetsLostFlag = false;
+        pCtx->bNewSeqBegin = false;
+        pCtx->bPrintFrameErrorTraceFlag = false;
+    }
+
+    /*!
+     * \brief   configure decoder parameters
+     */
+    public static int32_t DecoderConfigParam(SWelsDecoderContext* pCtx, SDecodingParam* kpParam)
+    {
+        if (null == pCtx || null == kpParam)
+            return ERR_INFO_INVALID_PARAM;
+
+        *pCtx->pParam = *kpParam;
+        if ((pCtx->pParam->eEcActiveIdc > ERROR_CON_SLICE_MV_COPY_CROSS_IDR_FREEZE_RES_CHANGE)
+            || (pCtx->pParam->eEcActiveIdc < ERROR_CON_DISABLE))
+        {
+            WelsLog(&(pCtx->sLogCtx), WELS_LOG_WARNING,
+                     $"eErrorConMethod ({(int32_t)pCtx->pParam->eEcActiveIdc}) not in range: ({(int32_t)ERROR_CON_DISABLE} - {(int32_t)ERROR_CON_SLICE_MV_COPY_CROSS_IDR_FREEZE_RES_CHANGE}). Set as default value: ({(int32_t)ERROR_CON_SLICE_MV_COPY_CROSS_IDR_FREEZE_RES_CHANGE}).");
+            pCtx->pParam->eEcActiveIdc = ERROR_CON_SLICE_MV_COPY_CROSS_IDR_FREEZE_RES_CHANGE;
+        }
+
+        if (pCtx->pParam->bParseOnly) //parse only, disable EC method
+            pCtx->pParam->eEcActiveIdc = ERROR_CON_DISABLE;
+        InitErrorCon(pCtx);
+
+        if (VIDEO_BITSTREAM_SVC == pCtx->pParam->sVideoProperty.eVideoBsType ||
+            VIDEO_BITSTREAM_AVC == pCtx->pParam->sVideoProperty.eVideoBsType)
+        {
+            pCtx->eVideoType = pCtx->pParam->sVideoProperty.eVideoBsType;
+        }
+        else
+        {
+            pCtx->eVideoType = VIDEO_BITSTREAM_DEFAULT;
+        }
+
+        WelsLog(&(pCtx->sLogCtx), WELS_LOG_INFO, $"eVideoType: {(int32_t)pCtx->eVideoType}");
+
+        return ERR_NONE;
+    }
+
+    /*!
+     *************************************************************************************
+     * \brief   Initialize Wels decoder parameters and memory
+     *
+     * \param   pCtx input context to be initialized at first stage
+     *
+     * \return  0 - successed
+     * \return  1 - failed
+     *
+     * \note    N/A
+     *************************************************************************************
+     */
+    public static int32_t WelsInitDecoder(SWelsDecoderContext* pCtx, SLogContext* pLogCtx)
+    {
+        if (pCtx == null)
+        {
+            return ERR_INFO_INVALID_PTR;
+        }
+
+        // open decoder
+        return WelsOpenDecoder(pCtx, pLogCtx);
+    }
+
+    /*!
+     *************************************************************************************
+     * \brief   Uninitialize Wels decoder parameters and memory
+     *
+     * \param   pCtx input context to be uninitialized at release stage
+     *
+     * \return  NONE
+     *
+     * \note    N/A
+     *************************************************************************************
+     */
+    public static void WelsEndDecoder(SWelsDecoderContext* pCtx)
+    {
+        // close decoder
+        WelsCloseDecoder(pCtx);
+    }
+
     public static void GetVclNalTemporalId(SWelsDecoderContext* pCtx)
     {
         SAccessUnit* pAccessUnit = pCtx->pAccessUnitList;
@@ -597,6 +773,279 @@ internal static unsafe partial class WelsDec
         pCtx->iFeedbackVclNalInAu = (int32_t)FEEDBACK_VCL_NAL;
         pCtx->iFeedbackTidInAu = pAccessUnit->pNalUnitsList[idx]->sNalHeaderExt.uiTemporalId;
         pCtx->iFeedbackNalRefIdc = pAccessUnit->pNalUnitsList[idx]->sNalHeaderExt.sNalUnitHeader.uiNalRefIdc;
+    }
+
+    /*!
+     *************************************************************************************
+     * \brief   First entrance to decoding core interface.
+     *
+     * \param   pCtx            decoder context
+     * \param   pBufBs          bit streaming buffer
+     * \param   kBsLen          size in bytes length of bit streaming buffer input
+     * \param   ppDst           picture payload data to be output
+     * \param   pDstBufInfo     buf information of ouput data
+     *
+     * \return  0 - successed
+     * \return  1 - failed
+     *
+     * \note    N/A
+     *************************************************************************************
+     */
+    // Returns false if wrapping sRawData to pHead would overwrite bytes still referenced
+    // by a queued NAL's slice bit-reader, indicating the wrap is unsafe.
+    private static bool RawDataWrapIsClean(SWelsDecoderContext* pCtx, int32_t iNewBytes)
+    {
+        SAccessUnit* pAu = pCtx->pAccessUnitList;
+        if (pAu == null || pAu->pNalUnitsList == null || pAu->uiAvailUnitsNum == 0) return true;
+        uint8_t* pHead = pCtx->sRawData.pHead;
+        for (uint32_t i = 0; i < pAu->uiAvailUnitsNum; ++i)
+        {
+            SNalUnit* pNal = pAu->pNalUnitsList[i];
+            if (pNal == null) continue;
+            uint8_t* pStart = pNal->sNalData.sVclNal.sSliceBitsRead.pStartBuf;
+            if (pStart != null && pStart >= pHead && pStart < pHead + iNewBytes) return false;
+        }
+        return true;
+    }
+
+    // pDstBsInfo is unused here upstream too. The parse-only saved data branch is
+    // kept, but parse-only mode cannot be initialised in this port.
+    public static int32_t WelsDecodeBs(SWelsDecoderContext* pCtx, uint8_t* kpBsBuf, int32_t kiBsLen,
+                                       uint8_t** ppDst, SBufferInfo* pDstBufInfo, SParserBsInfo* pDstBsInfo)
+    {
+        if (!pCtx->bEndOfStreamFlag)
+        {
+            SDataBuffer* pRawData = &pCtx->sRawData;
+            SDataBuffer* pSavedData = null;
+
+            int32_t iSrcIdx = 0; //the index of source bit-stream till now after parsing one or more NALs
+            int32_t iSrcConsumed = 0; // consumed bit count of source bs
+            int32_t iDstIdx = 0; //the size of current NAL after 0x03 removal and 00 00 01 removal
+            int32_t iSrcLength = 0; //the total size of current AU or NAL
+            int32_t iRet = 0;
+            int32_t iConsumedBytes = 0;
+            int32_t iOffset = 0;
+
+            uint8_t* pSrcNal = null;
+            uint8_t* pDstNal = null;
+            uint8_t* pNalPayload = null;
+
+
+            if (null == DetectStartCodePrefix(kpBsBuf, &iOffset,
+                                               kiBsLen))
+            {  //CAN'T find the 00 00 01 start prefix from the source buffer
+                pCtx->iErrorCode |= (int32_t)dsBitstreamError;
+                return (int32_t)dsBitstreamError;
+            }
+
+            pSrcNal = kpBsBuf + iOffset;
+            iSrcLength = kiBsLen - iOffset;
+
+            if ((kiBsLen + 4) > (pRawData->pEnd - pRawData->pCurPos))
+            {
+                if (!RawDataWrapIsClean(pCtx, kiBsLen + 4))
+                {
+                    pCtx->iErrorCode |= (int32_t)dsOutOfMemory;
+                    return pCtx->iErrorCode;
+                }
+                pRawData->pCurPos = pRawData->pHead;
+            }
+
+            if (pCtx->pParam->bParseOnly)
+            {
+                pSavedData = &pCtx->sSavedData;
+                if ((kiBsLen + 4) > (pSavedData->pEnd - pSavedData->pCurPos))
+                {
+                    pSavedData->pCurPos = pSavedData->pHead;
+                }
+            }
+            //copy raw data from source buffer (application) to raw data buffer (codec inside)
+            //0x03 removal and extract all of NAL Unit from current raw data
+            pDstNal = pRawData->pCurPos;
+
+            bool bNalStartBytes = false;
+
+            while (iSrcConsumed < iSrcLength)
+            {
+                if ((2 + iSrcConsumed < iSrcLength) && (0 == LD16(pSrcNal + iSrcIdx)) && (pSrcNal[2 + iSrcIdx] <= 0x03))
+                {
+                    if (bNalStartBytes && (pSrcNal[2 + iSrcIdx] != 0x00 && pSrcNal[2 + iSrcIdx] != 0x01))
+                    {
+                        pCtx->iErrorCode |= (int32_t)dsBitstreamError;
+                        return pCtx->iErrorCode;
+                    }
+
+                    if (pSrcNal[2 + iSrcIdx] == 0x02)
+                    {
+                        pCtx->iErrorCode |= (int32_t)dsBitstreamError;
+                        return pCtx->iErrorCode;
+                    }
+                    else if (pSrcNal[2 + iSrcIdx] == 0x00)
+                    {
+                        pDstNal[iDstIdx++] = pSrcNal[iSrcIdx++];
+                        iSrcConsumed++;
+                        bNalStartBytes = true;
+                    }
+                    else if (pSrcNal[2 + iSrcIdx] == 0x03)
+                    {
+                        if ((3 + iSrcConsumed < iSrcLength) && pSrcNal[3 + iSrcIdx] > 0x03)
+                        {
+                            /* Just skip */
+                        }
+                        else
+                        {
+                            ST16(pDstNal + iDstIdx, 0);
+                            iDstIdx += 2;
+                        }
+                        iSrcIdx += 3;
+                        iSrcConsumed += 3;
+                    }
+                    else
+                    { // 0x01
+                        bNalStartBytes = false;
+
+                        iConsumedBytes = 0;
+                        pDstNal[iDstIdx] = pDstNal[iDstIdx + 1] = pDstNal[iDstIdx + 2] = pDstNal[iDstIdx + 3] =
+                                             0; // set 4 reserved bytes to zero
+                        pNalPayload = ParseNalHeader(pCtx, &pCtx->sCurNalHead, pDstNal, iDstIdx, pSrcNal - 3, iSrcIdx + 3, &iConsumedBytes);
+                        if (pNalPayload != null)
+                        { //parse correct
+                            if (IS_PARAM_SETS_NALS(pCtx->sCurNalHead.eNalUnitType))
+                            {
+                                iRet = ParseNonVclNal(pCtx, pNalPayload, iDstIdx - iConsumedBytes, pSrcNal - 3, iSrcIdx + 3);
+                            }
+                            CheckAndFinishLastPic(pCtx, ppDst, pDstBufInfo);
+                            if (pCtx->bAuReadyFlag && pCtx->pAccessUnitList->uiAvailUnitsNum != 0)
+                            {
+                                if (GetThreadCount(pCtx) <= 1)
+                                {
+                                    ConstructAccessUnit(pCtx, ppDst, pDstBufInfo);
+                                }
+                            }
+                        }
+                        DecodeFinishUpdate(pCtx);
+
+                        if ((((int32_t)dsOutOfMemory | (int32_t)dsNoParamSets) & pCtx->iErrorCode) != 0)
+                        {
+                            // LONG_TERM_REF
+                            pCtx->bParamSetsLostFlag = true;
+                            if (((int32_t)dsOutOfMemory & pCtx->iErrorCode) != 0)
+                            {
+                                return pCtx->iErrorCode;
+                            }
+                        }
+                        if (iRet != 0)
+                        {
+                            iRet = 0;
+                            if (((int32_t)dsNoParamSets & pCtx->iErrorCode) != 0)
+                            {
+                                // LONG_TERM_REF
+                                pCtx->bParamSetsLostFlag = true;
+                            }
+                            return pCtx->iErrorCode;
+                        }
+
+                        if (pCtx->iErrorCode != ERR_NONE && (pCtx->iErrorCode & (int32_t)dsDataErrorConcealed) == 0)
+                        {
+                            return pCtx->iErrorCode;
+                        }
+
+                        pDstNal += (iDstIdx + 4); //init, increase 4 reserved zero bytes, used to store the next NAL
+                        if ((iSrcLength - iSrcConsumed + 4) > (pRawData->pEnd - pDstNal))
+                        {
+                            if (!RawDataWrapIsClean(pCtx, iSrcLength - iSrcConsumed + 4))
+                            {
+                                pCtx->iErrorCode |= (int32_t)dsOutOfMemory;
+                                return pCtx->iErrorCode;
+                            }
+                            pDstNal = pRawData->pCurPos = pRawData->pHead;
+                        }
+                        else
+                        {
+                            pRawData->pCurPos = pDstNal;
+                        }
+
+                        pSrcNal += iSrcIdx + 3;
+                        iSrcConsumed += 3;
+                        iSrcIdx = 0;
+                        iDstIdx = 0; //reset 0, used to statistic the length of next NAL
+                    }
+                    continue;
+                }
+                pDstNal[iDstIdx++] = pSrcNal[iSrcIdx++];
+                iSrcConsumed++;
+            }
+
+            //last NAL decoding
+
+            iConsumedBytes = 0;
+            pDstNal[iDstIdx] = pDstNal[iDstIdx + 1] = pDstNal[iDstIdx + 2] = pDstNal[iDstIdx + 3] =
+                                 0; // set 4 reserved bytes to zero
+            pRawData->pCurPos = pDstNal + iDstIdx + 4; //init, increase 4 reserved zero bytes, used to store the next NAL
+            pNalPayload = ParseNalHeader(pCtx, &pCtx->sCurNalHead, pDstNal, iDstIdx, pSrcNal - 3, iSrcIdx + 3, &iConsumedBytes);
+            if (pNalPayload != null)
+            { //parse correct
+                if (IS_PARAM_SETS_NALS(pCtx->sCurNalHead.eNalUnitType))
+                {
+                    iRet = ParseNonVclNal(pCtx, pNalPayload, iDstIdx - iConsumedBytes, pSrcNal - 3, iSrcIdx + 3);
+                }
+                if (GetThreadCount(pCtx) <= 1)
+                {
+                    CheckAndFinishLastPic(pCtx, ppDst, pDstBufInfo);
+                }
+                if (pCtx->bAuReadyFlag && pCtx->pAccessUnitList->uiAvailUnitsNum != 0)
+                {
+                    if (GetThreadCount(pCtx) <= 1)
+                    {
+                        ConstructAccessUnit(pCtx, ppDst, pDstBufInfo);
+                    }
+                }
+            }
+            DecodeFinishUpdate(pCtx);
+
+            if ((((int32_t)dsOutOfMemory | (int32_t)dsNoParamSets) & pCtx->iErrorCode) != 0)
+            {
+                // LONG_TERM_REF
+                pCtx->bParamSetsLostFlag = true;
+                return pCtx->iErrorCode;
+            }
+            if (iRet != 0)
+            {
+                iRet = 0;
+                if (((int32_t)dsNoParamSets & pCtx->iErrorCode) != 0)
+                {
+                    // LONG_TERM_REF
+                    pCtx->bParamSetsLostFlag = true;
+                }
+                return pCtx->iErrorCode;
+            }
+        }
+        else
+        { /* no supplementary picture payload input, but stored a picture */
+            SAccessUnit* pCurAu =
+                pCtx->pAccessUnitList; // current access unit, it will never point to NULL after decode's successful initialization
+
+            if (pCurAu->uiAvailUnitsNum == 0)
+            {
+                return pCtx->iErrorCode;
+            }
+            else
+            {
+                pCtx->pAccessUnitList->uiEndPos = pCtx->pAccessUnitList->uiAvailUnitsNum - 1;
+
+                ConstructAccessUnit(pCtx, ppDst, pDstBufInfo);
+            }
+            DecodeFinishUpdate(pCtx);
+
+            if ((((int32_t)dsOutOfMemory | (int32_t)dsNoParamSets) & pCtx->iErrorCode) != 0)
+            {
+                // LONG_TERM_REF
+                pCtx->bParamSetsLostFlag = true;
+                return pCtx->iErrorCode;
+            }
+        }
+
+        return pCtx->iErrorCode;
     }
 
     /*!
@@ -639,6 +1088,16 @@ internal static unsafe partial class WelsDec
         }
         // MEMORY_MONITOR: not defined.
         return iErr;
+    }
+
+    // The C kernels only; uiCpuFlag is passed on and unused.
+    public static void InitDecFuncs(SWelsDecoderContext* pCtx, uint32_t uiCpuFlag)
+    {
+        WelsBlockFuncInit(&pCtx->sBlockFunc, (int32_t)uiCpuFlag);
+        InitPredFunc(pCtx, uiCpuFlag);
+        InitMcFunc(&(pCtx->sMcFunc), uiCpuFlag);
+        InitExpandPictureFunc(&(pCtx->sExpandPicFunc), uiCpuFlag);
+        DeblockingInit(&pCtx->sDeblockingFunc, (int32_t)uiCpuFlag);
     }
 
     // template<void pfIdctResAddPred (uint8_t* pPred, int32_t iStride, int16_t* pRs)>
@@ -709,5 +1168,95 @@ internal static unsafe partial class WelsDec
         pCtx->pIdctFourResAddPredFunc = &IdctFourResAddPred_;
 
         pCtx->pIdctResAddPredFunc8x8 = &IdctResAddPred8x8_c;
+    }
+
+    //reset decoder number related statistics info
+    public static void ResetDecStatNums(SDecoderStatistics* pDecStat)
+    {
+        uint32_t uiWidth = pDecStat->uiWidth;
+        uint32_t uiHeight = pDecStat->uiHeight;
+        int32_t iAvgLumaQp = pDecStat->iAvgLumaQp;
+        uint32_t iLogInterval = pDecStat->iStatisticsLogInterval;
+        uint32_t uiProfile = pDecStat->uiProfile;
+        uint32_t uiLevel = pDecStat->uiLevel;
+        *pDecStat = default; // memset (pDecStat, 0, sizeof (SDecoderStatistics))
+        pDecStat->uiWidth = uiWidth;
+        pDecStat->uiHeight = uiHeight;
+        pDecStat->iAvgLumaQp = iAvgLumaQp;
+        pDecStat->iStatisticsLogInterval = iLogInterval;
+        pDecStat->uiProfile = uiProfile;
+        pDecStat->uiLevel = uiLevel;
+    }
+
+    //update information when freezing occurs, including IDR/non-IDR number
+    public static void UpdateDecStatFreezingInfo(bool kbIdrFlag, SDecoderStatistics* pDecStat)
+    {
+        if (kbIdrFlag)
+            pDecStat->uiFreezingIDRNum++;
+        else
+            pDecStat->uiFreezingNonIDRNum++;
+    }
+
+    //update information when no freezing occurs, including QP, correct IDR number, ECed IDR number
+    public static void UpdateDecStatNoFreezingInfo(SWelsDecoderContext* pCtx)
+    {
+        SDqLayer* pCurDq = pCtx->pCurDqLayer;
+        SPicture* pPic = pCtx->pDec;
+        SDecoderStatistics* pDecStat = pCtx->pDecoderStatistics;
+
+        if (pDecStat->iAvgLumaQp == -1) //first correct frame received
+            pDecStat->iAvgLumaQp = 0;
+
+        //update QP info
+        int32_t iTotalQp = 0;
+        int32_t kiMbNum = pCurDq->iMbWidth * pCurDq->iMbHeight;
+        if (pCtx->pParam->eEcActiveIdc == ERROR_CON_DISABLE)
+        { //all correct
+            for (int32_t iMb = 0; iMb < kiMbNum; ++iMb)
+            {
+                iTotalQp += pCurDq->pLumaQp[iMb];
+            }
+            iTotalQp /= kiMbNum;
+        }
+        else
+        {
+            int32_t iCorrectMbNum = 0;
+            for (int32_t iMb = 0; iMb < kiMbNum; ++iMb)
+            {
+                int32_t iCorrect = pCurDq->pMbCorrectlyDecodedFlag[iMb] ? 1 : 0;
+                iCorrectMbNum += iCorrect;
+                iTotalQp += pCurDq->pLumaQp[iMb] * iCorrect;
+            }
+            if (iCorrectMbNum == 0) //non MB is correct, should remain QP statistic info
+                iTotalQp = pDecStat->iAvgLumaQp;
+            else
+                iTotalQp /= iCorrectMbNum;
+        }
+        if (pDecStat->uiDecodedFrameCount + 1 == 0)
+        { //maximum uint32_t reached
+            ResetDecStatNums(pDecStat);
+            pDecStat->iAvgLumaQp = iTotalQp;
+        }
+        else
+            // The sum is unsigned int arithmetic in C, so it wraps at 32 bits before the widening.
+            pDecStat->iAvgLumaQp = (int)((uint64_t)((uint32_t)pDecStat->iAvgLumaQp * pDecStat->uiDecodedFrameCount + (uint32_t)iTotalQp) /
+                                         (pDecStat->uiDecodedFrameCount + 1));
+
+        //update IDR number
+        if (pCurDq->sLayerInfo.sNalHeaderExt.bIdrFlag)
+        {
+            pDecStat->uiIDRCorrectNum += pPic->bIsComplete ? 1u : 0u;
+            if (pCtx->pParam->eEcActiveIdc != ERROR_CON_DISABLE)
+                pDecStat->uiEcIDRNum += !pPic->bIsComplete ? 1u : 0u;
+        }
+    }
+
+    //update decoder statistics information
+    public static void UpdateDecStat(SWelsDecoderContext* pCtx, bool kbOutput)
+    {
+        if (pCtx->bFreezeOutput)
+            UpdateDecStatFreezingInfo(pCtx->pCurDqLayer->sLayerInfo.sNalHeaderExt.bIdrFlag, pCtx->pDecoderStatistics);
+        else if (kbOutput)
+            UpdateDecStatNoFreezingInfo(pCtx);
     }
 }
