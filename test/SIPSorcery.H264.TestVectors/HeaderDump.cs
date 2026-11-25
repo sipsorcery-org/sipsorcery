@@ -11,8 +11,10 @@
 // and dumps every macroblock's parse results (reference/mbs.tsv), since D3
 // reconstructs each slice's intra macroblocks (ReconSlice) and dumps their
 // samples, and since D4 runs the decoder's own reference handling (the DPB,
-// InitRefPicList, WelsMarkAsRef) and reconstructs every macroblock. Keep the
-// two in step: same fields, same order, same names.
+// InitRefPicList, WelsMarkAsRef) and reconstructs every macroblock, and since
+// D5 reconstructs and deblocks each slice with the decoder's own
+// WelsTargetSliceConstruction. Keep the two in step: same fields, same order,
+// same names.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
@@ -22,6 +24,7 @@
 // 25 Nov 2026  Claude          D2: the macroblock dump (mbs mode).
 // 25 Nov 2026  Claude          D3: intra reconstruction in mbs mode.
 // 25 Nov 2026  Claude          D4: reference handling and inter reconstruction in mbs mode.
+// 25 Nov 2026  Claude          D5: deblocking, through WelsTargetSliceConstruction.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -911,11 +914,12 @@ internal static unsafe class HeaderDump
                 vlc = (SVlcTable*)NativeMemory.AllocZeroed((nuint)sizeof(SVlcTable));
                 InitVlcTable(vlc);
                 ctx->pVlcTable = vlc;
-                // InitDecFuncs (WelsInitDecoder), without the deblocking (D5).
+                // InitDecFuncs (WelsInitDecoder).
                 WelsBlockFuncInit(&ctx->sBlockFunc, 0);
                 InitPredFunc(ctx, 0);
                 InitMcFunc(&ctx->sMcFunc, 0);
                 InitExpandPictureFunc(&ctx->sExpandPicFunc, 0);
+                DeblockingInit(&ctx->sDeblockingFunc, 0);
             }
             return true;
         }
@@ -1447,7 +1451,8 @@ internal static unsafe class HeaderDump
             ctx->pDec = null;
         }
 
-        // WelsTargetSliceConstruction up to its deblocking (ReconSlice in
+        // WelsDecodeConstructSlice's WelsTargetSliceConstruction, which
+        // reconstructs the slice and then deblocks it (ReconSlice in
         // headers.cpp).
         private int ReconSlice()
         {
@@ -1455,76 +1460,30 @@ internal static unsafe class HeaderDump
             SSlice* pCurSlice = &pCurDqLayer->sLayerInfo.sSliceInLayer;
             SSliceHeader* pSliceHeader = &pCurSlice->sSliceHeaderExt.sSliceHeader;
             int iTotalMbTargetLayer = (int)pSliceHeader->pSps->uiTotalMbCount;
-            int iCurLayerWidth = pCurDqLayer->iMbWidth << 4;
-            int iCurLayerHeight = pCurDqLayer->iMbHeight << 4;
-            SFmo* pFmo = ctx->pFmo;
-            int iTotalNumMb = pCurSlice->iTotalMbInCurSlice;
-            int iCountNumMb = 0;
-            int iRet = ERR_NONE;
+            int iRet = WelsTargetSliceConstruction(ctx);
             recon.Clear();
             int n = 0;
-
-            if (!ctx->sSpsPpsCtx.bAvcBasedFlag && iCurLayerWidth != ctx->iCurSeqIntervalMaxPicWidth)
+            // The reconstructed macroblocks: the whole slice, or after a failure
+            // (which leaves iMbXyIndex on the failing macroblock) those before
+            // it, and that one too when it was the reconstruction count that
+            // overflowed.
+            if (iRet != ERR_INFO_WIDTH_MISMATCH)
             {
-                iRet = ERR_INFO_WIDTH_MISMATCH;
-            }
-            else
-            {
-                int iNextMbXyIndex = pSliceHeader->iFirstMbInSlice;
-                pCurDqLayer->iMbX = iNextMbXyIndex % pCurDqLayer->iMbWidth;
-                pCurDqLayer->iMbY = iNextMbXyIndex / pCurDqLayer->iMbWidth;
-                pCurDqLayer->iMbXyIndex = iNextMbXyIndex;
-                if (0 == iNextMbXyIndex)
+                int iStop = iRet == ERR_NONE ? -1 : pCurDqLayer->iMbXyIndex;
+                for (int xy = pSliceHeader->iFirstMbInSlice;
+                     n < pCurSlice->iTotalMbInCurSlice && xy >= 0 && xy < iTotalMbTargetLayer;)
                 {
-                    pCurDqLayer->pDec->iSpsId = ctx->pSps->iSpsId;
-                    pCurDqLayer->pDec->iPpsId = ctx->pPps->iPpsId;
-                    pCurDqLayer->pDec->uiQualityId = pCurDqLayer->sLayerInfo.sNalHeaderExt.uiQualityId;
-                }
-                do
-                {
-                    if (iCountNumMb >= iTotalNumMb)
+                    if (xy == iStop && iRet == ERR_INFO_MB_RECON_FAIL)
                     {
                         break;
                     }
-                    if (WelsTargetMbConstruction(ctx) != 0)
-                    {
-                        iRet = ERR_INFO_MB_RECON_FAIL;
-                        break;
-                    }
-                    RecordSamples(recon, pCurDqLayer->pDec, pCurDqLayer->iMbX, pCurDqLayer->iMbY);
+                    RecordSamples(recon, pCurDqLayer->pDec, xy % pCurDqLayer->iMbWidth, xy / pCurDqLayer->iMbWidth);
                     ++n;
-                    ++iCountNumMb;
-                    if (!pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex])
-                    {
-                        pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex] = true;
-                        ctx->pDec->iMbEcedPropNum += pCurDqLayer->pMbRefConcealedFlag[iNextMbXyIndex] ? 1 : 0;
-                        ++ctx->iTotalNumMbRec;
-                    }
-                    if (ctx->iTotalNumMbRec > iTotalMbTargetLayer)
-                    {
-                        iRet = ERR_INFO_MB_NUM_EXCEED_FAIL;
-                        break;
-                    }
-                    if (pSliceHeader->pPps->uiNumSliceGroups > 1)
-                    {
-                        iNextMbXyIndex = FmoNextMb(pFmo, iNextMbXyIndex);
-                    }
-                    else
-                    {
-                        ++iNextMbXyIndex;
-                    }
-                    if (-1 == iNextMbXyIndex || iNextMbXyIndex >= iTotalMbTargetLayer)
+                    if (xy == iStop)
                     {
                         break;
                     }
-                    pCurDqLayer->iMbX = iNextMbXyIndex % pCurDqLayer->iMbWidth;
-                    pCurDqLayer->iMbY = iNextMbXyIndex / pCurDqLayer->iMbWidth;
-                    pCurDqLayer->iMbXyIndex = iNextMbXyIndex;
-                } while (true);
-                if (iRet == ERR_NONE)
-                {
-                    ctx->pDec->iWidthInPixel = iCurLayerWidth;
-                    ctx->pDec->iHeightInPixel = iCurLayerHeight;
+                    xy = pSliceHeader->pPps->uiNumSliceGroups > 1 ? FmoNextMb(ctx->pFmo, xy) : xy + 1;
                 }
             }
             d.Kv("rec", iRet);

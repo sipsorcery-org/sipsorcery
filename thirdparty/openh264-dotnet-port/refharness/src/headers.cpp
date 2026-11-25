@@ -51,14 +51,22 @@
 // then for a reference picture WelsMarkAsRef and ExpandReferencingPicture (a
 // "K" line with the lists after marking), and the frame_num bookkeeping. The
 // "Y" line names the picture as well. Error concealment (NeedErrorCon,
-// ImplementErrorCon, MarkECFrameAsRef) and deblocking are not run (D6, D5), so
-// a damaged picture keeps whatever its unreconstructed macroblocks held and
-// references are unfiltered; both sides do the same. Where upstream returns
+// ImplementErrorCon, MarkECFrameAsRef) is not run (D6), so a damaged picture
+// keeps whatever its unreconstructed macroblocks held; both sides do the
+// same. Where upstream returns
 // from DecodeCurrentAccessUnit early (an FmoParamUpdate or reconstruction
 // error) the access unit ends without marking, which is where upstream's
 // concealment would take over. Skipped slices still do nothing, an access
 // unit with no slice parsed is not marked, and once PrefetchPic fails the rest
 // of the stream is skipped (noPic).
+//
+// D5 swaps ReconSlice's copy of the macroblock loop for the decoder's own
+// WelsTargetSliceConstruction, so each slice is deblocked straight after its
+// reconstruction (and DeblockingInit joins the decode functions). The "D"
+// line's samples are read after the call: they include the slice's own
+// filtering but not what later slices do across its bottom and right edges.
+// The "Y" line is the finished picture, as the decoder outputs and references
+// it.
 
 #include <algorithm>
 #include <climits>
@@ -72,6 +80,7 @@
 #include "au_parser.h"
 #include "decode_mb_aux.h"
 #include "decode_slice.h"
+#include "deblocking.h"
 #include "decoder.h"
 #include "decoder_context.h"
 #include "decoder_core.h"
@@ -658,11 +667,12 @@ struct Driver {
       memset (&vlc, 0, sizeof vlc);
       InitVlcTable (&vlc);
       ctx->pVlcTable = &vlc;
-      // InitDecFuncs (WelsInitDecoder), without the deblocking (D5).
+      // InitDecFuncs (WelsInitDecoder).
       WelsBlockFuncInit (&ctx->sBlockFunc, 0);
       InitPredFunc (ctx, 0);
       InitMcFunc (&ctx->sMcFunc, 0);
       InitExpandPictureFunc (&ctx->sExpandPicFunc, 0);
+      DeblockingInit (&ctx->sDeblockingFunc, 0);
     }
     return true;
   }
@@ -1054,66 +1064,31 @@ struct Driver {
     ctx->pDec = NULL;
   }
 
-  // WelsTargetSliceConstruction (decode_slice.cpp) up to its deblocking. Adds
-  // to the slice's "D" line its return value, the macroblocks reconstructed and
-  // the SHA-1 of their samples (16x16 luma, 8x8 Cb, 8x8 Cr, in slice order).
+  // WelsDecodeConstructSlice's WelsTargetSliceConstruction (decode_slice.cpp),
+  // which reconstructs the slice and then deblocks it. Adds to the slice's "D"
+  // line its return value, the number of macroblocks it reconstructed and the
+  // SHA-1 of their samples after the call (16x16 luma, 8x8 Cb, 8x8 Cr, in slice
+  // order).
   int32_t ReconSlice() {
     PDqLayer pCurDqLayer = ctx->pCurDqLayer;
     PSlice pCurSlice = &pCurDqLayer->sLayerInfo.sSliceInLayer;
     PSliceHeader pSliceHeader = &pCurSlice->sSliceHeaderExt.sSliceHeader;
     const int32_t iTotalMbTargetLayer = pSliceHeader->pSps->uiTotalMbCount;
-    const int32_t iCurLayerWidth = pCurDqLayer->iMbWidth << 4;
-    const int32_t iCurLayerHeight = pCurDqLayer->iMbHeight << 4;
-    PFmo pFmo = ctx->pFmo;
-    const int32_t iTotalNumMb = pCurSlice->iTotalMbInCurSlice;
-    int32_t iCountNumMb = 0;
-    int32_t iRet = ERR_NONE;
+    const int32_t iRet = WelsTargetSliceConstruction (ctx);
     std::string b;
     int32_t n = 0;
-
-    if (!ctx->sSpsPpsCtx.bAvcBasedFlag && iCurLayerWidth != ctx->iCurSeqIntervalMaxPicWidth) {
-      iRet = ERR_INFO_WIDTH_MISMATCH;
-    } else {
-      int32_t iNextMbXyIndex = pSliceHeader->iFirstMbInSlice;
-      pCurDqLayer->iMbX = iNextMbXyIndex % pCurDqLayer->iMbWidth;
-      pCurDqLayer->iMbY = iNextMbXyIndex / pCurDqLayer->iMbWidth;
-      pCurDqLayer->iMbXyIndex = iNextMbXyIndex;
-      if (0 == iNextMbXyIndex) {
-        pCurDqLayer->pDec->iSpsId = ctx->pSps->iSpsId;
-        pCurDqLayer->pDec->iPpsId = ctx->pPps->iPpsId;
-        pCurDqLayer->pDec->uiQualityId = pCurDqLayer->sLayerInfo.sNalHeaderExt.uiQualityId;
-      }
-      do {
-        if (iCountNumMb >= iTotalNumMb) break;
-        if (WelsTargetMbConstruction (ctx)) {
-          iRet = ERR_INFO_MB_RECON_FAIL;
-          break;
-        }
-        RecordSamples (b, pCurDqLayer->pDec, pCurDqLayer->iMbX, pCurDqLayer->iMbY);
+    // The reconstructed macroblocks: the whole slice, or after a failure (which
+    // leaves iMbXyIndex on the failing macroblock) those before it, and that
+    // one too when it was the reconstruction count that overflowed.
+    if (iRet != ERR_INFO_WIDTH_MISMATCH) {
+      const int32_t iStop = iRet == ERR_NONE ? -1 : pCurDqLayer->iMbXyIndex;
+      for (int32_t xy = pSliceHeader->iFirstMbInSlice;
+           n < pCurSlice->iTotalMbInCurSlice && xy >= 0 && xy < iTotalMbTargetLayer;) {
+        if (xy == iStop && iRet == ERR_INFO_MB_RECON_FAIL) break;
+        RecordSamples (b, pCurDqLayer->pDec, xy % pCurDqLayer->iMbWidth, xy / pCurDqLayer->iMbWidth);
         ++n;
-        ++iCountNumMb;
-        if (!pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex]) {
-          pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex] = true;
-          ctx->pDec->iMbEcedPropNum += (pCurDqLayer->pMbRefConcealedFlag[iNextMbXyIndex] ? 1 : 0);
-          ++ctx->iTotalNumMbRec;
-        }
-        if (ctx->iTotalNumMbRec > iTotalMbTargetLayer) {
-          iRet = ERR_INFO_MB_NUM_EXCEED_FAIL;
-          break;
-        }
-        if (pSliceHeader->pPps->uiNumSliceGroups > 1) {
-          iNextMbXyIndex = FmoNextMb (pFmo, iNextMbXyIndex);
-        } else {
-          ++iNextMbXyIndex;
-        }
-        if (-1 == iNextMbXyIndex || iNextMbXyIndex >= iTotalMbTargetLayer) break;
-        pCurDqLayer->iMbX = iNextMbXyIndex % pCurDqLayer->iMbWidth;
-        pCurDqLayer->iMbY = iNextMbXyIndex / pCurDqLayer->iMbWidth;
-        pCurDqLayer->iMbXyIndex = iNextMbXyIndex;
-      } while (1);
-      if (iRet == ERR_NONE) {
-        ctx->pDec->iWidthInPixel = iCurLayerWidth;
-        ctx->pDec->iHeightInPixel = iCurLayerHeight;
+        if (xy == iStop) break;
+        xy = pSliceHeader->pPps->uiNumSliceGroups > 1 ? FmoNextMb (ctx->pFmo, xy) : xy + 1;
       }
     }
     d.Kv ("rec", iRet);

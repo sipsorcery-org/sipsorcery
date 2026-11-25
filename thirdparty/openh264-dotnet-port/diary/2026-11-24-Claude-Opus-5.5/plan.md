@@ -19,7 +19,8 @@ was kept for the VP8 encoder.
 | D2 CAVLC macroblock syntax | **Done** (25 Nov) | `parse_mb_syn_cavlc` (CAVLC paths), the rest of `decoder_data_tables` and `fmo`, `InitVlcTable`, `pic_queue`, the P-slice half of `mv_pred`, the DQ layer setup in `decoder_core`, and the parse half of `decode_slice` (`WelsDecodeSlice`, the I/P macroblock parsers, intra mode parsing, the two DC transforms the residual parser calls). ~5.2k lines. `decode_mb_aux` moved to D3: nothing in the parse calls it. New `h264ref mbs` and `mbs-damaged` modes: the D1 driver also parses each AU's slices and hashes every macroblock's parse results. All 51 vectors match, clean and in 3 damaged forms each (`reference/mbs.tsv`, `mbs-damaged.tsv`), and the 68 new decoder tables match (83 `dectable` rows). UnitTest: 1361. TestVectors: 211 + 1 skipped. |
 | D3 I-slice reconstruction | **Done** (25 Nov) | `get_intra_predictor` (all 42 C predictors), `decode_mb_aux` (the 4x4 and 8x8 residual IDCTs, the block offset table), `InitPredFunc`, the intra half of `rec_mb`, and `WelsMbIntraPredictionConstruction`/`WelsTargetMbConstruction` in `decode_slice`. ~2k lines. `mbs` mode now also reconstructs every intra macroblock of each parsed slice (no deblocking) and hashes its samples: 167.8k intra MBs over the clean vectors, all matching, clean and damaged. `kernels.tsv`: 1969 rows (636 new). UnitTest: 1999. TestVectors: 211 + 1 skipped. |
 | D4 P-slice reconstruction | **Done** (25 Nov) | `manage_dec_ref` (list init and reordering, sliding window, MMCO, long-term references), the inter half of `rec_mb` (`GetRefPic`, `BaseMC`, `WeightPrediction`, `GetInterPred`), `WelsMbInterPrediction`/`WelsMbInterConstruction` and `WelsBlockFuncInit` in `decode_slice`, the DPB memory in `decoder` (`CreatePicBuff`/`IncreasePicBuff`/`DecreasePicBuff`, `WelsRequestMem`, `SyncPictureResolutionExt`, `WelsFreeDynamicMemory`), and `AllocPicBuffOnNewSeqBegin`, `InitConstructAccessUnit`, `InitRefPicList` and `CheckRefPicturesComplete` in `decoder_core`. B-slice and CABAC reference paths fail loudly. ~2.3k lines. `mbs` mode drops its stand-ins for the real reference flow (DPB, `InitRefPicList`, `WelsMarkAsRef`, padding) and reconstructs every macroblock: 1.41M P-slice MBs over the clean vectors, 4,501 pictures marked, all matching, clean and damaged. On the 7 vectors with deblocking off, the C harness's pictures equal the real decoder's output, all 191 frames. UnitTest: 1999. TestVectors: 211 + 1 skipped. |
-| D5 Deblocking | Next | `deblocking.cpp` (the decoder's filter driver over the C3 edge kernels: boundary strengths, QP averaging, the slice and picture edge rules) and the rest of `WelsTargetSliceConstruction`; the harness's `ReconSlice` gives way to the real slice construction. Acceptance: the deblocked planes match on every macroblock, and on clean Constrained Baseline vectors the pictures equal the real decoder's output frames. |
+| D5 Deblocking | **Done** (25 Nov) | `deblocking` (boundary strengths for P slices with 4x4 and 8x8 transforms, the alpha/beta/tc0 tables, the edge filters, the intra and inter macroblock filters, the slice loop, the per-MB entry points, `DeblockingInit`) and `WelsTargetSliceConstruction` in `decode_slice`. B-slice strengths throw; they can't be reached. ~1.35k lines. `mbs` mode now calls the real `WelsTargetSliceConstruction`, so every slice is deblocked: 5,196 slices and 1.43M macroblocks over the clean vectors (2.06M with the damaged ones, which also reach filter mode 2), all matching, clean and damaged. On the 33 clean Constrained Baseline vectors without cropping, every picture equals the real decoder's output frame, 4,196 of 4,196. UnitTest: 1999. TestVectors: 211 + 1 skipped. |
+| D6 Decoder API | Next | The rest of `decoder_core` (`DecodeCurrentAccessUnit`, `ConstructAccessUnit`, `DecodeFrameConstruction`), `decoder` (`WelsInitDecoder`, `InitDecFuncs`, `ResetDecoder`, `WelsDecodeBs`), `error_concealment` and `welsDecoderExt` (`CWelsDecoder`, `DecodeFrame2`/`DecodeFrameNoDelay`). Acceptance: the 35 Constrained Baseline vectors pass their upstream hashes (the skipped decode test), and a stream that exhausts the DPB recovers through `ResetDecoder`. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -321,6 +322,57 @@ Notes from D4:
   moving `BaseMC`'s right clip bound by two pixels leaves the block inside
   the replicated padding, so the samples are identical.
 
+Notes from D5:
+
+- **Scope.** All of `deblocking.cpp` except the B-slice strength functions
+  (`DeblockingBSliceBsMarginalMBAvcbase`, `DeblockingBSliceBSInsideMBNormal`,
+  with their `ON_MB_BS`/`IN_SMB_EDGE_MV` macros), which throw
+  `NotSupportedException`. They are unreachable: this port's B macroblock
+  parser fails on a slice's first macroblock, so a B slice reaches
+  `WelsTargetSliceConstruction` with `iTotalMbInCurSlice` 0, and that skips
+  the filter. The 8x8-transform strength paths are ported in full although
+  Constrained Baseline never uses them. `WelsDeblockingInitFilter` and
+  `WelsDeblockingFilterMB` (the threaded decoder's per-MB entry points) are
+  ported with `ref` parameters for the C++ references;
+  `WelsDecodeAndConstructSlice`, their only caller, is not. `InitDecFuncs`
+  waits for D6 with `WelsInitDecoder`; the harness calls its five parts.
+- **Port details.** `nBS[2][4][4]` is a 32-byte stackalloc with a `Bs (nBS,
+  dir, edge)` helper for `&nBS[dir][edge][0]`, so the `*(uint32_t*)` stores
+  and tests stay as upstream writes them. The macros became small static
+  helpers (`MB_BS_MV`, `SMB_EDGE_MV`, `BS_EDGE`, `GET_ALPHA_BETA_FROM_QP`,
+  `TC0_TBL_LOOKUP`). The five tables were checked number for number against
+  `deblocking.cpp` by a script.
+- **Oracle.** `ReconSlice` on both sides is now a call to
+  `WelsTargetSliceConstruction` followed by the sample record: the slice's
+  macroblocks walked from `iFirstMbInSlice` (all of them, or after a failure
+  those before the failing one, which upstream leaves in `iMbXyIndex`, and that
+  one too for `ERR_INFO_MB_NUM_EXCEED_FAIL`). The samples are read after the
+  call, so they include the slice's own filtering but not what later slices do
+  across its edges; the "Y" line has the finished picture. `mbs.tsv` and
+  `mbs-damaged.tsv` were regenerated. Only the deblocked vectors changed; the 7
+  with deblocking off and the CABAC ones are byte-identical to D4's.
+- **Checked against the real decoder.** On every clean Constrained Baseline
+  vector without cropping (33 of 35), each "Y" hash equals the SHA1 of the
+  matching `h264ref yuv` frame, 4,196 of 4,196, in decode order. CVFC1_Sony_C
+  and Static crop their output, which the full-picture hash can't be compared
+  with; D6's decode test covers them.
+- **Coverage.** Clean: 5,196 slices deblocked with filter mode 0 (291 with it
+  off), 1,615 of them with alpha or beta offsets (BA1_FT_C, CI1_FT_B, MPS_MW_A,
+  MR1/2_MW_A). No clean vector uses mode 2 (no filtering across slice
+  boundaries); 7 damaged slices do (CI1_FT_B, CVFC1_Sony_C, SVA_CL1_E), and
+  one damaged slice carries the invalid mode 3, which the filter ignores.
+- **Negative controls.** Nine, each alone, run against the 86 vector MB-dump
+  tests (clean and damaged). Caught: chroma tc0 without its +1 (60 failed),
+  the left-edge luma QP average without rounding (32), `BS_EDGE` without its
+  coefficient shift (43), `SMB_EDGE_MV`'s threshold at 8 rather than 4
+  quarter-samples (49), `MB_BS_MV`'s at 5 (45), the intra macroblock's internal
+  luma strength 2 rather than 3 (55), and the beta table read one entry high
+  (51). Filter mode 2 crossing slice boundaries is caught by one damaged
+  variant only, which is all the coverage mode 2 has. Dropping the 8x8
+  transform's inner-edge skip survives: no vector this port decodes uses the
+  8x8 transform (it needs CABAC or High profile CAVLC with
+  `transform_8x8_mode_flag`), so that path is unverified until Main/High.
+
 ## 1. Goal
 
 A pure managed H.264 encoder and decoder in `src/SIPSorcery.H264`, ported from
@@ -537,7 +589,9 @@ merges. Approximate C# sizes are in brackets.
   `rec_mb`. Acceptance: the planes before deblocking match on P vectors.
   *[~2.5k; ~2.3k, see the D4 notes]*
 - **D5** Deblocking (`decoder/deblocking.cpp`). Acceptance: the first SHA1
-  matches. *[~1.2k]*
+  matches. *[~1.2k; ~1.35k. The upstream hashes need the API layer, so D5's
+  acceptance became the harness pictures against the real decoder's frames,
+  see the D5 notes]*
 - **D6** Orchestration and API: `decode_slice`, `decoder_core`, `decoder`,
   `error_concealment` and `welsDecoderExt` (`CWelsDecoder`,
   `DecodeFrameNoDelay`/`DecodeFrame2`). Acceptance: every Constrained Baseline

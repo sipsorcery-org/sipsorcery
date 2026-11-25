@@ -68,10 +68,10 @@ against the C# dump the test writes on a mismatch.
 
 `mbs` is the same driver, also decoding each access unit as
 `DecodeCurrentAccessUnit` does (single-threaded, error concealment on but not
-run, no deblocking): the picture comes from the DPB, each slice builds its
-reference list with `InitRefPicList`, is parsed by `WelsDecodeSlice` and
-reconstructed as `WelsTargetSliceConstruction` does, and a reference picture is
-then marked (`WelsMarkAsRef`) and padded. For each parsed slice it adds a line
+run): the picture comes from the DPB, each slice builds its reference list
+with `InitRefPicList`, is parsed by `WelsDecodeSlice`, then reconstructed and
+deblocked by `WelsTargetSliceConstruction`, and a reference picture is then
+marked (`WelsMarkAsRef`) and padded. For each parsed slice it adds a line
 with the frame_num gap check, the reference list, the parser's end state, the
 SHA1 of a binary record of every macroblock the slice reached (type, QPs, CBP,
 non-zero counts, coefficients, intra modes, sub-MB types, motion vectors,
@@ -80,8 +80,10 @@ and sample SHA1, and the completeness flag; for each access unit, the picture
 and its SHA1, and for a reference picture the short- and long-term lists after
 marking. CABAC and B slices are skipped (not ported yet), and so is the rest
 of a stream once `PrefetchPic` finds no free picture (upstream resets the whole
-decoder there, in the API layer). On the vectors with deblocking turned off,
-the pictures equal the real decoder's output frames. `mbs-damaged` and
+decoder there, in the API layer). On the clean Constrained Baseline vectors
+the pictures equal the real decoder's output frames (all but the two cropped
+vectors, whose output can't be compared with the uncropped picture hash).
+`mbs-damaged` and
 `mbdump` work as their `headers` counterparts.
 
 ## Reference results (`reference/`)

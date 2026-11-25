@@ -14,8 +14,10 @@
 // P macroblocks (CheckRefPics, WelsMbInterPrediction, WelsMbInterConstruction,
 // WelsMbInterSampleConstruction) with WelsBlockFuncInit and its block-zero
 // kernels; their B slice branches log and return ERR_INFO_UNSUPPORTED_BIPRED.
-// The slice loop (WelsTargetSliceConstruction, which ends in deblocking) and
-// WelsDecodeAndConstructSlice come with deblocking (D5). CABAC is not ported yet: WelsDecodeSlice logs and
+// D5 adds the slice loop, WelsTargetSliceConstruction, which reconstructs the
+// slice and then deblocks it. WelsDecodeAndConstructSlice, the threaded
+// decoder's parse-and-construct loop, is not ported, as the threaded decoder
+// is not. CABAC is not ported yet: WelsDecodeSlice logs and
 // returns ERR_INFO_UNSUPPORTED_CABAC_EL for a CABAC PPS, and the CABAC
 // branches of the intra mode parsers (unreachable from the CAVLC parsers)
 // return the same. CAVLC B slices are not ported yet either:
@@ -31,6 +33,7 @@
 // 25 Nov 2026  Claude          Created (D2).
 // 25 Nov 2026  Claude          D3: intra macroblock reconstruction.
 // 25 Nov 2026  Claude          D4: inter macroblock reconstruction.
+// 25 Nov 2026  Claude          D5: WelsTargetSliceConstruction.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -115,6 +118,121 @@ internal static unsafe partial class WelsDec
             }
         }
         return true;
+    }
+
+    public static int32_t WelsTargetSliceConstruction(SWelsDecoderContext* pCtx)
+    {
+        SDqLayer* pCurDqLayer = pCtx->pCurDqLayer;
+        SSlice* pCurSlice = &pCurDqLayer->sLayerInfo.sSliceInLayer;
+        SSliceHeader* pSliceHeader = &pCurSlice->sSliceHeaderExt.sSliceHeader;
+
+        int32_t iTotalMbTargetLayer = (int32_t)pSliceHeader->pSps->uiTotalMbCount;
+
+        int32_t iCurLayerWidth = pCurDqLayer->iMbWidth << 4;
+        int32_t iCurLayerHeight = pCurDqLayer->iMbHeight << 4;
+
+        int32_t iNextMbXyIndex = 0;
+        SFmo* pFmo = pCtx->pFmo;
+
+        int32_t iTotalNumMb = pCurSlice->iTotalMbInCurSlice;
+        int32_t iCountNumMb = 0;
+        PDeblockingFilterMbFunc pDeblockMb = &WelsDeblockingMb;
+
+        if (!pCtx->sSpsPpsCtx.bAvcBasedFlag && iCurLayerWidth != pCtx->iCurSeqIntervalMaxPicWidth)
+        {
+            return ERR_INFO_WIDTH_MISMATCH;
+        }
+
+        iNextMbXyIndex = pSliceHeader->iFirstMbInSlice;
+        pCurDqLayer->iMbX = iNextMbXyIndex % pCurDqLayer->iMbWidth;
+        pCurDqLayer->iMbY = iNextMbXyIndex / pCurDqLayer->iMbWidth;
+        pCurDqLayer->iMbXyIndex = iNextMbXyIndex;
+
+        if (0 == iNextMbXyIndex)
+        {
+            pCurDqLayer->pDec->iSpsId = pCtx->pSps->iSpsId;
+            pCurDqLayer->pDec->iPpsId = pCtx->pPps->iPpsId;
+
+            pCurDqLayer->pDec->uiQualityId = pCurDqLayer->sLayerInfo.sNalHeaderExt.uiQualityId;
+        }
+
+        do
+        {
+            if (iCountNumMb >= iTotalNumMb)
+            {
+                break;
+            }
+
+            if (!pCtx->pParam->bParseOnly)
+            { //for parse only, actual recon MB unnecessary
+                if (WelsTargetMbConstruction(pCtx) != 0)
+                {
+                    WelsLog(&(pCtx->sLogCtx), WELS_LOG_WARNING,
+                        $"WelsTargetSliceConstruction():::MB({pCurDqLayer->iMbX}, {pCurDqLayer->iMbY}) construction error. pCurSlice_type:{pCurSlice->eSliceType}");
+
+                    return ERR_INFO_MB_RECON_FAIL;
+                }
+            }
+
+            ++iCountNumMb;
+            if (!pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex])
+            { //already con-ed, overwrite
+                pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex] = true;
+                pCtx->pDec->iMbEcedPropNum += (pCurDqLayer->pMbRefConcealedFlag[iNextMbXyIndex] ? 1 : 0);
+                ++pCtx->iTotalNumMbRec;
+            }
+
+            if (pCtx->iTotalNumMbRec > iTotalMbTargetLayer)
+            {
+                WelsLog(&(pCtx->sLogCtx), WELS_LOG_WARNING,
+                    $"WelsTargetSliceConstruction():::pCtx->iTotalNumMbRec:{pCtx->iTotalNumMbRec}, iTotalMbTargetLayer:{iTotalMbTargetLayer}");
+
+                return ERR_INFO_MB_NUM_EXCEED_FAIL;
+            }
+
+            if (pSliceHeader->pPps->uiNumSliceGroups > 1)
+            {
+                iNextMbXyIndex = FmoNextMb(pFmo, iNextMbXyIndex);
+            }
+            else
+            {
+                ++iNextMbXyIndex;
+            }
+            if (-1 == iNextMbXyIndex || iNextMbXyIndex >= iTotalMbTargetLayer)
+            { // slice group boundary or end of a frame
+                break;
+            }
+            pCurDqLayer->iMbX = iNextMbXyIndex % pCurDqLayer->iMbWidth;
+            pCurDqLayer->iMbY = iNextMbXyIndex / pCurDqLayer->iMbWidth;
+            pCurDqLayer->iMbXyIndex = iNextMbXyIndex;
+        } while (true);
+
+        pCtx->pDec->iWidthInPixel = iCurLayerWidth;
+        pCtx->pDec->iHeightInPixel = iCurLayerHeight;
+
+        if ((pCurSlice->eSliceType != (uint8_t)I_SLICE) && (pCurSlice->eSliceType != (uint8_t)P_SLICE)
+            && (pCurSlice->eSliceType != (uint8_t)B_SLICE))
+        {
+            return ERR_NONE; //no error but just ignore the type unsupported
+        }
+
+        if (pCtx->pParam->bParseOnly)
+        { //for parse only, deblocking should not go on
+            return ERR_NONE;
+        }
+
+        if (1 == pSliceHeader->uiDisableDeblockingFilterIdc
+            || pCtx->pCurDqLayer->sLayerInfo.sSliceInLayer.iTotalMbInCurSlice <= 0)
+        {
+            return ERR_NONE;//NO_SUPPORTED_FILTER_IDX
+        }
+        else
+        {
+            WelsDeblockingFilterSlice(pCtx, pDeblockMb);
+        }
+        // any other filter_idc not supported here, 7/22/2010
+
+        return ERR_NONE;
     }
 
     public static int32_t WelsMbInterSampleConstruction(SWelsDecoderContext* pCtx, SDqLayer* pCurDqLayer,
