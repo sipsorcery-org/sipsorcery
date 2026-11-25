@@ -64,14 +64,33 @@ internal static class Codecs
 
     /// <summary>
     /// The format offered for a codec. Only the one codec is offered on each leg, so the browser
-    /// has to use it. H264 is Constrained Baseline, packetization mode 1, as WebRTC uses.
+    /// has to use it. H264 is Constrained Baseline, packetization mode 1, as WebRTC uses, at the
+    /// lowest level that allows the frame size.
     /// </summary>
-    public static VideoFormat Format(string name) => name switch
+    public static VideoFormat Format(string name, int width, int height) => name switch
     {
         "VP8" => new VideoFormat(VideoCodecsEnum.VP8, 96),
-        "H264" => new VideoFormat(VideoCodecsEnum.H264, 102, 90000, "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f"),
+        "H264" => new VideoFormat(VideoCodecsEnum.H264, 102, 90000,
+            $"level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e0{H264Level(width, height):x2}"),
         _ => throw new ArgumentException($"Unknown codec {name}"),
     };
+
+    /// <summary>
+    /// The lowest H264 level (as profile-level-id's last byte, 10 x the level) whose largest frame
+    /// (in 16x16 macroblocks, H.264 table A-1) holds this size: 3.1 for up to 720p, as browsers
+    /// offer, 4.0 for 1080p, 5.1 for 4K, 6.0 beyond.
+    /// </summary>
+    private static int H264Level(int width, int height)
+    {
+        int macroblocks = (width + 15) / 16 * ((height + 15) / 16);
+        return macroblocks switch
+        {
+            <= 3600 => 31,
+            <= 8192 => 40,
+            <= 36864 => 51,
+            _ => 60,
+        };
+    }
 
     public static AudioFormat Opus => AudioCommonlyUsedFormats.OpusWebRTC;
 

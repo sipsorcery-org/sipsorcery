@@ -185,7 +185,7 @@ select:disabled { opacity: 0.45; }
   position: absolute;
   inset: 0;
   display: grid;
-  place-items: center;
+  place-items: end center;   /* below the stats overlay, which fills the top at large sizes */
   padding: 24px;
   text-align: center;
   color: var(--text-3);

@@ -40,6 +40,8 @@ internal sealed class LossyLink : IDisposable
     {
         var s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         s.Bind(new IPEndPoint(IPAddress.Any, 0));
+        // Room for a 4K keyframe's burst of packets, so the relay itself loses none.
+        s.ReceiveBufferSize = s.SendBufferSize = 8 << 20;
         // Don't let an ICMP port unreachable (a side that has closed) end the receive loop.
         const int SIO_UDP_CONNRESET = -1744830452;
         s.IOControl(SIO_UDP_CONNRESET, [0, 0, 0, 0], null);

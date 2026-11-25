@@ -45,7 +45,33 @@ function onClock(m) {
 // Controls
 
 let caps = { implementations: [] };
-const SIZES = ["320x240", "640x480", "1280x720"];
+// No 8K: the browser can't capture and encode it in real time (a few frames in 15 s), and
+// SIPSorcery's FFmpeg VP8 takes 100 ms to decode an 8K frame and 180 ms to encode one.
+const SIZES = ["320x240", "640x480", "1280x720", "1920x1080", "3840x2160"];
+const SIZE_LABELS = {
+  "320x240": "320×240", "640x480": "640×480", "1280x720": "1280×720 (720p)",
+  "1920x1080": "1920×1080 (1080p)", "3840x2160": "3840×2160 (4K)",
+};
+// Bitrates that give a clean picture at each size, picked when the size is: [browser, encoder] kbit/s.
+const BITRATES = {
+  "320x240": [500, 500], "640x480": [1500, 1000], "1280x720": [2500, 2000],
+  "1920x1080": [4000, 4000], "3840x2160": [15000, 15000],
+};
+// Above 1080p the decoded tile starts off: each frame is copied into the shared buffer on
+// SIPSorcery's decode thread and uploaded to the GPU on the page's main thread (25 MB a frame at
+// 4K), which would slow the pipeline being measured and starve the test card. It can be turned on.
+const BIG = 1920 * 1080;
+const isBig = () => { const [w, h] = $("size").value.split("x").map(Number); return w * h > BIG; };
+function defaultDecodedTile() {
+  $("showDecoded").checked = !isBig();
+  updateDecodedNote();
+}
+
+function suggestBitrates({ browser = true, encoder = true } = {}) {
+  const [b, e] = BITRATES[$("size").value] ?? [];
+  if (browser && b) $("kbps").value = String(b);
+  if (encoder && e) $("encKbps").value = String(e);
+}
 
 function fillSelect(sel, values, wanted, labels = {}) {
   const keep = wanted ?? sel.value;
@@ -81,13 +107,15 @@ function readConfig() {
 }
 
 function initControls() {
-  fillSelect($("size"), SIZES, params.get("size") ?? "640x480", { "320x240": "320×240", "640x480": "640×480", "1280x720": "1280×720" });
+  fillSelect($("size"), SIZES, params.get("size") ?? "640x480", SIZE_LABELS);
+  suggestBitrates();   // the switches below override these
+  $("size").addEventListener("change", () => { suggestBitrates(); defaultDecodedTile(); });   // before the restart below
   for (const [id, key] of [["source", "source"], ["fps", "fps"], ["mode", "mode"], ["kbps", "kbps"], ["encKbps", "enckbps"], ["dropA", "dropA"], ["lossB", "lossB"]]) {
     if (params.get(key)) $(id).value = params.get(key);
   }
   $("dropAOut").textContent = `${$("dropA").value}%`;
   $("lossBOut").textContent = `${$("lossB").value}%`;
-  if (params.get("decoded") === "0") $("showDecoded").checked = false;
+  $("showDecoded").checked = params.get("decoded") ? params.get("decoded") !== "0" : !isBig();
   for (const id of ["source", "size", "fps", "kbps", "mode", "codecIn", "decoder", "codecOut", "encoder", "encKbps"]) {
     $(id).addEventListener("change", () => {
       refreshPickers();
@@ -155,11 +183,16 @@ async function start() {
       source = startCard(cfg.width, cfg.height, cfg.fps);
     } else {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { exact: cfg.width }, height: { exact: cfg.height }, frameRate: cfg.fps },
+        // The fake camera runs at 30 fps (MainForm sets it); max brings it down for 15.
+        video: { width: { exact: cfg.width }, height: { exact: cfg.height }, frameRate: { ideal: cfg.fps, max: cfg.fps } },
         audio: true,
       });
       source = { stream, drawnAt: () => undefined, stop: () => stream.getTracks().forEach((t) => t.stop()) };
     }
+    // "detail" makes the browser keep the full size from the first frame (its default for
+    // camera-like content is to start smaller and step up, and a size change isn't what's being
+    // tested). setParameters below says the same once leg A is up.
+    for (const t of source.stream.getVideoTracks()) t.contentHint = "detail";
     $("srcVideo").srcObject = source.stream;
     log(`start: ${cfg.source} ${cfg.width}x${cfg.height} at ${cfg.fps} fps, ${cfg.mode === "relay" ? `relay ${cfg.codecIn}` : `${cfg.codecIn} (${cfg.decoder}) -> ${cfg.codecOut} (${cfg.encoder})`}`);
     post({ type: "start", config: cfg });
@@ -335,12 +368,12 @@ function onOutputFrame(now, meta) {
   out.height = meta.height;
   if (cfg?.source === "card" && meta.width > 0) {
     const r = stripRect(meta.width, meta.height);
-    if (stripCanvas.width !== meta.width || stripCanvas.height !== meta.height) {
-      stripCanvas.width = meta.width;
-      stripCanvas.height = meta.height;
+    if (stripCanvas.width !== r.w || stripCanvas.height !== r.h) {
+      stripCanvas.width = r.w;
+      stripCanvas.height = r.h;
     }
-    stripCtx.drawImage(video, 0, 0, meta.width, meta.height);
-    const n = readStrip(stripCtx.getImageData(r.x, r.y, r.w, r.h).data, r.cell);
+    stripCtx.drawImage(video, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+    const n = readStrip(stripCtx.getImageData(0, 0, r.w, r.h).data, r.cell);
     const drawn = n >= 0 ? source?.drawnAt?.(n) : undefined;
     if (drawn != null) {
       out.latency.push(meta.expectedDisplayTime - drawn);
@@ -385,8 +418,10 @@ function initGl() {
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 }
 
+// A new buffer comes with each stream size that needs one; the old one is let go.
 window.chrome?.webview?.addEventListener("sharedbufferreceived", (e) => {
   const meta = e.additionalData;
+  if (dec.buffer) { try { chrome.webview.releaseBuffer(dec.buffer); } catch { } }
   dec.buffer = e.getBuffer();
   dec.view = new DataView(dec.buffer);
   dec.header = meta.header;
@@ -396,6 +431,15 @@ window.chrome?.webview?.addEventListener("sharedbufferreceived", (e) => {
 
 function drawDecoded(now) {
   if (!dec.view || !running || !$("showDecoded").checked || cfg?.mode === "relay") return;
+  try {
+    drawDecodedFrame();
+  } catch (err) {
+    // The host closed this buffer for a new one that's on its way.
+    dec.view = null;
+  }
+}
+
+function drawDecodedFrame() {
   const seq = dec.view.getInt32(0, true);
   if (seq === dec.seq) return;
   const slot = dec.view.getInt32(4, true);
@@ -424,6 +468,7 @@ function updateDecodedNote() {
   const relay = (running ? cfg?.mode : $("mode").value) === "relay";
   note.hidden = !(relay || !$("showDecoded").checked);
   note.textContent = relay ? "Relay: SIPSorcery forwards frames without decoding them, so there's nothing to show here."
+    : isBig() ? "Off above 1080p: copying and drawing each frame here would slow SIPSorcery's decode thread and the test card. View ▸ Decoded tile turns it on."
     : "Turned off (View ▸ Decoded tile), so it costs nothing while benchmarking.";
   $("decCanvas").style.visibility = note.hidden ? "visible" : "hidden";
 }
@@ -589,7 +634,7 @@ async function pollBrowserStats() {
       const media = o.mediaSourceId ? r.get(o.mediaSourceId) : null;
       const p = prevSrc;
       srcStats = {
-        framesIn: media?.frames ?? null,
+        framesIn: media?.frames ?? null, sourceFps: media?.framesPerSecond ?? null, cardDrawMs: source?.drawMs ?? null,
         width: o.frameWidth, height: o.frameHeight, fps: o.framesPerSecond,
         kbps: p ? ((o.bytesSent - p.bytesSent) * 8) / (now - p.at) : null,
         codec: codec?.mimeType?.split("/")[1], impl: o.encoderImplementation,
@@ -684,7 +729,7 @@ function render() {
   if (s.framesIn != null && s.framesEncoded > 0 && srcBaseline == null) srcBaseline = s.framesIn - s.framesEncoded;
   const notEncoded = srcBaseline != null ? Math.max(0, s.framesIn - s.framesEncoded - srcBaseline) : null;
   $("ovSource").innerHTML = running ? [
-    `<b>${size(s.width, s.height)}</b> · ${f1(s.fps)} fps sent`,
+    `<b>${size(s.width, s.height)}</b> · ${f1(s.fps)} fps sent` + (short(s.sourceFps) ? ` · <em>source gives ${f1(s.sourceFps)} of ${cfg.fps} fps</em>` : ""),
     [s.codec ?? "–", s.impl, mbps(s.kbps)].filter(Boolean).join(" · "),
     `encode ${f1(s.encodeMs)} ms · keyframes ${s.keyframes ?? "–"}${notEncoded != null ? ` · ${bad(notEncoded, "not encoded")}` : ""}`,
     `keyframe requests in ${s.pli != null ? s.pli + (s.fir ?? 0) : "–"}${s.limit && s.limit !== "none" ? ` · <em>limited by ${s.limit}</em>` : ""}`,
@@ -753,10 +798,14 @@ function render() {
   $("hopAImpl").textContent = cfg && !relay ? `decode: ${cfg.decoder}` : relay ? "no decode" : "";
   $("hopBImpl").textContent = cfg && !relay ? `encode: ${cfg.encoder}` : relay ? "no encode" : "";
 
-  renderVerdict(outFps);
+  // Judged on frames page B decoded, not shown: the display drops frames to fit its refresh, and
+  // that isn't SIPSorcery's doing (missing frames are counted from decoded frames too).
+  renderVerdict(o.fps ?? outFps);
 }
 
 const bad = (n, label) => (n ? `<em>${label} ${n}</em>` : `${label} 0`);
+/** A measured frame rate well under the one picked. */
+const short = (fps) => fps != null && cfg != null && fps < cfg.fps * 0.9;
 
 function renderVerdict(outFps) {
   const chip = $("chipVerdict");
@@ -766,14 +815,18 @@ function renderVerdict(outFps) {
   freezeTimes = freezeTimes.filter((t) => t > now - 10000);
   const problems = [];
   if (outStats.width && (outStats.width !== cfg.width || outStats.height !== cfg.height)) problems.push(`output is ${outStats.width}×${outStats.height}, not ${cfg.width}×${cfg.height}`);
-  if (outFps < cfg.fps * 0.9) problems.push(`output ${f1(outFps)} of ${cfg.fps} fps`);
+  // Against what page A sends, not the rate picked: a source or browser encoder that falls short
+  // isn't SIPSorcery's doing, and is said separately.
+  const sent = srcStats.fps ?? cfg.fps;
+  if (outFps < Math.min(sent, cfg.fps) * 0.9) problems.push(`page B decodes ${f1(outFps)} of ${f1(sent)} fps sent`);
   const lat = pct(out.latency, 0.5);
   if (lat > 500) problems.push(`latency ${f0(lat)} ms`);
   if (freezeTimes.length) problems.push(`${freezeTimes.length} freeze${freezeTimes.length > 1 ? "s" : ""} in 10 s`);
   const recentTrouble = events.out.filter((e) => e.t > now - 10000 && (e.kind === "unread" || e.kind === "gap")).reduce((sum, e) => sum + Math.max(1, e.n), 0);
   if (recentTrouble) problems.push(`${recentTrouble} damaged or missing frames in 10 s`);
   chip.dataset.level = problems.length ? "warn" : "ok";
-  chip.textContent = problems.length ? `Check: ${problems.join(" · ")}` : `Looks right: ${f1(outFps)} fps out, no freezes`;
+  const note = short(srcStats.fps) ? ` (page A sends ${f1(srcStats.fps)} of ${cfg.fps} fps)` : "";
+  chip.textContent = (problems.length ? `Check: ${problems.join(" · ")}` : `Looks right: ${f1(outFps)} fps decoded by page B, no freezes`) + note;
 }
 
 function onCpu(m) {

@@ -83,6 +83,7 @@ internal sealed class Options
                 case "--drop-a": o.Page["dropA"] = Next(ref i); break;            // percent of leg A frames dropped before decode
                 case "--loss-b": o.Page["lossB"] = Next(ref i); break;            // percent of leg B packets dropped
                 case "--no-decoded-view": o.Page["decoded"] = "0"; break;
+                case "--decoded-view": o.Page["decoded"] = "1"; break;           // on even above 1080p
                 case "--capture": o.CapturePath = Path.GetFullPath(Next(ref i)); o.Page["start"] = "1"; break;
                 case "--capture-after": o.CaptureAfter = double.Parse(Next(ref i), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--exit-after": o.ExitAfter = double.Parse(Next(ref i), System.Globalization.CultureInfo.InvariantCulture); o.Page["start"] = "1"; break;

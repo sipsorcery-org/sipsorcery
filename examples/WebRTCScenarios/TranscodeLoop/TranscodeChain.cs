@@ -26,13 +26,13 @@ using SIPSorceryMedia.FFmpeg;
 
 namespace SIPSorcery.TranscodeLoop;
 
-internal sealed record ChainConfig(string Source, string Mode, string CodecIn, string Decoder, string CodecOut, string Encoder, int EncoderKbps)
+internal sealed record ChainConfig(string Source, int Width, int Height, string Mode, string CodecIn, string Decoder, string CodecOut, string Encoder, int EncoderKbps)
 {
     public bool Relay => Mode == "relay";
     public bool TestCard => Source == "card";
-    public string Describe() => Relay
+    public string Describe() => $"{Width}x{Height} " + (Relay
         ? $"relay {CodecIn} (no decode or encode)"
-        : $"transcode {CodecIn} ({Decoder}) → {CodecOut} ({Encoder}{(EncoderKbps > 0 ? $", {EncoderKbps} kbit/s" : "")})";
+        : $"transcode {CodecIn} ({Decoder}) → {CodecOut} ({Encoder}{(EncoderKbps > 0 ? $", {EncoderKbps} kbit/s" : "")})");
 }
 
 internal sealed class TranscodeChain : IDisposable
@@ -112,8 +112,8 @@ internal sealed class TranscodeChain : IDisposable
         _cfg = cfg;
         _view = view;
         _log = log;
-        _formatIn = Codecs.Format(cfg.CodecIn);
-        _formatOut = Codecs.Format(cfg.Relay ? cfg.CodecIn : cfg.CodecOut);
+        _formatIn = Codecs.Format(cfg.CodecIn, cfg.Width, cfg.Height);
+        _formatOut = Codecs.Format(cfg.Relay ? cfg.CodecIn : cfg.CodecOut, cfg.Width, cfg.Height);
         if (!cfg.Relay)
         {
             _decoder = Codecs.Create(cfg.Decoder, 0);
@@ -123,6 +123,9 @@ internal sealed class TranscodeChain : IDisposable
         _a = new RTCPeerConnection(new RTCConfiguration { X_UseRtpFeedbackProfile = true });
         _a.addTrack(new MediaStreamTrack(Codecs.Opus, MediaStreamStatusEnum.RecvOnly));
         _a.addTrack(new MediaStreamTrack(_formatIn, MediaStreamStatusEnum.RecvOnly));
+        // SIPSorcery reassembles each frame from its packets in a buffer of this size (1 MB unless
+        // told otherwise) and drops a frame that doesn't fit: too small for a 4K keyframe.
+        _a.MaxReconstructedVideoFrameSize = Math.Max(1 << 20, cfg.Width * cfg.Height / 2);
         _b = new RTCPeerConnection(new RTCConfiguration { X_UseRtpFeedbackProfile = true });
         _b.addTrack(new MediaStreamTrack(Codecs.Opus, MediaStreamStatusEnum.SendOnly));
         _b.addTrack(new MediaStreamTrack(_formatOut, MediaStreamStatusEnum.SendOnly));

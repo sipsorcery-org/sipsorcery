@@ -33,7 +33,8 @@ Three tiles of the same size:
 
 1. **Source**: page A's test card, as drawn, before the browser encodes it.
 2. **Decoded**: SIPSorcery's decoded frames, shown straight from the decoder through a shared
-   memory buffer, before they're encoded again. It can be turned off (it costs a copy per frame).
+   memory buffer, before they're encoded again. It can be turned off (it costs a copy per frame),
+   and is off by default above 1080p (see below).
 3. **Output**: what page B decoded from SIPSorcery's stream.
 
 The test card is made to show faults to the eye: colour bars and differently coloured corners
@@ -48,7 +49,26 @@ keyframe requests, NACKs, freezes, missing or unreadable frames, and simulated l
 mark for details; click a picture to zoom all three.
 
 The header's check sums it up ("Looks right", or what isn't: a size mismatch, a low frame rate,
-latency over half a second, freezes, missing or unreadable frames in the last 10 s).
+latency over half a second, freezes, missing or unreadable frames in the last 10 s). The frame
+rate is judged on the frames page B decoded against the frames page A actually sent, not the rate
+picked: when the source or the browser's encoder falls short, the check and the source tile say
+so separately rather than blaming SIPSorcery.
+
+## Sizes
+
+320×240 up to 4K (3840×2160). Picking a size also picks bitrates that suit it (1.5 Mbit/s at
+640×480, 4 Mbit/s at 1080p, 15 Mbit/s at 4K), which can be changed after. Above 1080p:
+
+- The decoded tile starts off. Each frame shown there is copied into the shared buffer on
+  SIPSorcery's decode thread and uploaded to the GPU on the page's main thread (25 MB a frame at
+  4K), which slows the pipeline being measured and starves the test card (6 fps instead of 30 at
+  4K). Turn it on to look, not to measure.
+- H264 is offered at the level the size needs (3.1 up to 720p, 4.0 for 1080p, 5.1 for 4K), and
+  SIPSorcery's frame reassembly buffer is enlarged to hold a 4K keyframe.
+
+There's no 8K: in WebView2 the browser couldn't capture and encode it in real time (4 frames
+encoded in 15 s), and SIPSorcery's FFmpeg VP8 takes about 100 ms to decode an 8K frame and 180 ms
+to encode one, so even a capable source would get 5 fps at best.
 
 ### Where missing frames come from
 
@@ -86,6 +106,12 @@ Counts on a tile include everything lost upstream of it, so read them left to ri
   to fit and the overlay says so.
 - **Relay mode** (Pipeline: relay) skips both codecs: leg A's frames go to leg B as they came. It's
   the baseline, the plumbing alone.
+- **A fixed source size**: page A's video track is marked as "detail" content and its sender set
+  to maintain resolution, so the browser sends the full size from the first frame instead of
+  starting smaller and stepping up (which, with FFmpegVideoEncoder, would hit the size-change
+  bug below).
+- **The fake camera** runs at 30 fps (`--use-fake-device-for-media-stream=fps=30`): left alone,
+  Chromium's runs at 20.
 - **Clocks**: latencies across the page and C# use an offset measured with a ping between them.
 
 ## Scripted runs
@@ -100,14 +126,14 @@ TranscodeLoop.exe --exit-after 15 --stats run.json --capture run.png --capture-a
 |---|---|
 | `--start` | start straight away |
 | `--source card\|fake` | the test card, or Chromium's fake camera |
-| `--size 640x480`, `--fps 30` | the source's size and frame rate |
+| `--size 640x480`, `--fps 30` | the source's size (up to `3840x2160`) and frame rate |
 | `--mode transcode\|relay` | decode and encode, or pass frames through |
 | `--codec-in`, `--codec-out` | `VP8` or `H264` |
 | `--decoder`, `--encoder` | `vp8.net` or `ffmpeg` |
-| `--browser-kbps`, `--encoder-kbps` | bitrates for page A's encoder and SIPSorcery's |
+| `--browser-kbps`, `--encoder-kbps` | bitrates for page A's encoder and SIPSorcery's (default: picked for the size) |
 | `--drop-a <percent>` | leg A frames dropped before decode |
 | `--loss-b <percent>` | leg B video packets lost |
-| `--no-decoded-view` | don't show the decoded tile |
+| `--no-decoded-view`, `--decoded-view` | turn the decoded tile off, or on (it's off by default above 1080p) |
 | `--capture <png>`, `--capture-after <s>` | a screenshot this long after both legs connect (default 10 s) |
 | `--exit-after <s>` | close this long after both legs connect |
 | `--stats <json>` | on closing, write SIPSorcery's counters and the page's |
@@ -124,10 +150,14 @@ What the first runs turned up in SIPSorcery, to be looked at separately:
   the FFmpeg decoder's colours match the browser's.
 - **FFmpegVideoEncoder doesn't follow a change of size.** When the frame size changes it sets the
   encoder context's width and height but doesn't reinitialise the encoder, so after page A starts
-  at 640×360 and moves to 1280×720, page B gets the top-left 640×360 of each frame.
+  at 640×360 and moves to 1280×720, page B gets the top-left 640×360 of each frame (and at 1080p,
+  the top-left 960×540). The app now keeps page A at one size, so it no longer shows this.
 - **No bandwidth estimation feedback.** SIPSorcery sends no REMB or transport-cc, so a browser
   sending to it stays at its start bitrate (worked around above).
 - **vp8.net at 720p.** Encoding takes 25 ms a frame (p95 29 ms), so at 30 fps about 1 frame in 8 is
   skipped, and its per-frame allocations cause around 2 gen-2 garbage collections a second. It
   also has no rate control yet: its output is about twice the browser's bitrate for the same
-  picture. At 640×480 it keeps up.
+  picture. At 640×480 it keeps up; at 1080p it manages 14 fps (encode 70 ms).
+- **FFmpeg at 1080p and 4K.** 1080p keeps up with VP8 and H264 (VP8 decode 4 ms, encode 15 ms).
+  At 4K, H264 keeps up (decode 14 ms, encode 30 ms) but VP8 doesn't: decode takes 24 ms and encode
+  about 50 ms, so page B gets 17 to 18 fps with frames skipped.

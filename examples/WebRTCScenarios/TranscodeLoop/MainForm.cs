@@ -57,8 +57,9 @@ internal sealed class MainForm : Form
 
     private async Task StartAsync()
     {
+        // The fake camera runs at 20 fps unless told otherwise: 30 is the highest rate the page offers.
         var args = "--disable-features=WebRtcHideLocalIpsWithMdns --autoplay-policy=no-user-gesture-required " +
-                   "--use-fake-device-for-media-stream --use-fake-ui-for-media-stream";
+                   "--use-fake-device-for-media-stream=fps=30 --use-fake-ui-for-media-stream";
         _env = await CoreWebView2Environment.CreateAsync(null, Path.Combine(Options.DataDir, "WebView2"), new CoreWebView2EnvironmentOptions(args));
         await _web.EnsureCoreWebView2Async(_env);
         var core = _web.CoreWebView2;
@@ -70,7 +71,6 @@ internal sealed class MainForm : Form
         };
         core.WebMessageReceived += async (_, e) => await OnPageMessage(e.WebMessageAsJson);
         core.Settings.AreDevToolsEnabled = true;
-        _view = new DecodedView(_env);
 
         var query = string.Join("&", _options.Page.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
         core.Navigate("https://transcodeloop.app/index.html" + (query.Length > 0 ? "?" + query : ""));
@@ -129,12 +129,14 @@ internal sealed class MainForm : Form
     {
         StopChain();
         string S(string name) => c.GetProperty(name).GetString() ?? "";
-        var cfg = new ChainConfig(S("source"), S("mode"), S("codecIn"), S("decoder"), S("codecOut"), S("encoder"), c.GetProperty("encoderKbps").GetInt32());
+        var cfg = new ChainConfig(S("source"), c.GetProperty("width").GetInt32(), c.GetProperty("height").GetInt32(),
+            S("mode"), S("codecIn"), S("decoder"), S("codecOut"), S("encoder"), c.GetProperty("encoderKbps").GetInt32());
         if (!cfg.Relay)
         {
             if (!Codecs.CanDecode(cfg.Decoder, cfg.CodecIn)) throw new InvalidOperationException($"{cfg.Decoder} can't decode {cfg.CodecIn}");
             if (!Codecs.CanEncode(cfg.Encoder, cfg.CodecOut)) throw new InvalidOperationException($"{cfg.Encoder} can't encode {cfg.CodecOut}");
         }
+        SizeDecodedView(cfg.Width, cfg.Height);
         var chain = new TranscodeChain(cfg, _view, Log);
         chain.ShowDecoded = c.GetProperty("showDecoded").GetBoolean();
         chain.PliOnDrop = c.GetProperty("pliOnDrop").GetBoolean();
@@ -154,6 +156,21 @@ internal sealed class MainForm : Form
         _connectedAt = null;
         var (a, b) = await chain.CreateOffersAsync();
         Post(new { type = "offers", a, b });
+    }
+
+    /// <summary>
+    /// The decoded tile's shared buffer, sized for the stream about to start: replaced by a bigger
+    /// one when the stream needs it, and by a smaller one after a big stream, so a 4K run's
+    /// 75 MB isn't kept for a 640x480 one. On the UI thread, with no chain running.
+    /// </summary>
+    private void SizeDecodedView(int width, int height)
+    {
+        long needed = DecodedView.SlotBytesFor(width, height);
+        if (_view != null && _view.SlotBytes >= needed && _view.SlotBytes <= needed * 4) return;
+        var old = _view;
+        _view = new DecodedView(_env!, width, height);
+        _view.PostTo(_web.CoreWebView2);
+        old?.Dispose();
     }
 
     private void StopChain()

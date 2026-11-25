@@ -91,6 +91,7 @@ export function startCard(width, height, fps) {
   const stream = canvas.captureStream(0);
   const track = stream.getVideoTracks()[0];
   const drawn = new Map();   // frame number -> performance.now() when it was captured
+  const drawMs = [];         // how long the last frames took to draw, to tell when the card is the limit
 
   // Sound: a quiet steady tone (so it's plain when audio stops) and a beep on each A/V flash.
   const audio = new AudioContext({ sampleRate: 48000 });
@@ -114,8 +115,11 @@ export function startCard(width, height, fps) {
 
   function tick() {
     if (stopped) return;
+    const t0 = performance.now();
     draw(g, width, height, fps, n, start);
     track.requestFrame();
+    drawMs.push(performance.now() - t0);
+    if (drawMs.length > 30) drawMs.shift();
     drawn.set(n, performance.now());
     if (drawn.size > 900) drawn.delete(n - 900);
     if (n % fps === 0) {
@@ -133,6 +137,7 @@ export function startCard(width, height, fps) {
     stream,
     drawnAt: (number) => drawn.get(number),
     get frames() { return n; },
+    get drawMs() { return drawMs.length ? drawMs.reduce((a, b) => a + b, 0) / drawMs.length : null; },
     stop() {
       stopped = true;
       clearTimeout(timer);
