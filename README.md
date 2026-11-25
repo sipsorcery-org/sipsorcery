@@ -41,6 +41,9 @@ Some performance mesaurements of the various codecs can be found [below](#video-
 
 A fully featured Windows and Web softphone application ([README](examples/Softphonev2/desktop/README.md)). Web version available for GitHub users to experiment with [here](https://www.sipsorcery.com/softphone/).
 
+![Softphone Screenshot 1](https://raw.githubusercontent.com/sipsorcery-org/sipsorcery/refs/heads/master/img/softphonev2-1.png)
+![Softphone Screenshot 1](https://raw.githubusercontent.com/sipsorcery-org/sipsorcery/refs/heads/master/img/softphonev2-2.png)
+
 ### Examples
 
 This repository includes **[70+ example projects](examples/)** demonstrating various SIP and WebRTC scenarios:
