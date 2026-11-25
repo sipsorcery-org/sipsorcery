@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SIPSorcery.H264 sender</title>
+
+    <script type="text/javascript">
+
+        const WEBSOCKET_URL = "ws://127.0.0.1:8081/";
+
+        var pc, ws, statsTimer, patternTimer;
+
+        // A moving test pattern, for a machine with no camera or when one is not wanted.
+        function testPatternStream() {
+            const canvas = document.createElement("canvas");
+            canvas.width = 640;
+            canvas.height = 480;
+            const ctx = canvas.getContext("2d");
+            const bars = ["#c0c0c0", "#c0c000", "#00c0c0", "#00c000", "#c000c0", "#c00000", "#0000c0"];
+            let frame = 0;
+            patternTimer = setInterval(() => {
+                bars.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(i * canvas.width / bars.length, 0, canvas.width / bars.length + 1, canvas.height); });
+                ctx.fillStyle = "#000";
+                ctx.fillRect(0, 360, canvas.width, 120);
+                ctx.fillStyle = "#fff";
+                ctx.font = "48px monospace";
+                ctx.fillText("frame " + frame, 20, 435);
+                ctx.fillRect((frame * 4) % canvas.width, 20, 40, 40);
+                frame++;
+            }, 1000 / 30);
+            return canvas.captureStream(30);
+        }
+
+        async function start() {
+
+            let stream;
+            if (!document.querySelector('#pattern').checked) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                }
+                catch (err) {
+                    console.log("No camera (" + err.name + "), sending a test pattern instead.");
+                }
+            }
+            stream = stream || testPatternStream();
+            document.querySelector('#videoCtl').srcObject = stream;
+
+            pc = new RTCPeerConnection();
+            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+            pc.onconnectionstatechange = () => console.log("onconnectionstatechange: " + pc.connectionState);
+
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+            // Web socket signalling: the C# program sends the offer, with H.264 as its only codec.
+            ws = new WebSocket(document.querySelector('#websockurl').value, []);
+            ws.onmessage = async function (evt) {
+                if (/^[\{"'\s]*candidate/.test(evt.data)) {
+                    pc.addIceCandidate(JSON.parse(evt.data));
+                }
+                else {
+                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    ws.send(JSON.stringify(pc.localDescription));
+                }
+            };
+
+            // What the browser is actually sending.
+            statsTimer = setInterval(async () => {
+                if (!pc) return;
+                const stats = await pc.getStats();
+                let text = "";
+                stats.forEach(r => {
+                    if (r.type === "outbound-rtp" && r.kind === "video") {
+                        const codec = stats.get(r.codecId);
+                        text = `${codec ? codec.mimeType + " " + (codec.sdpFmtpLine || "") : "?"}, ${r.frameWidth}x${r.frameHeight}, ` +
+                            `${r.framesEncoded} frames encoded, ${r.keyFramesEncoded} key frames, ${r.pliCount} PLIs, encoder ${r.encoderImplementation}`;
+                    }
+                });
+                document.querySelector('#stats').textContent = text;
+            }, 1000);
+        };
+
+        async function closePeer() {
+            clearInterval(statsTimer);
+            clearInterval(patternTimer);
+            pc.getSenders().forEach(sender => {
+                sender.track.stop();
+                pc.removeTrack(sender);
+            });
+            await pc.close();
+            await ws.close();
+            pc = null;
+        };
+
+    </script>
+</head>
+<body>
+    <video controls autoplay muted id="videoCtl" width="640" height="480"></video>
+    <div>
+        <input type="text" id="websockurl" size="40" />
+        <label><input type="checkbox" id="pattern" /> Test pattern</label>
+        <button type="button" onclick="start();">Start</button>
+        <button type="button" onclick="closePeer();">Close</button>
+    </div>
+    <div id="stats"></div>
+</body>
+
+<script>
+    document.querySelector('#websockurl').value = WEBSOCKET_URL;
+</script>
+</html>

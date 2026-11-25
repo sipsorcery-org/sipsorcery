@@ -220,9 +220,10 @@ public static unsafe class DecoderHash
             Decode(null, 0);
             int remaining = 0;
             dec->GetOption(DECODER_OPTION.DECODER_OPTION_NUM_OF_FRAMES_REMAINING_IN_BUFFER, &remaining);
+            byte** flushData = stackalloc byte*[3];
             for (int i = 0; i < remaining; ++i)
             {
-                byte** data = stackalloc byte*[3];
+                byte** data = flushData;
                 data[0] = data[1] = data[2] = null;
                 SBufferInfo bi = default;
                 DECODING_STATE st = dec->FlushFrame(data, &bi);

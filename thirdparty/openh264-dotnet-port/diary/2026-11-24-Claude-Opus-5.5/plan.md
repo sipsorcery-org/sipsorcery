@@ -21,7 +21,8 @@ was kept for the VP8 encoder.
 | D4 P-slice reconstruction | **Done** (25 Nov) | `manage_dec_ref` (list init and reordering, sliding window, MMCO, long-term references), the inter half of `rec_mb` (`GetRefPic`, `BaseMC`, `WeightPrediction`, `GetInterPred`), `WelsMbInterPrediction`/`WelsMbInterConstruction` and `WelsBlockFuncInit` in `decode_slice`, the DPB memory in `decoder` (`CreatePicBuff`/`IncreasePicBuff`/`DecreasePicBuff`, `WelsRequestMem`, `SyncPictureResolutionExt`, `WelsFreeDynamicMemory`), and `AllocPicBuffOnNewSeqBegin`, `InitConstructAccessUnit`, `InitRefPicList` and `CheckRefPicturesComplete` in `decoder_core`. B-slice and CABAC reference paths fail loudly. ~2.3k lines. `mbs` mode drops its stand-ins for the real reference flow (DPB, `InitRefPicList`, `WelsMarkAsRef`, padding) and reconstructs every macroblock: 1.41M P-slice MBs over the clean vectors, 4,501 pictures marked, all matching, clean and damaged. On the 7 vectors with deblocking off, the C harness's pictures equal the real decoder's output, all 191 frames. UnitTest: 1999. TestVectors: 211 + 1 skipped. |
 | D5 Deblocking | **Done** (25 Nov) | `deblocking` (boundary strengths for P slices with 4x4 and 8x8 transforms, the alpha/beta/tc0 tables, the edge filters, the intra and inter macroblock filters, the slice loop, the per-MB entry points, `DeblockingInit`) and `WelsTargetSliceConstruction` in `decode_slice`. B-slice strengths throw; they can't be reached. ~1.35k lines. `mbs` mode now calls the real `WelsTargetSliceConstruction`, so every slice is deblocked: 5,196 slices and 1.43M macroblocks over the clean vectors (2.06M with the damaged ones, which also reach filter mode 2), all matching, clean and damaged. On the 33 clean Constrained Baseline vectors without cropping, every picture equals the real decoder's output frame, 4,196 of 4,196. UnitTest: 1999. TestVectors: 211 + 1 skipped. |
 | D6 Decoder API | **Done** (25 Nov) | The rest of `decoder_core` (`ConstructAccessUnit`, `DecodeCurrentAccessUnit`, `WelsDecodeConstructSlice`, `DecodeFrameConstruction`), of `decoder` (`WelsDecoderDefaults`, `WelsOpenDecoder`/`WelsCloseDecoder`, `DecoderConfigParam`, `WelsInitDecoder`/`WelsEndDecoder`, `InitDecFuncs`, `WelsDecodeBs`, the statistics updates), `error_concealment` (frame copy, slice copy, slice MV copy), `welsDecoderExt` (`CWelsDecoder`, `WelsCreateDecoder`/`WelsDestroyDecoder`, `WelsGetDecoderCapability`) and `measure_time` (`WelsTime`). Single threaded; parse-only mode is rejected. ~3.2k lines. The upstream-hash decode test is on: **all 35 Constrained Baseline vectors decode to upstream's SHA1 and frame count** (4,256 frames, no failed call). New `h264ref decode-damaged` mode (`reference/decode-damaged.tsv`): the decoder API over the 153 damaged variants. The 105 Constrained Baseline ones match in every column but one, which is the B-slice exception noted below. That includes the 3 that run the DPB out and recover through `ResetDecoder`. The other 16 vectors decode clean and damaged without crashing. UnitTest: 1999. TestVectors: 299. |
-| D7 SIPSorcery wire-up | Next | `H264Codec.DecodeVideo` (Annex B access units from `H264Depacketiser` to I420/BGR `VideoSample`) on top of `CWelsDecoder`, and a `WebRTCClientH264Net` example that decodes Chrome's stream. This could ship as the first `-pre` package. |
+| D7 SIPSorcery wire-up | **Done** (25 Nov) | `H264Codec : IVideoEncoder` (decode only: `DecodeVideo` to I420, BGR or RGB, `DecodeVideoFaster` into a re-used buffer, `KeyFrameRequired`; the encode methods throw `NotSupportedException`), `H264NetVideoEndPoint : IVideoSink` (BGR pictures, `OnKeyFrameRequired` throttled to once a second) and `YuvToRgb` (BT.601/BT.709, limited/full range, from the SPS VUI). One access unit per call through `DecodeFrameNoDelay`. Two small non-upstream members on `CWelsDecoder`: `CurrentSps` and `ReleaseHeldPicture`. New example `examples/WebRTCExamples/WebRTCClientH264Net`. **All 35 Constrained Baseline vectors give upstream's SHA1 when fed one access unit at a time, and again after an RTP round trip through `H264Depacketiser`** (STAP-A, FU-A, reordering, sequence wrap). Checked live against Chromium's H.264 encoder: 640x480 at 30 fps decodes clean, and a dropped access unit leads to a PLI, an IDR from the browser, and clean decoding again one frame later. UnitTest: 2006. TestVectors: 412. |
+| E1 Encoder bit writer, NAL encapsulation, parameter sets | Next | Phase 3 starts. See section 6, E1. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -452,6 +453,94 @@ Notes from D6:
   - `ImplementErrorCon` using frame copy instead of slice copy. 30 of the 35
     damaged-vector tests fail; the 35 clean hash tests still pass, as they
     should, since no clean vector conceals.
+
+Notes from D7:
+
+- **Scope.** The decoder wired into SIPSorcery. Three files outside the port
+  proper, in `src/SIPSorcery.H264`:
+  - `H264Codec`, an `IVideoEncoder` that only decodes so far. Each call takes
+    one Annex B access unit, which is what `H264Depacketiser` and
+    `RTCPeerConnection.OnVideoFrameReceived` deliver. It decodes with
+    `DecodeFrameNoDelay`, so the picture comes out of the same call. Output is
+    I420, BGR or RGB from `DecodeVideo` and BGR or RGB from
+    `DecodeVideoFaster`, which converts into a native buffer the codec owns
+    and re-uses. A `RawImage` describes one plane, so I420 is `DecodeVideo`
+    only. Any other requested format gets BGR, the convention the other
+    SIPSorcery decoders follow. Calls take a lock. Error concealment is slice
+    copy, the mode the D6 damaged tests verified. The decoder's log lines go
+    to the codec's `ILogger`: errors as warnings, warnings as debug.
+  - `H264NetVideoEndPoint`, an `IVideoSink` modelled on
+    `Vp8NetVideoEncoderEndPoint`'s sink half. It raises BGR pictures with
+    packed rows (stride = 3 × width), and `OnKeyFrameRequired` at most once a
+    second while the decoder needs a key frame. A source half follows the
+    encoder.
+  - `YuvToRgb`, the plane copy and the YUV to RGB conversion. It reads the
+    matrix and range from the SPS VUI: BT.709 when matrix_coefficients is 1,
+    otherwise BT.601; full range when video_full_range_flag is set, otherwise
+    limited range. A stream that signals nothing is BT.601 limited, as
+    browsers and FFmpeg's default scaler take it. It is 8-bit fixed point,
+    within 1 of the equations (unit tested over a grid for all four matrices).
+    `PixelConverter.I420toBGR` was not used: its blue coefficient is 2.302
+    rather than 2.032, it ignores range, and it pads rows to 4 bytes, which a
+    `VideoSample` cannot describe.
+- **`KeyFrameRequired`.** Set when `DecodeFrameNoDelay` returns any state but
+  `dsErrorFree` (ignoring `dsFramePending`): missing parameter sets, a lost
+  reference, a damaged bitstream, or `dsDataErrorConcealed`. The decoder sets
+  the last for every picture that predicts from a concealed one until the
+  next IDR (`bAllRefComplete` in `WelsDecodeConstructSlice`), so the flag
+  stays up exactly as long as the damage does.
+- **The Main profile vector, and the two non-upstream members.**
+  CVPCMNL1_SVA_C has profile_idc 77 (constraint flags 0xe0), although it uses
+  only Constrained Baseline tools. Upstream switches its reordering buffer on
+  for any profile_idc but 66 and 83, so each picture is held until the next
+  one arrives: one picture late, and the last only on `FlushFrame`. Calling
+  `FlushFrame` after each access unit is legal, because `DecodeFrameNoDelay`
+  leaves the end-of-stream flag set, but it passes no decoder context. Single
+  threaded, `m_pPicBuff` is null, so the picture's reference count never comes
+  down and the picture buffer runs out: 4 of 30 frames. That is an upstream
+  quirk, harmless at a real end of stream. `CWelsDecoder.ReleaseHeldPicture`
+  makes the release `ReorderPicturesInDisplay` would make a picture later
+  (`ReleaseBufferedReadyPictureNoReorder` with the context), only for streams
+  without B slices. The vector then decodes to upstream's SHA1 with no delay.
+  `CWelsDecoder.CurrentSps` gives `YuvToRgb` the active SPS. Both are marked
+  "Not upstream".
+- **Oracle.** No new harness mode. The hash is the same as D6's, but the
+  stream is fed the way an RTP receiver feeds it:
+  - `AccessUnits.Split` splits each vector into access units (H.264
+    7.4.1.2.3): AUD; SEI, SPS, PPS or prefix NAL after a slice; a slice with
+    first_mb_in_slice 0 after a slice. Constrained Baseline has no ASO, so the
+    last rule is enough.
+  - `ConstrainedBaselineVector_AccessUnitsDecodeToUpstreamHash`: all 35 give
+    upstream's SHA1 and frame count, with `KeyFrameRequired` never set.
+  - `ConstrainedBaselineVector_RtpRoundTripDecodesToUpstreamHash`: the same
+    after `AccessUnits.Packetise` (SPS and PPS in a STAP-A, FU-A over 1200
+    bytes, as browsers send) and SIPSorcery's `H264Depacketiser`, with two
+    packets of each unit swapped and the sequence numbers wrapping. All 35.
+  - `ConstrainedBaselineVector_OutputFormatsAgree`: I420, BGR, RGB and
+    `DecodeVideoFaster` agree picture for picture.
+  - Key frame signalling: joining after the IDR gives no pictures and the flag
+    until the IDR comes. A lost reference picture conceals the next seven with
+    the flag up, and re-sending the IDR clears it and decodes byte for byte as
+    the first time. The endpoint asks once for a burst of 19 bad units.
+  The TestVectors project now references `SIPSorcery` for the depacketiser.
+- **Live check** (not automated). A scratch console version of the example
+  served `capture.html` to the Claude desktop app's built-in browser
+  (Chromium). Its canvas test pattern went out as H.264 42e01f, 640x480 at 30
+  fps, packetization mode 1. 450 frames decoded clean, colours and moving
+  marker correct. With one access unit dropped (unit 200): unit 201 came out
+  concealed with `KeyFrameRequired` set, the endpoint sent a PLI (sender SSRC
+  from `VideoRtcpSession`, as `KeyFrameRequester` learned the hard way), and
+  the browser's next unit, 202, began with an SPS and IDR. Decoding was clean
+  from there, and the browser's stats showed 1 PLI and 2 key frames.
+- **Example.** `examples/WebRTCExamples/WebRTCClientH264Net` (net10.0-windows,
+  WinForms), from `WebRTCClientVP8Net`: a recvonly peer connection offering
+  only H.264 42e01f, `H264NetVideoEndPoint` into a picture box, PLIs on
+  `OnKeyFrameRequired`. Its `capture.html` falls back to a canvas test pattern
+  with no camera, and shows the browser's outbound codec, key frame and PLI
+  counts. In `SIPSorcery.slnx`, with a `.slnf`.
+- **Not done.** No `-pre` package: `IsPackable` stays false until the patent
+  decision in section 8. The CLI's `h264.net` option waits for the encoder
+  (E8), since the CLI's receive paths already have FFmpeg's decoder.
 
 ## 1. Goal
 

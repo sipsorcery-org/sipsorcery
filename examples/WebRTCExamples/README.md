@@ -7,3 +7,4 @@ The examples in this folder contain sample code to demonstrate common WebRTC cas
    - Capture devices (webcam and microphone).
  The example includes an html file which runs in a Browser and will connect to a sample program running on the same machine.
 - [WebRTCReceiver](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCReceiver): A receive only example. It attempts to connect to a WebRTC peer and display the video stream that it receives.
+- [WebRTCClientH264Net](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCClientH264Net): A receive only example that decodes a browser's H.264 video with SIPSorcery.H264, the pure C# port of OpenH264, and displays it. Open its `capture.html` in a browser to send a camera or test pattern stream to it.

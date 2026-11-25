@@ -19,6 +19,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SIPSorcery.H264\SIPSorcery.H264.csproj" />
+    <!-- For the RTP round trip through SIPSorcery's H264Depacketiser (H264CodecTests.cs). -->
+    <ProjectReference Include="..\..\src\SIPSorcery\SIPSorcery.csproj" />
   </ItemGroup>
 
   <ItemGroup>

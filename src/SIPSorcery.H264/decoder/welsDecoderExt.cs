@@ -30,6 +30,7 @@
 //
 // History:
 // 25 Nov 2026  Claude          Created (D6).
+// 25 Nov 2026  Claude          CurrentSps and ReleaseHeldPicture, not upstream, for H264Codec (D7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -114,6 +115,14 @@ internal unsafe struct CWelsDecoder
     private CWelsDecoder* This => (CWelsDecoder*)Unsafe.AsPointer(ref this);
 
     private SPictInfo* PictInfoList => (SPictInfo*)&This->m_sPictInfoList;
+
+    /// <summary>
+    /// Not upstream, for H264Codec: the SPS of the access unit decoded last, or null before
+    /// one has been. Single threaded, so it is decoder context 0's. Its VUI is where the
+    /// stream signals its colour matrix and range.
+    /// </summary>
+    internal SSps* CurrentSps =>
+        (m_pDecThrCtx == null || m_pDecThrCtx[0].pCtx == null) ? null : m_pDecThrCtx[0].pCtx->pSps;
 
     //////////////////////////////////////////////////////////////////////
     // Construction/Destruction
@@ -925,6 +934,26 @@ internal unsafe struct CWelsDecoder
             }
         }
         return dsErrorFree;
+    }
+
+    /// <summary>
+    /// Not upstream, for H264Codec: outputs the picture the reordering buffer holds for a
+    /// stream with no B slices, so that a stream whose profile_idc is not Baseline comes out
+    /// with no delay as Baseline does. It is the release ReorderPicturesInDisplay makes once a
+    /// second picture is buffered, made a picture sooner. FlushFrame would do it too, but it
+    /// passes no decoder context and, single threaded, m_pPicBuff is null, so the picture's
+    /// reference count would never come down and the picture buffer would run out mid-stream.
+    /// </summary>
+    /// <returns>True if a picture was output.</returns>
+    internal bool ReleaseHeldPicture(uint8_t** ppDst, SBufferInfo* pDstInfo)
+    {
+        if (m_sReoderingStatus.iNumOfPicts <= 0 || m_sReoderingStatus.bHasBSlice ||
+            m_pDecThrCtx == null || m_pDecThrCtx[0].pCtx == null)
+        {
+            return false;
+        }
+        ReleaseBufferedReadyPictureNoReorder(m_pDecThrCtx[0].pCtx, ppDst, pDstInfo);
+        return pDstInfo->iBufferStatus == 1;
     }
 
     private void OutputStatisticsLog(SDecoderStatistics* sDecoderStatistics)
