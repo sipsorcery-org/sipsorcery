@@ -8,9 +8,11 @@
 // reconstruction) and writes the same text dump, which the tests compare with
 // the native build's (reference/headers.tsv). In mbs mode it also parses each
 // access unit's slices as DecodeCurrentAccessUnit does up to WelsDecodeSlice
-// and dumps every macroblock's parse results (reference/mbs.tsv), and since D3
+// and dumps every macroblock's parse results (reference/mbs.tsv), since D3
 // reconstructs each slice's intra macroblocks (ReconSlice) and dumps their
-// samples. Keep the two in step: same fields, same order, same names.
+// samples, and since D4 runs the decoder's own reference handling (the DPB,
+// InitRefPicList, WelsMarkAsRef) and reconstructs every macroblock. Keep the
+// two in step: same fields, same order, same names.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
@@ -19,6 +21,7 @@
 // 25 Nov 2026  Claude          Created.
 // 25 Nov 2026  Claude          D2: the macroblock dump (mbs mode).
 // 25 Nov 2026  Claude          D3: intra reconstruction in mbs mode.
+// 25 Nov 2026  Claude          D4: reference handling and inter reconstruction in mbs mode.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -865,9 +868,9 @@ internal static unsafe class HeaderDump
         // The D2 macroblock dump (mbs mode), see MbParse.
         public bool mbs;
         private SVlcTable* vlc;
-        private SPicture* pic;              // the one pDec
-        private SPicture* refOk, refBad;    // the stand-in reference pictures
-        public int slices, mbRecs;          // slices parsed, macroblock records written
+        public int slices, mbRecs;
+        // Set once PrefetchPic finds no free picture (noPic in headers.cpp).
+        private bool noPic;          // slices parsed, macroblock records written
         private readonly ByteBuf rec = new ByteBuf();
         private readonly ByteBuf recon = new ByteBuf(); // ReconSlice's samples
 
@@ -908,11 +911,11 @@ internal static unsafe class HeaderDump
                 vlc = (SVlcTable*)NativeMemory.AllocZeroed((nuint)sizeof(SVlcTable));
                 InitVlcTable(vlc);
                 ctx->pVlcTable = vlc;
-                refOk = (SPicture*)NativeMemory.AllocZeroed((nuint)sizeof(SPicture));
-                refBad = (SPicture*)NativeMemory.AllocZeroed((nuint)sizeof(SPicture));
-                refOk->bIsComplete = true;
-                // InitDecFuncs' share that the intra reconstruction uses (WelsInitDecoder).
+                // InitDecFuncs (WelsInitDecoder), without the deblocking (D5).
+                WelsBlockFuncInit(&ctx->sBlockFunc, 0);
                 InitPredFunc(ctx, 0);
+                InitMcFunc(&ctx->sMcFunc, 0);
+                InitExpandPictureFunc(&ctx->sExpandPicFunc, 0);
             }
             return true;
         }
@@ -924,14 +927,7 @@ internal static unsafe class HeaderDump
                 CMemoryAlign* pMa = ctx->pMemAlign;
                 if (mbs)
                 {
-                    // WelsFreeDynamicMemory's share of what the parse allocates.
-                    ResetFmoList(ctx);
-                    UninitialDqLayersContext(ctx);
-                    if (pic != null)
-                    {
-                        FreePicture(pic, pMa);
-                    }
-                    pic = null;
+                    WelsFreeDynamicMemory(ctx);
                 }
                 if (ctx->pParam != null)
                 {
@@ -948,16 +944,6 @@ internal static unsafe class HeaderDump
             {
                 NativeMemory.Free(vlc);
                 vlc = null;
-            }
-            if (refOk != null)
-            {
-                NativeMemory.Free(refOk);
-                refOk = null;
-            }
-            if (refBad != null)
-            {
-                NativeMemory.Free(refBad);
-                refBad = null;
             }
             if (stats != null)
             {
@@ -1074,65 +1060,102 @@ internal static unsafe class HeaderDump
             Ctx("e");
         }
 
-        // InitConstructAccessUnit's AllocPicBuffOnNewSeqBegin, minus the DPB:
-        // SyncPictureResolutionExt's InitialDqLayersContext, and the one picture
-        // (re)allocated at the sequence size. Returns false on failure.
+        // InitConstructAccessUnit's AllocPicBuffOnNewSeqBegin: the DPB and the DQ
+        // layer memory for a new sequence. Returns false on failure.
         private bool MbAlloc()
         {
             if (!ctx->bNewSeqBegin)
             {
                 return true;
             }
-            int w = (int)(ctx->pSps->iMbWidth << 4), h = (int)(ctx->pSps->iMbHeight << 4);
-            int iErr = InitialDqLayersContext(ctx, w, h);
-            if (iErr == ERR_NONE && (pic == null || pic->iWidthInPixel != w || pic->iHeightInPixel != h))
-            {
-                if (pic != null)
-                {
-                    FreePicture(pic, ctx->pMemAlign);
-                }
-                pic = AllocPicture(ctx, w, h);
-                if (pic == null)
-                {
-                    iErr = ERR_INFO_OUT_OF_MEMORY;
-                }
-            }
+            int iErr = AllocPicBuffOnNewSeqBegin(ctx);
             d.Tag("Z");
-            d.Kv("w", w);
-            d.Kv("h", h);
+            d.Kv("w", ctx->pSps->iMbWidth << 4);
+            d.Kv("h", ctx->pSps->iMbHeight << 4);
             d.Kv("ret", iErr);
+            d.Kv("cap", ctx->pPicBuff != null ? ctx->pPicBuff->iCapacity : -1);
+            d.Kv("pq", ctx->iPicQueueNumber);
             d.End();
             return iErr == ERR_NONE;
         }
 
-        // The reference list stand-in for InitRefPicList (RefList in headers.cpp).
-        private void RefList(int au, SSliceHeader* pSh)
+        // A picture (Pic in headers.cpp): "b<DPB index>", then "f<frame_num>" or
+        // "l<long term frame index>", then "x" if it is incomplete; "-" for none.
+        private void Pic(SPicture* p)
         {
-            memset(&ctx->sRefPic.pRefList, 0, sizeof(InlineArray2<PtrArray17<SPicture>>));
-            uint n = (uint)pSh->uiRefCount[(int)LIST_0];
+            if (p == null)
+            {
+                d.Raw('-');
+                return;
+            }
+            int b = -1;
+            for (int i = 0; ctx->pPicBuff != null && i < ctx->pPicBuff->iCapacity; ++i)
+            {
+                if (ctx->pPicBuff->ppPic[i] == p)
+                {
+                    b = i;
+                }
+            }
+            d.Raw('b');
+            d.Num(b);
+            d.Raw(p->bIsLongRef ? 'l' : 'f');
+            d.Num(p->bIsLongRef ? p->iLongTermFrameIdx : p->iFrameNum);
+            if (!p->bIsComplete)
+            {
+                d.Raw('x');
+            }
+        }
+
+        private void PicList(string k, SPicture** l, int n)
+        {
             if (n > MAX_DPB_COUNT)
             {
                 n = MAX_DPB_COUNT;
             }
-            for (uint i = 0; i < n; ++i)
+            d.Raw(' ');
+            d.Raw(k);
+            d.Raw('=');
+            for (int i = 0; i < n; ++i)
             {
-                uint k = unchecked((uint)au * 7 + i);
-                if (k % 5 != 4)
+                if (i != 0)
                 {
-                    ctx->sRefPic.pRefList[(int)LIST_0][(int)i] = k % 3 == 2 ? refBad : refOk;
+                    d.Raw(',');
                 }
+                Pic(l[i]);
             }
-            ctx->sRefPic.uiRefCount[(int)LIST_0] = (byte)n;
         }
 
-        // What DecodeCurrentAccessUnit does with the access unit before and in
-        // WelsDecodeSlice (MbParse in headers.cpp).
+        // InitRefPicList's result (-1 when it is not called) and list 0.
+        private void DumpRefList(int iRpl)
+        {
+            d.Kv("rpl", iRpl);
+            d.Kv("rc", ctx->sRefPic.uiRefCount[(int)LIST_0]);
+            PicList("refs", (SPicture**)&ctx->sRefPic.pRefList[(int)LIST_0], ctx->sRefPic.uiRefCount[(int)LIST_0]);
+        }
+
+        // WelsMarkAsRef's result and the lists it leaves.
+        private void DumpMarking(int au, int iRet)
+        {
+            d.Tag("K");
+            d.Kv("au", au);
+            d.Kv("ret", iRet);
+            d.Kv("maxlt", ctx->sRefPic.iMaxLongTermFrameIdx);
+            d.Kv("mmco5", ctx->pLastDecPicInfo->bLastHasMmco5);
+            PicList("st", (SPicture**)&ctx->sRefPic.pShortRefList[(int)LIST_0], ctx->sRefPic.uiShortRefCount[(int)LIST_0]);
+            PicList("lt", (SPicture**)&ctx->sRefPic.pLongRefList[(int)LIST_0], ctx->sRefPic.uiLongRefCount[(int)LIST_0]);
+            d.End();
+        }
+
+        // What DecodeCurrentAccessUnit does with the access unit, without the
+        // error concealment and the picture output (MbParse in headers.cpp).
         private void MbParse()
         {
             SAccessUnit* pCurAu = ctx->pAccessUnitList;
             int au = aus - 1;
+            bool bAllRefComplete = true;
             // GetTargetDqId.
             byte kuiTargetLayerDqId = Math.Min(ctx->uiTargetDqId, ctx->pParam->uiTargetDqLayer);
+            byte kuiDependencyIdMax = (byte)((kuiTargetLayerDqId & 0x7F) >> 4);
             short iLastIdD = -1, iLastIdQ = -1;
             ctx->uiNalRefIdc = 0;
             if (ctx->bInitialDqLayersMem || ctx->pCurDqLayer == null)
@@ -1140,7 +1163,8 @@ internal static unsafe class HeaderDump
                 ctx->pCurDqLayer = ctx->pDqLayersList[0];
             }
             InitCurDqLayerData(ctx, ctx->pCurDqLayer);
-            if (pic == null || (ctx->pSps->iMbWidth << 4) > (uint)pic->iWidthInPixel || (ctx->pSps->iMbHeight << 4) > (uint)pic->iHeightInPixel)
+            if (ctx->pPicBuff == null || (ctx->pSps->iMbWidth << 4) > ctx->iImgWidthInPixel
+                || (ctx->pSps->iMbHeight << 4) > ctx->iImgHeightInPixel)
             {
                 d.Tag("D");
                 d.Kv("au", au);
@@ -1148,18 +1172,43 @@ internal static unsafe class HeaderDump
                 d.End();
                 return;
             }
-            ctx->pDec = pic; // PrefetchPic
+            if (!noPic)
+            {
+                ctx->pDec = PrefetchPic(ctx->pPicBuff);
+            }
+            if (ctx->iTotalNumMbRec != 0)
+            {
+                ctx->iTotalNumMbRec = 0;
+            }
+            if (ctx->pDec == null)
+            {
+                noPic = true;
+                ctx->iErrorCode |= (int)dsOutOfMemory;
+                d.Tag("D");
+                d.Kv("au", au);
+                d.Kv("skip", 6);
+                d.End();
+                return;
+            }
+            ctx->pDec->bNewSeqBegin = ctx->bNewSeqBegin;
+            // The picture's start (iTotalNumMbRec == 0).
             for (int i = 0; i < LAYER_NUM_EXCHANGEABLE; ++i)
             {
                 memset(ctx->sMb.pSliceIdc[i].p, 0xff, (nint)(ctx->sMb.iMbWidth * ctx->sMb.iMbHeight * sizeof(int)));
             }
             memset(ctx->pCurDqLayer->pMbCorrectlyDecodedFlag, 0, (nint)(ctx->pSps->iMbWidth * ctx->pSps->iMbHeight * sizeof(bool)));
             memset(ctx->pCurDqLayer->pMbRefConcealedFlag, 0, (nint)(ctx->pSps->iMbWidth * ctx->pSps->iMbHeight * sizeof(bool)));
+            memset(&ctx->pDec->pRefPic[(int)LIST_0], 0, sizeof(nint) * MAX_DPB_COUNT);
+            memset(&ctx->pDec->pRefPic[(int)LIST_1], 0, sizeof(nint) * MAX_DPB_COUNT);
+            ctx->pDec->iMbNum = (int)(ctx->pSps->iMbWidth * ctx->pSps->iMbHeight);
+            ctx->pDec->iMbEcedNum = 0;
+            ctx->pDec->iMbEcedPropNum = 0;
             ctx->bRPLRError = false;
             GetI4LumaIChromaAddrTable(ctx->iDecBlockOffsetArray, ctx->pDec->iLinesize[0], ctx->pDec->iLinesize[1]);
 
             SLayerInfo pLayerInfo = default;
-            bool parsed = false;
+            SSliceHeader* pLastSh = null; // the last slice header through the loop
+            bool parsed = false, target = false, ended = false;
             for (uint iIdx = pCurAu->uiStartPos; iIdx <= pCurAu->uiEndPos; ++iIdx)
             {
                 SNalUnit* pNalCur = pCurAu->pNalUnitsList[iIdx];
@@ -1179,8 +1228,14 @@ internal static unsafe class HeaderDump
                 }
                 short iCurrIdQ = pNalCur->sNalHeaderExt.uiQualityId;
                 short iCurrIdD = pNalCur->sNalHeaderExt.uiDependencyId;
+                byte uiTid = pNalCur->sNalHeaderExt.uiTemporalId;
                 ctx->bRPLRError = false;
+                bool bReconstructSlice = pNalCur->sNalHeaderExt.uiLayerDqId == kuiTargetLayerDqId;
                 pLayerInfo.sNalHeaderExt = pNalCur->sNalHeaderExt;
+                ctx->pDec->iFrameNum = pSh->iFrameNum;
+                ctx->pDec->iFramePoc = pSh->iPicOrderCntLsb;
+                ctx->pDec->bIdrFlag = pNalCur->sNalHeaderExt.bIdrFlag;
+                ctx->pDec->eSliceType = pSh->eSliceType;
                 pLayerInfo.sSliceInLayer.sSliceHeaderExt = *pShExt;
                 pLayerInfo.sSliceInLayer.bSliceHeaderExtFlag = pNalCur->sNalData.sVclNal.bSliceHeaderExtFlag;
                 pLayerInfo.sSliceInLayer.eSliceType = (byte)pSh->eSliceType;
@@ -1190,12 +1245,15 @@ internal static unsafe class HeaderDump
                 pLayerInfo.pPps = pSh->pPps;
                 pLayerInfo.pSps = pSh->pSps;
                 pLayerInfo.pSubsetSps = pShExt->pSubsetSps;
+                pLastSh = pSh;
                 ctx->pFmo = &ctx->sFmoList[pSh->iPpsId];
                 int iRet = FmoParamUpdate(ctx->pFmo, pLayerInfo.pSps, pLayerInfo.pPps, &ctx->iActiveFmoNum, ctx->pMemAlign);
                 if (iRet != ERR_NONE)
                 {
+                    ctx->iErrorCode |= (int)(iRet == ERR_INFO_OUT_OF_MEMORY ? dsOutOfMemory : dsBitstreamError);
                     d.Kv("fmo", iRet);
                     d.End();
+                    ended = true;
                     break;
                 }
                 bool bFreshSliceAvailable = iCurrIdD != iLastIdD || iCurrIdQ != iLastIdQ;
@@ -1212,7 +1270,7 @@ internal static unsafe class HeaderDump
                     {
                         skip = 2;
                     }
-                    else if ((pSh->iMbWidth << 4) > pic->iWidthInPixel || (pSh->iMbHeight << 4) > pic->iHeightInPixel)
+                    else if ((pSh->iMbWidth << 4) > ctx->iImgWidthInPixel || (pSh->iMbHeight << 4) > ctx->iImgHeightInPixel)
                     {
                         skip = 3;
                     }
@@ -1222,24 +1280,82 @@ internal static unsafe class HeaderDump
                     }
                     else
                     {
-                        RefList(au, pSh);
+                        // Subclause 8.2.5.2, gaps in frame_num.
+                        int gap = 0;
+                        if (!dq_cur->sLayerInfo.pSps->bGapsInFrameNumValueAllowedFlag)
+                        {
+                            bool kbIdrFlag = dq_cur->sLayerInfo.sNalHeaderExt.bIdrFlag
+                                || dq_cur->sLayerInfo.sNalHeaderExt.sNalUnitHeader.eNalUnitType == NAL_UNIT_CODED_SLICE_IDR;
+                            int iPrevFrameNum = ctx->pLastDecPicInfo->iPrevFrameNum;
+                            if (!kbIdrFlag && pSh->iFrameNum != iPrevFrameNum
+                                && pSh->iFrameNum != ((iPrevFrameNum + 1) & ((1 << (int)dq_cur->sLayerInfo.pSps->uiLog2MaxFrameNum) - 1)))
+                            {
+                                gap = 1;
+                                bAllRefComplete = false;
+                                ctx->iErrorCode |= (int)dsRefLost;
+                            }
+                        }
+                        int iRpl = -1;
+                        if (iCurrIdD == kuiDependencyIdMax && iCurrIdQ == BASE_QUALITY_ID)
+                        {
+                            iRpl = InitRefPicList(ctx, ctx->uiNalRefIdc, pSh->iPicOrderCntLsb);
+                            if (iRpl != 0)
+                            {
+                                ctx->bRPLRError = true;
+                                bAllRefComplete = false;
+                                // HandleReferenceLost.
+                                if (0 == uiTid || 1 == uiTid)
+                                {
+                                    ctx->bReferenceLostAtT0Flag = true;
+                                }
+                                ctx->iErrorCode |= (int)dsRefLost;
+                            }
+                        }
+                        d.Kv("gap", gap);
+                        DumpRefList(iRpl);
                         iRet = WelsDecodeSlice(ctx, bFreshSliceAvailable, pNalCur);
                         DumpSlice(iRet);
                         parsed = true;
-                        // CheckSliceNeedReconstruct, then WelsDecodeConstructSlice (with its
-                        // HandleReferenceLostL0); a reconstruction error ends
-                        // DecodeCurrentAccessUnit.
-                        if (pNalCur->sNalHeaderExt.uiLayerDqId == kuiTargetLayerDqId && ReconSlice() != ERR_NONE)
+                        if (iRet != ERR_NONE)
                         {
-                            if (0 == pNalCur->sNalHeaderExt.uiTemporalId)
+                            bAllRefComplete = false;
+                            // HandleReferenceLostL0.
+                            if (0 == uiTid)
                             {
                                 ctx->bReferenceLostAtT0Flag = true;
                             }
                             ctx->iErrorCode |= (int)dsBitstreamError;
-                            ctx->pDec->bIsComplete = false;
-                            d.End();
-                            break;
                         }
+                        if (bReconstructSlice)
+                        {
+                            target = true;
+                            // WelsDecodeConstructSlice (with its HandleReferenceLostL0); a
+                            // reconstruction error ends DecodeCurrentAccessUnit.
+                            if (ReconSlice() != ERR_NONE)
+                            {
+                                if (0 == uiTid)
+                                {
+                                    ctx->bReferenceLostAtT0Flag = true;
+                                }
+                                ctx->iErrorCode |= (int)dsBitstreamError;
+                                ctx->pDec->bIsComplete = false;
+                                d.End();
+                                ended = true;
+                                break;
+                            }
+                        }
+                        if (bAllRefComplete && ctx->eSliceType != I_SLICE)
+                        {
+                            if (ctx->sRefPic.uiRefCount[(int)LIST_0] > 0)
+                            {
+                                bAllRefComplete &= CheckRefPicturesComplete(ctx);
+                            }
+                            else
+                            {
+                                bAllRefComplete = false;
+                            }
+                        }
+                        d.Kv("arc", bAllRefComplete);
                     }
                 }
                 else
@@ -1252,6 +1368,25 @@ internal static unsafe class HeaderDump
             }
             if (parsed)
             {
+                SPicture* pic = ctx->pDec;
+                if (!ended)
+                {
+                    pic->bIsComplete = bAllRefComplete;
+                    if (!pic->bIsComplete)
+                    {
+                        ctx->iErrorCode |= (int)dsDataErrorConcealed;
+                    }
+                    if (target)
+                    {
+                        // DecodeFrameConstruction's share: a complete, error free IDR picture.
+                        SDqLayer* pCurDq = ctx->pCurDqLayer;
+                        if (ctx->iTotalNumMbRec == pCurDq->iMbWidth * pCurDq->iMbHeight
+                            && pCurDq->sLayerInfo.sNalHeaderExt.bIdrFlag && ctx->iErrorCode == (int)dsErrorFree)
+                        {
+                            pic->bIsComplete = true;
+                        }
+                    }
+                }
                 using var c = IncrementalHash.CreateHash(HashAlgorithmName.SHA1);
                 for (int p = 0; p < 3; ++p)
                 {
@@ -1264,16 +1399,56 @@ internal static unsafe class HeaderDump
                 }
                 d.Tag("Y");
                 d.Kv("au", au);
+                d.Raw(" pic=");
+                Pic(pic);
                 d.Raw(" sha=");
                 d.Raw(Convert.ToHexString(c.GetHashAndReset()).ToLowerInvariant());
                 d.End();
+                if (target && !ended)
+                {
+                    ctx->iTotalNumMbRec = 0;
+                    ctx->pLastDecPicInfo->pPreviousDecodedPictureInDpb = pic;
+                    ctx->bUsedAsRef = ctx->uiNalRefIdc > 0;
+                    if (ctx->bUsedAsRef)
+                    {
+                        for (int listIdx = (int)LIST_0; listIdx < (int)LIST_A; ++listIdx)
+                        {
+                            int i = 0;
+                            while (i < MAX_DPB_COUNT && ctx->sRefPic.pRefList[listIdx][i].p != null)
+                            {
+                                pic->pRefPic[listIdx][i] = ctx->sRefPic.pRefList[listIdx][i];
+                                ++i;
+                            }
+                        }
+                        int iMark = WelsMarkAsRef(ctx);
+                        if (iMark == ERR_INFO_DUPLICATE_FRAME_NUM)
+                        {
+                            ctx->iErrorCode |= (int)dsBitstreamError;
+                        }
+                        ExpandReferencingPicture((byte**)&pic->pData, pic->iWidthInPixel, pic->iHeightInPixel, pic->iLinesize,
+                            ctx->sExpandPicFunc.pfExpandLumaPicture, ctx->sExpandPicFunc.pfExpandChromaPicture);
+                        DumpMarking(au, iMark);
+                    }
+                }
             }
-            ctx->iTotalNumMbRec = 0; // as DecodeFrameConstruction leaves it
+            // The frame_num bookkeeping after a dq layer.
+            if (!ended && pLastSh != null)
+            {
+                if (pCurAu->pNalUnitsList[pCurAu->uiStartPos]->sNalHeaderExt.sNalUnitHeader.uiNalRefIdc > 0)
+                {
+                    last->iPrevFrameNum = pLastSh->iFrameNum;
+                }
+                if (last->bLastHasMmco5)
+                {
+                    last->iPrevFrameNum = 0;
+                }
+            }
+            ctx->iTotalNumMbRec = 0;
             ctx->pDec = null;
         }
 
-        // WelsTargetSliceConstruction up to its deblocking, intra macroblocks only
-        // (ReconSlice in headers.cpp).
+        // WelsTargetSliceConstruction up to its deblocking (ReconSlice in
+        // headers.cpp).
         private int ReconSlice()
         {
             SDqLayer* pCurDqLayer = ctx->pCurDqLayer;
@@ -1311,16 +1486,13 @@ internal static unsafe class HeaderDump
                     {
                         break;
                     }
-                    if (IS_INTRA(pCurDqLayer->pDec->pMbType[pCurDqLayer->iMbXyIndex]))
+                    if (WelsTargetMbConstruction(ctx) != 0)
                     {
-                        if (WelsTargetMbConstruction(ctx) != 0)
-                        {
-                            iRet = ERR_INFO_MB_RECON_FAIL;
-                            break;
-                        }
-                        RecordSamples(recon, pCurDqLayer->pDec, pCurDqLayer->iMbX, pCurDqLayer->iMbY);
-                        ++n;
+                        iRet = ERR_INFO_MB_RECON_FAIL;
+                        break;
                     }
+                    RecordSamples(recon, pCurDqLayer->pDec, pCurDqLayer->iMbX, pCurDqLayer->iMbY);
+                    ++n;
                     ++iCountNumMb;
                     if (!pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex])
                     {
@@ -1399,7 +1571,7 @@ internal static unsafe class HeaderDump
             int n = 0;
             for (int xy = pSh->iFirstMbInSlice; xy >= 0 && xy < kiTotal && n < kiTotal;)
             {
-                Record(rec, dq, pic, xy);
+                Record(rec, dq, ctx->pDec, xy);
                 ++n;
                 if (xy == dq->iMbXyIndex)
                 {

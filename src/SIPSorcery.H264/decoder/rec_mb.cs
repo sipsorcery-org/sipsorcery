@@ -6,16 +6,19 @@
 // residual.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
-// So far (D3) the intra half: WelsFillRecNeededMbInfo, the 4x4, 8x8 and
-// 16x16 intra macroblocks and the chroma residual (RecChroma). The inter half
-// (sMCRefMember, GetRefPic, BaseMC, the weighted and bi-prediction helpers,
-// GetInterPred, GetInterBPred) comes with the P-slice step.
+// D3 ported the intra half: WelsFillRecNeededMbInfo, the 4x4, 8x8 and 16x16
+// intra macroblocks and the chroma residual (RecChroma). D4 adds the P half:
+// sMCRefMember, GetRefPic, BaseMC, WeightPrediction and GetInterPred. The B
+// slice helpers (BiWeightPrediction, BiPrediction, GetInterBPred) are not
+// ported yet. BaseMC's threaded-decoder wait for the reference rows is left
+// out, as the threaded decoder is.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 25 Nov 2026  Claude          Created.
+// 25 Nov 2026  Claude          D4: P macroblock inter prediction.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -64,8 +67,33 @@
 
 namespace SIPSorcery.H264.Decoder;
 
+/// <summary>TagMCRefMember (sMCRefMember).</summary>
+internal unsafe struct sMCRefMember
+{
+    public uint8_t* pDstY;
+    public uint8_t* pDstU;
+    public uint8_t* pDstV;
+
+    public uint8_t* pSrcY;
+    public uint8_t* pSrcU;
+    public uint8_t* pSrcV;
+
+    public int32_t iSrcLineLuma;
+    public int32_t iSrcLineChroma;
+
+    public int32_t iDstLineLuma;
+    public int32_t iDstLineChroma;
+
+    public int32_t iPicWidth;
+    public int32_t iPicHeight;
+}
+
 internal static unsafe partial class WelsDec
 {
+    // #define WELS_B_MB_REC_VERIFY(uiRet): return (uint32_t)uiRet when it is not
+    // ERR_NONE. Written out at each use as
+    // { uint32_t uiRetTmp = (uint32_t)(...); if (uiRetTmp != ERR_NONE) return (int32_t)uiRetTmp; }
+
     public static void WelsFillRecNeededMbInfo(SWelsDecoderContext* pCtx, bool bOutput, SDqLayer* pCurDqLayer)
     {
         SPicture* pCurPic = pCtx->pDec;
@@ -246,6 +274,385 @@ internal static unsafe partial class WelsDec
 
         return ERR_NONE;
     }
+
+    //according to current 8*8 block ref_index to gain reference picture
+    private static int32_t GetRefPic(sMCRefMember* pMCRefMem, SWelsDecoderContext* pCtx, int8_t iRefIdx,
+        int32_t listIdx)
+    {
+        SPicture* pRefPic;
+
+        if (iRefIdx >= 0)
+        {
+            pRefPic = pCtx->sRefPic.pRefList[listIdx][iRefIdx];
+
+            if (pRefPic != null)
+            {
+                pMCRefMem->iSrcLineLuma = pRefPic->iLinesize[0];
+                pMCRefMem->iSrcLineChroma = pRefPic->iLinesize[1];
+
+                pMCRefMem->pSrcY = pRefPic->pData[0];
+                pMCRefMem->pSrcU = pRefPic->pData[1];
+                pMCRefMem->pSrcV = pRefPic->pData[2];
+                if (pMCRefMem->pSrcY == null || pMCRefMem->pSrcU == null || pMCRefMem->pSrcV == null)
+                {
+                    return GENERATE_ERROR_NO(ERR_LEVEL_SLICE_DATA, ERR_INFO_REFERENCE_PIC_LOST);
+                }
+                return ERR_NONE;
+            }
+        }
+        return GENERATE_ERROR_NO(ERR_LEVEL_SLICE_DATA, ERR_INFO_REFERENCE_PIC_LOST);
+    }
+
+    // MC_FLOW_SIMPLE_JUDGE is defined to 1 upstream and used nowhere.
+    public static void BaseMC(SWelsDecoderContext* pCtx, sMCRefMember* pMCRefMem, int32_t listIdx, int8_t iRefIdx,
+        int32_t iXOffset, int32_t iYOffset,
+        SMcFunc* pMCFunc,
+        int32_t iBlkWidth, int32_t iBlkHeight, int16_t* iMVs)
+    {
+        int32_t iFullMVx = (iXOffset << 2) + iMVs[0]; //quarter pixel
+        int32_t iFullMVy = (iYOffset << 2) + iMVs[1];
+        iFullMVx = WELS_CLIP3(iFullMVx, ((-PADDING_LENGTH + 2) * (1 << 2)),
+            ((pMCRefMem->iPicWidth + PADDING_LENGTH - 19) * (1 << 2)));
+        iFullMVy = WELS_CLIP3(iFullMVy, ((-PADDING_LENGTH + 2) * (1 << 2)),
+            ((pMCRefMem->iPicHeight + PADDING_LENGTH - 19) * (1 << 2)));
+
+        // GetThreadCount (pCtx) > 1 && iRefIdx >= 0: waits for the reference rows
+        // in the threaded decoder, which is not ported.
+
+        int32_t iSrcPixOffsetLuma = (iFullMVx >> 2) + (iFullMVy >> 2) * pMCRefMem->iSrcLineLuma;
+        int32_t iSrcPixOffsetChroma = (iFullMVx >> 3) + (iFullMVy >> 3) * pMCRefMem->iSrcLineChroma;
+
+        int32_t iBlkWidthChroma = iBlkWidth >> 1;
+        int32_t iBlkHeightChroma = iBlkHeight >> 1;
+
+        uint8_t* pSrcY = pMCRefMem->pSrcY + iSrcPixOffsetLuma;
+        uint8_t* pSrcU = pMCRefMem->pSrcU + iSrcPixOffsetChroma;
+        uint8_t* pSrcV = pMCRefMem->pSrcV + iSrcPixOffsetChroma;
+        uint8_t* pDstY = pMCRefMem->pDstY;
+        uint8_t* pDstU = pMCRefMem->pDstU;
+        uint8_t* pDstV = pMCRefMem->pDstV;
+
+        // The MC functions take int16_t motion vectors; C narrows implicitly.
+        pMCFunc->pMcLumaFunc(pSrcY, pMCRefMem->iSrcLineLuma, pDstY, pMCRefMem->iDstLineLuma, (int16_t)iFullMVx, (int16_t)iFullMVy, iBlkWidth,
+            iBlkHeight);
+        pMCFunc->pMcChromaFunc(pSrcU, pMCRefMem->iSrcLineChroma, pDstU, pMCRefMem->iDstLineChroma, (int16_t)iFullMVx, (int16_t)iFullMVy,
+            iBlkWidthChroma, iBlkHeightChroma);
+        pMCFunc->pMcChromaFunc(pSrcV, pMCRefMem->iSrcLineChroma, pDstV, pMCRefMem->iDstLineChroma, (int16_t)iFullMVx, (int16_t)iFullMVy,
+            iBlkWidthChroma, iBlkHeightChroma);
+    }
+
+    private static void WeightPrediction(SDqLayer* pCurDqLayer, sMCRefMember* pMCRefMem, int32_t listIdx, int32_t iRefIdx,
+        int32_t iBlkWidth,
+        int32_t iBlkHeight)
+    {
+        int32_t iLog2denom, iWoc, iOoc;
+        int32_t iPredTemp, iLineStride;
+        int32_t iPixel = 0;
+        uint8_t* pDst;
+        //luma
+        iLog2denom = (int32_t)pCurDqLayer->pPredWeightTable->uiLumaLog2WeightDenom;
+        iWoc = pCurDqLayer->pPredWeightTable->sPredList[listIdx].iLumaWeight[iRefIdx];
+        iOoc = pCurDqLayer->pPredWeightTable->sPredList[listIdx].iLumaOffset[iRefIdx];
+        iLineStride = pMCRefMem->iDstLineLuma;
+
+        for (int i = 0; i < iBlkHeight; i++)
+        {
+            for (int j = 0; j < iBlkWidth; j++)
+            {
+                iPixel = j + i * (iLineStride);
+                if (iLog2denom >= 1)
+                {
+                    iPredTemp = ((pMCRefMem->pDstY[iPixel] * iWoc + (1 << (iLog2denom - 1))) >> iLog2denom) + iOoc;
+
+                    pMCRefMem->pDstY[iPixel] = (uint8_t)WELS_CLIP3(iPredTemp, 0, 255);
+                }
+                else
+                {
+                    iPredTemp = pMCRefMem->pDstY[iPixel] * iWoc + iOoc;
+
+                    pMCRefMem->pDstY[iPixel] = (uint8_t)WELS_CLIP3(iPredTemp, 0, 255);
+
+                }
+            }
+        }
+
+
+        //UV
+        iBlkWidth = iBlkWidth >> 1;
+        iBlkHeight = iBlkHeight >> 1;
+        iLog2denom = (int32_t)pCurDqLayer->pPredWeightTable->uiChromaLog2WeightDenom;
+        iLineStride = pMCRefMem->iDstLineChroma;
+
+        for (int i = 0; i < 2; i++)
+        {
+            //iLog2denom = pCurDqLayer->pPredWeightTable->uiChromaLog2WeightDenom;
+            iWoc = pCurDqLayer->pPredWeightTable->sPredList[listIdx].iChromaWeight[iRefIdx][i];
+            iOoc = pCurDqLayer->pPredWeightTable->sPredList[listIdx].iChromaOffset[iRefIdx][i];
+            pDst = i != 0 ? pMCRefMem->pDstV : pMCRefMem->pDstU;
+            //iLineStride = pMCRefMem->iDstLineChroma;
+
+            // The inner loop's i shadows the plane index in C.
+            for (int k = 0; k < iBlkHeight; k++)
+            {
+                for (int j = 0; j < iBlkWidth; j++)
+                {
+                    iPixel = j + k * (iLineStride);
+                    if (iLog2denom >= 1)
+                    {
+                        iPredTemp = ((pDst[iPixel] * iWoc + (1 << (iLog2denom - 1))) >> iLog2denom) + iOoc;
+
+                        pDst[iPixel] = (uint8_t)WELS_CLIP3(iPredTemp, 0, 255);
+                    }
+                    else
+                    {
+                        iPredTemp = pDst[iPixel] * iWoc + iOoc;
+
+                        pDst[iPixel] = (uint8_t)WELS_CLIP3(iPredTemp, 0, 255);
+
+                    }
+                }
+
+            }
+
+
+        }
+    }
+
+    // BiWeightPrediction and BiPrediction: B slices, not ported yet.
+
+    public static int32_t GetInterPred(uint8_t* pPredY, uint8_t* pPredCb, uint8_t* pPredCr, SWelsDecoderContext* pCtx)
+    {
+        sMCRefMember pMCRefMem;
+        SDqLayer* pCurDqLayer = pCtx->pCurDqLayer;
+        SMcFunc* pMCFunc = &pCtx->sMcFunc;
+
+        int32_t iMBXY = pCurDqLayer->iMbXyIndex;
+
+        int16_t* iMVs = stackalloc int16_t[2] { 0, 0 };
+
+        uint32_t iMBType = pCurDqLayer->pDec->pMbType[iMBXY];
+
+        int32_t iMBOffsetX = pCurDqLayer->iMbX << 4;
+        int32_t iMBOffsetY = pCurDqLayer->iMbY << 4;
+
+        int32_t iDstLineLuma = pCtx->pDec->iLinesize[0];
+        int32_t iDstLineChroma = pCtx->pDec->iLinesize[1];
+
+        int32_t iBlk8X, iBlk8Y, iBlk4X, iBlk4Y, i, j, iIIdx, iJIdx;
+
+        pMCRefMem = default;
+        pMCRefMem.iPicWidth = (pCurDqLayer->sLayerInfo.sSliceInLayer.sSliceHeaderExt.sSliceHeader.iMbWidth << 4);
+        pMCRefMem.iPicHeight = (pCurDqLayer->sLayerInfo.sSliceInLayer.sSliceHeaderExt.sSliceHeader.iMbHeight << 4);
+
+        pMCRefMem.pDstY = pPredY;
+        pMCRefMem.pDstU = pPredCb;
+        pMCRefMem.pDstV = pPredCr;
+
+        pMCRefMem.iDstLineLuma = iDstLineLuma;
+        pMCRefMem.iDstLineChroma = iDstLineChroma;
+
+        int8_t iRefIndex = 0;
+        uint32_t uiRetTmp;
+        InlineArray16<InlineArray2<int16_t>>* pMv = pCurDqLayer->pDec->pMv[0].p + iMBXY;
+        InlineArray16<int8_t>* pRefIdx = pCurDqLayer->pDec->pRefIndex[0].p + iMBXY;
+
+        switch (iMBType)
+        {
+            case MB_TYPE_SKIP:
+            case MB_TYPE_16x16:
+                iMVs[0] = (*pMv)[0][0];
+                iMVs[1] = (*pMv)[0][1];
+                iRefIndex = (*pRefIdx)[0];
+                uiRetTmp = (uint32_t)GetRefPic(&pMCRefMem, pCtx, iRefIndex, (int32_t)LIST_0);
+                if (uiRetTmp != ERR_NONE) return (int32_t)uiRetTmp; // WELS_B_MB_REC_VERIFY
+                BaseMC(pCtx, &pMCRefMem, (int32_t)LIST_0, iRefIndex, iMBOffsetX, iMBOffsetY, pMCFunc, 16, 16, iMVs);
+
+                if (pCurDqLayer->bUseWeightPredictionFlag)
+                {
+                    iRefIndex = (*pRefIdx)[0];
+                    WeightPrediction(pCurDqLayer, &pMCRefMem, (int32_t)LIST_0, iRefIndex, 16, 16);
+                }
+                break;
+            case MB_TYPE_16x8:
+                iMVs[0] = (*pMv)[0][0];
+                iMVs[1] = (*pMv)[0][1];
+                iRefIndex = (*pRefIdx)[0];
+                uiRetTmp = (uint32_t)GetRefPic(&pMCRefMem, pCtx, iRefIndex, (int32_t)LIST_0);
+                if (uiRetTmp != ERR_NONE) return (int32_t)uiRetTmp; // WELS_B_MB_REC_VERIFY
+                BaseMC(pCtx, &pMCRefMem, (int32_t)LIST_0, iRefIndex, iMBOffsetX, iMBOffsetY, pMCFunc, 16, 8, iMVs);
+
+                if (pCurDqLayer->bUseWeightPredictionFlag)
+                {
+                    WeightPrediction(pCurDqLayer, &pMCRefMem, (int32_t)LIST_0, iRefIndex, 16, 8);
+                }
+
+                iMVs[0] = (*pMv)[8][0];
+                iMVs[1] = (*pMv)[8][1];
+                iRefIndex = (*pRefIdx)[8];
+                uiRetTmp = (uint32_t)GetRefPic(&pMCRefMem, pCtx, iRefIndex, (int32_t)LIST_0);
+                if (uiRetTmp != ERR_NONE) return (int32_t)uiRetTmp; // WELS_B_MB_REC_VERIFY
+                pMCRefMem.pDstY = pPredY + (iDstLineLuma << 3);
+                pMCRefMem.pDstU = pPredCb + (iDstLineChroma << 2);
+                pMCRefMem.pDstV = pPredCr + (iDstLineChroma << 2);
+                BaseMC(pCtx, &pMCRefMem, (int32_t)LIST_0, iRefIndex, iMBOffsetX, iMBOffsetY + 8, pMCFunc, 16, 8, iMVs);
+
+                if (pCurDqLayer->bUseWeightPredictionFlag)
+                {
+                    WeightPrediction(pCurDqLayer, &pMCRefMem, (int32_t)LIST_0, iRefIndex, 16, 8);
+                }
+                break;
+            case MB_TYPE_8x16:
+                iMVs[0] = (*pMv)[0][0];
+                iMVs[1] = (*pMv)[0][1];
+                iRefIndex = (*pRefIdx)[0];
+                uiRetTmp = (uint32_t)GetRefPic(&pMCRefMem, pCtx, iRefIndex, (int32_t)LIST_0);
+                if (uiRetTmp != ERR_NONE) return (int32_t)uiRetTmp; // WELS_B_MB_REC_VERIFY
+                BaseMC(pCtx, &pMCRefMem, (int32_t)LIST_0, iRefIndex, iMBOffsetX, iMBOffsetY, pMCFunc, 8, 16, iMVs);
+                if (pCurDqLayer->bUseWeightPredictionFlag)
+                {
+                    WeightPrediction(pCurDqLayer, &pMCRefMem, (int32_t)LIST_0, iRefIndex, 8, 16);
+                }
+
+                iMVs[0] = (*pMv)[2][0];
+                iMVs[1] = (*pMv)[2][1];
+                iRefIndex = (*pRefIdx)[2];
+                uiRetTmp = (uint32_t)GetRefPic(&pMCRefMem, pCtx, iRefIndex, (int32_t)LIST_0);
+                if (uiRetTmp != ERR_NONE) return (int32_t)uiRetTmp; // WELS_B_MB_REC_VERIFY
+                pMCRefMem.pDstY = pPredY + 8;
+                pMCRefMem.pDstU = pPredCb + 4;
+                pMCRefMem.pDstV = pPredCr + 4;
+                BaseMC(pCtx, &pMCRefMem, (int32_t)LIST_0, iRefIndex, iMBOffsetX + 8, iMBOffsetY, pMCFunc, 8, 16, iMVs);
+
+                if (pCurDqLayer->bUseWeightPredictionFlag)
+                {
+                    WeightPrediction(pCurDqLayer, &pMCRefMem, (int32_t)LIST_0, iRefIndex, 8, 16);
+                }
+                break;
+            case MB_TYPE_8x8:
+            case MB_TYPE_8x8_REF0:
+                {
+                    uint32_t iSubMBType;
+                    int32_t iXOffset, iYOffset;
+                    uint8_t* pDstY, pDstU, pDstV;
+                    for (i = 0; i < 4; i++)
+                    {
+                        iSubMBType = pCurDqLayer->pSubMbType[iMBXY][i];
+                        iBlk8X = (i & 1) << 3;
+                        iBlk8Y = (i >> 1) << 3;
+                        iXOffset = iMBOffsetX + iBlk8X;
+                        iYOffset = iMBOffsetY + iBlk8Y;
+
+                        iIIdx = ((i >> 1) << 3) + ((i & 1) << 1);
+                        iRefIndex = (*pRefIdx)[iIIdx];
+                        uiRetTmp = (uint32_t)GetRefPic(&pMCRefMem, pCtx, iRefIndex, (int32_t)LIST_0);
+                        if (uiRetTmp != ERR_NONE) return (int32_t)uiRetTmp; // WELS_B_MB_REC_VERIFY
+                        pDstY = pPredY + iBlk8X + iBlk8Y * iDstLineLuma;
+                        pDstU = pPredCb + (iBlk8X >> 1) + (iBlk8Y >> 1) * iDstLineChroma;
+                        pDstV = pPredCr + (iBlk8X >> 1) + (iBlk8Y >> 1) * iDstLineChroma;
+                        pMCRefMem.pDstY = pDstY;
+                        pMCRefMem.pDstU = pDstU;
+                        pMCRefMem.pDstV = pDstV;
+                        switch (iSubMBType)
+                        {
+                            case SUB_MB_TYPE_8x8:
+                                iMVs[0] = (*pMv)[iIIdx][0];
+                                iMVs[1] = (*pMv)[iIIdx][1];
+                                BaseMC(pCtx, &pMCRefMem, (int32_t)LIST_0, iRefIndex, iXOffset, iYOffset, pMCFunc, 8, 8, iMVs);
+                                if (pCurDqLayer->bUseWeightPredictionFlag)
+                                {
+
+                                    WeightPrediction(pCurDqLayer, &pMCRefMem, (int32_t)LIST_0, iRefIndex, 8, 8);
+                                }
+
+                                break;
+                            case SUB_MB_TYPE_8x4:
+                                iMVs[0] = (*pMv)[iIIdx][0];
+                                iMVs[1] = (*pMv)[iIIdx][1];
+                                BaseMC(pCtx, &pMCRefMem, (int32_t)LIST_0, iRefIndex, iXOffset, iYOffset, pMCFunc, 8, 4, iMVs);
+                                if (pCurDqLayer->bUseWeightPredictionFlag)
+                                {
+
+                                    WeightPrediction(pCurDqLayer, &pMCRefMem, (int32_t)LIST_0, iRefIndex, 8, 4);
+                                }
+
+
+                                iMVs[0] = (*pMv)[iIIdx + 4][0];
+                                iMVs[1] = (*pMv)[iIIdx + 4][1];
+                                pMCRefMem.pDstY += (iDstLineLuma << 2);
+                                pMCRefMem.pDstU += (iDstLineChroma << 1);
+                                pMCRefMem.pDstV += (iDstLineChroma << 1);
+                                BaseMC(pCtx, &pMCRefMem, (int32_t)LIST_0, iRefIndex, iXOffset, iYOffset + 4, pMCFunc, 8, 4, iMVs);
+                                if (pCurDqLayer->bUseWeightPredictionFlag)
+                                {
+
+                                    WeightPrediction(pCurDqLayer, &pMCRefMem, (int32_t)LIST_0, iRefIndex, 8, 4);
+                                }
+
+                                break;
+                            case SUB_MB_TYPE_4x8:
+                                iMVs[0] = (*pMv)[iIIdx][0];
+                                iMVs[1] = (*pMv)[iIIdx][1];
+                                BaseMC(pCtx, &pMCRefMem, (int32_t)LIST_0, iRefIndex, iXOffset, iYOffset, pMCFunc, 4, 8, iMVs);
+                                if (pCurDqLayer->bUseWeightPredictionFlag)
+                                {
+
+                                    WeightPrediction(pCurDqLayer, &pMCRefMem, (int32_t)LIST_0, iRefIndex, 4, 8);
+                                }
+
+
+                                iMVs[0] = (*pMv)[iIIdx + 1][0];
+                                iMVs[1] = (*pMv)[iIIdx + 1][1];
+                                pMCRefMem.pDstY += 4;
+                                pMCRefMem.pDstU += 2;
+                                pMCRefMem.pDstV += 2;
+                                BaseMC(pCtx, &pMCRefMem, (int32_t)LIST_0, iRefIndex, iXOffset + 4, iYOffset, pMCFunc, 4, 8, iMVs);
+                                if (pCurDqLayer->bUseWeightPredictionFlag)
+                                {
+
+                                    WeightPrediction(pCurDqLayer, &pMCRefMem, (int32_t)LIST_0, iRefIndex, 4, 8);
+                                }
+
+                                break;
+                            case SUB_MB_TYPE_4x4:
+                                {
+                                    for (j = 0; j < 4; j++)
+                                    {
+                                        int32_t iUVLineStride;
+                                        iJIdx = ((j >> 1) << 2) + (j & 1);
+
+                                        iBlk4X = (j & 1) << 2;
+                                        iBlk4Y = (j >> 1) << 2;
+
+                                        iUVLineStride = (iBlk4X >> 1) + (iBlk4Y >> 1) * iDstLineChroma;
+                                        pMCRefMem.pDstY = pDstY + iBlk4X + iBlk4Y * iDstLineLuma;
+                                        pMCRefMem.pDstU = pDstU + iUVLineStride;
+                                        pMCRefMem.pDstV = pDstV + iUVLineStride;
+
+                                        iMVs[0] = (*pMv)[iIIdx + iJIdx][0];
+                                        iMVs[1] = (*pMv)[iIIdx + iJIdx][1];
+                                        BaseMC(pCtx, &pMCRefMem, (int32_t)LIST_0, iRefIndex, iXOffset + iBlk4X, iYOffset + iBlk4Y, pMCFunc, 4, 4, iMVs);
+                                        if (pCurDqLayer->bUseWeightPredictionFlag)
+                                        {
+
+                                            WeightPrediction(pCurDqLayer, &pMCRefMem, (int32_t)LIST_0, iRefIndex, 4, 4);
+                                        }
+
+                                    }
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+        return ERR_NONE;
+    }
+
+    // GetInterBPred: B slices, not ported yet.
 
     public static int32_t RecChroma(int32_t iMBXY, SWelsDecoderContext* pCtx, int16_t* pScoeffLevel, SDqLayer* pDqLayer)
     {

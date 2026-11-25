@@ -66,17 +66,23 @@ damaged copies of each vector (dropped, truncated and bit-flipped NALs, from
 `fixture.h`'s generator). `headerdump` prints one dump in full, for diffing
 against the C# dump the test writes on a mismatch.
 
-`mbs` is the same driver, also parsing each access unit's slices as
-`DecodeCurrentAccessUnit` does up to and including `WelsDecodeSlice` (a fixed
-stand-in reference list, one picture as `pDec`), then reconstructing the
-slice's intra macroblocks as `WelsTargetSliceConstruction` does, without
-deblocking (inter reconstruction is not ported yet). For each parsed slice it
-adds a line with the parser's end state, the SHA1 of a binary record of every
-macroblock the slice reached (type, QPs, CBP, non-zero counts, coefficients,
-intra modes, sub-MB types, motion vectors, reference indices, flags), and the
-reconstruction's return code, macroblock count and sample SHA1; for each access
-unit, the SHA1 of the picture. CABAC and B slices are skipped (not ported yet).
-`mbs-damaged` and `mbdump` work as their `headers` counterparts.
+`mbs` is the same driver, also decoding each access unit as
+`DecodeCurrentAccessUnit` does (single-threaded, error concealment on but not
+run, no deblocking): the picture comes from the DPB, each slice builds its
+reference list with `InitRefPicList`, is parsed by `WelsDecodeSlice` and
+reconstructed as `WelsTargetSliceConstruction` does, and a reference picture is
+then marked (`WelsMarkAsRef`) and padded. For each parsed slice it adds a line
+with the frame_num gap check, the reference list, the parser's end state, the
+SHA1 of a binary record of every macroblock the slice reached (type, QPs, CBP,
+non-zero counts, coefficients, intra modes, sub-MB types, motion vectors,
+reference indices, flags), the reconstruction's return code, macroblock count
+and sample SHA1, and the completeness flag; for each access unit, the picture
+and its SHA1, and for a reference picture the short- and long-term lists after
+marking. CABAC and B slices are skipped (not ported yet), and so is the rest
+of a stream once `PrefetchPic` finds no free picture (upstream resets the whole
+decoder there, in the API layer). On the vectors with deblocking turned off,
+the pictures equal the real decoder's output frames. `mbs-damaged` and
+`mbdump` work as their `headers` counterparts.
 
 ## Reference results (`reference/`)
 
@@ -101,5 +107,5 @@ unit, the SHA1 of the picture. CABAC and B slices are skipped (not ported yet).
   aren't committed are checked when `OPENH264_RES` points at openh264's `res/`.
 - **`mbs.tsv`** and **`mbs-damaged.tsv`** are the outputs of `h264ref mbs` and
   `mbs-damaged`: slices parsed, macroblock records, and the size and SHA1 of
-  each vector's macroblock and intra reconstruction dump. Read by
+  each vector's macroblock, reference and reconstruction dump. Read by
   `MbDumpTests`, the same way.

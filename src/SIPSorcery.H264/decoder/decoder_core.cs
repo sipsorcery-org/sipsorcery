@@ -13,7 +13,10 @@
 // layer memory (InitialDqLayersContext, UninitialDqLayersContext) and the
 // per-slice layer setup DecodeCurrentAccessUnit does before WelsDecodeSlice
 // (InitDqLayerInfo, WelsDqLayerDecodeStart, InitCurDqLayerData);
-// DecodeCurrentAccessUnit itself comes with reconstruction.
+// DecodeCurrentAccessUnit itself comes with the orchestration step (D6).
+// D4 adds what reference handling needs from here: AllocPicBuffOnNewSeqBegin,
+// InitConstructAccessUnit, InitRefPicList (whose B slice and non-Baseline
+// CABAC paths fail loudly) and CheckRefPicturesComplete.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
@@ -21,6 +24,7 @@
 // History:
 // 25 Nov 2026  Claude          Created.
 // 25 Nov 2026  Claude          D2: DQ layer memory and per-slice layer setup.
+// 25 Nov 2026  Claude          D4: picture buffer setup, reference list init.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -2299,6 +2303,60 @@ internal static unsafe partial class WelsDec
         return iErr;
     }
 
+    /*
+    * AllocPicBuffOnNewSeqBegin
+    * check and (re)allocate picture buffers on new sequence begin
+    * return:
+    *  0 - success; otherwise returned error_no defined in error_no.h
+    */
+    public static int32_t AllocPicBuffOnNewSeqBegin(SWelsDecoderContext* pCtx)
+    {
+        //try to allocate or relocate DPB memory only when new sequence is coming.
+        if (GetThreadCount(pCtx) <= 1)
+        {
+            WelsResetRefPic(pCtx); //clear ref pPic when IDR NAL
+        }
+        int32_t iErr = SyncPictureResolutionExt(pCtx, (int32_t)pCtx->pSps->iMbWidth, (int32_t)pCtx->pSps->iMbHeight);
+
+        if (ERR_NONE != iErr)
+        {
+            WelsLog(&(pCtx->sLogCtx), WELS_LOG_WARNING, $"sync picture resolution ext failed,  the error is {iErr}");
+            return iErr;
+        }
+
+        return iErr;
+    }
+
+    /*
+    * InitConstructAccessUnit
+    * Init before constructing an access unit for given input bitstream, maybe partial NAL Unit, one or more Units are involved to
+    * joint a collective access unit.
+    * parameter\
+    *  SBufferInfo:    Buffer info
+    * return:
+    *  0 - success; otherwise returned error_no defined in error_no.h
+    */
+    public static int32_t InitConstructAccessUnit(SWelsDecoderContext* pCtx, SBufferInfo* pDstInfo)
+    {
+        int32_t iErr = ERR_NONE;
+
+        iErr = WelsDecodeInitAccessUnitStart(pCtx, pDstInfo);
+        if (ERR_NONE != iErr)
+        {
+            return iErr;
+        }
+        if (pCtx->bNewSeqBegin)
+        {
+            iErr = AllocPicBuffOnNewSeqBegin(pCtx);
+            if (ERR_NONE != iErr)
+            {
+                return iErr;
+            }
+        }
+
+        return iErr;
+    }
+
     // static inline in C. internal here (the class is) so the slice-parse
     // test driver can call it, as DecodeCurrentAccessUnit does.
     public static void InitDqLayerInfo(SDqLayer* pDqLayer, SLayerInfo* pLayerInfo, SNalUnit* pNalUnit, SPicture* pPicDec)
@@ -2362,6 +2420,39 @@ internal static unsafe partial class WelsDec
         UpdateDecoderStatisticsForActiveParaset(pCtx->pDecoderStatistics, pSps, pPps);
     }
 
+    // WelsInitBSliceRefList (with CreateImplicitWeightTable) and WelsReorderRefList2
+    // are not ported yet (B slices; CABAC outside the Baseline profile), so those
+    // two paths fail loudly here instead.
+    public static int32_t InitRefPicList(SWelsDecoderContext* pCtx, uint8_t kuiNRi, int32_t iPoc)
+    {
+        int32_t iRet = ERR_NONE;
+        if (pCtx->eSliceType == B_SLICE)
+        {
+            WelsLog(&(pCtx->sLogCtx), WELS_LOG_ERROR, "InitRefPicList():::B slice reference lists are not supported by this port yet.");
+            return ERR_INFO_UNSUPPORTED_BIPRED;
+        }
+        else
+        {
+            iRet = WelsInitRefList(pCtx, iPoc);
+        }
+        if ((pCtx->eSliceType != I_SLICE && pCtx->eSliceType != SI_SLICE))
+        {
+            // #if 1
+            if ((int32_t)pCtx->pSps->uiProfileIdc != 66 && pCtx->pPps->bEntropyCodingModeFlag)
+            {
+                WelsLog(&(pCtx->sLogCtx), WELS_LOG_ERROR, "InitRefPicList():::CABAC reference list reordering is not supported by this port yet.");
+                iRet = ERR_INFO_UNSUPPORTED_CABAC_EL; // WelsReorderRefList2 (pCtx)
+            }
+            else
+            {
+                // #endif
+                iRet = WelsReorderRefList(pCtx);
+            }
+        }
+
+        return iRet;
+    }
+
     public static void InitCurDqLayerData(SWelsDecoderContext* pCtx, SDqLayer* pCurDq)
     {
         if (null != pCtx && null != pCurDq)
@@ -2394,5 +2485,63 @@ internal static unsafe partial class WelsDec
             pCurDq->pMbCorrectlyDecodedFlag = pCtx->sMb.pMbCorrectlyDecodedFlag[0];
             pCurDq->pMbRefConcealedFlag = pCtx->sMb.pMbRefConcealedFlag[0];
         }
+    }
+
+    public static bool CheckRefPicturesComplete(SWelsDecoderContext* pCtx)
+    {
+        // Multi Reference, RefIdx may differ
+        bool bAllRefComplete = true;
+        SPicture** ppRefList0 = (SPicture**)&pCtx->sRefPic.pRefList[(int32_t)LIST_0];
+        SPicture* pDec = pCtx->pCurDqLayer->pDec;
+        int32_t iRealMbIdx = pCtx->pCurDqLayer->sLayerInfo.sSliceInLayer.sSliceHeaderExt.sSliceHeader.iFirstMbInSlice;
+        for (int32_t iMbIdx = 0; bAllRefComplete
+             && iMbIdx < pCtx->pCurDqLayer->sLayerInfo.sSliceInLayer.iTotalMbInCurSlice; iMbIdx++)
+        {
+            switch (pDec->pMbType[iRealMbIdx])
+            {
+                case MB_TYPE_SKIP:
+                case MB_TYPE_16x16:
+                    bAllRefComplete &=
+                        ppRefList0[pDec->pRefIndex[0].p[iRealMbIdx][0]]->bIsComplete;
+                    break;
+
+                case MB_TYPE_16x8:
+                    bAllRefComplete &=
+                        ppRefList0[pDec->pRefIndex[0].p[iRealMbIdx][0]]->bIsComplete;
+                    bAllRefComplete &=
+                        ppRefList0[pDec->pRefIndex[0].p[iRealMbIdx][8]]->bIsComplete;
+                    break;
+
+                case MB_TYPE_8x16:
+                    bAllRefComplete &=
+                        ppRefList0[pDec->pRefIndex[0].p[iRealMbIdx][0]]->bIsComplete;
+                    bAllRefComplete &=
+                        ppRefList0[pDec->pRefIndex[0].p[iRealMbIdx][2]]->bIsComplete;
+                    break;
+
+                case MB_TYPE_8x8:
+                case MB_TYPE_8x8_REF0:
+                    bAllRefComplete &=
+                        ppRefList0[pDec->pRefIndex[0].p[iRealMbIdx][0]]->bIsComplete;
+                    bAllRefComplete &=
+                        ppRefList0[pDec->pRefIndex[0].p[iRealMbIdx][2]]->bIsComplete;
+                    bAllRefComplete &=
+                        ppRefList0[pDec->pRefIndex[0].p[iRealMbIdx][8]]->bIsComplete;
+                    bAllRefComplete &=
+                        ppRefList0[pDec->pRefIndex[0].p[iRealMbIdx][10]]->bIsComplete;
+                    break;
+
+                default:
+                    break;
+            }
+            iRealMbIdx = (pCtx->pPps->uiNumSliceGroups > 1) ? FmoNextMb(pCtx->pFmo, iRealMbIdx) :
+                         (pCtx->pCurDqLayer->sLayerInfo.sSliceInLayer.sSliceHeaderExt.sSliceHeader.iFirstMbInSlice + iMbIdx);
+            if (iRealMbIdx == -1) //caused by abnormal return of FmoNextMb()
+            {
+                return false;
+            }
+        }
+
+        return bAllRefComplete;
     }
 }

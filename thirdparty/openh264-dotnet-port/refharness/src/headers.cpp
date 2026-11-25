@@ -39,6 +39,26 @@
 // Inter macroblocks are left as the picture held them (inter prediction is
 // D4), so intra macroblocks next to them predict from those samples; both
 // sides do the same.
+//
+// D4 replaces the stand-ins with the decoder's own reference handling and
+// reconstructs every macroblock. The pictures come from the DPB
+// (AllocPicBuffOnNewSeqBegin on a new sequence, the "Z" line; PrefetchPic per
+// access unit), each slice of the top dependency layer builds its list with
+// InitRefPicList after the frame_num gap check (a "gap", "rpl", "rc" and
+// "refs" group on its "D" line), and the access unit ends as
+// DecodeCurrentAccessUnit's does: the completeness flags
+// (CheckRefPicturesComplete, "arc"), DecodeFrameConstruction's share of them,
+// then for a reference picture WelsMarkAsRef and ExpandReferencingPicture (a
+// "K" line with the lists after marking), and the frame_num bookkeeping. The
+// "Y" line names the picture as well. Error concealment (NeedErrorCon,
+// ImplementErrorCon, MarkECFrameAsRef) and deblocking are not run (D6, D5), so
+// a damaged picture keeps whatever its unreconstructed macroblocks held and
+// references are unfiltered; both sides do the same. Where upstream returns
+// from DecodeCurrentAccessUnit early (an FmoParamUpdate or reconstruction
+// error) the access unit ends without marking, which is where upstream's
+// concealment would take over. Skipped slices still do nothing, an access
+// unit with no slice parsed is not marked, and once PrefetchPic fails the rest
+// of the stream is skipped (noPic).
 
 #include <algorithm>
 #include <climits>
@@ -56,9 +76,13 @@
 #include "decoder_context.h"
 #include "decoder_core.h"
 #include "error_code.h"
+#include "expand_pic.h"
 #include "fmo.h"
+#include "manage_dec_ref.h"
+#include "mc.h"
 #include "memmgr_nal_unit.h"
 #include "memory_align.h"
+#include "pic_queue.h"
 #include "sha1.h"
 #include "vlc_decoder.h"
 
@@ -70,6 +94,7 @@ namespace WelsDec {
 PPicture AllocPicture (PWelsDecoderContext pCtx, const int32_t kiPicWidth, const int32_t kiPicHeight);
 void FreePicture (PPicture pPic, CMemoryAlign* pMa);
 void InitCurDqLayerData (PWelsDecoderContext pCtx, PDqLayer pCurDq);
+int32_t InitRefPicList (PWelsDecoderContext pCtx, const uint8_t kuiNRi, int32_t iPoc);
 }
 
 using namespace WelsDec;
@@ -596,9 +621,12 @@ struct Driver {
   // The D2 macroblock dump (mbs mode), see MbParse.
   bool mbs = false;
   SVlcTable vlc;
-  PPicture pic = NULL;          // the one pDec
-  SPicture refOk, refBad;       // the stand-in reference pictures
   int slices = 0, mbRecs = 0;   // slices parsed, macroblock records written
+  // Set once PrefetchPic finds no free picture. Upstream's DecodeFrame2 then
+  // resets the whole decoder (ResetDecoder, the API layer: D6), and without
+  // that PrefetchPic's next search would run past the buffer, so the rest of
+  // the stream is skipped (skip 6).
+  bool noPic = false;
 
   bool Init() {
     ctx = (PWelsDecoderContext)calloc (1, sizeof (SWelsDecoderContext));
@@ -630,11 +658,11 @@ struct Driver {
       memset (&vlc, 0, sizeof vlc);
       InitVlcTable (&vlc);
       ctx->pVlcTable = &vlc;
-      memset (&refOk, 0, sizeof refOk);
-      memset (&refBad, 0, sizeof refBad);
-      refOk.bIsComplete = true;
-      // InitDecFuncs' share that the intra reconstruction uses (WelsInitDecoder).
+      // InitDecFuncs (WelsInitDecoder), without the deblocking (D5).
+      WelsBlockFuncInit (&ctx->sBlockFunc, 0);
       InitPredFunc (ctx, 0);
+      InitMcFunc (&ctx->sMcFunc, 0);
+      InitExpandPictureFunc (&ctx->sExpandPicFunc, 0);
     }
     return true;
   }
@@ -642,13 +670,7 @@ struct Driver {
   void Close() {
     if (ctx == NULL) return;
     CMemoryAlign* pMa = ctx->pMemAlign;
-    if (mbs) {
-      // WelsFreeDynamicMemory's share of what the parse allocates.
-      ResetFmoList (ctx);
-      UninitialDqLayersContext (ctx);
-      if (pic != NULL) FreePicture (pic, pMa);
-      pic = NULL;
-    }
+    if (mbs) WelsFreeDynamicMemory (ctx);
     WelsFreeStaticMemory (ctx);
     delete pMa;
     free (ctx);
@@ -745,70 +767,118 @@ struct Driver {
     Ctx ("e");
   }
 
-  // InitConstructAccessUnit's AllocPicBuffOnNewSeqBegin, minus the DPB:
-  // SyncPictureResolutionExt's InitialDqLayersContext, and the one picture
-  // (re)allocated at the sequence size. Returns false on failure.
+  // InitConstructAccessUnit's AllocPicBuffOnNewSeqBegin: the DPB and the DQ
+  // layer memory for a new sequence. Returns false on failure.
   bool MbAlloc() {
     if (!ctx->bNewSeqBegin) return true;
-    const int32_t w = ctx->pSps->iMbWidth << 4, h = ctx->pSps->iMbHeight << 4;
-    int32_t iErr = InitialDqLayersContext (ctx, w, h);
-    if (iErr == ERR_NONE && (pic == NULL || pic->iWidthInPixel != w || pic->iHeightInPixel != h)) {
-      if (pic != NULL) FreePicture (pic, ctx->pMemAlign);
-      pic = AllocPicture (ctx, w, h);
-      if (pic == NULL) iErr = ERR_INFO_OUT_OF_MEMORY;
-    }
+    int32_t iErr = AllocPicBuffOnNewSeqBegin (ctx);
     d.Tag ("Z");
-    d.Kv ("w", w);
-    d.Kv ("h", h);
+    d.Kv ("w", ctx->pSps->iMbWidth << 4);
+    d.Kv ("h", ctx->pSps->iMbHeight << 4);
     d.Kv ("ret", iErr);
+    d.Kv ("cap", ctx->pPicBuff != NULL ? ctx->pPicBuff->iCapacity : -1);
+    d.Kv ("pq", ctx->iPicQueueNumber);
     d.End();
     return iErr == ERR_NONE;
   }
 
-  // The reference list stand-in for InitRefPicList: entries 0..uiRefCount[0]-1
-  // of list 0 are set, from a fixed pattern over the access unit number, to a
-  // complete picture, an incomplete one or none, so the parser's missing and
-  // incomplete reference paths run.
-  void RefList (int au, PSliceHeader pSh) {
-    memset (ctx->sRefPic.pRefList, 0, sizeof (ctx->sRefPic.pRefList));
-    uint32_t n = pSh->uiRefCount[LIST_0];
-    if (n > MAX_DPB_COUNT) n = MAX_DPB_COUNT;
-    for (uint32_t i = 0; i < n; ++i) {
-      uint32_t k = (uint32_t)au * 7 + i;
-      if (k % 5 != 4) ctx->sRefPic.pRefList[LIST_0][i] = k % 3 == 2 ? &refBad : &refOk;
+  // A picture: "b<DPB index>" then "f<frame_num>", or "l<long term frame
+  // index>" for a long term reference, then "x" if it is incomplete; "-" for
+  // none.
+  void Pic (PPicture p) {
+    if (p == NULL) {
+      d.s += '-';
+      return;
     }
-    ctx->sRefPic.uiRefCount[LIST_0] = (uint8_t)n;
+    int32_t b = -1;
+    for (int32_t i = 0; ctx->pPicBuff != NULL && i < ctx->pPicBuff->iCapacity; ++i)
+      if (ctx->pPicBuff->ppPic[i] == p) b = i;
+    d.s += 'b' + std::to_string (b);
+    d.s += p->bIsLongRef ? 'l' + std::to_string (p->iLongTermFrameIdx) : 'f' + std::to_string (p->iFrameNum);
+    if (!p->bIsComplete) d.s += 'x';
   }
 
-  // What DecodeCurrentAccessUnit does with the access unit before and in
-  // WelsDecodeSlice (decoder_core.cpp, the iThreadCount <= 1 path), in order.
+  void PicList (const char* k, PPicture* l, int32_t n) {
+    if (n > MAX_DPB_COUNT) n = MAX_DPB_COUNT;
+    d.s += ' ';
+    d.s += k;
+    d.s += '=';
+    for (int32_t i = 0; i < n; ++i) {
+      if (i) d.s += ',';
+      Pic (l[i]);
+    }
+  }
+
+  // InitRefPicList's result (-1 when it is not called) and list 0.
+  void DumpRefList (int32_t iRpl) {
+    d.Kv ("rpl", iRpl);
+    d.Kv ("rc", ctx->sRefPic.uiRefCount[LIST_0]);
+    PicList ("refs", ctx->sRefPic.pRefList[LIST_0], ctx->sRefPic.uiRefCount[LIST_0]);
+  }
+
+  // WelsMarkAsRef's result and the lists it leaves.
+  void DumpMarking (int au, int32_t iRet) {
+    d.Tag ("K");
+    d.Kv ("au", au);
+    d.Kv ("ret", iRet);
+    d.Kv ("maxlt", ctx->sRefPic.iMaxLongTermFrameIdx);
+    d.Kv ("mmco5", ctx->pLastDecPicInfo->bLastHasMmco5);
+    PicList ("st", ctx->sRefPic.pShortRefList[LIST_0], ctx->sRefPic.uiShortRefCount[LIST_0]);
+    PicList ("lt", ctx->sRefPic.pLongRefList[LIST_0], ctx->sRefPic.uiLongRefCount[LIST_0]);
+    d.End();
+  }
+
+  // What DecodeCurrentAccessUnit does with the access unit (decoder_core.cpp,
+  // the iThreadCount <= 1 path, with error concealment on), in order, without
+  // the concealment itself and the picture output.
   void MbParse() {
     PAccessUnit pCurAu = ctx->pAccessUnitList;
     const int au = aus - 1;
+    bool bAllRefComplete = true;
     // GetTargetDqId.
     const uint8_t kuiTargetLayerDqId = WELS_MIN (ctx->uiTargetDqId, ctx->pParam->uiTargetDqLayer);
+    const uint8_t kuiDependencyIdMax = (kuiTargetLayerDqId & 0x7F) >> 4;
     int16_t iLastIdD = -1, iLastIdQ = -1;
     ctx->uiNalRefIdc = 0;
     if (ctx->bInitialDqLayersMem || ctx->pCurDqLayer == NULL) ctx->pCurDqLayer = ctx->pDqLayersList[0];
     InitCurDqLayerData (ctx, ctx->pCurDqLayer);
-    if (pic == NULL || (ctx->pSps->iMbWidth << 4) > pic->iWidthInPixel || (ctx->pSps->iMbHeight << 4) > pic->iHeightInPixel) {
+    if (ctx->pPicBuff == NULL || (ctx->pSps->iMbWidth << 4) > ctx->iImgWidthInPixel
+        || (ctx->pSps->iMbHeight << 4) > ctx->iImgHeightInPixel) {
       d.Tag ("D");
       d.Kv ("au", au);
       d.Kv ("skip", 3);
       d.End();
       return;
     }
-    ctx->pDec = pic;  // PrefetchPic
+    if (!noPic) ctx->pDec = PrefetchPic (ctx->pPicBuff);
+    if (ctx->iTotalNumMbRec != 0) ctx->iTotalNumMbRec = 0;
+    if (ctx->pDec == NULL) {
+      noPic = true;
+      ctx->iErrorCode |= dsOutOfMemory;
+      d.Tag ("D");
+      d.Kv ("au", au);
+      d.Kv ("skip", 6);
+      d.End();
+      return;
+    }
+    ctx->pDec->bNewSeqBegin = ctx->bNewSeqBegin;
+    // The picture's start (iTotalNumMbRec == 0).
     for (int32_t i = 0; i < LAYER_NUM_EXCHANGEABLE; ++ i)
       memset (ctx->sMb.pSliceIdc[i], 0xff, (ctx->sMb.iMbWidth * ctx->sMb.iMbHeight * sizeof (int32_t)));
     memset (ctx->pCurDqLayer->pMbCorrectlyDecodedFlag, 0, ctx->pSps->iMbWidth * ctx->pSps->iMbHeight * sizeof (bool));
     memset (ctx->pCurDqLayer->pMbRefConcealedFlag, 0, ctx->pSps->iMbWidth * ctx->pSps->iMbHeight * sizeof (bool));
+    memset (ctx->pDec->pRefPic[LIST_0], 0, sizeof (PPicture) * MAX_DPB_COUNT);
+    memset (ctx->pDec->pRefPic[LIST_1], 0, sizeof (PPicture) * MAX_DPB_COUNT);
+    ctx->pDec->iMbNum = ctx->pSps->iMbWidth * ctx->pSps->iMbHeight;
+    ctx->pDec->iMbEcedNum = 0;
+    ctx->pDec->iMbEcedPropNum = 0;
     ctx->bRPLRError = false;
     GetI4LumaIChromaAddrTable (ctx->iDecBlockOffsetArray, ctx->pDec->iLinesize[0], ctx->pDec->iLinesize[1]);
 
     SLayerInfo pLayerInfo;
     memset (&pLayerInfo, 0, sizeof (SLayerInfo));
-    bool parsed = false;
+    PSliceHeader pLastSh = NULL;  // the last slice header through the loop
+    bool parsed = false, target = false, ended = false;
     for (uint32_t iIdx = pCurAu->uiStartPos; iIdx <= pCurAu->uiEndPos; ++iIdx) {
       PNalUnit pNalCur = pCurAu->pNalUnitsList[iIdx];
       PDqLayer dq_cur = ctx->pCurDqLayer;
@@ -826,8 +896,14 @@ struct Driver {
       }
       const int16_t iCurrIdQ = pNalCur->sNalHeaderExt.uiQualityId;
       const int16_t iCurrIdD = pNalCur->sNalHeaderExt.uiDependencyId;
+      const uint8_t uiTid = pNalCur->sNalHeaderExt.uiTemporalId;
       ctx->bRPLRError = false;
+      const bool bReconstructSlice = pNalCur->sNalHeaderExt.uiLayerDqId == kuiTargetLayerDqId;
       memcpy (&pLayerInfo.sNalHeaderExt, &pNalCur->sNalHeaderExt, sizeof (SNalUnitHeaderExt));
+      ctx->pDec->iFrameNum = pSh->iFrameNum;
+      ctx->pDec->iFramePoc = pSh->iPicOrderCntLsb;
+      ctx->pDec->bIdrFlag = pNalCur->sNalHeaderExt.bIdrFlag;
+      ctx->pDec->eSliceType = pSh->eSliceType;
       memcpy (&pLayerInfo.sSliceInLayer.sSliceHeaderExt, pShExt, sizeof (SSliceHeaderExt));
       pLayerInfo.sSliceInLayer.bSliceHeaderExtFlag = pNalCur->sNalData.sVclNal.bSliceHeaderExtFlag;
       pLayerInfo.sSliceInLayer.eSliceType = pSh->eSliceType;
@@ -837,11 +913,14 @@ struct Driver {
       pLayerInfo.pPps = pSh->pPps;
       pLayerInfo.pSps = pSh->pSps;
       pLayerInfo.pSubsetSps = pShExt->pSubsetSps;
+      pLastSh = pSh;
       ctx->pFmo = &ctx->sFmoList[pSh->iPpsId];
       int32_t iRet = FmoParamUpdate (ctx->pFmo, pLayerInfo.pSps, pLayerInfo.pPps, &ctx->iActiveFmoNum, ctx->pMemAlign);
       if (iRet != ERR_NONE) {
+        ctx->iErrorCode |= iRet == ERR_INFO_OUT_OF_MEMORY ? dsOutOfMemory : dsBitstreamError;
         d.Kv ("fmo", iRet);
         d.End();
+        ended = true;
         break;
       }
       const bool bFreshSliceAvailable = (iCurrIdD != iLastIdD || iCurrIdQ != iLastIdQ);
@@ -851,24 +930,66 @@ struct Driver {
         int skip = 0;
         if (ctx->pPps->bEntropyCodingModeFlag || pSh->pPps->bEntropyCodingModeFlag) skip = 1;
         else if (pSh->eSliceType == B_SLICE) skip = 2;
-        else if ((pSh->iMbWidth << 4) > pic->iWidthInPixel || (pSh->iMbHeight << 4) > pic->iHeightInPixel) skip = 3;
+        else if ((pSh->iMbWidth << 4) > ctx->iImgWidthInPixel || (pSh->iMbHeight << 4) > ctx->iImgHeightInPixel) skip = 3;
         if (skip != 0) {
           d.Kv ("skip", skip);
         } else {
-          RefList (au, pSh);
+          // Subclause 8.2.5.2, gaps in frame_num.
+          int gap = 0;
+          if (!dq_cur->sLayerInfo.pSps->bGapsInFrameNumValueAllowedFlag) {
+            const bool kbIdrFlag = dq_cur->sLayerInfo.sNalHeaderExt.bIdrFlag
+                                   || (dq_cur->sLayerInfo.sNalHeaderExt.sNalUnitHeader.eNalUnitType == NAL_UNIT_CODED_SLICE_IDR);
+            const int32_t iPrevFrameNum = ctx->pLastDecPicInfo->iPrevFrameNum;
+            if (!kbIdrFlag && pSh->iFrameNum != iPrevFrameNum
+                && pSh->iFrameNum != ((iPrevFrameNum + 1) & ((1 << dq_cur->sLayerInfo.pSps->uiLog2MaxFrameNum) - 1))) {
+              gap = 1;
+              bAllRefComplete = false;
+              ctx->iErrorCode |= dsRefLost;
+            }
+          }
+          int32_t iRpl = -1;
+          if (iCurrIdD == kuiDependencyIdMax && iCurrIdQ == BASE_QUALITY_ID) {
+            iRpl = InitRefPicList (ctx, ctx->uiNalRefIdc, pSh->iPicOrderCntLsb);
+            if (iRpl) {
+              ctx->bRPLRError = true;
+              bAllRefComplete = false;
+              // HandleReferenceLost.
+              if (0 == uiTid || 1 == uiTid) ctx->bReferenceLostAtT0Flag = true;
+              ctx->iErrorCode |= dsRefLost;
+            }
+          }
+          d.Kv ("gap", gap);
+          DumpRefList (iRpl);
           iRet = WelsDecodeSlice (ctx, bFreshSliceAvailable, pNalCur);
           DumpSlice (iRet);
           parsed = true;
-          // CheckSliceNeedReconstruct, then WelsDecodeConstructSlice (with its
-          // HandleReferenceLostL0); a reconstruction error ends
-          // DecodeCurrentAccessUnit.
-          if (pNalCur->sNalHeaderExt.uiLayerDqId == kuiTargetLayerDqId && ReconSlice() != ERR_NONE) {
-            if (0 == pNalCur->sNalHeaderExt.uiTemporalId) ctx->bReferenceLostAtT0Flag = true;
+          if (iRet != ERR_NONE) {
+            bAllRefComplete = false;
+            // HandleReferenceLostL0.
+            if (0 == uiTid) ctx->bReferenceLostAtT0Flag = true;
             ctx->iErrorCode |= dsBitstreamError;
-            ctx->pDec->bIsComplete = false;
-            d.End();
-            break;
           }
+          if (bReconstructSlice) {
+            target = true;
+            // WelsDecodeConstructSlice (with its HandleReferenceLostL0); a
+            // reconstruction error ends DecodeCurrentAccessUnit.
+            if (ReconSlice() != ERR_NONE) {
+              if (0 == uiTid) ctx->bReferenceLostAtT0Flag = true;
+              ctx->iErrorCode |= dsBitstreamError;
+              ctx->pDec->bIsComplete = false;
+              d.End();
+              ended = true;
+              break;
+            }
+          }
+          if (bAllRefComplete && ctx->eSliceType != I_SLICE) {
+            if (ctx->sRefPic.uiRefCount[LIST_0] > 0) {
+              bAllRefComplete &= CheckRefPicturesComplete (ctx);
+            } else {
+              bAllRefComplete = false;
+            }
+          }
+          d.Kv ("arc", bAllRefComplete);
         }
       } else {
         d.Kv ("skip", 5);
@@ -878,6 +999,18 @@ struct Driver {
       iLastIdQ = iCurrIdQ;
     }
     if (parsed) {
+      PPicture pic = ctx->pDec;
+      if (!ended) {
+        pic->bIsComplete = bAllRefComplete;
+        if (!pic->bIsComplete) ctx->iErrorCode |= dsDataErrorConcealed;
+        if (target) {
+          // DecodeFrameConstruction's share: a complete, error free IDR picture.
+          PDqLayer pCurDq = ctx->pCurDqLayer;
+          if (ctx->iTotalNumMbRec == pCurDq->iMbWidth * pCurDq->iMbHeight
+              && pCurDq->sLayerInfo.sNalHeaderExt.bIdrFlag && ctx->iErrorCode == dsErrorFree)
+            pic->bIsComplete = true;
+        }
+      }
       SHA1Context c;
       SHA1Reset (&c);
       for (int p = 0; p < 3; ++p) {
@@ -887,16 +1020,42 @@ struct Driver {
       }
       d.Tag ("Y");
       d.Kv ("au", au);
+      d.s += " pic=";
+      Pic (pic);
       d.s += " sha=" + Sha1Final (c);
       d.End();
+      if (target && !ended) {
+        ctx->iTotalNumMbRec = 0;
+        ctx->pLastDecPicInfo->pPreviousDecodedPictureInDpb = pic;
+        ctx->bUsedAsRef = ctx->uiNalRefIdc > 0;
+        if (ctx->bUsedAsRef) {
+          for (int32_t listIdx = LIST_0; listIdx < LIST_A; ++listIdx) {
+            uint32_t i = 0;
+            while (i < MAX_DPB_COUNT && ctx->sRefPic.pRefList[listIdx][i]) {
+              pic->pRefPic[listIdx][i] = ctx->sRefPic.pRefList[listIdx][i];
+              ++i;
+            }
+          }
+          const int32_t iRet = WelsMarkAsRef (ctx);
+          if (iRet == ERR_INFO_DUPLICATE_FRAME_NUM) ctx->iErrorCode |= dsBitstreamError;
+          ExpandReferencingPicture (pic->pData, pic->iWidthInPixel, pic->iHeightInPixel, pic->iLinesize,
+                                    ctx->sExpandPicFunc.pfExpandLumaPicture, ctx->sExpandPicFunc.pfExpandChromaPicture);
+          DumpMarking (au, iRet);
+        }
+      }
     }
-    ctx->iTotalNumMbRec = 0;  // as DecodeFrameConstruction leaves it
+    // The frame_num bookkeeping after a dq layer.
+    if (!ended && pLastSh != NULL) {
+      if (pCurAu->pNalUnitsList[pCurAu->uiStartPos]->sNalHeaderExt.sNalUnitHeader.uiNalRefIdc > 0)
+        last.iPrevFrameNum = pLastSh->iFrameNum;
+      if (last.bLastHasMmco5) last.iPrevFrameNum = 0;
+    }
+    ctx->iTotalNumMbRec = 0;
     ctx->pDec = NULL;
   }
 
-  // WelsTargetSliceConstruction (decode_slice.cpp) up to its deblocking, with
-  // only the intra macroblocks reconstructed (inter prediction is D4). Adds to
-  // the slice's "D" line its return value, the macroblocks reconstructed and
+  // WelsTargetSliceConstruction (decode_slice.cpp) up to its deblocking. Adds
+  // to the slice's "D" line its return value, the macroblocks reconstructed and
   // the SHA-1 of their samples (16x16 luma, 8x8 Cb, 8x8 Cr, in slice order).
   int32_t ReconSlice() {
     PDqLayer pCurDqLayer = ctx->pCurDqLayer;
@@ -926,14 +1085,12 @@ struct Driver {
       }
       do {
         if (iCountNumMb >= iTotalNumMb) break;
-        if (IS_INTRA (pCurDqLayer->pDec->pMbType[pCurDqLayer->iMbXyIndex])) {
-          if (WelsTargetMbConstruction (ctx)) {
-            iRet = ERR_INFO_MB_RECON_FAIL;
-            break;
-          }
-          RecordSamples (b, pCurDqLayer->pDec, pCurDqLayer->iMbX, pCurDqLayer->iMbY);
-          ++n;
+        if (WelsTargetMbConstruction (ctx)) {
+          iRet = ERR_INFO_MB_RECON_FAIL;
+          break;
         }
+        RecordSamples (b, pCurDqLayer->pDec, pCurDqLayer->iMbX, pCurDqLayer->iMbY);
+        ++n;
         ++iCountNumMb;
         if (!pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex]) {
           pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex] = true;
@@ -996,7 +1153,7 @@ struct Driver {
     std::string b;
     int32_t n = 0;
     for (int32_t xy = pSh->iFirstMbInSlice; xy >= 0 && xy < kiTotal && n < kiTotal;) {
-      Record (b, dq, pic, xy);
+      Record (b, dq, ctx->pDec, xy);
       ++n;
       if (xy == dq->iMbXyIndex) break;
       xy = pSh->pPps->uiNumSliceGroups > 1 ? FmoNextMb (ctx->pFmo, xy) : xy + 1;

@@ -8,6 +8,10 @@
 // the D1 header dump plus, for each parsed slice, the parser's end state and
 // the SHA-1 of every macroblock's parse results. See HeaderDump.cs.
 //
+// D3 added intra reconstruction to the dump, and D4 the decoder's reference
+// handling (picture buffer, reference lists, marking) and the reconstruction
+// of every macroblock, so these tests are also the D3 and D4 acceptance.
+//
 // As in D1, each vector is also checked in the three damaged forms
 // (`h264ref mbs-damaged`, reference/mbs-damaged.tsv), which drive the
 // macroblock parsers' error and concealment paths.
@@ -23,6 +27,7 @@
 //
 // History:
 // 25 Nov 2026  Claude          Created (D2).
+// 25 Nov 2026  Claude          D3 and D4 coverage noted.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

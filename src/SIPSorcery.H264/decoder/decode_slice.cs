@@ -10,11 +10,12 @@
 // neighbour-to-sample maps, the dequant scaling list setup and the two DC
 // transforms the residual parser calls (WelsLumaDcDequantIdct,
 // WelsChromaDcIdct). D3 adds intra macroblock reconstruction
-// (WelsMbIntraPredictionConstruction, WelsTargetMbConstruction, whose inter
-// branch logs and returns ERR_INFO_MB_RECON_FAIL until the P-slice step). The
-// slice loop (WelsTargetSliceConstruction, which ends in deblocking),
-// WelsDecodeAndConstructSlice and the inter Mb*Construction functions come
-// later. CABAC is not ported yet: WelsDecodeSlice logs and
+// (WelsMbIntraPredictionConstruction, WelsTargetMbConstruction), and D4 the
+// P macroblocks (CheckRefPics, WelsMbInterPrediction, WelsMbInterConstruction,
+// WelsMbInterSampleConstruction) with WelsBlockFuncInit and its block-zero
+// kernels; their B slice branches log and return ERR_INFO_UNSUPPORTED_BIPRED.
+// The slice loop (WelsTargetSliceConstruction, which ends in deblocking) and
+// WelsDecodeAndConstructSlice come with deblocking (D5). CABAC is not ported yet: WelsDecodeSlice logs and
 // returns ERR_INFO_UNSUPPORTED_CABAC_EL for a CABAC PPS, and the CABAC
 // branches of the intra mode parsers (unreachable from the CAVLC parsers)
 // return the same. CAVLC B slices are not ported yet either:
@@ -29,6 +30,7 @@
 // History:
 // 25 Nov 2026  Claude          Created (D2).
 // 25 Nov 2026  Claude          D3: intra macroblock reconstruction.
+// 25 Nov 2026  Claude          D4: inter macroblock reconstruction.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -85,6 +87,110 @@ internal static unsafe partial class WelsDec
     // Raw byte size of one 4:2:0 8-bit I_PCM macroblock copied verbatim from the
     // bitstream: 16x16 luma + 2 x (8x8) chroma.
     public const int I_PCM_MB_SIZE_IN_BYTE = (16 * 16 + 2 * (8 * 8));
+
+    private static bool CheckRefPics(SWelsDecoderContext* pCtx)
+    {
+        int32_t listCount = 1;
+        if (pCtx->eSliceType == B_SLICE)
+        {
+            ++listCount;
+        }
+        for (int32_t list = (int32_t)LIST_0; list < listCount; ++list)
+        {
+            int32_t shortRefCount = pCtx->sRefPic.uiShortRefCount[list];
+            for (int32_t refIdx = 0; refIdx < shortRefCount; ++refIdx)
+            {
+                if (pCtx->sRefPic.pShortRefList[list][refIdx].p == null)
+                {
+                    return false;
+                }
+            }
+            int32_t longRefCount = pCtx->sRefPic.uiLongRefCount[list];
+            for (int32_t refIdx = 0; refIdx < longRefCount; ++refIdx)
+            {
+                if (pCtx->sRefPic.pLongRefList[list][refIdx].p == null)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public static int32_t WelsMbInterSampleConstruction(SWelsDecoderContext* pCtx, SDqLayer* pCurDqLayer,
+        uint8_t* pDstY, uint8_t* pDstU, uint8_t* pDstV, int32_t iStrideL, int32_t iStrideC)
+    {
+        int32_t iMbXy = pCurDqLayer->iMbXyIndex;
+        int32_t i, iIndex, iOffset;
+
+        if (pCurDqLayer->pTransformSize8x8Flag[iMbXy])
+        {
+            for (i = 0; i < 4; i++)
+            {
+                iIndex = g_kuiMbCountScan4Idx[i << 2];
+                if (pCurDqLayer->pNzc[iMbXy][iIndex] != 0 || pCurDqLayer->pNzc[iMbXy][iIndex + 1] != 0 || pCurDqLayer->pNzc[iMbXy][iIndex + 4] != 0
+                    || pCurDqLayer->pNzc[iMbXy][iIndex + 5] != 0)
+                {
+                    iOffset = ((iIndex >> 2) << 2) * iStrideL + ((iIndex % 4) << 2);
+                    pCtx->pIdctResAddPredFunc8x8(pDstY + iOffset, iStrideL, (int16_t*)&pCurDqLayer->pScaledTCoeff[iMbXy] + (i << 6));
+                }
+            }
+        }
+        else
+        {
+            // luma.
+            int8_t* pNzcL = (int8_t*)&pCurDqLayer->pNzc[iMbXy];
+            int16_t* pScaledTCoeffL = (int16_t*)&pCurDqLayer->pScaledTCoeff[iMbXy];
+            pCtx->pIdctFourResAddPredFunc(pDstY + 0 * iStrideL + 0, iStrideL, pScaledTCoeffL + 0 * 64, pNzcL + 0);
+            pCtx->pIdctFourResAddPredFunc(pDstY + 0 * iStrideL + 8, iStrideL, pScaledTCoeffL + 1 * 64, pNzcL + 2);
+            pCtx->pIdctFourResAddPredFunc(pDstY + 8 * iStrideL + 0, iStrideL, pScaledTCoeffL + 2 * 64, pNzcL + 8);
+            pCtx->pIdctFourResAddPredFunc(pDstY + 8 * iStrideL + 8, iStrideL, pScaledTCoeffL + 3 * 64, pNzcL + 10);
+        }
+
+        int8_t* pNzc = (int8_t*)&pCurDqLayer->pNzc[iMbXy];
+        int16_t* pScaledTCoeff = (int16_t*)&pCurDqLayer->pScaledTCoeff[iMbXy];
+        // Cb.
+        pCtx->pIdctFourResAddPredFunc(pDstU, iStrideC, pScaledTCoeff + 4 * 64, pNzc + 16);
+        // Cr.
+        pCtx->pIdctFourResAddPredFunc(pDstV, iStrideC, pScaledTCoeff + 5 * 64, pNzc + 18);
+
+        return ERR_NONE;
+    }
+
+    // The B slice branch (pTempDec, GetInterBPred) is not ported yet: it logs
+    // and returns ERR_INFO_UNSUPPORTED_BIPRED.
+    public static int32_t WelsMbInterConstruction(SWelsDecoderContext* pCtx, SDqLayer* pCurDqLayer)
+    {
+        int32_t iMbX = pCurDqLayer->iMbX;
+        int32_t iMbY = pCurDqLayer->iMbY;
+        uint8_t* pDstY, pDstCb, pDstCr;
+
+        int32_t iLumaStride = pCtx->pDec->iLinesize[0];
+        int32_t iChromaStride = pCtx->pDec->iLinesize[1];
+
+        pDstY = pCurDqLayer->pDec->pData[0] + ((iMbY * iLumaStride + iMbX) << 4);
+        pDstCb = pCurDqLayer->pDec->pData[1] + ((iMbY * iChromaStride + iMbX) << 3);
+        pDstCr = pCurDqLayer->pDec->pData[2] + ((iMbY * iChromaStride + iMbX) << 3);
+
+        if (pCtx->eSliceType == P_SLICE)
+        {
+            uint32_t uiRetTmp = (uint32_t)GetInterPred(pDstY, pDstCb, pDstCr, pCtx);
+            if (uiRetTmp != ERR_NONE) return (int32_t)uiRetTmp; // WELS_B_MB_REC_VERIFY
+        }
+        else
+        {
+            WelsLog(&(pCtx->sLogCtx), WELS_LOG_ERROR, "WelsMbInterConstruction()::::B slices are not supported by this port yet.");
+            return GENERATE_ERROR_NO(ERR_LEVEL_MB_DATA, ERR_INFO_UNSUPPORTED_BIPRED);
+        }
+        WelsMbInterSampleConstruction(pCtx, pCurDqLayer, pDstY, pDstCb, pDstCr, iLumaStride, iChromaStride);
+
+        if (GetThreadCount(pCtx) <= 1)
+        {
+            pCtx->sBlockFunc.pWelsSetNonZeroCountFunc(
+                (int8_t*)&pCurDqLayer->pNzc[pCurDqLayer->iMbXyIndex]); // set all none-zero nzc to 1; dbk can be opti!
+        }
+        return ERR_NONE;
+    }
 
     // WelsLumaDcDequantIdct's static const tables (STRIDE 16).
     private static readonly int32_t* s_kiLumaDcXOffset = StaticTable.Of<int32_t>(4, [0, 16, 16 << 2, 5 * 16]);
@@ -156,11 +262,34 @@ internal static unsafe partial class WelsDec
         return ERR_NONE;
     }
 
-    // WelsMbInterPrediction: with inter reconstruction (D4).
+    // The B slice branch (pTempDec, GetInterBPred) is not ported yet: it logs
+    // and returns ERR_INFO_UNSUPPORTED_BIPRED.
+    public static int32_t WelsMbInterPrediction(SWelsDecoderContext* pCtx, SDqLayer* pCurDqLayer)
+    {
+        int32_t iMbX = pCurDqLayer->iMbX;
+        int32_t iMbY = pCurDqLayer->iMbY;
+        uint8_t* pDstY, pDstCb, pDstCr;
 
-    // The inter branch (CheckRefPics, WelsMbInterPrediction,
-    // WelsMbInterConstruction) is not ported yet: it logs and returns
-    // ERR_INFO_MB_RECON_FAIL, as for an unknown MB type.
+        int32_t iLumaStride = pCtx->pDec->iLinesize[0];
+        int32_t iChromaStride = pCtx->pDec->iLinesize[1];
+
+        pDstY = pCurDqLayer->pDec->pData[0] + ((iMbY * iLumaStride + iMbX) << 4);
+        pDstCb = pCurDqLayer->pDec->pData[1] + ((iMbY * iChromaStride + iMbX) << 3);
+        pDstCr = pCurDqLayer->pDec->pData[2] + ((iMbY * iChromaStride + iMbX) << 3);
+
+        if (pCtx->eSliceType == P_SLICE)
+        {
+            uint32_t uiRetTmp = (uint32_t)GetInterPred(pDstY, pDstCb, pDstCr, pCtx);
+            if (uiRetTmp != ERR_NONE) return (int32_t)uiRetTmp; // WELS_B_MB_REC_VERIFY
+        }
+        else
+        {
+            WelsLog(&(pCtx->sLogCtx), WELS_LOG_ERROR, "WelsMbInterPrediction()::::B slices are not supported by this port yet.");
+            return GENERATE_ERROR_NO(ERR_LEVEL_MB_DATA, ERR_INFO_UNSUPPORTED_BIPRED);
+        }
+        return ERR_NONE;
+    }
+
     public static int32_t WelsTargetMbConstruction(SWelsDecoderContext* pCtx)
     {
         SDqLayer* pCurDqLayer = pCtx->pCurDqLayer;
@@ -175,9 +304,18 @@ internal static unsafe partial class WelsDec
         }
         else if (IS_INTER(pCurDqLayer->pDec->pMbType[pCurDqLayer->iMbXyIndex]))
         { //InterMB
-            WelsLog(&(pCtx->sLogCtx), WELS_LOG_WARNING,
-                    "WelsTargetMbConstruction():::inter reconstruction is not supported by this port yet.");
-            return ERR_INFO_MB_RECON_FAIL;
+            if (0 == pCurDqLayer->pCbp[pCurDqLayer->iMbXyIndex])
+            { //uiCbp==0 include SKIP
+                if (!CheckRefPics(pCtx))
+                {
+                    return ERR_INFO_MB_RECON_FAIL;
+                }
+                return WelsMbInterPrediction(pCtx, pCurDqLayer);
+            }
+            else
+            {
+                WelsMbInterConstruction(pCtx, pCurDqLayer);
+            }
         }
         else
         {
@@ -1610,5 +1748,35 @@ internal static unsafe partial class WelsDec
     {
         WelsLog(&(pCtx->sLogCtx), WELS_LOG_ERROR, "WelsDecodeMbCavlcBSlice()::::B slices are not supported by this port yet.");
         return GENERATE_ERROR_NO(ERR_LEVEL_MB_DATA, ERR_INFO_UNSUPPORTED_BIPRED);
+    }
+
+    public static void WelsBlockFuncInit(SBlockFunc* pFunc, int32_t iCpu)
+    {
+        pFunc->pWelsSetNonZeroCountFunc = &WelsNonZeroCount_c;
+        pFunc->pWelsBlockZero16x16Func = &WelsBlockZero16x16_c;
+        pFunc->pWelsBlockZero8x8Func = &WelsBlockZero8x8_c;
+        // HAVE_NEON / HAVE_NEON_AARCH64 / X86_ASM variants: not ported.
+    }
+
+    public static void WelsBlockInit(int16_t* pBlock, int iW, int iH, int iStride, uint8_t uiVal)
+    {
+        int32_t i;
+        int16_t* pDst = pBlock;
+
+        for (i = 0; i < iH; i++)
+        {
+            memset(pDst, uiVal, iW * sizeof(int16_t));
+            pDst += iStride;
+        }
+    }
+
+    public static void WelsBlockZero16x16_c(int16_t* pBlock, int32_t iStride)
+    {
+        WelsBlockInit(pBlock, 16, 16, iStride, 0);
+    }
+
+    public static void WelsBlockZero8x8_c(int16_t* pBlock, int32_t iStride)
+    {
+        WelsBlockInit(pBlock, 8, 8, iStride, 0);
     }
 }

@@ -18,7 +18,8 @@ was kept for the VP8 encoder.
 | D1 Bitstream reader, NAL/AU parsing | **Done** (25 Nov) | `bit_stream`, `dec_golomb`/`golomb_common`, `memmgr_nal_unit`, `au_parser` (start codes, NAL headers, SPS/subset SPS/PPS, VUI, scaling lists, SEI skip, prefix NAL) and the parsing half of `decoder_core` (slice header, reordering, weight table, ref pic marking, AU boundaries and AU start/end), plus the decoder's type graph (`decoder_context.h` and the headers it pulls in). ~7.9k lines. New `h264ref headers` and `headers-damaged` modes: a WelsDecodeBs-shaped driver dumps every NAL, slice header, parameter set change and AU on both sides. All 51 vectors match, clean and in 3 damaged forms each (`reference/headers.tsv`, `headers-damaged.tsv`), and the 15 decoder tables match (`dectable` rows in `kernels.tsv`). UnitTest: 1293. TestVectors: 123 + 1 skipped. |
 | D2 CAVLC macroblock syntax | **Done** (25 Nov) | `parse_mb_syn_cavlc` (CAVLC paths), the rest of `decoder_data_tables` and `fmo`, `InitVlcTable`, `pic_queue`, the P-slice half of `mv_pred`, the DQ layer setup in `decoder_core`, and the parse half of `decode_slice` (`WelsDecodeSlice`, the I/P macroblock parsers, intra mode parsing, the two DC transforms the residual parser calls). ~5.2k lines. `decode_mb_aux` moved to D3: nothing in the parse calls it. New `h264ref mbs` and `mbs-damaged` modes: the D1 driver also parses each AU's slices and hashes every macroblock's parse results. All 51 vectors match, clean and in 3 damaged forms each (`reference/mbs.tsv`, `mbs-damaged.tsv`), and the 68 new decoder tables match (83 `dectable` rows). UnitTest: 1361. TestVectors: 211 + 1 skipped. |
 | D3 I-slice reconstruction | **Done** (25 Nov) | `get_intra_predictor` (all 42 C predictors), `decode_mb_aux` (the 4x4 and 8x8 residual IDCTs, the block offset table), `InitPredFunc`, the intra half of `rec_mb`, and `WelsMbIntraPredictionConstruction`/`WelsTargetMbConstruction` in `decode_slice`. ~2k lines. `mbs` mode now also reconstructs every intra macroblock of each parsed slice (no deblocking) and hashes its samples: 167.8k intra MBs over the clean vectors, all matching, clean and damaged. `kernels.tsv`: 1969 rows (636 new). UnitTest: 1999. TestVectors: 211 + 1 skipped. |
-| D4 | Next | P-slice reconstruction: `manage_dec_ref`, the inter half of `rec_mb` (reference fetch, MC, weighted prediction) and `WelsMbInterPrediction`; the harness swaps its stand-in reference list for the real one. Acceptance: the planes before deblocking match on every macroblock. |
+| D4 P-slice reconstruction | **Done** (25 Nov) | `manage_dec_ref` (list init and reordering, sliding window, MMCO, long-term references), the inter half of `rec_mb` (`GetRefPic`, `BaseMC`, `WeightPrediction`, `GetInterPred`), `WelsMbInterPrediction`/`WelsMbInterConstruction` and `WelsBlockFuncInit` in `decode_slice`, the DPB memory in `decoder` (`CreatePicBuff`/`IncreasePicBuff`/`DecreasePicBuff`, `WelsRequestMem`, `SyncPictureResolutionExt`, `WelsFreeDynamicMemory`), and `AllocPicBuffOnNewSeqBegin`, `InitConstructAccessUnit`, `InitRefPicList` and `CheckRefPicturesComplete` in `decoder_core`. B-slice and CABAC reference paths fail loudly. ~2.3k lines. `mbs` mode drops its stand-ins for the real reference flow (DPB, `InitRefPicList`, `WelsMarkAsRef`, padding) and reconstructs every macroblock: 1.41M P-slice MBs over the clean vectors, 4,501 pictures marked, all matching, clean and damaged. On the 7 vectors with deblocking off, the C harness's pictures equal the real decoder's output, all 191 frames. UnitTest: 1999. TestVectors: 211 + 1 skipped. |
+| D5 Deblocking | Next | `deblocking.cpp` (the decoder's filter driver over the C3 edge kernels: boundary strengths, QP averaging, the slice and picture edge rules) and the rest of `WelsTargetSliceConstruction`; the harness's `ReconSlice` gives way to the real slice construction. Acceptance: the deblocked planes match on every macroblock, and on clean Constrained Baseline vectors the pictures equal the real decoder's output frames. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -260,6 +261,66 @@ Notes from D3:
   fields and the picture hash changed. In the kernels, a rounding change in a
   horizontal-up predictor and the `pNzc` index above were both caught.
 
+Notes from D4:
+
+- **Scope.** All of `manage_dec_ref` except `WelsInitBSliceRefList` and
+  `WelsReorderRefList2` (B slices, and the CABAC lists of non-Baseline
+  profiles). From `rec_mb`, the P half; `BiWeightPrediction`, `BiPrediction`
+  and `GetInterBPred` wait with the B slices. `InitRefPicList` returns
+  `ERR_INFO_UNSUPPORTED_BIPRED` for a B slice and
+  `ERR_INFO_UNSUPPORTED_CABAC_EL` for a non-Baseline CABAC P slice, with a log
+  line; `WelsMbInterConstruction` does the same for B macroblocks. The threaded
+  decoder's parts (the reference row waits in `BaseMC`, the thread contexts in
+  `WelsFreeDynamicMemory`) are left out. `DecodeCurrentAccessUnit` itself and
+  `WelsTargetSliceConstruction` still wait for D6 and D5; the harness carries
+  copies of both.
+- **Oracle: `mbs` mode on the real reference flow.** The stand-in list and
+  the single picture are gone. `AllocPicBuffOnNewSeqBegin` builds the DPB on a
+  new sequence (the "Z" line gains its capacity), `PrefetchPic` supplies
+  `pDec`, and each parsed slice runs the frame_num gap check and
+  `InitRefPicList` (for the top dependency layer, base quality) before
+  `WelsDecodeSlice`, as `DecodeCurrentAccessUnit` does. The "D" line gains
+  `gap`, `rpl`, `rc` and `refs` (each entry as DPB index and frame_num or
+  long-term index, `x` when incomplete), and `arc` after
+  `CheckRefPicturesComplete`. `ReconSlice` now reconstructs every macroblock.
+  The AU ends as upstream's does for the target layer: the completeness flags,
+  `DecodeFrameConstruction`'s complete-IDR rule, then for a reference picture
+  the `pRefPic` copy, `WelsMarkAsRef`, `ExpandReferencingPicture` and a new
+  "K" line with the lists after marking, then the `iPrevFrameNum` update. The
+  driver also picked up two error effects it had skipped: a failed
+  `WelsDecodeSlice` now does `HandleReferenceLostL0`, and an `FmoParamUpdate`
+  failure sets its error code. Concealment is still not run, so where upstream
+  returns early (FMO or reconstruction failure) the AU ends unmarked.
+  `mbs.tsv` and `mbs-damaged.tsv` were regenerated: slice and record counts
+  unchanged.
+- **The oracle checked against the real decoder.** The C-vs-C# comparison only
+  shows the port agrees with the harness. On the 7 vectors whose slices all
+  disable deblocking (CVPCMNL1_SVA_C, NL1_Sony_D, NLMQ1/2_JVC_C, SVA_CL1_E,
+  SVA_NL1_B, SVA_NL2_E), every "Y" hash equals the SHA1 of the matching frame
+  from `h264ref yuv`, 191 of 191, so the harness's flow is the decoder's.
+- **Coverage.** Clean: 4,614 pictures, 4,501 marked, no marking errors. The 125
+  list errors and the incomplete pictures come only from the three
+  `cavlc_temporal_direct` vectors (their B references are skipped) and the two
+  `BA_MW_D_*_LOST` vectors. Damaged: 534 frame_num gaps, 332 list errors, 11
+  duplicate frame_num markings, 7,120 of 7,753 pictures incomplete.
+- **An upstream leak, and where the harness stops.** `AddShortTermToList`
+  replaces a picture with a duplicate frame_num in the short-term list without
+  `SetUnRef`, so the old picture keeps `bUsedAsRef` for good. On damaged
+  streams enough of these fill the DPB; `PrefetchPic` then returns NULL and
+  leaves `iCurrentIdx == iCapacity`, and its next call reads
+  `ppPic[iCapacity]`, past the buffer (the harness crashed on 3 damaged
+  variants). Upstream survives because `DecodeFrame2` calls `ResetDecoder` on
+  `dsOutOfMemory`. The harness has no API layer, so after the first failure it
+  skips the rest of the stream ("skip 6", 682 AUs over the damaged set). The
+  port keeps upstream's behaviour as is; D6 has to bring `ResetDecoder` along
+  for this path, and its tests should include a stream that hits it.
+- **Negative controls.** Three, each alone: `BaseMC` dropping the vertical
+  quarter-pel bit (54 of 88 MB tests failed), the second 8x16 partition one
+  pixel left (54), and the short-term list's 2nd and 3rd entries swapped after
+  each insertion (41). One mutation survived and can't be seen by any oracle:
+  moving `BaseMC`'s right clip bound by two pixels leaves the block inside
+  the replicated padding, so the samples are identical.
+
 ## 1. Goal
 
 A pure managed H.264 encoder and decoder in `src/SIPSorcery.H264`, ported from
@@ -473,7 +534,8 @@ merges. Approximate C# sizes are in brackets.
   the intra/IDCT/dequant/PCM parts of `rec_mb`. Acceptance: the planes before
   deblocking match on intra-only content. *[~2k]*
 - **D4** P-slices: `mv_pred`, `manage_dec_ref`, `pic_queue` and the MC path in
-  `rec_mb`. Acceptance: the planes before deblocking match on P vectors. *[~2.5k]*
+  `rec_mb`. Acceptance: the planes before deblocking match on P vectors.
+  *[~2.5k; ~2.3k, see the D4 notes]*
 - **D5** Deblocking (`decoder/deblocking.cpp`). Acceptance: the first SHA1
   matches. *[~1.2k]*
 - **D6** Orchestration and API: `decode_slice`, `decoder_core`, `decoder`,
