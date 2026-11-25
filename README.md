@@ -25,8 +25,21 @@ This repository is the home of the **SIPSorcery** project - a comprehensive real
 | **SIPSorceryMedia.Abstractions** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | Interfaces for audio/video encoders and device access | [README](src/SIPSorceryMedia.Abstractions/README.md) |
 | **SIPSorceryMedia.Windows** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | Windows-specific audio capture and playback and video capture | [README](src/SIPSorceryMedia.Windows/README.md) |
 | **SIPSorceryMedia.FFmpeg** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | Cross-platform media support using FFmpeg | [README](src/SIPSorceryMedia.FFmpeg/README.md) |
-| **SIPSorcery.VP8** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | Pure C# VP8 video codec implementation | [README](src/SIPSorcery.VP8/README.md) |
 
+### Video Codec Ports
+
+The packages below are ongoing attempts to port a number of C based video codecs. While none of the efforts are yet deemded production ready the idea is that they will eventually make the reliance on FFmpeg optional.
+
+Some performance mesaurements of the various codecs can be found [below](#video-pipeline-capacity).
+
+| Package | Version | Downloads | Description | README |
+|---------|---------|-----------|-------------|---------|
+| **SIPSorcery.VP8** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | C# port of VP8 codec from [libvpx](https://chromium.googlesource.com/webm/libvpx) | [README](src/SIPSorcery.VP8/README.md) |
+| **SIPSorcery.AV1** |  |  | C# port of AV1 encoder from [libaom](https://aomedia.org/blog%20posts/Libaom-v3_15-is-now-available/) - thanks to [@lostmsu](https://github.com/lostmsu) | [README](src/SIPSorcery.AV1/README.md) |
+
+### Demo Softphone
+
+A fully featured Windows and Web softphone application ([README](examples/Softphonev2/desktop/README.md)). Web version available for GitHub users to experiment with [here](https://www.sipsorcery.com/softphone/).
 
 ### Examples
 
@@ -36,7 +49,7 @@ This repository includes **[70+ example projects](examples/)** demonstrating var
 - **[WebRTC Examples](examples/WebRTCExamples/)** - Video streaming, data channels, signaling patterns ([README](examples/WebRTCExamples/README.md))
 - **[SIP Scenarios](examples/SIPScenarios/)** - Call transfers, load testing, complex call flows ([README](examples/SIPScenarios/README.md))
 - **[WebRTC Scenarios](examples/WebRTCScenarios/)** - Advanced WebRTC use cases ([README](examples/WebRTCScenarios/README.md))
-- **[Softphone](examples/Softphonev2)** - Full-featured Windows and Web softphone application ([README](examples/Softphonev2/desktop/README.md)). Web version available for GitHub users to experiment with [here](https://www.sipsorcery.com/softphone/)
+- **[Softphone](examples/Softphone)** - Original WPF based softphone ([README](examples/Softphone/README.md)). Web version available for GitHub users to experiment with [here](https://www.sipsorcery.com/softphone/)
 - **[OpenAI](examples/OpenAIExamples/)** - Example applications for interacting with OpenAI's Realtime WebRTC and SIP end points ([README](examples/OpenAIExamples/GetStarted/README.md))
 
 ---
