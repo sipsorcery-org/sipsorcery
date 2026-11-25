@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>SIPSorcery.H264.TestVectors</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SIPSorcery.H264\SIPSorcery.H264.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The Constrained Baseline conformance vectors from openh264's res/ (the only ones in scope). -->
+    <None Include="TestVectors\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Results of the C-only reference build (thirdparty/openh264-dotnet-port/refharness):
+         one row per upstream decoder_test.cpp vector, with its SHA1 and coding-tool classification. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\decoder-conformance.tsv" Link="decoder-conformance.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Size and SHA1 of each vector's parser header dump (h264ref headers), see HeaderDump.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\headers.tsv" Link="headers.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\headers-damaged.tsv" Link="headers-damaged.tsv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

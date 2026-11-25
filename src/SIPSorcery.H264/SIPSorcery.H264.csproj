@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net8.0 for the SIPSorcery.Cli global tool, as SIPSorcery.VP8. -->
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <!-- The port relies on C# 12: inline arrays, aliases for pointer types, function pointers.
+         The repo-wide Directory.Build.props pins 8.0, so override it here. -->
+    <LangVersion>12.0</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsTrimmable>true</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <RootNamespace>SIPSorcery.H264</RootNamespace>
+    <!-- Ported code keeps openh264's names (lower-case types, Hungarian prefixes, C-style
+         constants), so the naming and documentation analyzers are noise here. -->
+    <NoWarn>$(NoWarn);CS1570;CS1573;CS1591;CS1587;CS8981;IDE1006</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Authors>Aaron Clauson</Authors>
+    <Copyright>Copyright © 2026 Aaron Clauson. Portions copyright © 2013 Cisco Systems (OpenH264).</Copyright>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <Title>SIPSorcery.H264</Title>
+    <Summary>A pure C# H.264 video codec ported from Cisco's OpenH264.</Summary>
+    <Description>A pure C# H.264 (Constrained Baseline) video codec for the SIPSorcery real-time communications library, ported from Cisco's OpenH264. No native binaries.</Description>
+    <Company>SIP Sorcery PTY LTD</Company>
+    <Product>SIPSorcery.H264</Product>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorcery.H264</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryBranch>master</RepositoryBranch>
+    <PackageTags>SIPSorcery WebRTC Video-Encoding H264 OpenH264</PackageTags>
+    <NeutralLanguage>en</NeutralLanguage>
+    <!-- Not packed or published until the H.264 patent question is settled (see
+         thirdparty/openh264-dotnet-port/diary, "Risks and open decisions"). -->
+    <IsPackable>false</IsPackable>
+    <Version>10.0.19-pre</Version>
+    <AssemblyVersion>10.0.19</AssemblyVersion>
+    <FileVersion>10.0.19</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="..\..\LICENSE.md" Pack="true" PackagePath="" />
+    <None Include="OPENH264_LICENSE" Pack="true" PackagePath="" />
+    <None Include="..\SIPSorcery\icon.png" Pack="true" PackagePath="" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorceryMedia.Abstractions\SIPSorceryMedia.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="SIPSorcery.H264.UnitTest" />
+    <InternalsVisibleTo Include="SIPSorcery.H264.TestVectors" />
+  </ItemGroup>
+
+</Project>
