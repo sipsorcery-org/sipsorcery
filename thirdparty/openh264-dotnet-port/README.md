@@ -43,6 +43,8 @@ refharness/build/Release/h264ref decode-damaged <openh264>/res > reference/decod
 refharness/build/Release/h264ref hash-damaged <file.264> <0-2>         # one damaged variant's output SHA1
 refharness/build/Release/h264ref yuv-damaged <file.264> <0-2> <out.yuv>  # one damaged variant's frames
 refharness/build/Release/h264ref trace-damaged <file.264> <0-2>        # one line per DecodeFrame2/FlushFrame call
+refharness/build/Release/h264ref encoder-conformance <openh264>/res > reference/encoder-conformance.tsv  # all 16 upstream encoder hashes
+refharness/build/Release/h264ref paramsets > reference/paramsets.tsv   # encoder validation and SPS/PPS output
 ```
 
 `conformance` copies upstream's `test/api/BaseDecoderTest.cpp` decode loop and
@@ -103,6 +105,23 @@ length, NAL type, state, buffer status, frame SHA1); with
 tests write the same files on a mismatch when `H264_DUMP_DIR` is set, so the
 two can be diffed directly.
 
+`encoder-conformance` encodes every row of upstream's `test/api/encoder_test.cpp`
+table (`kFileParamArray`) the way `BaseEncoderTest` does and compares the
+SHA1s, which shows the C-only build is the encoder oracle too (`src/encoder.cpp`).
+
+`paramsets` runs a table of encoder configurations (`kParamConfigs` in
+`src/encoder.cpp`): WebRTC's settings, the five SPS/PPS id strategies, levels,
+profiles, VUI, reference counts, cropping, rate control modes, SVC and
+simulcast, and settings init rejects. Each configuration's `key=value` settings
+go on top of `GetDefaultParams` (`api=ext`) or a zeroed `SEncParamBase`
+(`api=base`). Then a script runs: `P` is `EncodeParameterSets`, `I` is
+`ForceIntraFrame` then `EncodeFrame`, and `F` is `EncodeFrame`. The harness
+prints the init result, the parameters `GetOption
+(ENCODER_OPTION_SVC_ENCODE_PARAM_EXT)` reports after init, and, for each
+operation, the frame type and every non-VCL layer's NAL bytes.
+`test/SIPSorcery.H264.TestVectors/ParameterSetTests.cs` has the same settings
+table and output format, and the two must stay in step.
+
 ## Reference results (`reference/`)
 
 - **`decoder-conformance.tsv`** is the output of `h264ref conformance` on the
@@ -132,3 +151,9 @@ two can be diffed directly.
   decoder API over the 153 damaged variants. Read by `DecodeDamagedTests`: the
   committed vectors must match in every column, the others (CABAC, B slices,
   High profile, none of them ported) only have to decode without crashing.
+- **`encoder-conformance.tsv`** is the output of `h264ref encoder-conformance`:
+  **16/16 upstream encoder hashes reproduced**. It becomes the encoder's
+  acceptance table from E7 on.
+- **`paramsets.tsv`** is the output of `h264ref paramsets`: 66 configurations
+  with their init results, validated parameters and parameter set bytes. Read
+  by `ParameterSetTests` (E1). All 66 match.

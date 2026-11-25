@@ -17,6 +17,11 @@
 //                                   copies (error concealment, ResetDecoder).
 //   h264ref kernels                 Fixture hashes for the ported kernels and
 //                                   tables (reference/kernels.tsv), see fixture.h.
+//   h264ref encoder-conformance <res-dir>
+//                                   Encode upstream's test/api/encoder_test.cpp
+//                                   table and compare SHA1s (encoder.cpp).
+//   h264ref paramsets               E1: the SPS/PPS the encoder writes for a table
+//                                   of configurations (encoder.cpp).
 //
 // The decode loop and hashing copy upstream's test/api/BaseDecoderTest.cpp and
 // decoder_test.cpp exactly (input split on 4-byte start codes, DecodeFrame2,
@@ -43,6 +48,10 @@
 #include "headers.h"
 #include "sha1.h"
 #include "stream_info.h"
+
+// encoder.cpp
+int EncoderConformance (const char* resDir);
+int ParamSets();
 
 namespace {
 
@@ -445,7 +454,9 @@ int Usage() {
            "       h264ref hash-damaged <file> <variant>\n"
            "       h264ref trace-damaged <file> <variant>\n"
            "       h264ref yuv-damaged <file> <variant> <out.yuv>\n"
-           "       h264ref kernels\n");
+           "       h264ref kernels\n"
+           "       h264ref encoder-conformance <res-dir>\n"
+           "       h264ref paramsets\n");
   return 2;
 }
 
@@ -470,9 +481,17 @@ int Kernels() {
 
 int main (int argc, char** argv) {
   if (argc == 2 && std::string (argv[1]) == "kernels") return Kernels();
+  if (argc == 2 && std::string (argv[1]) == "paramsets") {
+    BinaryStdout();
+    return ParamSets();
+  }
   if (argc < 3) return Usage();
   std::string cmd = argv[1];
   if (cmd == "conformance") return Conformance (argv[2]);
+  if (cmd == "encoder-conformance") {
+    BinaryStdout();
+    return EncoderConformance (argv[2]);
+  }
   if (cmd == "headers") return Headers (argv[2]);
   if (cmd == "headers-damaged") return HeadersDamaged (argv[2]);
   if (cmd == "mbs") return Mbs (argv[2]);

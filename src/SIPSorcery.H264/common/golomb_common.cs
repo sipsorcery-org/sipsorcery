@@ -130,6 +130,14 @@ internal static unsafe partial class WelsCommon
         return 0;
     }
 
+    // Port addition: C passes bool flags straight to the uint32_t parameter.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int32_t BsWriteOneBit(SBitStringAux* pBitString, bool kbValue)
+    {
+        BsWriteBits(pBitString, 1, kbValue ? 1u : 0u);
+        return 0;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int32_t BsFlush(SBitStringAux* pBitString)
     {

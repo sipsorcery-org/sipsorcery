@@ -37,6 +37,8 @@
     <None Include="..\..\thirdparty\openh264-dotnet-port\reference\mbs-damaged.tsv" Link="mbs-damaged.tsv" CopyToOutputDirectory="PreserveNewest" />
     <!-- Decoded output of the same damaged streams through the full decoder API (h264ref decode-damaged), see DecodeDamagedTests.cs. -->
     <None Include="..\..\thirdparty\openh264-dotnet-port\reference\decode-damaged.tsv" Link="decode-damaged.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Encoder parameter validation and SPS/PPS output for a table of configurations (h264ref paramsets), see ParameterSetTests.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\paramsets.tsv" Link="paramsets.tsv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

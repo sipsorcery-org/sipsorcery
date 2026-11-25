@@ -22,7 +22,8 @@ was kept for the VP8 encoder.
 | D5 Deblocking | **Done** (25 Nov) | `deblocking` (boundary strengths for P slices with 4x4 and 8x8 transforms, the alpha/beta/tc0 tables, the edge filters, the intra and inter macroblock filters, the slice loop, the per-MB entry points, `DeblockingInit`) and `WelsTargetSliceConstruction` in `decode_slice`. B-slice strengths throw; they can't be reached. ~1.35k lines. `mbs` mode now calls the real `WelsTargetSliceConstruction`, so every slice is deblocked: 5,196 slices and 1.43M macroblocks over the clean vectors (2.06M with the damaged ones, which also reach filter mode 2), all matching, clean and damaged. On the 33 clean Constrained Baseline vectors without cropping, every picture equals the real decoder's output frame, 4,196 of 4,196. UnitTest: 1999. TestVectors: 211 + 1 skipped. |
 | D6 Decoder API | **Done** (25 Nov) | The rest of `decoder_core` (`ConstructAccessUnit`, `DecodeCurrentAccessUnit`, `WelsDecodeConstructSlice`, `DecodeFrameConstruction`), of `decoder` (`WelsDecoderDefaults`, `WelsOpenDecoder`/`WelsCloseDecoder`, `DecoderConfigParam`, `WelsInitDecoder`/`WelsEndDecoder`, `InitDecFuncs`, `WelsDecodeBs`, the statistics updates), `error_concealment` (frame copy, slice copy, slice MV copy), `welsDecoderExt` (`CWelsDecoder`, `WelsCreateDecoder`/`WelsDestroyDecoder`, `WelsGetDecoderCapability`) and `measure_time` (`WelsTime`). Single threaded; parse-only mode is rejected. ~3.2k lines. The upstream-hash decode test is on: **all 35 Constrained Baseline vectors decode to upstream's SHA1 and frame count** (4,256 frames, no failed call). New `h264ref decode-damaged` mode (`reference/decode-damaged.tsv`): the decoder API over the 153 damaged variants. The 105 Constrained Baseline ones match in every column but one, which is the B-slice exception noted below. That includes the 3 that run the DPB out and recover through `ResetDecoder`. The other 16 vectors decode clean and damaged without crashing. UnitTest: 1999. TestVectors: 299. |
 | D7 SIPSorcery wire-up | **Done** (25 Nov) | `H264Codec : IVideoEncoder` (decode only: `DecodeVideo` to I420, BGR or RGB, `DecodeVideoFaster` into a re-used buffer, `KeyFrameRequired`; the encode methods throw `NotSupportedException`), `H264NetVideoEndPoint : IVideoSink` (BGR pictures, `OnKeyFrameRequired` throttled to once a second) and `YuvToRgb` (BT.601/BT.709, limited/full range, from the SPS VUI). One access unit per call through `DecodeFrameNoDelay`. Two small non-upstream members on `CWelsDecoder`: `CurrentSps` and `ReleaseHeldPicture`. New example `examples/WebRTCExamples/WebRTCClientH264Net`. **All 35 Constrained Baseline vectors give upstream's SHA1 when fed one access unit at a time, and again after an RTP round trip through `H264Depacketiser`** (STAP-A, FU-A, reordering, sequence wrap). Checked live against Chromium's H.264 encoder: 640x480 at 30 fps decodes clean, and a dropped access unit leads to a PLI, an IDR from the browser, and clean decoding again one frame later. UnitTest: 2006. TestVectors: 412. |
-| E1 Encoder bit writer, NAL encapsulation, parameter sets | Next | Phase 3 starts. See section 6, E1. |
+| E1 Encoder bit writer, NAL encapsulation, parameter sets | **Done** (25 Nov) | `svc_enc_golomb`, `nal_encap`, `parameter_sets`, `param_svc` (`SWelsSvcCodingParam`, defaults, transcoding, temporal settings), `au_set`, `paraset_strategy` (all five id strategies), `wels_const`, `wels_common_basis`, `rc.h` and `svc_enc_slice_segment.h` constants and checks, part of `encoder_data_tables`, and from `encoder_ext` the parameter validation, slice and thread settings and the SPS/PPS writers. Partial `sWelsEncCtx` and `SWelsFuncPtrList`. ~4.6k lines. The refharness builds the encoder too: new `h264ref encoder-conformance` mode reproduces **all 16** upstream encoder hashes (`reference/encoder-conformance.tsv`). New `h264ref paramsets` mode (`reference/paramsets.tsv`): 66 configurations covering WebRTC's settings, the id strategies, levels, profiles, VUI, references, cropping, rate control, SVC and simulcast, and 10 rejects. **All 66 match**: init result, validated parameters, and every SPS, subset SPS and PPS byte (272 operations with parameter sets). Slice headers moved to E4. UnitTest: 2009. TestVectors: 480. |
+| E2 Encoder kernels | Next | See section 6, E2. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -542,6 +543,59 @@ Notes from D7:
   decision in section 8. The CLI's `h264.net` option waits for the encoder
   (E8), since the CLI's receive paths already have FFmpeg's decoder.
 
+Notes from E1:
+
+- **Encoder namespace.** `SIPSorcery.H264.Encoder`, free functions in
+  `WelsEnc` (static partial, one per ported file). `WelsEnc` is not a global
+  `using static`, because some of its constants clash with the decoder's
+  (`MAX_PPS_COUNT` is 57 in the encoder). Types outside `WelsEnc` write
+  `WelsEnc.X`.
+- **C++ classes.** `SWelsSvcCodingParam : SEncParamExt` repeats the base
+  fields first, in the same order and types, with `Base()` for the upcast.
+  A unit test checks that the prefix matches `SEncParamExt` field for field.
+  The `IWelsParametersetStrategy` hierarchy (an interface and five classes,
+  all sharing `CWelsParametersetIdConstant`'s fields) is one native struct:
+  a port-added class tag, and each virtual method switches on it to the
+  override the vtable would pick. The bodies keep their class names
+  (`CWelsParametersetSpsListing_GenerateNewSps`). The `_DEBUG`-only checks
+  are left out, as in the Release reference.
+- **Upstream quirks kept.** `ParamBaseTranscode` writes layer 0's profile,
+  level, QP and max bitrate on every layer pass. `ParamValidation` truncates
+  the loop filter settings to `int16_t` for `CheckInRangeCloseOpen`.
+  `CWelsParametersetSpsPpsListing::OutputCurrentStructure` copies the PPS list
+  from `pCtx->pPps`, not `pPPSArray`. `WelsWriteParameterSets` writes
+  `pSpsArray[GetSpsIdx (i)]`, which for the non-listing strategies is SPS 0
+  every time, so simulcast's `EncodeParameterSets` writes the base layer's
+  SPS twice.
+- **One deviation.** `WelsCheckRefFrameLimitationLevelIdcFirst` indexes
+  `g_ksLevelLimits` by `uiLevelIdc - 1`, past the 17-entry table for levels
+  above 1.3. The port clamps the index. The function is unreachable:
+  `ParamValidationExt` rejects the non-real-time usage types that call it.
+- **CPU detection.** The C-only `WelsCPUFeatureDetect` returns no features and
+  no core count, so cores come from `DynamicDetectCpuCores`, which is
+  `Environment.ProcessorCount` here. Only `iMultipleThreadIdc == 0` and
+  `SM_FIXEDSLCNUM_SLICE` with `uiSliceNum == 0` read it. Every reference
+  configuration sets one thread.
+- **Oracle.** `h264ref paramsets` applies each configuration's settings to
+  `GetDefaultParams` (`api=ext`) or to a zeroed `SEncParamBase` (`api=base`).
+  It then runs a script of `EncodeParameterSets`, forced-IDR and plain
+  frames, and prints, for each operation, the frame type and the non-VCL
+  layers with their NAL bytes. It also prints the
+  `ENCODER_OPTION_SVC_ENCODE_PARAM_EXT` parameters after init, and the
+  defaults once. `ParameterSetTests` drives the ported functions as
+  `InitializeInternal`, `WelsInitEncoderExt`, `RequestMemorySvc` and
+  `InitDqLayers` do, keeping their parameter set work. For frames it uses
+  the reference's frame type, because the frame type decision comes with
+  rate control (E6). An IDR writes the parameter sets as
+  `PrepareEncodeFrame` does. Corrupting one SPS byte or one parameter in the
+  copied table fails exactly the affected configuration.
+- **Slice headers** were in E1's acceptance line. They are written by
+  `svc_encode_slice`'s `WelsSliceHeaderWrite`, which needs the slice and
+  reference state, so they move to E4 and are covered by its IDR byte match.
+- **Not done.** `encoder_ext`, `encoder` and `encoder_context` are partial:
+  only the fields and functions above. The rest comes with E4 to E8. Init
+  and frame orchestration are mirrored in the test until E8 ports them.
+
 ## 1. Goal
 
 A pure managed H.264 encoder and decoder in `src/SIPSorcery.H264`, ported from
@@ -777,7 +831,9 @@ merges. Approximate C# sizes are in brackets.
 
 - **E1** Bit writer, NAL encapsulation and parameter sets: `nal_encap`, `au_set`
   and `paraset_strategy` (single-layer path). Acceptance: the SPS/PPS/slice
-  headers match native byte for byte. *[~2k]*
+  headers match native byte for byte. *[~2k]* **Done**: all strategies and
+  multi-layer paths too, ~4.6k lines. Slice headers moved to E4 (see the E1
+  notes).
 - **E2** Kernels: `encode_mb_aux`, the encoder's `decode_mb_aux`,
   `encoder_data_tables`, `sample` (SAD/SATD/SSD) and the encoder's
   `get_intra_predictor`. *[~2k]*

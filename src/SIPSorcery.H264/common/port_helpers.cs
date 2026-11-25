@@ -166,6 +166,12 @@ internal struct InlineArray8<T> where T : unmanaged
     private T _e0;
 }
 
+[InlineArray(9)]
+internal struct InlineArray9<T> where T : unmanaged
+{
+    private T _e0;
+}
+
 [InlineArray(14)]
 internal struct InlineArray14<T> where T : unmanaged
 {
@@ -196,6 +202,12 @@ internal struct InlineArray24<T> where T : unmanaged
     private T _e0;
 }
 
+[InlineArray(29)]
+internal struct InlineArray29<T> where T : unmanaged
+{
+    private T _e0;
+}
+
 [InlineArray(30)]
 internal struct InlineArray30<T> where T : unmanaged
 {
@@ -216,6 +228,12 @@ internal struct InlineArray33<T> where T : unmanaged
 
 [InlineArray(52)]
 internal struct InlineArray52<T> where T : unmanaged
+{
+    private T _e0;
+}
+
+[InlineArray(57)]
+internal struct InlineArray57<T> where T : unmanaged
 {
     private T _e0;
 }

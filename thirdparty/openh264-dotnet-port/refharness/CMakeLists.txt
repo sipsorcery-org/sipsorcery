@@ -47,8 +47,45 @@ add_library(oh_decoder STATIC ${DECODER_SRC} "${OH}/decoder/plus/src/welsDecoder
 target_include_directories(oh_decoder PUBLIC "${OH}/decoder/core/inc" "${OH}/decoder/plus/inc")
 target_link_libraries(oh_decoder PUBLIC oh_common)
 
+# codec/processing (list from codec/processing/meson.build, minus the arch folders).
+set(PROCESSING_SRC
+  adaptivequantization/AdaptiveQuantization backgrounddetection/BackgroundDetection
+  common/memory common/WelsFrameWork common/WelsFrameWorkEx
+  complexityanalysis/ComplexityAnalysis denoise/denoise denoise/denoise_filter
+  downsample/downsample downsample/downsamplefuncs imagerotate/imagerotate
+  imagerotate/imagerotatefuncs scenechangedetection/SceneChangeDetection
+  scrolldetection/ScrollDetection scrolldetection/ScrollDetectionFuncs
+  vaacalc/vaacalcfuncs vaacalc/vaacalculation)
+list(TRANSFORM PROCESSING_SRC PREPEND "${OH}/processing/src/")
+list(TRANSFORM PROCESSING_SRC APPEND ".cpp")
+set(PROCESSING_INC
+  "${OH}/processing/interface" "${OH}/processing/src/common"
+  "${OH}/processing/src/adaptivequantization" "${OH}/processing/src/downsample"
+  "${OH}/processing/src/scrolldetection" "${OH}/processing/src/vaacalc")
+add_library(oh_processing STATIC ${PROCESSING_SRC})
+target_include_directories(oh_processing PRIVATE ${PROCESSING_INC})
+target_link_libraries(oh_processing PUBLIC oh_common)
+
+# codec/encoder (list from codec/encoder/meson.build, minus the arch folders). Its
+# headers share names with the decoder's (wels_const.h, parameter_sets.h, ...), so
+# they stay private: the harness reaches the encoder through codec_api.h only.
+set(ENCODER_SRC
+  au_set deblocking decode_mb_aux encode_mb_aux encoder encoder_data_tables
+  encoder_ext get_intra_predictor md mv_pred nal_encap paraset_strategy
+  picture_handle ratectl ref_list_mgr_svc sample set_mb_syn_cabac set_mb_syn_cavlc
+  slice_multi_threading svc_base_layer_md svc_enc_slice_segment svc_encode_mb
+  svc_encode_slice svc_mode_decision svc_motion_estimate svc_set_mb_syn_cabac
+  svc_set_mb_syn_cavlc wels_preprocess wels_task_base wels_task_encoder
+  wels_task_management)
+list(TRANSFORM ENCODER_SRC PREPEND "${OH}/encoder/core/src/")
+list(TRANSFORM ENCODER_SRC APPEND ".cpp")
+add_library(oh_encoder STATIC ${ENCODER_SRC} "${OH}/encoder/plus/src/welsEncoderExt.cpp")
+target_include_directories(oh_encoder PRIVATE "${OH}/encoder/core/inc" "${OH}/encoder/plus/inc" ${PROCESSING_INC})
+target_link_libraries(oh_encoder PUBLIC oh_processing oh_common)
+
 # The harness: conformance hashes, stream feature classification, YUV dumps,
-# the parser header dumps (src/headers.cpp) and the kernel fixtures (src/fixture.h, src/kernels_*.cpp).
+# the parser header dumps (src/headers.cpp), the kernel fixtures (src/fixture.h, src/kernels_*.cpp)
+# and the encoder modes (src/encoder.cpp).
 add_executable(h264ref
   src/main.cpp
   src/headers.cpp
@@ -57,7 +94,8 @@ add_executable(h264ref
   src/kernels_mc.cpp
   src/kernels_deblock_sad.cpp
   src/kernels_decoder.cpp
+  src/encoder.cpp
   "${OPENH264_DIR}/test/api/sha1.c")
 target_include_directories(h264ref PRIVATE "${OPENH264_DIR}/test" src)
 target_compile_features(h264ref PRIVATE cxx_std_17)
-target_link_libraries(h264ref PRIVATE oh_decoder)
+target_link_libraries(h264ref PRIVATE oh_decoder oh_encoder)
