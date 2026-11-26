@@ -10,7 +10,9 @@
 // The expected digests were produced by running this file, unchanged, against
 // the encoder as it was before those changes (commit b293c065d). It only uses
 // the array returning API that existed then, so it can be re-run against that
-// commit to re-derive them.
+// commit to re-derive them. The exception is the four packed RGB scenarios
+// (Bgr, Bgra, Rgb, Rgba), which were re-derived when PixelConverter moved to
+// BT.601 limited range colour conversion and so changed the I420 they encode.
 //
 // Author(s):
 // SIPSorcery contributors
@@ -107,13 +109,13 @@ namespace Vpx.Net.UnitTest
                 ExpectedDigest = "452F8181C7E1A9280FAB84853AEB5892F697B48C1E29C9C2233BBB992E1A1BC2" },
             // Each input format that is converted to I420 before encoding.
             new Vp8GoldenScenario { Name = "Bgr_160x96", Width = 160, Height = 96, PixelFormat = VideoPixelFormatsEnum.Bgr, FrameCount = 5,
-                ExpectedDigest = "9826A2C4078BCEE6BCDBC28280BDC104B449C8CE4AB65E7639DC2B00582968B4" },
+                ExpectedDigest = "48094D8A0F54F59F0236A87879A0709BE4A7C0B66E7B9FFD19FB8723226DBBCE" },
             new Vp8GoldenScenario { Name = "Bgra_160x96", Width = 160, Height = 96, PixelFormat = VideoPixelFormatsEnum.Bgra, FrameCount = 5,
-                ExpectedDigest = "763DC39C2984E8342D67AF362EE2E4F32ADA3A1FE986BE9A4C448ABD9C906DFB" },
+                ExpectedDigest = "EFC1EE61121C728154F7821EED735EF6BFAC0A37CADFFA802C0EEA4943954048" },
             new Vp8GoldenScenario { Name = "Rgb_160x96", Width = 160, Height = 96, PixelFormat = VideoPixelFormatsEnum.Rgb, FrameCount = 5,
-                ExpectedDigest = "6FCEC483EBE7AB7AEA785F49E6CF72EF11A792BBFCF4296333686CA316D2E4EB" },
+                ExpectedDigest = "B096856FC529472ED2EB8EEFD6EF9D3EE18B927FDA78C32BD544146817C54EC6" },
             new Vp8GoldenScenario { Name = "Rgba_160x96", Width = 160, Height = 96, PixelFormat = VideoPixelFormatsEnum.Rgba, FrameCount = 5,
-                ExpectedDigest = "7E62E76F6D759A4CBAAE7FBBCC2DAF1E30E380F0AF525CA60EDC908B905B24F9" },
+                ExpectedDigest = "38F021A36E557A75B03ABDBB240061AA79EAA316E81C1CF0563D967F190F76C8" },
             new Vp8GoldenScenario { Name = "NV12_160x96_IntraFallback", Width = 160, Height = 96, PixelFormat = VideoPixelFormatsEnum.NV12, FrameCount = 5, IntraFallback = true,
                 ExpectedDigest = "2E99345AC412D5DD29E598C6F55A8D9F14DBF2D9F7B2F3D1F74CCA87F130F678" },
             // A realistic size, large enough for the output buffer to live on the large object heap.

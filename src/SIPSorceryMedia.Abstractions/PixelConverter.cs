@@ -1,16 +1,98 @@
 ﻿using System;
 using System.Buffers;
+using System.Runtime.CompilerServices;
 
 #if NET8_0_OR_GREATER
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 #endif
 
 namespace SIPSorceryMedia.Abstractions
 {
+    /// <summary>
+    /// Converts video frames between the raw pixel formats used by the media pipeline.
+    /// </summary>
+    /// <remarks>
+    /// Conversions between RGB and YUV (I420, NV12) use ITU-R BT.601 limited range YCbCr, the
+    /// colour space that VP8, H264 and browsers use for standard definition and WebRTC video:
+    /// Y spans 16 to 235 and Cb/Cr span 16 to 240, centred on 128. The arithmetic is 16.16 fixed
+    /// point, which matches the floating point BT.601 equations to within one code value.
+    /// </remarks>
     public class PixelConverter
     {
+        // ITU-R BT.601 limited range coefficients scaled by 2^16. The chroma rows are rounded so that
+        // each sums to exactly zero, which keeps every grey at Cb = Cr = 128.
+        private const int FixedPointShift = 16;
+        private const int FixedPointHalf = 1 << (FixedPointShift - 1);
+
+        // RGB to YCbCr:
+        //   Y  =  16 + 0.256788 R + 0.504129 G + 0.097906 B
+        //   Cb = 128 - 0.148223 R - 0.290993 G + 0.439216 B
+        //   Cr = 128 + 0.439216 R - 0.367788 G - 0.071427 B
+        private const int YFromR = 16829;
+        private const int YFromG = 33039;
+        private const int YFromB = 6416;
+        private const int UFromR = -9714;
+        private const int UFromG = -19070;
+        private const int UFromB = 28784;
+        private const int VFromR = 28784;
+        private const int VFromG = -24103;
+        private const int VFromB = -4681;
+        private const int YBias = (16 << FixedPointShift) + FixedPointHalf;
+        private const int UVBias = (128 << FixedPointShift) + FixedPointHalf;
+
+        // YCbCr to RGB:
+        //   R = 1.164384 (Y - 16)                        + 1.596027 (Cr - 128)
+        //   G = 1.164384 (Y - 16) - 0.391762 (Cb - 128)  - 0.812968 (Cr - 128)
+        //   B = 1.164384 (Y - 16) + 2.017232 (Cb - 128)
+        private const int RgbFromY = 76309;
+        private const int RFromV = 104597;
+        private const int GFromU = -25675;
+        private const int GFromV = -53279;
+        private const int BFromU = 132201;
+
+        /// <summary>
+        /// BT.601 limited range luma for an 8 bit RGB pixel. The result is always within 16 to 235.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte RgbToY(int r, int g, int b)
+            => (byte)((YFromR * r + YFromG * g + YFromB * b + YBias) >> FixedPointShift);
+
+        /// <summary>
+        /// BT.601 limited range blue difference chroma (Cb) for an 8 bit RGB pixel. The result is always
+        /// within 16 to 240.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte RgbToU(int r, int g, int b)
+            => (byte)((UFromR * r + UFromG * g + UFromB * b + UVBias) >> FixedPointShift);
+
+        /// <summary>
+        /// BT.601 limited range red difference chroma (Cr) for an 8 bit RGB pixel. The result is always
+        /// within 16 to 240.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte RgbToV(int r, int g, int b)
+            => (byte)((VFromR * r + VFromG * g + VFromB * b + UVBias) >> FixedPointShift);
+
+        /// <summary>
+        /// Converts a BT.601 limited range YCbCr sample to 8 bit RGB, clamping anything outside the RGB cube.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void YuvToRgb(int y, int u, int v, out byte r, out byte g, out byte b)
+        {
+            // An arithmetic right shift floors, so adding half before it rounds negative values correctly too.
+            int luma = (y - 16) * RgbFromY + FixedPointHalf;
+            int cb = u - 128;
+            int cr = v - 128;
+
+            r = ClampToByte((luma + RFromV * cr) >> FixedPointShift);
+            g = ClampToByte((luma + GFromU * cb + GFromV * cr) >> FixedPointShift);
+            b = ClampToByte((luma + BFromU * cb) >> FixedPointShift);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte ClampToByte(int value) => (byte)(value < 0 ? 0 : value > 255 ? 255 : value);
+
         [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
         public static byte[] ToI420(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
         {
@@ -191,27 +273,22 @@ namespace SIPSorceryMedia.Abstractions
 
         private static void RGBAtoI420Core(Span<byte> buffer, ReadOnlySpan<byte> rgba, int width, int height, int stride, int uOffset, int vOffset)
         {
+            // RGBA: Byte order is Red, Green, Blue, Alpha.
             for (var row = 0; row < height; row++)
             {
-                int u, v, y;
-                int r, g, b;
-
                 for (var col = 0; col < width; col++)
                 {
-                    r = rgba[row * stride + col * 4] & 0xff;
-                    g = rgba[row * stride + col * 4 + 1] & 0xff;
-                    b = rgba[row * stride + col * 4 + 2] & 0xff;
+                    int r = rgba[row * stride + col * 4];
+                    int g = rgba[row * stride + col * 4 + 1];
+                    int b = rgba[row * stride + col * 4 + 2];
+                    // Alpha at index 3 is ignored.
 
-                    y = (int)(0.299 * r + 0.587 * g + 0.114 * b);
-                    u = (int)(-0.147 * r - 0.289 * g + 0.436 * b) + 128;
-                    v = (int)(0.615 * r - 0.515 * g - 0.100 * b) + 128;
-
-                    buffer[col + row * width] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
+                    buffer[col + row * width] = RgbToY(r, g, b);
 
                     var uvposn = col / 2 + row / 2 * width / 2;
 
-                    buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
-                    buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
+                    buffer[uOffset + uvposn] = RgbToU(r, g, b);
+                    buffer[vOffset + uvposn] = RgbToV(r, g, b);
                 }
             }
         }
@@ -292,25 +369,18 @@ namespace SIPSorceryMedia.Abstractions
             // RGB: Byte order is Red, Green, Blue.
             for (var row = 0; row < height; row++)
             {
-                int u, v, y;
-                int r, g, b;
-
                 for (var col = 0; col < width; col++)
                 {
-                    r = rgb[row * stride + col * 3] & 0xff;
-                    g = rgb[row * stride + col * 3 + 1] & 0xff;
-                    b = rgb[row * stride + col * 3 + 2] & 0xff;
+                    int r = rgb[row * stride + col * 3];
+                    int g = rgb[row * stride + col * 3 + 1];
+                    int b = rgb[row * stride + col * 3 + 2];
 
-                    y = (int)(0.299 * r + 0.587 * g + 0.114 * b);
-                    u = (int)(-0.147 * r - 0.289 * g + 0.436 * b) + 128;
-                    v = (int)(0.615 * r - 0.515 * g - 0.100 * b) + 128;
-
-                    buffer[col + row * width] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
+                    buffer[col + row * width] = RgbToY(r, g, b);
 
                     var uvposn = col / 2 + row / 2 * width / 2;
 
-                    buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
-                    buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
+                    buffer[uOffset + uvposn] = RgbToU(r, g, b);
+                    buffer[vOffset + uvposn] = RgbToV(r, g, b);
                 }
             }
         }
@@ -391,25 +461,18 @@ namespace SIPSorceryMedia.Abstractions
             // BGR: Byte order is Blue, Green, Red.
             for (var row = 0; row < height; row++)
             {
-                int u, v, y;
-                int r, g, b;
-
                 for (var col = 0; col < width; col++)
                 {
-                    b = bgr[row * stride + col * 3] & 0xff;
-                    g = bgr[row * stride + col * 3 + 1] & 0xff;
-                    r = bgr[row * stride + col * 3 + 2] & 0xff;
+                    int b = bgr[row * stride + col * 3];
+                    int g = bgr[row * stride + col * 3 + 1];
+                    int r = bgr[row * stride + col * 3 + 2];
 
-                    y = (int)(0.299 * r + 0.587 * g + 0.114 * b);
-                    u = (int)(-0.147 * r - 0.289 * g + 0.436 * b) + 128;
-                    v = (int)(0.615 * r - 0.515 * g - 0.100 * b) + 128;
-
-                    buffer[col + row * width] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
+                    buffer[col + row * width] = RgbToY(r, g, b);
 
                     var uvposn = col / 2 + row / 2 * width / 2;
 
-                    buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
-                    buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
+                    buffer[uOffset + uvposn] = RgbToU(r, g, b);
+                    buffer[vOffset + uvposn] = RgbToV(r, g, b);
                 }
             }
         }
@@ -482,26 +545,18 @@ namespace SIPSorceryMedia.Abstractions
             // BGRA: Byte order is Blue, Green, Red, Alpha.
             for (var row = 0; row < height; row++)
             {
-                int u, v, y;
-                int r, g, b;
-
                 for (var col = 0; col < width; col++)
                 {
-                    b = bgra[row * stride + col * 4] & 0xff;
-                    g = bgra[row * stride + col * 4 + 1] & 0xff;
-                    r = bgra[row * stride + col * 4 + 2] & 0xff;
+                    int b = bgra[row * stride + col * 4];
+                    int g = bgra[row * stride + col * 4 + 1];
+                    int r = bgra[row * stride + col * 4 + 2];
                     // Alpha at index 3 is ignored.
 
-                    y = (int)(0.299 * r + 0.587 * g + 0.114 * b);
-                    u = (int)(-0.147 * r - 0.289 * g + 0.436 * b) + 128;
-                    v = (int)(0.615 * r - 0.515 * g - 0.100 * b) + 128;
-
-                    var yIdx = col + row * width;
-                    buffer[yIdx] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
+                    buffer[col + row * width] = RgbToY(r, g, b);
 
                     var uvposn = (col / 2) + (row / 2) * (width / 2);
-                    buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
-                    buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
+                    buffer[uOffset + uvposn] = RgbToU(r, g, b);
+                    buffer[vOffset + uvposn] = RgbToV(r, g, b);
                 }
             }
         }
@@ -580,26 +635,18 @@ namespace SIPSorceryMedia.Abstractions
 
         private static void I420toRGBCore(Span<byte> rgb, ReadOnlySpan<byte> data, int width, int height, int uOffset, int vOffset, int lclStride)
         {
+            // RGB: Byte order is Red, Green, Blue.
             for (var row = 0; row < height; row++)
             {
-                int u, v, y;
-                int r, g, b;
-
                 for (var col = 0; col < width; col++)
                 {
-                    y = data[col + row * width];
                     var uvposn = col / 2 + row / 2 * width / 2;
 
-                    u = data[uOffset + uvposn] - 128;
-                    v = data[vOffset + uvposn] - 128;
+                    YuvToRgb(data[col + row * width], data[uOffset + uvposn], data[vOffset + uvposn], out var r, out var g, out var b);
 
-                    r = (int)(y + 1.140 * v);
-                    g = (int)(y - 0.395 * u - 0.581 * v);
-                    b = (int)(y + 2.302 * u);
-
-                    rgb[row * lclStride + col * 3] = (byte)(r > 255 ? 255 : r < 0 ? 0 : r);
-                    rgb[row * lclStride + col * 3 + 1] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);
-                    rgb[row * lclStride + col * 3 + 2] = (byte)(b > 255 ? 255 : b < 0 ? 0 : b);
+                    rgb[row * lclStride + col * 3] = r;
+                    rgb[row * lclStride + col * 3 + 1] = g;
+                    rgb[row * lclStride + col * 3 + 2] = b;
                 }
             }
         }
@@ -678,26 +725,18 @@ namespace SIPSorceryMedia.Abstractions
 
         private static void I420toBGRCore(Span<byte> bgr, ReadOnlySpan<byte> data, int width, int height, int uOffset, int vOffset, int lclStride)
         {
+            // BGR: Byte order is Blue, Green, Red.
             for (var row = 0; row < height; row++)
             {
-                int u, v, y;
-                int r, g, b;
-
                 for (var col = 0; col < width; col++)
                 {
-                    y = data[col + row * width];
                     var uvposn = col / 2 + row / 2 * width / 2;
 
-                    u = data[uOffset + uvposn] - 128;
-                    v = data[vOffset + uvposn] - 128;
+                    YuvToRgb(data[col + row * width], data[uOffset + uvposn], data[vOffset + uvposn], out var r, out var g, out var b);
 
-                    b = (int)(y + 1.140 * v);
-                    g = (int)(y - 0.395 * u - 0.581 * v);
-                    r = (int)(y + 2.302 * u);
-
-                    bgr[row * lclStride + col * 3] = (byte)(r > 255 ? 255 : r < 0 ? 0 : r);
-                    bgr[row * lclStride + col * 3 + 1] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);
-                    bgr[row * lclStride + col * 3 + 2] = (byte)(b > 255 ? 255 : b < 0 ? 0 : b);
+                    bgr[row * lclStride + col * 3] = b;
+                    bgr[row * lclStride + col * 3 + 1] = g;
+                    bgr[row * lclStride + col * 3 + 2] = r;
                 }
             }
         }
@@ -774,26 +813,18 @@ namespace SIPSorceryMedia.Abstractions
 
         private static void NV12toBGRCore(Span<byte> bgr, ReadOnlySpan<byte> data, int width, int height, int stride, int uvOffset)
         {
+            // BGR: Byte order is Blue, Green, Red.
             for (var row = 0; row < height; row++)
             {
-                int u, v, y;
-                int r, g, b;
-
                 for (var col = 0; col < width; col++)
                 {
-                    y = data[col + row * width];
                     var uvposn = row / 2 * width + col / 2 * 2;
 
-                    u = data[uvOffset + uvposn] - 128;
-                    v = data[uvOffset + uvposn + 1] - 128;
+                    YuvToRgb(data[col + row * width], data[uvOffset + uvposn], data[uvOffset + uvposn + 1], out var r, out var g, out var b);
 
-                    r = (int)(y + 1.140 * v);
-                    g = (int)(y - 0.395 * u - 0.581 * v);
-                    b = (int)(y + 2.302 * u);
-
-                    bgr[row * stride + col * 3] = (byte)(b > 255 ? 255 : b < 0 ? 0 : b);
-                    bgr[row * stride + col * 3 + 1] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);
-                    bgr[row * stride + col * 3 + 2] = (byte)(r > 255 ? 255 : r < 0 ? 0 : r);
+                    bgr[row * stride + col * 3] = b;
+                    bgr[row * stride + col * 3 + 1] = g;
+                    bgr[row * stride + col * 3 + 2] = r;
                 }
             }
         }

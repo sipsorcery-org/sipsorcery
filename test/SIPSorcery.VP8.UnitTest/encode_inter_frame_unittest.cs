@@ -274,9 +274,11 @@ namespace Vpx.Net.UnitTest
                          || fmt == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Bgra;
             int bpp = hasAlpha ? 4 : 3;
 
-            // Grayscale detail (R=G=B=g) so luma is g regardless of channel order
-            // and chroma stays flat 128; lets us assert on the Y plane without
-            // caring about RGB-vs-BGR ordering. A diagonal ramp gives real AC.
+            // Grayscale detail (R=G=B=g) so luma depends only on g regardless of
+            // channel order and chroma stays flat 128; lets us assert on the Y
+            // plane without caring about RGB-vs-BGR ordering. A diagonal ramp
+            // gives real AC. PixelConverter produces BT.601 limited range, so
+            // grey g has luma 16 + 219 * g / 255.
             byte[] gray = new byte[width * height];
             byte[] packed = new byte[width * height * bpp];
             for (int row = 0; row < height; row++)
@@ -285,7 +287,7 @@ namespace Vpx.Net.UnitTest
                 {
                     int g = 16 + ((col + row) * 200) / (width + height);
                     int pi = row * width + col;
-                    gray[pi] = (byte)g;
+                    gray[pi] = (byte)(16 + (219 * g + 127) / 255);
                     int b = pi * bpp;
                     packed[b] = (byte)g; packed[b + 1] = (byte)g; packed[b + 2] = (byte)g;
                     if (hasAlpha) { packed[b + 3] = 255; }
