@@ -76,6 +76,8 @@ global using static SIPSorcery.H264.EMvComp;
 global using static SIPSorcery.H264.EChromaComp;
 global using static SIPSorcery.H264.EMmcoCode;
 global using static SIPSorcery.H264.EVuiVideoFormat;
+global using static SIPSorcery.H264.ESceneChangeIdc;
+global using static SIPSorcery.H264.EStaticBlockIdc;
 
 // libc (memcpy, memset, ...), see common/port_helpers.cs.
 global using static SIPSorcery.H264.CRuntime;

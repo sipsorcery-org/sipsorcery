@@ -151,6 +151,11 @@ generator and output format, and writes its own bytes on a mismatch when
   1265 in all), and D2 the other 68 (the CAVLC VLC, scan and CBP tables; 1333
   rows). D3 added the decoder's `get_intra_predictor` (504 rows) and
   `decode_mb_aux` (132) kernels: 1969 rows.
+  The encoder steps add theirs: the kernels (E2, `src/kernels_encoder.cpp`),
+  the CAVLC writer (E3, `src/cavlc_encoder.cpp`), and the I-slice (E4a) and
+  P-slice (E5a) coding of whole frames on hand-built contexts
+  (`src/islice_encoder.cpp` and `src/pslice_encoder.cpp`, which share the
+  context in `src/islice_ctx.h`): 6743 rows.
 - **`headers.tsv`** and **`headers-damaged.tsv`** are the outputs of `h264ref
   headers` and `headers-damaged`: the size and SHA1 of each vector's parser
   dump, clean (51 rows) and damaged (153 rows). Read by

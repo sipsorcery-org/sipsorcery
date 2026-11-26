@@ -3,9 +3,9 @@
 //
 // Description: Port of codec/encoder/core/src/encoder.cpp, part 1 (E1):
 // InitBitStream (E1), WelsSetMemZero_c (E4), and UpdateFrameNum,
-// LoadBackFrameNum and InitFrameCoding (E4b). InitPic, WelsInitBGDFunc,
-// InitFunctionPointers and DecideFrameType follow with what they install or
-// read (the motion search, MC and VAA in E5 and E7).
+// LoadBackFrameNum and InitFrameCoding (E4b), and WelsInitBGDFunc and
+// InitFunctionPointers (E5). InitPic and DecideFrameType follow with what
+// they read (the reference list in E5b and the preprocessing in E7).
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // Author(s):
@@ -15,6 +15,7 @@
 // 25 Nov 2026  Claude          Created (E1).
 // 26 Nov 2026  Claude          WelsSetMemZero_c (E4).
 // 26 Nov 2026  Claude          UpdateFrameNum, LoadBackFrameNum and InitFrameCoding (E4b).
+// 26 Nov 2026  Claude          WelsInitBGDFunc and InitFunctionPointers (E5).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -59,7 +60,80 @@ namespace SIPSorcery.H264.Encoder;
 
 internal static unsafe partial class WelsEnc
 {
-    // InitPic, WelsInitBGDFunc and InitFunctionPointers come with E5.
+    // InitPic comes with E7, with the preprocessing that calls it.
+
+    public static void WelsInitBGDFunc(SWelsFuncPtrList* pFuncList, bool kbEnableBackgroundDetection)
+    {
+        if (kbEnableBackgroundDetection)
+        {
+            pFuncList->pfInterMdBackgroundDecision = &WelsMdInterJudgeBGDPskip;
+            pFuncList->pfMdBackgroundInfoUpdate = &WelsMdUpdateBGDInfo;
+        }
+        else
+        {
+            pFuncList->pfInterMdBackgroundDecision = &WelsMdInterJudgeBGDPskipFalse;
+            pFuncList->pfMdBackgroundInfoUpdate = &WelsMdUpdateBGDInfoNULL;
+        }
+    }
+
+    /*!
+     * \brief   initialize function pointers that potentially used in Wels encoding
+     * \param   pEncCtx     sWelsEncCtx*
+     * \return  successful - 0; otherwise none 0 for failed
+     */
+    public static int32_t InitFunctionPointers(sWelsEncCtx* pEncCtx, SWelsSvcCodingParam* pParam, uint32_t uiCpuFlag)
+    {
+        int32_t iReturn = ENC_RETURN_SUCCESS;
+        SWelsFuncPtrList* pFuncList = pEncCtx->pFuncList;
+        bool bScreenContent = (SCREEN_CONTENT_REAL_TIME == pParam->iUsageType);
+
+        /* Functionality utilization of CPU instructions dependency */
+        pFuncList->pfSetMemZeroSize8 = &WelsSetMemZero_c;             // confirmed_safe_unsafe_usage
+        pFuncList->pfSetMemZeroSize64Aligned16 = &WelsSetMemZero_c;     // confirmed_safe_unsafe_usage
+        pFuncList->pfSetMemZeroSize64 = &WelsSetMemZero_c;     // confirmed_safe_unsafe_usage
+        // The X86_ASM, HAVE_NEON and HAVE_NEON_AARCH64 overrides are not ported (C paths only).
+
+        InitExpandPictureFunc(&(pFuncList->sExpandPicFunc), uiCpuFlag);
+
+        /* Intra_Prediction_fn*/
+        WelsInitIntraPredFuncs(pFuncList, uiCpuFlag);
+
+        /* ME func */
+        WelsInitMeFunc(pFuncList, uiCpuFlag, bScreenContent);
+
+        /* sad, satd, average */
+        WelsInitSampleSadFunc(pFuncList, uiCpuFlag);
+
+        //
+        WelsInitBGDFunc(pFuncList, pParam->bEnableBackgroundDetection);
+        WelsInitSCDPskipFunc(pFuncList, bScreenContent &&
+                                        (pParam->bEnableSceneChangeDetect) &&
+                                        (pEncCtx->pSvcParam->iComplexityMode < HIGH_COMPLEXITY));
+
+        // for pfGetVarianceFromIntraVaa function ptr adaptive by CPU features, 6/7/2010
+        InitIntraAnalysisVaaInfo(pFuncList, uiCpuFlag);
+
+        /* Motion compensation */
+        /*init pixel average function*/
+        /*get one column or row pixel when refinement*/
+        InitMcFunc(&pFuncList->sMcFuncs, uiCpuFlag);
+        InitCoeffFunc(pFuncList, uiCpuFlag, pParam->iEntropyCodingModeFlag);
+
+        WelsInitEncodingFuncs(pFuncList, uiCpuFlag);
+        WelsInitReconstructionFuncs(pFuncList, uiCpuFlag);
+
+        DeblockingInit(&pFuncList->pfDeblocking, (int32_t)uiCpuFlag);
+        WelsBlockFuncInit(&pFuncList->pfSetNZCZero, (int32_t)uiCpuFlag);
+
+        InitFillNeighborCacheInterFunc(pFuncList, pParam->bEnableBackgroundDetection ? 1 : 0);
+
+        pFuncList->pParametersetStrategy = IWelsParametersetStrategy.CreateParametersetStrategy(pParam->eSpsPpsIdStrategy,
+                                           pParam->bSimulcastAVC, pParam->iSpatialLayerNum);
+        if (null == pFuncList->pParametersetStrategy)
+            return ENC_RETURN_MEMALLOCERR; // WELS_VERIFY_RETURN_IF
+
+        return iReturn;
+    }
 
     public static void UpdateFrameNum(sWelsEncCtx* pEncCtx, int32_t kiDidx)
     {
@@ -198,7 +272,7 @@ internal static unsafe partial class WelsEnc
         // #if defined(STAT_OUTPUT) memset (&pEncCtx->sPerInfo, 0, sizeof (SStatSliceInfo)); #endif
     }
 
-    // DecideFrameType reads the VAA's IDR period and scene change flags and comes with E5. The
+    // DecideFrameType reads the VAA's IDR period and scene change flags and comes with E5b. The
     // DumpDependencyRec and DumpRecFrame dumps are ENABLE_FRAME_DUMP only, which is off.
 
     /***********************************************************************************/

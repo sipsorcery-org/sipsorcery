@@ -4,7 +4,8 @@
 // Description: Port of codec/encoder/core/inc/encoder_context.h, partial:
 // SRefList, SSpatialPicIndex, SStrideTables and the sWelsEncCtx fields that
 // parameter set generation and writing (E1), the CAVLC macroblock writer
-// (E3), the I-slice macroblock coder (E4) and the frame set-up (E4b) use. The remaining fields arrive with the
+// (E3), the I-slice macroblock coder (E4), the frame set-up (E4b) and the
+// P-slice coder (E5) use. The remaining fields arrive with the
 // code that reads them, in the upstream order. The port never copies or
 // memsets the context as a whole, so its layout only needs to hold these
 // fields, not mirror the C one.
@@ -18,6 +19,7 @@
 // 26 Nov 2026  Claude          pCurDqLayer and eSliceType (E3).
 // 26 Nov 2026  Claude          SStrideTables, the picture pointers and the RC fields (E4).
 // 26 Nov 2026  Claude          SRefList, SSpatialPicIndex and the layer, list and NAL fields (E4b).
+// 26 Nov 2026  Claude          The MVD cost table fields and pVaa (E5).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -69,7 +71,7 @@ internal unsafe struct SRefList
     public uint8_t uiLongRefCount;              // dependend on pRef pic module
 }
 
-// SLTRState comes with E5.
+// SLTRState comes with E5b.
 
 /// <summary>TagSpatialPicIndex.</summary>
 internal unsafe struct SSpatialPicIndex
@@ -98,8 +100,11 @@ internal unsafe struct sWelsEncCtx
     public SWelsSvcCodingParam* pSvcParam;      // SVC parameter, WelsSVCParamConfig in svc_param_settings.h
 
     public int32_t* pSadCostMb;
-    // iMvRange and the MVD cost tables (pMvdCostTable, iMvdCostTableSize, iMvdCostTableStride)
-    // come with E5.
+    /* MVD cost tables for Inter MB */
+    public int32_t iMvRange;
+    public uint16_t* pMvdCostTable;             //[52];  // adaptive to spatial layers
+    public int32_t iMvdCostTableSize;           //the size of above table
+    public int32_t iMvdCostTableStride;         //the stride of above table
     public SMVUnitXY* pMvUnitBlock4x4;          // (*pMvUnitBlock4x4[2])[MB_BLOCK4x4_NUM];          // for store each 4x4 blocks' mv unit, the two swap after different d layer
     public int8_t* pRefIndexBlock4x4;           // (*pRefIndexBlock4x4[2])[MB_BLOCK8x8_NUM];        // for store each 4x4 blocks' pRef index, the two swap after different d layer
     public int8_t* pNonZeroCountBlocks;         // (*pNonZeroCountBlocks)[MB_LUMA_CHROMA_BLOCK4x4_NUM];
@@ -109,7 +114,7 @@ internal unsafe struct sWelsEncCtx
     public SStrideTables* pStrideTab;           // stride tables for internal coding used
     public SWelsFuncPtrList* pFuncList;
 
-    // pSliceThreading and pTaskManage come with the threading work, and pReferenceStrategy with E5.
+    // pSliceThreading and pTaskManage come with the threading work, and pReferenceStrategy with E5b.
 
     // pointers
     public SPicture* pEncPic;                   // pointer to current picture to be encoded
@@ -121,7 +126,7 @@ internal unsafe struct sWelsEncCtx
 
     public SRefList** ppRefPicListExt;          // reference picture list for SVC
     public PtrArray16<SPicture> pRefList0;      // [16]
-    // SLTRState* pLtr comes with E5.
+    // SLTRState* pLtr comes with E5b.
 
     public bool bCurFrameMarkedAsSceneLtr;
     // Derived
@@ -141,7 +146,8 @@ internal unsafe struct sWelsEncCtx
     // the check window fields come with E6.
     public int32_t iGlobalQp;                   // global qp
 
-    // VAA: SVAAFrameInfo* pVaa and CWelsPreProcess* pVpp come with E5 and E7.
+    public SVAAFrameInfo* pVaa;                 // VAA information of reference
+    // CWelsPreProcess* pVpp comes with E7.
 
     public SWelsSPS* pSpsArray;                 // MAX_SPS_COUNT by standard compatible
     public SWelsSPS* pSps;
@@ -163,7 +169,7 @@ internal unsafe struct sWelsEncCtx
     public InlineArray4<SSpatialPicIndex> sSpatialIndexMap; // [MAX_DEPENDENCY_LAYER]
     public fixed int32_t iSliceBufferSize[WelsEnc.MAX_DEPENDENCY_LAYER];
 
-    // bRefOfCurTidIsLtr comes with E5.
+    // bRefOfCurTidIsLtr comes with E5b.
 
     public int32_t iMaxSliceCount;              // maximal count number of slices for all layers observation
     public int16_t iActiveThreadsNum;           // number of threads active so far

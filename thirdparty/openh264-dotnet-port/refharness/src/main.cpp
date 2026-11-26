@@ -495,6 +495,9 @@ int Kernels() {
   KernelsPictureHandle();
   KernelsEncoderExt();
   KernelsSvcEncodeSlice();
+  KernelsMvPred();
+  KernelsMdInter();
+  KernelsSvcEncodePSlice();
   return 0;
 }
 

@@ -10,7 +10,7 @@
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // The adaptive quantisation branches only run for P slices and read the VAA
-// state, which comes with E5; they throw NotSupportedException until then.
+// state (from E5); the preprocessing that fills it comes with E7.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
@@ -18,6 +18,7 @@
 // History:
 // 26 Nov 2026  Claude          Created (E4).
 // 26 Nov 2026  Claude          GomRCInitForOneSlice (E4b).
+// 26 Nov 2026  Claude          The adaptive quantisation branches of the Disable functions (E5).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -95,10 +96,9 @@ internal static unsafe partial class WelsEnc
 
         if (pEncCtx->pSvcParam->bEnableAdaptiveQuant && (pEncCtx->eSliceType == P_SLICE))
         {
-            // pEncCtx->iGlobalQp = WELS_CLIP3 ((pEncCtx->iGlobalQp * INT_MULTIPLY -
-            //     pEncCtx->pVaa->sAdaptiveQuantParam.iAverMotionTextureIndexToDeltaQp) / INT_MULTIPLY, pWelsSvcRc->iMinQp,
-            //     pWelsSvcRc->iMaxQp);
-            throw new NotSupportedException("WelsRcPictureInitDisable: adaptive quantisation needs the VAA state, which comes with E5.");
+            pEncCtx->iGlobalQp = WELS_CLIP3((pEncCtx->iGlobalQp * INT_MULTIPLY -
+                                             pEncCtx->pVaa->sAdaptiveQuantParam.iAverMotionTextureIndexToDeltaQp) / INT_MULTIPLY, pWelsSvcRc->iMinQp,
+                                            pWelsSvcRc->iMaxQp);
         }
         else
         {
@@ -123,9 +123,8 @@ internal static unsafe partial class WelsEnc
 
         if (pEncCtx->pSvcParam->bEnableAdaptiveQuant && (pEncCtx->eSliceType == P_SLICE))
         {
-            // iLumaQp   = (int8_t)WELS_CLIP3 (iLumaQp +
-            //     pEncCtx->pVaa->sAdaptiveQuantParam.pMotionTextureIndexToDeltaQp[pCurMb->iMbXY], pWelsSvcRc->iMinQp, pWelsSvcRc->iMaxQp);
-            throw new NotSupportedException("WelsRcMbInitDisable: adaptive quantisation needs the VAA state, which comes with E5.");
+            iLumaQp = (int8_t)WELS_CLIP3(iLumaQp +
+                                         pEncCtx->pVaa->sAdaptiveQuantParam.pMotionTextureIndexToDeltaQp[pCurMb->iMbXY], pWelsSvcRc->iMinQp, pWelsSvcRc->iMaxQp);
         }
         else
         {

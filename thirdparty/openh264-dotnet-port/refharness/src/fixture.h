@@ -94,5 +94,9 @@ void KernelsSvcBaseLayerMd();
 void KernelsPictureHandle();
 void KernelsEncoderExt();
 void KernelsSvcEncodeSlice();
+// The P-slice coding's, in pslice_encoder.cpp (E5a).
+void KernelsMvPred();
+void KernelsMdInter();
+void KernelsSvcEncodePSlice();
 
 #endif  // H264REF_FIXTURE_H

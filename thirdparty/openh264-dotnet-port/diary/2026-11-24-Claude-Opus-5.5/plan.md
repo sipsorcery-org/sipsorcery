@@ -27,6 +27,7 @@ was kept for the VP8 encoder.
 | E3 CAVLC writer | **Done** (26 Nov) | `set_mb_syn_cavlc` (`CavlcParamCal_c`, `WriteBlockResidualCavlc`, the CAVLC and CABAC stash/pop pairs, `GetBsPos*`, `WelsWriteSliceEndSyn`, `InitCoeffFunc`), `svc_set_mb_syn_cavlc` (`WelsSpatialWriteMbPred`, `WelsSpatialWriteSubMbPred`, `CheckBitstreamBuffer`, `WelsSpatialWriteMbSyn`, `WelsWriteMbResidual`, the CBP maps), the `vlc_encoder.h` writers, and the structs they read (see the notes). CAVLC only: the CABAC paths throw. ~1.8k lines. New kernel groups (`refharness/src/cavlc_encoder.cpp`): 18 `vlc_encoder`, 1042 `set_mb_syn_cavlc` (546 random residual blocks, a 110-row level sweep and a 262-row count sweep among them) and 382 `svc_set_mb_syn_cavlc` rows (156 of them slices of 8 macroblocks), **all match**. Every residual block the writer accepts is also read back by the D2 parser, which uses the same bits and returns the same coefficients. 29 planted bugs each fail their rows. Two of them failed the residual rows only after the sweeps were added (see the notes). UnitTest: 6547. TestVectors: 480. |
 | E4a I-slice macroblock coding | **Done** (26 Nov) | E4 is split in two (see the notes). E4a: the intra half of `md` and `svc_base_layer_md` (I16x16, I4x4 and its fast variant, chroma, the fine partition choice), `svc_encode_mb` (the I16x16, I4x4 and chroma transform, quantisation and reconstruction), the I-slice half of `svc_encode_slice` (`WelsISliceMdEnc` with its overflow retry, `UpdateMbNeighbor`, the macroblock cache, the slice boundary tables), `svc_mode_decision`'s background QP update, `ratectl`'s rate control off path, `picture`/`picture_handle`, the rest of `svc_enc_slice_segment`, and from `encoder_ext` `AllocStrideTables` and the fast/normal coding switch. ~3.3k lines. New kernel groups (`refharness/src/islice_encoder.cpp`): 204 `md`, 8 `svc_base_layer_md`, 10 `picture_handle`, 8 `encoder_ext` and 728 `svc_encode_slice` rows. 706 of those code whole frames (1 to 99 macroblocks, 1 to 9 slices, both coding modes, QP 0 to 51, three kinds of content) through `WelsISliceMdEnc` on a hand-built context, and hash the bitstream, the reconstruction and every macroblock's state. **All match**. Of 29 planted bugs, 26 fail rows, two of them only after threshold rows were added. The other three cannot change an I slice (see the notes). UnitTest: 7511. TestVectors: 480. |
 | E4b The IDR through the API | **Done** (26 Nov) | The rest of E4. From `svc_encode_slice`: the slice header writers (base and extension, with the reference reordering and marking), `WelsCodeOneSlice`, and the slice lists (`InitSliceList`, `InitSliceInLayer`, `InitSliceThreadInfo`, the slice bitstream buffers). The encoder's `deblocking` (the intra and inter boundary strengths, the edge, macroblock and slice filters, `PerformDeblockingFilter`, `DeblockingInit`). From `encoder_ext`: the layer and macroblock list set-up (`InitMbInfo` to `InitDqLayers`, `InitMbListD`, with their frees), `WelsInitCurrentLayer`, `PrefetchReferencePicture`, `PreprocessSliceCoding` and `GetTemporalLevel`. `encoder`'s `InitFrameCoding` and the frame numbers. `ratectl`'s `GomRCInitForOneSlice`. ~2.5k lines. New `h264ref idr` mode (`reference/idr.tsv`): 47 configurations of one spatial layer with rate control off. They cover 4 kinds of content, QP 0 to 51, the three complexity modes, 9 sizes (16x16 to 1280x720, odd and cropped), fixed, raster-row and raster-list slicing, the three deblocking modes with offsets, temporal layers, LTR, three id strategies, the feature flags and the Main profile. `IdrTests.cs` drives the ported functions the way `InitializeExt` and the first `EncodeFrame` do. It does by hand, for an IDR, what the unported reference manager, VAA and preprocessing do (see the notes). **All 47 match** native byte for byte, including two rows that overflow the frame buffer and return 3. Every reconstruction equals the C# decoder's picture, and every row frees all it allocates. 3 planted bugs (deblocking, slice header and padding) each fail exactly the rows they should. UnitTest: 7511. TestVectors: 528. |
+| E5a P-slice macroblock coding | **Done** (26 Nov) | E5 is split in two (see the notes). E5a: `mv_pred`, the camera half of `svc_motion_estimate` (the initial point, the diamond search, `WelsMotionEstimateSearch`, `WelsInitMeFunc`), the inter half of `md` (the inter neighbour caches, `MeRefineFracPixel`, `PredictSad`, `PredictSadSkip`, `MvdCostInit`), the P half of `svc_base_layer_md` (the skip, background skip, 16x16 and fine partition decisions with their VAA variant, the sub-pel refinement, intra in P), `svc_mode_decision`'s background skip, `svc_encode_mb`'s inter coding and skip reconstruction, the P half of `svc_encode_slice` (`WelsCodePSlice`, `WelsMdInterMbLoop`), the P pointers of `PreprocessSliceCoding`, `InitFunctionPointers`, `ratectl`'s adaptive quantisation branches, and the VAA structs. ~3.8k lines. New kernel groups (`refharness/src/pslice_encoder.cpp`): 112 `mv_pred`, 2 `md` and 230 `svc_encode_slice` rows. The 230 code whole P frames (1 to 99 macroblocks, 1 to 9 slices, the three complexity modes, background detection and AQ on and off, QP 0 to 51, two MV ranges, five kinds of motion, I and P references) through `WelsCodePSlice` on a hand-built context, and hash the bitstream, the reconstruction and every macroblock's state. **All match**. Of 15 planted bugs, 13 fail rows. The other two move a threshold by one (see the notes). UnitTest: 7857. TestVectors: 528. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -860,6 +861,73 @@ Notes from E4b:
   - Padding the right-hand U columns with 0x7f fails exactly the four sizes
     whose width is not a multiple of 16.
 
+Notes from E5a:
+
+- **The split.** E5 is two steps, like E4. E5a ports the macroblock-level
+  inter coding and checks it on hand-built P contexts, the same on both sides.
+  E5b brings `ref_list_mgr_svc` (camera, one reference), `DecideFrameType`
+  and the multi-frame stream match through the frame loop, by extending
+  `IdrEncoder`.
+- **The P-slice context.** `pslice_encoder.cpp` (mirrored by
+  `PsliceFixtures.cs`) builds on the I-slice context, which moved to
+  `islice_ctx.h` so both files share it:
+  - The function list is `InitFunctionPointers`, `WelsRcInitFuncPointers`
+    and `PreprocessSliceCoding`, as the encoder builds it.
+  - The MVD cost table and MV range are what `RequestMemorySvc` sets, for an
+    MV range `GetMvMvdRange` could give. Rows use the camera's 64, or 6 so
+    that the search window clamps.
+  - The reference is the previous source plus coding noise, padded with
+    `ExpandReferencingPicture`. Its macroblock arrays (type, QP, motion
+    vector and skip SAD) are drawn.
+  - The VAA state that the preprocessing (E7) would leave is computed or
+    drawn: the 8x8 SADs of the two sources (what `VAACalcSad` takes), random
+    background flags, and AQ offsets in [-6, 6]. The VAA planes are the
+    current source and the previous one, which the background skips copy
+    into.
+  - The current source is the previous one moved, plus noise. The motion is
+    none, one shift, a shift blended half a pixel, a shift per 8x8 block, or
+    new content.
+- **What the rows reach.** `WelsCodePSlice_RowsReachEveryPath` pins rows that
+  reach:
+  - every inter partition (16x16, 16x8, 8x16, 8x8) and both intra kinds;
+  - sub-pel vectors, skips and background skips;
+  - AQ QPs, the level overflow retry at QP 0, and the bitstream check giving
+    up.
+
+  Across all rows, 125 have sub-pel vectors, 14 have background skips and 71
+  have QPs off the slice QP. A background skip is saved as
+  `MB_TYPE_BACKGROUND` in the reference types before `WelsMdUpdateBGDInfo`
+  makes it a skip, which is how the test counts them.
+  - Camera P slices never code sub-8x8 partitions; the base layer stops at
+    8x8. So only the `mv_pred` rows check the 4x4, 8x4 and 4x8 updates.
+  - MEDIUM and HIGH complexity take the same camera path (the mode only
+    switches screen content's scrolling detection), so the rows alternate
+    them.
+  - The QP 0 rows have AQ off, as the AQ floor (`iMinQp` 6) would lift every
+    macroblock off 0.
+- **Planted bugs.** Each was planted one at a time and restored from a copy.
+  The rows that fail:
+  - PredMv's top-only case taking A: 74.
+  - PredInter8x16Mv's top-left index: 1, its own row.
+  - The candidate rounding in `WelsMotionEstimateInitialPoint`: 42.
+  - The diamond search's iteration count: 16.
+  - A tie in the half-pel refinement: 3.
+  - The inter luma's single-coefficient threshold: 2.
+  - The ordinary skip test for background references: 91.
+  - The bottom temporal predictor: 80.
+  - The VAA chroma copy offset: 13.
+  - The AQ QP ceiling: 13.
+  - The background skip's chroma "too large" check off: 38.
+  - Its invisible-cost threshold times 10: 2.
+  - The VAA sign that skips the fine partitions: 33.
+
+  The two that pass move a threshold by one: the chroma "too large" 640 to
+  641, and the invisible cost 128 to 129. Random content rarely lands on a
+  threshold, and the E5b streams add coverage.
+- **Native determinism.** `WelsPSliceMdEnc`'s `SWelsMD sMd` is uninitialised
+  in C, and the C# zeroes it. Every field the loop reads is written first.
+  Three native runs give the same `kernels.tsv`.
+
 ## 1. Goal
 
 A pure managed H.264 encoder and decoder in `src/SIPSorcery.H264`, ported from
@@ -1115,6 +1183,9 @@ merges. Approximate C# sizes are in brackets.
 - **E5** P-slices at fixed QP: `svc_motion_estimate`, `mv_pred`,
   `svc_mode_decision`, `svc_base_layer_md` P and `ref_list_mgr_svc` (single
   reference). Acceptance: the stream matches native byte for byte. *[~4k]*
+  Split in two. **E5a done**: the macroblock-level inter coding, checked on
+  hand-built P contexts, ~3.8k lines. E5b: the reference list manager,
+  `DecideFrameType` and the stream match through the frame loop.
 - **E6** Rate control: `ratectl` (bitrate and quality modes, frame skip).
   Acceptance: the output matches native byte for byte with rate control on and
   preprocessing off. *[~1.5k]*

@@ -11,8 +11,9 @@
 // and SetNormalCodingFunc (E4). Then (E4b) the layer and
 // macroblock list set up (InitMbInfo, InitMbListD, InitDqLayers and the
 // FreeDqLayer/FreeRefList they fail through), GetTemporalLevel,
-// WelsInitCurrentLayer, PreprocessSliceCoding (I slices; P and screen
-// content throw until E5), WelsSwapDqLayers and PrefetchReferencePicture.
+// WelsInitCurrentLayer, PreprocessSliceCoding (I and, from E5, P slices;
+// screen content throws until Phase 4), WelsSwapDqLayers and
+// PrefetchReferencePicture.
 // RequestMemorySvc, WelsInitEncoderExt and WelsEncoderEncodeExt come with E8.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
@@ -30,6 +31,7 @@
 // 25 Nov 2026  Claude          Created (E1).
 // 26 Nov 2026  Claude          AllocStrideTables and the fast/normal coding setters (E4).
 // 26 Nov 2026  Claude          The layer set up, WelsInitCurrentLayer and PreprocessSliceCoding (E4b).
+// 26 Nov 2026  Claude          The P-slice pointers in PreprocessSliceCoding (E5).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -1742,7 +1744,7 @@ internal static unsafe partial class WelsEnc
             (*pDq)->pCountMbNumInSlice = null;
         }
 
-        // pFeatureSearchPreparation (screen content) comes with E5.
+        // pFeatureSearchPreparation (screen content) comes with Phase 4.
 
         UninitSlicePEncCtx(*pDq, pMa);
         (*pDq)->iMaxSliceNum = 0;
@@ -1812,7 +1814,7 @@ internal static unsafe partial class WelsEnc
                                        ((kiFeatureStrategyIndex << 16) + ((kiMe16x16 & 0x00FF) << 8) + (kiMe8x8 & 0x00FF));
         if (kiNeedFeatureStorage != 0)
         {
-            // The feature storage and pFeatureSearchPreparation (screen content) come with E5.
+            // The feature storage and pFeatureSearchPreparation (screen content) come with Phase 4.
             throw new NotSupportedException("InitDqLayers: screen content coding is not ported yet.");
         }
 
@@ -1928,7 +1930,7 @@ internal static unsafe partial class WelsEnc
             }
 
             // if (kiNeedFeatureStorage && iDlayerIndex == iDlayerCount - 1) { pFeatureSearchPreparation } comes
-            // with E5 (rejected above); otherwise pFeatureSearchPreparation = NULL.
+            // with Phase 4 (rejected above); otherwise pFeatureSearchPreparation = NULL.
 
             (*ppCtx)->ppDqLayerList[iDlayerIndex] = pDqLayer;
 
@@ -2177,8 +2179,31 @@ internal static unsafe partial class WelsEnc
 
         if (P_SLICE == pCtx->eSliceType)
         {
-            // The motion search, first intra mode, ME cost, scrolling and inter fine partition pointers come with E5.
-            throw new NotSupportedException("PreprocessSliceCoding: P slices are not ported yet.");
+            for (int i = 0; i < (int)BLOCK_STATIC_IDC_ALL; i++)
+            {
+                pFuncList->pfMotionSearch[i] = &WelsMotionEstimateSearch;
+            }
+            pFuncList->pfSearchMethod[BLOCK_16x16] =
+                pFuncList->pfSearchMethod[BLOCK_16x8] =
+                    pFuncList->pfSearchMethod[BLOCK_8x16] =
+                        pFuncList->pfSearchMethod[BLOCK_8x8] =
+                            pFuncList->pfSearchMethod[BLOCK_4x4] =
+                                pFuncList->pfSearchMethod[BLOCK_8x4] =
+                                    pFuncList->pfSearchMethod[BLOCK_4x8] = &WelsDiamondSearch;
+            pFuncList->pfFirstIntraMode = &WelsMdFirstIntraMode;
+            pFuncList->sSampleDealingFuncs.pfMeCost = pCtx->pFuncList->sSampleDealingFuncs.pfSampleSatd;
+            pFuncList->pfSetScrollingMv = &SetScrollingMvToMdNull;
+
+            if (bFastMode)
+            {
+                pFuncList->pfCalculateSatd = &NotCalculateSatdCost;
+                pFuncList->pfInterFineMd = &WelsMdInterFinePartitionVaa;
+            }
+            else
+            {
+                pFuncList->pfCalculateSatd = &CalculateSatdCost;
+                pFuncList->pfInterFineMd = &WelsMdInterFinePartition;
+            }
         }
         else
         {
@@ -2188,7 +2213,7 @@ internal static unsafe partial class WelsEnc
         //to init at each frame will be needed when dealing with hybrid content (camera+screen)
         if (pCtx->pSvcParam->iUsageType == SCREEN_CONTENT_REAL_TIME)
         {
-            // The screen content pointers and the FME state come with E5.
+            // The screen content pointers and the FME state come with Phase 4.
             throw new NotSupportedException("PreprocessSliceCoding: screen content coding is not ported yet.");
         }
 

@@ -1,11 +1,11 @@
 //-----------------------------------------------------------------------------
 // Filename: svc_encode_mb.cs
 //
-// Description: Port of codec/encoder/core/src/svc_encode_mb.cpp, part 1
-// (E4): the intra macroblock transform, quantisation and reconstruction
-// (WelsDctMb, WelsEncRecI16x16Y, WelsEncRecI4x4Y) and the chroma residual
-// coder WelsEncRecUV. The inter luma coder and the P skip checks follow with
-// P slices in E5.
+// Description: Port of codec/encoder/core/src/svc_encode_mb.cpp: the intra
+// macroblock transform, quantisation and reconstruction (WelsDctMb,
+// WelsEncRecI16x16Y, WelsEncRecI4x4Y), the inter luma coder WelsEncInterY,
+// the chroma residual coder WelsEncRecUV, the P skip reconstruction and the
+// P skip checks.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // Author(s):
@@ -13,6 +13,7 @@
 //
 // History:
 // 26 Nov 2026  Claude          Created (E4).
+// 26 Nov 2026  Claude          WelsEncInterY and the P skip functions (E5).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -204,7 +205,81 @@ internal static unsafe partial class WelsEnc
             pFuncList->pfCopy4x4(pPredI4x4, iRecStride, pBestPred, 4);
     }
 
-    // WelsEncInterY comes with E5.
+    public static void WelsEncInterY(SWelsFuncPtrList* pFuncList, SMB* pCurMb, SMbCache* pMbCache)
+    {
+        PQuantizationMaxFunc pfQuantizationFour4x4Max = pFuncList->pfQuantizationFour4x4Max;
+        PSetMemoryZero pfSetMemZeroSize64 = pFuncList->pfSetMemZeroSize64;
+        PScanFunc pfScan4x4 = pFuncList->pfScan4x4;
+        PCalculateSingleCtrFunc pfCalculateSingleCtr4x4 = pFuncList->pfCalculateSingleCtr4x4;
+        PGetNoneZeroCountFunc pfGetNoneZeroCount = pFuncList->pfGetNoneZeroCount;
+        PDeQuantizationFunc pfDequantizationFour4x4 = pFuncList->pfDequantizationFour4x4;
+        int16_t* pRes = pMbCache->pCoeffLevel;
+        int32_t iSingleCtrMb = 0;
+        int32_t* iSingleCtr8x8 = stackalloc int32_t[4];
+        int16_t* pBlock = (int16_t*)&pMbCache->pDct->iLumaBlock[0];
+        uint8_t uiQp = pCurMb->uiLumaQp;
+        int16_t* pMF = (int16_t*)(g_kiQuantMF + uiQp);
+        int16_t* pFF = (int16_t*)(g_kiQuantInterFF + uiQp);
+        int16_t* aMax = stackalloc int16_t[16];
+        int32_t i, j, iNoneZeroCount = 0;
+
+        for (i = 0; i < 4; i++)
+        {
+            pfQuantizationFour4x4Max(pRes, pFF, pMF, aMax + (i << 2));
+            iSingleCtr8x8[i] = 0;
+            for (j = 0; j < 4; j++)
+            {
+                if (aMax[(i << 2) + j] == 0)
+                    memset(pBlock, 0, 32);
+                else
+                {
+                    pfScan4x4(pBlock, pRes);
+                    if (aMax[(i << 2) + j] > 1)
+                        iSingleCtr8x8[i] += 9;
+                    else if (iSingleCtr8x8[i] < 6)
+                        iSingleCtr8x8[i] += pfCalculateSingleCtr4x4(pBlock);
+                }
+                pRes += 16;
+                pBlock += 16;
+            }
+            iSingleCtrMb += iSingleCtr8x8[i];
+        }
+        pBlock -= 256;
+        pRes -= 256;
+
+        memset(pCurMb->pNonZeroCount, 0, 16);
+
+
+        if (iSingleCtrMb < 6)
+        {  //from JVT-O079
+            pfSetMemZeroSize64(pRes, 768); // confirmed_safe_unsafe_usage
+        }
+        else
+        {
+            uint8_t* kpNoneZeroCountIdx = g_kuiMbCountScan4Idx;
+            for (i = 0; i < 4; i++)
+            {
+                if (iSingleCtr8x8[i] >= 4)
+                {
+                    for (j = 0; j < 4; j++)
+                    {
+                        iNoneZeroCount = pfGetNoneZeroCount(pBlock);
+                        pCurMb->pNonZeroCount[*kpNoneZeroCountIdx++] = (int8_t)iNoneZeroCount;
+                        pBlock += 16;
+                    }
+                    pfDequantizationFour4x4(pRes, (uint16_t*)(g_kuiDequantCoeff + uiQp));
+                    pCurMb->uiCbp |= (uint8_t)(1 << i);
+                }
+                else
+                { // set zero for an 8x8 pBlock
+                    pfSetMemZeroSize64(pRes, 128); // confirmed_safe_unsafe_usage
+                    kpNoneZeroCountIdx += 4;
+                    pBlock += 64;
+                }
+                pRes += 64;
+            }
+        }
+    }
 
     public static void WelsEncRecUV(SWelsFuncPtrList* pFuncList, SMB* pCurMb, SMbCache* pMbCache, int16_t* pRes, int32_t iUV)
     {
@@ -287,5 +362,82 @@ internal static unsafe partial class WelsEnc
         }
     }
 
-    // WelsRecPskip, WelsTryPYskip and WelsTryPUVskip come with E5.
+    public static void WelsRecPskip(SDqLayer* pCurLayer, SWelsFuncPtrList* pFuncList, SMB* pCurMb, SMbCache* pMbCache)
+    {
+        int32_t* iRecStride = pCurLayer->iCsStride;
+        uint8_t** pCsMb = (uint8_t**)&pMbCache->SPicData.pCsMb;
+
+        pFuncList->pfCopy16x16Aligned(pCsMb[0], *iRecStride++, pMbCache->pSkipMb, 16);
+        pFuncList->pfCopy8x8Aligned(pCsMb[1], *iRecStride++, pMbCache->pSkipMb + 256, 8);
+        pFuncList->pfCopy8x8Aligned(pCsMb[2], *iRecStride, pMbCache->pSkipMb + 320, 8);
+        memset(pCurMb->pNonZeroCount, 0, 24);
+    }
+
+    public static bool WelsTryPYskip(sWelsEncCtx* pEncCtx, SMB* pCurMb, SMbCache* pMbCache)
+    {
+        int32_t iSingleCtrMb = 0;
+        int16_t* pRes = pMbCache->pCoeffLevel;
+        uint8_t kuiQp = pCurMb->uiLumaQp;
+
+        int16_t* pBlock = (int16_t*)&pMbCache->pDct->iLumaBlock[0];
+        uint16_t* aMax = stackalloc uint16_t[4];
+        uint16_t i, j;
+        int16_t* pMF = (int16_t*)(g_kiQuantMF + kuiQp);
+        int16_t* pFF = (int16_t*)(g_kiQuantInterFF + kuiQp);
+
+        for (i = 0; i < 4; i++)
+        {
+            pEncCtx->pFuncList->pfQuantizationFour4x4Max(pRes, pFF, pMF, (int16_t*)aMax);
+
+            for (j = 0; j < 4; j++)
+            {
+                if (aMax[j] > 1) return false; // iSingleCtrMb += 9, can't be P_SKIP
+                else if (aMax[j] == 1)
+                {
+                    pEncCtx->pFuncList->pfScan4x4(pBlock, pRes); //
+                    iSingleCtrMb += pEncCtx->pFuncList->pfCalculateSingleCtr4x4(pBlock);
+                }
+                if (iSingleCtrMb >= 6) return false; //from JVT-O079
+                pRes += 16;
+                pBlock += 16;
+            }
+        }
+        return true;
+    }
+
+    public static bool WelsTryPUVskip(sWelsEncCtx* pEncCtx, SMB* pCurMb, SMbCache* pMbCache, int32_t iUV)
+    {
+        int16_t* pRes = ((iUV == 1) ? &(pMbCache->pCoeffLevel[256]) : &(pMbCache->pCoeffLevel[256 + 64]));
+
+        uint8_t kuiQp = g_kuiChromaQpTable[CLIP3_QP_0_51(pCurMb->uiLumaQp +
+                                                         pEncCtx->pCurDqLayer->sLayerInfo.pPpsP->uiChromaQpIndexOffset)];
+
+        int16_t* pMF = (int16_t*)(g_kiQuantMF + kuiQp);
+        int16_t* pFF = (int16_t*)(g_kiQuantInterFF + kuiQp);
+
+        if (pEncCtx->pFuncList->pfQuantizationHadamard2x2Skip(pRes, (int16_t)(pFF[0] << 1), (int16_t)(pMF[0] >> 1)) != 0)
+            return false;
+        else
+        {
+            uint16_t* aMax = stackalloc uint16_t[4];
+            uint16_t j;
+            int32_t iSingleCtrMb = 0;
+            int16_t* pBlock = (int16_t*)&pMbCache->pDct->iChromaBlock[(iUV - 1) << 2];
+            pEncCtx->pFuncList->pfQuantizationFour4x4Max(pRes, pFF, pMF, (int16_t*)aMax);
+
+            for (j = 0; j < 4; j++)
+            {
+                if (aMax[j] > 1) return false;   // iSingleCtrMb += 9, can't be P_SKIP
+                else if (aMax[j] == 1)
+                {
+                    pEncCtx->pFuncList->pfScan4x4Ac(pBlock, pRes);
+                    iSingleCtrMb += pEncCtx->pFuncList->pfCalculateSingleCtr4x4(pBlock);
+                }
+                if (iSingleCtrMb >= 7) return false; //from JVT-O079
+                pRes += 16;
+                pBlock += 16;
+            }
+            return true;
+        }
+    }
 }

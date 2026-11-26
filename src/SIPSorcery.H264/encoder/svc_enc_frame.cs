@@ -4,8 +4,8 @@
 // Description: Port of codec/encoder/core/inc/svc_enc_frame.h (E3, E4):
 // the layer information and the DQ layer. SDqLayer is partial: the picture
 // pointers (pRefPic, pDecPic, pRefOri) arrived with SPicture in E4, and
-// pFeatureSearchPreparation (with SFeatureSearchPreparation) with the motion
-// search in E5. As with sWelsEncCtx, the port never copies or memsets a whole
+// pFeatureSearchPreparation (with SFeatureSearchPreparation) comes with the
+// screen content feature search in Phase 4. As with sWelsEncCtx, the port never copies or memsets a whole
 // SDqLayer, so the missing fields don't move any that are read.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
@@ -62,7 +62,7 @@ namespace SIPSorcery.H264.Encoder;
 
 ///////////////////////////////////DQ Layer level///////////////////////////////////
 
-// typedef struct TagFeatureSearchPreparation SFeatureSearchPreparation comes with E5.
+// typedef struct TagFeatureSearchPreparation SFeatureSearchPreparation comes with Phase 4 (screen content).
 
 /// <summary>TagSliceBufferInfo.</summary>
 internal unsafe struct SSliceBufferInfo
@@ -126,7 +126,7 @@ internal unsafe struct SDqLayer
 
     public bool bNeedAdjustingSlicing;
 
-    // SFeatureSearchPreparation* pFeatureSearchPreparation comes with E5.
+    // SFeatureSearchPreparation* pFeatureSearchPreparation comes with Phase 4 (screen content).
 
     public SDqLayer* pRefLayer;                 // pointer to referencing dq_layer of current layer to be decoded
 }

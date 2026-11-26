@@ -8,8 +8,9 @@
 // AllocMbCacheAligned, FreeMbCache, InitSliceBoundaryInfo,
 // SetSliceBoundaryInfo), then (E4b) the slice header writers,
 // WelsCodeOneSlice and the slice lists (InitSliceInLayer and what it calls).
-// The P-slice loops follow in E5, and the SM_SIZELIMITED_SLICE coders and
-// buffer growth in Phase 4.
+// Then (E5) the P-slice coder: WelsCodePSlice, WelsPSliceMdEnc,
+// WelsMdInterMbLoop and the inter macroblock encode and reconstruction. The
+// SM_SIZELIMITED_SLICE coders and buffer growth follow in Phase 4.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // CABAC is not ported: WelsISliceMdEnc throws NotSupportedException when
@@ -21,6 +22,7 @@
 // History:
 // 26 Nov 2026  Claude          Created (E4).
 // 26 Nov 2026  Claude          Slice headers, WelsCodeOneSlice and the slice lists (E4b).
+// 26 Nov 2026  Claude          The P-slice coder (E5).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -60,6 +62,7 @@
  */
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace SIPSorcery.H264.Encoder;
 
@@ -462,7 +465,14 @@ internal static unsafe partial class WelsEnc
         }
     }
 
-    // WelsInterMbEncode comes with E5.
+    public static void WelsInterMbEncode(sWelsEncCtx* pEncCtx, SSlice* pSlice, SMB* pCurMb)
+    {
+        SMbCache* pMbCache = &pSlice->sMbCacheInfo;
+
+        WelsDctMb(pMbCache->pCoeffLevel, pMbCache->SPicData.pEncMb[0], pEncCtx->pCurDqLayer->iEncStride[0],
+                  pMbCache->pMemPredLuma, pEncCtx->pFuncList->pfDctFourT4);
+        WelsEncInterY(pEncCtx->pFuncList, pCurMb, pMbCache);
+    }
 
     //only BaseLayer inter MB and SpatialLayer (uiQualityId = 0) inter MB calling this pFunc.
     //only for I SSlice
@@ -488,7 +498,43 @@ internal static unsafe partial class WelsEnc
         pFunc->pfIDctFourT4(pCsCr, kiCsStride, pBestPred + 64, 8, pCurRS + 64);
     }
 
-    // WelsPMbChromaEncode and OutputPMbWithoutConstructCsRsNoCopy come with E5.
+    //only BaseLayer inter MB and SpatialLayer (uiQualityId = 0) inter MB calling this pFunc.
+    //only for I SSlice
+    public static void WelsPMbChromaEncode(sWelsEncCtx* pEncCtx, SSlice* pSlice, SMB* pCurMb)
+    {
+        SWelsFuncPtrList* pFunc = pEncCtx->pFuncList;
+        SDqLayer* pCurLayer = pEncCtx->pCurDqLayer;
+        int32_t kiEncStride = pCurLayer->iEncStride[1];
+        SMbCache* pMbCache = &pSlice->sMbCacheInfo;
+        int16_t* pCurRS = pMbCache->pCoeffLevel + 256;
+        uint8_t* pBestPred = pMbCache->pMemPredChroma;
+
+        pFunc->pfDctFourT4(pCurRS, pMbCache->SPicData.pEncMb[1], kiEncStride, pBestPred, 8);
+        pFunc->pfDctFourT4(pCurRS + 64, pMbCache->SPicData.pEncMb[2], kiEncStride, pBestPred + 64, 8);
+
+        WelsEncRecUV(pFunc, pCurMb, pMbCache, pCurRS, 1);
+        WelsEncRecUV(pFunc, pCurMb, pMbCache, pCurRS + 64, 2);
+    }
+
+    public static void OutputPMbWithoutConstructCsRsNoCopy(sWelsEncCtx* pCtx, SDqLayer* pDq, SSlice* pSlice, SMB* pMb)
+    {
+        if ((IS_INTER(pMb->uiMbType) && !IS_SKIP(pMb->uiMbType))
+            || IS_I_BL(pMb->uiMbType))
+        { //intra have been reconstructed, NO COPY from CS to pDecPic--
+            SMbCache* pMbCache = &pSlice->sMbCacheInfo;
+            uint8_t* pDecY = pMbCache->SPicData.pDecMb[0];
+            uint8_t* pDecU = pMbCache->SPicData.pDecMb[1];
+            uint8_t* pDecV = pMbCache->SPicData.pDecMb[2];
+            int16_t* pScaledTcoeff = pMbCache->pCoeffLevel;
+            int32_t kiDecStrideLuma = pDq->pDecPic->iLineSize[0];
+            int32_t kiDecStrideChroma = pDq->pDecPic->iLineSize[1];
+            PIDctFunc pfIdctFour4x4 = pCtx->pFuncList->pfIDctFourT4;
+
+            WelsIDctT4RecOnMb(pDecY, kiDecStrideLuma, pDecY, kiDecStrideLuma, pScaledTcoeff, pfIdctFour4x4);
+            pfIdctFour4x4(pDecU, kiDecStrideChroma, pDecU, kiDecStrideChroma, pScaledTcoeff + 256);
+            pfIdctFour4x4(pDecV, kiDecStrideChroma, pDecV, kiDecStrideChroma, pScaledTcoeff + 320);
+        }
+    }
 
     //only BaseLayer inter MB and SpatialLayer (uiQualityId = 0) inter MB calling this pFunc.
     //for P SSlice (intra part + inter part)
@@ -572,20 +618,62 @@ internal static unsafe partial class WelsEnc
     }
 
     // WelsISliceMdEncDynamic and WelsCodePOverDynamicSlice (SM_SIZELIMITED_SLICE) come with
-    // Phase 4, and WelsPSliceMdEnc, WelsPSliceMdEncDynamic and WelsCodePSlice with E5.
+    // Phase 4, with WelsPSliceMdEncDynamic and WelsMdInterMbLoopOverDynamicSlice.
+
+    public static int32_t WelsPSliceMdEnc(sWelsEncCtx* pEncCtx, SSlice* pSlice, bool kbIsHighestDlayerFlag)
+    { //pMd + encoding
+        SSliceHeaderExt* kpShExt = &pSlice->sSliceHeaderExt;
+        SSliceHeader* kpSh = &kpShExt->sSliceHeader;
+        int32_t kiSliceFirstMbXY = kpSh->iFirstMbInSlice;
+        // SWelsMD sMd; is uninitialised in C. Every field the loop reads is written first, so
+        // zeroing it changes nothing and keeps the C# deterministic when sMe isn't cleared below.
+        SWelsMD sMd = default;
+
+        sMd.uiRef = kpSh->uiRefIndex;
+        sMd.bMdUsingSad = (pEncCtx->pSvcParam->iComplexityMode == LOW_COMPLEXITY);
+        if (!pEncCtx->pCurDqLayer->bBaseLayerAvailableFlag || !kbIsHighestDlayerFlag)
+            sMd.sMe = default; // memset (&sMd.sMe, 0, sizeof (sMd.sMe));
+
+        //pMb loop
+        return WelsMdInterMbLoop(pEncCtx, pSlice, &sMd, kiSliceFirstMbXY);
+    }
+
+    public static int32_t WelsCodePSlice(sWelsEncCtx* pEncCtx, SSlice* pSlice)
+    {
+        //pSlice-level init should be outside and before this function
+        SDqLayer* pCurLayer = pEncCtx->pCurDqLayer;
+
+        bool kbBaseAvail = pCurLayer->bBaseLayerAvailableFlag;
+        bool kbHighestSpatial = pEncCtx->pSvcParam->iSpatialLayerNum ==
+                                (pCurLayer->sLayerInfo.sNalHeaderExt.uiDependencyId + 1);
+
+        //MD switch
+        if (kbBaseAvail && kbHighestSpatial)
+        {
+            //initial pMd pointer
+            // pEncCtx->pFuncList->pfInterMd = WelsMdInterMbEnhancelayer: the spatial enhancement layers come with Phase 4.
+            throw new NotSupportedException("WelsCodePSlice: inter-layer prediction (spatial enhancement layers) is not ported yet.");
+        }
+        else
+        {
+            //initial pMd pointer
+            pEncCtx->pFuncList->pfInterMd = &WelsMdInterMb;
+        }
+        return WelsPSliceMdEnc(pEncCtx, pSlice, kbHighestSpatial);
+    }
 
     // static const PWelsCodingSliceFunc g_pWelsSliceCoding[2][2] = {
     //   { WelsCodePSlice, WelsCodePOverDynamicSlice }, // P SSlice
     //   { WelsISliceMdEnc, WelsISliceMdEncDynamic }    // I SSlice
     // };
-    // Only the I-slice entry is ported so far, so the table is a switch that rejects the rest.
+    // The dynamic (SM_SIZELIMITED_SLICE) entries are not ported yet, so the table is a switch that rejects them.
     private static int32_t g_pWelsSliceCoding(bool bIdrFlag, int32_t kiDynamicSliceFlag, sWelsEncCtx* pCtx, SSlice* pSlice) =>
         (bIdrFlag, kiDynamicSliceFlag != 0) switch
         {
             (true, false) => WelsISliceMdEnc(pCtx, pSlice),
             (true, true) => throw new NotSupportedException("WelsISliceMdEncDynamic: SM_SIZELIMITED_SLICE is not ported yet."),
-            (false, false) => throw new NotSupportedException("WelsCodePSlice: P slices are not ported yet."),
-            (false, true) => throw new NotSupportedException("WelsCodePOverDynamicSlice: P slices are not ported yet."),
+            (false, false) => WelsCodePSlice(pCtx, pSlice),
+            (false, true) => throw new NotSupportedException("WelsCodePOverDynamicSlice: SM_SIZELIMITED_SLICE is not ported yet."),
         };
 
     // static const PWelsSliceHeaderWriteFunc g_pWelsWriteSliceHeader[2] = {  // 0: for base; 1: for ext;
@@ -1151,6 +1239,115 @@ internal static unsafe partial class WelsEnc
     }
 
     // UpdateMbNeighbourInfoForNextSlice, AddSliceBoundary and DynSlcJudgeSliceBoundaryStepBack
-    // (SM_SIZELIMITED_SLICE) come with Phase 4, and WelsInitInterMDStruc, WelsMdInterMbLoop and
-    // WelsMdInterMbLoopOverDynamicSlice with E5 and Phase 4.
+    // (SM_SIZELIMITED_SLICE) come with Phase 4.
+
+    //Allocate slice's MB cache buffer
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void WelsInitInterMDStruc(SMB* pCurMb, uint16_t* pMvdCostTable, int32_t kiMvdInterTableStride,
+                                            SWelsMD* pMd)
+    {
+        pMd->iLambda = g_kiQpCostTable[pCurMb->uiLumaQp];
+        pMd->pMvdCost = &pMvdCostTable[pCurMb->uiLumaQp * kiMvdInterTableStride];
+        pMd->iMbPixX = (pCurMb->iMbX << 4);
+        pMd->iMbPixY = (pCurMb->iMbY << 4);
+        memset(&pMd->iBlock8x8StaticIdc[0], 0, sizeof(int32_t) * 4);
+    }
+
+    // for inter non-dynamic pSlice
+    public static int32_t WelsMdInterMbLoop(sWelsEncCtx* pEncCtx, SSlice* pSlice, void* pWelsMd, int32_t kiSliceFirstMbXY)
+    {
+        SWelsMD* pMd = (SWelsMD*)pWelsMd;
+        SBitStringAux* pBs = pSlice->pSliceBsa;
+        SDqLayer* pCurLayer = pEncCtx->pCurDqLayer;
+        SMbCache* pMbCache = &pSlice->sMbCacheInfo;
+        SMB* pMbList = pCurLayer->sMbDataP;
+        SMB* pCurMb = null;
+        int32_t iNumMbCoded = 0;
+        int32_t iNextMbIdx = kiSliceFirstMbXY;
+        int32_t iCurMbIdx = -1;
+        int32_t kiTotalNumMb = pCurLayer->iMbWidth * pCurLayer->iMbHeight;
+        int32_t kiMvdInterTableStride = pEncCtx->iMvdCostTableStride;
+        uint16_t* pMvdCostTable = &pEncCtx->pMvdCostTable[pEncCtx->iMvdCostTableSize];
+        int32_t kiSliceIdx = pSlice->iSliceIdx;
+        uint8_t kuiChromaQpIndexOffset = (uint8_t)pCurLayer->sLayerInfo.pPpsP->uiChromaQpIndexOffset;
+        int32_t iEncReturn = ENC_RETURN_SUCCESS;
+        SDynamicSlicingStack sDss;
+        if (pEncCtx->pSvcParam->iEntropyCodingModeFlag != 0)
+        {
+            // WelsInitSliceCabac (pEncCtx, pSlice); sDss.pRestoreBuffer = NULL; sDss.iStartPos = sDss.iCurrentPos = 0;
+            throw new NotSupportedException("WelsMdInterMbLoop: CABAC encoding is not supported by this port.");
+        }
+        pSlice->iMbSkipRun = 0;
+        for (; ; )
+        {
+            if (pEncCtx->pSvcParam->iEntropyCodingModeFlag == 0)
+                pEncCtx->pFuncList->pfStashMBStatus(&sDss, pSlice, pSlice->iMbSkipRun);
+            //point to current pMb
+            iCurMbIdx = iNextMbIdx;
+            pCurMb = &pMbList[iCurMbIdx];
+
+
+            //step(1): set QP for the current MB
+            pEncCtx->pFuncList->pfRc.pfWelsRcMbInit(pEncCtx, pCurMb, pSlice);
+
+            //step (2). save some vale for future use, initial pWelsMd
+            WelsMdIntraInit(pEncCtx, pCurMb, pMbCache, kiSliceFirstMbXY);
+            WelsMdInterInit(pEncCtx, pSlice, pCurMb, kiSliceFirstMbXY);
+
+        TRY_REENCODING:
+            WelsInitInterMDStruc(pCurMb, pMvdCostTable, kiMvdInterTableStride, pMd);
+            pEncCtx->pFuncList->pfInterMd(pEncCtx, pMd, pSlice, pCurMb, pMbCache);
+            //mb_qp
+
+            //step (4): save from the MD process from future use
+            WelsMdInterSaveSadAndRefMbType((pCurLayer->pDecPic->uiRefMbType), pMbCache, pCurMb, pMd);
+
+            pEncCtx->pFuncList->pfMdBackgroundInfoUpdate(pCurLayer, pCurMb, pMbCache->bCollocatedPredFlag,
+                                                         pEncCtx->pRefPic->iPictureType);
+
+            //step (5): update cache
+            UpdateNonZeroCountCache(pCurMb, pMbCache);
+
+            //step (6): begin to write bit stream; if the pSlice size is controlled, the writing may be skipped
+
+            iEncReturn = pEncCtx->pFuncList->pfWelsSpatialWriteMbSyn(pEncCtx, pSlice, pCurMb);
+            if (pEncCtx->pSvcParam->iEntropyCodingModeFlag == 0)
+            {
+                if (iEncReturn == ENC_RETURN_VLCOVERFLOWFOUND && (pCurMb->uiLumaQp < 50))
+                {
+                    pSlice->iMbSkipRun = pEncCtx->pFuncList->pfStashPopMBStatus(&sDss, pSlice);
+                    UpdateQpForOverflow(pCurMb, kuiChromaQpIndexOffset);
+                    goto TRY_REENCODING;
+                }
+            }
+            if (ENC_RETURN_SUCCESS != iEncReturn)
+                return iEncReturn;
+
+
+            //step (7): reconstruct current MB
+            pCurMb->uiSliceIdc = (uint16_t)kiSliceIdx;
+            OutputPMbWithoutConstructCsRsNoCopy(pEncCtx, pCurLayer, pSlice, pCurMb);
+
+            // WelsCountMbType (MB_TYPES_CHECK) is off upstream.
+
+            //step (8): update status and other parameters
+            pEncCtx->pFuncList->pfRc.pfWelsRcMbInfoUpdate(pEncCtx, pCurMb, pMd->iCostLuma, pSlice);
+
+            /*judge if all pMb in cur pSlice has been encoded*/
+            ++iNumMbCoded;
+            iNextMbIdx = WelsGetNextMbOfSlice(pCurLayer, iCurMbIdx);
+            //whether all of MB in current pSlice encoded or not
+            if (iNextMbIdx == -1 || iNextMbIdx >= kiTotalNumMb || iNumMbCoded >= kiTotalNumMb)
+            {
+                break;
+            }
+        }
+
+        if (pSlice->iMbSkipRun != 0)
+        {
+            BsWriteUE(pBs, (uint32_t)pSlice->iMbSkipRun);
+        }
+
+        return iEncReturn;
+    }
 }

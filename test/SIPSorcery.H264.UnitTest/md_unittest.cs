@@ -5,13 +5,15 @@
 // in reference/kernels.tsv, refharness src/islice_encoder.cpp
 // KernelsMdIntra): the neighbour cache fill, the two VAA analysis kernels, and
 // rows that put MdInterAnalysisVaaInfo_c on ties and MdIntraAnalysisVaaInfo on
-// its variance threshold.
+// its variance threshold; and MvdCostInit, the inter half's MVD cost table
+// (refharness src/pslice_encoder.cpp KernelsMdInter).
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 26 Nov 2026  Claude          Created (E4).
+// 26 Nov 2026  Claude          MvdCostInit (E5).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -47,6 +49,7 @@ public unsafe class md_unittest
             nameof(MdInterAnalysisVaaInfo_c) => VaaInter(row),
             nameof(FillNeighborCacheIntra) => NeighbourCache(row),
             nameof(MdIntraAnalysisVaaInfo) => VaaIntraThreshold(row),
+            nameof(MvdCostInit) => MvdCost(row),
             _ => throw new ArgumentException($"No C# kernel {kernel}."),
         };
         Assert.Equal(sha1, actual);
@@ -182,13 +185,28 @@ public unsafe class md_unittest
         }
     }
 
+    // MvdCostInit's whole table (52 QP rows) over a random buffer with 8 guard
+    // entries, for an MV range of the P rows.
+    private static string MvdCost(KernelFixture row)
+    {
+        int iMvRange = row.Param("mvrange");
+        int kiMvdRange = Math.Min((iMvRange + 1) << 1, CAMERA_MVD_RANGE);
+        int kiStride = 1 + ((kiMvdRange << 2) << 1);
+        int kiEntries = 52 * kiStride + 8;
+        using var table = new NativeBuffer(kiEntries * sizeof(ushort));
+        var g = new FixtureRng((uint)iMvRange);
+        g.Fill(table.Span);
+        MvdCostInit((ushort*)table.Ptr, kiStride);
+        return FixtureHasher.Of(table.Span);
+    }
+
     [Fact]
     public void Group_HasEveryKernel()
     {
         var kernels = KernelFixtures.Group(GroupName).Select(r => (string)r[0]).Distinct().OrderBy(k => k, StringComparer.Ordinal);
         Assert.Equal(
             new[] { nameof(AnalysisVaaInfoIntra_c), nameof(FillNeighborCacheIntra), nameof(MdInterAnalysisVaaInfo_c),
-                    nameof(MdIntraAnalysisVaaInfo) },
+                    nameof(MdIntraAnalysisVaaInfo), nameof(MvdCostInit) },
             kernels);
     }
 }

@@ -141,6 +141,56 @@ global using unsafe PIntraFineMdFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEn
 // typedef void (*PMdBackgroundInfoUpdateFunc) (SDqLayer* pCurLayer,  SMB* pCurMb, const bool bFlag,
 //                                              const int32_t kiRefPictureType);
 global using unsafe PMdBackgroundInfoUpdateFunc = delegate*<SIPSorcery.H264.Encoder.SDqLayer*, SIPSorcery.H264.Encoder.SMB*, bool, int, void>;
+// typedef void (*PInterFineMdFunc) (sWelsEncCtx* pEncCtx, SWelsMD* pWelsMd, SSlice* slice, SMB* pCurMb, int32_t bestCost);
+global using unsafe PInterFineMdFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, SIPSorcery.H264.Encoder.SWelsMD*,
+                                                 SIPSorcery.H264.Encoder.SSlice*, SIPSorcery.H264.Encoder.SMB*, int, void>;
+// typedef bool (*PInterMdFirstIntraModeFunc) (sWelsEncCtx* pEncCtx, SWelsMD* pWelsMd, SMB* pCurMb, SMbCache* pMbCache);
+global using unsafe PInterMdFirstIntraModeFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, SIPSorcery.H264.Encoder.SWelsMD*,
+                                                           SIPSorcery.H264.Encoder.SMB*, SIPSorcery.H264.Encoder.SMbCache*, bool>;
+// typedef void (*PFillInterNeighborCacheFunc) (SMbCache* pMbCache, SMB* pCurMb, int32_t iMbWidth, int8_t* pVaaBgMbFlag);
+global using unsafe PFillInterNeighborCacheFunc = delegate*<SIPSorcery.H264.Encoder.SMbCache*, SIPSorcery.H264.Encoder.SMB*, int,
+                                                            sbyte*, void>;
+// typedef bool (*PInterMdBackgroundDecisionFunc) (sWelsEncCtx* pEncCtx, SWelsMD* pWelsMd, SSlice* slice, SMB* pCurMb,
+//                                                 SMbCache* pMbCache, bool* pKeepPskip);
+global using unsafe PInterMdBackgroundDecisionFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, SIPSorcery.H264.Encoder.SWelsMD*,
+                                                               SIPSorcery.H264.Encoder.SSlice*, SIPSorcery.H264.Encoder.SMB*,
+                                                               SIPSorcery.H264.Encoder.SMbCache*, bool*, bool>;
+// typedef bool (*PInterMdScrollingPSkipDecisionFunc) (sWelsEncCtx* pEncCtx, SWelsMD* pWelsMd, SSlice* slice, SMB* pCurMb,
+//                                                     SMbCache* pMbCache);
+global using unsafe PInterMdScrollingPSkipDecisionFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, SIPSorcery.H264.Encoder.SWelsMD*,
+                                                                   SIPSorcery.H264.Encoder.SSlice*, SIPSorcery.H264.Encoder.SMB*,
+                                                                   SIPSorcery.H264.Encoder.SMbCache*, bool>;
+// typedef void (*PSetScrollingMv) (SVAAFrameInfo* pVaa, SWelsMD* pMd);
+global using unsafe PSetScrollingMv = delegate*<SIPSorcery.H264.Encoder.SVAAFrameInfo*, SIPSorcery.H264.Encoder.SWelsMD*, void>;
+// typedef void (*PInterMdFunc) (sWelsEncCtx* pEncCtx, SWelsMD* pWelsMd, SSlice* slice, SMB* pCurMb, SMbCache* pMbCache);
+global using unsafe PInterMdFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, SIPSorcery.H264.Encoder.SWelsMD*,
+                                             SIPSorcery.H264.Encoder.SSlice*, SIPSorcery.H264.Encoder.SMB*,
+                                             SIPSorcery.H264.Encoder.SMbCache*, void>;
+// typedef uint32_t (*PSampleSadHor8Func) (uint8_t*, int32_t, uint8_t*, int32_t, uint16_t*, int32_t*);
+global using unsafe PSampleSadHor8Func = delegate*<byte*, int, byte*, int, ushort*, int*, uint>;
+// typedef void (*PMotionSearchFunc) (SWelsFuncPtrList* pFuncList, SDqLayer* pCurDqLayer, SWelsME* pMe, SSlice* pSlice);
+global using unsafe PMotionSearchFunc = delegate*<SIPSorcery.H264.Encoder.SWelsFuncPtrList*, SIPSorcery.H264.Encoder.SDqLayer*,
+                                                  SIPSorcery.H264.Encoder.SWelsME*, SIPSorcery.H264.Encoder.SSlice*, void>;
+// typedef void (*PSearchMethodFunc) (SWelsFuncPtrList* pFuncList, SWelsME* pMe, SSlice* pSlice, const int32_t kiEncStride,
+//                                    const int32_t kiRefStride);
+global using unsafe PSearchMethodFunc = delegate*<SIPSorcery.H264.Encoder.SWelsFuncPtrList*, SIPSorcery.H264.Encoder.SWelsME*,
+                                                  SIPSorcery.H264.Encoder.SSlice*, int, int, void>;
+// typedef void (*PCalculateSatdFunc) (PSampleSadSatdCostFunc pSatd, SWelsME* pMe, const int32_t kiEncStride,
+//                                     const int32_t kiRefStride);
+global using unsafe PCalculateSatdFunc = delegate*<delegate*<byte*, int, byte*, int, int>, SIPSorcery.H264.Encoder.SWelsME*, int, int, void>;
+// typedef bool (*PCheckDirectionalMv) (PSampleSadSatdCostFunc pSad, SWelsME* pMe,
+//                                      const SMVUnitXY ksMinMv, const SMVUnitXY ksMaxMv, const int32_t kiEncStride, const int32_t kiRefStride,
+//                                      int32_t& iBestSadCost);
+global using unsafe PCheckDirectionalMv = delegate*<delegate*<byte*, int, byte*, int, int>, SIPSorcery.H264.Encoder.SWelsME*,
+                                                    SIPSorcery.H264.Encoder.SMVUnitXY, SIPSorcery.H264.Encoder.SMVUnitXY, int, int,
+                                                    int*, bool>;
+// typedef void (*PLineFullSearchFunc) (SWelsFuncPtrList* pFuncList, SWelsME* pMe, uint16_t* pMvdTable,
+//                                      const int32_t kiEncStride, const int32_t kiRefStride,
+//                                      const int16_t kiMinMv, const int16_t kiMaxMv, const bool bVerticalSearch);
+global using unsafe PLineFullSearchFunc = delegate*<SIPSorcery.H264.Encoder.SWelsFuncPtrList*, SIPSorcery.H264.Encoder.SWelsME*,
+                                                    ushort*, int, int, short, short, bool, void>;
+// typedef void (*PUpdateFMESwitch) (SDqLayer* pCurLayer);
+global using unsafe PUpdateFMESwitch = delegate*<SIPSorcery.H264.Encoder.SDqLayer*, void>;
 
 namespace SIPSorcery.H264.Encoder;
 
@@ -214,26 +264,43 @@ internal unsafe struct DeblockingFunc
 /// <summary>TagWelsFuncPointerList (partial, see the file header).</summary>
 internal unsafe struct SWelsFuncPtrList
 {
-    // SExpandPicFunc sExpandPicFunc (used by WelsUpdateRefList) and PFillInterNeighborCacheFunc
-    // pfFillInterNeighborCache come with E5.
+    public SExpandPicFunc sExpandPicFunc;
+    public PFillInterNeighborCacheFunc pfFillInterNeighborCache;
+
     public PGetVarianceFromIntraVaaFunc pfGetVarianceFromIntraVaa;
     public PGetMbSignFromInterVaaFunc pfGetMbSignFromInterVaa;
     public PUpdateMbMvFunc pfUpdateMbMv;
-    // PInterMdFirstIntraModeFunc pfFirstIntraMode comes with E5.
+    public PInterMdFirstIntraModeFunc pfFirstIntraMode; //svc_encode_slice.c svc_mode_decision.c svc_base_layer_md.c
     public PIntraFineMdFunc pfIntraFineMd;  //svc_encode_slice.c svc_mode_decision.c svc_base_layer_md.c
-    // pfInterFineMd, pfInterMd and pfInterMdBackgroundDecision come with E5.
-    public PMdBackgroundInfoUpdateFunc pfMdBackgroundInfoUpdate;
-    // pfSCDPSkipDecision, pfSetScrollingMv and SMcFunc sMcFuncs come with E5.
+    public PInterFineMdFunc pfInterFineMd;  //svc_encode_slice.c svc_base_layer_md.c
+    public PInterMdFunc pfInterMd;
 
+    public PInterMdBackgroundDecisionFunc pfInterMdBackgroundDecision;
+    public PMdBackgroundInfoUpdateFunc pfMdBackgroundInfoUpdate;
+
+    public PInterMdScrollingPSkipDecisionFunc pfSCDPSkipDecision;
+    public PSetScrollingMv pfSetScrollingMv;
+
+    public SMcFunc sMcFuncs;
     public SSampleDealingFunc sSampleDealingFuncs;
 #pragma warning disable CS0649 // written through the function-pointer array properties below
     private InlineArray7<nint> _pfGetLumaI16x16Pred;
     private InlineArray14<nint> _pfGetLumaI4x4Pred;
     private InlineArray7<nint> _pfGetChromaPred;
-#pragma warning restore CS0649
 
-    // pfSampleSadHor8 and the motion search pointers (pfMotionSearch .. pfUpdateFMESwitch)
-    // come with E5.
+    private InlineArray2<nint> _pfSampleSadHor8;     // 1: for 16x16 square; 0: for 8x8 square
+    private InlineArray3<nint> _pfMotionSearch;      // [BLOCK_STATIC_IDC_ALL] svc_encode_slice.c svc_mode_decision.c svc_enhance_layer_md.c svc_base_layer_md.c
+    private InlineArray7<nint> _pfSearchMethod;      // [BLOCK_SIZE_ALL]
+#pragma warning restore CS0649
+    public PCalculateSatdFunc pfCalculateSatd;
+    public PCheckDirectionalMv pfCheckDirectionalMv;
+
+    // The feature search pointers (pfInitializeHashforFeature, pfFillQpelLocationByFeatureValue,
+    // pfCalculateBlockFeatureOfFrame[2] and pfCalculateSingleBlockFeature[2]) are for screen
+    // content, which comes with Phase 4.
+    public PLineFullSearchFunc pfVerticalFullSearch;
+    public PLineFullSearchFunc pfHorizontalFullSearch;
+    public PUpdateFMESwitch pfUpdateFMESwitch;
 
     public PCopyFunc pfCopy16x16Aligned;    //svc_encode_slice.c svc_mode_decision.c svc_base_layer_md.c
     public PCopyFunc pfCopy16x16NotAligned;  //md.c
@@ -305,5 +372,26 @@ internal unsafe struct SWelsFuncPtrList
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => (PGetIntraPredFuncEnc*)Unsafe.AsPointer(ref _pfGetChromaPred);
+    }
+
+    /// <summary>PSampleSadHor8Func pfSampleSadHor8[2].</summary>
+    public PSampleSadHor8Func* pfSampleSadHor8
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => (PSampleSadHor8Func*)Unsafe.AsPointer(ref _pfSampleSadHor8);
+    }
+
+    /// <summary>PMotionSearchFunc pfMotionSearch[BLOCK_STATIC_IDC_ALL].</summary>
+    public PMotionSearchFunc* pfMotionSearch
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => (PMotionSearchFunc*)Unsafe.AsPointer(ref _pfMotionSearch);
+    }
+
+    /// <summary>PSearchMethodFunc pfSearchMethod[BLOCK_SIZE_ALL].</summary>
+    public PSearchMethodFunc* pfSearchMethod
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => (PSearchMethodFunc*)Unsafe.AsPointer(ref _pfSearchMethod);
     }
 }

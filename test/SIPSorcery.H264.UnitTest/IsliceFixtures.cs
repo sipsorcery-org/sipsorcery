@@ -145,6 +145,9 @@ internal sealed unsafe class IsliceCtx : IDisposable
 {
     private CMemoryAlign* _pMa;
 
+    /// <summary>The context's allocator (pCtx->pMemAlign).</summary>
+    public CMemoryAlign* Ma => _pMa;
+
     public SWelsSvcCodingParam* Param { get; }
     public SWelsFuncPtrList* Funcs { get; }
     public SWelsPPS* Pps { get; }
