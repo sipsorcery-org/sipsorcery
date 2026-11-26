@@ -7,8 +7,8 @@ again and sends it to a second browser page, and the three pictures are shown si
 ```
  page A ── leg A ──► RTCPeerConnection A ─► decode ─► BGR ─► encode ─► RTCPeerConnection B ── leg B ──► page B
  (browser encodes)   (recvonly)             vp8.net          vp8.net   (sendonly)             (browser decodes)
-                                            ffmpeg           av1.net
-                                                             ffmpeg
+                                            h264.net         av1.net
+                                            ffmpeg           ffmpeg
 ```
 
 The browser does what browsers do well (capture, encode, decode, show) and SIPSorcery does
@@ -25,7 +25,7 @@ Windows only (WinForms and WebView2). From this folder:
 dotnet run -c Release
 ```
 
-and press **Start**. The managed codecs (vp8.net, av1.net) need nothing else. The `ffmpeg` codec
+and press **Start**. The managed codecs (vp8.net, av1.net, h264.net) need nothing else. The `ffmpeg` codec
 implementations need the FFmpeg 8 shared libraries on the `PATH` (for example
 `winget install Gyan.FFmpeg.Shared`); the pickers only offer what was found.
 
@@ -38,6 +38,7 @@ has just the one codec, so the browser has to use it. What does the work in SIPS
 |---|---|---|
 | **vp8.net** (SIPSorcery.VP8, managed) | VP8 | VP8 |
 | **av1.net** (SIPSorcery.AV1, managed port of libaom's realtime encoder) | | AV1 |
+| **h264.net** (SIPSorcery.H264, managed port of OpenH264; its encoder isn't ported yet) | H264 (Constrained Baseline, as WebRTC sends) | |
 | **ffmpeg** (SIPSorceryMedia.FFmpeg) | VP8, VP9, H264, H265, AV1 (dav1d) | VP8 (libvpx), VP9 (libvpx-vp9), H264 (libx264), H265 (libx265), AV1 (SVT-AV1) |
 
 The pickers name FFmpeg's own codec, as found in the FFmpeg build that's loaded.
@@ -188,10 +189,11 @@ TranscodeLoop.exe --exit-after 15 --stats run.json --capture run.png --capture-a
 | `--size 640x480`, `--fps 30` | the source's size (up to `3840x2160`) and frame rate |
 | `--mode transcode\|relay` | decode and encode, or pass frames through |
 | `--codec-in`, `--codec-out` | `VP8`, `VP9`, `H264`, `H265` (out only, with `--try-h265`) or `AV1`. A codec a leg can't use isn't swapped for another: the run doesn't start, and a scripted one exits with `refused` in its stats |
-| `--decoder`, `--encoder` | `vp8.net` or `ffmpeg`; `av1.net` encodes AV1 |
+| `--decoder`, `--encoder` | `vp8.net` or `ffmpeg`; `h264.net` decodes H264 and `av1.net` encodes AV1 |
 | `--try-h265` | offer H265 out though WebView2 can't receive it (it crashes WebView2 158) |
 | `--browser-kbps`, `--encoder-kbps` | bitrates for page A's encoder and SIPSorcery's (default: picked for the size) |
 | `--drop-a <percent>` | leg A frames dropped before decode |
+| `--no-drop-pli` | don't ask page A for a keyframe after a dropped frame, so only the decoder's own keyframe requests recover the stream |
 | `--loss-b <percent>` | leg B video packets lost |
 | `--no-decoded-view`, `--decoded-view` | turn the decoded tile off, or on (it's off by default above 1080p) |
 | `--capture <png>`, `--capture-after <s>` | a screenshot this long after both legs connect (default 10 s) |
@@ -266,6 +268,16 @@ What the runs turned up in SIPSorcery. Three are fixed on master; the rest are s
   and about 107 at 1080p, that SIPSorcery's decoder read fine. av1.net's AV1 goes through the same
   packetiser and arrives clean, so it's more likely in what SVT-AV1 encodes (perhaps the same
   stale blocks as above) than in the RTP path. Not yet looked into.
+- **h264.net, the OpenH264 port's decoder (h264-port branch).** H264 from page A decodes cleanly:
+  no decode errors or unreadable frames in 25 s runs at 640×480, 720p and 1080p. It takes 1.3 ms
+  a frame at 640×480, about 4 ms at 720p and 8.1 to 8.6 ms at 1080p (p95 under 10 ms), about 3
+  times FFmpeg's decoder (1.3 ms at 720p, 3 ms at 1080p). With 3% of frames dropped before decode
+  and `--no-drop-pli`, its `KeyFrameRequired` asks page A for a keyframe after each drop and the
+  stream recovers within a few frames (88 unreadable in 25 s). FFmpeg's decoder gives no such
+  signal: 704 of its 744 frames stayed unreadable. At 1080p, page B drops about 14 frames once,
+  about 2 s into each h264.net run, and asks for a keyframe; runs with FFmpeg's decoder don't. It
+  looks like a startup race between page B getting ready and the first keyframe, but hasn't been
+  looked into.
 - **av1.net skips its first second.** About 26 frames are skipped at the start of each run before
   its first frame comes out, then it keeps up. It sends one keyframe, at the start, where the
   FFmpeg encoders send one a second. At 720p page B can't read 1 or 2 of its frames in some runs.

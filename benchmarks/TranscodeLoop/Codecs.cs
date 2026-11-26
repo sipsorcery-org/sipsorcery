@@ -1,11 +1,14 @@
 // The video codecs the chain can decode and encode with, by name:
 //   vp8.net - SIPSorcery.VP8, the managed libvpx port (VP8 only, no native code);
 //   av1.net - SIPSorcery.AV1, the managed port of libaom's realtime encoder (AV1, encode only);
-//   ffmpeg  - SIPSorceryMedia.FFmpeg, FFmpeg's native codecs, if FFmpeg's shared libraries are
+//   h264.net - SIPSorcery.H264, the managed OpenH264 port (H264 Constrained Baseline, decode only
+//             until its encoder is ported);
+//   ffmpeg - SIPSorceryMedia.FFmpeg, FFmpeg's native codecs, if FFmpeg's shared libraries are
 //             on the PATH (or in an FFmpeg\bin\x64 folder above the working directory).
 
 using FFmpeg.AutoGen;
 using SIPSorcery.AV1;
+using SIPSorcery.H264;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
@@ -17,6 +20,7 @@ internal static class Codecs
 {
     public const string Vp8Net = "vp8.net";
     public const string Av1Net = "av1.net";
+    public const string H264Net = "h264.net";
     public const string Ffmpeg = "ffmpeg";
 
     /// <summary>Every codec SIPSorcery can carry over RTP, in the order the pickers show them.</summary>
@@ -32,6 +36,8 @@ internal static class Codecs
     {
         _implementations[Vp8Net] = (["VP8"], ["VP8"]);
         _implementations[Av1Net] = ([], ["AV1"]);
+        // Decode only: SIPSorcery.H264's encoder isn't ported yet.
+        _implementations[H264Net] = (["H264"], []);
         try
         {
             FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_FATAL);
@@ -69,7 +75,7 @@ internal static class Codecs
                                       or NotSupportedException or ApplicationException)
         {
             _ffmpegNote = ex.Message;
-            log($"ffmpeg not available ({ex.Message}); only vp8.net and av1.net can be used");
+            log($"ffmpeg not available ({ex.Message}); only vp8.net, av1.net and h264.net can be used");
         }
     }
 
@@ -182,6 +188,7 @@ internal static class Codecs
     {
         Vp8Net => new Vpx.Net.VP8Codec(),
         Av1Net => bitrateKbps > 0 ? new AV1VideoEncoder(new Av1rt.Av1EncoderOptions { TargetBitrateKbps = bitrateKbps }) : new AV1VideoEncoder(),
+        H264Net => new H264Codec(),
         Ffmpeg => CreateFfmpeg(bitrateKbps),
         _ => throw new ArgumentException($"Unknown codec implementation {impl}"),
     };

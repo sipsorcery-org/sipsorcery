@@ -168,6 +168,7 @@ function initControls() {
   $("dropAOut").textContent = `${$("dropA").value}%`;
   $("lossBOut").textContent = `${$("lossB").value}%`;
   $("showDecoded").checked = params.get("decoded") ? params.get("decoded") !== "0" : !isBig();
+  if (params.get("pliOnDrop") === "0") $("pliOnDrop").checked = false;
   for (const id of ["source", "size", "fps", "kbps", "mode", "codecIn", "decoder", "codecOut", "encoder", "encKbps"]) {
     $(id).addEventListener("change", () => {
       refreshPickers();
