@@ -202,16 +202,22 @@ Logs go to `%LOCALAPPDATA%\SIPSorcery\TranscodeLoop`.
 
 ## Found so far (November 2026)
 
-What the first runs turned up in SIPSorcery, to be looked at separately:
+What the runs turned up in SIPSorcery. Three are fixed on master; the rest are still open.
 
-- **Colours from vp8.net's decoder are off.** `PixelConverter.I420toBGR` (and `BGRtoI420`) use the
-  analogue YUV equations, with full-range luma and `2.302` where `2.032` was meant, instead of
-  BT.601 limited-range YCbCr. The card's white (192) comes out at 181 and its blue bar too bright;
-  the FFmpeg decoder's colours match the browser's.
-- **FFmpegVideoEncoder doesn't follow a change of size.** When the frame size changes it sets the
-  encoder context's width and height but doesn't reinitialise the encoder, so after page A starts
-  at 640×360 and moves to 1280×720, page B gets the top-left 640×360 of each frame (and at 1080p,
-  the top-left 960×540). The app now keeps page A at one size, so it no longer shows this.
+- **Fixed (#1937): colours from vp8.net's decoder were off.** `PixelConverter.I420toBGR` (and
+  `BGRtoI420`) used the analogue YUV equations, with full-range luma and `2.302` where `2.032` was
+  meant, instead of BT.601 limited-range YCbCr. The card's white (192) came out at 181 and its blue
+  bar too bright, where the FFmpeg decoder's colours matched the browser's. All seven of
+  PixelConverter's RGB/YUV converters now use BT.601 limited range.
+- **Fixed (#1936): FFmpegVideoEncoder didn't follow a change of size.** When the frame size
+  changed it set the encoder context's width and height but didn't reinitialise the encoder, so
+  after page A started at 640×360 and moved to 1280×720, page B got the top-left 640×360 of each
+  frame (and at 1080p, the top-left 960×540). It now reopens the encoder at the new size. The app
+  keeps page A at one size anyway, so it never showed this after the first runs.
+- **Fixed (#1938): libvpx-vp9 held 24 frames before its first output.** FFmpegVideoEncoder didn't
+  set `lag-in-frames` for libvpx-vp9, so libvpx's default of 25 applied: page B showed "dropped by
+  encoder 24" and every frame arrived about 800 ms late (860 ms at 720p and 1080p, 1.1 s at 4K). It
+  now sets it to 0, and VP8 to VP9 at 720p has 59 ms latency and passes.
 - **No bandwidth estimation feedback.** SIPSorcery sends no REMB or transport-cc, so a browser
   sending to it stays at its start bitrate (worked around above).
 - **vp8.net at 720p.** Encoding takes 25 ms a frame (p95 29 ms), so at 30 fps about 1 frame in 8 is
@@ -237,7 +243,8 @@ What the first runs turned up in SIPSorcery, to be looked at separately:
   1080p, where SVT-AV1 sends 2.5 and 5.2 Mbps), so this isn't like for like. FFmpeg's decoders take
   1.3 to 1.6 ms a frame at 720p and 2.7 to 3.1 ms at 1080p for all four codecs; at 4K, AV1
   (libdav1d) takes 12.5 ms, VP9 19 ms and VP8 19 to 21 ms. Runs that passed: VP8 to H264 at 720p,
-  VP8 to AV1 with av1.net at 1080p, and VP9 or AV1 to H264 at 1080p. Nothing passes at 4K: H264
+  VP8 to AV1 with av1.net at 1080p, VP9 or AV1 to H264 at 1080p, and (since #1938) VP8 to VP9 at
+  720p. Nothing passes at 4K: H264
   encoding is right at the 33 ms limit (as above), and with av1.net the VP8 decoder slows to 27 ms
   (p95 39 ms) while av1.net encodes alongside it, so about 1 frame in 5 is skipped.
 - **H265 out crashes WebView2: Edge's bug, not SIPSorcery's.** Edge and WebView2 (157 and 158)
@@ -248,10 +255,6 @@ What the first runs turned up in SIPSorcery, to be looked at separately:
   cleanly, and SIPSorcery's RTP passes an independent RFC 7798 check. The same missing code is why
   WebView2 can't send H265. H265 out is now greyed for WebView2; if a run crashes the renderer
   anyway, the app stops it, reloads the page and shows what happened.
-- **libvpx-vp9 holds 24 frames before its first output.** FFmpegVideoEncoder doesn't set
-  `lag-in-frames` for libvpx-vp9, so libvpx's default of 25 applies: page B shows "dropped by
-  encoder 24" and every frame arrives about 800 ms late (860 ms at 720p and 1080p, 1.1 s at 4K).
-  Setting it to 0, as a real-time encoder should, would fix it.
 - **Chromium's VP9 and AV1 encoders leave blocks stale.** At 720p about 1 in 3 of page A's VP9
   frames, and 1 in 8 to 1 in 12 of its AV1 frames, have one or more 64×64 blocks over the strip
   still showing an earlier frame (the CRC cells hold the previous frame's values). SIPSorcery's
