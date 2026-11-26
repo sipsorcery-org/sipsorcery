@@ -488,8 +488,11 @@ namespace SIPSorcery.Net
                     // An AV1 payload is not a slice of the temporal unit: OBU size fields are left out and element
                     // lengths added. So the payloads are written one after another into a buffer rented from the
                     // shared array pool, and each packet is built from its slice of that buffer.
-                    var payloadLengths = new List<int>(temporalUnit.Length / RTPSession.RTP_MAX_PAYLOAD + 2);
-                    using var payloads = new ArrayPoolBufferWriter<byte>(temporalUnit.Length + 2 * RTPSession.RTP_MAX_PAYLOAD);
+                    // Room for the payloads: the temporal unit, about 3 bytes more a packet for the aggregation
+                    // header and a fragment's length, and a whole payload free for the last GetSpan.
+                    int packetEstimate = temporalUnit.Length / (RTPSession.RTP_MAX_PAYLOAD - 3) + 2;
+                    var payloadLengths = new List<int>(packetEstimate);
+                    using var payloads = new ArrayPoolBufferWriter<byte>(temporalUnit.Length + packetEstimate * 3 + RTPSession.RTP_MAX_PAYLOAD);
                     AV1Packetiser.Packetize(temporalUnit, RTPSession.RTP_MAX_PAYLOAD, payloads, payloadLengths);
 
                     ReadOnlySpan<byte> remaining = payloads.WrittenSpan;

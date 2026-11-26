@@ -168,16 +168,17 @@ public class AV1Packetiser
     /// <param name="temporalUnit">The temporal unit, a sequence of OBUs. Only read during the call.</param>
     /// <param name="maxPayloadSize">The maximum RTP payload size.</param>
     /// <param name="output">The payloads are written to it one after another, each with one
-    /// <see cref="IBufferWriter{T}.GetSpan(int)"/> of <paramref name="maxPayloadSize"/> bytes and one
-    /// <see cref="IBufferWriter{T}.Advance(int)"/>.</param>
+    /// <see cref="IBufferWriter{T}.GetSpan(int)"/> and one <see cref="IBufferWriter{T}.Advance(int)"/>. The span
+    /// asked for is <paramref name="maxPayloadSize"/> bytes, or the most a payload of this temporal unit can need
+    /// when that is less.</param>
     /// <param name="payloadLengths">The length of each payload written is added to it, in order. The last one
     /// ends the temporal unit, so its packet takes the RTP marker bit.</param>
     /// <exception cref="ArgumentNullException"><paramref name="output"/> or <paramref name="payloadLengths"/> is
     /// null.</exception>
     /// <exception cref="ArgumentException"><paramref name="maxPayloadSize"/> is too small for AV1 packetisation. An
     /// empty temporal unit writes nothing and is not refused.</exception>
-    /// <exception cref="FormatException">An OBU in the temporal unit is malformed. The payloads before the one that
-    /// would have held it are already written.</exception>
+    /// <exception cref="FormatException">An OBU in the temporal unit is malformed. The payloads finished before it
+    /// was reached are left in <paramref name="output"/>; the one being written at the time is not.</exception>
     public static void Packetize(ReadOnlySpan<byte> temporalUnit, int maxPayloadSize, IBufferWriter<byte> output, ICollection<int> payloadLengths)
     {
         if (output == null)
@@ -200,6 +201,11 @@ public class AV1Packetiser
             throw new ArgumentException("The maximum RTP payload size is too small for AV1 packetisation.", nameof(maxPayloadSize));
         }
 
+        // No payload of this temporal unit can be longer than this: an element, its length and then the OBU without
+        // its size field, is at most twice the length of the OBU. So a larger limit changes no payload, only how much
+        // would be asked of the writer.
+        int payloadLimit = (int)Math.Min(maxPayloadSize, AV1_AGGREGATION_HEADER_LENGTH + 2L * temporalUnit.Length + MAX_LEB128_LENGTH);
+
         // Each OBU is parsed when the payloads reach it, rather than all of them first.
         int parseOffset = 0;
         if (!TryParseNextTransmittedObu(temporalUnit, ref parseOffset, out var obu))
@@ -214,9 +220,9 @@ public class AV1Packetiser
 
         while (hasObu)
         {
-            Span<byte> payload = output.GetSpan(maxPayloadSize);
+            Span<byte> payload = output.GetSpan(payloadLimit);
             int length = AV1_AGGREGATION_HEADER_LENGTH;
-            int capacity = maxPayloadSize - AV1_AGGREGATION_HEADER_LENGTH;
+            int capacity = payloadLimit - AV1_AGGREGATION_HEADER_LENGTH;
             bool firstObuIsContinuation = obuOffset > 0;
             bool lastObuContinues = false;
 

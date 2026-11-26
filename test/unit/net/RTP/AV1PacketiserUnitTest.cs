@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
@@ -469,6 +470,10 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(payload, reconstructedFrame.Skip(offset).ToArray());
         }
 
+        /// <summary>
+        /// Temporal units of several kinds with a payload limit each, and the payloads master's packetiser made for
+        /// them at commit e774801c5: their lengths, and the SHA-256 of the payloads one after another.
+        /// </summary>
         public static IEnumerable<object[]> BufferWriterCases()
         {
             var sequenceHeader = CreateObu(AV1Packetiser.AV1ObuType.SequenceHeader, new byte[] { 1, 2, 3 });
@@ -478,49 +483,69 @@ namespace SIPSorcery.Net.UnitTests
             var padding = CreateObu(AV1Packetiser.AV1ObuType.Padding, new byte[20]);
             var unsized = new byte[] { 0x30 }.Concat(new byte[700]).ToArray(); // Frame without a size field.
 
-            yield return new object[] { "SequenceHeaderAndFrame", sequenceHeader.Concat(frame1500).ToArray(), 200 };
-            yield return new object[] { "Leb128Boundary", CreateObu(AV1Packetiser.AV1ObuType.Frame, new byte[127]), 130 };
-            yield return new object[] { "ExtensionHeaderSmallestPayload", sequenceHeader.Concat(extendedFrame).ToArray(), 4 };
-            yield return new object[] { "ExtensionHeader", sequenceHeader.Concat(extendedFrame).ToArray(), 7 };
-            yield return new object[] { "SmallObus", smallObus, 64 };
-            yield return new object[] { "SkippedObus", padding.Concat(frame1500).ToArray(), 1200 };
-            yield return new object[] { "UnsizedLastObu", sequenceHeader.Concat(unsized).ToArray(), 100 };
+            yield return new object[] { "SequenceHeaderAndFrame", sequenceHeader.Concat(frame1500).ToArray(), 200,
+                new[] { 200, 200, 200, 200, 200, 200, 200, 129 }, "883E958762D9ADC6B070AC4D33E96FB1E09214208BB15B863E13E27C788B2664" };
+            yield return new object[] { "Leb128Boundary", CreateObu(AV1Packetiser.AV1ObuType.Frame, new byte[127]), 130,
+                new[] { 129, 3 }, "5D28B09C380F01FEE6C8576439EDA59EBA428D9B340173AF663F31EACB312587" };
+            yield return new object[] { "ExtensionHeaderSmallestPayload", sequenceHeader.Concat(extendedFrame).ToArray(), 4,
+                new[] { 4, 4, 4, 4, 4, 3 }, "04E86B5229C5078CCF8EE9DE96D38BDD9C3FF3A8FA5479B1144B41B389C1786A" };
+            yield return new object[] { "ExtensionHeader", sequenceHeader.Concat(extendedFrame).ToArray(), 7,
+                new[] { 6, 7, 4 }, "C8CC8EA327023057140AF6CA8AAB69E395B7594CA826DE1A07BE501E790268F7" };
+            yield return new object[] { "SmallObus", smallObus, 64,
+                new[] { 64, 64, 63, 64, 64, 64, 64, 64, 27 }, "FD519B2185BCCFE081E8E05F76B6BCD29B5709DBE87FEA68988756C8C7037245" };
+            yield return new object[] { "SkippedObus", padding.Concat(frame1500).ToArray(), 1200,
+                new[] { 1200, 307 }, "BA32478281461B18BEFD4A8AF225EE1EF8F3043DDD33BCAC964F140152FE0D24" };
+            yield return new object[] { "UnsizedLastObu", sequenceHeader.Concat(unsized).ToArray(), 100,
+                new[] { 100, 100, 100, 100, 100, 100, 100, 22 }, "5656C9F565574B7C43F21AB7515300CE1AE17E23C0FDA4DAF4D1AF84C472F2C7" };
+
+            // Limits larger than any payload of the temporal unit could need: everything goes in one payload.
+            yield return new object[] { "LargestLimit", sequenceHeader.Concat(frame1500).ToArray(), int.MaxValue,
+                new[] { 1509 }, "8CDDD892FBA7B8CCEA53843399D69E325FDC0E0C4A5F619D025A496C4D1983DD" };
+            yield return new object[] { "VeryLargeLimit", smallObus, 100_000_000,
+                new[] { 526 }, "BF79722294835F71955468815EC1BDD293BC7730B92DA4A09564B9E669B68922" };
         }
 
+        public static IEnumerable<object[]> BufferWriterLimitCases() => BufferWriterCases().Select(c => new[] { c[0], c[1], c[2] });
+
         /// <summary>
-        /// The buffer writer overload writes exactly the payloads the list overload returns, one after another, and
-        /// their lengths in order.
+        /// Both overloads make exactly the payloads master made, the list one with only its last payload marked, and
+        /// the buffer writer one writing them one after another with their lengths in order.
         /// </summary>
         [Theory]
         [MemberData(nameof(BufferWriterCases))]
-        public void BufferWriterPayloadsAreTheListPayloads(string name, byte[] temporalUnit, int maxPayloadSize)
+        public void BothOverloadsMakeThePayloadsMasterMade(string name, byte[] temporalUnit, int maxPayloadSize, int[] expectedLengths, string expectedDigest)
         {
-            var expected = AV1Packetiser.Packetize(temporalUnit.AsSpan(), maxPayloadSize);
+            var packets = AV1Packetiser.Packetize(temporalUnit.AsSpan(), maxPayloadSize);
             var output = new RecordingBufferWriter();
             var payloadLengths = new List<int>();
 
             AV1Packetiser.Packetize(temporalUnit, maxPayloadSize, output, payloadLengths);
 
-            Assert.True(expected.Count > 0, name);
-            Assert.Equal(expected.Select(p => p.Payload.Length), payloadLengths);
-            Assert.Equal(expected.SelectMany(p => p.Payload).ToArray(), output.WrittenSpan.ToArray());
-            Assert.All(payloadLengths, length => Assert.InRange(length, 1, maxPayloadSize));
+            Assert.True(packets.Count > 0, name);
+            Assert.Equal(expectedLengths, packets.Select(p => p.Payload.Length));
+            Assert.Equal(expectedDigest, Sha256Hex(packets.SelectMany(p => p.Payload).ToArray()));
+            Assert.Equal(packets.Select((p, i) => i == packets.Count - 1), packets.Select(p => p.IsLast));
+            Assert.Equal(expectedLengths, payloadLengths);
+            Assert.Equal(expectedDigest, Sha256Hex(output.WrittenSpan.ToArray()));
         }
 
         /// <summary>
-        /// Each payload is written with one GetSpan of the maximum payload size and one Advance of its length.
+        /// Each payload is written with one GetSpan and one Advance of its length. The span asked for is the maximum
+        /// payload size, or the most a payload of the temporal unit can need when that is less: the aggregation
+        /// header, at most twice the temporal unit, and the 8 bytes of the longest leb128.
         /// </summary>
         [Theory]
-        [MemberData(nameof(BufferWriterCases))]
-        public void BufferWriterIsAskedForOneFullPayloadPerPacket(string name, byte[] temporalUnit, int maxPayloadSize)
+        [MemberData(nameof(BufferWriterLimitCases))]
+        public void BufferWriterIsAskedForOneSpanPerPayload(string name, byte[] temporalUnit, int maxPayloadSize)
         {
             var output = new RecordingBufferWriter();
             var payloadLengths = new List<int>();
 
             AV1Packetiser.Packetize(temporalUnit, maxPayloadSize, output, payloadLengths);
 
+            int expectedSize = (int)Math.Min(maxPayloadSize, 1 + 2L * temporalUnit.Length + 8);
             Assert.True(payloadLengths.Count > 0, name);
-            Assert.Equal(Enumerable.Repeat(maxPayloadSize, payloadLengths.Count), output.SizeHints);
+            Assert.Equal(Enumerable.Repeat(expectedSize, payloadLengths.Count), output.SizeHints);
             Assert.Equal(payloadLengths, output.Advances);
         }
 
@@ -582,6 +607,14 @@ namespace SIPSorcery.Net.UnitTests
         public void BufferWriterMalformedObusAreRejected(byte[] temporalUnit)
         {
             Assert.Throws<FormatException>(() => AV1Packetiser.Packetize(temporalUnit, 1200, new RecordingBufferWriter(), new List<int>()));
+        }
+
+        private static string Sha256Hex(byte[] bytes)
+        {
+            using (var sha = SHA256.Create())
+            {
+                return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", string.Empty);
+            }
         }
 
         private static byte[] CreateObu(AV1Packetiser.AV1ObuType obuType, byte[] payload)

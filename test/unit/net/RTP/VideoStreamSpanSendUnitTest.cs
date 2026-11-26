@@ -333,6 +333,13 @@ namespace SIPSorcery.Net.UnitTests
                 // The wire buffers themselves plus a small per packet allowance for the array object headers and the
                 // RTP header object.
                 long budget = wireBytes + packets * 160;
+                if (codec == "AV1")
+                {
+                    // AV1 payloads go into a buffer rented from the shared array pool, which can let its arrays go (a
+                    // gen 2 collection trims them), so allow for one rent of a new one: at most twice the frame and
+                    // the room the send asks for on top of it.
+                    budget += 2L * (frameLength + 2 * 1200);
+                }
                 Assert.True(allocated <= budget,
                     $"{codec}: allocated {allocated} bytes for {packets} packets of {wireBytes} wire bytes ({allocated / (double)wireBytes:F2}x); budget {budget}.");
             }
