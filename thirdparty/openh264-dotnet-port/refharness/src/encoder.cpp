@@ -32,6 +32,18 @@
 //   h264ref idr-dump <name> <out>
 //       Writes that configuration's frame to <out>, to compare with the C#
 //       bytes when a row does not match.
+//
+//   h264ref stream
+//       E5b: P streams, frame by frame, through the real API for a table of
+//       fixed QP configurations (kStreamConfigs, reference/stream.tsv): the
+//       settings as for idr with the analysis features off, synthetic moving
+//       content (StreamSample), then for each frame the return code, the frame
+//       type, the temporal ids, the layers and the SHA1 of its bytes, and the
+//       SHA1 of the whole stream. The C# test (StreamTests.cs) encodes the same
+//       frames with its port and compares.
+//
+//   h264ref stream-dump <name> <out>
+//       Writes that configuration's stream to <out>.
 
 #include <cfloat>
 #include <cstdio>
@@ -426,6 +438,8 @@ bool ApplySetting (SEncParamExt& e, SEncParamBase& b, bool base, const std::stri
   else if (key == "iMinQp") e.iMinQp = (int)v;
   else if (key == "uiMaxNalSize") e.uiMaxNalSize = (unsigned int)v;
   else if (key == "bEnableLongTermReference") e.bEnableLongTermReference = v != 0;
+  else if (key == "iLTRRefNum") e.iLTRRefNum = (int)v;
+  else if (key == "iLtrMarkPeriod") e.iLtrMarkPeriod = (unsigned int)v;
   else if (key == "iMultipleThreadIdc") e.iMultipleThreadIdc = (unsigned short)v;
   else if (key == "iLoopFilterDisableIdc") e.iLoopFilterDisableIdc = (int)v;
   else if (key == "bEnableDenoise") e.bEnableDenoise = v != 0;
@@ -889,5 +903,271 @@ int IdrDump (const char* name, const char* outPath) {
     return out ? 0 : 1;
   }
   fprintf (stderr, "no idr configuration %s\n", name);
+  return 1;
+}
+
+namespace {
+
+// ---------------------------------------------------------------------------
+// stream
+// ---------------------------------------------------------------------------
+
+// A triangle wave of period 256 over 0..254, for smooth content that moves by fractions
+// of a pixel.
+int Tri (int u) {
+  u &= 255;
+  return u < 128 ? u * 2 : (255 - u) * 2;
+}
+
+int Clip255 (int v) {
+  return v < 0 ? 0 : v > 255 ? 255 : v;
+}
+
+// One sample of frame f of the given content. Chroma coordinates are half the luma ones,
+// so a motion of (dx, dy) luma pixels is (dx >> 1, dy >> 1) chroma pixels where it is
+// written that way. The C# test has the same functions (StreamTests.cs).
+//   static  the idr "scene", every frame the same
+//   pan     the scene moving by (3, 2) luma pixels a frame
+//   block   the scene, still, with a 24x24 block of noise moving by (5, 3) over it
+//   noise   noise moving by (2, 1)
+//   random  new noise every frame
+//   fade    the scene getting darker and lifting towards grey
+//   cut     the scene, then from frame 4 an inverted, shifted scene
+//   subpel  smooth waves moving by (3/4, 1/4) of a luma pixel a frame
+unsigned char StreamSample (const std::string& kind, int plane, int r, int c, int f) {
+  const int sh = plane ? 1 : 0;
+  if (kind == "static") return Scene (plane, r, c);
+  if (kind == "pan") return Scene (plane, r + ((2 * f) >> sh), c + ((3 * f) >> sh));
+  if (kind == "block") {
+    const int bs = 24 >> sh, x0 = (5 * f) >> sh, y0 = (3 * f) >> sh;
+    if (r >= y0 && r < y0 + bs && c >= x0 && c < x0 + bs) return Noise (plane + 3, r - y0, c - x0);
+    return Scene (plane, r, c);
+  }
+  if (kind == "noise") return Noise (plane, r + (f >> sh), c + ((2 * f) >> sh));
+  if (kind == "random")
+    return (unsigned char) (Hash32 ((((uint32_t)plane << 28) | ((uint32_t)r << 13) | (uint32_t)c) ^ ((uint32_t) (f + 1) *
+                            0x9e3779b9u)) >> 24);
+  if (kind == "fade") return (unsigned char)Clip255 (Scene (plane, r, c) * (20 - f) / 20 + 6 * f);
+  if (kind == "cut") return f < 4 ? Scene (plane, r, c) : (unsigned char) (255 - Scene (plane, r + 37, c + 91));
+  // subpel: luma u = 4c + 3f, so a quarter pixel per unit; chroma 8c + 3f, the same motion.
+  const int s = plane ? 8 : 4;
+  const int a = Tri (s * c + 3 * f), b = Tri (s * r + f);
+  return (unsigned char) (plane ? 64 + ((a + b) >> 2) : (a + b) >> 1);
+}
+
+void FillFrame (std::vector<unsigned char>& buf, int w, int h, const std::string& kind, int f) {
+  const int cw = w >> 1, ch = h >> 1;
+  buf.assign (w * h + 2 * cw * ch, 0);
+  unsigned char* p[3] = {buf.data(), buf.data() + w * h, buf.data() + w * h + cw * ch};
+  const int pw[3] = {w, cw, cw}, ph[3] = {h, ch, ch};
+  for (int plane = 0; plane < 3; plane++)
+    for (int r = 0; r < ph[plane]; r++)
+      for (int c = 0; c < pw[plane]; c++) p[plane][r * pw[plane] + c] = StreamSample (kind, plane, r, c, f);
+}
+
+struct StreamConfig {
+  const char* name;
+  const char* content;    // see StreamSample
+  int frames;
+  const char* settings;   // as kParamConfigs
+};
+
+// As IDR_BASE, with the analysis features (background detection, adaptive quantisation
+// and scene change detection, which upstream enables by default) off: what the port codes
+// by E5b. Camera content.
+#define STREAM_BASE "api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;" \
+  "bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;"
+#define QCIF "iPicWidth=176;iPicHeight=144;"
+const StreamConfig kStreamConfigs[] = {
+  // Content, at the defaults: QP 26, LOW_COMPLEXITY, one reference, no intra period.
+  {"static", "static", 8, STREAM_BASE QCIF},
+  {"pan", "pan", 10, STREAM_BASE QCIF},
+  {"block", "block", 10, STREAM_BASE QCIF},
+  {"noise", "noise", 8, STREAM_BASE QCIF},
+  {"random", "random", 6, STREAM_BASE QCIF},
+  {"fade", "fade", 8, STREAM_BASE QCIF},
+  {"cut", "cut", 8, STREAM_BASE QCIF},
+  {"subpel", "subpel", 10, STREAM_BASE QCIF},
+
+  // MEDIUM and HIGH complexity: the normal coding functions, sub-pixel search and more
+  // partitions.
+  {"pan-medium", "pan", 10, STREAM_BASE QCIF "iComplexityMode=1"},
+  {"pan-high", "pan", 10, STREAM_BASE QCIF "iComplexityMode=2"},
+  {"block-medium", "block", 8, STREAM_BASE QCIF "iComplexityMode=1"},
+  {"subpel-high", "subpel", 8, STREAM_BASE QCIF "iComplexityMode=2"},
+  {"block-high", "block", 8, STREAM_BASE QCIF "iComplexityMode=2"},
+  {"noise-high", "noise", 6, STREAM_BASE QCIF "iComplexityMode=2"},
+  {"cut-high", "cut", 8, STREAM_BASE QCIF "iComplexityMode=2"},
+  {"fade-medium", "fade", 8, STREAM_BASE QCIF "iComplexityMode=1"},
+
+  // QPs.
+  {"pan-qp0", "pan", 4, STREAM_BASE QCIF "L0.iDLayerQp=0"},
+  {"pan-qp12", "pan", 6, STREAM_BASE QCIF "L0.iDLayerQp=12"},
+  {"fade-qp20", "fade", 6, STREAM_BASE QCIF "L0.iDLayerQp=20"},
+  {"subpel-qp20-high", "subpel", 6, STREAM_BASE QCIF "L0.iDLayerQp=20;iComplexityMode=2"},
+  {"pan-qp40", "pan", 8, STREAM_BASE QCIF "L0.iDLayerQp=40"},
+  {"pan-qp51", "pan", 8, STREAM_BASE QCIF "L0.iDLayerQp=51"},
+  {"static-qp51", "static", 6, STREAM_BASE QCIF "L0.iDLayerQp=51"},
+
+  // Intra periods: IDRs in the stream.
+  {"intra-period-4", "pan", 12, STREAM_BASE QCIF "uiIntraPeriod=4"},
+  {"intra-period-3-high", "subpel", 10, STREAM_BASE QCIF "uiIntraPeriod=3;iComplexityMode=2"},
+  {"intra-period-2-static", "static", 6, STREAM_BASE QCIF "uiIntraPeriod=2"},
+
+  // Temporal layers: the reference picture structure, the per layer QPs and the
+  // non-reference frames of the highest layer.
+  {"temporal-2", "pan", 12, STREAM_BASE QCIF "iTemporalLayerNum=2"},
+  {"temporal-3", "pan", 16, STREAM_BASE QCIF "iTemporalLayerNum=3"},
+  {"temporal-4", "pan", 18, STREAM_BASE QCIF "iTemporalLayerNum=4"},
+  {"temporal-3-high", "subpel", 12, STREAM_BASE QCIF "iTemporalLayerNum=3;iComplexityMode=2"},
+  {"temporal-4-intra-period-8", "block", 18, STREAM_BASE QCIF "iTemporalLayerNum=4;uiIntraPeriod=8"},
+
+  // Slices (single threaded).
+  {"slices-fixed-4", "pan", 8, STREAM_BASE QCIF "L0.uiSliceMode=1;L0.uiSliceNum=4"},
+  {"slices-fixed-3-high", "subpel", 8, STREAM_BASE QCIF "L0.uiSliceMode=1;L0.uiSliceNum=3;iComplexityMode=2"},
+  {"slices-fixed-4-no-load-balancing", "pan", 6, STREAM_BASE QCIF "L0.uiSliceMode=1;L0.uiSliceNum=4;bUseLoadBalancing=0"},
+  {"slices-raster-rows", "pan", 8, STREAM_BASE QCIF "L0.uiSliceMode=2"},
+  {"slices-raster-mbs", "block", 8, STREAM_BASE QCIF "L0.uiSliceMode=2;L0.uiSliceMbNum=10,30,59"},
+
+  // Sizes, cropping and padding (motion vectors pointing outside the picture).
+  {"16x16", "pan", 6, STREAM_BASE "iPicWidth=16;iPicHeight=16"},
+  {"48x32", "block", 8, STREAM_BASE "iPicWidth=48;iPicHeight=32"},
+  {"33x17", "pan", 8, STREAM_BASE "iPicWidth=33;iPicHeight=17"},
+  {"33x17-no-cropping", "pan", 6, STREAM_BASE "iPicWidth=33;iPicHeight=17;bEnableFrameCroppingFlag=0"},
+  {"152x100", "subpel", 8, STREAM_BASE "iPicWidth=152;iPicHeight=100"},
+  {"320x192-high", "pan", 6, STREAM_BASE "iPicWidth=320;iPicHeight=192;iComplexityMode=2"},
+
+  // Deblocking, which the reference pictures carry.
+  {"deblock-off", "pan", 8, STREAM_BASE QCIF "iLoopFilterDisableIdc=1"},
+  {"deblock-idc2-slices", "pan", 8, STREAM_BASE QCIF "iLoopFilterDisableIdc=2;L0.uiSliceMode=1;L0.uiSliceNum=4"},
+  {"deblock-offsets-plus", "subpel", 6, STREAM_BASE QCIF "iLoopFilterAlphaC0Offset=6;iLoopFilterBetaOffset=6"},
+  {"deblock-offsets-minus-qp40", "block", 6, STREAM_BASE QCIF "iLoopFilterAlphaC0Offset=-6;iLoopFilterBetaOffset=-6;L0.iDLayerQp=40"},
+
+  // Long term references (camera: marking without feedback).
+  {"ltr", "pan", 10, STREAM_BASE QCIF "bEnableLongTermReference=1"},
+  {"ltr-mark-3", "pan", 12, STREAM_BASE QCIF "bEnableLongTermReference=1;iLtrMarkPeriod=3"},
+  {"ltr-mark-2-temporal-2", "block", 12, STREAM_BASE QCIF "bEnableLongTermReference=1;iLtrMarkPeriod=2;iTemporalLayerNum=2"},
+  {"ltr-mark-4-temporal-3-high", "subpel", 12, STREAM_BASE QCIF "bEnableLongTermReference=1;iLtrMarkPeriod=4;iTemporalLayerNum=3;iComplexityMode=2"},
+  {"ltr-intra-period-5", "pan", 12, STREAM_BASE QCIF "bEnableLongTermReference=1;iLtrMarkPeriod=3;uiIntraPeriod=5"},
+
+  // Reference counts, parameter set strategies and the main profile.
+  {"ref-4", "pan", 10, STREAM_BASE QCIF "iNumRefFrame=4"},
+  {"ref-2-temporal-2", "pan", 10, STREAM_BASE QCIF "iNumRefFrame=2;iTemporalLayerNum=2"},
+  {"strategy-increasing", "pan", 10, STREAM_BASE QCIF "eSpsPpsIdStrategy=1;uiIntraPeriod=3"},
+  {"strategy-sps-listing", "pan", 10, STREAM_BASE QCIF "eSpsPpsIdStrategy=2;uiIntraPeriod=3"},
+  {"strategy-sps-pps-listing", "pan", 10, STREAM_BASE QCIF "eSpsPpsIdStrategy=6;uiIntraPeriod=3"},
+  {"profile-main", "pan", 8, STREAM_BASE QCIF "L0.uiProfileIdc=77"},
+};
+#undef QCIF
+#undef STREAM_BASE
+
+struct StreamFrame {
+  int rc;
+  std::string type, layers, tid;
+  std::vector<unsigned char> bytes;
+};
+
+// Encodes one configuration's frames, the timestamps 1000 / 30 ms apart. Returns
+// InitializeExt's code; each frame's outputs go to *pFrames.
+int EncodeStream (const StreamConfig& c, std::vector<StreamFrame>* pFrames) {
+  pFrames->clear();
+  ISVCEncoder* encoder = NULL;
+  if (WelsCreateSVCEncoder (&encoder) != 0) return -1;
+  int iTraceLevel = WELS_LOG_QUIET;
+  encoder->SetOption (ENCODER_OPTION_TRACE_LEVEL, &iTraceLevel);
+
+  SEncParamExt ext;
+  SEncParamBase base;
+  memset (&base, 0, sizeof base);
+  encoder->GetDefaultParams (&ext);
+  std::stringstream ss (c.settings);
+  std::string item;
+  while (std::getline (ss, item, ';')) {
+    if (item.empty()) continue;
+    size_t eq = item.find ('=');
+    std::string k = item.substr (0, eq), v = item.substr (eq + 1);
+    if (k == "api") continue;
+    if (!ApplySetting (ext, base, false, k, v)) {
+      fprintf (stderr, "%s: unknown setting %s\n", c.name, k.c_str());
+      exit (1);
+    }
+  }
+
+  int rv = encoder->InitializeExt (&ext);
+  if (rv == cmResultSuccess) {
+    const int w = ext.iPicWidth, h = ext.iPicHeight;
+    std::vector<unsigned char> buf;
+    for (int f = 0; f < c.frames; f++) {
+      FillFrame (buf, w, h, c.content, f);
+      SSourcePicture pic;
+      memset (&pic, 0, sizeof pic);
+      pic.iPicWidth = w;
+      pic.iPicHeight = h;
+      pic.iColorFormat = videoFormatI420;
+      pic.iStride[0] = w;
+      pic.iStride[1] = pic.iStride[2] = w >> 1;
+      pic.pData[0] = buf.data();
+      pic.pData[1] = pic.pData[0] + w * h;
+      pic.pData[2] = pic.pData[1] + (w >> 1) * (h >> 1);
+      pic.uiTimeStamp = (long long)f * 1000 / 30;
+
+      SFrameBSInfo info;
+      memset (&info, 0, sizeof info);
+      StreamFrame out;
+      out.rc = encoder->EncodeFrame (&pic, &info);
+      out.type = FrameTypeName (info.eFrameType);
+      out.layers = Layers (info);
+      for (int i = 0; i < info.iLayerNum; i++) {
+        const SLayerBSInfo& l = info.sLayerInfo[i];
+        if (l.uiLayerType == VIDEO_CODING_LAYER) out.tid += (out.tid.empty() ? "" : ",") + std::to_string (l.uiTemporalId);
+        int n = 0;
+        for (int j = 0; j < l.iNalCount; j++) n += l.pNalLengthInByte[j];
+        out.bytes.insert (out.bytes.end(), l.pBsBuf, l.pBsBuf + n);
+      }
+      if (out.tid.empty()) out.tid = "-";
+      pFrames->push_back (out);
+    }
+    encoder->Uninitialize();
+  }
+  WelsDestroySVCEncoder (encoder);
+  return rv;
+}
+
+}  // namespace
+
+int Stream() {
+  printf ("# %s, C-only reference build. Frame by frame P streams per configuration, see refharness/src/encoder.cpp.\n",
+          g_strCodecVer);
+  printf ("# config\t<name>\t<content>\t<frames>\t<settings>\n");
+  printf ("# frame\t<name>\t<index>\t<EncodeFrame>\t<frame type>\t<temporal ids>\t<layers>\t<sha1 of the frame>\t<size>\n");
+  printf ("# stream\t<name>\t<InitializeExt>\t<sha1 of the stream>\t<size>\n");
+  for (const StreamConfig& c : kStreamConfigs) {
+    printf ("config\t%s\t%s\t%d\t%s\n", c.name, c.content, c.frames, c.settings);
+    std::vector<StreamFrame> frames;
+    int rv = EncodeStream (c, &frames);
+    std::vector<unsigned char> all;
+    for (size_t i = 0; i < frames.size(); i++) {
+      const StreamFrame& f = frames[i];
+      printf ("frame\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%d\n", c.name, (int)i, f.rc, f.type.c_str(), f.tid.c_str(),
+              f.layers.c_str(), f.bytes.empty() ? "-" : Sha1Hex (f.bytes.data(), (int)f.bytes.size()).c_str(),
+              (int)f.bytes.size());
+      all.insert (all.end(), f.bytes.begin(), f.bytes.end());
+    }
+    printf ("stream\t%s\t%d\t%s\t%d\n", c.name, rv, all.empty() ? "-" : Sha1Hex (all.data(), (int)all.size()).c_str(),
+            (int)all.size());
+  }
+  return 0;
+}
+
+int StreamDump (const char* name, const char* outPath) {
+  for (const StreamConfig& c : kStreamConfigs) {
+    if (std::string (c.name) != name) continue;
+    std::vector<StreamFrame> frames;
+    EncodeStream (c, &frames);
+    std::ofstream out (outPath, std::ios::binary);
+    for (const StreamFrame& f : frames) out.write ((const char*)f.bytes.data(), (std::streamsize)f.bytes.size());
+    return out ? 0 : 1;
+  }
+  fprintf (stderr, "no stream configuration %s\n", name);
   return 1;
 }

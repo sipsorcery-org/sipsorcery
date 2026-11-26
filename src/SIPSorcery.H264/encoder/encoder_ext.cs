@@ -13,7 +13,7 @@
 // FreeDqLayer/FreeRefList they fail through), GetTemporalLevel,
 // WelsInitCurrentLayer, PreprocessSliceCoding (I and, from E5, P slices;
 // screen content throws until Phase 4), WelsSwapDqLayers and
-// PrefetchReferencePicture.
+// PrefetchReferencePicture, and (E5b) GetMvMvdRange.
 // RequestMemorySvc, WelsInitEncoderExt and WelsEncoderEncodeExt come with E8.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
@@ -32,6 +32,7 @@
 // 26 Nov 2026  Claude          AllocStrideTables and the fast/normal coding setters (E4).
 // 26 Nov 2026  Claude          The layer set up, WelsInitCurrentLayer and PreprocessSliceCoding (E4b).
 // 26 Nov 2026  Claude          The P-slice pointers in PreprocessSliceCoding (E5).
+// 26 Nov 2026  Claude          GetMvMvdRange (E5b).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -1542,6 +1543,41 @@ internal static unsafe partial class WelsEnc
         pTmpRow = null;
 
         return 0;
+    }
+
+    // E5b: GetMvMvdRange (encoder_ext.cpp:1510), which RequestMemorySvc sizes the MVD cost table with.
+    // RequestMemoryVaaScreen and ReleaseMemoryVaaScreen come with screen content (Phase 4).
+
+    public static void GetMvMvdRange(SWelsSvcCodingParam* pParam, ref int32_t iMvRange, ref int32_t iMvdRange)
+    {
+        ELevelIdc iMinLevelIdc = LEVEL_5_2;
+        int32_t iMinMv = 0;
+        int32_t iMaxMv = 0;
+        int32_t iFixMvRange = pParam->iUsageType != 0 ? EXPANDED_MV_RANGE : CAMERA_STARTMV_RANGE;
+        int32_t iFixMvdRange = (pParam->iUsageType != 0 ? EXPANDED_MVD_RANGE : ((pParam->iSpatialLayerNum == 1) ? CAMERA_MVD_RANGE :
+                                CAMERA_HIGHLAYER_MVD_RANGE));
+        for (int32_t iLayer = 0; iLayer < pParam->iSpatialLayerNum; iLayer++)
+        {
+            if (pParam->sSpatialLayers[iLayer].uiLevelIdc < iMinLevelIdc)
+            {
+                iMinLevelIdc = pParam->sSpatialLayers[iLayer].uiLevelIdc;
+            }
+        }
+        SLevelLimits* pLevelLimit = g_ksLevelLimits;
+        while ((pLevelLimit->uiLevelIdc != LEVEL_5_2) && (pLevelLimit->uiLevelIdc != iMinLevelIdc))
+        {
+            pLevelLimit++;
+        }
+        iMinMv = (pLevelLimit->iMinVmv) >> 2;
+        iMaxMv = (pLevelLimit->iMaxVmv) >> 2;
+
+        iMvRange = WELS_MIN(WELS_ABS(iMinMv), iMaxMv);
+
+        iMvRange = WELS_MIN(iMvRange, iFixMvRange);
+
+        iMvdRange = (iMvRange + 1) << 1;
+
+        iMvdRange = WELS_MIN(iMvdRange, iFixMvdRange);
     }
 
     public static void SetFastCodingFunc(SWelsFuncPtrList* pFuncList)

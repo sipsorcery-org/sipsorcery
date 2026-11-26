@@ -21,6 +21,7 @@
 // History:
 // 25 Nov 2026  Claude          Created (E1).
 // 26 Nov 2026  Claude          ParseSettings and InitializeInternalChecks shared with IdrTests (E4b).
+// 26 Nov 2026  Claude          The iLTRRefNum and iLtrMarkPeriod settings, for the stream tests (E5b).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -619,6 +620,8 @@ internal sealed unsafe class ParamSetEncoder : IDisposable
             case "iMinQp": e.iMinQp = (int)v; break;
             case "uiMaxNalSize": e.uiMaxNalSize = (uint)v; break;
             case "bEnableLongTermReference": e.bEnableLongTermReference = v != 0; break;
+            case "iLTRRefNum": e.iLTRRefNum = (int)v; break;
+            case "iLtrMarkPeriod": e.iLtrMarkPeriod = (uint)v; break;
             case "iMultipleThreadIdc": e.iMultipleThreadIdc = (ushort)v; break;
             case "iLoopFilterDisableIdc": e.iLoopFilterDisableIdc = (int)v; break;
             case "bEnableDenoise": e.bEnableDenoise = v != 0; break;

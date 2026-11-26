@@ -25,6 +25,10 @@
 //   h264ref idr                     E4b: the first frame (IDR) the encoder writes
 //                                   for a table of fixed QP configurations.
 //   h264ref idr-dump <name> <out>   That frame for one configuration, to a file.
+//   h264ref stream                  E5b: P streams, frame by frame, for a table of
+//                                   fixed QP configurations.
+//   h264ref stream-dump <name> <out>
+//                                   That stream for one configuration, to a file.
 //
 // The decode loop and hashing copy upstream's test/api/BaseDecoderTest.cpp and
 // decoder_test.cpp exactly (input split on 4-byte start codes, DecodeFrame2,
@@ -57,6 +61,8 @@ int EncoderConformance (const char* resDir);
 int ParamSets();
 int Idr();
 int IdrDump (const char* name, const char* outPath);
+int Stream();
+int StreamDump (const char* name, const char* outPath);
 
 namespace {
 
@@ -463,7 +469,9 @@ int Usage() {
            "       h264ref encoder-conformance <res-dir>\n"
            "       h264ref paramsets\n"
            "       h264ref idr\n"
-           "       h264ref idr-dump <name> <out>\n");
+           "       h264ref idr-dump <name> <out>\n"
+           "       h264ref stream\n"
+           "       h264ref stream-dump <name> <out>\n");
   return 2;
 }
 
@@ -498,6 +506,7 @@ int Kernels() {
   KernelsMvPred();
   KernelsMdInter();
   KernelsSvcEncodePSlice();
+  KernelsVaaCalc();
   return 0;
 }
 
@@ -514,6 +523,11 @@ int main (int argc, char** argv) {
     return Idr();
   }
   if (argc == 4 && std::string (argv[1]) == "idr-dump") return IdrDump (argv[2], argv[3]);
+  if (argc == 2 && std::string (argv[1]) == "stream") {
+    BinaryStdout();
+    return Stream();
+  }
+  if (argc == 4 && std::string (argv[1]) == "stream-dump") return StreamDump (argv[2], argv[3]);
   if (argc < 3) return Usage();
   std::string cmd = argv[1];
   if (cmd == "conformance") return Conformance (argv[2]);

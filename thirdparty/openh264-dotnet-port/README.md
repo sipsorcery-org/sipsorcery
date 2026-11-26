@@ -47,6 +47,8 @@ refharness/build/Release/h264ref encoder-conformance <openh264>/res > reference/
 refharness/build/Release/h264ref paramsets > reference/paramsets.tsv   # encoder validation and SPS/PPS output
 refharness/build/Release/h264ref idr > reference/idr.tsv               # first frame (IDR) at a fixed QP
 refharness/build/Release/h264ref idr-dump <name> <out.264>        # one idr row's bytes
+refharness/build/Release/h264ref stream > reference/stream.tsv         # P streams at a fixed QP, frame by frame
+refharness/build/Release/h264ref stream-dump <name> <out.264>     # one stream row's bytes
 ```
 
 `conformance` copies upstream's `test/api/BaseDecoderTest.cpp` decode loop and
@@ -135,6 +137,20 @@ SHA1 and size. `idr-dump` writes one row's frame to a file.
 generator and output format, and writes its own bytes on a mismatch when
 `H264_DUMP_DIR` is set.
 
+`stream` encodes several frames of each of a table of configurations
+(`kStreamConfigs`): one spatial layer of camera content with rate control,
+background detection, adaptive quantisation and scene change detection off.
+The content moves (`StreamSample`: still, a pan, a moving block, moving and
+fresh noise, a fade, a cut, and smooth waves moving by a fraction of a pixel),
+and the settings cover the complexity modes, QP 0 to 51, IDR periods,
+temporal layers, LTR marking, reference counts, the slice modes, odd and
+cropped sizes, the deblocking modes, three id strategies and the Main
+profile. For each frame it prints the `EncodeFrame` result, the frame type,
+the temporal ids, each layer's NAL lengths and short SHA1s and the frame's
+SHA1 and size, then the whole stream's SHA1 and size. `stream-dump` writes
+one row's stream to a file. `test/SIPSorcery.H264.TestVectors/StreamTests.cs`
+has the same content generator and output format.
+
 ## Reference results (`reference/`)
 
 - **`decoder-conformance.tsv`** is the output of `h264ref conformance` on the
@@ -155,7 +171,8 @@ generator and output format, and writes its own bytes on a mismatch when
   the CAVLC writer (E3, `src/cavlc_encoder.cpp`), and the I-slice (E4a) and
   P-slice (E5a) coding of whole frames on hand-built contexts
   (`src/islice_encoder.cpp` and `src/pslice_encoder.cpp`, which share the
-  context in `src/islice_ctx.h`): 6743 rows.
+  context in `src/islice_ctx.h`): 6743 rows. E5b added the video processing
+  VAA statistics (`src/kernels_processing.cpp`, 177 `vaacalc` rows): 6920.
 - **`headers.tsv`** and **`headers-damaged.tsv`** are the outputs of `h264ref
   headers` and `headers-damaged`: the size and SHA1 of each vector's parser
   dump, clean (51 rows) and damaged (153 rows). Read by
@@ -179,3 +196,8 @@ generator and output format, and writes its own bytes on a mismatch when
   first frame. Read by `IdrTests` (E4b), which also decodes each frame with
   the ported decoder and compares it with the encoder's reconstruction. All
   47 match.
+- **`stream.tsv`** is the output of `h264ref stream`: 57 configurations, 506
+  frames (429 P, 77 IDR). Read by `StreamTests` (E5b), which also decodes
+  each stream with the ported decoder and compares its pictures with the
+  encoder's reconstructions wherever the encoder deblocked them (the
+  reference pictures, or every picture with the filter off). All 57 match.

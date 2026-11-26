@@ -28,6 +28,7 @@ was kept for the VP8 encoder.
 | E4a I-slice macroblock coding | **Done** (26 Nov) | E4 is split in two (see the notes). E4a: the intra half of `md` and `svc_base_layer_md` (I16x16, I4x4 and its fast variant, chroma, the fine partition choice), `svc_encode_mb` (the I16x16, I4x4 and chroma transform, quantisation and reconstruction), the I-slice half of `svc_encode_slice` (`WelsISliceMdEnc` with its overflow retry, `UpdateMbNeighbor`, the macroblock cache, the slice boundary tables), `svc_mode_decision`'s background QP update, `ratectl`'s rate control off path, `picture`/`picture_handle`, the rest of `svc_enc_slice_segment`, and from `encoder_ext` `AllocStrideTables` and the fast/normal coding switch. ~3.3k lines. New kernel groups (`refharness/src/islice_encoder.cpp`): 204 `md`, 8 `svc_base_layer_md`, 10 `picture_handle`, 8 `encoder_ext` and 728 `svc_encode_slice` rows. 706 of those code whole frames (1 to 99 macroblocks, 1 to 9 slices, both coding modes, QP 0 to 51, three kinds of content) through `WelsISliceMdEnc` on a hand-built context, and hash the bitstream, the reconstruction and every macroblock's state. **All match**. Of 29 planted bugs, 26 fail rows, two of them only after threshold rows were added. The other three cannot change an I slice (see the notes). UnitTest: 7511. TestVectors: 480. |
 | E4b The IDR through the API | **Done** (26 Nov) | The rest of E4. From `svc_encode_slice`: the slice header writers (base and extension, with the reference reordering and marking), `WelsCodeOneSlice`, and the slice lists (`InitSliceList`, `InitSliceInLayer`, `InitSliceThreadInfo`, the slice bitstream buffers). The encoder's `deblocking` (the intra and inter boundary strengths, the edge, macroblock and slice filters, `PerformDeblockingFilter`, `DeblockingInit`). From `encoder_ext`: the layer and macroblock list set-up (`InitMbInfo` to `InitDqLayers`, `InitMbListD`, with their frees), `WelsInitCurrentLayer`, `PrefetchReferencePicture`, `PreprocessSliceCoding` and `GetTemporalLevel`. `encoder`'s `InitFrameCoding` and the frame numbers. `ratectl`'s `GomRCInitForOneSlice`. ~2.5k lines. New `h264ref idr` mode (`reference/idr.tsv`): 47 configurations of one spatial layer with rate control off. They cover 4 kinds of content, QP 0 to 51, the three complexity modes, 9 sizes (16x16 to 1280x720, odd and cropped), fixed, raster-row and raster-list slicing, the three deblocking modes with offsets, temporal layers, LTR, three id strategies, the feature flags and the Main profile. `IdrTests.cs` drives the ported functions the way `InitializeExt` and the first `EncodeFrame` do. It does by hand, for an IDR, what the unported reference manager, VAA and preprocessing do (see the notes). **All 47 match** native byte for byte, including two rows that overflow the frame buffer and return 3. Every reconstruction equals the C# decoder's picture, and every row frees all it allocates. 3 planted bugs (deblocking, slice header and padding) each fail exactly the rows they should. UnitTest: 7511. TestVectors: 528. |
 | E5a P-slice macroblock coding | **Done** (26 Nov) | E5 is split in two (see the notes). E5a: `mv_pred`, the camera half of `svc_motion_estimate` (the initial point, the diamond search, `WelsMotionEstimateSearch`, `WelsInitMeFunc`), the inter half of `md` (the inter neighbour caches, `MeRefineFracPixel`, `PredictSad`, `PredictSadSkip`, `MvdCostInit`), the P half of `svc_base_layer_md` (the skip, background skip, 16x16 and fine partition decisions with their VAA variant, the sub-pel refinement, intra in P), `svc_mode_decision`'s background skip, `svc_encode_mb`'s inter coding and skip reconstruction, the P half of `svc_encode_slice` (`WelsCodePSlice`, `WelsMdInterMbLoop`), the P pointers of `PreprocessSliceCoding`, `InitFunctionPointers`, `ratectl`'s adaptive quantisation branches, and the VAA structs. ~3.8k lines. New kernel groups (`refharness/src/pslice_encoder.cpp`): 112 `mv_pred`, 2 `md` and 230 `svc_encode_slice` rows. The 230 code whole P frames (1 to 99 macroblocks, 1 to 9 slices, the three complexity modes, background detection and AQ on and off, QP 0 to 51, two MV ranges, five kinds of motion, I and P references) through `WelsCodePSlice` on a hand-built context, and hash the bitstream, the reconstruction and every macroblock's state. **All match**. Of 15 planted bugs, 13 fail rows. The other two move a threshold by one (see the notes). UnitTest: 7857. TestVectors: 528. |
+| E5b The P stream through the frame loop | **Done** (26 Nov) | The rest of E5. `ref_list_mgr_svc` for camera content: the `IWelsReferenceStrategy` (`CWelsReference_TemporalLayer`), the list reset, update and build, `WelsMarkPic` with the MMCO and LTR marking, `WelsUpdateRefSyntax` and `PrefetchNextBuffer`. Also `encoder`'s `DecideFrameType`, `encoder_ext`'s `GetMvMvdRange`, and `processing`'s VAA statistics (the five `vaacalcfuncs` C kernels and `CVAACalculation`). ~1.9k lines. `IdrTests.cs`'s `IdrEncoder` became `EncoderDriver.cs`, with the reference strategy, the LTR state, the VAA buffers, the MVD cost table, a hand port of the camera half of `CWelsPreProcess` for one spatial layer, and `WelsEncoderEncodeExt`'s whole frame loop (see the notes). New `vaacalc` kernel group (`refharness/src/kernels_processing.cpp`, 177 rows). New `h264ref stream` mode (`reference/stream.tsv`): 57 configurations, 506 frames (429 P) of eight kinds of moving content. They cover the complexity modes, QP 0 to 51, IDR periods, two to four temporal layers, LTR marking, reference counts, the slice modes, odd and cropped sizes, the deblocking modes, three id strategies and the Main profile. **All match** native byte for byte, frame by frame. Every reconstruction the encoder deblocked equals the C# decoder's picture, and every row frees all it allocates. Of 12 planted bugs, 9 fail rows. The other three can't be reached before E7 or E8 (see the notes). UnitTest: 8034. TestVectors: 586. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -928,6 +929,99 @@ Notes from E5a:
   in C, and the C# zeroes it. Every field the loop reads is written first.
   Three native runs give the same `kernels.tsv`.
 
+Notes from E5b:
+
+- **The driver.** `IdrTests.cs`'s `IdrEncoder` is now
+  `test/SIPSorcery.H264.TestVectors/EncoderDriver.cs`, used by `IdrTests`
+  and `StreamTests`. It still mirrors `InitializeExt`, `WelsInitEncoderExt`,
+  `RequestMemorySvc` and `WelsEncoderEncodeExt`, now with the whole frame
+  loop:
+  - `PrepareEncodeFrame`: `DecideFrameType`, the temporal level, and the
+    parameter sets on an IDR.
+  - `MarkPic`, then `BuildRefList`. When `BuildRefList` fails, the frame is
+    coded as an IDR, as upstream does.
+  - `AfterBuildRefList`, `WelsUpdateRefSyntax`, the slices and the
+    deblocking.
+  - `UpdateRefList` for every frame above `NRI_PRI_LOWEST`, and the
+    `CORRECTED` retry.
+
+  The library's `InitFunctionPointers` replaces the driver's copy.
+  `RequestMemorySvc` also allocates the reference strategy, the LTR state,
+  the VAA buffers and the MVD cost table (`GetMvMvdRange`, `MvdCostInit`).
+  The release frees them in upstream's order, so every row still frees all
+  it allocates. After `ENC_RETURN_MEMALLOCERR` the API uninitialises the
+  encoder, and later frames return 3, so the driver does the same.
+- **The preprocessing.** `CWelsPreProcess` comes with E7. Until then the
+  driver has a hand port of its camera half for one spatial layer:
+  - `AllocSpatialPictures`: `2 + max(highest tid, 1)` pictures, plus the
+    LTR ones.
+  - `BuildSpatialPicList`: the IDR period flag, the source copy and the
+    padding.
+  - `AnalyzeSpatialPic`: the reference picture from `g_kuiRefTemporalIdx`
+    (or the LTR's), then the VAA statistics through `CVAACalculation`.
+  - `UpdateSpatialPictures`: the picture swaps, with the LTR swap.
+
+  The driver throws `NotSupportedException` where an analysis feature
+  would run: scene change detection on a T0 P frame, and background
+  detection and adaptive quantisation on a P frame. It also throws for
+  anything that scales. The VAA runs even with every analysis feature off.
+  At LOW complexity (the fast mode), its 8x8 SADs feed
+  `WelsMdInterFinePartitionVaa`, which skips the fine partitions when all
+  four are small. So E5b ports `processing`'s VAA: the five C kernels in
+  `vaacalcfuncs` and `CVAACalculation`. The `vaacalc` rows check them,
+  including `CVAACalculation`'s dispatch over the SSD, variance and
+  background flags and its invalid arguments.
+- **The reference strategy.** `IWelsReferenceStrategy` is one native struct
+  with a class tag, like E1's `IWelsParametersetStrategy`. Camera content
+  is always `CWelsReference_TemporalLayer`, with or without LTR. Screen
+  content (`CWelsReference_Screen`,
+  `CWelsReference_LosslessWithLtr`) throws until Phase 4. Native forces
+  `iLTRRefNum` for camera content, so only `iLtrMarkPeriod` changes an LTR
+  stream.
+- **The stream table.** `h264ref stream` (`reference/stream.tsv`) has 57
+  configurations and 506 frames, 429 of them P. Some rows come out the same,
+  as expected:
+  - MEDIUM complexity gives the same stream as HIGH (`pan-medium` and
+    `pan-high`, `block-medium` and `block-high`). Only screen content's
+    scrolling detection tells them apart.
+  - `cut` has no IDR at the cut, because scene change detection is off.
+
+  Noise at QP 8 to 20 overflows the frame buffer natively (3, then an
+  uninitialised encoder for the rest of the stream), so the noise rows keep
+  the default QP and `fade-qp20` covers the low QPs on P frames instead.
+  Two native runs give the same table.
+- **What the reconstruction check sees.** A P frame's bytes now depend on
+  its references' deblocking, so the stream match checks the encoder's
+  deblocking too. The decoder comparison checks every frame whose
+  reconstruction the encoder deblocked. Upstream deblocks only reference
+  frames, so the top temporal layer's frames are skipped unless the filter
+  is off: `temporal-3` compares 8 of its 16 frames.
+- **Planted bugs.** Each of 12 was planted one at a time and restored from
+  a copy. The rows that fail, of 57 streams and 48 IDR rows:
+  - LTR marking one frame early (`uiLtrMarkInterval >=`): 3 LTR streams.
+  - Keeping a second short-term reference after a T0 frame: 51.
+  - A frame referring to a picture one temporal layer up: 5, the streams
+    with three or four layers.
+  - `DecideFrameType` ignoring the IDR period: 8, the streams with one.
+  - The preprocessing's IDR period one frame early: the same 8.
+  - The VAA SAD without its absolute value: 24 streams, and 26 of the 177
+    `vaacalc` rows.
+  - The VAA measured against the current picture: 30.
+  - The spatial pictures never moving on: 30.
+  - The VAA reference for the fourth frame of an 8-frame GOP: 1. A VAA bug
+    only shows where an 8x8 SAD crosses the fine partition threshold.
+
+  The three that pass can't be reached before E7 or E8:
+  - The LTR index wrap in `HandleLTRMarkFeedback` needs the API's LTR
+    marking feedback (E8).
+  - `DecideFrameType` resetting `iCodingIndex` on an IDR. The IDR period
+    must be a multiple of the GOP size, so a periodic IDR is already at the
+    start of a GOP, and every use of the index masks it by the GOP size.
+    Only a scene change IDR (E7) can come mid-GOP.
+  - `UpdateSpatialPictures` not keeping an LTR's source picture. The VAA
+    reads it only when recovering through the LTR from a lost frame, which
+    the API's recovery request starts (E8).
+
 ## 1. Goal
 
 A pure managed H.264 encoder and decoder in `src/SIPSorcery.H264`, ported from
@@ -1184,8 +1278,9 @@ merges. Approximate C# sizes are in brackets.
   `svc_mode_decision`, `svc_base_layer_md` P and `ref_list_mgr_svc` (single
   reference). Acceptance: the stream matches native byte for byte. *[~4k]*
   Split in two. **E5a done**: the macroblock-level inter coding, checked on
-  hand-built P contexts, ~3.8k lines. E5b: the reference list manager,
-  `DecideFrameType` and the stream match through the frame loop.
+  hand-built P contexts, ~3.8k lines. **E5b done**: the reference list
+  manager, `DecideFrameType`, the VAA statistics and the stream match
+  through the frame loop, ~1.9k lines.
 - **E6** Rate control: `ratectl` (bitrate and quality modes, frame skip).
   Acceptance: the output matches native byte for byte with rate control on and
   preprocessing off. *[~1.5k]*

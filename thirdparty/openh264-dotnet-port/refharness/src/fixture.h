@@ -98,5 +98,7 @@ void KernelsSvcEncodeSlice();
 void KernelsMvPred();
 void KernelsMdInter();
 void KernelsSvcEncodePSlice();
+// The video processing VAA statistics, in kernels_processing.cpp (E5b).
+void KernelsVaaCalc();
 
 #endif  // H264REF_FIXTURE_H

@@ -2,11 +2,12 @@
 // Filename: encoder_context.cs
 //
 // Description: Port of codec/encoder/core/inc/encoder_context.h, partial:
-// SRefList, SSpatialPicIndex, SStrideTables and the sWelsEncCtx fields that
-// parameter set generation and writing (E1), the CAVLC macroblock writer
-// (E3), the I-slice macroblock coder (E4), the frame set-up (E4b) and the
-// P-slice coder (E5) use. The remaining fields arrive with the
-// code that reads them, in the upstream order. The port never copies or
+// SRefList, SLTRState, SSpatialPicIndex, SStrideTables and the sWelsEncCtx
+// fields that parameter set generation and writing (E1), the CAVLC
+// macroblock writer (E3), the I-slice macroblock coder (E4), the frame set-up
+// (E4b), the P-slice coder (E5) and the reference list manager (E5b) use. The
+// remaining fields arrive with the code that reads them, in the upstream
+// order. The port never copies or
 // memsets the context as a whole, so its layout only needs to hold these
 // fields, not mirror the C one.
 // OpenH264 commit 78783f19 (v2.7.0-1).
@@ -20,6 +21,7 @@
 // 26 Nov 2026  Claude          SStrideTables, the picture pointers and the RC fields (E4).
 // 26 Nov 2026  Claude          SRefList, SSpatialPicIndex and the layer, list and NAL fields (E4b).
 // 26 Nov 2026  Claude          The MVD cost table fields and pVaa (E5).
+// 26 Nov 2026  Claude          SLTRState, pReferenceStrategy, pLtr and bRefOfCurTidIsLtr (E5b).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -71,7 +73,32 @@ internal unsafe struct SRefList
     public uint8_t uiLongRefCount;              // dependend on pRef pic module
 }
 
-// SLTRState comes with E5b.
+/// <summary>TagLTRState.</summary>
+internal unsafe struct SLTRState
+{
+    // LTR mark feedback
+    public uint32_t uiLtrMarkState;             // LTR mark state, indicate whether there is a LTR mark feedback unsolved
+    public int32_t iLtrMarkFbFrameNum;          // the unsolved LTR mark feedback, the marked iFrameNum feedback from decoder
+
+    // LTR used as recovery reference
+    public int32_t iLastRecoverFrameNum;        // reserve the last LTR or IDR recover iFrameNum
+    public int32_t iLastCorFrameNumDec;         // reserved the last correct position in decoder side, use to select valid LTR to recover or to decide the LTR mark validation
+    public int32_t iCurFrameNumInDec;           // current iFrameNum in decoder side, use to select valid LTR to recover or to decide the LTR mark validation
+
+    // LTR mark
+    public int32_t iLTRMarkMode;                // direct mark or delay mark
+    public int32_t iLTRMarkSuccessNum;          //successful marked num, for mark mode switch
+    public int32_t iCurLtrIdx;                  // current int32_t term reference index to mark
+    public fixed int32_t iLastLtrIdx[codec_app_def.MAX_TEMPORAL_LAYER_NUM];
+    public int32_t iSceneLtrIdx;                // related to Scene LTR, used by screen content
+
+    public uint32_t uiLtrMarkInterval;          // the interval from the last int32_t term pRef mark
+
+    public bool bLTRMarkingFlag;                //decide whether current frame marked as LTR
+    public bool bLTRMarkEnable;                 //when LTR is confirmed and the interval is no smaller than the marking period
+    public bool bReceivedT0LostFlag;            // indicate whether a t0 lost feedback is recieved, for LTR recovery
+}
+
 
 /// <summary>TagSpatialPicIndex.</summary>
 internal unsafe struct SSpatialPicIndex
@@ -114,7 +141,8 @@ internal unsafe struct sWelsEncCtx
     public SStrideTables* pStrideTab;           // stride tables for internal coding used
     public SWelsFuncPtrList* pFuncList;
 
-    // pSliceThreading and pTaskManage come with the threading work, and pReferenceStrategy with E5b.
+    // pSliceThreading and pTaskManage come with the threading work.
+    public IWelsReferenceStrategy* pReferenceStrategy;
 
     // pointers
     public SPicture* pEncPic;                   // pointer to current picture to be encoded
@@ -126,7 +154,7 @@ internal unsafe struct sWelsEncCtx
 
     public SRefList** ppRefPicListExt;          // reference picture list for SVC
     public PtrArray16<SPicture> pRefList0;      // [16]
-    // SLTRState* pLtr comes with E5b.
+    public SLTRState* pLtr;                     //[MAX_DEPENDENCY_LAYER];
 
     public bool bCurFrameMarkedAsSceneLtr;
     // Derived
@@ -169,7 +197,7 @@ internal unsafe struct sWelsEncCtx
     public InlineArray4<SSpatialPicIndex> sSpatialIndexMap; // [MAX_DEPENDENCY_LAYER]
     public fixed int32_t iSliceBufferSize[WelsEnc.MAX_DEPENDENCY_LAYER];
 
-    // bRefOfCurTidIsLtr comes with E5b.
+    public fixed bool bRefOfCurTidIsLtr[WelsEnc.MAX_DEPENDENCY_LAYER * WelsEnc.MAX_TEMPORAL_LEVEL]; // [MAX_DEPENDENCY_LAYER][MAX_TEMPORAL_LEVEL]
 
     public int32_t iMaxSliceCount;              // maximal count number of slices for all layers observation
     public int16_t iActiveThreadsNum;           // number of threads active so far

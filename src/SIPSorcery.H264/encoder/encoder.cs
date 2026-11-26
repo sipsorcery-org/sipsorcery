@@ -2,10 +2,10 @@
 // Filename: encoder.cs
 //
 // Description: Port of codec/encoder/core/src/encoder.cpp, part 1 (E1):
-// InitBitStream (E1), WelsSetMemZero_c (E4), and UpdateFrameNum,
-// LoadBackFrameNum and InitFrameCoding (E4b), and WelsInitBGDFunc and
-// InitFunctionPointers (E5). InitPic and DecideFrameType follow with what
-// they read (the reference list in E5b and the preprocessing in E7).
+// InitBitStream (E1), WelsSetMemZero_c (E4), UpdateFrameNum,
+// LoadBackFrameNum and InitFrameCoding (E4b), WelsInitBGDFunc and
+// InitFunctionPointers (E5), and DecideFrameType (E5b). InitPic follows with
+// the preprocessing (E7).
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // Author(s):
@@ -16,6 +16,7 @@
 // 26 Nov 2026  Claude          WelsSetMemZero_c (E4).
 // 26 Nov 2026  Claude          UpdateFrameNum, LoadBackFrameNum and InitFrameCoding (E4b).
 // 26 Nov 2026  Claude          WelsInitBGDFunc and InitFunctionPointers (E5).
+// 26 Nov 2026  Claude          DecideFrameType (E5b).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -272,8 +273,106 @@ internal static unsafe partial class WelsEnc
         // #if defined(STAT_OUTPUT) memset (&pEncCtx->sPerInfo, 0, sizeof (SStatSliceInfo)); #endif
     }
 
-    // DecideFrameType reads the VAA's IDR period and scene change flags and comes with E5b. The
-    // DumpDependencyRec and DumpRecFrame dumps are ENABLE_FRAME_DUMP only, which is off.
+    public static EVideoFrameType DecideFrameType(sWelsEncCtx* pEncCtx, int8_t kiSpatialNum, int32_t kiDidx,
+                                                  bool bSkipFrameFlag)
+    {
+        SWelsSvcCodingParam* pSvcParam = pEncCtx->pSvcParam;
+        SSpatialLayerInternal* pParamInternal = &pEncCtx->pSvcParam->sDependencyLayers[kiDidx];
+        EVideoFrameType iFrameType = videoFrameTypeInvalid;
+        bool bSceneChangeFlag = false;
+        if (pSvcParam->iUsageType == SCREEN_CONTENT_REAL_TIME)
+        {
+            if ((!pSvcParam->bEnableSceneChangeDetect) || pEncCtx->pVaa->bIdrPeriodFlag ||
+                (kiSpatialNum < pSvcParam->iSpatialLayerNum))
+            {
+                bSceneChangeFlag = false;
+            }
+            else
+            {
+                bSceneChangeFlag = pEncCtx->pVaa->bSceneChangeFlag;
+            }
+            if (pEncCtx->pVaa->bIdrPeriodFlag || pParamInternal->bEncCurFrmAsIdrFlag || (!pSvcParam->bEnableLongTermReference
+                && bSceneChangeFlag && !bSkipFrameFlag))
+            {
+                iFrameType = videoFrameTypeIDR;
+            }
+            else if (pSvcParam->bEnableLongTermReference && (bSceneChangeFlag
+                     || pEncCtx->pVaa->eSceneChangeIdc == ESceneChangeIdc.LARGE_CHANGED_SCENE))
+            {
+                int iActualLtrcount = 0;
+                SPicture** pLongTermRefList = (SPicture**)&pEncCtx->ppRefPicListExt[0]->pLongRefList;
+                for (int i = 0; i < pSvcParam->iLTRRefNum; ++i)
+                {
+                    if (null != pLongTermRefList[i] && pLongTermRefList[i]->bUsedAsRef && pLongTermRefList[i]->bIsLongRef
+                        && pLongTermRefList[i]->bIsSceneLTR)
+                    {
+                        ++iActualLtrcount;
+                    }
+                }
+                if (iActualLtrcount == pSvcParam->iLTRRefNum && bSceneChangeFlag)
+                {
+                    iFrameType = videoFrameTypeIDR;
+                }
+                else
+                {
+                    iFrameType = videoFrameTypeP;
+                    pEncCtx->bCurFrameMarkedAsSceneLtr = true;
+                }
+            }
+            else
+            {
+                iFrameType = videoFrameTypeP;
+            }
+            if (videoFrameTypeP == iFrameType && bSkipFrameFlag)
+            {
+                iFrameType = videoFrameTypeSkip;
+            }
+            else if (videoFrameTypeIDR == iFrameType)
+            {
+                pParamInternal->iCodingIndex = 0;
+                pEncCtx->bCurFrameMarkedAsSceneLtr = true;
+            }
+
+        }
+        else
+        {
+            // perform scene change detection
+            if ((!pSvcParam->bEnableSceneChangeDetect) || pEncCtx->pVaa->bIdrPeriodFlag ||
+                (kiSpatialNum < pSvcParam->iSpatialLayerNum)
+                || (pParamInternal->iFrameIndex < (VGOP_SIZE << 1)))
+            { // avoid too frequent I frame coding, rc control
+                bSceneChangeFlag = false;
+            }
+            else
+            {
+                bSceneChangeFlag = pEncCtx->pVaa->bSceneChangeFlag;
+            }
+
+            //scene_changed_flag: RC enable && iSpatialNum == pSvcParam->iSpatialLayerNum
+            //bIdrPeriodFlag: RC disable || iSpatialNum != pSvcParam->iSpatialLayerNum
+            //pEncCtx->bEncCurFrmAsIdrFlag: 1. first frame should be IDR; 2. idr pause; 3. idr request
+            iFrameType = (pEncCtx->pVaa->bIdrPeriodFlag || bSceneChangeFlag
+                          || pParamInternal->bEncCurFrmAsIdrFlag) ? videoFrameTypeIDR : videoFrameTypeP;
+            if (videoFrameTypeIDR == iFrameType)
+            {
+                WelsLog(&(pEncCtx->sLogCtx), WELS_LOG_DEBUG,
+                        $"encoding videoFrameTypeIDR due to ( bIdrPeriodFlag {(pEncCtx->pVaa->bIdrPeriodFlag ? 1 : 0)}, bSceneChangeFlag {(bSceneChangeFlag ? 1 : 0)}, bEncCurFrmAsIdrFlag {(pParamInternal->bEncCurFrmAsIdrFlag ? 1 : 0)} )");
+            }
+
+            if (videoFrameTypeP == iFrameType && bSkipFrameFlag)
+            {  // for frame skip, 1/5/2010
+                iFrameType = videoFrameTypeSkip;
+            }
+            else if (videoFrameTypeIDR == iFrameType)
+            {
+                pParamInternal->iCodingIndex = 0;
+            }
+        }
+        return iFrameType;
+    }
+
+    // The DumpDependencyRec and DumpRecFrame dumps are ENABLE_FRAME_DUMP only, which is off.
+
 
     /***********************************************************************************/
     public static void WelsSetMemZero_c(void* pDst, int32_t iSize)
