@@ -78,6 +78,7 @@ internal sealed class Options
                 case "--decoder": o.Page["dec"] = Next(ref i); break;            // vp8.net | ffmpeg
                 case "--codec-out": o.Page["out"] = Next(ref i); break;
                 case "--encoder": o.Page["enc"] = Next(ref i); break;            // vp8.net | av1.net | ffmpeg
+                case "--try-h265": o.Page["h265"] = "try"; break;               // offer H265 out though WebView2 lacks it
                 case "--browser-kbps": o.Page["kbps"] = Next(ref i); break;
                 case "--encoder-kbps": o.Page["enckbps"] = Next(ref i); break;
                 case "--drop-a": o.Page["dropA"] = Next(ref i); break;            // percent of leg A frames dropped before decode

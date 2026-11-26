@@ -94,11 +94,24 @@ const browserCodecs = (kind) => {
 };
 const browserCan = { send: browserCodecs(RTCRtpSender), receive: browserCodecs(RTCRtpReceiver) };
 
+// Edge and WebView2 (157 and 158 at least) are built without libwebrtc's H265 code, yet with
+// WebRtcAllowH265Receive on they list H265 in getCapabilities and agree to receive it, and the
+// first H265 packet then crashes the renderer. So it's ruled out by browser, not by what the
+// browser claims. ?h265=try (--try-h265) offers it anyway, to see whether a later version has it.
+const noWebRtcH265 = params.get("h265") === "try" ? null
+  : window.chrome?.webview ? "WebView2" : /\bEdg\//.test(navigator.userAgent) ? "Edge" : null;
+const cantReceive = (c) => c === "H265" && noWebRtcH265 ? `${noWebRtcH265} can't receive it`
+  : browserCan.receive.has(c) ? null : "browser can't receive it";
+
 /** An implementation with what does the work under it: "ffmpeg (libsvtav1)". */
 function implLabel(impl, codec, side) {
   const name = impl === "ffmpeg" ? caps.ffmpegNames?.[`${side}:${codec}`] : null;
   return name ? `${impl} (${name})` : impl;
 }
+
+// What the URL asked for that couldn't be picked: kept up through Start (so a scripted run says
+// why it isn't running what was asked) until the pickers are changed.
+let pickNote = null;
 
 function refreshPickers(initial = false) {
   const impls = caps.implementations;
@@ -109,9 +122,9 @@ function refreshPickers(initial = false) {
   // Leg A needs page A to encode it and (to transcode) SIPSorcery to decode it, or (to relay)
   // page B to decode it; leg B needs SIPSorcery to encode it and page B to decode it.
   const whyIn = (c) => !browserCan.send.has(c) ? "browser can't send it"
-    : relay ? (browserCan.receive.has(c) ? null : "browser can't receive it")
+    : relay ? cantReceive(c)
     : decodes(c) ? null : "no decoder here";
-  const whyOut = (c) => !browserCan.receive.has(c) ? "browser can't receive it" : encodes(c) ? null : "no encoder here";
+  const whyOut = (c) => cantReceive(c) ?? (encodes(c) ? null : "no encoder here");
   const refused = [];
   const pick = (id, items, key) => {
     const why = fillOptions($(id), items, initial ? params.get(key) : null);
@@ -128,7 +141,9 @@ function refreshPickers(initial = false) {
   const encoder = $("encoder").value;
   $("encKbps").disabled = relay || encoder === "vp8.net";
   $("encKbps").title = encoder === "vp8.net" ? "vp8.net has a fixed quantiser, not a bitrate" : "";
-  if (refused.length) showError(refused.join("; "));
+  if (refused.length) showError(pickNote = refused.join("; "));
+  else if (!initial && pickNote) { pickNote = null; $("errorBar").hidden = true; }
+  return refused;
 }
 
 function readConfig() {
@@ -216,6 +231,7 @@ async function start() {
   clearTimeout(restartTimer);
   source?.stop();   // never two cards drawing at once
   $("errorBar").hidden = true;
+  if (pickNote) { $("errorBar").textContent = pickNote; $("errorBar").hidden = false; }
   cfg = readConfig();
   running = true;
   startedAt = performance.now();
@@ -1065,14 +1081,20 @@ setInterval(() => {
 window.chrome?.webview?.addEventListener("message", async (e) => {
   const m = e.data;
   switch (m.type) {
-    case "hello":
+    case "hello": {
       caps = m.caps;
-      refreshPickers(true);
+      const refused = refreshPickers(true);
       if (m.caps.ffmpegNote) log(`ffmpeg not available: ${m.caps.ffmpegNote}`);
       $("version").textContent = m.sipsorcery ? `SIPSorcery ${m.sipsorcery}` : "";
       syncClock();
-      if (params.get("start") === "1" && !running) setTimeout(start, 300);
+      // A run the switches started with a codec a leg can't use isn't started with another one in
+      // its place: a scripted run would then report on codecs it wasn't asked for.
+      if (params.get("start") === "1" && !running) {
+        if (refused.length) post({ type: "refused", message: refused.join("; ") });
+        else setTimeout(start, 300);
+      }
       break;
+    }
     case "clock": onClock(m); break;
     case "offers": onOffers(m).catch((err) => showError(`Answering SIPSorcery's offers failed: ${err.message}`)); break;
     case "state": break;   // the page's own connection states are shown; the host's go in the log

@@ -42,11 +42,11 @@ has just the one codec, so the browser has to use it. What does the work in SIPS
 
 The pickers name FFmpeg's own codec, as found in the FFmpeg build that's loaded.
 
-The browser is the other limit. WebView2 sends VP8, VP9, H264 and AV1, and receives those and
-H265: H265 over WebRTC is behind Chromium features the app turns on, and is decoded on the GPU
-where the GPU can. It doesn't send H265 (Chromium has no WebRTC H265 encoder on Windows yet), so
-H265 can be tested out of SIPSorcery but not into it. A codec that can't be used on a leg is shown
-in its picker, greyed, with the reason.
+The browser is the other limit. WebView2 sends and receives VP8, VP9, H264 and AV1, but not H265
+over WebRTC: it's built without libwebrtc's H265 code (Chrome isn't), so it can't send H265, and
+although it claims it can receive it, the first H265 packet crashes it (see "Found so far"). So
+H265 out is greyed for WebView2; `--try-h265` offers it anyway, for a later WebView2 that may have
+it. A codec that can't be used on a leg is shown in its picker, greyed, with the reason.
 
 ## The screen
 
@@ -187,8 +187,9 @@ TranscodeLoop.exe --exit-after 15 --stats run.json --capture run.png --capture-a
 | `--source card\|fake` | the test card, or Chromium's fake camera |
 | `--size 640x480`, `--fps 30` | the source's size (up to `3840x2160`) and frame rate |
 | `--mode transcode\|relay` | decode and encode, or pass frames through |
-| `--codec-in`, `--codec-out` | `VP8`, `VP9`, `H264`, `H265` (out only) or `AV1` |
+| `--codec-in`, `--codec-out` | `VP8`, `VP9`, `H264`, `H265` (out only, with `--try-h265`) or `AV1`. A codec a leg can't use isn't swapped for another: the run doesn't start, and a scripted one exits with `refused` in its stats |
 | `--decoder`, `--encoder` | `vp8.net` or `ffmpeg`; `av1.net` encodes AV1 |
+| `--try-h265` | offer H265 out though WebView2 can't receive it (it crashes WebView2 158) |
 | `--browser-kbps`, `--encoder-kbps` | bitrates for page A's encoder and SIPSorcery's (default: picked for the size) |
 | `--drop-a <percent>` | leg A frames dropped before decode |
 | `--loss-b <percent>` | leg B video packets lost |
@@ -239,12 +240,14 @@ What the first runs turned up in SIPSorcery, to be looked at separately:
   VP8 to AV1 with av1.net at 1080p, and VP9 or AV1 to H264 at 1080p. Nothing passes at 4K: H264
   encoding is right at the 33 ms limit (as above), and with av1.net the VP8 decoder slows to 27 ms
   (p95 39 ms) while av1.net encodes alongside it, so about 1 frame in 5 is skipped.
-- **H265 out crashes WebView2.** Page B's renderer process dies (access violation, 0xC0000005)
-  within a second of SIPSorcery's first H265 frames arriving. WebCodecs in the same WebView2
-  decodes libx265's H265 without trouble, so it's Chromium's WebRTC H265 receive path being fed
-  SIPSorcery's RTP stream: either something in SIPSorcery's H265 packetisation that Chromium
-  doesn't expect, or a Chromium bug. The app now notices the crash, stops the run, reloads the
-  page and shows what happened. (WebView2 can't send H265 at all, so H265 in can't be tried.)
+- **H265 out crashes WebView2: Edge's bug, not SIPSorcery's.** Edge and WebView2 (157 and 158)
+  are built without libwebrtc's H265 support, yet with `WebRtcAllowH265Receive` on they agree to
+  receive H265 with no depacketiser behind it, so the first H265 RTP packet crashes the renderer
+  (access violation, a call through a null pointer in `RtpVideoStreamReceiver2::ReceivePacket`).
+  One packet holding a VPS is enough. Chrome 158, on the same Chromium, decodes SIPSorcery's H265
+  cleanly, and SIPSorcery's RTP passes an independent RFC 7798 check. The same missing code is why
+  WebView2 can't send H265. H265 out is now greyed for WebView2; if a run crashes the renderer
+  anyway, the app stops it, reloads the page and shows what happened.
 - **libvpx-vp9 holds 24 frames before its first output.** FFmpegVideoEncoder doesn't set
   `lag-in-frames` for libvpx-vp9, so libvpx's default of 25 applies: page B shows "dropped by
   encoder 24" and every frame arrives about 800 ms late (860 ms at 720p and 1080p, 1.1 s at 4K).

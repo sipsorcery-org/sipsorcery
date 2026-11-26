@@ -31,7 +31,7 @@ internal sealed class MainForm : Form
     private double? _connectedAt;
     private bool _captured;
     // What the chain was running, and a crash of the page to tell it about once it has reloaded.
-    private string? _running, _crash, _crashToShow;
+    private string? _running, _crash, _crashToShow, _refused;
 
     // CPU: 1 core = 100, over each second.
     private int _cpuTick;
@@ -66,6 +66,7 @@ internal sealed class MainForm : Form
                    "--autoplay-policy=no-user-gesture-required --use-fake-device-for-media-stream=fps=30 --use-fake-ui-for-media-stream";
         _env = await CoreWebView2Environment.CreateAsync(null, Path.Combine(Options.DataDir, "WebView2"), new CoreWebView2EnvironmentOptions(args));
         await _web.EnsureCoreWebView2Async(_env);
+        Log($"WebView2 runtime {_env.BrowserVersionString}");
         var core = _web.CoreWebView2;
         core.SetVirtualHostNameToFolderMapping("transcodeloop.app", Path.Combine(AppContext.BaseDirectory, "wwwroot"), CoreWebView2HostResourceAccessKind.Deny);
         core.PermissionRequested += (_, e) =>
@@ -136,6 +137,13 @@ internal sealed class MainForm : Form
                     break;
                 case "answer":
                     _chain?.SetAnswer(msg.GetProperty("leg").GetString()!, msg.GetProperty("sdp").GetString()!);
+                    break;
+                case "refused":
+                    // The switches asked for a codec a leg can't use, so the page didn't start: a
+                    // scripted run says so in its stats and exits, rather than run something else.
+                    _refused = msg.GetProperty("message").GetString();
+                    Log($"not started: {_refused}");
+                    if (_options.ExitAfter != null) Close();
                     break;
                 case "stop":
                     StopChain();
@@ -309,7 +317,7 @@ internal sealed class MainForm : Form
         {
             try
             {
-                File.WriteAllText(_options.StatsPath, JsonSerializer.Serialize(new { host = _lastStats, page = _lastPageStats, crash = _crash }, new JsonSerializerOptions(JsonOpts) { WriteIndented = true }));
+                File.WriteAllText(_options.StatsPath, JsonSerializer.Serialize(new { host = _lastStats, page = _lastPageStats, crash = _crash, refused = _refused }, new JsonSerializerOptions(JsonOpts) { WriteIndented = true }));
             }
             catch (Exception ex) { Log($"stats: {ex.Message}"); }
         }
