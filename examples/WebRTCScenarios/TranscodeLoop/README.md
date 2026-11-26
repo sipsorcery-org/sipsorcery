@@ -61,10 +61,20 @@ so separately rather than blaming SIPSorcery.
 
 - The decoded tile starts off. Each frame shown there is copied into the shared buffer on
   SIPSorcery's decode thread and uploaded to the GPU on the page's main thread (25 MB a frame at
-  4K), which slows the pipeline being measured and starves the test card (6 fps instead of 30 at
-  4K). Turn it on to look, not to measure.
+  4K, about 40 ms), which takes the main thread from the test card and from page B's frame
+  reading: at 4K page A sends 23 fps instead of 30, and page B's counts miss frames the page
+  never saw. Turn it on to look, not to measure.
 - H264 is offered at the level the size needs (3.1 up to 720p, 4.0 for 1080p, 5.1 for 4K), and
   SIPSorcery's frame reassembly buffer is enlarged to hold a 4K keyframe.
+
+At 4K the browsers are at their limit, not just SIPSorcery (on a 20-thread desktop, where the
+whole loop uses about 6 cores):
+
+- Page A's H264 encoder takes about 70 ms a frame, so it sends about 15 fps and its stats say it's
+  limited by CPU. Its VP8 encoder keeps up (20 ms), so to see SIPSorcery's H264 encoder at 4K,
+  send VP8 in and H264 out.
+- Page B decodes 30 fps but the browser drops some frames after decoding (5 to 10%), latency
+  rises to a few hundred ms, and there are occasional freezes.
 
 There's no 8K: in WebView2 the browser couldn't capture and encode it in real time (4 frames
 encoded in 15 s), and SIPSorcery's FFmpeg VP8 takes about 100 ms to decode an 8K frame and 180 ms
@@ -82,7 +92,8 @@ Counts on a tile include everything lost upstream of it, so read them left to ri
   the oldest is skipped, so a slow encoder shows as skips rather than a growing delay.
 - **Output, "missing"**: frame numbers page B's decoder never produced, read from the decoded
   frames themselves (not from what the display showed, which drops frames to fit its refresh
-  rate).
+  rate). Frames the page had no time to read are counted as "not read", not as missing; frames
+  the browser drops after decoding (at 4K it does) show as "dropped", and as missing.
 
 ### Simulated trouble
 
@@ -112,6 +123,11 @@ Counts on a tile include everything lost upstream of it, so read them left to ri
   bug below).
 - **The fake camera** runs at 30 fps (`--use-fake-device-for-media-stream=fps=30`): left alone,
   Chromium's runs at 20.
+- **Page B's frames are read in a worker.** Reading a frame's barcode means reading it back from
+  the GPU, which on the page's main thread holds up the test card's timer: page A then sends
+  fewer frames and page B falls behind, which looks like frames lost in SIPSorcery. The worker
+  keeps several reads in flight, and latency is measured by matching the frame the `<video>`
+  shows to the one read by RTP timestamp, without reading its pixels.
 - **Clocks**: latencies across the page and C# use an offset measured with a ping between them.
 
 ## Scripted runs
@@ -158,6 +174,8 @@ What the first runs turned up in SIPSorcery, to be looked at separately:
   skipped, and its per-frame allocations cause around 2 gen-2 garbage collections a second. It
   also has no rate control yet: its output is about twice the browser's bitrate for the same
   picture. At 640×480 it keeps up; at 1080p it manages 14 fps (encode 70 ms).
-- **FFmpeg at 1080p and 4K.** 1080p keeps up with VP8 and H264 (VP8 decode 4 ms, encode 15 ms).
-  At 4K, H264 keeps up (decode 14 ms, encode 30 ms) but VP8 doesn't: decode takes 24 ms and encode
-  about 50 ms, so page B gets 17 to 18 fps with frames skipped.
+- **FFmpeg at 1080p and 4K.** 1080p keeps up with VP8 and H264 (VP8 decode 4 ms, encode 15 ms;
+  H264 decode 3 ms, encode 7 ms). At 4K, H264 decoding takes 14 to 21 ms and encoding about 32 ms
+  (p95 35 to 40 ms), right at the 33 ms a frame lasts at 30 fps, so 1 to 4% of frames are skipped.
+  VP8 doesn't keep up at 4K: decoding takes 24 ms and encoding about 50 ms, so about 1 frame in 3
+  is skipped.

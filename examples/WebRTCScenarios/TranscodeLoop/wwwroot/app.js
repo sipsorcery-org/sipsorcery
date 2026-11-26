@@ -4,7 +4,7 @@
 // SIPSorcery (the host, C#) makes the offers; this page answers them. In between, the host
 // shares the frames it decoded (DecodedView.cs), which the middle tile draws with WebGL.
 
-import { startCard, stripRect, readStrip, readFrame } from "./card.js";
+import { startCard } from "./card.js";
 
 const $ = (id) => document.getElementById(id);
 const post = (m) => window.chrome?.webview?.postMessage(m);
@@ -170,8 +170,14 @@ let source = null;      // { stream, drawnAt?, stop }
 let pcA = null, pcB = null;
 let outStream = null;
 let startedAt = 0;
+let restartTimer = 0;
+// Page B's per-frame callback. A pending one outlives a stop and would fire again on the next
+// run's frames, alongside that run's own: each restart would add another read of every frame.
+let outFrameCallback = 0;
 
 async function start() {
+  clearTimeout(restartTimer);
+  source?.stop();   // never two cards drawing at once
   $("errorBar").hidden = true;
   cfg = readConfig();
   running = true;
@@ -203,6 +209,7 @@ async function start() {
 }
 
 function stop() {
+  clearTimeout(restartTimer);
   running = false;
   post({ type: "stop" });
   pcA?.close();
@@ -211,15 +218,18 @@ function stop() {
   source?.stop();
   source = null;
   $("srcVideo").srcObject = null;
+  $("outVideo").cancelVideoFrameCallback(outFrameCallback);
+  stopFrameReader();
   $("outVideo").srcObject = null;
   setLegState("a", "idle");
   setLegState("b", "idle");
   setRunningUi();
 }
 
+// Several changes in quick succession (arrowing through a picker) make one restart, not several.
 function restart() {
   stop();
-  setTimeout(start, 200);
+  restartTimer = setTimeout(start, 200);
 }
 
 function setRunningUi() {
@@ -283,7 +293,7 @@ async function onOffers(m) {
   out.srcObject = outStream;
   out.muted = !$("listen").checked;
   out.play().catch(() => {});
-  out.requestVideoFrameCallback(onOutputFrame);
+  outFrameCallback = out.requestVideoFrameCallback(onOutputFrame);
 }
 
 // SIPSorcery sends no bandwidth estimate (no REMB or transport-cc feedback), so the browser
@@ -313,33 +323,81 @@ function setLegState(leg, state) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Page B. Every frame the browser decodes is read (MediaStreamTrackProcessor) for its number:
-// frames missing, repeated or too damaged to read. Separately, each frame the <video> shows is
-// read for latency. The two differ: a 59 Hz display shows a 30 fps stream with a frame left out
-// every couple of seconds, which is the display's cadence, not a fault in the stream.
+// Page B. Every frame the browser decodes is read (MediaStreamTrackProcessor, in a worker:
+// framereader.js) for its number: frames missing, repeated or too damaged to read. Separately, each
+// frame the <video> shows is timed for latency, matched to its number by RTP timestamp, so the
+// main thread reads no pixels. The two differ: a 59 Hz display shows a 30 fps stream with a frame
+// left out every couple of seconds, which is the display's cadence, not a fault in the stream.
 
-const stripCanvas = new OffscreenCanvas(16, 16);
-const stripCtx = stripCanvas.getContext("2d", { willReadFrequently: true });
-const out = { decoded: 0, number: -1, gaps: 0, repeats: 0, unreadable: 0, presented: 0, latency: [], width: 0, height: 0 };
+const out = { decoded: 0, notRead: 0, number: -1, gaps: 0, repeats: 0, unreadable: 0, presented: 0, latency: [], width: 0, height: 0 };
 let outShownTimes = [];
+let notReadSince = 0;   // frames not read since the last number read
+let frameReader = null;
+// RTP timestamp -> frame number for decoded frames not yet shown, and -> display time for shown
+// frames not yet read (the <video> can show a frame before the worker has read it).
+const numberByRtp = new Map();
+const shownByRtp = new Map();
 
-async function readDecodedFrames(track) {
+function readDecodedFrames(track) {
+  stopFrameReader();
   if (!("MediaStreamTrackProcessor" in window)) { log("no MediaStreamTrackProcessor: page B's frame numbers aren't read"); return; }
+  const worker = new Worker("framereader.js", { type: "module" });
+  worker.onmessage = ({ data }) => { if (worker === frameReader && running) onDecodedFrame(data); };
+  worker.onerror = (e) => log(`page B's frame reader: ${e.message}`);
+  worker.postMessage({ card: cfg?.source === "card" });
+  frameReader = worker;
+  // Frames are taken here, as soon as they come, and handed over one by one. (Handing the worker
+  // the stream itself lost about 1% of H264 frames, none of VP8's: a transferred stream pulls one
+  // frame at a time, waiting on the worker, and the processor drops frames that come meanwhile.)
   const reader = new MediaStreamTrackProcessor({ track }).readable.getReader();
-  const mine = track;
-  while (running && outStream?.getVideoTracks()[0] === mine) {
-    const { value: frame, done } = await reader.read();
-    if (done) break;
-    try {
-      out.decoded++;
-      if (cfg?.source === "card") onOutputNumber(await readFrame(frame));
-    } catch (err) {
-      log(`reading page B's frame: ${err.message}`);
-    } finally {
-      frame.close();
+  (async () => {
+    for (;;) {
+      const { value: frame, done } = await reader.read();
+      if (done) break;
+      if (worker !== frameReader) { frame.close(); break; }
+      worker.postMessage({ frame }, [frame]);
     }
+    reader.cancel().catch(() => {});
+  })();
+}
+
+function stopFrameReader() {
+  frameReader?.terminate();
+  frameReader = null;
+  numberByRtp.clear();
+  shownByRtp.clear();
+}
+
+function onDecodedFrame({ n, rtp, error, skipped }) {
+  out.decoded++;
+  if (skipped) {
+    out.notRead++;
+    notReadSince++;
+    return;
   }
-  reader.cancel().catch(() => {});
+  if (error) log(`reading page B's frame: ${error}`);
+  if (n == null) return;
+  onOutputNumber(n);
+  if (n < 0 || rtp == null) return;
+  const shown = shownByRtp.get(rtp);
+  if (shown != null) {
+    shownByRtp.delete(rtp);
+    addLatency(n, shown);
+  } else {
+    remember(numberByRtp, rtp, n);
+  }
+}
+
+function remember(map, key, value) {
+  map.set(key, value);
+  if (map.size > 120) map.delete(map.keys().next().value);
+}
+
+function addLatency(n, displayTime) {
+  const drawn = source?.drawnAt?.(n);
+  if (drawn == null) return;
+  out.latency.push(displayTime - drawn);
+  if (out.latency.length > 120) out.latency.shift();
 }
 
 function onOutputNumber(n) {
@@ -348,14 +406,17 @@ function onOutputNumber(n) {
     addEvent("out", "unread");
     return;
   }
-  if (out.number >= 0 && n > out.number + 1) {
-    out.gaps += n - out.number - 1;
-    addEvent("out", "gap", n - out.number - 1);
+  // Frames the reader had no room for were decoded, so they're not missing.
+  const missing = out.number >= 0 ? n - out.number - 1 - notReadSince : 0;
+  if (missing > 0) {
+    out.gaps += missing;
+    addEvent("out", "gap", missing);
   } else if (out.number >= 0 && n <= out.number) {
     out.repeats++;
     addEvent("out", "repeat");
   }
   out.number = n;
+  notReadSince = 0;
 }
 
 function onOutputFrame(now, meta) {
@@ -366,21 +427,17 @@ function onOutputFrame(now, meta) {
   out.presented = meta.presentedFrames;
   out.width = meta.width;
   out.height = meta.height;
-  if (cfg?.source === "card" && meta.width > 0) {
-    const r = stripRect(meta.width, meta.height);
-    if (stripCanvas.width !== r.w || stripCanvas.height !== r.h) {
-      stripCanvas.width = r.w;
-      stripCanvas.height = r.h;
-    }
-    stripCtx.drawImage(video, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
-    const n = readStrip(stripCtx.getImageData(0, 0, r.w, r.h).data, r.cell);
-    const drawn = n >= 0 ? source?.drawnAt?.(n) : undefined;
-    if (drawn != null) {
-      out.latency.push(meta.expectedDisplayTime - drawn);
-      if (out.latency.length > 120) out.latency.shift();
+  const rtp = meta.rtpTimestamp;
+  if (cfg?.source === "card" && rtp != null) {
+    const n = numberByRtp.get(rtp);
+    if (n != null) {
+      numberByRtp.delete(rtp);
+      addLatency(n, meta.expectedDisplayTime);
+    } else {
+      remember(shownByRtp, rtp, meta.expectedDisplayTime);
     }
   }
-  video.requestVideoFrameCallback(onOutputFrame);
+  outFrameCallback = video.requestVideoFrameCallback(onOutputFrame);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -611,7 +668,8 @@ function resetStats() {
   srcStats = {};
   outStats = {};
   prevSrc = prevOut = null;
-  Object.assign(out, { decoded: 0, number: -1, gaps: 0, repeats: 0, unreadable: 0, presented: 0, latency: [], width: 0, height: 0 });
+  Object.assign(out, { decoded: 0, notRead: 0, number: -1, gaps: 0, repeats: 0, unreadable: 0, presented: 0, latency: [], width: 0, height: 0 });
+  notReadSince = 0;
   outShownTimes = [];
   Object.assign(dec, { seq: dec.view ? dec.view.getInt32(0, true) : 0, shown: 0, shownTimes: [], number: -1 });
   freezeTimes = [];
@@ -780,7 +838,8 @@ function render() {
     [o.codec ?? "–", o.impl, mbps(o.kbps)].filter(Boolean).join(" · "),
     `drawn → shown ${f0(pct(lat, 0.5))} ms <i>p95 ${f0(pct(lat, 0.95))}</i> · jitter buffer ${f0(o.jitterMs)} ms`,
     `keyframes ${o.keyframes ?? "–"} · requests ${o.pli != null ? o.pli + (o.fir ?? 0) : "–"} · NACKs ${o.nack ?? "–"}`,
-    `${bad(o.freezes, "freezes")} · ${bad(o.dropped, "dropped")} · ${bad(out.gaps, "missing")} · ${bad(out.unreadable, "unreadable")}`,
+    `${bad(o.freezes, "freezes")} · ${bad(o.dropped, "dropped")} · ${bad(out.gaps, "missing")} · ${bad(out.unreadable, "unreadable")}` +
+      (out.notRead ? ` · <span title="Frames page B decoded whose numbers this page had no time to read. Not counted as missing.">not read ${out.notRead}</span>` : ""),
     h?.b?.lossDropped || h?.b?.resent
       ? `lost on leg B ${h.b.lossDropped} packets (simulated) · SIPSorcery resent ${h.b.resent}` +
         (h.b.notKept ? ` · ${bad(h.b.notKept, "not kept")}` : "") +
@@ -843,7 +902,7 @@ setInterval(() => {
     stats: {
       config: cfg, cpu: latestCpu,
       source: srcStats,
-      output: { ...outStats, shownFps: rate(outShownTimes, performance.now()), latencyP50: pct(out.latency, 0.5), latencyP95: pct(out.latency, 0.95), framesRead: out.decoded, gaps: out.gaps, repeats: out.repeats, unreadable: out.unreadable, lastNumber: out.number },
+      output: { ...outStats, shownFps: rate(outShownTimes, performance.now()), latencyP50: pct(out.latency, 0.5), latencyP95: pct(out.latency, 0.95), framesRead: out.decoded - out.notRead, notRead: out.notRead, gaps: out.gaps, repeats: out.repeats, unreadable: out.unreadable, lastNumber: out.number },
       decodedShown: dec.shown,
     },
   });

@@ -28,15 +28,6 @@ export function crc8(bytes) {
 }
 
 /**
- * Reads the frame number from RGBA pixels of the barcode strip (getImageData of the strip,
- * CELLS * cell wide and cell high, starting at the strip's top left). -1 if unreadable.
- */
-export function readStrip(data, cell) {
-  const width = CELLS * cell;
-  return readCells((x, y) => { const p = (y * width + x) * 4; return (77 * data[p] + 150 * data[p + 1] + 29 * data[p + 2]) >> 8; }, cell);
-}
-
-/**
  * Reads the frame number from a decoded VideoFrame's strip, straight from its luma plane (or
  * from RGB if that's what it holds). -1 if unreadable. Its rectangle is on even pixels, as
  * copyTo needs for subsampled formats.
