@@ -32,7 +32,7 @@ internal static class Program
         try
         {
             Directory.CreateDirectory(Options.DataDir);
-            File.AppendAllText(Path.Combine(Options.DataDir, "errors.log"), $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {ex}{Environment.NewLine}{Environment.NewLine}");
+            File.AppendAllText(Path.Join(Options.DataDir, "errors.log"), $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {ex}{Environment.NewLine}{Environment.NewLine}");
         }
         catch (Exception logEx) when (logEx is IOException or UnauthorizedAccessException) { /* the box still shows */ }
         MessageBox.Show(ex?.ToString() ?? "Unknown error", "TranscodeLoop failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -45,7 +45,7 @@ internal static class Program
 /// </summary>
 internal sealed class Options
 {
-    public static readonly string DataDir = Path.Combine(
+    public static readonly string DataDir = Path.Join(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SIPSorcery", "TranscodeLoop");
 
     /// <summary>Settings for the page, passed in its query string.</summary>

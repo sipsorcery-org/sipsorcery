@@ -333,8 +333,8 @@ internal sealed class TranscodeChain : IDisposable
                 foreach (var p in pictures) OnDecoded(f, p.Bgr, p.W, p.H);
             }
         }
-        catch (OperationCanceledException) { }
-        catch (InvalidOperationException) { }   // completed as the chain closed
+        catch (OperationCanceledException) { /* the chain stopped */ }
+        catch (InvalidOperationException) { /* the queue was completed as the chain closed */ }
     }
 
     /// <summary>The decoder's pictures as tightly packed BGR (both implementations give BGR).</summary>
@@ -460,6 +460,8 @@ internal sealed class TranscodeChain : IDisposable
             {
                 encoded = _encoder!.EncodeVideo(w, h, bgr, VideoPixelFormatsEnum.Bgr, codec);
             }
+            // Everything: vp8.net, av1.net and FFmpeg each throw their own types on a bad frame, and a
+            // run has to count the failure and carry on, not lose its encode thread.
             catch (Exception ex)
             {
                 _encodeErrors++;

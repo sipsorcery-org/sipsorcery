@@ -110,7 +110,7 @@ internal sealed class LossyLink : IDisposable
             {
                 (fromBrowser ? _hostSide : _browserSide).SendTo(buffer, 0, n, SocketFlags.None, to);
             }
-            catch (SocketException) { }
+            catch (SocketException) { /* the packet is lost, as it could be on a real network */ }
             catch (ObjectDisposedException) { return; }
         }
     }

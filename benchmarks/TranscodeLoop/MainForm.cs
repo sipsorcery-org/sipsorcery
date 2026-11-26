@@ -50,7 +50,7 @@ internal sealed class MainForm : Form
         Controls.Add(_web);
 
         Directory.CreateDirectory(Options.DataDir);
-        _logFile = new StreamWriter(Path.Combine(Options.DataDir, "transcodeloop.log"), append: false) { AutoFlush = true };
+        _logFile = new StreamWriter(Path.Join(Options.DataDir, "transcodeloop.log"), append: false) { AutoFlush = true };
         LibraryLog.Line += Log;
         _probe = Task.Run(() => Codecs.Probe(Log));
 
@@ -66,11 +66,11 @@ internal sealed class MainForm : Form
         // the GPU can), and sends it where Chromium has an encoder for it (none on Windows so far).
         var args = "--disable-features=WebRtcHideLocalIpsWithMdns --enable-features=WebRtcAllowH265Receive,WebRtcAllowH265Send " +
                    "--autoplay-policy=no-user-gesture-required --use-fake-device-for-media-stream=fps=30 --use-fake-ui-for-media-stream";
-        _env = await CoreWebView2Environment.CreateAsync(null, Path.Combine(Options.DataDir, "WebView2"), new CoreWebView2EnvironmentOptions(args));
+        _env = await CoreWebView2Environment.CreateAsync(null, Path.Join(Options.DataDir, "WebView2"), new CoreWebView2EnvironmentOptions(args));
         await _web.EnsureCoreWebView2Async(_env);
         Log($"WebView2 runtime {_env.BrowserVersionString}");
         var core = _web.CoreWebView2;
-        core.SetVirtualHostNameToFolderMapping("transcodeloop.app", Path.Combine(AppContext.BaseDirectory, "wwwroot"), CoreWebView2HostResourceAccessKind.Deny);
+        core.SetVirtualHostNameToFolderMapping("transcodeloop.app", Path.Join(AppContext.BaseDirectory, "wwwroot"), CoreWebView2HostResourceAccessKind.Deny);
         core.PermissionRequested += (_, e) =>
         {
             if (e.PermissionKind is CoreWebView2PermissionKind.Camera or CoreWebView2PermissionKind.Microphone)
@@ -334,7 +334,7 @@ internal sealed class MainForm : Form
         var stamped = $"{DateTime.Now:HH:mm:ss.fff} {line}";
         lock (_logFile)
         {
-            try { _logFile.WriteLine(stamped); } catch (ObjectDisposedException) { }
+            try { _logFile.WriteLine(stamped); } catch (ObjectDisposedException) { /* a line logged after the window closed */ }
         }
         if (!line.StartsWith("page: ")) Post(new { type = "log", line = stamped });
     }
@@ -344,7 +344,7 @@ internal sealed class MainForm : Form
         if (IsDisposed || Disposing || !IsHandleCreated) return;
         if (InvokeRequired)
         {
-            try { BeginInvoke(() => Post(message)); } catch (InvalidOperationException) { }
+            try { BeginInvoke(() => Post(message)); } catch (InvalidOperationException) { /* the window closed in between */ }
             return;
         }
         _web.CoreWebView2?.PostWebMessageAsJson(JsonSerializer.Serialize(message, JsonOpts));
