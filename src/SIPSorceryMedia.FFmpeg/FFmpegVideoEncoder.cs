@@ -70,6 +70,12 @@ namespace SIPSorceryMedia.FFmpeg
         private long? _rc_max_rate = null;
 
         private int? _thread_count = null;
+
+        // The last AdjustStream call, which changes the rate control of the open encoder. Applied again when the
+        // encoder is reopened at a new frame size, so the change outlives the context it was made on. Cleared when
+        // the encoder is reset for new settings, which then start from the configured ones.
+        private (int Bitrate, int Fps)? _streamAdjustment;
+
         private long _lastFrameTicks = 0;
 
         private bool _forceKeyFrame;
@@ -447,6 +453,13 @@ namespace SIPSorceryMedia.FFmpeg
                     // Set Key frame interval
                     _encoderContext->gop_size = (fps < ALL_KEY_FRAMES_FPS_THRESHOLD) ? 1 : fps;
 
+                    // An encoder reopened at a new frame size keeps the rate control AdjustStream gave the one before
+                    // it. Applied before the per-encoder defaults below, as libsvtav1's depend on the bitrate.
+                    if (_streamAdjustment is { } adjustment)
+                    {
+                        ApplyStreamAdjustment(_encoderContext, adjustment.Bitrate, adjustment.Fps);
+                    }
+
                     try
                     {
                         // Real-time oriented defaults for the common encoders: a fast preset / cpu-used,
@@ -478,6 +491,10 @@ namespace SIPSorceryMedia.FFmpeg
                                 // tile-row multi-threading which is what makes VP9 keep up at high rates.
                                 ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", "8", 0).ThrowExceptionIfError();
                                 ffmpeg.av_opt_set(_encoderContext->priv_data, "row-mt", "1", 0).ThrowExceptionIfError();
+                                // Unlike VP8, libvpx-vp9 keeps its look-ahead in realtime mode: the default
+                                // lag-in-frames of 25 holds 24 frames before the first output, so every frame
+                                // arrives ~800 ms late at 30 fps. Live use needs each frame encoded on arrival.
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "lag-in-frames", "0", 0).ThrowExceptionIfError();
                                 break;
                             case "libaom-av1":
                                 // libaom's default (good/best) is far too slow for live use; usage=realtime
@@ -579,7 +596,15 @@ namespace SIPSorceryMedia.FFmpeg
             ResetEncoder();
         }
 
-        private void ResetEncoder()
+        private void ResetEncoder() => ResetEncoder(keepStreamState: false);
+
+        /// <summary>
+        /// Closes the encoder, so the next frame opens a new one.
+        /// </summary>
+        /// <param name="keepStreamState">True when the encoder is only being reopened at a new frame size: the
+        /// negotiated pixel format and the last <see cref="AdjustStream(int, int)"/> are kept for the new encoder. False
+        /// when it is reset for new settings, after which it starts from the configured ones.</param>
+        private void ResetEncoder(bool keepStreamState)
         {
             // Reset encoder
             lock (_encoderLock)
@@ -592,9 +617,61 @@ namespace SIPSorceryMedia.FFmpeg
                         ffmpeg.avcodec_free_context(pCtx);
                     }
 
-                    UnsafeReset();
+                    // Only the encoder's own state. The decoder's frames are left alone: an instance that decodes as
+                    // well as encodes, as FFmpegVideoEndPoint uses it, keeps decoding into them, and freeing them here
+                    // crashed its next decode.
+                    if (!keepStreamState)
+                    {
+                        _negotiatedPixFmt = null;
+                        _streamAdjustment = null;
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Opens the encoder for the first frame, or reopens it when the frame size has changed. Must be called with
+        /// _encoderLock held.
+        /// </summary>
+        private void EnsureEncoderForFrameSize(AVCodecID codecID, int width, int height, int fps)
+        {
+            if (!_isEncoderInitialised)
+            {
+                InitialiseEncoder(codecID, width, height, fps);
+            }
+            else if (_encoderContext->width != width || _encoderContext->height != height)
+            {
+                ReopenEncoderAtFrameSize(codecID, width, height);
+            }
+        }
+
+        /// <summary>
+        /// An opened libavcodec encoder does not take a new frame size: setting the width and height on its context
+        /// leaves it encoding at the size it was opened with, which for a larger frame is its top left corner. So the
+        /// encoder is closed and opened again at the new size, with the same codec, codec options, pixel format,
+        /// bitrate, frame rate and thread count, and the first frame from it is a key frame. Must be called with
+        /// _encoderLock held.
+        /// </summary>
+        /// <remarks>
+        /// Any frames an encoder with look-ahead was still holding are dropped with it. They are at the old size, and
+        /// the key frame that follows does not depend on them.
+        /// </remarks>
+        private void ReopenEncoderAtFrameSize(AVCodecID codecID, int width, int height)
+        {
+            logger.LogDebug("Video encoder frame size changed from {OldWidth}x{OldHeight} to {Width}x{Height}, reopening the encoder.",
+                _encoderContext->width, _encoderContext->height, width, height);
+
+            // InitialiseEncoder sets the time base to 1/fps and AdjustStream does not change it, so this is the frame
+            // rate the encoder was opened at. A later AdjustStream frame rate is applied again by InitialiseEncoder.
+            int fps = _encoderContext->time_base.num == 1 && _encoderContext->time_base.den > 0
+                ? _encoderContext->time_base.den
+                : Helper.DEFAULT_VIDEO_FRAME_RATE;
+
+            ResetEncoder(keepStreamState: true);
+            InitialiseEncoder(codecID, width, height, fps);
+
+            // A new encoder starts with a key frame anyway; this makes it explicit for any that would not.
+            _forceKeyFrame = true;
         }
 
         private void ResetDecoder()
@@ -785,15 +862,7 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     if (!_isDisposed)
                     {
-                        if (!_isEncoderInitialised)
-                        {
-                            InitialiseEncoder(codecID, width, height, fps);
-                        }
-                        else if (_encoderContext->width != width || _encoderContext->height != height)
-                        {
-                            _encoderContext->width = width;
-                            _encoderContext->height = height;
-                        }
+                        EnsureEncoderForFrameSize(codecID, width, height, fps);
 
                         AVFrame avFrame = new AVFrame();
 
@@ -867,15 +936,7 @@ namespace SIPSorceryMedia.FFmpeg
                     int width = avFrame->width;
                     int height = avFrame->height;
 
-                    if (!_isEncoderInitialised)
-                    {
-                        InitialiseEncoder(codecID, width, height, fps);
-                    }
-                    else if (_encoderContext->width != width || _encoderContext->height != height)
-                    {
-                        _encoderContext->width = width;
-                        _encoderContext->height = height;
-                    }
+                    EnsureEncoderForFrameSize(codecID, width, height, fps);
 
                     //int _linesizeY = width;
                     //int _linesizeU = width / 2;
@@ -1055,21 +1116,30 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     return;
                 }
-                _encoderContext->bit_rate = bitrate;
-                _encoderContext->framerate.num = fps;
-                _encoderContext->gop_size = Math.Max(5, fps * 2);
-                switch(_encoderContext->codec_id)
-                {
-                    case AVCodecID.AV_CODEC_ID_VP8:
-                        _encoderContext->rc_max_rate = (long)(_encoderContext->bit_rate * 1.2);
-                        _encoderContext->rc_min_rate = (long)(_encoderContext->bit_rate * 0.75);
-                        _encoderContext->bit_rate_tolerance = (int)(_encoderContext->bit_rate * 0.15); // 15% tolerance for slight bitrate fluctuations
-                        _encoderContext->rc_buffer_size = (int)(_encoderContext->bit_rate * 1.5); // 1.5x target bitrate buffer
-                        break;
-                    case AVCodecID.AV_CODEC_ID_H264:
-                        
-                        break;
-                }
+
+                ApplyStreamAdjustment(_encoderContext, bitrate, fps);
+
+                // Kept so an encoder reopened at a new frame size gets the same rate control.
+                _streamAdjustment = (bitrate, fps);
+            }
+        }
+
+        private static void ApplyStreamAdjustment(AVCodecContext* context, int bitrate, int fps)
+        {
+            context->bit_rate = bitrate;
+            context->framerate.num = fps;
+            context->gop_size = Math.Max(5, fps * 2);
+            switch (context->codec_id)
+            {
+                case AVCodecID.AV_CODEC_ID_VP8:
+                    context->rc_max_rate = (long)(context->bit_rate * 1.2);
+                    context->rc_min_rate = (long)(context->bit_rate * 0.75);
+                    context->bit_rate_tolerance = (int)(context->bit_rate * 0.15); // 15% tolerance for slight bitrate fluctuations
+                    context->rc_buffer_size = (int)(context->bit_rate * 1.5); // 1.5x target bitrate buffer
+                    break;
+                case AVCodecID.AV_CODEC_ID_H264:
+
+                    break;
             }
         }
 
