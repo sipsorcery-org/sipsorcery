@@ -20,6 +20,7 @@
 //
 // History:
 // 25 Nov 2026  Claude          Created (E1).
+// 26 Nov 2026  Claude          ParseSettings and InitializeInternalChecks shared with IdrTests (E4b).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -178,24 +179,7 @@ internal sealed unsafe class ParamSetEncoder : IDisposable
     /// </summary>
     public int Initialize(string settings)
     {
-        var ext = default(SEncParamExt);
-        SWelsSvcCodingParam.FillDefault(ref ext); // GetDefaultParams
-        var bas = default(SEncParamBase);
-        bool isBase = false;
-        foreach (string item in settings.Split(';'))
-        {
-            int eq = item.IndexOf('=');
-            string k = item[..eq], v = item[(eq + 1)..];
-            if (k == "api")
-            {
-                isBase = v == "base";
-                continue;
-            }
-            if (!ApplySetting(ref ext, ref bas, isBase, k, v))
-            {
-                throw new InvalidDataException($"Unknown setting {k}.");
-            }
-        }
+        ParseSettings(settings, out SEncParamExt ext, out SEncParamBase bas, out bool isBase);
 
         // SWelsSvcCodingParam sConfig; (the constructor calls FillDefault)
         var sConfig = default(SWelsSvcCodingParam);
@@ -209,6 +193,20 @@ internal sealed unsafe class ParamSetEncoder : IDisposable
 
     /// <summary>CWelsH264SVCEncoder::InitializeInternal.</summary>
     private int InitializeInternal(SWelsSvcCodingParam* pCfg)
+    {
+        int iRet = InitializeInternalChecks(pCfg);
+        if (iRet != 0)
+        {
+            return iRet;
+        }
+        return WelsInitEncoderExt(pCfg) != 0 ? cmInitParaError : 0;
+    }
+
+    /// <summary>
+    /// CWelsH264SVCEncoder::InitializeInternal up to its WelsInitEncoderExt call: the checks and
+    /// adjustments of the coding parameters. Returns cmInitParaError or 0.
+    /// </summary>
+    internal static int InitializeInternalChecks(SWelsSvcCodingParam* pCfg)
     {
         int iNumOfLayers = pCfg->iSpatialLayerNum;
         if (iNumOfLayers < 1 || iNumOfLayers > WelsEnc.MAX_DEPENDENCY_LAYER)
@@ -276,8 +274,7 @@ internal sealed unsafe class ParamSetEncoder : IDisposable
         pCfg->iTemporalLayerNum = (sbyte)(1 + kiDecStages);
         pCfg->iLoopFilterAlphaC0Offset = WelsCommon.WELS_CLIP3(pCfg->iLoopFilterAlphaC0Offset, -6, 6);
         pCfg->iLoopFilterBetaOffset = WelsCommon.WELS_CLIP3(pCfg->iLoopFilterBetaOffset, -6, 6);
-
-        return WelsInitEncoderExt(pCfg) != 0 ? cmInitParaError : 0;
+        return 0;
     }
 
     /// <summary>WelsInitEncoderExt, up to and including RequestMemorySvc's parameter set work.</summary>
@@ -511,8 +508,49 @@ internal sealed unsafe class ParamSetEncoder : IDisposable
 
     // ---- the harness's helpers (refharness/src/encoder.cpp) ----
 
-    private static bool ApplySetting(ref SEncParamExt e, ref SEncParamBase b, bool isBase, string key, string value)
+    /// <summary>
+    /// The harness's settings string (api=base|ext, then key=value items, ';' separated) applied
+    /// to GetDefaultParams (ext) or a zeroed SEncParamBase (base).
+    /// </summary>
+    internal static void ParseSettings(string settings, out SEncParamExt ext, out SEncParamBase bas, out bool isBase)
     {
+        ext = default;
+        SWelsSvcCodingParam.FillDefault(ref ext); // GetDefaultParams
+        bas = default;
+        isBase = false;
+        foreach (string item in settings.Split(';'))
+        {
+            if (item.Length == 0)
+            {
+                continue;
+            }
+            int eq = item.IndexOf('=');
+            string k = item[..eq], v = item[(eq + 1)..];
+            if (k == "api")
+            {
+                isBase = v == "base";
+                continue;
+            }
+            if (!ApplySetting(ref ext, ref bas, isBase, k, v))
+            {
+                throw new InvalidDataException($"Unknown setting {k}.");
+            }
+        }
+    }
+
+    internal static bool ApplySetting(ref SEncParamExt e, ref SEncParamBase b, bool isBase, string key, string value)
+    {
+        if (!isBase && key.Length > 3 && key[0] == 'L' && key[2] == '.' && key[3..] == "uiSliceMbNum")
+        {
+            // A comma separated list, for SM_RASTER_SLICE.
+            ref SSpatialLayerConfig sl = ref e.sSpatialLayers[key[1] - '0'];
+            string[] n = value.Split(',');
+            for (int i = 0; i < n.Length && i < codec_app_def.MAX_SLICES_NUM_TMP; i++)
+            {
+                sl.sSliceArgument.uiSliceMbNum[i] = uint.Parse(n[i], CultureInfo.InvariantCulture);
+            }
+            return true;
+        }
         long v = long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out long l) ? l : (long)double.Parse(value, CultureInfo.InvariantCulture);
         float f = (float)double.Parse(value, CultureInfo.InvariantCulture);
         if (isBase)
@@ -586,6 +624,13 @@ internal sealed unsafe class ParamSetEncoder : IDisposable
             case "bEnableDenoise": e.bEnableDenoise = v != 0; break;
             case "bEnableFrameCroppingFlag": e.bEnableFrameCroppingFlag = v != 0; break;
             case "bIsLosslessLink": e.bIsLosslessLink = v != 0; break;
+            case "iLoopFilterAlphaC0Offset": e.iLoopFilterAlphaC0Offset = (int)v; break;
+            case "iLoopFilterBetaOffset": e.iLoopFilterBetaOffset = (int)v; break;
+            case "iComplexityMode": e.iComplexityMode = (ECOMPLEXITY_MODE)v; break;
+            case "bUseLoadBalancing": e.bUseLoadBalancing = v != 0; break;
+            case "bEnableBackgroundDetection": e.bEnableBackgroundDetection = v != 0; break;
+            case "bEnableAdaptiveQuant": e.bEnableAdaptiveQuant = v != 0; break;
+            case "bEnableSceneChangeDetect": e.bEnableSceneChangeDetect = v != 0; break;
             default: return false;
         }
         return true;

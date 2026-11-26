@@ -1,9 +1,10 @@
 //-----------------------------------------------------------------------------
 // Filename: rc.cs
 //
-// Description: Port of codec/encoder/core/inc/rc.h, constants only (E1):
-// the QP limits and GOM row tables the parameter checks use. The rate
-// control structures and functions follow with ratectl.cpp in E6.
+// Description: Port of codec/encoder/core/inc/rc.h: the QP limits and GOM
+// row tables the parameter checks use (E1), and the rate control
+// structures and function pointer types (E4). The rate control functions
+// follow with ratectl.cpp in E6, apart from the RC_OFF ones E4 needs.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // Author(s):
@@ -11,6 +12,7 @@
 //
 // History:
 // 25 Nov 2026  Claude          Created (E1).
+// 26 Nov 2026  Claude          Rate control structs and function pointer types (E4).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -48,6 +50,27 @@
  *     POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+// typedef void (*PWelsRCPictureInitFunc) (sWelsEncCtx* pCtx, long long uiTimeStamp);
+global using unsafe PWelsRCPictureInitFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, long, void>;
+// typedef void (*PWelsRCPictureDelayJudgeFunc) (sWelsEncCtx* pCtx, long long uiTimeStamp, int32_t iDidIdx);
+global using unsafe PWelsRCPictureDelayJudgeFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, long, int, void>;
+// typedef void (*PWelsRCPictureInfoUpdateFunc) (sWelsEncCtx* pCtx, int32_t iLayerSize);
+global using unsafe PWelsRCPictureInfoUpdateFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, int, void>;
+// typedef void (*PWelsRCMBInfoUpdateFunc) (sWelsEncCtx* pCtx, SMB* pCurMb, int32_t iCostLuma, SSlice* pSlice);
+global using unsafe PWelsRCMBInfoUpdateFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, SIPSorcery.H264.Encoder.SMB*, int,
+                                                        SIPSorcery.H264.Encoder.SSlice*, void>;
+// typedef void (*PWelsRCMBInitFunc) (sWelsEncCtx* pCtx, SMB* pCurMb, SSlice* pSlice);
+global using unsafe PWelsRCMBInitFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, SIPSorcery.H264.Encoder.SMB*,
+                                                  SIPSorcery.H264.Encoder.SSlice*, void>;
+// typedef void (*PWelsCheckFrameSkipBasedMaxbrFunc) (sWelsEncCtx* pCtx, const long long uiTimeStamp, int32_t iDidIdx);
+global using unsafe PWelsCheckFrameSkipBasedMaxbrFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, long, int, void>;
+// typedef void (*PWelsUpdateBufferWhenFrameSkippedFunc)(sWelsEncCtx* pCtx, int32_t iSpatialNum);
+global using unsafe PWelsUpdateBufferWhenFrameSkippedFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, int, void>;
+// typedef void (*PWelsUpdateMaxBrCheckWindowStatusFunc)(sWelsEncCtx* pCtx, int32_t iSpatialNum, const long long uiTimeStamp);
+global using unsafe PWelsUpdateMaxBrCheckWindowStatusFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, int, long, void>;
+// typedef bool (*PWelsRCPostFrameSkippingFunc)(sWelsEncCtx* pCtx, const int32_t iDid, const long long uiTimeStamp);
+global using unsafe PWelsRCPostFrameSkippingFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, int, long, bool>;
 
 namespace SIPSorcery.H264.Encoder;
 
@@ -135,4 +158,119 @@ internal static partial class WelsEnc
     public const int EVEN_TIME_WINDOW = 0;
     public const int ODD_TIME_WINDOW = 1;
     public const int TIME_WINDOW_TOTAL = 2;
+}
+
+internal struct SRCTemporal
+{
+    public int iMinBitsTl;
+    public int iMaxBitsTl;
+    public int iTlayerWeight;
+    public int iGopBitsDq;
+    //P frame level R-Q Model
+    public long iLinearCmplx; // *INT_MULTIPLY
+    public int iPFrameNum;
+    public long iFrameCmplxMean;
+    public int iMaxQp;
+    public int iMinQp;
+}
+
+internal unsafe struct SWelsSvcRc
+{
+    public int iRcVaryPercentage;
+    public int iRcVaryRatio;
+
+    public int iInitialQp; //initial qp
+    public long iBitRate;
+    public int iPreviousBitrate;
+    public int iPreviousGopSize;
+    public double fFrameRate;
+    public int iBitsPerFrame;
+    public int iMaxBitsPerFrame;
+    public double dPreviousFps;
+
+    // bits allocation and status
+    public int iLastAllocatedBits;
+    public int iRemainingBits;
+    public int iBitsPerMb;
+    public int iTargetBits;
+    public int iCurrentBitsLevel;//0:normal; 1:limited; 2:exceeded.
+
+    public int iIdrNum;
+    public long iIntraComplexity;
+    public int iIntraMbCount;
+    public long iIntraComplxMean;
+
+    public fixed sbyte iTlOfFrames[WelsEnc.VGOP_SIZE];
+    public int iRemainingWeights;
+    public int iFrameDqBits;
+
+    public bool bGomRC;
+    public double* pGomComplexity;
+    public int* pGomForegroundBlockNum;
+    public int* pCurrentFrameGomSad;
+    public int* pGomCost;
+
+    public int bEnableGomQp;
+    public int iAverageFrameQp;
+    public int iMinFrameQp;
+    public int iMaxFrameQp;
+    public int iNumberMbFrame;
+    public int iNumberMbGom;
+    public int iGomSize;
+
+    public int iSkipFrameNum;
+    public int iFrameCodedInVGop;
+    public int iSkipFrameInVGop;
+    public int iGopNumberInVGop;
+    public int iGopIndexInVGop;
+
+    public int iSkipQpValue;
+    public int iQpRangeUpperInFrame;
+    public int iQpRangeLowerInFrame;
+    public int iMinQp;
+    public int iMaxQp;
+    public int iSkipBufferRatio;
+
+    public int iQStep; // *INT_MULTIPLY
+    public int iFrameDeltaQpUpper;
+    public int iFrameDeltaQpLower;
+    public int iLastCalculatedQScale;
+
+    //for skip frame and padding
+    public int iBufferSizeSkip;
+    public long iBufferFullnessSkip;
+    public fixed long iBufferMaxBRFullness[WelsEnc.TIME_WINDOW_TOTAL];//0: EVEN_TIME_WINDOW; 1: ODD_TIME_WINDOW
+    public int iPredFrameBit;
+    public fixed bool bNeedShiftWindowCheck[WelsEnc.TIME_WINDOW_TOTAL];
+    public int iBufferSizePadding;
+    public int iBufferFullnessPadding;
+    public int iPaddingSize;
+    public int iPaddingBitrateStat;
+    public bool bSkipFlag;
+    public int iContinualSkipFrames;
+    public SRCTemporal* pTemporalOverRc;
+
+    //for scc
+    public long iAvgCost2Bits;
+    public long iCost2BitsIntra;
+    public int iBaseQp;
+    public long uiLastTimeStamp;
+
+    //for statistics and online adjustments
+    public int iActualBitRate;
+    public float fLatestFrameRate;
+}
+
+internal unsafe struct SWelsRcFunc
+{
+    public PWelsRCPictureInitFunc pfWelsRcPictureInit;
+    public PWelsRCPictureDelayJudgeFunc pfWelsRcPicDelayJudge;
+    public PWelsRCPictureInfoUpdateFunc pfWelsRcPictureInfoUpdate;
+    public PWelsRCMBInitFunc pfWelsRcMbInit;
+    public PWelsRCMBInfoUpdateFunc pfWelsRcMbInfoUpdate;
+    public PWelsCheckFrameSkipBasedMaxbrFunc pfWelsCheckSkipBasedMaxbr;
+    public PWelsUpdateBufferWhenFrameSkippedFunc pfWelsUpdateBufferWhenSkip;
+    public PWelsUpdateMaxBrCheckWindowStatusFunc pfWelsUpdateMaxBrWindowStatus;
+
+    public PWelsRCPostFrameSkippingFunc pfWelsRcPostFrameSkipping;
 }

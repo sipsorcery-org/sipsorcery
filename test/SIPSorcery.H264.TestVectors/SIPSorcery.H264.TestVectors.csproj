@@ -39,6 +39,8 @@
     <None Include="..\..\thirdparty\openh264-dotnet-port\reference\decode-damaged.tsv" Link="decode-damaged.tsv" CopyToOutputDirectory="PreserveNewest" />
     <!-- Encoder parameter validation and SPS/PPS output for a table of configurations (h264ref paramsets), see ParameterSetTests.cs. -->
     <None Include="..\..\thirdparty\openh264-dotnet-port\reference\paramsets.tsv" Link="paramsets.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The first frame (an IDR at a fixed QP) for a table of configurations and synthetic pictures (h264ref idr), see IdrTests.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\idr.tsv" Link="idr.tsv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

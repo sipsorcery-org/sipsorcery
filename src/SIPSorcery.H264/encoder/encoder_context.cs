@@ -1,11 +1,13 @@
 //-----------------------------------------------------------------------------
 // Filename: encoder_context.cs
 //
-// Description: Port of codec/encoder/core/inc/encoder_context.h, part 1
-// (E1): the sWelsEncCtx fields that parameter set generation and writing
-// use. The remaining fields arrive with the code that reads them, in the
-// upstream order. The port never copies or memsets the context as a whole,
-// so its layout only needs to hold these fields, not mirror the C one.
+// Description: Port of codec/encoder/core/inc/encoder_context.h, partial:
+// SRefList, SSpatialPicIndex, SStrideTables and the sWelsEncCtx fields that
+// parameter set generation and writing (E1), the CAVLC macroblock writer
+// (E3), the I-slice macroblock coder (E4) and the frame set-up (E4b) use. The remaining fields arrive with the
+// code that reads them, in the upstream order. The port never copies or
+// memsets the context as a whole, so its layout only needs to hold these
+// fields, not mirror the C one.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // Author(s):
@@ -13,6 +15,9 @@
 //
 // History:
 // 25 Nov 2026  Claude          Created (E1).
+// 26 Nov 2026  Claude          pCurDqLayer and eSliceType (E3).
+// 26 Nov 2026  Claude          SStrideTables, the picture pointers and the RC fields (E4).
+// 26 Nov 2026  Claude          SRefList, SSpatialPicIndex and the layer, list and NAL fields (E4b).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -53,6 +58,35 @@
 
 namespace SIPSorcery.H264.Encoder;
 
+/// <summary>TagRefList.</summary>
+internal unsafe struct SRefList
+{
+    public PtrArray9<SPicture> pShortRefList;   // [1 + MAX_SHORT_REF_COUNT] reference list 0 - int16_t
+    public PtrArray17<SPicture> pLongRefList;   // [1 + MAX_REF_PIC_COUNT] reference list 1 - int32_t
+    public SPicture* pNextBuffer;
+    public PtrArray17<SPicture> pRef;           // [1 + MAX_REF_PIC_COUNT] plus 1 for swap intend
+    public uint8_t uiShortRefCount;
+    public uint8_t uiLongRefCount;              // dependend on pRef pic module
+}
+
+// SLTRState comes with E5.
+
+/// <summary>TagSpatialPicIndex.</summary>
+internal unsafe struct SSpatialPicIndex
+{
+    public SPicture* pSrc;                      // I420 based and after color space converted
+    public int32_t iDid;                        // dependency id
+}
+
+/// <summary>TagStrideTables.</summary>
+internal unsafe struct SStrideTables
+{
+    public InlineArray4<PtrArray2<int32_t>> pStrideDecBlockOffset; // [MAX_DEPENDENCY_LAYER][2]: [iDid][tid==0][24 x 4]: luma+chroma= 24 x 4
+    public PtrArray4<int32_t> pStrideEncBlockOffset;    // [MAX_DEPENDENCY_LAYER]: [iDid][24 x 4]: luma+chroma= 24 x 4
+    public PtrArray4<int16_t> pMbIndexX;                // [MAX_DEPENDENCY_LAYER]: [iDid][iMbX]: map for iMbX in each spatial layer coding
+    public PtrArray4<int16_t> pMbIndexY;                // [MAX_DEPENDENCY_LAYER]: [iDid][iMbY]: map for iMbY in each spatial layer coding
+}
+
 /*
  *  Encoder Context
  */
@@ -63,13 +97,51 @@ internal unsafe struct sWelsEncCtx
     // Input
     public SWelsSvcCodingParam* pSvcParam;      // SVC parameter, WelsSVCParamConfig in svc_param_settings.h
 
+    public int32_t* pSadCostMb;
+    // iMvRange and the MVD cost tables (pMvdCostTable, iMvdCostTableSize, iMvdCostTableStride)
+    // come with E5.
+    public SMVUnitXY* pMvUnitBlock4x4;          // (*pMvUnitBlock4x4[2])[MB_BLOCK4x4_NUM];          // for store each 4x4 blocks' mv unit, the two swap after different d layer
+    public int8_t* pRefIndexBlock4x4;           // (*pRefIndexBlock4x4[2])[MB_BLOCK8x8_NUM];        // for store each 4x4 blocks' pRef index, the two swap after different d layer
+    public int8_t* pNonZeroCountBlocks;         // (*pNonZeroCountBlocks)[MB_LUMA_CHROMA_BLOCK4x4_NUM];
+    public int8_t* pIntra4x4PredModeBlocks;     // (*pIntra4x4PredModeBlocks)[INTRA_4x4_MODE_NUM];  //last byte is not used; the first 4 byte is for the bottom 12,13,14,15 4x4 block intra mode, and 3 byte for (3,7,11)
+
+    public SMB** ppMbListD;                     // [MAX_DEPENDENCY_LAYER];
+    public SStrideTables* pStrideTab;           // stride tables for internal coding used
     public SWelsFuncPtrList* pFuncList;
 
-    public bool bCurFrameMarkedAsSceneLtr;
+    // pSliceThreading and pTaskManage come with the threading work, and pReferenceStrategy with E5.
 
-    // Cur pSlice type
+    // pointers
+    public SPicture* pEncPic;                   // pointer to current picture to be encoded
+    public SPicture* pDecPic;                   // pointer to current picture being reconstructed
+    public SPicture* pRefPic;                   // pointer to current reference picture
+
+    public SDqLayer* pCurDqLayer;               // DQ layer context used to being encoded currently, for reference base layer to refer: pCurDqLayer->pRefLayer if applicable
+    public SDqLayer** ppDqLayerList;            // overall DQ layers encoded for storage
+
+    public SRefList** ppRefPicListExt;          // reference picture list for SVC
+    public PtrArray16<SPicture> pRefList0;      // [16]
+    // SLTRState* pLtr comes with E5.
+
+    public bool bCurFrameMarkedAsSceneLtr;
+    // Derived
+
+    public EWelsSliceType eSliceType;           // currently coding slice type
+    public EWelsNalUnitType eNalType;           // NAL type
+    public EWelsNalRefIdc eNalPriority;         // NAL_Reference_Idc currently
+    public InlineArray4<EWelsNalRefIdc> eLastNalPriority; // [MAX_DEPENDENCY_LAYER] NAL_Reference_Idc in last frame
+    public uint8_t iNumRef0;
+
     public uint8_t uiDependencyId;              // Idc of dependecy layer to be coded
     public uint8_t uiTemporalId;                // Idc of temporal layer to be coded
+    public bool bNeedPrefixNalFlag;             // whether add prefix nal
+
+    // Rate control routine
+    public SWelsSvcRc* pWelsSvcRc;
+    // the check window fields come with E6.
+    public int32_t iGlobalQp;                   // global qp
+
+    // VAA: SVAAFrameInfo* pVaa and CWelsPreProcess* pVpp come with E5 and E7.
 
     public SWelsSPS* pSpsArray;                 // MAX_SPS_COUNT by standard compatible
     public SWelsSPS* pSps;
@@ -87,6 +159,11 @@ internal unsafe struct sWelsEncCtx
     public uint8_t* pFrameBs;                   // restoring bitstream pBuffer of all NALs in a frame
     public int32_t iFrameBsSize;                // count size of frame bs in bytes allocated
     public int32_t iPosBsBuffer;                // current writing position of frame bs pBuffer
+
+    public InlineArray4<SSpatialPicIndex> sSpatialIndexMap; // [MAX_DEPENDENCY_LAYER]
+    public fixed int32_t iSliceBufferSize[WelsEnc.MAX_DEPENDENCY_LAYER];
+
+    // bRefOfCurTidIsLtr comes with E5.
 
     public int32_t iMaxSliceCount;              // maximal count number of slices for all layers observation
     public int16_t iActiveThreadsNum;           // number of threads active so far

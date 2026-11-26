@@ -20,6 +20,18 @@
 //       GetOption(ENCODER_OPTION_SVC_ENCODE_PARAM_EXT) reports after
 //       initialisation. The C# test applies the same settings to its port and
 //       compares the bytes.
+//
+//   h264ref idr
+//       E4b: the first frame (an IDR) the encoder writes through the real API
+//       for a table of fixed QP configurations (kIdrConfigs, reference/idr.tsv):
+//       the settings as for paramsets, a synthetic source picture (FillContent),
+//       then the return codes, the frame type, every layer's NAL units (length
+//       and SHA1 prefix) and the SHA1 of the whole frame. The C# test
+//       (IdrTests.cs) encodes the same picture with its port and compares.
+//
+//   h264ref idr-dump <name> <out>
+//       Writes that configuration's frame to <out>, to compare with the C#
+//       bytes when a row does not match.
 
 #include <cfloat>
 #include <cstdio>
@@ -374,6 +386,13 @@ bool ApplySetting (SEncParamExt& e, SEncParamBase& b, bool base, const std::stri
     else if (k == "uiSliceMode") l.sSliceArgument.uiSliceMode = (SliceModeEnum)v;
     else if (k == "uiSliceNum") l.sSliceArgument.uiSliceNum = (unsigned int)v;
     else if (k == "uiSliceSizeConstraint") l.sSliceArgument.uiSliceSizeConstraint = (unsigned int)v;
+    else if (k == "uiSliceMbNum") {
+      // A comma separated list, for SM_RASTER_SLICE.
+      std::stringstream ss (value);
+      std::string n;
+      for (int i = 0; std::getline (ss, n, ',') && i < MAX_SLICES_NUM_TMP; i++)
+        l.sSliceArgument.uiSliceMbNum[i] = (unsigned int)strtoul (n.c_str(), NULL, 10);
+    }
     else if (k == "bVideoSignalTypePresent") l.bVideoSignalTypePresent = v != 0;
     else if (k == "uiVideoFormat") l.uiVideoFormat = (unsigned char)v;
     else if (k == "bFullRange") l.bFullRange = v != 0;
@@ -412,6 +431,13 @@ bool ApplySetting (SEncParamExt& e, SEncParamBase& b, bool base, const std::stri
   else if (key == "bEnableDenoise") e.bEnableDenoise = v != 0;
   else if (key == "bEnableFrameCroppingFlag") e.bEnableFrameCroppingFlag = v != 0;
   else if (key == "bIsLosslessLink") e.bIsLosslessLink = v != 0;
+  else if (key == "iLoopFilterAlphaC0Offset") e.iLoopFilterAlphaC0Offset = (int)v;
+  else if (key == "iLoopFilterBetaOffset") e.iLoopFilterBetaOffset = (int)v;
+  else if (key == "iComplexityMode") e.iComplexityMode = (ECOMPLEXITY_MODE)v;
+  else if (key == "bUseLoadBalancing") e.bUseLoadBalancing = v != 0;
+  else if (key == "bEnableBackgroundDetection") e.bEnableBackgroundDetection = v != 0;
+  else if (key == "bEnableAdaptiveQuant") e.bEnableAdaptiveQuant = v != 0;
+  else if (key == "bEnableSceneChangeDetect") e.bEnableSceneChangeDetect = v != 0;
   else return false;
   return true;
 }
@@ -609,4 +635,259 @@ int ParamSets() {
     WelsDestroySVCEncoder (encoder);
   }
   return 0;
+}
+
+namespace {
+
+// ---------------------------------------------------------------------------
+// idr
+// ---------------------------------------------------------------------------
+
+// A stateless 32-bit hash (the "lowbias32" finaliser), so a sample does not depend on
+// the order the planes are filled in. The C# test has the same functions (IdrTests.cs).
+uint32_t Hash32 (uint32_t x) {
+  x ^= x >> 16;
+  x *= 0x7feb352du;
+  x ^= x >> 15;
+  x *= 0x846ca68bu;
+  x ^= x >> 16;
+  return x;
+}
+
+unsigned char Noise (int plane, int r, int c) {
+  return (unsigned char) (Hash32 (((uint32_t)plane << 28) | ((uint32_t)r << 13) | (uint32_t)c) >> 24);
+}
+
+// The "scene" content: 24x24 luma regions (12x12 chroma), not macroblock aligned, of six
+// kinds, so that some macroblocks are flat, some smooth, some textured, and the region
+// edges fall both on and inside macroblock edges.
+unsigned char Scene (int plane, int r, int c) {
+  const int s = plane ? 12 : 24;
+  switch (((c / s) * 7 + (r / s) * 3) % 6) {
+  case 0: return (unsigned char) ((60 + 37 * (c / s + r / s) + plane * 50) & 0xff);
+  case 1: return (unsigned char) ((c * 3 + plane * 40) & 0xff);
+  case 2: return (unsigned char) ((r * 5 + plane * 90) & 0xff);
+  case 3: return Noise (plane, r, c);
+  case 4: return (((r >> 2) + (c >> 2)) & 1) ? 200 : 40;
+  default: return (unsigned char) (((r + c) & 7) * 30 + plane * 7);
+  }
+}
+
+// An I420 picture of the given content: Y w x h, U and V (w/2) x (h/2), each packed.
+void FillContent (std::vector<unsigned char>& buf, int w, int h, const std::string& kind) {
+  const int cw = w >> 1, ch = h >> 1;
+  buf.assign (w * h + 2 * cw * ch, 0);
+  unsigned char* p[3] = {buf.data(), buf.data() + w * h, buf.data() + w * h + cw * ch};
+  const int pw[3] = {w, cw, cw}, ph[3] = {h, ch, ch};
+  for (int plane = 0; plane < 3; plane++)
+    for (int r = 0; r < ph[plane]; r++)
+      for (int c = 0; c < pw[plane]; c++) {
+        unsigned char v;
+        if (kind == "flat") v = plane == 0 ? 100 : plane == 1 ? 110 : 150;
+        else if (kind == "gradient") v = (unsigned char) ((plane == 0 ? c * 4 + r * 4 : plane == 1 ? c * 8 : r * 8) & 0xff);
+        else if (kind == "noise") v = Noise (plane, r, c);
+        else v = Scene (plane, r, c);
+        p[plane][r * pw[plane] + c] = v;
+      }
+}
+
+struct IdrConfig {
+  const char* name;
+  const char* content;    // flat, gradient, noise or scene, see FillContent
+  const char* settings;   // as kParamConfigs
+};
+
+// Rate control off (fixed QP, sSpatialLayers[0].iDLayerQp, 26 by default), one thread,
+// CAVLC, camera content, one spatial layer: what the port codes by E4.
+#define IDR_BASE "api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;"
+#define QCIF "iPicWidth=176;iPicHeight=144;"
+const IdrConfig kIdrConfigs[] = {
+  // Content, at the defaults: QP 26 and LOW_COMPLEXITY (the fast coding functions).
+  {"scene", "scene", IDR_BASE QCIF},
+  {"gradient", "gradient", IDR_BASE QCIF},
+  {"noise", "noise", IDR_BASE QCIF},
+  {"flat", "flat", IDR_BASE QCIF},
+
+  // QPs.
+  {"qp0-scene", "scene", IDR_BASE QCIF "L0.iDLayerQp=0"},
+  {"qp10-scene", "scene", IDR_BASE QCIF "L0.iDLayerQp=10"},
+  {"qp18-noise", "noise", IDR_BASE QCIF "L0.iDLayerQp=18"},
+  {"qp34-scene", "scene", IDR_BASE QCIF "L0.iDLayerQp=34"},
+  {"qp40-gradient", "gradient", IDR_BASE QCIF "L0.iDLayerQp=40"},
+  {"qp51-scene", "scene", IDR_BASE QCIF "L0.iDLayerQp=51"},
+  {"qp51-noise", "noise", IDR_BASE QCIF "L0.iDLayerQp=51"},
+
+  // MEDIUM and HIGH complexity use the normal coding functions.
+  {"complexity-medium", "scene", IDR_BASE QCIF "iComplexityMode=1"},
+  {"complexity-high", "scene", IDR_BASE QCIF "iComplexityMode=2"},
+  {"complexity-high-noise-qp20", "noise", IDR_BASE QCIF "iComplexityMode=2;L0.iDLayerQp=20"},
+  {"complexity-high-gradient-qp30", "gradient", IDR_BASE QCIF "iComplexityMode=2;L0.iDLayerQp=30"},
+
+  // Sizes, cropping and padding.
+  {"16x16", "scene", IDR_BASE "iPicWidth=16;iPicHeight=16"},
+  {"48x32-noise", "noise", IDR_BASE "iPicWidth=48;iPicHeight=32"},
+  {"33x17-odd", "scene", IDR_BASE "iPicWidth=33;iPicHeight=17"},
+  {"152x100", "scene", IDR_BASE "iPicWidth=152;iPicHeight=100"},
+  {"320x192", "scene", IDR_BASE "iPicWidth=320;iPicHeight=192"},
+  {"330x250", "scene", IDR_BASE "iPicWidth=330;iPicHeight=250"},
+  {"330x250-no-cropping", "scene", IDR_BASE "iPicWidth=330;iPicHeight=250;bEnableFrameCroppingFlag=0"},
+  {"640x480-gradient", "gradient", IDR_BASE "iPicWidth=640;iPicHeight=480"},
+  {"1280x720", "scene", IDR_BASE "iPicWidth=1280;iPicHeight=720;iComplexityMode=2"},
+
+  // Slices (single threaded, so fixed and raster slices are coded in turn).
+  {"slices-fixed-4", "scene", IDR_BASE QCIF "L0.uiSliceMode=1;L0.uiSliceNum=4"},
+  {"slices-fixed-3-noise", "noise", IDR_BASE QCIF "L0.uiSliceMode=1;L0.uiSliceNum=3"},
+  {"slices-fixed-7-320x192", "scene", IDR_BASE "iPicWidth=320;iPicHeight=192;L0.uiSliceMode=1;L0.uiSliceNum=7;iComplexityMode=2"},
+  {"slices-fixed-4-no-load-balancing", "scene", IDR_BASE QCIF "L0.uiSliceMode=1;L0.uiSliceNum=4;bUseLoadBalancing=0"},
+  {"slices-raster-rows", "scene", IDR_BASE QCIF "L0.uiSliceMode=2"},
+  {"slices-raster-mbs", "scene", IDR_BASE QCIF "L0.uiSliceMode=2;L0.uiSliceMbNum=10,30,59"},
+  {"slices-raster-mbs-high", "noise", IDR_BASE QCIF "L0.uiSliceMode=2;L0.uiSliceMbNum=1,11,40,47;iComplexityMode=2"},
+
+  // Deblocking.
+  {"deblock-off", "scene", IDR_BASE QCIF "iLoopFilterDisableIdc=1"},
+  {"deblock-idc2-single-slice", "scene", IDR_BASE QCIF "iLoopFilterDisableIdc=2"},
+  {"deblock-idc2-slices", "scene", IDR_BASE QCIF "iLoopFilterDisableIdc=2;L0.uiSliceMode=1;L0.uiSliceNum=4"},
+  {"deblock-idc0-slices", "scene", IDR_BASE QCIF "iLoopFilterDisableIdc=0;L0.uiSliceMode=2"},
+  {"deblock-offsets-plus", "scene", IDR_BASE QCIF "iLoopFilterAlphaC0Offset=6;iLoopFilterBetaOffset=6"},
+  {"deblock-offsets-minus", "scene", IDR_BASE QCIF "iLoopFilterAlphaC0Offset=-6;iLoopFilterBetaOffset=-6"},
+  {"deblock-offsets-mixed-qp40", "gradient", IDR_BASE QCIF "iLoopFilterAlphaC0Offset=-3;iLoopFilterBetaOffset=4;L0.iDLayerQp=40"},
+
+  // Temporal layers (the cascading QP of the T0 IDR), LTR, parameter set strategies and
+  // the analysis features, which an IDR does not use.
+  {"temporal-2", "scene", IDR_BASE QCIF "iTemporalLayerNum=2"},
+  {"temporal-3", "scene", IDR_BASE QCIF "iTemporalLayerNum=3"},
+  {"temporal-4", "scene", IDR_BASE QCIF "iTemporalLayerNum=4"},
+  {"ltr", "scene", IDR_BASE QCIF "bEnableLongTermReference=1"},
+  {"strategy-increasing", "scene", IDR_BASE QCIF "eSpsPpsIdStrategy=1"},
+  {"strategy-sps-listing", "scene", IDR_BASE QCIF "eSpsPpsIdStrategy=2"},
+  {"strategy-sps-pps-listing", "scene", IDR_BASE QCIF "eSpsPpsIdStrategy=6"},
+  {"features-off", "scene", IDR_BASE QCIF "bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0"},
+  {"profile-main", "scene", IDR_BASE QCIF "L0.uiProfileIdc=77"},
+};
+#undef QCIF
+#undef IDR_BASE
+
+std::string Sha1Hex (const unsigned char* d, int n) {
+  SHA1Context ctx;
+  SHA1Reset (&ctx);
+  SHA1Input (&ctx, d, n);
+  unsigned char digest[SHA_DIGEST_LENGTH];
+  SHA1Result (&ctx, digest);
+  return Hex (digest, SHA_DIGEST_LENGTH);
+}
+
+// Every layer of one output, '|' separated: V (VCL) or N (non-VCL), then each NAL unit
+// (start code included) as <length>:<first 8 hex digits of its SHA1>.
+std::string Layers (const SFrameBSInfo& info) {
+  std::string s;
+  for (int i = 0; i < info.iLayerNum; i++) {
+    const SLayerBSInfo& l = info.sLayerInfo[i];
+    if (!s.empty()) s += "|";
+    s += l.uiLayerType == VIDEO_CODING_LAYER ? "V=" : "N=";
+    const unsigned char* p = l.pBsBuf;
+    for (int j = 0; j < l.iNalCount; j++) {
+      if (j) s += ",";
+      s += std::to_string (l.pNalLengthInByte[j]) + ":" + Sha1Hex (p, l.pNalLengthInByte[j]).substr (0, 8);
+      p += l.pNalLengthInByte[j];
+    }
+  }
+  return s.empty() ? "-" : s;
+}
+
+// Encodes one configuration's first frame (an IDR). Returns InitializeExt's code, and
+// EncodeFrame's in *pEncodeRc; the output bytes go to *pFrame.
+int EncodeIdr (const IdrConfig& c, int* pEncodeRc, std::string* pFrameType, std::string* pLayers,
+               std::vector<unsigned char>* pFrame) {
+  ISVCEncoder* encoder = NULL;
+  if (WelsCreateSVCEncoder (&encoder) != 0) return -1;
+  int iTraceLevel = WELS_LOG_QUIET;
+  encoder->SetOption (ENCODER_OPTION_TRACE_LEVEL, &iTraceLevel);
+
+  SEncParamExt ext;
+  SEncParamBase base;
+  memset (&base, 0, sizeof base);
+  encoder->GetDefaultParams (&ext);
+  std::stringstream ss (c.settings);
+  std::string item;
+  while (std::getline (ss, item, ';')) {
+    if (item.empty()) continue;
+    size_t eq = item.find ('=');
+    std::string k = item.substr (0, eq), v = item.substr (eq + 1);
+    if (k == "api") continue;
+    if (!ApplySetting (ext, base, false, k, v)) {
+      fprintf (stderr, "%s: unknown setting %s\n", c.name, k.c_str());
+      exit (1);
+    }
+  }
+
+  int rv = encoder->InitializeExt (&ext);
+  *pEncodeRc = 0;
+  pFrame->clear();
+  *pFrameType = "-";
+  *pLayers = "-";
+  if (rv == cmResultSuccess) {
+    const int w = ext.iPicWidth, h = ext.iPicHeight;
+    std::vector<unsigned char> buf;
+    FillContent (buf, w, h, c.content);
+    SSourcePicture pic;
+    memset (&pic, 0, sizeof pic);
+    pic.iPicWidth = w;
+    pic.iPicHeight = h;
+    pic.iColorFormat = videoFormatI420;
+    pic.iStride[0] = w;
+    pic.iStride[1] = pic.iStride[2] = w >> 1;
+    pic.pData[0] = buf.data();
+    pic.pData[1] = pic.pData[0] + w * h;
+    pic.pData[2] = pic.pData[1] + (w >> 1) * (h >> 1);
+    pic.uiTimeStamp = 0;
+
+    SFrameBSInfo info;
+    memset (&info, 0, sizeof info);
+    *pEncodeRc = encoder->EncodeFrame (&pic, &info);
+    *pFrameType = FrameTypeName (info.eFrameType);
+    *pLayers = Layers (info);
+    for (int i = 0; i < info.iLayerNum; i++) {
+      const SLayerBSInfo& l = info.sLayerInfo[i];
+      int n = 0;
+      for (int j = 0; j < l.iNalCount; j++) n += l.pNalLengthInByte[j];
+      pFrame->insert (pFrame->end(), l.pBsBuf, l.pBsBuf + n);
+    }
+    encoder->Uninitialize();
+  }
+  WelsDestroySVCEncoder (encoder);
+  return rv;
+}
+
+}  // namespace
+
+int Idr() {
+  printf ("# %s, C-only reference build. First frame (IDR) per configuration, see refharness/src/encoder.cpp.\n",
+          g_strCodecVer);
+  printf ("# config\t<name>\t<content>\t<settings>\n");
+  printf ("# idr\t<name>\t<InitializeExt>\t<EncodeFrame>\t<frame type>\t<layers>\t<sha1 of the frame>\t<size>\n");
+  for (const IdrConfig& c : kIdrConfigs) {
+    printf ("config\t%s\t%s\t%s\n", c.name, c.content, c.settings);
+    int encodeRc = 0;
+    std::string frameType, layers;
+    std::vector<unsigned char> frame;
+    int rv = EncodeIdr (c, &encodeRc, &frameType, &layers, &frame);
+    printf ("idr\t%s\t%d\t%d\t%s\t%s\t%s\t%d\n", c.name, rv, encodeRc, frameType.c_str(), layers.c_str(),
+            frame.empty() ? "-" : Sha1Hex (frame.data(), (int)frame.size()).c_str(), (int)frame.size());
+  }
+  return 0;
+}
+
+int IdrDump (const char* name, const char* outPath) {
+  for (const IdrConfig& c : kIdrConfigs) {
+    if (std::string (c.name) != name) continue;
+    int encodeRc = 0;
+    std::string frameType, layers;
+    std::vector<unsigned char> frame;
+    EncodeIdr (c, &encodeRc, &frameType, &layers, &frame);
+    std::ofstream out (outPath, std::ios::binary);
+    out.write ((const char*)frame.data(), (std::streamsize)frame.size());
+    return out ? 0 : 1;
+  }
+  fprintf (stderr, "no idr configuration %s\n", name);
+  return 1;
 }

@@ -4,10 +4,13 @@
 // Description: Port of codec/encoder/core/inc/wels_func_ptr_def.h, part 2
 // (E2): the encoder's function pointer list. So far it holds the kernel
 // slots that WelsInitEncodingFuncs, WelsInitReconstructionFuncs,
-// WelsInitSampleSadFunc and WelsInitIntraPredFuncs fill (E2), and
-// pParametersetStrategy (E1). The other upstream fields (expand picture, MC,
-// mode decision, motion search, deblocking, rate control, CAVLC) arrive with
-// the modules that install them; comments mark where they go.
+// WelsInitSampleSadFunc and WelsInitIntraPredFuncs fill (E2), the CAVLC
+// writer's slots that InitCoeffFunc fills (E3), pParametersetStrategy (E1),
+// the intra mode decision, rate control and memory-zero slots (E4), and the
+// deblocking slots with DeblockingFunc (E4b). The other upstream fields
+// (expand picture, MC, inter mode decision, motion search, the RC SAD
+// accumulator) arrive with the modules that install them; comments mark where
+// they go.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // The typedefs are global aliases, as in the decoder. Upstream's encoder
@@ -22,6 +25,9 @@
 // History:
 // 25 Nov 2026  Claude          Created (E1).
 // 26 Nov 2026  Claude          Kernel typedefs, SSampleDealingFunc and the E2 slots.
+// 26 Nov 2026  Claude          The CAVLC writer's typedefs and slots (E3).
+// 26 Nov 2026  Claude          Intra mode decision, rate control and memory-zero slots (E4).
+// 26 Nov 2026  Claude          DeblockingFunc and the deblocking slots (E4b).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -86,6 +92,16 @@ global using unsafe PQuantizationDcFunc = delegate*<short*, short, short, void>;
 global using unsafe PQuantizationSkipFunc = delegate*<short*, short, short, int>;
 // typedef int32_t (*PQuantizationHadamardFunc) (int16_t* pRes, const int16_t kiFF, int16_t iMF, int16_t* pDct, int16_t* pBlock);
 global using unsafe PQuantizationHadamardFunc = delegate*<short*, short, short, short*, short*, int>;
+// The four deblocking kernel typedefs (PLumaDeblockingLT4Func .. PChromaDeblockingEQ4Func) are the decoder's aliases.
+// typedef void (*PDeblockingBSCalc) (SWelsFuncPtrList* pFunc, SMB* pCurMb, uint8_t uiBS[2][4][4], Mb_Type uiCurMbType,
+//                                    int32_t iMbStride, int32_t iLeftFlag, int32_t iTopFlag);
+global using unsafe PDeblockingBSCalc = delegate*<SIPSorcery.H264.Encoder.SWelsFuncPtrList*, SIPSorcery.H264.Encoder.SMB*, byte*, uint, int,
+                                                  int, int, void>;
+// typedef void (*PDeblockingFilterSlice) (SDqLayer* pCurDq, SWelsFuncPtrList* pFunc, SSlice* pSlice);
+global using unsafe PDeblockingFilterSlice = delegate*<SIPSorcery.H264.Encoder.SDqLayer*, SIPSorcery.H264.Encoder.SWelsFuncPtrList*,
+                                                       SIPSorcery.H264.Encoder.SSlice*, void>;
+// typedef  void (*PSetNoneZeroCountZeroFunc) (int8_t* pNonZeroCount);
+global using unsafe PSetNoneZeroCountZeroFunc = delegate*<sbyte*, void>;
 // typedef int32_t (*PSampleSadSatdCostFunc) (uint8_t*, int32_t, uint8_t*, int32_t);
 global using unsafe PSampleSadSatdCostFunc = delegate*<byte*, int, byte*, int, int>;
 // typedef void (*PSample4SadCostFunc) (uint8_t*, int32_t, uint8_t*, int32_t, int32_t*);
@@ -99,6 +115,32 @@ global using unsafe PIntraPred8x8Combined3Func = delegate*<byte*, int, byte*, in
 // typedef void (*PGetIntraPredFunc) (uint8_t* pPrediction, uint8_t* pRef, const int32_t kiStride);
 // (renamed: the decoder's PGetIntraPredFunc takes (pPred, kiStride); see the file header)
 global using unsafe PGetIntraPredFuncEnc = delegate*<byte*, byte*, int, void>;
+// typedef int32_t (*PGetVarianceFromIntraVaaFunc) (uint8_t* pSampelY, const int32_t kiStride);
+global using unsafe PGetVarianceFromIntraVaaFunc = delegate*<byte*, int, int>;
+// typedef uint8_t (*PGetMbSignFromInterVaaFunc) (int32_t* pSad8x8);
+global using unsafe PGetMbSignFromInterVaaFunc = delegate*<int*, byte>;
+// typedef void (*PUpdateMbMvFunc) (SMVUnitXY* pMvUnit, const SMVUnitXY ksMv);
+global using unsafe PUpdateMbMvFunc = delegate*<SIPSorcery.H264.Encoder.SMVUnitXY*, SIPSorcery.H264.Encoder.SMVUnitXY, void>;
+// typedef  int32_t (*PCavlcParamCalFunc) (int16_t* pCoff, uint8_t* pRun, int16_t* pLevel, int32_t* pTotalCoeffs,
+//                                         int32_t iEndIdx);
+global using unsafe PCavlcParamCalFunc = delegate*<short*, byte*, short*, int*, int, int>;
+// typedef int32_t (*PWelsSpatialWriteMbSyn) (sWelsEncCtx* pCtx, SSlice* pSlice, SMB* pCurMb);
+global using unsafe PWelsSpatialWriteMbSyn = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, SIPSorcery.H264.Encoder.SSlice*,
+                                                       SIPSorcery.H264.Encoder.SMB*, int>;
+// typedef void (*PStashMBStatus) (SDynamicSlicingStack* pDss, SSlice* pSlice, int32_t iMbSkipRun);
+global using unsafe PStashMBStatus = delegate*<SIPSorcery.H264.Encoder.SDynamicSlicingStack*, SIPSorcery.H264.Encoder.SSlice*, int, void>;
+// typedef int32_t (*PStashPopMBStatus) (SDynamicSlicingStack* pDss, SSlice* pSlice);
+global using unsafe PStashPopMBStatus = delegate*<SIPSorcery.H264.Encoder.SDynamicSlicingStack*, SIPSorcery.H264.Encoder.SSlice*, int>;
+// typedef int32_t (*PGetBsPosition)(SSlice *pSlice);
+global using unsafe PGetBsPosition = delegate*<SIPSorcery.H264.Encoder.SSlice*, int>;
+// typedef void (*PSetMemoryZero) (void* pDst, int32_t iSize);
+global using unsafe PSetMemoryZero = delegate*<void*, int, void>;
+// typedef int32_t (*PIntraFineMdFunc) (sWelsEncCtx* pEncCtx, SWelsMD* pWelsMd, SMB* pCurMb, SMbCache* pMbCache);
+global using unsafe PIntraFineMdFunc = delegate*<SIPSorcery.H264.Encoder.sWelsEncCtx*, SIPSorcery.H264.Encoder.SWelsMD*,
+                                                 SIPSorcery.H264.Encoder.SMB*, SIPSorcery.H264.Encoder.SMbCache*, int>;
+// typedef void (*PMdBackgroundInfoUpdateFunc) (SDqLayer* pCurLayer,  SMB* pCurMb, const bool bFlag,
+//                                              const int32_t kiRefPictureType);
+global using unsafe PMdBackgroundInfoUpdateFunc = delegate*<SIPSorcery.H264.Encoder.SDqLayer*, SIPSorcery.H264.Encoder.SMB*, bool, int, void>;
 
 namespace SIPSorcery.H264.Encoder;
 
@@ -151,11 +193,37 @@ internal unsafe struct SSampleDealingFunc
     }
 }
 
+/// <summary>tagDeblockingFunc.</summary>
+internal unsafe struct DeblockingFunc
+{
+    public PLumaDeblockingLT4Func pfLumaDeblockingLT4Ver;
+    public PLumaDeblockingEQ4Func pfLumaDeblockingEQ4Ver;
+    public PLumaDeblockingLT4Func pfLumaDeblockingLT4Hor;
+    public PLumaDeblockingEQ4Func pfLumaDeblockingEQ4Hor;
+
+    public PChromaDeblockingLT4Func pfChromaDeblockingLT4Ver;
+    public PChromaDeblockingEQ4Func pfChromaDeblockingEQ4Ver;
+    public PChromaDeblockingLT4Func pfChromaDeblockingLT4Hor;
+    public PChromaDeblockingEQ4Func pfChromaDeblockingEQ4Hor;
+
+    public PDeblockingBSCalc pfDeblockingBSCalc;
+
+    public PDeblockingFilterSlice pfDeblockingFilterSlice;
+}
+
 /// <summary>TagWelsFuncPointerList (partial, see the file header).</summary>
 internal unsafe struct SWelsFuncPtrList
 {
-    // SExpandPicFunc sExpandPicFunc; the mode decision callbacks (pfFillInterNeighborCache ..
-    // pfSetScrollingMv) and SMcFunc sMcFuncs come with E4 and E5.
+    // SExpandPicFunc sExpandPicFunc (used by WelsUpdateRefList) and PFillInterNeighborCacheFunc
+    // pfFillInterNeighborCache come with E5.
+    public PGetVarianceFromIntraVaaFunc pfGetVarianceFromIntraVaa;
+    public PGetMbSignFromInterVaaFunc pfGetMbSignFromInterVaa;
+    public PUpdateMbMvFunc pfUpdateMbMv;
+    // PInterMdFirstIntraModeFunc pfFirstIntraMode comes with E5.
+    public PIntraFineMdFunc pfIntraFineMd;  //svc_encode_slice.c svc_mode_decision.c svc_base_layer_md.c
+    // pfInterFineMd, pfInterMd and pfInterMdBackgroundDecision come with E5.
+    public PMdBackgroundInfoUpdateFunc pfMdBackgroundInfoUpdate;
+    // pfSCDPSkipDecision, pfSetScrollingMv and SMcFunc sMcFuncs come with E5.
 
     public SSampleDealingFunc sSampleDealingFuncs;
 #pragma warning disable CS0649 // written through the function-pointer array properties below
@@ -200,9 +268,21 @@ internal unsafe struct SWelsFuncPtrList
     public PIDctFunc pfIDctT4;
     public PIDctFunc pfIDctI16x16Dc;
 
-    // DeblockingFunc pfDeblocking, pfSetNZCZero, SWelsRcFunc pfRc, pfAccumulateSadForRc,
-    // the pfSetMemZero* pointers, pfCavlcParamCal, pfWelsSpatialWriteMbSyn, pfGetBsPosition,
-    // pfStashMBStatus and pfStashPopMBStatus come with E3 to E6.
+    /* For Deblocking */
+    public DeblockingFunc pfDeblocking;
+    public PSetNoneZeroCountZeroFunc pfSetNZCZero;
+
+    public SWelsRcFunc pfRc;
+    // PAccumulateSadFunc pfAccumulateSadForRc comes with E6.
+    public PSetMemoryZero pfSetMemZeroSize8;            // for size is times to 8
+    public PSetMemoryZero pfSetMemZeroSize64Aligned16;  // for size is times of 64, and address is align to 16
+    public PSetMemoryZero pfSetMemZeroSize64;           // for size is times of 64, and don't know address is align to 16 or not
+
+    public PCavlcParamCalFunc pfCavlcParamCal;
+    public PWelsSpatialWriteMbSyn pfWelsSpatialWriteMbSyn;
+    public PGetBsPosition pfGetBsPosition;
+    public PStashMBStatus pfStashMBStatus;
+    public PStashPopMBStatus pfStashPopMBStatus;
 
     public IWelsParametersetStrategy* pParametersetStrategy;
 

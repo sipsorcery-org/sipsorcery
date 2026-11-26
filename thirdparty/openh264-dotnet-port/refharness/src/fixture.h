@@ -84,5 +84,15 @@ void KernelsEncDecodeMbAux();
 void KernelsEncIntraPred();
 void KernelsSample();
 void KernelsEncInit();
+// The CAVLC writer's, in cavlc_encoder.cpp (E3).
+void KernelsVlcEncoder();
+void KernelsSetMbSynCavlc();
+void KernelsSvcSetMbSynCavlc();
+// The I-slice coding's, in islice_encoder.cpp (E4).
+void KernelsMdIntra();
+void KernelsSvcBaseLayerMd();
+void KernelsPictureHandle();
+void KernelsEncoderExt();
+void KernelsSvcEncodeSlice();
 
 #endif  // H264REF_FIXTURE_H

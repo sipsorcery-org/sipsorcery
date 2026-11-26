@@ -45,6 +45,8 @@ refharness/build/Release/h264ref yuv-damaged <file.264> <0-2> <out.yuv>  # one d
 refharness/build/Release/h264ref trace-damaged <file.264> <0-2>        # one line per DecodeFrame2/FlushFrame call
 refharness/build/Release/h264ref encoder-conformance <openh264>/res > reference/encoder-conformance.tsv  # all 16 upstream encoder hashes
 refharness/build/Release/h264ref paramsets > reference/paramsets.tsv   # encoder validation and SPS/PPS output
+refharness/build/Release/h264ref idr > reference/idr.tsv               # first frame (IDR) at a fixed QP
+refharness/build/Release/h264ref idr-dump <name> <out.264>        # one idr row's bytes
 ```
 
 `conformance` copies upstream's `test/api/BaseDecoderTest.cpp` decode loop and
@@ -122,6 +124,17 @@ operation, the frame type and every non-VCL layer's NAL bytes.
 `test/SIPSorcery.H264.TestVectors/ParameterSetTests.cs` has the same settings
 table and output format, and the two must stay in step.
 
+`idr` encodes the first frame, an IDR, of a table of configurations
+(`kIdrConfigs` in `src/encoder.cpp`): one spatial layer with rate control
+off, over synthetic pictures (flat, gradient, noise and a scene of mixed
+regions, from a hash, so no files are needed). The settings work as in
+`paramsets`. It prints the `InitializeExt` and `EncodeFrame` results, the
+frame type, each layer's NAL lengths and short SHA1s, and the whole frame's
+SHA1 and size. `idr-dump` writes one row's frame to a file.
+`test/SIPSorcery.H264.TestVectors/IdrTests.cs` has the same content
+generator and output format, and writes its own bytes on a mismatch when
+`H264_DUMP_DIR` is set.
+
 ## Reference results (`reference/`)
 
 - **`decoder-conformance.tsv`** is the output of `h264ref conformance` on the
@@ -157,3 +170,7 @@ table and output format, and the two must stay in step.
 - **`paramsets.tsv`** is the output of `h264ref paramsets`: 66 configurations
   with their init results, validated parameters and parameter set bytes. Read
   by `ParameterSetTests` (E1). All 66 match.
+- **`idr.tsv`** is the output of `h264ref idr`: 47 configurations with their
+  first frame. Read by `IdrTests` (E4b), which also decodes each frame with
+  the ported decoder and compares it with the encoder's reconstruction. All
+  47 match.

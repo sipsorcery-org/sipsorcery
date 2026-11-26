@@ -100,6 +100,12 @@ internal struct PtrArray8<T> where T : unmanaged
     private Ptr<T> _e0;
 }
 
+[InlineArray(9)]
+internal struct PtrArray9<T> where T : unmanaged
+{
+    private Ptr<T> _e0;
+}
+
 [InlineArray(15)]
 internal struct PtrArray15<T> where T : unmanaged
 {
@@ -144,6 +150,12 @@ internal struct InlineArray3<T> where T : unmanaged
 
 [InlineArray(4)]
 internal struct InlineArray4<T> where T : unmanaged
+{
+    private T _e0;
+}
+
+[InlineArray(5)]
+internal struct InlineArray5<T> where T : unmanaged
 {
     private T _e0;
 }
