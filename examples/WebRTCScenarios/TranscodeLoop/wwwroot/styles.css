@@ -47,11 +47,14 @@ button, select, input { font: inherit; color: inherit; }
   background: var(--panel);
 }
 
-.brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
-.brand .name { font-weight: 600; font-size: 15px; }
-.brand .sub { color: var(--text-3); white-space: nowrap; }
+/* One line at any width: the chips' numbers change as a run goes, and wrapping would move the page. */
+.brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; flex: 0 1 auto; overflow: hidden; }
+.brand .name { font-weight: 600; font-size: 15px; white-space: nowrap; }
+.brand .sub { color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.chips { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; justify-content: flex-end; }
+.chips { display: flex; gap: 8px; flex: 1; flex-wrap: nowrap; justify-content: flex-end; min-width: 0; overflow: hidden; }
+.chips .chip { flex: none; }
+.chips #chipCpu { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
 .chip {
   display: inline-flex;
@@ -70,8 +73,74 @@ button, select, input { font: inherit; color: inherit; }
 .chip.leg[data-state="connected"] i { background: var(--ok); }
 .chip.leg[data-state="connecting"] i, .chip.leg[data-state="new"] i { background: var(--warn); }
 .chip.leg[data-state="failed"] i, .chip.leg[data-state="disconnected"] i { background: var(--bad); }
-.chip.verdict[data-level="ok"] { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); }
-.chip.verdict[data-level="warn"] { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); }
+#chipCpu { font-variant-numeric: tabular-nums; }
+
+/* ---- Status: the verdict and its problems, on a line of its own ---- */
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;              /* fixed: whatever it says, nothing below moves */
+  flex: none;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  overflow: hidden;
+  white-space: nowrap;
+  transition: background-color 0.4s;
+}
+.status .badge {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 132px;
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--text-2);
+  font-weight: 600;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+}
+/* Fills over the 10 s a run has to keep up for. */
+.status .badge-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--progress, 0%);
+  background: color-mix(in srgb, var(--ok) 28%, transparent);
+  transition: width 0.5s linear;
+}
+.status .badge-text { position: relative; }
+.status-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-2);
+}
+.status-text .issue { color: var(--warn); }
+.status-text .note { color: var(--text-3); }
+.status-text .upstream { color: color-mix(in srgb, var(--warn) 55%, var(--text-3)); }
+.status-text .sep { color: var(--text-3); padding: 0 6px; }
+
+.status[data-level="keeping"] .badge { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); }
+.status[data-level="warn"] .badge { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, var(--line)); }
+.status[data-level="warn"] { background: color-mix(in srgb, var(--warn) 7%, var(--panel)); }
+.status[data-level="pass"], .status[data-level="pass-warn"] { background: color-mix(in srgb, var(--ok) 12%, var(--panel)); }
+.status[data-level="pass"] .badge, .status[data-level="pass-warn"] .badge,
+.status[data-level="passed"] .badge {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #0b1a0f;
+}
+.status[data-level="pass"] .status-text { color: var(--text); }
+.status[data-level="passed"] .badge { background: color-mix(in srgb, var(--ok) 70%, var(--panel-2)); }
+.status[data-level="failed"] .badge { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, var(--line)); }
 
 button {
   background: var(--panel-2);

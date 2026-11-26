@@ -16,10 +16,15 @@
       <span class="chip leg" id="chipA" data-state="idle"><i></i>Leg A <b>idle</b></span>
       <span class="chip leg" id="chipB" data-state="idle"><i></i>Leg B <b>idle</b></span>
       <span class="chip" id="chipCpu">CPU –</span>
-      <span class="chip verdict" id="chipVerdict">Not running</span>
     </div>
     <button id="startBtn" class="primary">Start</button>
   </header>
+
+  <!-- One line, always the same height, so a long list of problems never moves the page. -->
+  <section class="status" id="status" data-level="idle">
+    <span class="badge" id="verdictBadge"><span class="badge-fill" id="verdictFill"></span><span class="badge-text" id="verdictLabel">Not running</span></span>
+    <span class="status-text" id="verdictText">Press Start. A run passes once page B has kept up for 10 s in a row.</span>
+  </section>
 
   <section class="config">
     <div class="group">

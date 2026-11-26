@@ -32,7 +32,8 @@ internal sealed record ChainConfig(string Source, int Width, int Height, string 
     public bool TestCard => Source == "card";
     public string Describe() => $"{Width}x{Height} " + (Relay
         ? $"relay {CodecIn} (no decode or encode)"
-        : $"transcode {CodecIn} ({Decoder}) → {CodecOut} ({Encoder}{(EncoderKbps > 0 ? $", {EncoderKbps} kbit/s" : "")})");
+        : $"transcode {CodecIn} ({Codecs.Describe(Decoder, CodecIn, encode: false)}) → " +
+          $"{CodecOut} ({Codecs.Describe(Encoder, CodecOut, encode: true)}{(EncoderKbps > 0 ? $", {EncoderKbps} kbit/s" : "")})");
 }
 
 internal sealed class TranscodeChain : IDisposable
@@ -90,10 +91,13 @@ internal sealed class TranscodeChain : IDisposable
     private long _framesIn, _bytesIn, _keyIn, _pliToA, _droppedA, _rtpLostA, _audioIn;
     // Decode.
     private long _decoded, _decodeErrors, _overruns, _queueDropped, _skippedForKey, _gaps, _unreadable, _repeats;
-    private int _decWidth, _decHeight, _lastNumber = -1;
+    private int _decWidth, _decHeight, _lastNumber = -1, _unreadSince;
+    // Ranges of frame numbers that didn't come out of the decoder readable, for the page, which
+    // tells damage done before SIPSorcery decoded a frame from damage done after it.
+    private readonly ConcurrentQueue<int[]> _lostAtDecode = new();
     private double _lastNumberAt;
     // Encode.
-    private long _encoded, _encodeSkipped, _encodeErrors, _keyOut, _bytesOut, _forced;
+    private long _encoded, _encodeSkipped, _encodeErrors, _encodeNoOutput, _keyOut, _bytesOut, _forced;
     // Leg B.
     private long _framesOutB, _pliFromB, _firFromB, _nackFromB, _audioOut, _nackReported, _lossReported;
     private double? _rrLossB, _rrJitterB;
@@ -376,14 +380,24 @@ internal sealed class TranscodeChain : IDisposable
             if (number < 0)
             {
                 _unreadable++;
+                _unreadSince++;
                 Event("unread");
             }
             else
             {
                 if (_lastNumber >= 0 && number > _lastNumber + 1)
                 {
-                    _gaps += number - _lastNumber - 1;
-                    Event("gap", number - _lastNumber - 1);
+                    // Unreadable frames in between were counted as such, not as missing too.
+                    long missing = number - _lastNumber - 1 - _unreadSince;
+                    if (missing > 0)
+                    {
+                        _gaps += missing;
+                        Event("gap", missing);
+                    }
+                    // Whatever the cause, these numbers never came out of the decoder readable: the
+                    // page holds them against page A, or the decoder, not what follows it.
+                    _lostAtDecode.Enqueue([_lastNumber + 1, number - 1]);
+                    while (_lostAtDecode.Count > 500) _lostAtDecode.TryDequeue(out _);
                 }
                 else if (_lastNumber >= 0 && number <= _lastNumber)
                 {
@@ -392,6 +406,7 @@ internal sealed class TranscodeChain : IDisposable
                 }
                 _lastNumber = number;
                 _lastNumberAt = Clock.NowMs;
+                _unreadSince = 0;
             }
         }
 
@@ -459,7 +474,13 @@ internal sealed class TranscodeChain : IDisposable
                 ReturnFrame(f.Bgr);
             }
             _encodeMs.Add(Clock.NowMs - t0);
-            if (encoded == null || encoded.Length == 0) continue;
+            if (encoded == null || encoded.Length == 0)
+            {
+                // The encoder took the frame and gave nothing back: its rate control dropped it
+                // (av1.net does when it's over its bitrate). Page B counts it as missing too.
+                _encodeNoOutput++;
+                continue;
+            }
 
             _encoded++;
             _bytesOut += encoded.Length;
@@ -559,6 +580,8 @@ internal sealed class TranscodeChain : IDisposable
     {
         var events = new List<object>();
         while (_events.TryDequeue(out var e)) events.Add(e);
+        var lostAtDecode = new List<int[]>();
+        while (_lostAtDecode.TryDequeue(out var r)) lostAtDecode.Add(r);
         double now = Math.Round(Clock.NowMs, 1);
         long nacks = Interlocked.Read(ref _nackFromB), lost = _linkB?.DroppedToBrowser ?? 0;
         var resend = _b.VideoStream?.RetransmissionMetrics;
@@ -585,7 +608,7 @@ internal sealed class TranscodeChain : IDisposable
             },
             enc = _cfg.Relay ? null : new
             {
-                encoded = _encoded, skipped = _encodeSkipped, queue = _toEncode.Count, ms = _encodeMs.Summary(), errors = _encodeErrors,
+                encoded = _encoded, skipped = _encodeSkipped, noOutput = _encodeNoOutput, queue = _toEncode.Count, ms = _encodeMs.Summary(), errors = _encodeErrors,
                 keyOut = _keyOut, bytesOut = _bytesOut, cropped = _cropped, forced = Interlocked.Read(ref _forced),
             },
             inChain = _inChainMs.Summary(),
@@ -603,6 +626,7 @@ internal sealed class TranscodeChain : IDisposable
             // The whole process's garbage collections: a pause stops every thread, the pipeline's included.
             gc = new { gen2 = GC.CollectionCount(2), pauseMs = Math.Round(GC.GetTotalPauseDuration().TotalMilliseconds, 1) },
             events,
+            lostAtDecode,
         };
     }
 

@@ -30,6 +30,8 @@ internal sealed class MainForm : Form
     private object? _lastStats;
     private double? _connectedAt;
     private bool _captured;
+    // What the chain was running, and a crash of the page to tell it about once it has reloaded.
+    private string? _running, _crash, _crashToShow;
 
     // CPU: 1 core = 100, over each second.
     private int _cpuTick;
@@ -58,8 +60,10 @@ internal sealed class MainForm : Form
     private async Task StartAsync()
     {
         // The fake camera runs at 20 fps unless told otherwise: 30 is the highest rate the page offers.
-        var args = "--disable-features=WebRtcHideLocalIpsWithMdns --autoplay-policy=no-user-gesture-required " +
-                   "--use-fake-device-for-media-stream=fps=30 --use-fake-ui-for-media-stream";
+        // H265 over WebRTC is behind features: with them the browser decodes it (on the GPU, where
+        // the GPU can), and sends it where Chromium has an encoder for it (none on Windows so far).
+        var args = "--disable-features=WebRtcHideLocalIpsWithMdns --enable-features=WebRtcAllowH265Receive,WebRtcAllowH265Send " +
+                   "--autoplay-policy=no-user-gesture-required --use-fake-device-for-media-stream=fps=30 --use-fake-ui-for-media-stream";
         _env = await CoreWebView2Environment.CreateAsync(null, Path.Combine(Options.DataDir, "WebView2"), new CoreWebView2EnvironmentOptions(args));
         await _web.EnsureCoreWebView2Async(_env);
         var core = _web.CoreWebView2;
@@ -70,11 +74,42 @@ internal sealed class MainForm : Form
                 e.State = CoreWebView2PermissionState.Allow;
         };
         core.WebMessageReceived += async (_, e) => await OnPageMessage(e.WebMessageAsJson);
+        core.ProcessFailed += (_, e) => OnProcessFailed(e);
         core.Settings.AreDevToolsEnabled = true;
 
-        var query = string.Join("&", _options.Page.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
-        core.Navigate("https://transcodeloop.app/index.html" + (query.Length > 0 ? "?" + query : ""));
+        core.Navigate(PageUrl());
         _statsTimer.Start();
+    }
+
+    private string PageUrl()
+    {
+        var query = string.Join("&", _options.Page.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
+        return "https://transcodeloop.app/index.html" + (query.Length > 0 ? "?" + query : "");
+    }
+
+    /// <summary>
+    /// WebView2's page crashed or hung (H265 into page B crashes it on some machines). The chain
+    /// is stopped and the crash logged; a scripted run records it in its stats and exits, otherwise
+    /// the page is reloaded, without starting again, and told what happened.
+    /// </summary>
+    private void OnProcessFailed(CoreWebView2ProcessFailedEventArgs e)
+    {
+        Log($"WebView2 process failed: {e.ProcessFailedKind}, {e.Reason}, exit code {e.ExitCode}" +
+            (string.IsNullOrEmpty(e.ProcessDescription) ? "" : $" ({e.ProcessDescription})"));
+        if (e.ProcessFailedKind is not (CoreWebView2ProcessFailedKind.RenderProcessExited or
+            CoreWebView2ProcessFailedKind.RenderProcessUnresponsive or CoreWebView2ProcessFailedKind.FrameRenderProcessExited)) return;
+
+        _crash = $"The page {(e.ProcessFailedKind == CoreWebView2ProcessFailedKind.RenderProcessUnresponsive ? "stopped responding" : "crashed")} " +
+                 $"({e.Reason}) while running {_running ?? "nothing"}.";
+        StopChain();
+        if (_options.ExitAfter != null)
+        {
+            Close();
+            return;
+        }
+        _crashToShow = _crash + " It has been reloaded.";
+        _options.Page.Remove("start");
+        _web.CoreWebView2.Navigate(PageUrl());
     }
 
     private async Task OnPageMessage(string json)
@@ -90,6 +125,8 @@ internal sealed class MainForm : Form
                     await _probe;
                     _view?.PostTo(_web.CoreWebView2);
                     Post(new { type = "hello", caps = Codecs.Capabilities(), sipsorcery = typeof(SIPSorcery.Net.RTCPeerConnection).Assembly.GetName().Version?.ToString() });
+                    if (_crashToShow != null) Post(new { type = "error", message = _crashToShow });
+                    _crashToShow = null;
                     break;
                 case "clock":
                     Post(new { type = "clock", t0 = msg.GetProperty("t0").GetDouble(), host = Clock.NowMs });
@@ -138,6 +175,7 @@ internal sealed class MainForm : Form
         }
         SizeDecodedView(cfg.Width, cfg.Height);
         var chain = new TranscodeChain(cfg, _view, Log);
+        _running = cfg.Describe();
         chain.ShowDecoded = c.GetProperty("showDecoded").GetBoolean();
         chain.PliOnDrop = c.GetProperty("pliOnDrop").GetBoolean();
         chain.DropPercentA = c.GetProperty("dropA").GetInt32();
@@ -271,7 +309,7 @@ internal sealed class MainForm : Form
         {
             try
             {
-                File.WriteAllText(_options.StatsPath, JsonSerializer.Serialize(new { host = _lastStats, page = _lastPageStats }, new JsonSerializerOptions(JsonOpts) { WriteIndented = true }));
+                File.WriteAllText(_options.StatsPath, JsonSerializer.Serialize(new { host = _lastStats, page = _lastPageStats, crash = _crash }, new JsonSerializerOptions(JsonOpts) { WriteIndented = true }));
             }
             catch (Exception ex) { Log($"stats: {ex.Message}"); }
         }

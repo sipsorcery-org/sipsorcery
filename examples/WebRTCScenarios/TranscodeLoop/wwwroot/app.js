@@ -74,24 +74,61 @@ function suggestBitrates({ browser = true, encoder = true } = {}) {
 }
 
 function fillSelect(sel, values, wanted, labels = {}) {
+  fillOptions(sel, values.map((v) => ({ value: v, label: labels[v] ?? v })), wanted);
+}
+
+/** Options as { value, label, why? }: one with a why is shown but can't be picked, and says why. */
+function fillOptions(sel, items, wanted) {
   const keep = wanted ?? sel.value;
-  sel.innerHTML = values.map((v) => `<option value="${v}">${labels[v] ?? v}</option>`).join("");
-  if (values.includes(keep)) sel.value = keep;
+  sel.innerHTML = items.map((o) => `<option value="${o.value}"${o.why ? " disabled" : ""}>${o.label}${o.why ? ` (${o.why})` : ""}</option>`).join("");
+  const usable = items.filter((o) => !o.why);
+  if (usable.some((o) => o.value === keep)) sel.value = keep;
+  else if (usable.length) sel.value = usable[0].value;
+  return keep == null || sel.value === keep || !items.some((o) => o.value === keep) ? null : items.find((o) => o.value === keep).why;
+}
+
+// The codecs this browser can send (page A's encoder) and receive (page B's decoder), by name.
+const browserCodecs = (kind) => {
+  try { return new Set(kind.getCapabilities("video").codecs.map((c) => c.mimeType.split("/")[1].toUpperCase())); }
+  catch { return new Set(); }
+};
+const browserCan = { send: browserCodecs(RTCRtpSender), receive: browserCodecs(RTCRtpReceiver) };
+
+/** An implementation with what does the work under it: "ffmpeg (libsvtav1)". */
+function implLabel(impl, codec, side) {
+  const name = impl === "ffmpeg" ? caps.ffmpegNames?.[`${side}:${codec}`] : null;
+  return name ? `${impl} (${name})` : impl;
 }
 
 function refreshPickers(initial = false) {
   const impls = caps.implementations;
   const relay = $("mode").value === "relay";
-  const decCodecs = [...new Set(impls.flatMap((i) => i.decode))];
-  const encCodecs = [...new Set(impls.flatMap((i) => i.encode))];
-  fillSelect($("codecIn"), decCodecs.length ? decCodecs : ["VP8"], initial ? params.get("in") : null);
-  fillSelect($("decoder"), impls.filter((i) => i.decode.includes($("codecIn").value)).map((i) => i.name), initial ? params.get("dec") : null);
-  fillSelect($("codecOut"), encCodecs.length ? encCodecs : ["VP8"], initial ? params.get("out") : null);
-  fillSelect($("encoder"), impls.filter((i) => i.encode.includes($("codecOut").value)).map((i) => i.name), initial ? params.get("enc") : null);
+  const codecs = caps.codecs ?? ["VP8", "H264"];
+  const decodes = (c) => impls.some((i) => i.decode.includes(c));
+  const encodes = (c) => impls.some((i) => i.encode.includes(c));
+  // Leg A needs page A to encode it and (to transcode) SIPSorcery to decode it, or (to relay)
+  // page B to decode it; leg B needs SIPSorcery to encode it and page B to decode it.
+  const whyIn = (c) => !browserCan.send.has(c) ? "browser can't send it"
+    : relay ? (browserCan.receive.has(c) ? null : "browser can't receive it")
+    : decodes(c) ? null : "no decoder here";
+  const whyOut = (c) => !browserCan.receive.has(c) ? "browser can't receive it" : encodes(c) ? null : "no encoder here";
+  const refused = [];
+  const pick = (id, items, key) => {
+    const why = fillOptions($(id), items, initial ? params.get(key) : null);
+    if (why) refused.push(`${params.get(key)} can't be used for ${id === "codecIn" ? "leg A" : "leg B"}: ${why}`);
+  };
+  pick("codecIn", codecs.map((c) => ({ value: c, label: c, why: whyIn(c) })), "in");
+  const codecIn = $("codecIn").value;
+  fillOptions($("decoder"), impls.filter((i) => i.decode.includes(codecIn)).map((i) => ({ value: i.name, label: implLabel(i.name, codecIn, "decode") })), initial ? params.get("dec") : null);
+  pick("codecOut", codecs.map((c) => ({ value: c, label: c, why: whyOut(c) })), "out");
+  const codecOut = $("codecOut").value;
+  fillOptions($("encoder"), impls.filter((i) => i.encode.includes(codecOut)).map((i) => ({ value: i.name, label: implLabel(i.name, codecOut, "encode") })), initial ? params.get("enc") : null);
   for (const id of ["decoder", "codecOut", "encoder", "encKbps"]) $(id).disabled = relay;
-  if (relay) $("codecOut").value = $("codecIn").value;
-  $("encKbps").disabled = relay || $("encoder").value !== "ffmpeg";
-  $("encKbps").title = $("encoder").value === "vp8.net" ? "vp8.net has a fixed quantiser, not a bitrate" : "";
+  if (relay) $("codecOut").value = codecIn;
+  const encoder = $("encoder").value;
+  $("encKbps").disabled = relay || encoder === "vp8.net";
+  $("encKbps").title = encoder === "vp8.net" ? "vp8.net has a fixed quantiser, not a bitrate" : "";
+  if (refused.length) showError(refused.join("; "));
 }
 
 function readConfig() {
@@ -233,6 +270,7 @@ function restart() {
 }
 
 function setRunningUi() {
+  renderVerdict(null);
   $("startBtn").textContent = running ? "Stop" : "Start";
   $("startBtn").classList.toggle("running", running);
   document.body.classList.toggle("running", running);
@@ -332,6 +370,35 @@ function setLegState(leg, state) {
 const out = { decoded: 0, notRead: 0, number: -1, gaps: 0, repeats: 0, unreadable: 0, presented: 0, latency: [], width: 0, height: 0 };
 let outShownTimes = [];
 let notReadSince = 0;   // frames not read since the last number read
+let unreadSince = 0;    // frames unreadable since the last number read
+
+// Which of page B's missing or damaged frames were already lost when SIPSorcery decoded them
+// (page A's encoder, leg A, or the decoder itself) and which were lost after (SIPSorcery's
+// encoder, leg B, page B). The host sends the numbers its decoder never read; each gap page B
+// sees is held for a moment, until the host's word on those numbers is in, then split.
+const lostAtDecode = new Set();
+const lostAtDecodeOrder = [];
+let pendingGaps = [];
+const lost = { before: [], after: [], totalBefore: 0, totalAfter: 0 };
+
+function onLostAtDecode(ranges) {
+  for (const [from, to] of ranges ?? []) {
+    for (let k = from; k <= to && k - from < 2000; k++) { lostAtDecode.add(k); lostAtDecodeOrder.push(k); }
+  }
+  while (lostAtDecodeOrder.length > 5000) lostAtDecode.delete(lostAtDecodeOrder.shift());
+}
+
+function splitGaps(now) {
+  while (pendingGaps.length && now - pendingGaps[0].t > 700) {
+    const g = pendingGaps.shift();
+    let before = 0;
+    for (let k = g.from; k <= g.to && k - g.from < 2000; k++) if (lostAtDecode.has(k)) before++;
+    const after = Math.max(0, g.to - g.from + 1 - before - g.notRead);
+    if (before) { lost.before.push({ t: g.t, n: before }); lost.totalBefore += before; }
+    if (after) { lost.after.push({ t: g.t, n: after }); lost.totalAfter += after; }
+  }
+  for (const k of ["before", "after"]) while (lost[k].length && lost[k][0].t < now - 30000) lost[k].shift();
+}
 let frameReader = null;
 // RTP timestamp -> frame number for decoded frames not yet shown, and -> display time for shown
 // frames not yet read (the <video> can show a frame before the worker has read it).
@@ -403,20 +470,26 @@ function addLatency(n, displayTime) {
 function onOutputNumber(n) {
   if (n < 0) {
     out.unreadable++;
+    unreadSince++;
     addEvent("out", "unread");
     return;
   }
-  // Frames the reader had no room for were decoded, so they're not missing.
-  const missing = out.number >= 0 ? n - out.number - 1 - notReadSince : 0;
-  if (missing > 0) {
-    out.gaps += missing;
-    addEvent("out", "gap", missing);
+  if (out.number >= 0 && n > out.number + 1) {
+    // Frames the reader had no room for were decoded, so they're not missing; unreadable ones
+    // were counted as such.
+    const missing = n - out.number - 1 - notReadSince - unreadSince;
+    if (missing > 0) {
+      out.gaps += missing;
+      addEvent("out", "gap", missing);
+    }
+    pendingGaps.push({ from: out.number + 1, to: n - 1, notRead: notReadSince, t: performance.now() });
   } else if (out.number >= 0 && n <= out.number) {
     out.repeats++;
     addEvent("out", "repeat");
   }
   out.number = n;
   notReadSince = 0;
+  unreadSince = 0;
 }
 
 function onOutputFrame(now, meta) {
@@ -654,7 +727,7 @@ for (const [tile, id] of [["src", "stripSource"], ["dec", "stripDecoded"], ["out
 
 // ---------------------------------------------------------------------------------------------
 // Stats: the browser's (getStats on both legs), the host's (posted 4 times a second), and what
-// was read off the frames. Shown on the overlays, the hops between tiles and the verdict.
+// was read off the frames. Shown on the overlays, the hops between tiles and the status line.
 
 let host = null, prevHost = null;
 let srcStats = {}, outStats = {};
@@ -669,11 +742,16 @@ function resetStats() {
   outStats = {};
   prevSrc = prevOut = null;
   Object.assign(out, { decoded: 0, notRead: 0, number: -1, gaps: 0, repeats: 0, unreadable: 0, presented: 0, latency: [], width: 0, height: 0 });
-  notReadSince = 0;
+  notReadSince = unreadSince = 0;
+  lostAtDecode.clear();
+  lostAtDecodeOrder.length = 0;
+  pendingGaps = [];
+  Object.assign(lost, { before: [], after: [], totalBefore: 0, totalAfter: 0 });
   outShownTimes = [];
   Object.assign(dec, { seq: dec.view ? dec.view.getInt32(0, true) : 0, shown: 0, shownTimes: [], number: -1 });
   freezeTimes = [];
   for (const k of Object.keys(events)) events[k] = [];
+  resetVerdict();
 }
 
 function find(report, type, kind) {
@@ -749,6 +827,7 @@ function onHostStats(s) {
   while (hostHistory.length > 1 && hostHistory[0].now < s.now - 2000) hostHistory.shift();
   prevHost = hostHistory[0] === host ? null : hostHistory[0];
   onHostEvents(s.events);
+  onLostAtDecode(s.lostAtDecode);
   render();
 }
 
@@ -815,7 +894,9 @@ function render() {
       decLines = [
         `<b>${size(h.dec.width, h.dec.height)}</b> · ${f1(decFps)} fps decoded${h.dec.number >= 0 ? ` · #${h.dec.number}` : ""}`,
         `decode ${ms(h.dec.ms)} · queue ${h.dec.queue}`,
-        `encode ${ms(h.enc.ms)} · queue ${h.enc.queue} · ${bad(h.enc.skipped, "skipped")}${h.enc.cropped ? ` · <em>cropped to ${h.enc.cropped}</em>` : ""}`,
+        `encode ${ms(h.enc.ms)} · queue ${h.enc.queue} · ${bad(h.enc.skipped, "skipped")}` +
+          (h.enc.noOutput ? ` · <span title="Frames the encoder took and gave nothing back for: its rate control dropped them. Page B counts them as missing.">${bad(h.enc.noOutput, "dropped by encoder")}</span>` : "") +
+          (h.enc.cropped ? ` · <em>cropped to ${h.enc.cropped}</em>` : ""),
         `drawn → decoded ${f0(sinceDrawn)} ms · in SIPSorcery ${h.inChain ? f1(h.inChain.p50) : "–"} ms`,
         `keyframes in ${h.a.keyIn} / out ${h.enc.keyOut} · requests to A ${h.a.pli} · from B ${h.b.pli + h.b.fir}`,
         `${bad(h.dec.errors + h.enc.errors, "errors")} · ${bad(h.dec.gaps, "missing")} · ${bad(h.dec.unreadable, "unreadable")}${h.dec.overruns ? ` · ${bad(h.dec.overruns, "overruns")}` : ""}`,
@@ -854,8 +935,8 @@ function render() {
   $("hopARate").textContent = running ? mbps(decKbpsIn ?? s.kbps) : "";
   $("hopBCodec").textContent = cfg ? cfg.codecOut : "–";
   $("hopBRate").textContent = running ? mbps(relay ? o.kbps : encKbpsOut ?? o.kbps) : "";
-  $("hopAImpl").textContent = cfg && !relay ? `decode: ${cfg.decoder}` : relay ? "no decode" : "";
-  $("hopBImpl").textContent = cfg && !relay ? `encode: ${cfg.encoder}` : relay ? "no encode" : "";
+  $("hopAImpl").textContent = cfg && !relay ? `decode: ${implLabel(cfg.decoder, cfg.codecIn, "decode")}` : relay ? "no decode" : "";
+  $("hopBImpl").textContent = cfg && !relay ? `encode: ${implLabel(cfg.encoder, cfg.codecOut, "encode")}` : relay ? "no encode" : "";
 
   // Judged on frames page B decoded, not shown: the display drops frames to fit its refresh, and
   // that isn't SIPSorcery's doing (missing frames are counted from decoded frames too).
@@ -866,12 +947,40 @@ const bad = (n, label) => (n ? `<em>${label} ${n}</em>` : `${label} 0`);
 /** A measured frame rate well under the one picked. */
 const short = (fps) => fps != null && cfg != null && fps < cfg.fps * 0.9;
 
+// A run passes once page B has kept up, with nothing wrong, for this long in a row. Problems
+// look back 10 s too (freezes, missing frames), so after a glitch it takes up to 20 s.
+const PASS_MS = 10000;
+// Judged from the end of the first 4 s ("Starting…"): what goes wrong while the loop warms up
+// (an encoder's first frames, say) still shows on the overlays and strips, but isn't held against it.
+const verdict = { ran: false, from: 0, cleanSince: null, passedAt: null, longestMs: 0, problems: [] };
+function resetVerdict() {
+  Object.assign(verdict, { ran: false, from: 0, cleanSince: null, passedAt: null, longestMs: 0, problems: [] });
+}
+
+const secs = (ms) => `${Math.floor(ms / 1000)} s`;
+
+function showVerdict(level, label, items, progress = 0) {
+  const status = $("status");
+  status.dataset.level = level;
+  $("verdictLabel").textContent = label;
+  $("verdictFill").style.setProperty("--progress", `${Math.round(progress * 100)}%`);
+  const text = $("verdictText");
+  text.innerHTML = items.map(([cls, t]) => `<span class="${cls}">${t}</span>`).join(`<span class="sep">·</span>`);
+  status.title = items.map(([, t]) => t.replace(/<[^>]+>/g, "")).join(" · ");
+}
+
 function renderVerdict(outFps) {
-  const chip = $("chipVerdict");
-  if (!running || !cfg) { chip.textContent = "Not running"; chip.dataset.level = ""; return; }
+  if (!running || !cfg) {
+    if (!verdict.ran) showVerdict("idle", "Not running", [["", "Press Start. A run passes once page B has kept up for 10 s in a row."]]);
+    else if (verdict.passedAt) showVerdict("passed", "✓ Passed", [["", `Last run passed: page B kept up for 10 s, ${secs(verdict.passedAt - startedAt)} after starting`], ["note", `longest stretch ${secs(verdict.longestMs)}`]]);
+    else showVerdict("failed", "Didn't pass", [["", `Last run never kept up for 10 s in a row`], ["note", `longest stretch ${secs(verdict.longestMs)}`], ...verdict.problems.map((p) => ["issue", p])]);
+    return;
+  }
   const now = performance.now();
-  if (now - startedAt < 4000 || !outShownTimes.length) { chip.textContent = "Starting…"; chip.dataset.level = ""; return; }
-  freezeTimes = freezeTimes.filter((t) => t > now - 10000);
+  if (now - startedAt < 4000 || !outShownTimes.length) { showVerdict("starting", "Starting…", [["note", "waiting for page B's first frames"]]); return; }
+  if (!verdict.ran) Object.assign(verdict, { ran: true, from: now });
+  const since = Math.max(now - 10000, verdict.from);
+  freezeTimes = freezeTimes.filter((t) => t > since);
   const problems = [];
   if (outStats.width && (outStats.width !== cfg.width || outStats.height !== cfg.height)) problems.push(`output is ${outStats.width}×${outStats.height}, not ${cfg.width}×${cfg.height}`);
   // Against what page A sends, not the rate picked: a source or browser encoder that falls short
@@ -881,11 +990,45 @@ function renderVerdict(outFps) {
   const lat = pct(out.latency, 0.5);
   if (lat > 500) problems.push(`latency ${f0(lat)} ms`);
   if (freezeTimes.length) problems.push(`${freezeTimes.length} freeze${freezeTimes.length > 1 ? "s" : ""} in 10 s`);
-  const recentTrouble = events.out.filter((e) => e.t > now - 10000 && (e.kind === "unread" || e.kind === "gap")).reduce((sum, e) => sum + Math.max(1, e.n), 0);
-  if (recentTrouble) problems.push(`${recentTrouble} damaged or missing frames in 10 s`);
-  chip.dataset.level = problems.length ? "warn" : "ok";
-  const note = short(srcStats.fps) ? ` (page A sends ${f1(srcStats.fps)} of ${cfg.fps} fps)` : "";
-  chip.textContent = (problems.length ? `Check: ${problems.join(" · ")}` : `Looks right: ${f1(outFps)} fps decoded by page B, no freezes`) + note;
+  // Frames page B lost or got damaged that SIPSorcery's decoder had read: lost after it. Those
+  // already lost when it decoded them weren't SIPSorcery's to keep (page A's encoder leaves
+  // parts of some VP9 and AV1 frames stale, say), so they're said, but don't stop a pass. In
+  // relay there's no decoder to tell them apart, and all count.
+  splitGaps(now);
+  const sum = (list) => list.filter((e) => e.t > since).reduce((total, e) => total + Math.max(1, e.n), 0);
+  const after = sum(lost.after), before = sum(lost.before);
+  const frames = (n) => `${n} frame${n > 1 ? "s" : ""}`;
+  if (after) problems.push(`${frames(after)} damaged or missing ${cfg.mode === "relay" ? "" : "after SIPSorcery's decoder "}in 10 s`);
+  const overruns = events.dec.filter((e) => e.kind === "overrun" && e.t > since).length;
+  if (overruns) problems.push(`SIPSorcery's decoder fell behind${overruns > 1 ? ` ${overruns} times` : ""}`);
+  const errors = sum(events.dec.filter((e) => e.kind === "error"));
+  if (errors) problems.push(`${errors} codec errors in SIPSorcery`);
+  verdict.problems = problems;
+
+  if (problems.length) verdict.cleanSince = null;
+  else verdict.cleanSince ??= now;
+  const clean = verdict.cleanSince != null ? now - verdict.cleanSince : 0;
+  verdict.longestMs = Math.max(verdict.longestMs, clean);
+  if (!verdict.passedAt && clean >= PASS_MS) {
+    verdict.passedAt = now;
+    log(`passed: page B kept up for 10 s in a row (${f1(outFps)} fps), ${secs(now - startedAt)} after starting`);
+  }
+
+  const note = [
+    ...(short(srcStats.fps) ? [["note", `page A sends ${f1(srcStats.fps)} of ${cfg.fps} fps`]] : []),
+    ...(before ? [["upstream", `${frames(before)} already damaged or missing when SIPSorcery decoded them`]] : []),
+  ];
+  const issues = problems.map((p) => ["issue", p]);
+  const fine = ["", `Looks right: ${f1(outFps)} fps decoded by page B, no freezes`];
+  if (verdict.passedAt) {
+    // Passed stays passed for the run; anything wrong since is still shown.
+    if (problems.length) showVerdict("pass-warn", "✓ Passed", [...issues.map(([c, t], i) => [c, i ? t : `but now: ${t}`]), ...note]);
+    else showVerdict("pass", "✓ Passed", [fine, ["note", `kept up for ${secs(clean)}`], ...note]);
+  } else if (problems.length) {
+    showVerdict("warn", "Check", [...issues, ...note, ["note", `longest stretch kept up ${secs(verdict.longestMs)} of 10 s`]]);
+  } else {
+    showVerdict("keeping", `Keeping up ${secs(clean)}`, [fine, ["note", "passes at 10 s in a row"], ...note], clean / PASS_MS);
+  }
 }
 
 function onCpu(m) {
@@ -904,6 +1047,14 @@ setInterval(() => {
       source: srcStats,
       output: { ...outStats, shownFps: rate(outShownTimes, performance.now()), latencyP50: pct(out.latency, 0.5), latencyP95: pct(out.latency, 0.95), framesRead: out.decoded - out.notRead, notRead: out.notRead, gaps: out.gaps, repeats: out.repeats, unreadable: out.unreadable, lastNumber: out.number },
       decodedShown: dec.shown,
+      lostBeforeDecode: lost.totalBefore,
+      lostAfterDecode: lost.totalAfter,
+      verdict: {
+        passed: verdict.passedAt != null,
+        passedAfterS: verdict.passedAt != null ? Math.round((verdict.passedAt - startedAt) / 100) / 10 : null,
+        longestKeptUpS: Math.round(verdict.longestMs / 100) / 10,
+        problems: verdict.problems,
+      },
     },
   });
 }, 2000);

@@ -74,10 +74,10 @@ internal sealed class Options
                 case "--size": o.Page["size"] = Next(ref i); break;              // 640x480
                 case "--fps": o.Page["fps"] = Next(ref i); break;
                 case "--mode": o.Page["mode"] = Next(ref i); break;              // transcode | relay
-                case "--codec-in": o.Page["in"] = Next(ref i); break;            // VP8 | H264
+                case "--codec-in": o.Page["in"] = Next(ref i); break;            // VP8 | VP9 | H264 | H265 | AV1
                 case "--decoder": o.Page["dec"] = Next(ref i); break;            // vp8.net | ffmpeg
                 case "--codec-out": o.Page["out"] = Next(ref i); break;
-                case "--encoder": o.Page["enc"] = Next(ref i); break;
+                case "--encoder": o.Page["enc"] = Next(ref i); break;            // vp8.net | av1.net | ffmpeg
                 case "--browser-kbps": o.Page["kbps"] = Next(ref i); break;
                 case "--encoder-kbps": o.Page["enckbps"] = Next(ref i); break;
                 case "--drop-a": o.Page["dropA"] = Next(ref i); break;            // percent of leg A frames dropped before decode

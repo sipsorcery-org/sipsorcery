@@ -6,7 +6,9 @@ again and sends it to a second browser page, and the three pictures are shown si
 
 ```
  page A ── leg A ──► RTCPeerConnection A ─► decode ─► BGR ─► encode ─► RTCPeerConnection B ── leg B ──► page B
- (browser encodes)    (recvonly)          vp8.net | ffmpeg   vp8.net | ffmpeg   (sendonly)            (browser decodes)
+ (browser encodes)   (recvonly)             vp8.net          vp8.net   (sendonly)             (browser decodes)
+                                            ffmpeg           av1.net
+                                                             ffmpeg
 ```
 
 The browser does what browsers do well (capture, encode, decode, show) and SIPSorcery does
@@ -23,9 +25,28 @@ Windows only (WinForms and WebView2). From this folder:
 dotnet run -c Release
 ```
 
-and press **Start**. The vp8.net codec needs nothing else. The `ffmpeg` codec implementations need
-the FFmpeg 8 shared libraries on the `PATH` (for example `winget install Gyan.FFmpeg.Shared`); the
-pickers only offer what was found.
+and press **Start**. The managed codecs (vp8.net, av1.net) need nothing else. The `ffmpeg` codec
+implementations need the FFmpeg 8 shared libraries on the `PATH` (for example
+`winget install Gyan.FFmpeg.Shared`); the pickers only offer what was found.
+
+## Codecs
+
+Every codec SIPSorcery can carry is in the pickers: VP8, VP9, H264, H265 and AV1. Each leg's offer
+has just the one codec, so the browser has to use it. What does the work in SIPSorcery:
+
+| | Decodes | Encodes |
+|---|---|---|
+| **vp8.net** (SIPSorcery.VP8, managed) | VP8 | VP8 |
+| **av1.net** (SIPSorcery.AV1, managed port of libaom's realtime encoder) | | AV1 |
+| **ffmpeg** (SIPSorceryMedia.FFmpeg) | VP8, VP9, H264, H265, AV1 (dav1d) | VP8 (libvpx), VP9 (libvpx-vp9), H264 (libx264), H265 (libx265), AV1 (SVT-AV1) |
+
+The pickers name FFmpeg's own codec, as found in the FFmpeg build that's loaded.
+
+The browser is the other limit. WebView2 sends VP8, VP9, H264 and AV1, and receives those and
+H265: H265 over WebRTC is behind Chromium features the app turns on, and is decoded on the GPU
+where the GPU can. It doesn't send H265 (Chromium has no WebRTC H265 encoder on Windows yet), so
+H265 can be tested out of SIPSorcery but not into it. A codec that can't be used on a leg is shown
+in its picker, greyed, with the reason.
 
 ## The screen
 
@@ -48,11 +69,28 @@ Each tile has a stats overlay and, below it, a strip of the last 30 s of events:
 keyframe requests, NACKs, freezes, missing or unreadable frames, and simulated loss. Hover over a
 mark for details; click a picture to zoom all three.
 
-The header's check sums it up ("Looks right", or what isn't: a size mismatch, a low frame rate,
-latency over half a second, freezes, missing or unreadable frames in the last 10 s). The frame
-rate is judged on the frames page B decoded against the frames page A actually sent, not the rate
-picked: when the source or the browser's encoder falls short, the check and the source tile say
-so separately rather than blaming SIPSorcery.
+The status line under the header sums it up: "Looks right", or what isn't (a size mismatch, a low
+frame rate, latency over half a second, freezes, missing or unreadable frames in the last 10 s). It
+is one line, always the same height, so problems coming and going never move the page; hover over
+it for the whole text. The frame rate is judged on the frames page B decoded against the frames
+page A actually sent, not the rate picked: when the source or the browser's encoder falls short,
+the status line and the source tile say so separately rather than blaming SIPSorcery.
+
+**A run passes** once page B has kept up for 10 s in a row with nothing wrong. Until then the badge
+counts up ("Keeping up 6 s", filling green) or says "Check"; then it turns solid green, "✓ Passed",
+and stays so for the run. Trouble after that still shows, in amber beside it ("but now: ..."). The
+first 4 s ("Starting…") aren't held against a run, as the loop warms up then, but anything that
+goes wrong later counts for 10 s, so after a glitch a run takes up to 20 s to pass. Stopping
+leaves the result up: passed, or didn't pass and the longest stretch it kept up for. Changing a
+picker starts a new run, and a new judgement.
+
+What counts against a run is what SIPSorcery did: frames page B lost or got damaged after
+SIPSorcery's decoder had read them (its encoder, leg B, page B), its decoder falling behind, and
+codec errors. Frames already missing or damaged when SIPSorcery decoded them (not sent by page A,
+lost on leg A, or damaged by page A's encoder) are said beside it, "N frames already damaged or
+missing when SIPSorcery decoded them", but don't stop a pass. The host tells the page which frame
+numbers its decoder never read, and page B's losses are split by those. In relay mode there's no
+decoder to split them by, so everything page B loses counts.
 
 ## Sizes
 
@@ -90,10 +128,15 @@ Counts on a tile include everything lost upstream of it, so read them left to ri
   plus any lost on leg A or dropped while the decoder waited for a keyframe.
 - **Decoded, "skipped"**: decoded frames the encoder had no time for. Up to 3 wait; beyond that
   the oldest is skipped, so a slow encoder shows as skips rather than a growing delay.
+- **Decoded, "dropped by encoder"**: frames the encoder took and gave nothing back for: its rate
+  control dropped them to hold the bitrate. Only shown when there are some.
 - **Output, "missing"**: frame numbers page B's decoder never produced, read from the decoded
   frames themselves (not from what the display showed, which drops frames to fit its refresh
   rate). Frames the page had no time to read are counted as "not read", not as missing; frames
   the browser drops after decoding (at 4K it does) show as "dropped", and as missing.
+
+A frame that can't be read is counted as "unreadable" only, not as missing as well (the frame
+number after it used to count it again).
 
 ### Simulated trouble
 
@@ -144,15 +187,15 @@ TranscodeLoop.exe --exit-after 15 --stats run.json --capture run.png --capture-a
 | `--source card\|fake` | the test card, or Chromium's fake camera |
 | `--size 640x480`, `--fps 30` | the source's size (up to `3840x2160`) and frame rate |
 | `--mode transcode\|relay` | decode and encode, or pass frames through |
-| `--codec-in`, `--codec-out` | `VP8` or `H264` |
-| `--decoder`, `--encoder` | `vp8.net` or `ffmpeg` |
+| `--codec-in`, `--codec-out` | `VP8`, `VP9`, `H264`, `H265` (out only) or `AV1` |
+| `--decoder`, `--encoder` | `vp8.net` or `ffmpeg`; `av1.net` encodes AV1 |
 | `--browser-kbps`, `--encoder-kbps` | bitrates for page A's encoder and SIPSorcery's (default: picked for the size) |
 | `--drop-a <percent>` | leg A frames dropped before decode |
 | `--loss-b <percent>` | leg B video packets lost |
 | `--no-decoded-view`, `--decoded-view` | turn the decoded tile off, or on (it's off by default above 1080p) |
 | `--capture <png>`, `--capture-after <s>` | a screenshot this long after both legs connect (default 10 s) |
 | `--exit-after <s>` | close this long after both legs connect |
-| `--stats <json>` | on closing, write SIPSorcery's counters and the page's |
+| `--stats <json>` | on closing, write SIPSorcery's counters and the page's, with the verdict (`page.verdict`: passed, after how long, the longest stretch kept up) |
 
 Logs go to `%LOCALAPPDATA%\SIPSorcery\TranscodeLoop`.
 
@@ -179,3 +222,44 @@ What the first runs turned up in SIPSorcery, to be looked at separately:
   (p95 35 to 40 ms), right at the 33 ms a frame lasts at 30 fps, so 1 to 4% of frames are skipped.
   VP8 doesn't keep up at 4K: decoding takes 24 ms and encoding about 50 ms, so about 1 frame in 3
   is skipped.
+- **The other codecs, timed (November 2026, 30 fps).** Encode time per frame, p50 / p95 in ms
+  (what page A sent made little difference, so ranges cover runs with different codecs in):
+
+  | Encoder | 720p | 1080p | 4K |
+  |---|---|---|---|
+  | av1.net (AV1) | 2.5–2.9 / 3.5–3.9 | 4.7 / 6.5 | 16.7 / 23.5 |
+  | ffmpeg libx264 (H264) | 3.4 / 4.2 | 7.0 / 8.3 | 32–33 / 37–39 |
+  | ffmpeg libvpx-vp9 (VP9) | 4.4 / 9.6 | 8.8 / 11.5 | 33 / 55 |
+  | ffmpeg libsvtav1 (AV1) | 7.8–8.1 / 12–13 | 17 / 24 | 72 / 104 |
+
+  av1.net's output is much smaller than the FFmpeg encoders' (0.6 Mbps at 720p and 1 Mbps at
+  1080p, where SVT-AV1 sends 2.5 and 5.2 Mbps), so this isn't like for like. FFmpeg's decoders take
+  1.3 to 1.6 ms a frame at 720p and 2.7 to 3.1 ms at 1080p for all four codecs; at 4K, AV1
+  (libdav1d) takes 12.5 ms, VP9 19 ms and VP8 19 to 21 ms. Runs that passed: VP8 to H264 at 720p,
+  VP8 to AV1 with av1.net at 1080p, and VP9 or AV1 to H264 at 1080p. Nothing passes at 4K: H264
+  encoding is right at the 33 ms limit (as above), and with av1.net the VP8 decoder slows to 27 ms
+  (p95 39 ms) while av1.net encodes alongside it, so about 1 frame in 5 is skipped.
+- **H265 out crashes WebView2.** Page B's renderer process dies (access violation, 0xC0000005)
+  within a second of SIPSorcery's first H265 frames arriving. WebCodecs in the same WebView2
+  decodes libx265's H265 without trouble, so it's Chromium's WebRTC H265 receive path being fed
+  SIPSorcery's RTP stream: either something in SIPSorcery's H265 packetisation that Chromium
+  doesn't expect, or a Chromium bug. The app now notices the crash, stops the run, reloads the
+  page and shows what happened. (WebView2 can't send H265 at all, so H265 in can't be tried.)
+- **libvpx-vp9 holds 24 frames before its first output.** FFmpegVideoEncoder doesn't set
+  `lag-in-frames` for libvpx-vp9, so libvpx's default of 25 applies: page B shows "dropped by
+  encoder 24" and every frame arrives about 800 ms late (860 ms at 720p and 1080p, 1.1 s at 4K).
+  Setting it to 0, as a real-time encoder should, would fix it.
+- **Chromium's VP9 and AV1 encoders leave blocks stale.** At 720p about 1 in 3 of page A's VP9
+  frames, and 1 in 8 to 1 in 12 of its AV1 frames, have one or more 64×64 blocks over the strip
+  still showing an earlier frame (the CRC cells hold the previous frame's values). SIPSorcery's
+  decoder sees the same, and so does page B in relay mode (157 VP9 and 55 AV1 frames in 10 s), so
+  it's in page A's bitstream rather than anything SIPSorcery does. It didn't show over the strip
+  at 1080p. The verdict lists these as already damaged when SIPSorcery decoded them, not as a
+  problem, except in relay mode.
+- **SVT-AV1's output loses frames on page B.** Page B can't read 9 to 18 frames in 10 s at 720p,
+  and about 107 at 1080p, that SIPSorcery's decoder read fine. av1.net's AV1 goes through the same
+  packetiser and arrives clean, so it's more likely in what SVT-AV1 encodes (perhaps the same
+  stale blocks as above) than in the RTP path. Not yet looked into.
+- **av1.net skips its first second.** About 26 frames are skipped at the start of each run before
+  its first frame comes out, then it keeps up. It sends one keyframe, at the start, where the
+  FFmpeg encoders send one a second. At 720p page B can't read 1 or 2 of its frames in some runs.
