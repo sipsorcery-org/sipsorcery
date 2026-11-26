@@ -34,7 +34,7 @@ internal static class Program
             Directory.CreateDirectory(Options.DataDir);
             File.AppendAllText(Path.Combine(Options.DataDir, "errors.log"), $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {ex}{Environment.NewLine}{Environment.NewLine}");
         }
-        catch { /* the box still shows */ }
+        catch (Exception logEx) when (logEx is IOException or UnauthorizedAccessException) { /* the box still shows */ }
         MessageBox.Show(ex?.ToString() ?? "Unknown error", "TranscodeLoop failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 }

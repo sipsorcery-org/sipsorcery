@@ -7,7 +7,9 @@
 // pagestats (the page's own numbers, kept for --stats), log.
 // Host -> page: hello (codecs available), clock, offers, state, stats, cpu, log, error.
 
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -273,7 +275,7 @@ internal sealed class MainForm : Form
             foreach (var info in await _env.GetProcessExtendedInfosAsync())
             {
                 try { using var p = Process.GetProcessById(info.ProcessInfo.ProcessId); web += p.TotalProcessorTime; }
-                catch { /* gone */ }
+                catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or Win32Exception) { /* gone, or not ours to read */ }
             }
             double now = Clock.NowMs;
             if (_cpuAt > 0)
@@ -289,7 +291,7 @@ internal sealed class MainForm : Form
             }
             (_hostCpu, _webCpu, _cpuAt) = (host, web, now);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is COMException or InvalidOperationException)   // WebView2 going away
         {
             Log($"cpu: {ex.Message}");
         }
@@ -304,7 +306,7 @@ internal sealed class MainForm : Form
             await _web.CoreWebView2.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, file);
             Log($"captured the window to {path}");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or COMException or InvalidOperationException)
         {
             Log($"capture failed: {ex.Message}");
         }
@@ -319,7 +321,7 @@ internal sealed class MainForm : Form
             {
                 File.WriteAllText(_options.StatsPath, JsonSerializer.Serialize(new { host = _lastStats, page = _lastPageStats, crash = _crash, refused = _refused }, new JsonSerializerOptions(JsonOpts) { WriteIndented = true }));
             }
-            catch (Exception ex) { Log($"stats: {ex.Message}"); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Log($"stats: {ex.Message}"); }
         }
         StopChain();
         LibraryLog.Line -= Log;

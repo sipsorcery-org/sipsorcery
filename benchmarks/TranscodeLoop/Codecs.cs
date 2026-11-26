@@ -63,7 +63,10 @@ internal static class Codecs
             log($"ffmpeg {ffmpeg.av_version_info()}: decodes {string.Join(", ", decode.Select(c => $"{c} ({_ffmpegNames[$"decode:{c}"]})"))}; " +
                 $"encodes {string.Join(", ", encode.Select(c => $"{c} ({_ffmpegNames[$"encode:{c}"]})"))}");
         }
-        catch (Exception ex)
+        // No FFmpeg, or not one FFmpeg.AutoGen can use: FFmpegInit throws DllNotFoundException or
+        // ApplicationException, and a missing or mismatched library the others.
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException
+                                      or NotSupportedException or ApplicationException)
         {
             _ffmpegNote = ex.Message;
             log($"ffmpeg not available ({ex.Message}); only vp8.net and av1.net can be used");

@@ -126,10 +126,9 @@ internal sealed class LossyLink : IDisposable
 
     private static IPEndPoint? FirstHostCandidate(string sdp)
     {
-        foreach (var line in sdp.Split('\n'))
+        // a=candidate:<foundation> <component> <transport> <priority> <address> <port> typ <type> ...
+        foreach (var t in sdp.Split('\n').Select(line => line.Trim().Split(' ')))
         {
-            var t = line.Trim().Split(' ');
-            // a=candidate:<foundation> <component> <transport> <priority> <address> <port> typ <type> ...
             if (t.Length >= 8 && t[0].StartsWith("a=candidate:") && t[2].Equals("udp", StringComparison.OrdinalIgnoreCase) &&
                 t[7] == "host" && IPAddress.TryParse(t[4], out var ip) && ip.AddressFamily == AddressFamily.InterNetwork &&
                 int.TryParse(t[5], out int port))
