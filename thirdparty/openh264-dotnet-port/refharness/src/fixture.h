@@ -65,7 +65,7 @@ inline void Emit (const char* group, const char* kernel, const std::string& kase
 
 }  // namespace fixture
 
-// One function per ported common/*.cpp group; each prints its rows.
+// One function per ported group; each prints its rows.
 void KernelsTables();
 void KernelsMacros();
 void KernelsCopyMb();
@@ -77,5 +77,12 @@ void KernelsSad();
 void KernelsDecoderTables();
 void KernelsDecodeMbAux();
 void KernelsIntraPredDec();
+// The encoder's, in kernels_encoder.cpp (E2).
+void KernelsEncoderTables();
+void KernelsEncodeMbAux();
+void KernelsEncDecodeMbAux();
+void KernelsEncIntraPred();
+void KernelsSample();
+void KernelsEncInit();
 
 #endif  // H264REF_FIXTURE_H

@@ -83,8 +83,18 @@ add_library(oh_encoder STATIC ${ENCODER_SRC} "${OH}/encoder/plus/src/welsEncoder
 target_include_directories(oh_encoder PRIVATE "${OH}/encoder/core/inc" "${OH}/encoder/plus/inc" ${PROCESSING_INC})
 target_link_libraries(oh_encoder PUBLIC oh_processing oh_common)
 
+# The encoder kernel fixtures (src/kernels_encoder.cpp) include the encoder's own
+# headers, which would clash with the decoder's in the harness's other files, so
+# they build on their own with only the encoder include paths.
+add_library(h264ref_enc_kernels OBJECT src/kernels_encoder.cpp)
+target_include_directories(h264ref_enc_kernels PRIVATE
+  "${OH}/encoder/core/inc" ${PROCESSING_INC} "${OPENH264_DIR}/test" src)
+target_compile_features(h264ref_enc_kernels PRIVATE cxx_std_17)
+target_link_libraries(h264ref_enc_kernels PRIVATE oh_common)
+
 # The harness: conformance hashes, stream feature classification, YUV dumps,
-# the parser header dumps (src/headers.cpp), the kernel fixtures (src/fixture.h, src/kernels_*.cpp)
+# the parser header dumps (src/headers.cpp), the kernel fixtures (src/fixture.h, src/kernels_*.cpp,
+# the encoder's through h264ref_enc_kernels above)
 # and the encoder modes (src/encoder.cpp).
 add_executable(h264ref
   src/main.cpp
@@ -95,6 +105,7 @@ add_executable(h264ref
   src/kernels_deblock_sad.cpp
   src/kernels_decoder.cpp
   src/encoder.cpp
+  $<TARGET_OBJECTS:h264ref_enc_kernels>
   "${OPENH264_DIR}/test/api/sha1.c")
 target_include_directories(h264ref PRIVATE "${OPENH264_DIR}/test" src)
 target_compile_features(h264ref PRIVATE cxx_std_17)

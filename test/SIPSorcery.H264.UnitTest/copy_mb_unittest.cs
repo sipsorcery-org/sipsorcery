@@ -44,7 +44,13 @@ public unsafe class copy_mb_unittest
             case nameof(WelsCopy16x16_c): f = &WelsCopy16x16_c; h = 16; break;
             default: throw new ArgumentException($"No C# kernel {kernel}.");
         }
-        var row = new KernelFixture("copy_mb", kernel, kase, sha1);
+        Assert.Equal(sha1, Copy(f, h, new KernelFixture("copy_mb", kernel, kase, sha1)));
+    }
+
+    // Random source and destination planes of h + 2 rows, the blocks at row 1,
+    // column 2. The hash covers the destination.
+    internal static string Copy(delegate*<byte*, int, byte*, int, void> f, int h, KernelFixture row)
+    {
         int dstStride = row.Param("dst"), srcStride = row.Param("src");
 
         var r = new FixtureRng((uint)row.Param("seed"));
@@ -55,6 +61,6 @@ public unsafe class copy_mb_unittest
 
         f(dst.Ptr + dstStride + 2, dstStride, src.Ptr + srcStride + 2, srcStride);
 
-        Assert.Equal(sha1, FixtureHasher.Of(dst.Span));
+        return FixtureHasher.Of(dst.Span);
     }
 }

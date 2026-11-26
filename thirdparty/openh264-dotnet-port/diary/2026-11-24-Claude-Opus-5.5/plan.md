@@ -23,7 +23,7 @@ was kept for the VP8 encoder.
 | D6 Decoder API | **Done** (25 Nov) | The rest of `decoder_core` (`ConstructAccessUnit`, `DecodeCurrentAccessUnit`, `WelsDecodeConstructSlice`, `DecodeFrameConstruction`), of `decoder` (`WelsDecoderDefaults`, `WelsOpenDecoder`/`WelsCloseDecoder`, `DecoderConfigParam`, `WelsInitDecoder`/`WelsEndDecoder`, `InitDecFuncs`, `WelsDecodeBs`, the statistics updates), `error_concealment` (frame copy, slice copy, slice MV copy), `welsDecoderExt` (`CWelsDecoder`, `WelsCreateDecoder`/`WelsDestroyDecoder`, `WelsGetDecoderCapability`) and `measure_time` (`WelsTime`). Single threaded; parse-only mode is rejected. ~3.2k lines. The upstream-hash decode test is on: **all 35 Constrained Baseline vectors decode to upstream's SHA1 and frame count** (4,256 frames, no failed call). New `h264ref decode-damaged` mode (`reference/decode-damaged.tsv`): the decoder API over the 153 damaged variants. The 105 Constrained Baseline ones match in every column but one, which is the B-slice exception noted below. That includes the 3 that run the DPB out and recover through `ResetDecoder`. The other 16 vectors decode clean and damaged without crashing. UnitTest: 1999. TestVectors: 299. |
 | D7 SIPSorcery wire-up | **Done** (25 Nov) | `H264Codec : IVideoEncoder` (decode only: `DecodeVideo` to I420, BGR or RGB, `DecodeVideoFaster` into a re-used buffer, `KeyFrameRequired`; the encode methods throw `NotSupportedException`), `H264NetVideoEndPoint : IVideoSink` (BGR pictures, `OnKeyFrameRequired` throttled to once a second) and `YuvToRgb` (BT.601/BT.709, limited/full range, from the SPS VUI). One access unit per call through `DecodeFrameNoDelay`. Two small non-upstream members on `CWelsDecoder`: `CurrentSps` and `ReleaseHeldPicture`. New example `examples/WebRTCExamples/WebRTCClientH264Net`. **All 35 Constrained Baseline vectors give upstream's SHA1 when fed one access unit at a time, and again after an RTP round trip through `H264Depacketiser`** (STAP-A, FU-A, reordering, sequence wrap). Checked live against Chromium's H.264 encoder: 640x480 at 30 fps decodes clean, and a dropped access unit leads to a PLI, an IDR from the browser, and clean decoding again one frame later. UnitTest: 2006. TestVectors: 412. |
 | E1 Encoder bit writer, NAL encapsulation, parameter sets | **Done** (25 Nov) | `svc_enc_golomb`, `nal_encap`, `parameter_sets`, `param_svc` (`SWelsSvcCodingParam`, defaults, transcoding, temporal settings), `au_set`, `paraset_strategy` (all five id strategies), `wels_const`, `wels_common_basis`, `rc.h` and `svc_enc_slice_segment.h` constants and checks, part of `encoder_data_tables`, and from `encoder_ext` the parameter validation, slice and thread settings and the SPS/PPS writers. Partial `sWelsEncCtx` and `SWelsFuncPtrList`. ~4.6k lines. The refharness builds the encoder too: new `h264ref encoder-conformance` mode reproduces **all 16** upstream encoder hashes (`reference/encoder-conformance.tsv`). New `h264ref paramsets` mode (`reference/paramsets.tsv`): 66 configurations covering WebRTC's settings, the id strategies, levels, profiles, VUI, references, cropping, rate control, SVC and simulcast, and 10 rejects. **All 66 match**: init result, validated parameters, and every SPS, subset SPS and PPS byte (272 operations with parameter sets). Slice headers moved to E4. UnitTest: 2009. TestVectors: 480. |
-| E2 Encoder kernels | Next | See section 6, E2. |
+| E2 Encoder kernels | **Done** (26 Nov) | `encode_mb_aux` (the quant tables and the quantisers, forward DCT, 4x4 and 2x2 Hadamard, zigzag scans, single-coefficient cost, non-zero count), the encoder's `decode_mb_aux` (dequantisation, inverse Hadamard, IDCT reconstruction, block offsets), `sample` (7 SATD sizes and the 5 combined predict-and-cost kernels), the encoder's `get_intra_predictor` (14 + 7 + 5 packed predictors), the rest of `encoder_data_tables` (cache scans, QP costs, mode maps, the CAVLC VLC tables), the four `WelsInit*Funcs` and the matching `SWelsFuncPtrList` slots. ~2.4k lines. The SSD in the plan's list is not in `sample.cpp`. The only SSD is the VAA's `pSsd16x16` from `processing`, which comes with E7. New kernel groups (`refharness/src/kernels_encoder.cpp`, its own object library): 13 `enctable`, 642 `encode_mb_aux`, 404 `enc_decode_mb_aux`, 156 `enc_get_intra_predictor`, 766 `sample`, 49 `enc_init` rows, **all match**. Planted bugs (a table byte, a loop bound, a dequant shift, boundaries, ties, clips, an int16 wrap) each fail their rows, after a second round of rows (see the notes). UnitTest: 4055. TestVectors: 480. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -595,6 +595,44 @@ Notes from E1:
 - **Not done.** `encoder_ext`, `encoder` and `encoder_context` are partial:
   only the fields and functions above. The rest comes with E4 to E8. Init
   and frame orchestration are mirrored in the test until E8 ports them.
+
+Notes from E2:
+
+- **Name clashes with the decoder's aliases.** The decoder already has the
+  global `PGetIntraPredFunc` (`byte*, int`, predicting in place). The
+  encoder's typedef (`byte* pPred, byte* pRef, int`, a packed prediction) is
+  `PGetIntraPredFuncEnc`. `PCopyFunc` has the same signature in both, so it
+  is shared. Future encoder typedefs that collide get the same `Enc` suffix.
+- **Function-pointer arrays in structs** (`pfSampleSad[MAX_BLOCK_TYPE]`,
+  `pfGetLumaI4x4Pred[I4_PRED_A]`, ...) are private `InlineArrayN<nint>`
+  storage behind a property that returns the alias pointer, so
+  `p->pfGetLumaI4x4Pred[i] = &X` reads as in C.
+- **Harness.** The encoder's headers clash with the decoder's
+  (`decode_mb_aux.h`, `get_intra_predictor.h`, `wels_const.h`), so
+  `kernels_encoder.cpp` builds as the `h264ref_enc_kernels` object library
+  with only the encoder include paths, linked into `h264ref`. `sample.h`
+  leaves `WelsSampleSatd8x4_c` and `WelsSampleSatd4x8_c` undeclared; the
+  fixture declares them. Coefficient buffers carry 4 guard entries a side,
+  and every hash covers the guards.
+- **Decisions the fixtures must decide** (the D3 lesson). The first pass
+  passed all its rows yet let four of eight planted bugs through: the skip's
+  `>` never met its threshold, the combined kernels never tied, the Hadamard
+  DC's lower clip was never reached, and one plant was a no-op. Added rows:
+  the 2x2 skip at threshold + {-1, 0, 1}; a flat-neighbour target for the
+  combined kernels, so all three modes predict the same block and the order
+  and `<` decide; eight Hadamard seeds, which reach both ends of all four
+  clips. `SkipRows_DecideBothWays` and `CombinedRows_PickEveryMode` assert
+  that the rows keep reaching both answers and every mode.
+- **Named slots are checked by behaviour.** Comparing function pointers is
+  not reliable in .NET (CS8909), so each named `SWelsFuncPtrList` slot must
+  reproduce a fixture row of the kernel upstream assigns it. The indexed
+  slots have their own `enc_init` rows, called slot by slot in C and C#.
+- **Combined3 kernels.** Upstream's C path sets the five
+  `pfIntra*Combined3*` pointers to NULL, since only SIMD builds set them, and
+  the port does the same. The mode decision (`svc_base_layer_md.cpp`) checks
+  the pointer and, when it is NULL, falls back to its per-mode loop. Nothing on
+  the C path calls the `_c` bodies. They are ported, file for file, and tested
+  so that the file is complete.
 
 ## 1. Goal
 

@@ -474,6 +474,12 @@ int Kernels() {
   KernelsDecoderTables();
   KernelsDecodeMbAux();
   KernelsIntraPredDec();
+  KernelsEncoderTables();
+  KernelsEncodeMbAux();
+  KernelsEncDecodeMbAux();
+  KernelsEncIntraPred();
+  KernelsSample();
+  KernelsEncInit();
   return 0;
 }
 
