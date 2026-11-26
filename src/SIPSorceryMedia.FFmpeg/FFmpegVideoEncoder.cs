@@ -491,6 +491,10 @@ namespace SIPSorceryMedia.FFmpeg
                                 // tile-row multi-threading which is what makes VP9 keep up at high rates.
                                 ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", "8", 0).ThrowExceptionIfError();
                                 ffmpeg.av_opt_set(_encoderContext->priv_data, "row-mt", "1", 0).ThrowExceptionIfError();
+                                // Unlike VP8, libvpx-vp9 keeps its look-ahead in realtime mode: the default
+                                // lag-in-frames of 25 holds 24 frames before the first output, so every frame
+                                // arrives ~800 ms late at 30 fps. Live use needs each frame encoded on arrival.
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "lag-in-frames", "0", 0).ThrowExceptionIfError();
                                 break;
                             case "libaom-av1":
                                 // libaom's default (good/best) is far too slow for live use; usage=realtime
