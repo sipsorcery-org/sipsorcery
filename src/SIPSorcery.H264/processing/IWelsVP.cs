@@ -15,6 +15,7 @@
 // History:
 // 26 Nov 2026  Claude          Created (E5).
 // 26 Nov 2026  Claude          EResult, EVideoFormat, SRect, SPixMap, EMethods and SVAACalcParam (E5b).
+// 26 Nov 2026  Claude          EComplexityAnalysisMode (E6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -217,6 +218,14 @@ internal unsafe struct SAdaptiveQuantizationParam
 
     public sbyte* pMotionTextureIndexToDeltaQp;
     public int iAverMotionTextureIndexToDeltaQp; // *AQ_STEP_INT_MULTIPLY
+}
+
+/// <summary>EComplexityAnalysisMode.</summary>
+internal enum EComplexityAnalysisMode
+{
+    FRAME_SAD = 0,
+    GOM_SAD = -1,
+    GOM_VAR = -2
 }
 
 /// <summary>SComplexityAnalysisParam.</summary>

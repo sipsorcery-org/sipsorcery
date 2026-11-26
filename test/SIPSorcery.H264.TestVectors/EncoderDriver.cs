@@ -3,8 +3,8 @@
 //
 // Description: The encoder's init, frame loop and release for one spatial
 // layer, over the ported functions, for the frame by frame acceptance tests:
-// IdrTests (E4b, the first frame of each configuration) and StreamTests (E5b,
-// P streams).
+// IdrTests (E4b, the first frame of each configuration), StreamTests (E5b,
+// P streams) and RcTests (E6, rate controlled streams).
 //
 // The encoder API and its init and frame loops come with E8 and the
 // preprocessing (CWelsPreProcess) with E7, so EncoderDriver drives the ported
@@ -12,9 +12,10 @@
 // WelsInitEncoderExt, RequestMemorySvc, WelsEncoderEncodeExt and
 // FreeMemorySvc do, with a hand port of the camera half of CWelsPreProcess
 // for one spatial layer (AllocSpatialPictures, BuildSpatialPicList,
-// AnalyzeSpatialPic over the ported VAA statistics, UpdateSpatialPictures).
+// AnalyzeSpatialPic over the ported VAA statistics, AnalyzePictureComplexity,
+// UpdateSpatialPictures) and the timestamp bookkeeping of UpdateStatistics.
 // Configurations outside that scope (CABAC, screen content, several spatial
-// layers, SM_SIZELIMITED_SLICE, threads, rate control, the denoiser, scaling)
+// layers, SM_SIZELIMITED_SLICE, threads, the denoiser, scaling)
 // throw NotSupportedException at init, and the analysis features when they
 // would run: scene change detection on a T0 P frame, background detection
 // and adaptive quantisation on a P frame.
@@ -26,6 +27,9 @@
 // 26 Nov 2026  Claude          Created (E5b) from IdrTests.cs's IdrEncoder (E4b), with the
 //                              reference strategy, the LTR state, the VAA, the MVD cost
 //                              table, the spatial pictures and the frame loop for P frames.
+// 26 Nov 2026  Claude          Rate control (E6): WelsRcInitModule, the frame skip checks, the
+//                              max bit rate windows, AnalyzePictureComplexity, padding and the
+//                              last timestamp.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -95,6 +99,7 @@ internal sealed unsafe class EncoderDriver : IDisposable
     private SPicture* _lastSpatialPic1;
     private bool _preprocessInitDone;
     private CVAACalculation _vaaCalculation;
+    private CComplexityAnalysis _complexityAnalysis;
 
     public EncoderDriver()
     {
@@ -110,7 +115,7 @@ internal sealed unsafe class EncoderDriver : IDisposable
         ParamSetEncoder.ParseSettings(settings, out SEncParamExt ext, out _, out bool isBase);
         if (isBase)
         {
-            throw new NotSupportedException("api=base: Initialize selects RC_QUALITY_MODE, which comes with E6.");
+            throw new NotSupportedException("api=base: CWelsH264SVCEncoder::Initialize comes with the encoder API (E8).");
         }
         _iPicWidth = ext.iPicWidth;
         _iPicHeight = ext.iPicHeight;
@@ -182,6 +187,8 @@ internal sealed unsafe class EncoderDriver : IDisposable
                 else
                 {
                     rv = cmResultSuccess;
+                    // UpdateStatistics: the rate control's last timestamp (the statistics are not ported).
+                    _ctx->uiLastTimestamp = _info->uiTimeStamp;
                 }
             }
         }
@@ -286,7 +293,6 @@ internal sealed unsafe class EncoderDriver : IDisposable
         Require(pCodingParam->iEntropyCodingModeFlag == 0, "CABAC");
         Require(pCodingParam->iSpatialLayerNum == 1 && !pCodingParam->bSimulcastAVC, "more than one spatial layer (E7)");
         Require(!pCodingParam->bPrefixNalAddingCtrl, "AddPrefixNal (E7)");
-        Require(pCodingParam->iRCMode == RC_MODES.RC_OFF_MODE, "rate control (E6)");
         Require(pCodingParam->iMultipleThreadIdc == 1, "threading (Phase 4)");
         Require(!pCodingParam->bEnableDenoise, "the denoiser (E7)");
         Require(pCodingParam->sSpatialLayers[0].sSliceArgument.uiSliceMode != SliceModeEnum.SM_SIZELIMITED_SLICE,
@@ -314,15 +320,13 @@ internal sealed unsafe class EncoderDriver : IDisposable
         }
 
         // WelsCabacInit: CAVLC only.
-        // WelsRcInitModule: WelsRcInitFuncPointers, then RcInitSequenceParameter, whose bit rate
-        // state (E6) nothing reads with rate control off (WelsRcMbInitDisable clips to 0..51,
-        // and pWelsSvcRc->bGomRC stays false).
-        WelsRcInitFuncPointers(pCtx, pCtx->pSvcParam->iRCMode);
+        WelsRcInitModule(pCtx, pCtx->pSvcParam->iRCMode);
 
         // CWelsPreProcess::CreatePreProcess (CWelsPreProcessVideo; its VP interface's VAA
         // strategy, which WelsPreprocessCreate makes on the first frame upstream) and
         // AllocSpatialPictures.
         _vaaCalculation = new CVAACalculation(0);
+        _complexityAnalysis = new CComplexityAnalysis(0);
         if (AllocSpatialPictures() != 0)
         {
             return 1;
@@ -875,6 +879,124 @@ internal sealed unsafe class EncoderDriver : IDisposable
         _vaaCalculation.Process(iMethodIdx, &sCurPixMap, &sRefPixMap);
     }
 
+    /// <summary>CWelsPreProcess::SetRefMbType.</summary>
+    private static void SetRefMbType(sWelsEncCtx* pCtx, uint** pRefMbTypeArray)
+    {
+        byte uiTid = pCtx->uiTemporalId;
+        byte uiDid = pCtx->uiDependencyId;
+        SRefList* pRefPicLlist = pCtx->ppRefPicListExt[uiDid];
+        SLTRState* pLtr = &pCtx->pLtr[uiDid];
+
+        if (pCtx->pSvcParam->bEnableLongTermReference && pLtr->bReceivedT0LostFlag && uiTid == 0)
+        {
+            for (byte i = 0; i < pRefPicLlist->uiLongRefCount; i++)
+            {
+                SPicture* pRef = pRefPicLlist->pLongRefList[i];
+                if (pRef != null && pRef->uiRecieveConfirmed == 1 /*RECIEVE_SUCCESS*/)
+                {
+                    *pRefMbTypeArray = pRef->uiRefMbType;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            for (byte i = 0; i < pRefPicLlist->uiShortRefCount; i++)
+            {
+                SPicture* pRef = pRefPicLlist->pShortRefList[i];
+                if (pRef != null && pRef->bUsedAsRef && pRef->iFramePoc >= 0 && pRef->uiTemporalId <= uiTid)
+                {
+                    *pRefMbTypeArray = pRef->uiRefMbType;
+                    break;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// CWelsPreProcess::AnalyzePictureComplexity (camera content), through the VP interface's
+    /// complexity strategy (CVpFrameWork::CheckValid passes the encoder's own I420 pictures,
+    /// with or without a reference).
+    /// </summary>
+    private void AnalyzePictureComplexity(SPicture* pCurPicture, SPicture* pRefPicture, int kiDependencyId,
+                                          bool bCalculateBGD)
+    {
+        sWelsEncCtx* pCtx = _ctx;
+        SWelsSvcCodingParam* pSvcParam = pCtx->pSvcParam;
+        int iComplexityAnalysisMode;
+
+        SVAAFrameInfo* pVaaInfo = pCtx->pVaa;
+        SComplexityAnalysisParam* sComplexityAnalysisParam = &pVaaInfo->sComplexityAnalysisParam;
+        SWelsSvcRc* pWelsSvcRc = &pCtx->pWelsSvcRc[kiDependencyId];
+
+        if (pSvcParam->iRCMode == RC_MODES.RC_QUALITY_MODE && pCtx->eSliceType == EWelsSliceType.P_SLICE)
+        {
+            iComplexityAnalysisMode = (int)EComplexityAnalysisMode.FRAME_SAD;
+        }
+        else if ((pSvcParam->iRCMode == RC_MODES.RC_BITRATE_MODE || pSvcParam->iRCMode == RC_MODES.RC_TIMESTAMP_MODE)
+                 && pCtx->eSliceType == EWelsSliceType.P_SLICE)
+        {
+            iComplexityAnalysisMode = (int)EComplexityAnalysisMode.GOM_SAD;
+        }
+        else if ((pSvcParam->iRCMode == RC_MODES.RC_BITRATE_MODE || pSvcParam->iRCMode == RC_MODES.RC_TIMESTAMP_MODE)
+                 && pCtx->eSliceType == EWelsSliceType.I_SLICE)
+        {
+            iComplexityAnalysisMode = (int)EComplexityAnalysisMode.GOM_VAR;
+        }
+        else
+        {
+            return;
+        }
+
+        sComplexityAnalysisParam->iComplexityAnalysisMode = iComplexityAnalysisMode;
+        sComplexityAnalysisParam->pCalcResult = &pVaaInfo->sVaaCalcInfo;
+        sComplexityAnalysisParam->pBackgroundMbFlag = pVaaInfo->pVaaBackgroundMbFlag;
+        if (pRefPicture != null)
+        {
+            SetRefMbType(pCtx, &sComplexityAnalysisParam->uiRefMbType);
+        }
+        sComplexityAnalysisParam->iCalcBgd = bCalculateBGD ? 1 : 0;
+        sComplexityAnalysisParam->iFrameComplexity = 0;
+
+        new Span<int>(pWelsSvcRc->pGomForegroundBlockNum, pWelsSvcRc->iGomSize).Clear();
+        if (iComplexityAnalysisMode != (int)EComplexityAnalysisMode.FRAME_SAD)
+        {
+            new Span<int>(pWelsSvcRc->pCurrentFrameGomSad, pWelsSvcRc->iGomSize).Clear();
+        }
+
+        sComplexityAnalysisParam->pGomComplexity = pWelsSvcRc->pCurrentFrameGomSad;
+        sComplexityAnalysisParam->pGomForegroundBlockNum = pWelsSvcRc->pGomForegroundBlockNum;
+        sComplexityAnalysisParam->iMbNumInGom = pWelsSvcRc->iNumberMbGom;
+
+        int iMethodIdx = (int)EMethods.METHOD_COMPLEXITY_ANALYSIS;
+        SPixMap sSrcPixMap = default;
+        SPixMap sRefPixMap = default;
+
+        sSrcPixMap.pPixel[0] = pCurPicture->pData[0];
+        sSrcPixMap.iSizeInBits = 8;     // g_kiPixMapSizeInBits
+        sSrcPixMap.iStride[0] = pCurPicture->iLineSize[0];
+        sSrcPixMap.sRect.iRectWidth = pCurPicture->iWidthInPixel;
+        sSrcPixMap.sRect.iRectHeight = pCurPicture->iHeightInPixel;
+        sSrcPixMap.eFormat = EVideoFormat.VIDEO_FORMAT_I420;
+
+        if (pRefPicture != null)
+        {
+            sRefPixMap.pPixel[0] = pRefPicture->pData[0];
+            sRefPixMap.iSizeInBits = 8;
+            sRefPixMap.iStride[0] = pRefPicture->iLineSize[0];
+            sRefPixMap.sRect.iRectWidth = pRefPicture->iWidthInPixel;
+            sRefPixMap.sRect.iRectHeight = pRefPicture->iHeightInPixel;
+        }
+        sRefPixMap.eFormat = EVideoFormat.VIDEO_FORMAT_I420;
+
+        _complexityAnalysis.Set(iMethodIdx, sComplexityAnalysisParam);
+        EResult iRet = _complexityAnalysis.Process(iMethodIdx, &sSrcPixMap, &sRefPixMap);
+        if (iRet == 0)
+        {
+            _complexityAnalysis.Get(iMethodIdx, sComplexityAnalysisParam);
+        }
+    }
+
     /// <summary>CWelsPreProcess::BackgroundDetection: the detection itself comes with E7.</summary>
     private static void BackgroundDetection(SVAAFrameInfo* pVaaInfo, SPicture* pCurPicture, SPicture* pRefPicture,
                                             bool bDetectFlag)
@@ -1053,53 +1175,9 @@ internal sealed unsafe class EncoderDriver : IDisposable
 
     // ---- frame: WelsEncoderEncodeExt ----
 
-    /// <summary>GetTimestampForRc.</summary>
-    private static long GetTimestampForRc(long uiTimeStamp, long uiLastTimeStamp, float fFrameRate)
-    {
-        if (uiLastTimeStamp >= uiTimeStamp || (uiTimeStamp == 0 && uiLastTimeStamp != -1))
-        {
-            return uiLastTimeStamp + (int)(1000.0 / fFrameRate);
-        }
-        return uiTimeStamp;
-    }
-
     /// <summary>
-    /// WelsRcCheckFrameStatus (ratectl.cpp) with rate control off: pfWelsRcPicDelayJudge and
-    /// pfWelsCheckSkipBasedMaxbr are null (WelsRcInitFuncPointers), so only bSkipFlag, which
-    /// nothing sets, can skip the frame.
-    /// </summary>
-    private bool WelsRcCheckFrameStatus(long uiTimeStamp, int iSpatialNum)
-    {
-        sWelsEncCtx* pCtx = _ctx;
-        Require(pCtx->pFuncList->pfRc.pfWelsRcPicDelayJudge == null && pCtx->pFuncList->pfRc.pfWelsCheckSkipBasedMaxbr == null,
-                "rate control (E6)");
-        bool bSkipMustFlag = false;
-        for (int i = 0; i < iSpatialNum; i++)
-        {
-            int iDidIdx = pCtx->sSpatialIndexMap[i].iDid;
-            if (pCtx->pWelsSvcRc[iDidIdx].bSkipFlag)
-            {
-                bSkipMustFlag = true;
-                break;
-            }
-        }
-        if (bSkipMustFlag)
-        {
-            for (int i = 0; i < iSpatialNum; i++)
-            {
-                int iDidIdx = pCtx->sSpatialIndexMap[i].iDid;
-                pCtx->pWelsSvcRc[iDidIdx].uiLastTimeStamp = uiTimeStamp;
-                pCtx->pWelsSvcRc[iDidIdx].bSkipFlag = false;
-                pCtx->pWelsSvcRc[iDidIdx].iContinualSkipFrames++;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    /// <summary>
-    /// PrepareEncodeFrame (not simulcast): the frame type, the temporal level and, for an IDR,
-    /// the parameter sets. pfWelsUpdateBufferWhenSkip is null with rate control off.
+    /// PrepareEncodeFrame (not simulcast): the rate control's skip decision, the frame type,
+    /// the temporal level and, for an IDR, the parameter sets.
     /// </summary>
     private EVideoFrameType PrepareEncodeFrame(ref SLayerBSInfo* pLayerBsInfo, int iSpatialNum, ref sbyte iCurDid,
                                                ref int iCurTid, ref int iLayerNum, ref int iFrameSize, long uiTimeStamp)
@@ -1107,9 +1185,21 @@ internal sealed unsafe class EncoderDriver : IDisposable
         sWelsEncCtx* pCtx = _ctx;
         SWelsSvcCodingParam* pSvcParam = pCtx->pSvcParam;
 
-        bool bSkipFrameFlag = WelsRcCheckFrameStatus(uiTimeStamp, iSpatialNum);
+        bool bSkipFrameFlag = WelsRcCheckFrameStatus(pCtx, uiTimeStamp, iSpatialNum, iCurDid);
         EVideoFrameType eFrameType = DecideFrameType(pCtx, (sbyte)iSpatialNum, iCurDid, bSkipFrameFlag);
-        if (eFrameType != EVideoFrameType.videoFrameTypeSkip)
+        if (eFrameType == EVideoFrameType.videoFrameTypeSkip)
+        {
+            if (pCtx->pFuncList->pfRc.pfWelsUpdateBufferWhenSkip != null)
+            {
+                for (int i = 0; i < iSpatialNum; i++)
+                {
+                    pCtx->pFuncList->pfRc.pfWelsUpdateBufferWhenSkip(pCtx, pCtx->sSpatialIndexMap[i].iDid);
+                }
+            }
+            WelsLog(&pCtx->sLogCtx, codec_app_def.WELS_LOG_DEBUG,
+                    $"[Rc] Frame timestamp = {uiTimeStamp}, iDid = {iCurDid},skip one frame due to target_br, continual skipped {pCtx->pWelsSvcRc[iCurDid].iContinualSkipFrames} frames");
+        }
+        else
         {
             SSpatialLayerInternal* pParamInternal = &pSvcParam->sDependencyLayers[iCurDid];
 
@@ -1144,6 +1234,7 @@ internal sealed unsafe class EncoderDriver : IDisposable
             pParamInternal->iPOC = 0;
             pParamInternal->bEncCurFrmAsIdrFlag = true;
         }
+        pCtx->bCheckWindowStatusRefreshFlag = false;
     }
 
     /// <summary>WelsEncoderEncodeExt for one spatial layer, not simulcast (see the file header).</summary>
@@ -1191,8 +1282,10 @@ internal sealed unsafe class EncoderDriver : IDisposable
             return iRet;
         }
 
-        // pfWelsUpdateMaxBrWindowStatus: null with rate control off.
-        Require(pCtx->pFuncList->pfRc.pfWelsUpdateMaxBrWindowStatus == null, "rate control (E6)");
+        if (pCtx->pFuncList->pfRc.pfWelsUpdateMaxBrWindowStatus != null)
+        {
+            pCtx->pFuncList->pfRc.pfWelsUpdateMaxBrWindowStatus(pCtx, iSpatialNum, pFbi->uiTimeStamp);
+        }
 
         if (iSpatialNum < 1)
         {
@@ -1307,7 +1400,12 @@ internal sealed unsafe class EncoderDriver : IDisposable
             {
                 pCtx->pReferenceStrategy->AfterBuildRefList();
             }
-            // AnalyzePictureComplexity: rate control only.
+            if (pSvcParam->iRCMode != RC_MODES.RC_OFF_MODE)
+            {
+                AnalyzePictureComplexity(pCtx->pEncPic,
+                    (pCtx->eSliceType == EWelsSliceType.P_SLICE && pCtx->iNumRef0 > 0) ? pCtx->pRefList0[0] : null, iCurDid,
+                    pCtx->eSliceType == EWelsSliceType.P_SLICE && pSvcParam->bEnableBackgroundDetection);
+            }
             WelsUpdateRefSyntax(pCtx, pParamInternal->iPOC, (int)eFrameType); //get reordering syntax used for writing slice header and transmit to encoder.
             PrefetchReferencePicture(pCtx, eFrameType); // update reference picture for current pDq layer
             pCtx->pFuncList->pfRc.pfWelsRcPictureInit(pCtx, pFbi->uiTimeStamp);
@@ -1406,8 +1504,13 @@ internal sealed unsafe class EncoderDriver : IDisposable
                 pLayerBsInfo->iSubSeqId = GetSubSequenceId(pCtx, eFrameType);
             }
 
-            // pfWelsRcPostFrameSkipping: null with rate control off.
-            Require(pCtx->pFuncList->pfRc.pfWelsRcPostFrameSkipping == null, "rate control (E6)");
+            // WelsRcPostFrameSkipping (the bit rate modes) returns false, so the stack back
+            // (StackBackEncoderStatus, ClearFrameBsInfo, WelsRcPostFrameSkippedUpdate) never runs.
+            if (pCtx->pFuncList->pfRc.pfWelsRcPostFrameSkipping != null
+                && pCtx->pFuncList->pfRc.pfWelsRcPostFrameSkipping(pCtx, iCurDid, pFbi->uiTimeStamp))
+            {
+                Require(false, "post frame skipping (StackBackEncoderStatus)");
+            }
 
             // deblocking filter
             if (!pCtx->pCurDqLayer->bDeblockingParallelFlag &&
@@ -1421,7 +1524,7 @@ internal sealed unsafe class EncoderDriver : IDisposable
 
             pCtx->pFuncList->pfRc.pfWelsRcPictureInfoUpdate(pCtx, iLayerSize);
             iFrameSize += iLayerSize;
-            // RcTraceFrameBits: a log.
+            RcTraceFrameBits(pCtx, pFbi->uiTimeStamp, iFrameSize);
             pCtx->pDecPic->iFrameAverageQp = pCtx->pWelsSvcRc[iCurDid].iAverageFrameQp;
 
             //update scc related
@@ -1452,7 +1555,39 @@ internal sealed unsafe class EncoderDriver : IDisposable
             pLayerBsInfo->pBsBuf = pCtx->pFrameBs + pCtx->iPosBsBuffer;
             pLayerBsInfo->pNalLengthInByte = (pLayerBsInfo - 1)->pNalLengthInByte + iCountNal;
 
-            // WritePadding: rate control only (iPaddingSize stays 0). CalcSliceComplexRatio: threads only.
+            if (pSvcParam->iPaddingFlag != 0 && pCtx->pWelsSvcRc[pCtx->uiDependencyId].iPaddingSize > 0)
+            {
+                int iPaddingNalSize = 0;
+                pCtx->iEncoderError = WritePadding(pCtx, pCtx->pWelsSvcRc[pCtx->uiDependencyId].iPaddingSize, ref iPaddingNalSize);
+                if (pCtx->iEncoderError != ENC_RETURN_SUCCESS)
+                {
+                    return pCtx->iEncoderError;
+                }
+                if (iPaddingNalSize <= 0)
+                {
+                    return ENC_RETURN_UNEXPECTED;
+                }
+
+                pCtx->pWelsSvcRc[pCtx->uiDependencyId].iPaddingBitrateStat += pCtx->pWelsSvcRc[pCtx->uiDependencyId].iPaddingSize;
+                pCtx->pWelsSvcRc[pCtx->uiDependencyId].iPaddingSize = 0;
+
+                pLayerBsInfo->uiSpatialId = 0;
+                pLayerBsInfo->uiTemporalId = 0;
+                pLayerBsInfo->uiQualityId = 0;
+                pLayerBsInfo->uiLayerType = (byte)LAYER_TYPE.NON_VIDEO_CODING_LAYER;
+                pLayerBsInfo->iNalCount = 1;
+                pLayerBsInfo->pNalLengthInByte[0] = iPaddingNalSize;
+                pLayerBsInfo->eFrameType = eFrameType;
+                pLayerBsInfo->iSubSeqId = GetSubSequenceId(pCtx, eFrameType);
+                ++pLayerBsInfo;
+                ++pCtx->pOut->iLayerBsIndex;
+                pLayerBsInfo->pBsBuf = pCtx->pFrameBs + pCtx->iPosBsBuffer;
+                pLayerBsInfo->pNalLengthInByte = (pLayerBsInfo - 1)->pNalLengthInByte + 1;
+                ++iLayerNum;
+
+                iFrameSize += iPaddingNalSize;
+            }
+            // CalcSliceComplexRatio: threads only.
 
             pCtx->eLastNalPriority[iCurDid] = eNalRefIdc;
             ++iSpatialIdx;
@@ -1622,7 +1757,12 @@ internal sealed unsafe class EncoderDriver : IDisposable
             pMa->WelsFree(pCtx->pLtr, "SLTRState");
             pCtx->pLtr = null;
         }
-        pMa->WelsFree(pCtx->pWelsSvcRc, "pWelsSvcRc");
+        if (pCtx->pWelsSvcRc != null)
+        {
+            WelsRcFreeMemory(pCtx);
+            pMa->WelsFree(pCtx->pWelsSvcRc, "pWelsSvcRc");
+            pCtx->pWelsSvcRc = null;
+        }
         if (pCtx->pMvdCostTable != null)
         {
             pMa->WelsFree(pCtx->pMvdCostTable, "pMvdCostTable");

@@ -100,5 +100,6 @@ void KernelsMdInter();
 void KernelsSvcEncodePSlice();
 // The video processing VAA statistics, in kernels_processing.cpp (E5b).
 void KernelsVaaCalc();
+void KernelsComplexity();
 
 #endif  // H264REF_FIXTURE_H

@@ -49,6 +49,8 @@ refharness/build/Release/h264ref idr > reference/idr.tsv               # first f
 refharness/build/Release/h264ref idr-dump <name> <out.264>        # one idr row's bytes
 refharness/build/Release/h264ref stream > reference/stream.tsv         # P streams at a fixed QP, frame by frame
 refharness/build/Release/h264ref stream-dump <name> <out.264>     # one stream row's bytes
+refharness/build/Release/h264ref rc > reference/rc.tsv                 # rate controlled streams, frame by frame
+refharness/build/Release/h264ref rc-dump <name> <out.264>         # one rc row's bytes
 ```
 
 `conformance` copies upstream's `test/api/BaseDecoderTest.cpp` decode loop and
@@ -151,6 +153,20 @@ SHA1 and size, then the whole stream's SHA1 and size. `stream-dump` writes
 one row's stream to a file. `test/SIPSorcery.H264.TestVectors/StreamTests.cs`
 has the same content generator and output format.
 
+`rc` prints the same table for rate controlled streams (`kRcConfigs`), still
+with the analysis features off: the quality, bit rate, buffer based and
+timestamp modes over QCIF and other sizes, at bit rates from 16 kbps to
+2 Mbps. The settings cover frame skipping on and off, the max bit rate
+windows, the IDR bit ratio, the overshoot fix, the QP limits, temporal layers,
+slices, padding, frame rates and LTR. A `mixed` content alternates panning,
+fresh noise, still and moving-block segments, so the rate control meets easy,
+impossible and moderate frames in turn. The `ts.*` settings are not encoder
+parameters. They set each frame's timestamp (`TimestampSchedule`): the clock
+(`ts.num`/`ts.den` ms a frame, 1000/30 by default), jitter, a pause, a step
+back and a timestamp of 0. `rc-dump` writes one row's stream.
+`test/SIPSorcery.H264.TestVectors/RcTests.cs` reads the table through
+`StreamTests.cs`'s shared check.
+
 ## Reference results (`reference/`)
 
 - **`decoder-conformance.tsv`** is the output of `h264ref conformance` on the
@@ -173,6 +189,8 @@ has the same content generator and output format.
   (`src/islice_encoder.cpp` and `src/pslice_encoder.cpp`, which share the
   context in `src/islice_ctx.h`): 6743 rows. E5b added the video processing
   VAA statistics (`src/kernels_processing.cpp`, 177 `vaacalc` rows): 6920.
+  E6 added the camera half of the complexity analysis (361 `complexity`
+  rows, same file): 7281.
 - **`headers.tsv`** and **`headers-damaged.tsv`** are the outputs of `h264ref
   headers` and `headers-damaged`: the size and SHA1 of each vector's parser
   dump, clean (51 rows) and damaged (153 rows). Read by
@@ -201,3 +219,7 @@ has the same content generator and output format.
   each stream with the ported decoder and compares its pictures with the
   encoder's reconstructions wherever the encoder deblocked them (the
   reference pictures, or every picture with the filter off). All 57 match.
+- **`rc.tsv`** is the output of `h264ref rc`: 94 rate controlled
+  configurations, 4848 frames (2808 P, 168 IDR, 1871 skipped, 93 with
+  padding). Read by `RcTests` (E6), with the same decoder check. All 94
+  match.

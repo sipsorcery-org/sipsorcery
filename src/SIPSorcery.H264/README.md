@@ -15,7 +15,7 @@ C-only build of OpenH264 (see
 | Path | State |
 |---|---|
 | **Decoder** (Constrained Baseline) | Done and wired into SIPSorcery. All 35 Constrained Baseline conformance vectors decode to OpenH264's own SHA1s, fed whole or one access unit at a time, and also after an RTP round trip through SIPSorcery's `H264Depacketiser`. Damaged copies of them decode as the C decoder does, error concealment and decoder resets included (all but one copy, whose damage turns a slice into a B slice, which is not ported). It decodes a browser's live H.264 stream, and asks for a key frame when packets are lost. CABAC and B slices (Main and High profile) are not ported. |
-| **Encoder** (Constrained Baseline, WebRTC realtime) | In progress, not usable yet. Parameter validation and SPS/PPS writing are ported, and match the C encoder byte for byte over 66 configurations, WebRTC's among them. Slice coding, rate control and the encoder API come next. |
+| **Encoder** (Constrained Baseline, WebRTC realtime) | In progress, not usable yet. Parameter validation, SPS/PPS writing, I and P slice coding (CAVLC, camera content) and rate control (the quality, bit rate, buffer based and timestamp modes, with frame skipping and padding) are ported. Driven through a test copy of the encoder's frame loop, they match the C encoder byte for byte, frame by frame, over 66 parameter set configurations, 57 fixed QP streams and 94 rate controlled streams. The preprocessing (scene change and background detection, adaptive quantisation, scaling) and the encoder API come next. |
 
 The target throughout is the profile WebRTC uses, Constrained Baseline
 (`profile-level-id=42e01f`). Other profiles come later, and only if needed.

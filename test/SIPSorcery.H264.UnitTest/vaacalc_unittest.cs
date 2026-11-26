@@ -13,6 +13,7 @@
 //
 // History:
 // 26 Nov 2026  Claude          Created (E5b).
+// 26 Nov 2026  Claude          The pictures, outputs and pixel map shared with complexity_unittest (E6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -129,7 +130,7 @@ public unsafe class vaacalc_unittest
         o.HashInto(hash);
     }
 
-    private static SPixMap PixMap(byte* p, int w, int h, int stride)
+    internal static SPixMap PixMap(byte* p, int w, int h, int stride)
     {
         SPixMap m = default;
         m.pPixel[0] = p;
@@ -143,7 +144,7 @@ public unsafe class vaacalc_unittest
 
     // MakePictures: kind 0 unrelated, 1 the reference within 4 of the current
     // picture, 2 identical, 3 only 0 and 255.
-    private sealed class Pictures : IDisposable
+    internal sealed class Pictures : IDisposable
     {
         private readonly NativeBuffer _cur, _ref;
 
@@ -186,7 +187,7 @@ public unsafe class vaacalc_unittest
 
     // VaaOutputs: per macroblock of the rounded-up size plus two guards, filled
     // with noise in the C harness's order.
-    private sealed class Outputs : IDisposable
+    internal sealed class Outputs : IDisposable
     {
         private readonly NativeBuffer _sad, _sum, _sq, _ssd, _sd, _mad;
         private readonly int _mbs;

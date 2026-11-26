@@ -22,6 +22,7 @@
 //
 // History:
 // 24 Nov 2026  Claude          Created.
+// 26 Nov 2026  Claude          WELS_DIV_ROUND with a float divisor, and EPSN (E6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -117,8 +118,19 @@ internal static unsafe partial class WelsCommon
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int32_t WELS_DIV_ROUND(int64_t x, int64_t y) => (int32_t)(y == 0 ? x / (y + 1) : (y / 2 + x) / y);
 
+    /// <summary>WELS_DIV_ROUND with a float divisor (a frame rate): the macro then works in float, as C does.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int32_t WELS_DIV_ROUND(int32_t x, float y) => (int32_t)(y == 0 ? x / (y + 1) : (y / 2 + x) / y);
+
+    /// <summary>WELS_DIV_ROUND with a float divisor: C converts the int64 dividend to float.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int32_t WELS_DIV_ROUND(int64_t x, float y) => (int32_t)(y == 0 ? x / (y + 1) : (y / 2 + x) / y);
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int64_t WELS_DIV_ROUND64(int64_t x, int64_t y) => (int64_t)(y == 0 ? x / (y + 1) : (y / 2 + x) / y);
+
+    /// <summary>EPSN (typedefs.h): the desired float precision.</summary>
+    public const float EPSN = 0.000001f;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void WELS_NON_ZERO_COUNT_AVERAGE(ref int8_t nC, int8_t nA, int8_t nB)

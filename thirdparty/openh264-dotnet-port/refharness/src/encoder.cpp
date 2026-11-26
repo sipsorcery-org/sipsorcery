@@ -452,6 +452,9 @@ bool ApplySetting (SEncParamExt& e, SEncParamBase& b, bool base, const std::stri
   else if (key == "bEnableBackgroundDetection") e.bEnableBackgroundDetection = v != 0;
   else if (key == "bEnableAdaptiveQuant") e.bEnableAdaptiveQuant = v != 0;
   else if (key == "bEnableSceneChangeDetect") e.bEnableSceneChangeDetect = v != 0;
+  else if (key == "iPaddingFlag") e.iPaddingFlag = (int)v;
+  else if (key == "bFixRCOverShoot") e.bFixRCOverShoot = v != 0;
+  else if (key == "iIdrBitrateRatio") e.iIdrBitrateRatio = (int)v;
   else return false;
   return true;
 }
@@ -934,8 +937,17 @@ int Clip255 (int v) {
 //   fade    the scene getting darker and lifting towards grey
 //   cut     the scene, then from frame 4 an inverted, shifted scene
 //   subpel  smooth waves moving by (3/4, 1/4) of a luma pixel a frame
+//   mixed   (E6) in cycles of 30 frames: pan (10 frames), random (4), static (8), block (8),
+//           so that the rate control meets easy, impossible and moderate frames in turn
 unsigned char StreamSample (const std::string& kind, int plane, int r, int c, int f) {
   const int sh = plane ? 1 : 0;
+  if (kind == "mixed") {
+    const int k = f % 30;
+    if (k < 10) return StreamSample ("pan", plane, r, c, f);
+    if (k < 14) return StreamSample ("random", plane, r, c, f);
+    if (k < 22) return Scene (plane, r, c);
+    return StreamSample ("block", plane, r, c, 2 * (k - 22));
+  }
   if (kind == "static") return Scene (plane, r, c);
   if (kind == "pan") return Scene (plane, r + ((2 * f) >> sh), c + ((3 * f) >> sh));
   if (kind == "block") {
@@ -1058,8 +1070,177 @@ const StreamConfig kStreamConfigs[] = {
   {"strategy-sps-pps-listing", "pan", 10, STREAM_BASE QCIF "eSpsPpsIdStrategy=6;uiIntraPeriod=3"},
   {"profile-main", "pan", 8, STREAM_BASE QCIF "L0.uiProfileIdc=77"},
 };
-#undef QCIF
 #undef STREAM_BASE
+
+// The rate controlled streams (E6): as STREAM_BASE, with the rate control mode and target
+// set per configuration. Camera content, the analysis features off. QCIF at 30 fps is
+// 760320 pixels a second, so 64k, 256k, 450k, 650k and 2M bps fall in each of
+// RcCalculateIdrQp's five bits-per-pixel bands; the frame sizes cover its four area bands
+// and RcInitSequenceParameter's four macroblock width classes.
+#define RC_BASE "api=ext;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;" \
+  "bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;"
+#define QUALITY RC_BASE QCIF "iRCMode=0;"
+#define BITRATE RC_BASE QCIF "iRCMode=1;"
+#define BUFFER RC_BASE QCIF "iRCMode=2;"
+#define TIMESTAMP RC_BASE QCIF "iRCMode=3;"
+const StreamConfig kRcConfigs[] = {
+  // Quality mode: frame SAD complexity for P frames. Frame skipping is on by default.
+  {"quality-pan-256k", "pan", 40, QUALITY "iTargetBitrate=256000"},
+  {"quality-mixed-128k", "mixed", 60, QUALITY "iTargetBitrate=128000"},
+  {"quality-mixed-128k-no-skip", "mixed", 60, QUALITY "iTargetBitrate=128000;bEnableFrameSkip=0"},
+  {"quality-subpel-650k-high", "subpel", 30, QUALITY "iTargetBitrate=650000;iComplexityMode=2"},
+  {"quality-temporal-3", "pan", 40, QUALITY "iTargetBitrate=200000;iTemporalLayerNum=3"},
+  {"quality-pan-maxbr", "pan", 80, QUALITY "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=200000;iMaxBitrate=200000"},
+
+  // Bitrate mode, the five bits-per-pixel bands, then over the content kinds.
+  {"bitrate-pan-64k", "pan", 40, BITRATE "iTargetBitrate=64000"},
+  {"bitrate-pan-256k", "pan", 40, BITRATE "iTargetBitrate=256000"},
+  {"bitrate-pan-450k", "pan", 30, BITRATE "iTargetBitrate=450000"},
+  {"bitrate-pan-650k", "pan", 30, BITRATE "iTargetBitrate=650000"},
+  {"bitrate-pan-2m", "pan", 30, BITRATE "iTargetBitrate=2000000"},
+  {"bitrate-static-128k", "static", 30, BITRATE "iTargetBitrate=128000"},
+  {"bitrate-block-128k", "block", 30, BITRATE "iTargetBitrate=128000"},
+  {"bitrate-noise-256k", "noise", 30, BITRATE "iTargetBitrate=256000"},
+  {"bitrate-fade-128k", "fade", 20, BITRATE "iTargetBitrate=128000"},
+  {"bitrate-cut-128k", "cut", 20, BITRATE "iTargetBitrate=128000"},
+  {"bitrate-subpel-256k-medium", "subpel", 30, BITRATE "iTargetBitrate=256000;iComplexityMode=1"},
+
+  // Frame skipping: the buffer, the VGOP constraint and the skip counters; without it, the
+  // exceeded bits level.
+  {"bitrate-mixed-128k-skip", "mixed", 90, BITRATE "iTargetBitrate=128000"},
+  {"bitrate-random-48k-skip", "random", 30, BITRATE "iTargetBitrate=48000"},
+  {"bitrate-noise-64k-skip-overshoot-off", "noise", 40, BITRATE "iTargetBitrate=64000;bFixRCOverShoot=0"},
+  {"bitrate-mixed-96k-no-skip", "mixed", 60, BITRATE "iTargetBitrate=96000;bEnableFrameSkip=0"},
+  {"bitrate-random-32k-no-skip", "random", 20, BITRATE "iTargetBitrate=32000;bEnableFrameSkip=0"},
+  {"bitrate-pan-64k-no-skip", "pan", 40, BITRATE "iTargetBitrate=64000;bEnableFrameSkip=0"},
+
+  // The max bitrate: the two shifted 5 s check windows, at 10 fps so that the streams cross
+  // several. At the target it decides skips; above it, only the windows' bookkeeping runs.
+  {"bitrate-pan-maxbr", "pan", 80, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=200000;iMaxBitrate=200000"},
+  {"bitrate-pan-maxbr-overshoot-off", "pan", 80, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=200000;"
+   "iMaxBitrate=200000;bFixRCOverShoot=0"},
+  {"bitrate-mixed-maxbr", "mixed", 90, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=128000;iMaxBitrate=128000"},
+  {"bitrate-mixed-maxbr-overshoot-off", "mixed", 80, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;"
+   "iTargetBitrate=128000;iMaxBitrate=128000;bFixRCOverShoot=0"},
+  {"bitrate-mixed-maxbr-above", "mixed", 60, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=64000;"
+   "iMaxBitrate=80000"},
+  {"bitrate-pan-maxbr-30fps", "pan", 120, BITRATE "iTargetBitrate=256000;iMaxBitrate=256000"},
+  // Longer, across three 5 s windows, where the shifted window's checks decide skips.
+  {"bitrate-mixed-maxbr-96k-long", "mixed", 150, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=96000;"
+   "iMaxBitrate=96000"},
+  {"bitrate-mixed-maxbr-96k-long-overshoot-off", "mixed", 150, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;"
+   "iTargetBitrate=96000;iMaxBitrate=96000;bFixRCOverShoot=0"},
+  {"bitrate-mixed-maxbr-160k-long", "mixed", 150, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=160000;"
+   "iMaxBitrate=160000"},
+  {"bitrate-mixed-maxbr-15fps-long", "mixed", 150, BITRATE "fMaxFrameRate=15;ts.num=1000;ts.den=15;iTargetBitrate=128000;"
+   "iMaxBitrate=128000"},
+  {"bitrate-block-maxbr-long", "block", 150, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=100000;"
+   "iMaxBitrate=100000"},
+  // The shifted window's reset exactly at 2.5 s decides a skip here.
+  {"bitrate-pan-maxbr-64k-long", "pan", 150, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=64000;"
+   "iMaxBitrate=64000"},
+  {"bitrate-noise-maxbr", "noise", 100, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=128000;"
+   "iMaxBitrate=128000"},
+  {"quality-mixed-maxbr-long", "mixed", 150, QUALITY "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=128000;"
+   "iMaxBitrate=128000"},
+
+  // Timestamps with the max bitrate windows (GetTimestampForRc): a pause, a step back on a
+  // 12 fps clock (a step back on the nominal clock is corrected straight back onto it), a
+  // timestamp of 0. Jitter does not move these decisions; timestamp-jitter covers it.
+  {"bitrate-pan-maxbr-gap", "pan", 80, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=200000;"
+   "iMaxBitrate=200000;ts.gap=40:6000"},
+  {"bitrate-mixed-maxbr-back", "mixed", 90, BITRATE "fMaxFrameRate=10;ts.num=1000;ts.den=12;iTargetBitrate=128000;"
+   "iMaxBitrate=128000;ts.back=40:400"},
+  {"bitrate-pan-maxbr-zero", "pan", 60, BITRATE "fMaxFrameRate=10;ts.num=100;ts.den=1;iTargetBitrate=200000;"
+   "iMaxBitrate=200000;ts.zero=30"},
+
+  // The IDR target, the overshoot fix and the IDR band search, IDRs in the stream.
+  {"bitrate-overshoot-off", "pan", 40, BITRATE "iTargetBitrate=256000;bFixRCOverShoot=0"},
+  {"bitrate-overshoot-off-2m", "subpel", 20, BITRATE "iTargetBitrate=2000000;bFixRCOverShoot=0"},
+  {"bitrate-intra-period-10", "mixed", 50, BITRATE "iTargetBitrate=128000;uiIntraPeriod=10"},
+  {"bitrate-intra-period-8-no-skip", "pan", 40, BITRATE "iTargetBitrate=128000;uiIntraPeriod=8;bEnableFrameSkip=0"},
+  {"bitrate-idr-ratio-150", "pan", 40, BITRATE "iTargetBitrate=128000;uiIntraPeriod=8;iIdrBitrateRatio=150"},
+  {"bitrate-idr-ratio-800", "mixed", 40, BITRATE "iTargetBitrate=128000;uiIntraPeriod=6;iIdrBitrateRatio=800"},
+  // Many IDRs: the intra complexity model's running mean (RcUpdateIntraComplexity).
+  {"bitrate-mixed-intra-period-6-no-skip", "mixed", 90, BITRATE "iTargetBitrate=128000;uiIntraPeriod=6;bEnableFrameSkip=0"},
+  {"bitrate-mixed-intra-period-4-no-skip", "mixed", 60, BITRATE "iTargetBitrate=200000;uiIntraPeriod=4;bEnableFrameSkip=0"},
+
+  // QP limits.
+  {"bitrate-qp-20-30", "mixed", 40, BITRATE "iTargetBitrate=128000;iMinQp=20;iMaxQp=30"},
+  {"bitrate-qp-30-32", "noise", 30, BITRATE "iTargetBitrate=64000;iMinQp=30;iMaxQp=32"},
+  // iMinQp and iMaxQp both default: camera content resets them to 12 and 42 when either is 0.
+  {"bitrate-random-qp-12-36-no-skip", "random", 20, BITRATE "iTargetBitrate=16000;iMinQp=12;iMaxQp=36;bEnableFrameSkip=0"},
+  {"bitrate-static-qp-min-30", "static", 30, BITRATE "iTargetBitrate=1000000;iMinQp=30"},
+
+  // Temporal layers: the layer weights, per layer QP ranges and the VGOP.
+  {"bitrate-temporal-2", "pan", 40, BITRATE "iTargetBitrate=192000;iTemporalLayerNum=2;bEnableFrameSkip=0"},
+  {"bitrate-temporal-3", "mixed", 60, BITRATE "iTargetBitrate=128000;iTemporalLayerNum=3"},
+  {"bitrate-temporal-4", "block", 48, BITRATE "iTargetBitrate=192000;iTemporalLayerNum=4"},
+  {"bitrate-temporal-3-intra-period-12", "mixed", 48, BITRATE "iTargetBitrate=128000;iTemporalLayerNum=3;uiIntraPeriod=12"},
+
+  // Slices: GOM QP off with more than one slice; one GOM a frame for raster slices.
+  {"bitrate-slices-fixed-4", "pan", 30, BITRATE "iTargetBitrate=256000;L0.uiSliceMode=1;L0.uiSliceNum=4;bEnableFrameSkip=0"},
+  {"bitrate-slices-raster-rows", "mixed", 30, BITRATE "iTargetBitrate=128000;L0.uiSliceMode=2;bEnableFrameSkip=0"},
+  {"bitrate-slices-raster-2", "pan", 30, BITRATE "iTargetBitrate=128000;L0.uiSliceMode=2;L0.uiSliceMbNum=60,39"},
+
+  // Padding: the padding buffer underflowing into filler data.
+  {"bitrate-static-padding", "static", 30, BITRATE "iTargetBitrate=1000000;iPaddingFlag=1"},
+  {"bitrate-subpel-padding-1m-no-skip", "subpel", 40, BITRATE "iTargetBitrate=1000000;iPaddingFlag=1;bEnableFrameSkip=0"},
+  {"bitrate-block-padding-1m-no-skip", "block", 40, BITRATE "iTargetBitrate=1000000;iPaddingFlag=1;bEnableFrameSkip=0"},
+
+  // Frame rates, references and LTR.
+  {"bitrate-5fps", "pan", 30, BITRATE "fMaxFrameRate=5;ts.num=200;ts.den=1;iTargetBitrate=64000"},
+  {"bitrate-60fps", "pan", 40, BITRATE "fMaxFrameRate=60;ts.num=1000;ts.den=60;iTargetBitrate=256000"},
+  {"bitrate-ref-4", "pan", 30, BITRATE "iTargetBitrate=128000;iNumRefFrame=4;bEnableFrameSkip=0"},
+  {"bitrate-ltr", "mixed", 40, BITRATE "iTargetBitrate=128000;bEnableLongTermReference=1;iLtrMarkPeriod=4;bEnableFrameSkip=0"},
+
+  // Sizes: the macroblock width classes and the area bands, and cropping.
+  {"bitrate-33x17", "pan", 30, RC_BASE "iRCMode=1;iPicWidth=33;iPicHeight=17;iTargetBitrate=20000"},
+  {"bitrate-152x100", "mixed", 30, RC_BASE "iRCMode=1;iPicWidth=152;iPicHeight=100;iTargetBitrate=96000;bEnableFrameSkip=0"},
+  {"bitrate-320x192", "mixed", 20, RC_BASE "iRCMode=1;iPicWidth=320;iPicHeight=192;iTargetBitrate=300000;bEnableFrameSkip=0"},
+  {"bitrate-480x272", "pan", 12, RC_BASE "iRCMode=1;iPicWidth=480;iPicHeight=272;iTargetBitrate=600000;bEnableFrameSkip=0"},
+  {"bitrate-640x368", "pan", 10, RC_BASE "iRCMode=1;iPicWidth=640;iPicHeight=368;iTargetBitrate=800000;bEnableFrameSkip=0"},
+  {"bitrate-1280x720", "pan", 5, RC_BASE "iRCMode=1;iPicWidth=1280;iPicHeight=720;iTargetBitrate=1500000;bEnableFrameSkip=0"},
+
+  // Buffer based mode: no target, the QP stepping down to the minimum. Random content at
+  // QP 24 then overflows the frame's buffer, and the encoder uninitialises itself.
+  {"buffer-pan", "pan", 30, BUFFER "iTargetBitrate=128000"},
+  {"buffer-mixed-qp-30-40", "mixed", 40, BUFFER "iTargetBitrate=128000;iMinQp=30;iMaxQp=40"},
+  {"buffer-mixed-overflow", "mixed", 12, BUFFER "iTargetBitrate=128000;iMinQp=24;iMaxQp=40"},
+
+  // Timestamp mode: the buffer drains by the time between frames.
+  {"timestamp-pan-256k", "pan", 40, TIMESTAMP "iTargetBitrate=256000"},
+  {"timestamp-mixed-128k", "mixed", 60, TIMESTAMP "iTargetBitrate=128000"},
+  {"timestamp-mixed-64k-no-skip", "mixed", 40, TIMESTAMP "iTargetBitrate=64000;bEnableFrameSkip=0"},
+  {"timestamp-4fps", "pan", 30, TIMESTAMP "fMaxFrameRate=4;ts.num=250;ts.den=1;iTargetBitrate=64000"},
+  {"timestamp-7fps", "mixed", 30, TIMESTAMP "fMaxFrameRate=7;ts.num=1000;ts.den=7;iTargetBitrate=96000"},
+  {"timestamp-jitter", "mixed", 60, TIMESTAMP "iTargetBitrate=128000;ts.jitter=20"},
+  {"timestamp-gap", "pan", 40, TIMESTAMP "iTargetBitrate=128000;ts.gap=20:1500"},
+  {"timestamp-back", "pan", 40, TIMESTAMP "iTargetBitrate=128000;ts.back=20:300"},
+  {"timestamp-zero", "pan", 30, TIMESTAMP "iTargetBitrate=128000;ts.zero=15"},
+  {"timestamp-temporal-3", "mixed", 48, TIMESTAMP "iTargetBitrate=128000;iTemporalLayerNum=3"},
+  {"timestamp-padding", "static", 30, TIMESTAMP "iTargetBitrate=1000000;iPaddingFlag=1"},
+  {"timestamp-intra-period-15", "mixed", 45, TIMESTAMP "iTargetBitrate=128000;uiIntraPeriod=15"},
+  {"timestamp-intra-period-5", "mixed", 60, TIMESTAMP "iTargetBitrate=160000;uiIntraPeriod=5"},
+  // Pauses either side of WelsRcFrameDelayJudgeTimeStamp's 1 s limit (an interval above it
+  // counts as one frame period). The two pan rows write the same stream, as the pause falls
+  // in a run of skips, but a limit moved by a millisecond either way changes one of them.
+  {"timestamp-pause-950", "pan", 40, TIMESTAMP "iTargetBitrate=128000;ts.gap=20:917"},
+  {"timestamp-pause-1000", "pan", 40, TIMESTAMP "iTargetBitrate=128000;ts.gap=20:967"},
+  {"timestamp-mixed-pause-950", "mixed", 40, TIMESTAMP "iTargetBitrate=96000;ts.gap=12:917"},
+  {"timestamp-mixed-pause-1000", "mixed", 40, TIMESTAMP "iTargetBitrate=96000;ts.gap=12:967"},
+  // IDR targets: below 5 fps one frame's bits, else four; clipped to the buffer's headroom.
+  {"timestamp-pan-4fps-intra-period-2", "pan", 40, TIMESTAMP "fMaxFrameRate=4;ts.num=250;ts.den=1;iTargetBitrate=96000;"
+   "uiIntraPeriod=2"},
+  {"timestamp-subpel-10fps-intra-period-2", "subpel", 60, TIMESTAMP "fMaxFrameRate=10;ts.num=100;ts.den=1;"
+   "iTargetBitrate=150000;uiIntraPeriod=2"},
+};
+#undef TIMESTAMP
+#undef BUFFER
+#undef BITRATE
+#undef QUALITY
+#undef RC_BASE
+#undef QCIF
 
 struct StreamFrame {
   int rc;
@@ -1067,7 +1248,44 @@ struct StreamFrame {
   std::vector<unsigned char> bytes;
 };
 
-// Encodes one configuration's frames, the timestamps 1000 / 30 ms apart. Returns
+// The source timestamps of a configuration (E6): frame f at f * num / den ms, 1000 / 30 by
+// default, shaped by the "ts." settings, which go here and not to the encoder:
+//   ts.num, ts.den   the period, num / den ms
+//   ts.jitter=n      up to n ms either way, from a hash of the frame index
+//   ts.gap=f:ms      from frame f on, ms later (a pause)
+//   ts.back=f:ms     from frame f on, ms earlier (a step back)
+//   ts.zero=f        frame f at 0
+// A timestamp below 0 is 0. The C# test has the same schedule (RcTests.cs).
+struct TimestampSchedule {
+  long long num = 1000, den = 30, gapMs = 0, backMs = 0;
+  int jitter = 0, gapFrame = -1, backFrame = -1, zeroFrame = -1;
+
+  static void FrameAndMs (const std::string& v, int* pFrame, long long* pMs) {
+    const size_t colon = v.find (':');
+    *pFrame = (int)strtol (v.substr (0, colon).c_str(), NULL, 10);
+    *pMs = colon == std::string::npos ? 0 : strtoll (v.substr (colon + 1).c_str(), NULL, 10);
+  }
+  bool Apply (const std::string& k, const std::string& v) {
+    if (k == "ts.num") num = strtoll (v.c_str(), NULL, 10);
+    else if (k == "ts.den") den = strtoll (v.c_str(), NULL, 10);
+    else if (k == "ts.jitter") jitter = (int)strtol (v.c_str(), NULL, 10);
+    else if (k == "ts.gap") FrameAndMs (v, &gapFrame, &gapMs);
+    else if (k == "ts.back") FrameAndMs (v, &backFrame, &backMs);
+    else if (k == "ts.zero") zeroFrame = (int)strtol (v.c_str(), NULL, 10);
+    else return false;
+    return true;
+  }
+  long long At (int f) const {
+    long long t = (long long)f * num / den;
+    if (jitter > 0) t += (long long) (Hash32 ((uint32_t)f ^ 0x5bd1e995u) % (uint32_t) (2 * jitter + 1)) - jitter;
+    if (gapFrame >= 0 && f >= gapFrame) t += gapMs;
+    if (backFrame >= 0 && f >= backFrame) t -= backMs;
+    if (f == zeroFrame) t = 0;
+    return t < 0 ? 0 : t;
+  }
+};
+
+// Encodes one configuration's frames, at the timestamps its schedule gives. Returns
 // InitializeExt's code; each frame's outputs go to *pFrames.
 int EncodeStream (const StreamConfig& c, std::vector<StreamFrame>* pFrames) {
   pFrames->clear();
@@ -1080,6 +1298,7 @@ int EncodeStream (const StreamConfig& c, std::vector<StreamFrame>* pFrames) {
   SEncParamBase base;
   memset (&base, 0, sizeof base);
   encoder->GetDefaultParams (&ext);
+  TimestampSchedule ts;
   std::stringstream ss (c.settings);
   std::string item;
   while (std::getline (ss, item, ';')) {
@@ -1087,7 +1306,7 @@ int EncodeStream (const StreamConfig& c, std::vector<StreamFrame>* pFrames) {
     size_t eq = item.find ('=');
     std::string k = item.substr (0, eq), v = item.substr (eq + 1);
     if (k == "api") continue;
-    if (!ApplySetting (ext, base, false, k, v)) {
+    if (k.compare (0, 3, "ts.") == 0 ? !ts.Apply (k, v) : !ApplySetting (ext, base, false, k, v)) {
       fprintf (stderr, "%s: unknown setting %s\n", c.name, k.c_str());
       exit (1);
     }
@@ -1109,7 +1328,7 @@ int EncodeStream (const StreamConfig& c, std::vector<StreamFrame>* pFrames) {
       pic.pData[0] = buf.data();
       pic.pData[1] = pic.pData[0] + w * h;
       pic.pData[2] = pic.pData[1] + (w >> 1) * (h >> 1);
-      pic.uiTimeStamp = (long long)f * 1000 / 30;
+      pic.uiTimeStamp = ts.At (f);
 
       SFrameBSInfo info;
       memset (&info, 0, sizeof info);
@@ -1135,13 +1354,15 @@ int EncodeStream (const StreamConfig& c, std::vector<StreamFrame>* pFrames) {
 
 }  // namespace
 
-int Stream() {
-  printf ("# %s, C-only reference build. Frame by frame P streams per configuration, see refharness/src/encoder.cpp.\n",
-          g_strCodecVer);
+// The frame by frame table of one set of configurations (stream, rc).
+static int PrintStreams (const StreamConfig* configs, size_t count, const char* what) {
+  printf ("# %s, C-only reference build. Frame by frame %s per configuration, see refharness/src/encoder.cpp.\n",
+          g_strCodecVer, what);
   printf ("# config\t<name>\t<content>\t<frames>\t<settings>\n");
   printf ("# frame\t<name>\t<index>\t<EncodeFrame>\t<frame type>\t<temporal ids>\t<layers>\t<sha1 of the frame>\t<size>\n");
   printf ("# stream\t<name>\t<InitializeExt>\t<sha1 of the stream>\t<size>\n");
-  for (const StreamConfig& c : kStreamConfigs) {
+  for (size_t n = 0; n < count; n++) {
+    const StreamConfig& c = configs[n];
     printf ("config\t%s\t%s\t%d\t%s\n", c.name, c.content, c.frames, c.settings);
     std::vector<StreamFrame> frames;
     int rv = EncodeStream (c, &frames);
@@ -1159,8 +1380,10 @@ int Stream() {
   return 0;
 }
 
-int StreamDump (const char* name, const char* outPath) {
-  for (const StreamConfig& c : kStreamConfigs) {
+// One configuration's stream, to a file.
+static int DumpStream (const StreamConfig* configs, size_t count, const char* name, const char* outPath) {
+  for (size_t n = 0; n < count; n++) {
+    const StreamConfig& c = configs[n];
     if (std::string (c.name) != name) continue;
     std::vector<StreamFrame> frames;
     EncodeStream (c, &frames);
@@ -1170,4 +1393,20 @@ int StreamDump (const char* name, const char* outPath) {
   }
   fprintf (stderr, "no stream configuration %s\n", name);
   return 1;
+}
+
+int Stream() {
+  return PrintStreams (kStreamConfigs, sizeof kStreamConfigs / sizeof kStreamConfigs[0], "P streams");
+}
+
+int StreamDump (const char* name, const char* outPath) {
+  return DumpStream (kStreamConfigs, sizeof kStreamConfigs / sizeof kStreamConfigs[0], name, outPath);
+}
+
+int Rc() {
+  return PrintStreams (kRcConfigs, sizeof kRcConfigs / sizeof kRcConfigs[0], "rate controlled streams");
+}
+
+int RcDump (const char* name, const char* outPath) {
+  return DumpStream (kRcConfigs, sizeof kRcConfigs / sizeof kRcConfigs[0], name, outPath);
 }

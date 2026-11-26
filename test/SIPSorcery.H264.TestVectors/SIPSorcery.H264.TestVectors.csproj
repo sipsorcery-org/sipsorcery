@@ -42,6 +42,8 @@
     <!-- The first frame (an IDR at a fixed QP) for a table of configurations and synthetic pictures (h264ref idr), see IdrTests.cs. -->
     <None Include="..\..\thirdparty\openh264-dotnet-port\reference\idr.tsv" Link="idr.tsv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\thirdparty\openh264-dotnet-port\reference\stream.tsv" Link="stream.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Rate controlled streams (h264ref rc), see RcTests.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\rc.tsv" Link="rc.tsv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -28,6 +28,7 @@
 // 26 Nov 2026  Claude          The CAVLC writer's typedefs and slots (E3).
 // 26 Nov 2026  Claude          Intra mode decision, rate control and memory-zero slots (E4).
 // 26 Nov 2026  Claude          DeblockingFunc and the deblocking slots (E4b).
+// 26 Nov 2026  Claude          pfAccumulateSadForRc noted as unused upstream (E6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -340,7 +341,7 @@ internal unsafe struct SWelsFuncPtrList
     public PSetNoneZeroCountZeroFunc pfSetNZCZero;
 
     public SWelsRcFunc pfRc;
-    // PAccumulateSadFunc pfAccumulateSadForRc comes with E6.
+    // PAccumulateSadFunc pfAccumulateSadForRc: declared upstream, never set or called.
     public PSetMemoryZero pfSetMemZeroSize8;            // for size is times to 8
     public PSetMemoryZero pfSetMemZeroSize64Aligned16;  // for size is times of 64, and address is align to 16
     public PSetMemoryZero pfSetMemZeroSize64;           // for size is times of 64, and don't know address is align to 16 or not

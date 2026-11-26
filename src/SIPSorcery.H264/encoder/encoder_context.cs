@@ -22,6 +22,7 @@
 // 26 Nov 2026  Claude          SRefList, SSpatialPicIndex and the layer, list and NAL fields (E4b).
 // 26 Nov 2026  Claude          The MVD cost table fields and pVaa (E5).
 // 26 Nov 2026  Claude          SLTRState, pReferenceStrategy, pLtr and bRefOfCurTidIsLtr (E5b).
+// 26 Nov 2026  Claude          The rate control check window fields (E6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -171,7 +172,12 @@ internal unsafe struct sWelsEncCtx
 
     // Rate control routine
     public SWelsSvcRc* pWelsSvcRc;
-    // the check window fields come with E6.
+    public bool bCheckWindowStatusRefreshFlag;
+    public int64_t iCheckWindowStartTs;
+    public int64_t iCheckWindowCurrentTs;
+    public int32_t iCheckWindowInterval;
+    public int32_t iCheckWindowIntervalShift;
+    public bool bCheckWindowShiftResetFlag;
     public int32_t iGlobalQp;                   // global qp
 
     public SVAAFrameInfo* pVaa;                 // VAA information of reference

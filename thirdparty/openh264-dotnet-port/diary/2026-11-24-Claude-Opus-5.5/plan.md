@@ -29,6 +29,7 @@ was kept for the VP8 encoder.
 | E4b The IDR through the API | **Done** (26 Nov) | The rest of E4. From `svc_encode_slice`: the slice header writers (base and extension, with the reference reordering and marking), `WelsCodeOneSlice`, and the slice lists (`InitSliceList`, `InitSliceInLayer`, `InitSliceThreadInfo`, the slice bitstream buffers). The encoder's `deblocking` (the intra and inter boundary strengths, the edge, macroblock and slice filters, `PerformDeblockingFilter`, `DeblockingInit`). From `encoder_ext`: the layer and macroblock list set-up (`InitMbInfo` to `InitDqLayers`, `InitMbListD`, with their frees), `WelsInitCurrentLayer`, `PrefetchReferencePicture`, `PreprocessSliceCoding` and `GetTemporalLevel`. `encoder`'s `InitFrameCoding` and the frame numbers. `ratectl`'s `GomRCInitForOneSlice`. ~2.5k lines. New `h264ref idr` mode (`reference/idr.tsv`): 47 configurations of one spatial layer with rate control off. They cover 4 kinds of content, QP 0 to 51, the three complexity modes, 9 sizes (16x16 to 1280x720, odd and cropped), fixed, raster-row and raster-list slicing, the three deblocking modes with offsets, temporal layers, LTR, three id strategies, the feature flags and the Main profile. `IdrTests.cs` drives the ported functions the way `InitializeExt` and the first `EncodeFrame` do. It does by hand, for an IDR, what the unported reference manager, VAA and preprocessing do (see the notes). **All 47 match** native byte for byte, including two rows that overflow the frame buffer and return 3. Every reconstruction equals the C# decoder's picture, and every row frees all it allocates. 3 planted bugs (deblocking, slice header and padding) each fail exactly the rows they should. UnitTest: 7511. TestVectors: 528. |
 | E5a P-slice macroblock coding | **Done** (26 Nov) | E5 is split in two (see the notes). E5a: `mv_pred`, the camera half of `svc_motion_estimate` (the initial point, the diamond search, `WelsMotionEstimateSearch`, `WelsInitMeFunc`), the inter half of `md` (the inter neighbour caches, `MeRefineFracPixel`, `PredictSad`, `PredictSadSkip`, `MvdCostInit`), the P half of `svc_base_layer_md` (the skip, background skip, 16x16 and fine partition decisions with their VAA variant, the sub-pel refinement, intra in P), `svc_mode_decision`'s background skip, `svc_encode_mb`'s inter coding and skip reconstruction, the P half of `svc_encode_slice` (`WelsCodePSlice`, `WelsMdInterMbLoop`), the P pointers of `PreprocessSliceCoding`, `InitFunctionPointers`, `ratectl`'s adaptive quantisation branches, and the VAA structs. ~3.8k lines. New kernel groups (`refharness/src/pslice_encoder.cpp`): 112 `mv_pred`, 2 `md` and 230 `svc_encode_slice` rows. The 230 code whole P frames (1 to 99 macroblocks, 1 to 9 slices, the three complexity modes, background detection and AQ on and off, QP 0 to 51, two MV ranges, five kinds of motion, I and P references) through `WelsCodePSlice` on a hand-built context, and hash the bitstream, the reconstruction and every macroblock's state. **All match**. Of 15 planted bugs, 13 fail rows. The other two move a threshold by one (see the notes). UnitTest: 7857. TestVectors: 528. |
 | E5b The P stream through the frame loop | **Done** (26 Nov) | The rest of E5. `ref_list_mgr_svc` for camera content: the `IWelsReferenceStrategy` (`CWelsReference_TemporalLayer`), the list reset, update and build, `WelsMarkPic` with the MMCO and LTR marking, `WelsUpdateRefSyntax` and `PrefetchNextBuffer`. Also `encoder`'s `DecideFrameType`, `encoder_ext`'s `GetMvMvdRange`, and `processing`'s VAA statistics (the five `vaacalcfuncs` C kernels and `CVAACalculation`). ~1.9k lines. `IdrTests.cs`'s `IdrEncoder` became `EncoderDriver.cs`, with the reference strategy, the LTR state, the VAA buffers, the MVD cost table, a hand port of the camera half of `CWelsPreProcess` for one spatial layer, and `WelsEncoderEncodeExt`'s whole frame loop (see the notes). New `vaacalc` kernel group (`refharness/src/kernels_processing.cpp`, 177 rows). New `h264ref stream` mode (`reference/stream.tsv`): 57 configurations, 506 frames (429 P) of eight kinds of moving content. They cover the complexity modes, QP 0 to 51, IDR periods, two to four temporal layers, LTR marking, reference counts, the slice modes, odd and cropped sizes, the deblocking modes, three id strategies and the Main profile. **All match** native byte for byte, frame by frame. Every reconstruction the encoder deblocked equals the C# decoder's picture, and every row frees all it allocates. Of 12 planted bugs, 9 fail rows. The other three can't be reached before E7 or E8 (see the notes). UnitTest: 8034. TestVectors: 586. |
+| E6 Rate control | **Done** (26 Nov) | `ratectl` for camera content: the off, quality, bit rate (with and without post skip), buffer based and timestamp modes, the frame skip decisions, the two shifted max bit rate check windows and padding, with `encoder_ext`'s `WritePadding`. Also the camera half of `processing`'s complexity analysis (`CComplexityAnalysis`), which the GOM rate control reads. ~1.9k lines. `EncoderDriver` gains the frame loop's rate control hooks and a hand port of `AnalyzePictureComplexity` (see the notes). New `complexity` kernel group (361 rows; `kernels.tsv` 7281). New `h264ref rc` mode (`reference/rc.tsv`): 94 configurations, 4848 frames (2808 P, 1871 skipped) over the four modes. They run at 16 kbps to 2 Mbps, with timestamp schedules that pause, step back, jump to 0 and jitter. **All match** native byte for byte, frame by frame, with E5b's decoder check. Of 19 planted bugs, 14 fail rows. Four are equivalent and one can't be pinned (see the notes). UnitTest: 8395. TestVectors: 681. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -1022,6 +1023,108 @@ Notes from E5b:
     reads it only when recovering through the LTR from a lost frame, which
     the API's recovery request starts (E8).
 
+Notes from E6:
+
+- **Scope.** Camera content only. Screen content's rate control
+  (`WelRcPictureInitScc` and the rest) is not ported, and the frame
+  complexity throws for it (Phase 4). Background detection, adaptive
+  quantisation and scene change detection stay off (E7). `SetOption`'s bit
+  rate and frame rate changes come with the API (E8). `RcJudgeBitrateFpsUpdate`
+  is ported and runs every frame, but nothing changes the rates yet.
+- **What is ported.** `ratectl.cs` has every camera mode:
+  - off, quality, bit rate (with and without post skip), buffer based and
+    timestamp;
+  - the frame skip decisions (`WelsRcCheckFrameStatus`,
+    `CheckFrameSkipBasedMaxbr`, `RcVBufferCalculationSkip`);
+  - the two shifted max bit rate check windows, and the padding buffer;
+  - `WelsRcInitModule`, `WelsRcFreeMemory` and `GetTimestampForRc`.
+
+  `encoder_ext` gains `WritePadding`. `processing/ComplexityAnalysis.cs` is
+  the camera half of `CComplexityAnalysis`: the frame SAD, the GOM SAD with
+  or without the background, and the GOM variance.
+- **C semantics kept.**
+  - `RcConvertQStep2Qp` calls the double `log`: UCRT has no float overload,
+    so the float argument widens.
+  - `WELS_DIV_ROUND` has float divisor overloads.
+  - The complexity analysis wraps in uint32.
+  - `GetFrameSadExcludeBackground` returns int32, and the frame SAD
+    zero-extends into the int64 complexity.
+- **The driver.** `EncoderDriver` adds what the frame loop does with rate
+  control on:
+  - `WelsRcInitModule` after `RequestMemorySvc`. For rate control off it
+    now runs `RcInitSequenceParameter` too, as upstream does. The off mode
+    reads its QP limits only with adaptive quantisation.
+  - The library's `WelsRcCheckFrameStatus` and `GetTimestampForRc` replace
+    the driver's, and a skip calls `pfWelsUpdateBufferWhenSkip`.
+  - `pfWelsUpdateMaxBrWindowStatus` after `BuildSpatialPicList`.
+  - `AnalyzePictureComplexity` after `AfterBuildRefList`: a hand port of
+    `CWelsPreProcess`'s, through `CComplexityAnalysis`.
+  - `RcTraceFrameBits`, and padding as a non-VCL layer.
+  - `ForceCodingIDR` clears `bCheckWindowStatusRefreshFlag`.
+  - The last timestamp is set after every frame the API counts as done, as
+    `UpdateStatistics` does.
+
+  `WelsRcPostFrameSkipping` always returns false, so the stack back after a
+  post skip is not ported. The driver throws if it ever returns true.
+- **Upstream behaviours that shaped the table.**
+  - Camera rate control resets the QP limits to 12 and 42 when either
+    `iMinQp` or `iMaxQp` is 0 (`encoder_ext.cpp:375`). The default
+    `iMinQp` is 0, so the nominal 0 to 51 never applies, and set limits are
+    clipped to 12 to 51.
+  - `bEnableFrameSkip` defaults to on.
+  - A max bit rate above the target never decided a skip in the streams
+    tried, so all but one of the max bit rate rows set it equal to the
+    target.
+  - A step back on the nominal clock is corrected to the last timestamp
+    plus a frame period. That is the nominal schedule again, so the stream
+    doesn't change. The step back row uses a 12 fps clock against a 10 fps
+    frame rate instead. Jitter doesn't move the max bit rate decisions in
+    bit rate mode, so only the timestamp mode has a jitter row.
+  - The buffer based mode lowers the QP by 1 a frame for good
+    (`bDeliveryFlag` only changes through `SetOption`). `buffer-mixed-overflow`
+    ends in a VLC overflow (3), then an uninitialised encoder, on both sides.
+  - A raster slice configuration with one slice becomes a single slice.
+- **The table.** `h264ref rc` (`reference/rc.tsv`) has 94 configurations:
+  7 quality, 65 bit rate, 3 buffer based and 19 timestamp. They have 4848
+  frames: 2808 P, 168 IDR, 1871 skipped, and 93 with filler data. Two native
+  runs give the same table. Only two rows write the same stream: the pan
+  pauses of 950 ms and 1000 ms, either side of the timestamp mode's 1 s
+  limit. The pause falls in a run of skips, but a limit moved by a
+  millisecond either way changes one of them. The `ts.*` settings are the
+  harness's timestamp schedule, not encoder parameters. `StreamTests` and
+  `RcTests` share the C# check (`StreamCheck`, `TimestampSchedule`).
+- **Planted bugs.** Each of 19 was planted one at a time and restored from
+  a copy, checked by md5. The rows that fail, of 94:
+  - A buffer full skip only below the predicted skip count (`<` for `<=`):
+    21.
+  - No `pfWelsUpdateBufferWhenSkip` after a skip: 45.
+  - The max bit rate window skipping only 100 Mbit over: 9.
+  - The shifted window's reset one frame late (`>` for `>=`): 1,
+    `bitrate-pan-maxbr-64k-long`.
+  - The even window's check off: 1. The odd window's: 6.
+  - Padding counted in quarter bytes (`>>= 2`): 4, the padding rows.
+  - The buffer based mode stepping the QP by 2: 2 of the 3 buffer rows.
+  - The IDR bits per pixel bands 10% lower: 2.
+  - The IDR QP floor one above the minimum: 1.
+  - The timestamp delay limit at 900 ms: 2, the 950 ms pauses. At
+    `>= 1000`: 1, `timestamp-pause-1000`.
+  - The driver never setting the last timestamp: 5.
+  - The GOM SAD in place of the GOM variance for I frames: 2.
+
+  Four are equivalent:
+  - The overshoot fix's equal weights branch off: with the weights equal,
+    both branches give the remaining bits.
+  - The timestamp check without its 0 case: `last >= ts` already covers a
+    timestamp of 0 once there is a last one.
+  - `RcUpdateIntraComplexity`'s alpha floor: `iAlpha` is never used, as
+    upstream.
+  - The driver's padding size reset: the size is worked out again for every
+    coded frame.
+
+  One isn't pinned: the timestamp mode's IDR target clip at 2/3 of the
+  buffer for 3/4. It only differs when the buffer is about 30 to 32% full
+  at an IDR at 30 fps, which no row hits.
+
 ## 1. Goal
 
 A pure managed H.264 encoder and decoder in `src/SIPSorcery.H264`, ported from
@@ -1283,7 +1386,9 @@ merges. Approximate C# sizes are in brackets.
   through the frame loop, ~1.9k lines.
 - **E6** Rate control: `ratectl` (bitrate and quality modes, frame skip).
   Acceptance: the output matches native byte for byte with rate control on and
-  preprocessing off. *[~1.5k]*
+  preprocessing off. *[~1.5k]* **Done**: the camera modes of `ratectl` and
+  the camera half of `processing`'s complexity analysis, ~1.9k lines, with
+  94 rate controlled streams matching.
 - **E7** Preprocessing: `processing/` and `wels_preprocess`. Acceptance: **the
   three upstream encoder hashes for CAMERA_VIDEO_REAL_TIME / SM_SINGLE_SLICE /
   1 layer / CAVLC** pass (`672a52fb…`, `08ade185…`, `e60f12e3…`). *[~4k]*

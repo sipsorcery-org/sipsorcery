@@ -21,6 +21,8 @@
 //
 // History:
 // 26 Nov 2026  Claude          Created (E5b).
+// 26 Nov 2026  Claude          StreamTable and StreamCheck shared with RcTests, the timestamp
+//                              schedules and the mixed content (E6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -37,7 +39,7 @@ using Xunit.Abstractions;
 
 namespace SIPSorcery.H264.TestVectors;
 
-/// <summary>One configuration of reference/stream.tsv, with its frame rows.</summary>
+/// <summary>One configuration of reference/stream.tsv or rc.tsv, with its frame rows.</summary>
 public sealed record StreamReference(string Name, string Content, int FrameCount, string Settings)
 {
     public int InitReturnCode { get; set; } = int.MinValue;
@@ -54,15 +56,19 @@ public static class StreamReferences
 {
     public const string TableFile = "stream.tsv";
 
-    private static readonly Lazy<IReadOnlyList<StreamReference>> _rows = new(Load);
+    private static readonly Lazy<IReadOnlyList<StreamReference>> _rows = new(() => StreamTable.Load(TableFile));
 
     public static IReadOnlyList<StreamReference> Rows => _rows.Value;
 
     public static IEnumerable<object[]> Names => Rows.Select(r => new object[] { r.Name });
+}
 
-    private static IReadOnlyList<StreamReference> Load()
+/// <summary>The harness's frame by frame stream tables (h264ref stream, h264ref rc).</summary>
+internal static class StreamTable
+{
+    public static IReadOnlyList<StreamReference> Load(string tableFile)
     {
-        string path = Path.Combine(AppContext.BaseDirectory, TableFile);
+        string path = Path.Combine(AppContext.BaseDirectory, tableFile);
         var rows = new List<StreamReference>();
         var byName = new Dictionary<string, StreamReference>();
         foreach (string line in File.ReadLines(path))
@@ -89,7 +95,7 @@ public static class StreamReferences
                     c.Size = int.Parse(f[4], CultureInfo.InvariantCulture);
                     break;
                 default:
-                    throw new InvalidDataException($"{TableFile}: unknown row {f[0]}.");
+                    throw new InvalidDataException($"{tableFile}: unknown row {f[0]}.");
             }
         }
         return rows;
@@ -98,8 +104,6 @@ public static class StreamReferences
 
 public class StreamTests
 {
-    private const string DumpEnvironmentVariable = "H264_DUMP_DIR";
-
     private readonly ITestOutputHelper _output;
 
     public StreamTests(ITestOutputHelper output) => _output = output;
@@ -118,12 +122,27 @@ public class StreamTests
 
     [Theory]
     [MemberData(nameof(StreamReferences.Names), MemberType = typeof(StreamReferences))]
-    public unsafe void StreamMatchesReference(string name)
+    public void StreamMatchesReference(string name) =>
+        StreamCheck.Run(StreamReferences.Rows.Single(r => r.Name == name), _output);
+}
+
+/// <summary>
+/// One configuration's stream through EncoderDriver, frame by frame against the reference
+/// rows, then the reconstructions against the ported decoder's pictures. Set H264_DUMP_DIR
+/// to have a failing row write its stream there.
+/// </summary>
+internal static class StreamCheck
+{
+    private const string DumpEnvironmentVariable = "H264_DUMP_DIR";
+
+    public static void Run(StreamReference expected, ITestOutputHelper output)
     {
-        StreamReference expected = StreamReferences.Rows.Single(r => r.Name == name);
+        string name = expected.Name;
+        var ts = new TimestampSchedule();
+        string settings = ts.Split(expected.Settings);
 
         using var enc = new EncoderDriver();
-        Assert.Equal(expected.InitReturnCode, enc.Initialize(expected.Settings));
+        Assert.Equal(expected.InitReturnCode, enc.Initialize(settings));
 
         int w = enc.PicWidth, h = enc.PicHeight;
         int rw = (w + 15) & ~15, rh = (h + 15) & ~15;
@@ -132,11 +151,11 @@ public class StreamTests
         var stream = new List<byte>();
         for (int f = 0; f < expected.FrameCount; f++)
         {
-            EncodedFrame got = enc.EncodeFrame(StreamContent.Fill(w, h, expected.Content, f), (long)f * 1000 / 30);
+            EncodedFrame got = enc.EncodeFrame(StreamContent.Fill(w, h, expected.Content, f), ts.At(f));
             string row = string.Join('\t', f.ToString(CultureInfo.InvariantCulture),
                                      got.ReturnCode.ToString(CultureInfo.InvariantCulture), got.FrameType, got.TemporalIds,
                                      got.Layers, got.Sha1, got.Bytes.Length.ToString(CultureInfo.InvariantCulture));
-            _output.WriteLine(row);
+            output.WriteLine(row);
             stream.AddRange(got.Bytes);
             if (row != expected.Frames[f])
             {
@@ -183,7 +202,7 @@ public class StreamTests
             }
             compared++;
         }
-        _output.WriteLine($"{compared} of {frames.Count} reconstructions compared with the decoder's");
+        output.WriteLine($"{compared} of {frames.Count} reconstructions compared with the decoder's");
 
         Assert.Equal(0u, enc.Release());
     }
@@ -193,7 +212,7 @@ public class StreamTests
         string dir = Environment.GetEnvironmentVariable(DumpEnvironmentVariable);
         if (!string.IsNullOrEmpty(dir))
         {
-            // Compare with h264ref stream-dump <name> <out>.
+            // Compare with h264ref stream-dump (or rc-dump) <name> <out>.
             File.WriteAllBytes(Path.Combine(dir, $"{name}.cs.264"), stream.ToArray());
         }
     }
@@ -206,6 +225,73 @@ public class StreamTests
             new ReadOnlySpan<byte>(p.Data + r * p.Stride, p.Width).CopyTo(a.AsSpan(r * p.Width));
         }
         return a;
+    }
+}
+
+/// <summary>
+/// The harness's TimestampSchedule (refharness/src/encoder.cpp): the ts.* settings, which
+/// the harness keeps out of the encoder's parameters, and the timestamp of frame f. By
+/// default f * 1000 / 30 ms.
+/// </summary>
+internal sealed class TimestampSchedule
+{
+    private long _num = 1000, _den = 30, _gapMs, _backMs;
+    private int _jitter, _gapFrame = -1, _backFrame = -1, _zeroFrame = -1;
+
+    /// <summary>Applies the ts.* items of a settings string and returns the others.</summary>
+    public string Split(string settings)
+    {
+        var rest = new List<string>();
+        foreach (string item in settings.Split(';'))
+        {
+            if (!item.StartsWith("ts.", StringComparison.Ordinal))
+            {
+                rest.Add(item);
+                continue;
+            }
+            int eq = item.IndexOf('=');
+            string k = item[..eq], v = item[(eq + 1)..];
+            switch (k)
+            {
+                case "ts.num": _num = long.Parse(v, CultureInfo.InvariantCulture); break;
+                case "ts.den": _den = long.Parse(v, CultureInfo.InvariantCulture); break;
+                case "ts.jitter": _jitter = int.Parse(v, CultureInfo.InvariantCulture); break;
+                case "ts.gap": FrameAndMs(v, out _gapFrame, out _gapMs); break;
+                case "ts.back": FrameAndMs(v, out _backFrame, out _backMs); break;
+                case "ts.zero": _zeroFrame = int.Parse(v, CultureInfo.InvariantCulture); break;
+                default: throw new InvalidDataException($"Unknown setting {k}.");
+            }
+        }
+        return string.Join(';', rest);
+    }
+
+    private static void FrameAndMs(string v, out int frame, out long ms)
+    {
+        int colon = v.IndexOf(':');
+        frame = int.Parse(colon < 0 ? v : v[..colon], CultureInfo.InvariantCulture);
+        ms = colon < 0 ? 0 : long.Parse(v[(colon + 1)..], CultureInfo.InvariantCulture);
+    }
+
+    public long At(int f)
+    {
+        long t = f * _num / _den;
+        if (_jitter > 0)
+        {
+            t += (long)(IdrContent.Hash32((uint)f ^ 0x5bd1e995u) % (uint)(2 * _jitter + 1)) - _jitter;
+        }
+        if (_gapFrame >= 0 && f >= _gapFrame)
+        {
+            t += _gapMs;
+        }
+        if (_backFrame >= 0 && f >= _backFrame)
+        {
+            t -= _backMs;
+        }
+        if (f == _zeroFrame)
+        {
+            t = 0;
+        }
+        return t < 0 ? 0 : t;
     }
 }
 
@@ -230,6 +316,24 @@ internal static class StreamContent
         int sh = plane != 0 ? 1 : 0;
         switch (kind)
         {
+            case "mixed":
+            {
+                // In cycles of 30 frames: pan (10), random (4), static (8), block (8).
+                int k = f % 30;
+                if (k < 10)
+                {
+                    return Sample("pan", plane, r, c, f);
+                }
+                if (k < 14)
+                {
+                    return Sample("random", plane, r, c, f);
+                }
+                if (k < 22)
+                {
+                    return IdrContent.Scene(plane, r, c);
+                }
+                return Sample("block", plane, r, c, 2 * (k - 22));
+            }
             case "static":
                 return IdrContent.Scene(plane, r, c);
             case "pan":

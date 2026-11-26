@@ -33,6 +33,7 @@
 // 26 Nov 2026  Claude          The layer set up, WelsInitCurrentLayer and PreprocessSliceCoding (E4b).
 // 26 Nov 2026  Claude          The P-slice pointers in PreprocessSliceCoding (E5).
 // 26 Nov 2026  Claude          GetMvMvdRange (E5b).
+// 26 Nov 2026  Claude          WritePadding (E6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -970,6 +971,47 @@ internal static unsafe partial class WelsEnc
 
         *pNumNal = iCountNal;
         *pTotalLength = iSize;
+
+        return ENC_RETURN_SUCCESS;
+    }
+
+    // AddPrefixNal comes with E7.
+
+    public static int32_t WritePadding(sWelsEncCtx* pCtx, int32_t iLen, ref int32_t iSize)
+    {
+        int32_t i = 0;
+        int32_t iNal = 0;
+        SBitStringAux* pBs = null;
+        int32_t iNalLen;
+
+        iSize = 0;
+        iNal = pCtx->pOut->iNalIndex;
+        pBs = &pCtx->pOut->sBsWrite;  // SBitStringAux instance for non VCL NALs decoding
+
+        if ((pBs->pEndBuf - pBs->pCurBuf) < iLen || iNal >= pCtx->pOut->iCountNals)
+        {
+            // The GOM_TRACE_FLAG log is off.
+            return ENC_RETURN_MEMOVERFLOWFOUND;
+        }
+
+        WelsLoadNal(pCtx->pOut, (int32_t)NAL_UNIT_FILLER_DATA, (int32_t)NRI_PRI_LOWEST);
+
+        for (i = 0; i < iLen; i++)
+        {
+            BsWriteBits(pBs, 8, 0xff);
+        }
+
+        BsRbspTrailingBits(pBs);
+
+        WelsUnloadNal(pCtx->pOut);
+        int32_t iReturn = WelsEncodeNal(&pCtx->pOut->sNalList[iNal], null,
+                                        pCtx->iFrameBsSize - pCtx->iPosBsBuffer,
+                                        pCtx->pFrameBs + pCtx->iPosBsBuffer,
+                                        &iNalLen);
+        if (iReturn != ENC_RETURN_SUCCESS) return iReturn; // WELS_VERIFY_RETURN_IFNEQ
+
+        pCtx->iPosBsBuffer += iNalLen;
+        iSize += iNalLen;
 
         return ENC_RETURN_SUCCESS;
     }

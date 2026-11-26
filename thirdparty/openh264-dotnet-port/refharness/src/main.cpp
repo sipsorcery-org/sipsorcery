@@ -29,6 +29,10 @@
 //                                   fixed QP configurations.
 //   h264ref stream-dump <name> <out>
 //                                   That stream for one configuration, to a file.
+//   h264ref rc                      E6: rate controlled streams, frame by frame, for a
+//                                   table of configurations (rate control modes, frame
+//                                   skip, padding, timestamps).
+//   h264ref rc-dump <name> <out>    That stream for one configuration, to a file.
 //
 // The decode loop and hashing copy upstream's test/api/BaseDecoderTest.cpp and
 // decoder_test.cpp exactly (input split on 4-byte start codes, DecodeFrame2,
@@ -63,6 +67,8 @@ int Idr();
 int IdrDump (const char* name, const char* outPath);
 int Stream();
 int StreamDump (const char* name, const char* outPath);
+int Rc();
+int RcDump (const char* name, const char* outPath);
 
 namespace {
 
@@ -471,7 +477,9 @@ int Usage() {
            "       h264ref idr\n"
            "       h264ref idr-dump <name> <out>\n"
            "       h264ref stream\n"
-           "       h264ref stream-dump <name> <out>\n");
+           "       h264ref stream-dump <name> <out>\n"
+           "       h264ref rc\n"
+           "       h264ref rc-dump <name> <out>\n");
   return 2;
 }
 
@@ -507,6 +515,7 @@ int Kernels() {
   KernelsMdInter();
   KernelsSvcEncodePSlice();
   KernelsVaaCalc();
+  KernelsComplexity();
   return 0;
 }
 
@@ -528,6 +537,11 @@ int main (int argc, char** argv) {
     return Stream();
   }
   if (argc == 4 && std::string (argv[1]) == "stream-dump") return StreamDump (argv[2], argv[3]);
+  if (argc == 2 && std::string (argv[1]) == "rc") {
+    BinaryStdout();
+    return Rc();
+  }
+  if (argc == 4 && std::string (argv[1]) == "rc-dump") return RcDump (argv[2], argv[3]);
   if (argc < 3) return Usage();
   std::string cmd = argv[1];
   if (cmd == "conformance") return Conformance (argv[2]);

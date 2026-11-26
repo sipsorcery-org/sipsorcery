@@ -11,6 +11,13 @@
 //            too.
 //            CVAACalculation Set and Process: every combination of the three
 //            statistics flags, which pick the kernel, and the invalid inputs.
+//
+//   complexity  (E6) CComplexityAnalysis Set, Process and Get, the frame and GOM
+//            complexity the rate control reads: each mode (frame SAD, GOM SAD,
+//            GOM variance), with and without the background exclusion, over GOM
+//            sizes that do and do not split macroblock rows, on statistics from
+//            VAACalcSadVar_c and on raw noise (the unsigned wraps and the sign
+//            extensions), with the invalid inputs.
 
 #include <cstdarg>
 #include <cstdio>
@@ -20,6 +27,7 @@
 
 #include "fixture.h"
 #include "vaacalculation.h"
+#include "ComplexityAnalysis.h"
 
 using namespace fixture;
 
@@ -245,5 +253,132 @@ void KernelsVaaCalc() {
     h.AddI32 (res.pRefY == NULL);
     o.HashInto (h);
     Emit ("vaacalc", "CVAACalculation", "invalid", h);
+  }
+}
+
+namespace {
+
+// Picture sizes for the complexity analysis, which works in whole macroblocks (w >> 4, h >> 4).
+const VaaSize kComplexitySizes[] = {
+  {16, 16, 16}, {48, 32, 64}, {33, 17, 48}, {31, 47, 32}, {176, 144, 240}, {80, 40, 81},
+};
+
+// Reference macroblock types: none, each of processing's three intra bits, the encoder's other
+// bits, and all of them.
+const uint32_t kRefMbTypes[] = {0, 1, 2, 4, 8, 0x10, 0x100, 0x7, 0xfffffff8u, 0xffffffffu};
+
+// The per-macroblock inputs and the per-GOM outputs of one row, plus two guards each.
+struct ComplexityBuffers {
+  std::vector<uint8_t> bgd;
+  std::vector<uint32_t> refMbType;
+  std::vector<int32_t> gomComplexity, gomForeground;
+  ComplexityBuffers (Rng& r, int mbs, int goms) : bgd (mbs + 2), refMbType (mbs + 2), gomComplexity (goms + 2),
+    gomForeground (goms + 2) {
+    for (size_t i = 0; i < bgd.size(); i++) {
+      const uint32_t x = r.Next();
+      bgd[i] = (x & 1) ? 0 : (uint8_t) (x >> 8);
+    }
+    for (size_t i = 0; i < refMbType.size(); i++) refMbType[i] = kRefMbTypes[r.Next() % 10];
+    r.Fill ((uint8_t*)gomComplexity.data(), gomComplexity.size() * 4);
+    for (size_t i = 0; i < gomForeground.size(); i++) gomForeground[i] = (int32_t) (r.Next() % 1000);
+  }
+  void HashInto (Hasher& h) const {
+    for (int32_t v : gomComplexity) h.AddI32 (v);
+    for (int32_t v : gomForeground) h.AddI32 (v);
+  }
+};
+
+int64_t Noise64 (Rng& r) {
+  const uint32_t hi = r.Next();
+  return (int64_t) (((uint64_t)hi << 32) | r.Next());
+}
+
+}  // namespace
+
+void KernelsComplexity() {
+  int seed = 300;
+  for (const VaaSize& s : kComplexitySizes) {
+    const int mbw = s.w >> 4, mbs = mbw * (s.h >> 4);
+    const int gomSizes[] = {1, mbw, 2 * mbw, mbw + 1, mbs + 3};
+    for (int gom : gomSizes) {
+      const int goms = (mbs + gom - 1) / gom;
+      for (int data = 0; data < 2; data++) {
+        for (int mode = FRAME_SAD; mode >= GOM_VAR; mode--) {
+          for (int bgd = 0; bgd < 2; bgd++, seed++) {
+            // data 0: the statistics VAACalcSadVar_c gives; 1: the noise the outputs start with.
+            Rng r (seed);
+            VaaPictures p = MakePictures (r, s, seed & 3);
+            VaaOutputs o (r, s);
+            if (data == 0) RunKernel (kSadVar, p, s, o);
+            SVAACalcResult res = ResultOf (o);
+            ComplexityBuffers b (r, mbs, goms);
+            SComplexityAnalysisParam param;
+            memset (&param, 0, sizeof param);
+            param.iComplexityAnalysisMode = mode;
+            param.iCalcBgd = bgd;
+            param.iMbNumInGom = gom;
+            param.iFrameComplexity = Noise64 (r);
+            param.pGomComplexity = b.gomComplexity.data();
+            param.pGomForegroundBlockNum = b.gomForeground.data();
+            param.pBackgroundMbFlag = (int8_t*)b.bgd.data();
+            param.uiRefMbType = b.refMbType.data();
+            param.pCalcResult = &res;
+            SComplexityAnalysisParam out;
+            memset (&out, 0, sizeof out);
+            out.iFrameComplexity = Noise64 (r);
+
+            WelsVP::CComplexityAnalysis ca (0);
+            SPixMap cur = PixMapOf (p.pCur, s), ref = PixMapOf (p.pRef, s);
+            Hasher h;
+            h.AddI32 (ca.Set (METHOD_COMPLEXITY_ANALYSIS, &param));
+            h.AddI32 (ca.Process (METHOD_COMPLEXITY_ANALYSIS, &cur, &ref));
+            h.AddI32 (ca.Get (METHOD_COMPLEXITY_ANALYSIS, &out));
+            h.AddI64 (out.iFrameComplexity);
+            h.AddI64 (param.iFrameComplexity);   // Set copies the parameters; Process works on the copy
+            b.HashInto (h);
+            Emit ("complexity", "CComplexityAnalysis", Fmt ("w=%d,h=%d,stride=%d,gom=%d,data=%d,mode=%d,bgd=%d,seed=%d", s.w,
+                  s.h, s.stride, gom, data, mode, bgd, seed), h);
+          }
+        }
+      }
+    }
+  }
+
+  // The invalid inputs: Set and Get without a parameter, Process in a mode that is not one,
+  // and Get after it (the complexity Set gave).
+  {
+    Rng r (400);
+    const VaaSize s = {48, 32, 64};
+    VaaPictures p = MakePictures (r, s, 1);
+    VaaOutputs o (r, s);
+    SVAACalcResult res = ResultOf (o);
+    ComplexityBuffers b (r, 6, 3);
+    SComplexityAnalysisParam param;
+    memset (&param, 0, sizeof param);
+    param.iMbNumInGom = 2;
+    param.iFrameComplexity = Noise64 (r);
+    param.pGomComplexity = b.gomComplexity.data();
+    param.pGomForegroundBlockNum = b.gomForeground.data();
+    param.pBackgroundMbFlag = (int8_t*)b.bgd.data();
+    param.uiRefMbType = b.refMbType.data();
+    param.pCalcResult = &res;
+    SComplexityAnalysisParam out;
+    memset (&out, 0, sizeof out);
+    WelsVP::CComplexityAnalysis ca (0);
+    SPixMap cur = PixMapOf (p.pCur, s), ref = PixMapOf (p.pRef, s);
+    Hasher h;
+    h.AddI32 (ca.Set (METHOD_COMPLEXITY_ANALYSIS, NULL));
+    h.AddI32 (ca.Get (METHOD_COMPLEXITY_ANALYSIS, NULL));
+    const int kModes[] = {1, -3, 7};
+    for (int mode : kModes) {
+      param.iComplexityAnalysisMode = mode;
+      out.iFrameComplexity = Noise64 (r);
+      h.AddI32 (ca.Set (METHOD_COMPLEXITY_ANALYSIS, &param));
+      h.AddI32 (ca.Process (METHOD_COMPLEXITY_ANALYSIS, &cur, &ref));
+      h.AddI32 (ca.Get (METHOD_COMPLEXITY_ANALYSIS, &out));
+      h.AddI64 (out.iFrameComplexity);
+    }
+    b.HashInto (h);
+    Emit ("complexity", "CComplexityAnalysis", "invalid", h);
   }
 }
