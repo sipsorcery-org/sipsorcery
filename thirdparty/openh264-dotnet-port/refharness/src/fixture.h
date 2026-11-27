@@ -101,5 +101,12 @@ void KernelsSvcEncodePSlice();
 // The video processing VAA statistics, in kernels_processing.cpp (E5b).
 void KernelsVaaCalc();
 void KernelsComplexity();
+// The rest of the camera preprocessing, in kernels_processing.cpp (E7).
+void KernelsScd();
+void KernelsBgd();
+void KernelsAq();
+void KernelsDenoise();
+void KernelsDownsample();
+void KernelsVpFrameWork();
 
 #endif  // H264REF_FIXTURE_H

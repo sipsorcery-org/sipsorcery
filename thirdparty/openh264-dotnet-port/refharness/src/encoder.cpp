@@ -44,6 +44,16 @@
 //
 //   h264ref stream-dump <name> <out>
 //       Writes that configuration's stream to <out>.
+//
+//   h264ref preprocess
+//       E7: the same, for camera content with the preprocessing on
+//       (kPreprocessConfigs, reference/preprocess.tsv): scene change
+//       detection, background detection, adaptive quantisation, the denoiser
+//       and the downsampling of a source larger than the layer. The C# test is
+//       PreprocessTests.cs.
+//
+//   h264ref preprocess-dump <name> <out>
+//       Writes that configuration's stream to <out>.
 
 #include <cfloat>
 #include <cstdio>
@@ -455,6 +465,7 @@ bool ApplySetting (SEncParamExt& e, SEncParamBase& b, bool base, const std::stri
   else if (key == "iPaddingFlag") e.iPaddingFlag = (int)v;
   else if (key == "bFixRCOverShoot") e.bFixRCOverShoot = v != 0;
   else if (key == "iIdrBitrateRatio") e.iIdrBitrateRatio = (int)v;
+  else if (key == "bPrefixNalAddingCtrl") e.bPrefixNalAddingCtrl = v != 0;
   else return false;
   return true;
 }
@@ -939,8 +950,30 @@ int Clip255 (int v) {
 //   subpel  smooth waves moving by (3/4, 1/4) of a luma pixel a frame
 //   mixed   (E6) in cycles of 30 frames: pan (10 frames), random (4), static (8), block (8),
 //           so that the rate control meets easy, impossible and moderate frames in turn
+//   cuts    (E7) a scene cut every 6 frames, between the scene and the inverted, shifted
+//           scene, each moving slowly: the large scene changes the scene change
+//           detection finds mid-GOP
+//   partcut (E7) the scene, its top 96 luma rows (48 chroma) inverted and shifted for
+//           frames 5 to 8: two medium changes (two thirds of a QCIF picture's blocks)
+//   camera  (E7) block over a background with new noise of up to 2 either way each frame,
+//           a camera's: what the background detection and the denoiser are for
 unsigned char StreamSample (const std::string& kind, int plane, int r, int c, int f) {
   const int sh = plane ? 1 : 0;
+  if (kind == "camera") {
+    const int bs = 24 >> sh, x0 = (5 * f) >> sh, y0 = (3 * f) >> sh;
+    if (r >= y0 && r < y0 + bs && c >= x0 && c < x0 + bs) return Noise (plane + 3, r - y0, c - x0);
+    const int n = (int) (Hash32 ((((uint32_t)plane << 28) | ((uint32_t)r << 13) | (uint32_t)c) ^ ((uint32_t) (f + 1) *
+                                 0x85ebca6bu)) % 5) - 2;
+    return (unsigned char)Clip255 (Scene (plane, r, c) + n);
+  }
+  if (kind == "cuts") {
+    if ((f / 6) & 1) return (unsigned char) (255 - Scene (plane, r + 37 + (f >> sh), c + 91));
+    return Scene (plane, r + (f >> sh), c + ((2 * f) >> sh));
+  }
+  if (kind == "partcut") {
+    if (f >= 5 && f < 9 && r < (96 >> sh)) return (unsigned char) (255 - Scene (plane, r + 37, c + 91));
+    return Scene (plane, r, c);
+  }
   if (kind == "mixed") {
     const int k = f % 30;
     if (k < 10) return StreamSample ("pan", plane, r, c, f);
@@ -1235,6 +1268,112 @@ const StreamConfig kRcConfigs[] = {
   {"timestamp-subpel-10fps-intra-period-2", "subpel", 60, TIMESTAMP "fMaxFrameRate=10;ts.num=100;ts.den=1;"
    "iTargetBitrate=150000;uiIntraPeriod=2"},
 };
+
+// The preprocessed streams (E7): camera content with GetDefaultParams' analysis on (scene
+// change detection, background detection and adaptive quantisation), then each alone, the
+// denoiser, rate control, the GOP structures scene changes interact with, the prefix NAL, a
+// source larger than the layer (the downsampling's paths), sizes that are not whole
+// macroblocks, and Initialize's base API. ParamValidation turns the adaptive quantisation
+// off whatever the setting ("algorithms needs to be refactored"), so aq-mixed codes as with
+// it off; the strategy itself is checked by the aq kernel rows.
+#define PP_BASE "api=ext;iMultipleThreadIdc=1;fMaxFrameRate=30;"
+#define PP PP_BASE QCIF
+#define SCD_ONLY "bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;"
+#define BGD_ONLY "bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;"
+#define AQ_ONLY "bEnableBackgroundDetection=0;bEnableSceneChangeDetect=0;"
+#define NONE "bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;"
+#define CIF_TO_QCIF "iPicWidth=352;iPicHeight=288;L0.iVideoWidth=176;L0.iVideoHeight=144;"
+const StreamConfig kPreprocessConfigs[] = {
+  // Fixed QP, the defaults on.
+  {"pp-static", "static", 10, PP "iRCMode=-1"},
+  {"pp-pan", "pan", 12, PP "iRCMode=-1"},
+  {"pp-block", "block", 16, PP "iRCMode=-1"},
+  {"pp-noise", "noise", 8, PP "iRCMode=-1"},
+  {"pp-random", "random", 6, PP "iRCMode=-1"},
+  {"pp-cut", "cut", 10, PP "iRCMode=-1"},
+  {"pp-cuts", "cuts", 24, PP "iRCMode=-1"},
+  {"pp-partcut", "partcut", 12, PP "iRCMode=-1"},
+  {"pp-fade", "fade", 10, PP "iRCMode=-1"},
+  {"pp-subpel-high", "subpel", 10, PP "iRCMode=-1;iComplexityMode=2"},
+  {"pp-mixed", "mixed", 60, PP "iRCMode=-1"},
+  {"none-camera", "camera", 16, PP "iRCMode=-1;" NONE},
+
+  // One analysis at a time, and the denoiser.
+  {"scd-cuts", "cuts", 24, PP "iRCMode=-1;" SCD_ONLY},
+  {"scd-partcut", "partcut", 12, PP "iRCMode=-1;" SCD_ONLY},
+  {"scd-mixed", "mixed", 45, PP "iRCMode=-1;" SCD_ONLY},
+  {"bgd-camera", "camera", 16, PP "iRCMode=-1;" BGD_ONLY},
+  {"bgd-camera-medium", "camera", 12, PP "iRCMode=-1;iComplexityMode=1;" BGD_ONLY},
+  {"bgd-mixed", "mixed", 40, PP "iRCMode=-1;" BGD_ONLY},
+  {"aq-mixed", "mixed", 40, PP "iRCMode=-1;" AQ_ONLY},
+  {"denoise-noise", "noise", 10, PP "iRCMode=-1;bEnableDenoise=1"},
+  {"denoise-pan", "pan", 10, PP "iRCMode=-1;bEnableDenoise=1;" NONE},
+  {"denoise-camera", "camera", 16, PP "iRCMode=-1;bEnableDenoise=1"},
+  {"denoise-mixed-high", "mixed", 32, PP "iRCMode=-1;bEnableDenoise=1;iComplexityMode=2"},
+
+  // Rate control: the background flags in the GOM complexity and the mode decision, scene
+  // changes against the skip logic.
+  {"quality-mixed-128k", "mixed", 60, PP "iRCMode=0;iTargetBitrate=128000"},
+  {"quality-camera-96k", "camera", 30, PP "iRCMode=0;iTargetBitrate=96000"},
+  {"bitrate-mixed-128k", "mixed", 60, PP "iRCMode=1;iTargetBitrate=128000"},
+  {"bitrate-block-96k", "block", 30, PP "iRCMode=1;iTargetBitrate=96000"},
+  {"bitrate-camera-96k", "camera", 40, PP "iRCMode=1;iTargetBitrate=96000"},
+  {"bitrate-camera-96k-none", "camera", 40, PP "iRCMode=1;iTargetBitrate=96000;" NONE},
+  {"bitrate-cuts-128k", "cuts", 36, PP "iRCMode=1;iTargetBitrate=128000"},
+  {"bitrate-mixed-bgd-only", "mixed", 45, PP "iRCMode=1;iTargetBitrate=128000;" BGD_ONLY},
+  {"bitrate-mixed-denoise", "mixed", 30, PP "iRCMode=1;iTargetBitrate=128000;bEnableDenoise=1"},
+  {"bitrate-camera-denoise", "camera", 30, PP "iRCMode=1;iTargetBitrate=96000;bEnableDenoise=1"},
+  {"buffer-pan", "pan", 20, PP "iRCMode=2;iTargetBitrate=128000"},
+  {"timestamp-mixed-128k", "mixed", 45, PP "iRCMode=3;iTargetBitrate=128000"},
+
+  // Scene changes in GOP structures: intra periods, temporal layers, references, LTR.
+  {"cuts-intra-period-8", "cuts", 24, PP "iRCMode=-1;uiIntraPeriod=8"},
+  {"cuts-intra-period-6", "cuts", 24, PP "iRCMode=-1;uiIntraPeriod=6"},
+  {"cuts-temporal-3", "cuts", 24, PP "iRCMode=-1;iTemporalLayerNum=3"},
+  {"mixed-temporal-4", "mixed", 36, PP "iRCMode=-1;iTemporalLayerNum=4"},
+  {"bitrate-cuts-temporal-2", "cuts", 30, PP "iRCMode=1;iTargetBitrate=128000;iTemporalLayerNum=2"},
+  {"cuts-ref-4", "cuts", 24, PP "iRCMode=-1;iNumRefFrame=4"},
+  {"cuts-ltr", "cuts", 24, PP "iRCMode=-1;bEnableLongTermReference=1;iLtrMarkPeriod=4"},
+  {"bitrate-mixed-ltr", "mixed", 40, PP "iRCMode=1;iTargetBitrate=128000;bEnableLongTermReference=1;iLtrMarkPeriod=4"},
+  {"cuts-slices-fixed-3", "cuts", 18, PP "iRCMode=-1;L0.uiSliceMode=1;L0.uiSliceNum=3"},
+
+  // The prefix NAL ahead of each slice of the AVC base layer.
+  {"prefix-nal-pan", "pan", 8, PP "iRCMode=-1;bPrefixNalAddingCtrl=1"},
+  {"prefix-nal-temporal-3", "pan", 12, PP "iRCMode=-1;bPrefixNalAddingCtrl=1;iTemporalLayerNum=3"},
+  {"prefix-nal-slices", "cuts", 12, PP "iRCMode=-1;bPrefixNalAddingCtrl=1;L0.uiSliceMode=1;L0.uiSliceNum=2"},
+
+  // A source larger than the layer: halving, twice, the general ratio, a halving then the
+  // general ratio, odd source sizes, with the denoiser and with rate control.
+  {"scale-half", "pan", 8, PP_BASE "iRCMode=-1;" CIF_TO_QCIF},
+  {"scale-half-mixed", "mixed", 40, PP_BASE "iRCMode=-1;" CIF_TO_QCIF},
+  {"scale-quarter", "pan", 6, PP_BASE "iRCMode=-1;iPicWidth=704;iPicHeight=576;L0.iVideoWidth=176;L0.iVideoHeight=144"},
+  {"scale-general", "pan", 8, PP_BASE "iRCMode=-1;iPicWidth=320;iPicHeight=240;L0.iVideoWidth=176;L0.iVideoHeight=144"},
+  {"scale-half-general", "block", 6, PP_BASE "iRCMode=-1;iPicWidth=528;iPicHeight=432;L0.iVideoWidth=176;"
+   "L0.iVideoHeight=144"},
+  {"scale-odd", "mixed", 12, PP_BASE "iRCMode=-1;iPicWidth=357;iPicHeight=291;L0.iVideoWidth=176;L0.iVideoHeight=144"},
+  {"scale-to-odd", "pan", 8, PP_BASE "iRCMode=-1;iPicWidth=320;iPicHeight=192;L0.iVideoWidth=150;L0.iVideoHeight=90"},
+  {"scale-denoise", "noise", 6, PP_BASE "iRCMode=-1;bEnableDenoise=1;" CIF_TO_QCIF},
+  {"scale-bitrate", "mixed", 30, PP_BASE "iRCMode=1;iTargetBitrate=128000;" CIF_TO_QCIF},
+
+  // Sizes: partial macroblocks, the background detection's OU rows, a larger picture.
+  {"pp-33x17", "pan", 10, PP_BASE "iRCMode=-1;iPicWidth=33;iPicHeight=17"},
+  {"pp-152x100", "mixed", 30, PP_BASE "iRCMode=-1;iPicWidth=152;iPicHeight=100"},
+  {"pp-100x60-denoise", "noise", 8, PP_BASE "iRCMode=-1;iPicWidth=100;iPicHeight=60;bEnableDenoise=1"},
+  {"bitrate-320x192", "mixed", 20, PP_BASE "iRCMode=1;iPicWidth=320;iPicHeight=192;iTargetBitrate=300000"},
+
+  // Initialize: a zeroed SEncParamBase, so the quality mode and every default.
+  {"base-mixed", "mixed", 40, "api=base;iPicWidth=176;iPicHeight=144;iTargetBitrate=256000;fMaxFrameRate=30"},
+  {"base-cuts-bitrate", "cuts", 24, "api=base;iPicWidth=176;iPicHeight=144;iTargetBitrate=128000;fMaxFrameRate=30;"
+   "iRCMode=1"},
+  {"base-152x100", "block", 20, "api=base;iPicWidth=152;iPicHeight=100;iTargetBitrate=200000;fMaxFrameRate=12"},
+};
+#undef CIF_TO_QCIF
+#undef NONE
+#undef AQ_ONLY
+#undef BGD_ONLY
+#undef SCD_ONLY
+#undef PP
+#undef PP_BASE
 #undef TIMESTAMP
 #undef BUFFER
 #undef BITRATE
@@ -1299,22 +1438,26 @@ int EncodeStream (const StreamConfig& c, std::vector<StreamFrame>* pFrames) {
   memset (&base, 0, sizeof base);
   encoder->GetDefaultParams (&ext);
   TimestampSchedule ts;
+  bool isBase = false;   // api=base (E7): Initialize with a zeroed SEncParamBase
   std::stringstream ss (c.settings);
   std::string item;
   while (std::getline (ss, item, ';')) {
     if (item.empty()) continue;
     size_t eq = item.find ('=');
     std::string k = item.substr (0, eq), v = item.substr (eq + 1);
-    if (k == "api") continue;
-    if (k.compare (0, 3, "ts.") == 0 ? !ts.Apply (k, v) : !ApplySetting (ext, base, false, k, v)) {
+    if (k == "api") {
+      isBase = v == "base";
+      continue;
+    }
+    if (k.compare (0, 3, "ts.") == 0 ? !ts.Apply (k, v) : !ApplySetting (ext, base, isBase, k, v)) {
       fprintf (stderr, "%s: unknown setting %s\n", c.name, k.c_str());
       exit (1);
     }
   }
 
-  int rv = encoder->InitializeExt (&ext);
+  int rv = isBase ? encoder->Initialize (&base) : encoder->InitializeExt (&ext);
   if (rv == cmResultSuccess) {
-    const int w = ext.iPicWidth, h = ext.iPicHeight;
+    const int w = isBase ? base.iPicWidth : ext.iPicWidth, h = isBase ? base.iPicHeight : ext.iPicHeight;
     std::vector<unsigned char> buf;
     for (int f = 0; f < c.frames; f++) {
       FillFrame (buf, w, h, c.content, f);
@@ -1409,4 +1552,13 @@ int Rc() {
 
 int RcDump (const char* name, const char* outPath) {
   return DumpStream (kRcConfigs, sizeof kRcConfigs / sizeof kRcConfigs[0], name, outPath);
+}
+
+int Preprocess() {
+  return PrintStreams (kPreprocessConfigs, sizeof kPreprocessConfigs / sizeof kPreprocessConfigs[0],
+                       "preprocessed streams");
+}
+
+int PreprocessDump (const char* name, const char* outPath) {
+  return DumpStream (kPreprocessConfigs, sizeof kPreprocessConfigs / sizeof kPreprocessConfigs[0], name, outPath);
 }

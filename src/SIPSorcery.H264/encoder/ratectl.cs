@@ -11,8 +11,8 @@
 // WelsRcMbInitScc and WelsRcDropFrameUpdate) are not ported: nothing upstream
 // installs or calls them. Where the camera functions would read the screen
 // content complexity (SVAAFrameInfoExt) they throw NotSupportedException
-// (Phase 4). The adaptive quantisation branches read the VAA state; the
-// preprocessing that fills it comes with E7.
+// (Phase 4). The adaptive quantisation branches read the VAA state the
+// preprocessing (CWelsPreProcess, E7) fills.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
@@ -22,6 +22,7 @@
 // 26 Nov 2026  Claude          GomRCInitForOneSlice (E4b).
 // 26 Nov 2026  Claude          The adaptive quantisation branches of the Disable functions (E5).
 // 26 Nov 2026  Claude          The rate control modes, frame skipping and padding (E6).
+// 27 Nov 2026  Claude          Header: the preprocessing exists (E7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

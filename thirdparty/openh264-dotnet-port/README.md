@@ -51,6 +51,8 @@ refharness/build/Release/h264ref stream > reference/stream.tsv         # P strea
 refharness/build/Release/h264ref stream-dump <name> <out.264>     # one stream row's bytes
 refharness/build/Release/h264ref rc > reference/rc.tsv                 # rate controlled streams, frame by frame
 refharness/build/Release/h264ref rc-dump <name> <out.264>         # one rc row's bytes
+refharness/build/Release/h264ref preprocess > reference/preprocess.tsv # preprocessed streams, frame by frame
+refharness/build/Release/h264ref preprocess-dump <name> <out.264> # one preprocess row's bytes
 ```
 
 `conformance` copies upstream's `test/api/BaseDecoderTest.cpp` decode loop and
@@ -167,6 +169,22 @@ back and a timestamp of 0. `rc-dump` writes one row's stream.
 `test/SIPSorcery.H264.TestVectors/RcTests.cs` reads the table through
 `StreamTests.cs`'s shared check.
 
+`preprocess` prints the same table again with the preprocessing on
+(`kPreprocessConfigs`): scene change detection, background detection, the
+denoiser and downsampling, each on its own and together, at fixed QP and in
+every rate control mode. Three more contents come in: `camera` (a moving block
+over a background with fresh noise of up to 2 either way, so background
+detection has something to find), `cuts` (a cut every 6 frames) and `partcut`
+(a medium change over the top rows for four frames). The settings cover
+temporal layers, intra periods, LTR, several slices, prefix NAL units
+(`bPrefixNalAddingCtrl`) and the base API, and sources larger than the coded
+size: half, quarter and general ratios, and odd sizes either side.
+Adaptive quantisation is in the settings of some rows, but upstream's
+`ParamValidation` turns it off whatever they say, so only the `aq` kernel rows
+reach it. `preprocess-dump` writes one row's stream.
+`test/SIPSorcery.H264.TestVectors/PreprocessTests.cs` reads the table through
+the shared check, which compares reconstructions at the coded size.
+
 ## Reference results (`reference/`)
 
 - **`decoder-conformance.tsv`** is the output of `h264ref conformance` on the
@@ -190,7 +208,11 @@ back and a timestamp of 0. `rc-dump` writes one row's stream.
   context in `src/islice_ctx.h`): 6743 rows. E5b added the video processing
   VAA statistics (`src/kernels_processing.cpp`, 177 `vaacalc` rows): 6920.
   E6 added the camera half of the complexity analysis (361 `complexity`
-  rows, same file): 7281.
+  rows, same file): 7281. E7 added the rest of the camera preprocessing, in
+  the same file: scene change detection (40 `scd` rows), background detection
+  (30 `bgd`), adaptive quantisation (93 `aq`), the denoiser (65 `denoise`),
+  downsampling (40 `downsample`) and `CVpFrameWork`'s dispatch and argument
+  checks (95 `vpframework`): 7644.
 - **`headers.tsv`** and **`headers-damaged.tsv`** are the outputs of `h264ref
   headers` and `headers-damaged`: the size and SHA1 of each vector's parser
   dump, clean (51 rows) and damaged (153 rows). Read by
@@ -205,8 +227,11 @@ back and a timestamp of 0. `rc-dump` writes one row's stream.
   committed vectors must match in every column, the others (CABAC, B slices,
   High profile, none of them ported) only have to decode without crashing.
 - **`encoder-conformance.tsv`** is the output of `h264ref encoder-conformance`:
-  **16/16 upstream encoder hashes reproduced**. It becomes the encoder's
-  acceptance table from E7 on.
+  **16/16 upstream encoder hashes reproduced**. From E7 on, the port must
+  reproduce its rows too (`UpstreamEncoderHashTests`): the three for camera
+  content, a single slice, one layer and CAVLC, and the same with the
+  denoiser, all four passing. They need upstream's YUV files, which are not
+  committed, so they run when `OPENH264_RES` points at openh264's `res/`.
 - **`paramsets.tsv`** is the output of `h264ref paramsets`: 66 configurations
   with their init results, validated parameters and parameter set bytes. Read
   by `ParameterSetTests` (E1). All 66 match.
@@ -223,3 +248,9 @@ back and a timestamp of 0. `rc-dump` writes one row's stream.
   configurations, 4848 frames (2808 P, 168 IDR, 1871 skipped, 93 with
   padding). Read by `RcTests` (E6), with the same decoder check. All 94
   match.
+- **`preprocess.tsv`** is the output of `h264ref preprocess`: 63 preprocessed
+  configurations, 1469 frames (900 P, 77 IDR, 14 of them scene change or
+  intra period IDRs mid stream, 465 skipped, and 27 uncoded after a frame
+  buffer overflow uninitialises the encoder, in two rows). Read by
+  `PreprocessTests` (E7),
+  with the same decoder check. All 63 match, and no two write the same stream.

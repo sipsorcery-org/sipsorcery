@@ -4,8 +4,8 @@
 // Description: Port of codec/encoder/core/src/encoder.cpp, part 1 (E1):
 // InitBitStream (E1), WelsSetMemZero_c (E4), UpdateFrameNum,
 // LoadBackFrameNum and InitFrameCoding (E4b), WelsInitBGDFunc and
-// InitFunctionPointers (E5), and DecideFrameType (E5b). InitPic follows with
-// the preprocessing (E7).
+// InitFunctionPointers (E5), DecideFrameType (E5b) and InitPic (E7). Nothing
+// upstream calls InitPic.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // Author(s):
@@ -17,6 +17,7 @@
 // 26 Nov 2026  Claude          UpdateFrameNum, LoadBackFrameNum and InitFrameCoding (E4b).
 // 26 Nov 2026  Claude          WelsInitBGDFunc and InitFunctionPointers (E5).
 // 26 Nov 2026  Claude          DecideFrameType (E5b).
+// 27 Nov 2026  Claude          InitPic (E7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -61,7 +62,85 @@ namespace SIPSorcery.H264.Encoder;
 
 internal static unsafe partial class WelsEnc
 {
-    // InitPic comes with E7, with the preprocessing that calls it.
+    /*!
+     * \brief   initialize source picture body
+     * \param   pSrc        SSourcePicture*
+     * \param   csp         internal csp format
+     * \param   iWidth      widht of picture in pixels
+     * \param   iHeight     iHeight of picture in pixels
+     * \return  successful - 0; otherwise none 0 for failed
+     */
+    public static int32_t InitPic(void* kpSrc, int32_t kiColorspace, int32_t kiWidth, int32_t kiHeight)
+    {
+        SSourcePicture* pSrcPic = (SSourcePicture*)kpSrc;
+
+        if (null == pSrcPic || kiWidth == 0 || kiHeight == 0)
+            return 1;
+
+        pSrcPic->iColorFormat = kiColorspace;
+        pSrcPic->iPicWidth = kiWidth;
+        pSrcPic->iPicHeight = kiHeight;
+
+        uint32_t uiFormat = (uint32_t)kiColorspace & ~(uint32_t)videoFormatVFlip;
+        //currently encoder only supports videoFormatI420.
+        if (uiFormat != (uint32_t)videoFormatI420)
+            return 2;
+        switch ((EVideoFormatType)uiFormat)
+        {
+            case videoFormatI420:
+            case videoFormatYV12:
+                pSrcPic->pData[0] = null;
+                pSrcPic->pData[1] = null;
+                pSrcPic->pData[2] = null;
+                pSrcPic->pData[3] = null;
+                pSrcPic->iStride[0] = kiWidth;
+                pSrcPic->iStride[2] = pSrcPic->iStride[1] = kiWidth >> 1;
+                pSrcPic->iStride[3] = 0;
+                break;
+            case videoFormatYUY2:
+            case videoFormatYVYU:
+            case videoFormatUYVY:
+                pSrcPic->pData[0] = null;
+                pSrcPic->pData[1] = null;
+                pSrcPic->pData[2] = null;
+                pSrcPic->pData[3] = null;
+                pSrcPic->iStride[0] = CALC_BI_STRIDE(kiWidth, 16);
+                pSrcPic->iStride[3] = pSrcPic->iStride[2] = pSrcPic->iStride[1] = 0;
+                break;
+            case videoFormatRGB:
+            case videoFormatBGR:
+                pSrcPic->pData[0] = null;
+                pSrcPic->pData[1] = null;
+                pSrcPic->pData[2] = null;
+                pSrcPic->pData[3] = null;
+                pSrcPic->iStride[0] = CALC_BI_STRIDE(kiWidth, 24);
+                pSrcPic->iStride[3] = pSrcPic->iStride[2] = pSrcPic->iStride[1] = 0;
+                if (((uint32_t)kiColorspace & (uint32_t)videoFormatVFlip) != 0)
+                    pSrcPic->iColorFormat = (int32_t)((uint32_t)kiColorspace & ~(uint32_t)videoFormatVFlip);
+                else
+                    pSrcPic->iColorFormat = (int32_t)((uint32_t)kiColorspace | (uint32_t)videoFormatVFlip);
+                break;
+            case videoFormatBGRA:
+            case videoFormatRGBA:
+            case videoFormatARGB:
+            case videoFormatABGR:
+                pSrcPic->pData[0] = null;
+                pSrcPic->pData[1] = null;
+                pSrcPic->pData[2] = null;
+                pSrcPic->pData[3] = null;
+                pSrcPic->iStride[0] = kiWidth << 2;
+                pSrcPic->iStride[3] = pSrcPic->iStride[2] = pSrcPic->iStride[1] = 0;
+                if (((uint32_t)kiColorspace & (uint32_t)videoFormatVFlip) != 0)
+                    pSrcPic->iColorFormat = (int32_t)((uint32_t)kiColorspace & ~(uint32_t)videoFormatVFlip);
+                else
+                    pSrcPic->iColorFormat = (int32_t)((uint32_t)kiColorspace | (uint32_t)videoFormatVFlip);
+                break;
+            default:
+                return 2; // any else?
+        }
+
+        return 0;
+    }
 
     public static void WelsInitBGDFunc(SWelsFuncPtrList* pFuncList, bool kbEnableBackgroundDetection)
     {

@@ -6,8 +6,7 @@
 // which picks one of the vaacalcfuncs kernels by the statistics asked for.
 // Only the C kernels are ported. CVAACalculation is a native struct, as the
 // port's other C++ classes are; of its IStrategy base it holds m_eMethod, and
-// the rest of IStrategy and the CVpFrameWork that owns the methods follow with
-// the preprocessing in E7.
+// CVpFrameWork (WelsFrameWork.cs) holds it and dispatches to it.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // Author(s):
@@ -15,6 +14,7 @@
 //
 // History:
 // 26 Nov 2026  Claude          Created (E5b).
+// 27 Nov 2026  Claude          Header: CVpFrameWork exists (E7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

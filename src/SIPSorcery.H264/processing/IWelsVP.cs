@@ -4,9 +4,11 @@
 // Description: Port of codec/processing/interface/IWelsVP.h, part 1: the VAA
 // result and adaptive quantisation structs the encoder's SVAAFrameInfo
 // embeds, and the scene change levels (E5), and the result codes, the pixel
-// map, the method ids and the VAA statistics parameters (E5b). The video
-// processing interface and the other methods' parameters follow with the
-// preprocessing in E7.
+// map, the method ids and the VAA statistics parameters (E5b), the complexity
+// analysis mode (E6), and the scene change, background detection and adaptive
+// quantisation parameters (E7). The IWelsVP interface itself is CVpFrameWork
+// (WelsFrameWork.cs), and WelsCreateVpInterface makes one. The screen content
+// complexity parameters come with Phase 4.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // Author(s):
@@ -16,6 +18,7 @@
 // 26 Nov 2026  Claude          Created (E5).
 // 26 Nov 2026  Claude          EResult, EVideoFormat, SRect, SPixMap, EMethods and SVAACalcParam (E5b).
 // 26 Nov 2026  Claude          EComplexityAnalysisMode (E6).
+// 27 Nov 2026  Claude          SScrollDetectionParam, SSceneChangeResult, SBGDInterface and EAQModes (E7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -177,6 +180,26 @@ internal enum EStaticBlockIdc
     BLOCK_STATIC_IDC_ALL
 }
 
+/// <summary>SScrollDetectionParam.</summary>
+internal struct SScrollDetectionParam
+{
+    public SRect sMaskRect;
+    public bool bMaskInfoAvailable;
+    public int iScrollMvX;
+    public int iScrollMvY;
+    public bool bScrollDetectFlag; // 0:false ; 1:ltr; 2: scene change
+}
+
+/// <summary>SSceneChangeResult.</summary>
+internal unsafe struct SSceneChangeResult
+{
+    public ESceneChangeIdc eSceneChangeIdc; // SIMILAR_SCENE, MEDIUM_CHANGED_SCENE, LARGE_CHANGED_SCENE
+    public int iMotionBlockNum;             // Number of motion blocks
+    public long iFrameComplexity;           // frame complexity
+    public byte* pStaticBlockIdc;           // static block idc
+    public SScrollDetectionParam sScrollResult; //results from scroll detection
+}
+
 /// <summary>SVAACalcResult.</summary>
 internal unsafe struct SVAACalcResult
 {
@@ -201,6 +224,19 @@ internal unsafe struct SVAACalcParam
     public SVAACalcResult* pCalcResult;
 }
 
+/// <summary>SBGDInterface.</summary>
+internal unsafe struct SBGDInterface
+{
+    public sbyte* pBackgroundMbFlag;
+    public SVAACalcResult* pCalcRes;
+}
+
+/// <summary>EAQModes.</summary>
+internal enum EAQModes
+{
+    AQ_QUALITY_MODE,   //Quality mode
+    AQ_BITRATE_MODE    //Bitrate mode
+}
 
 /// <summary>SMotionTextureUnit.</summary>
 internal struct SMotionTextureUnit

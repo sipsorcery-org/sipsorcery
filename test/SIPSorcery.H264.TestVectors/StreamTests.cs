@@ -23,6 +23,8 @@
 // 26 Nov 2026  Claude          Created (E5b).
 // 26 Nov 2026  Claude          StreamTable and StreamCheck shared with RcTests, the timestamp
 //                              schedules and the mixed content (E6).
+// 27 Nov 2026  Claude          The camera, cuts and partcut contents, shared with PreprocessTests,
+//                              and the reconstruction check at the coded size (E7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -144,8 +146,10 @@ internal static class StreamCheck
         using var enc = new EncoderDriver();
         Assert.Equal(expected.InitReturnCode, enc.Initialize(settings));
 
+        // The source size, and the reconstruction's: the coded picture's, smaller than the
+        // source when the preprocessing downsamples it (E7).
         int w = enc.PicWidth, h = enc.PicHeight;
-        int rw = (w + 15) & ~15, rh = (h + 15) & ~15;
+        int rw = (enc.CodedWidth + 15) & ~15, rh = (enc.CodedHeight + 15) & ~15;
         var chunks = new List<byte[]>();
         var recons = new List<byte[][]>();     // per coded frame, null where the decoder sees another picture
         var stream = new List<byte>();
@@ -316,6 +320,31 @@ internal static class StreamContent
         int sh = plane != 0 ? 1 : 0;
         switch (kind)
         {
+            case "cuts":
+                // (E7) a cut every 6 frames between the scene and the inverted, shifted scene.
+                if (((f / 6) & 1) != 0)
+                {
+                    return (byte)(255 - IdrContent.Scene(plane, r + 37 + (f >> sh), c + 91));
+                }
+                return IdrContent.Scene(plane, r + (f >> sh), c + ((2 * f) >> sh));
+            case "partcut":
+                // (E7) the top 96 luma rows inverted and shifted for frames 5 to 8.
+                if (f >= 5 && f < 9 && r < (96 >> sh))
+                {
+                    return (byte)(255 - IdrContent.Scene(plane, r + 37, c + 91));
+                }
+                return IdrContent.Scene(plane, r, c);
+            case "camera":
+            {
+                // (E7) block over a background with new noise of up to 2 either way each frame.
+                int bs = 24 >> sh, x0 = (5 * f) >> sh, y0 = (3 * f) >> sh;
+                if (r >= y0 && r < y0 + bs && c >= x0 && c < x0 + bs)
+                {
+                    return IdrContent.Noise(plane + 3, r - y0, c - x0);
+                }
+                int n = (int)(IdrContent.Hash32((((uint)plane << 28) | ((uint)r << 13) | (uint)c) ^ unchecked((uint)(f + 1) * 0x85ebca6bu)) % 5) - 2;
+                return (byte)Clip255(IdrContent.Scene(plane, r, c) + n);
+            }
             case "mixed":
             {
                 // In cycles of 30 frames: pan (10), random (4), static (8), block (8).

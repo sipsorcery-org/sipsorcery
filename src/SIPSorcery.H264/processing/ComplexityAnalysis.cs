@@ -6,8 +6,8 @@
 // method (CComplexityAnalysis) the rate control reads, by frame SAD, by GOM
 // SAD or by GOM variance, with the GOM SAD helpers. CComplexityAnalysis is a
 // native struct, as CVAACalculation is; of its IStrategy base it holds
-// m_eMethod. The screen content method (CComplexityAnalysisScreen) comes with
-// Phase 4.
+// m_eMethod. CVpFrameWork (WelsFrameWork.cs) holds it and dispatches to it.
+// The screen content method (CComplexityAnalysisScreen) comes with Phase 4.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // Author(s):
@@ -15,6 +15,7 @@
 //
 // History:
 // 26 Nov 2026  Claude          Created (E6).
+// 27 Nov 2026  Claude          Header: CVpFrameWork exists (E7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

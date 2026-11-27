@@ -92,6 +92,8 @@ add_library(h264ref_enc_kernels OBJECT src/kernels_encoder.cpp src/cavlc_encoder
   src/islice_encoder.cpp src/pslice_encoder.cpp src/kernels_processing.cpp)
 target_include_directories(h264ref_enc_kernels PRIVATE
   "${OH}/encoder/core/inc" ${PROCESSING_INC} "${OH}/processing/src/complexityanalysis"
+  "${OH}/processing/src/scenechangedetection" "${OH}/processing/src/backgrounddetection"
+  "${OH}/processing/src/denoise"
   "${OPENH264_DIR}/test" src)
 target_compile_features(h264ref_enc_kernels PRIVATE cxx_std_17)
 target_link_libraries(h264ref_enc_kernels PRIVATE oh_common)

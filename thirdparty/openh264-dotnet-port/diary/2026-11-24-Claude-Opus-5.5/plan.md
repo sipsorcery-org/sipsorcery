@@ -30,6 +30,7 @@ was kept for the VP8 encoder.
 | E5a P-slice macroblock coding | **Done** (26 Nov) | E5 is split in two (see the notes). E5a: `mv_pred`, the camera half of `svc_motion_estimate` (the initial point, the diamond search, `WelsMotionEstimateSearch`, `WelsInitMeFunc`), the inter half of `md` (the inter neighbour caches, `MeRefineFracPixel`, `PredictSad`, `PredictSadSkip`, `MvdCostInit`), the P half of `svc_base_layer_md` (the skip, background skip, 16x16 and fine partition decisions with their VAA variant, the sub-pel refinement, intra in P), `svc_mode_decision`'s background skip, `svc_encode_mb`'s inter coding and skip reconstruction, the P half of `svc_encode_slice` (`WelsCodePSlice`, `WelsMdInterMbLoop`), the P pointers of `PreprocessSliceCoding`, `InitFunctionPointers`, `ratectl`'s adaptive quantisation branches, and the VAA structs. ~3.8k lines. New kernel groups (`refharness/src/pslice_encoder.cpp`): 112 `mv_pred`, 2 `md` and 230 `svc_encode_slice` rows. The 230 code whole P frames (1 to 99 macroblocks, 1 to 9 slices, the three complexity modes, background detection and AQ on and off, QP 0 to 51, two MV ranges, five kinds of motion, I and P references) through `WelsCodePSlice` on a hand-built context, and hash the bitstream, the reconstruction and every macroblock's state. **All match**. Of 15 planted bugs, 13 fail rows. The other two move a threshold by one (see the notes). UnitTest: 7857. TestVectors: 528. |
 | E5b The P stream through the frame loop | **Done** (26 Nov) | The rest of E5. `ref_list_mgr_svc` for camera content: the `IWelsReferenceStrategy` (`CWelsReference_TemporalLayer`), the list reset, update and build, `WelsMarkPic` with the MMCO and LTR marking, `WelsUpdateRefSyntax` and `PrefetchNextBuffer`. Also `encoder`'s `DecideFrameType`, `encoder_ext`'s `GetMvMvdRange`, and `processing`'s VAA statistics (the five `vaacalcfuncs` C kernels and `CVAACalculation`). ~1.9k lines. `IdrTests.cs`'s `IdrEncoder` became `EncoderDriver.cs`, with the reference strategy, the LTR state, the VAA buffers, the MVD cost table, a hand port of the camera half of `CWelsPreProcess` for one spatial layer, and `WelsEncoderEncodeExt`'s whole frame loop (see the notes). New `vaacalc` kernel group (`refharness/src/kernels_processing.cpp`, 177 rows). New `h264ref stream` mode (`reference/stream.tsv`): 57 configurations, 506 frames (429 P) of eight kinds of moving content. They cover the complexity modes, QP 0 to 51, IDR periods, two to four temporal layers, LTR marking, reference counts, the slice modes, odd and cropped sizes, the deblocking modes, three id strategies and the Main profile. **All match** native byte for byte, frame by frame. Every reconstruction the encoder deblocked equals the C# decoder's picture, and every row frees all it allocates. Of 12 planted bugs, 9 fail rows. The other three can't be reached before E7 or E8 (see the notes). UnitTest: 8034. TestVectors: 586. |
 | E6 Rate control | **Done** (26 Nov) | `ratectl` for camera content: the off, quality, bit rate (with and without post skip), buffer based and timestamp modes, the frame skip decisions, the two shifted max bit rate check windows and padding, with `encoder_ext`'s `WritePadding`. Also the camera half of `processing`'s complexity analysis (`CComplexityAnalysis`), which the GOM rate control reads. ~1.9k lines. `EncoderDriver` gains the frame loop's rate control hooks and a hand port of `AnalyzePictureComplexity` (see the notes). New `complexity` kernel group (361 rows; `kernels.tsv` 7281). New `h264ref rc` mode (`reference/rc.tsv`): 94 configurations, 4848 frames (2808 P, 1871 skipped) over the four modes. They run at 16 kbps to 2 Mbps, with timestamp schedules that pause, step back, jump to 0 and jitter. **All match** native byte for byte, frame by frame, with E5b's decoder check. Of 19 planted bugs, 14 fail rows. Four are equivalent and one can't be pinned (see the notes). UnitTest: 8395. TestVectors: 681. |
+| E7 Preprocessing | **Done** (27 Nov) | The camera half of `processing`: `CVpFrameWork` with `CheckValid`, scene change detection for video, background detection, adaptive quantisation, the denoiser and the downsampler, with the processing allocator and constants (`memory`, `util`). The camera half of `wels_preprocess`: `CWelsPreProcess` with `CWelsPreProcessVideo` (the scaled pictures, `BuildSpatialPicList`, `SingleLayerPreprocess`, `DownsamplePadding`, `AnalyzeSpatialPic`, `UpdateSpatialPictures`), which replaces `EncoderDriver`'s hand ports. Also `encoder_ext`'s `AddPrefixNal` and `encoder`'s `InitPic`. ~3.9k lines. **The three upstream encoder hashes pass (`672a52fb…`, `08ade185…`, `e60f12e3…`), and so does the denoiser's (`913e49c7…`)**, through the base API and `InitializeExt` (`UpstreamEncoderHashTests`, which needs `OPENH264_RES`). New kernel groups (`refharness/src/kernels_processing.cpp`): 40 `scd`, 30 `bgd`, 93 `aq`, 65 `denoise`, 40 `downsample` and 95 `vpframework` rows (`kernels.tsv` 7644). New `h264ref preprocess` mode (`reference/preprocess.tsv`): 63 configurations, 1469 frames (900 P, 77 IDR with 14 mid stream, 465 skipped). They cover scene change detection, background detection, the denoiser and downsampling (half, quarter, general and odd sizes), alone and together, at fixed QP and in every rate control mode, with temporal layers, intra periods, LTR, slices, prefix NAL units and the base API. **All match** native byte for byte, frame by frame, with the decoder check at the coded size. Adaptive quantisation can't change a stream, as upstream's `ParamValidation` turns it off. Of 20 planted bugs, 18 fail rows, one of them only after two `vpframework` mutations were added. The other two are equivalent (see the notes). UnitTest: 8758. TestVectors: 749. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -1125,6 +1126,139 @@ Notes from E6:
   buffer for 3/4. It only differs when the buffer is about 30 to 32% full
   at an IDR at 30 fps, which no row hits.
 
+Notes from E7:
+
+- **Scope.** Camera content, one spatial layer as coded, CAVLC. The video
+  processor's camera methods are ported: the VAA (E5b), the complexity
+  analysis (E6), scene change detection for video, background detection,
+  adaptive quantisation, the denoiser and the downsampler. Screen content's
+  methods (the screen scene change detector, the scrolling detection, the
+  screen complexity analysis), the image rotation and the `CWelsPreProcessScreen`
+  class stay in Phase 4, and `CreatePreProcess` throws for screen content.
+  `SingleLayerPreprocess` and `DownsamplePadding` are ported whole, so the
+  code for more spatial layers is there, but the driver still throws for
+  more than one layer (E8, or Phase 4's simulcast).
+- **What is ported.**
+  - `processing/WelsFrameWork.cs`: `CVpFrameWork` with `CheckValid`, and
+    `WelsCreateVpInterface`/`WelsDestroyVpInterface`. The methods sit by
+    value in the struct in place of the `IStrategy*` chain, and the virtual
+    dispatch is a switch on the method (`GET_METHOD` masks the type with
+    `0xff`, and the index is clamped to the camera methods).
+  - `SceneChangeDetection.cs`, `BackgroundDetection.cs`,
+    `AdaptiveQuantization.cs` (with `SampleVariance16x16_c`), `denoise.cs`
+    (the bilateral luma, weighted average chroma and Gaussian edge filters)
+    and `downsample.cs` (the dyadic, quarter, one-third and general
+    bilinear kernels, and `CDownsampling` with its two half-size buffers).
+  - `memory.cs` and `util.cs`: the processing library's zero-filled,
+    16-byte aligned allocator, which is the common one, and its constants.
+  - `wels_preprocess.cs`: `CWelsPreProcess` with the `CWelsPreProcessVideo`
+    virtuals, the scaled picture set-up (`JudgeNeedOfScaling`,
+    `WelsInitScaledPic`), `BuildSpatialPicList`, `SingleLayerPreprocess`,
+    `DownsamplePadding`, `AnalyzeSpatialPic`, `AnalyzePictureComplexity`,
+    `UpdateSpatialPictures`, `UpdateSrcList`, `WelsMoveMemoryWrapper` and
+    `Padding`. `sWelsEncCtx` gains `pVpp`.
+  - `encoder_ext`'s `AddPrefixNal` and `encoder`'s `InitPic` (which nothing
+    upstream calls).
+- **C semantics kept.**
+  - The scene change thresholds are `float * int + 0.5f` in float, then
+    `+ PESN` in double, then truncated.
+  - The general bilinear downsamplers work out their scale as a float
+    product rounded in double, and the fast one does its arithmetic in
+    uint32, as C does with its unsigned operands.
+  - `DownsampleHalfAverage`'s stride asserts are `Debug.Assert`s, so the
+    Debug runs check them.
+- **The driver.** `EncoderDriver` now calls the library's `CWelsPreProcess`
+  through `pCtx->pVpp` (`WelsPreprocessCreate`, `AllocSpatialPictures`,
+  `BuildSpatialPicList`, `AnalyzeSpatialPic`, `AnalyzePictureComplexity`,
+  `UpdateSpatialPictures`, `WelsPreprocessDestroy`) in place of E5b's and
+  E6's hand ports, several hundred lines fewer. It gains `Initialize` for the
+  base API, and the prefix NAL unit before each slice when
+  `bNeedPrefixNalFlag` is set (`!bSimulcastAVC && bAvcBased &&
+  (bPrefixNalAddingCtrl || iSpatialLayerNum > 1)`). The stream check
+  compares reconstructions at the coded size, which is smaller than the
+  source when the preprocessing downsamples.
+- **The upstream hashes.** `UpstreamEncoderHashTests` encodes the four rows
+  of upstream's `encoder_test.cpp` table for camera content, a single slice,
+  one layer and CAVLC as `BaseEncoderTest` does: every frame of the file at
+  timestamp 0, hashing every frame that is not a skip. The three without the
+  denoiser go through `Initialize` (`SEncParamBase`: the quality mode with
+  the default scene change detection, background detection and adaptive
+  quantisation), the denoiser's through `InitializeExt`. All four pass. The
+  YUV files are not committed, so the rows run only when `OPENH264_RES`
+  points at openh264's `res/`.
+- **Upstream behaviours that shaped the table.**
+  - `ParamValidation` turns adaptive quantisation off for every
+    configuration ("algorithms needs to be refactored",
+    `encoder_ext.cpp:301`), so the encoder never runs it. Only the `aq`
+    kernel rows reach `CAdaptiveQuantization`, and the AQ settings in the
+    table change nothing.
+  - Scene change detection runs only on frames at the start of a GOP that
+    aren't IDRs already, against the previous source picture (or the LTR's
+    after a lost T0 frame). `DecideFrameType` ignores what it finds for the
+    first 16 frames after an IDR (`VGOP_SIZE << 1`). In `cuts` the
+    scrolling between cuts already measures as a large change, so the IDR
+    comes at frame 17, the first frame allowed, and the cuts at frames 6,
+    12 and 18 are coded as P frames. Only a large change
+    makes an IDR. A medium change (`partcut`, the top 96 rows) is detected
+    but changes nothing for camera content. Content that moves slowly
+    (`block`, `camera`) never reaches the thresholds.
+  - Background detection changes no stream of exactly static content, so
+    the table has `camera`:
+    a moving block over a background with fresh noise of up to 2 each way.
+  - The denoiser runs on the source before the downsampling.
+- **The table.** `h264ref preprocess` (`reference/preprocess.tsv`) has 63
+  configurations and 1469 frames: 900 P, 77 IDR, 465 skipped, and 27
+  uncoded after a frame buffer overflow uninitialises the encoder in two
+  rows. 14 of the IDRs come mid stream, from scene changes or intra
+  periods. No two configurations write the same stream: rows that came out
+  the same as another (AQ alone, BGD on static content, SCD on slow
+  content) were replaced. Two native runs give the same table.
+  `PreprocessTests` reads it through the shared `StreamCheck`. The six
+  kernel groups (363 rows) check each method on its own, including
+  `CVpFrameWork`'s argument checks (`vpframework`, up to 24 mutations of
+  the pixel maps for each of four methods).
+- **Planted bugs.** Each of 20 was planted one at a time and restored from
+  a copy, checked by md5. The rows that fail, of 363 kernel rows, 63
+  preprocessed streams, the 4 upstream hashes and the E4b to E6 tables:
+  - The large scene change threshold at `>` for `>=`: 8 `scd` rows. The
+    medium one: 8. A high motion block at `>=` for `>`: 4. No stream lands
+    exactly on a threshold.
+  - Background detection's SAD bound at `<=` for `<`: 1 stream, `pp-fade`.
+  - Its U edge check reading the current V plane: 10 `bgd` rows, 7
+    streams and 3 of the upstream hashes (not `Static_152_100`'s).
+  - Background detection run against an I frame reference: 39 streams and
+    all 4 upstream hashes.
+  - The denoiser's grey weight from 31 for 32, its chroma average rounded,
+    and its luma line ends one block early: 28 to 34 kernel rows each, the
+    8 denoised streams and the denoiser's upstream hash.
+  - The half average downsampler without its last rounding: 15 rows and
+    the 8 streams that halve. The fast general downsampler without its
+    rounding: 10 rows and the 4 streams with a general ratio.
+  - `CheckValid` letting a zero width through (`< 0` for `<= 0`): 3
+    `vpframework` rows, after mutations 22 and 23 were added. Before them
+    it passed, as a zero width with a left of 0 fails the left check too.
+  - Adaptive quantisation's bit rate texture weight 8760 for 8750: 11 `aq`
+    rows. No stream, as upstream turns AQ off.
+  - Scene change detection on every frame, not only at a GOP start: 1,
+    `cuts-temporal-3`. Against the picture before the previous one: 11.
+  - The IDR period flag one frame late: 8 streams of the stream table, 9
+    of the rate control table and 2 preprocessed ones. The preprocessing
+    is now the library's for every table.
+  - Denoising after the downsampling: 1, `scale-denoise`. Odd shrink sizes
+    left odd for the padding: 1, `scale-odd`.
+
+  Two are equivalent:
+  - `BGD_DELTA_QP_THD` from 3 to 2: it is defined but never used, as
+    upstream.
+  - `AddPrefixNal` passing false for the IDR flag: `WelsWriteSVCPrefixNal`
+    never reads it, as upstream.
+
+  E5b's survivor, `DecideFrameType` not resetting `iCodingIndex` on an
+  IDR, still passes with the reset taken out of the scene change branch.
+  Scene change detection runs only at the start of a GOP, so its IDRs land
+  where the index is already a multiple of the GOP size. Only
+  `ForceIntraFrame` (E8) can put an IDR mid-GOP.
+
 ## 1. Goal
 
 A pure managed H.264 encoder and decoder in `src/SIPSorcery.H264`, ported from
@@ -1392,6 +1526,9 @@ merges. Approximate C# sizes are in brackets.
 - **E7** Preprocessing: `processing/` and `wels_preprocess`. Acceptance: **the
   three upstream encoder hashes for CAMERA_VIDEO_REAL_TIME / SM_SINGLE_SLICE /
   1 layer / CAVLC** pass (`672a52fb…`, `08ade185…`, `e60f12e3…`). *[~4k]*
+  **Done**: the camera halves of `processing` and `wels_preprocess`, ~3.9k
+  lines. The three hashes pass, and so does the denoiser's (`913e49c7…`),
+  with 63 preprocessed streams matching.
 - **E8** Orchestration, API and wire-up: `encoder_ext`, `encoder` and
   `welsEncoderExt` (`InitializeExt`, `EncodeFrame`, `ForceIntraFrame`,
   `SetOption`), then `H264Codec.EncodeVideo`, the profile-level-id, the CLI's

@@ -7,7 +7,7 @@
 // the quality, bit rate, buffer based and timestamp modes with their frame
 // skips, max bit rate windows and padding, over timestamp schedules with
 // pauses, steps back and jitter. Preprocessing stays off (background
-// detection, adaptive quantisation and scene change detection come with E7),
+// detection and scene change detection; PreprocessTests turns them on, E7),
 // and every reconstruction a decoder can see must equal what the ported
 // decoder decodes from those bytes, as in StreamTests.
 //
@@ -19,6 +19,7 @@
 //
 // History:
 // 26 Nov 2026  Claude          Created (E6).
+// 27 Nov 2026  Claude          Header: the preprocessing has its own tests (E7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

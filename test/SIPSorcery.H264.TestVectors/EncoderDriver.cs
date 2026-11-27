@@ -4,21 +4,18 @@
 // Description: The encoder's init, frame loop and release for one spatial
 // layer, over the ported functions, for the frame by frame acceptance tests:
 // IdrTests (E4b, the first frame of each configuration), StreamTests (E5b,
-// P streams) and RcTests (E6, rate controlled streams).
+// P streams), RcTests (E6, rate controlled streams), and PreprocessTests and
+// UpstreamEncoderHashTests (E7, the preprocessing).
 //
-// The encoder API and its init and frame loops come with E8 and the
-// preprocessing (CWelsPreProcess) with E7, so EncoderDriver drives the ported
-// functions the way CWelsH264SVCEncoder::InitializeExt and EncodeFrame,
-// WelsInitEncoderExt, RequestMemorySvc, WelsEncoderEncodeExt and
-// FreeMemorySvc do, with a hand port of the camera half of CWelsPreProcess
-// for one spatial layer (AllocSpatialPictures, BuildSpatialPicList,
-// AnalyzeSpatialPic over the ported VAA statistics, AnalyzePictureComplexity,
-// UpdateSpatialPictures) and the timestamp bookkeeping of UpdateStatistics.
-// Configurations outside that scope (CABAC, screen content, several spatial
-// layers, SM_SIZELIMITED_SLICE, threads, the denoiser, scaling)
-// throw NotSupportedException at init, and the analysis features when they
-// would run: scene change detection on a T0 P frame, background detection
-// and adaptive quantisation on a P frame.
+// The encoder API and its init and frame loops come with E8, so
+// EncoderDriver drives the ported functions the way
+// CWelsH264SVCEncoder::Initialize, InitializeExt and EncodeFrame,
+// WelsInitEncoderExt, RequestMemorySvc, WelsEncoderEncodeExt,
+// WelsUninitEncoderExt and FreeMemorySvc do, with the library's
+// preprocessing (pCtx->pVpp, CWelsPreProcess) and the timestamp bookkeeping
+// of UpdateStatistics. Configurations outside that scope (CABAC, screen
+// content, several spatial layers, SM_SIZELIMITED_SLICE, threads) throw
+// NotSupportedException at init.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
@@ -30,6 +27,8 @@
 // 26 Nov 2026  Claude          Rate control (E6): WelsRcInitModule, the frame skip checks, the
 //                              max bit rate windows, AnalyzePictureComplexity, padding and the
 //                              last timestamp.
+// 27 Nov 2026  Claude          The library's CWelsPreProcess in place of the hand port, Initialize
+//                              (api=base), AddPrefixNal and the coded size (E7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -70,16 +69,6 @@ internal sealed unsafe class EncoderDriver : IDisposable
     private const int cmMallocMemeError = 3;
     private const int cmUnsupportedData = 5;
 
-    // g_kuiRefTemporalIdx[MAX_TEMPORAL_LEVEL][MAX_GOP_SIZE] (wels_preprocess.cpp): the spatial
-    // picture each coding index of a GOP refers to, by decomposition stages.
-    private static readonly byte[][] g_kuiRefTemporalIdx =
-    {
-        new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 },
-        new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 },
-        new byte[] { 0, 0, 0, 1, 0, 0, 0, 0 },
-        new byte[] { 0, 0, 0, 2, 0, 1, 1, 2 },
-    };
-
     private sWelsEncCtx* _ctx;
     private CMemoryAlign* _pMa;
     private SFrameBSInfo* _info;
@@ -89,18 +78,6 @@ internal sealed unsafe class EncoderDriver : IDisposable
     private SPicture* _fsnr;        // the last frame's reconstruction (WelsEncoderEncodeExt's fsnr)
     private bool _fsnrDeblocked;
 
-    // CWelsPreProcess (CWelsPreProcessVideo) for spatial layer 0: m_pSpatialPic[0],
-    // m_uiSpatialPicNum[0], m_uiSpatialLayersInTemporal[0], m_pLastSpatialPicture[0][0..1],
-    // m_bInitDone and the VAA strategy of m_pInterfaceVp.
-    private readonly SPicture*[] _spatialPic = new SPicture*[MAX_REF_PIC_COUNT + 1];
-    private int _spatialPicNum;
-    private int _spatialLayersInTemporal;
-    private SPicture* _lastSpatialPic0;
-    private SPicture* _lastSpatialPic1;
-    private bool _preprocessInitDone;
-    private CVAACalculation _vaaCalculation;
-    private CComplexityAnalysis _complexityAnalysis;
-
     public EncoderDriver()
     {
         _info = (SFrameBSInfo*)NativeMemory.AllocZeroed((nuint)sizeof(SFrameBSInfo));
@@ -109,14 +86,44 @@ internal sealed unsafe class EncoderDriver : IDisposable
     public int PicWidth => _iPicWidth;
     public int PicHeight => _iPicHeight;
 
-    /// <summary>InitializeExt with the settings applied, as the harness does. Returns the API's code.</summary>
+    /// <summary>
+    /// The top spatial layer's size (E7): the source's, or smaller when the preprocessing
+    /// downsamples the source to the layer. The source's when the encoder is not initialised.
+    /// </summary>
+    public int CodedWidth => _ctx == null ? _iPicWidth
+        : _ctx->pSvcParam->sDependencyLayers[_ctx->pSvcParam->iSpatialLayerNum - 1].iActualWidth;
+    public int CodedHeight => _ctx == null ? _iPicHeight
+        : _ctx->pSvcParam->sDependencyLayers[_ctx->pSvcParam->iSpatialLayerNum - 1].iActualHeight;
+
+    /// <summary>
+    /// Initialize (api=base) or InitializeExt with the settings applied, as the harness does.
+    /// Returns the API's code.
+    /// </summary>
     public int Initialize(string settings)
     {
-        ParamSetEncoder.ParseSettings(settings, out SEncParamExt ext, out _, out bool isBase);
-        if (isBase)
+        ParamSetEncoder.ParseSettings(settings, out SEncParamExt ext, out SEncParamBase bas, out bool isBase);
+        return isBase ? Initialize(bas) : InitializeExt(ext);
+    }
+
+    /// <summary>CWelsH264SVCEncoder::Initialize. Returns the API's code.</summary>
+    public int Initialize(SEncParamBase bas)
+    {
+        _iPicWidth = bas.iPicWidth;
+        _iPicHeight = bas.iPicHeight;
+
+        // SWelsSvcCodingParam sConfig; (the constructor calls FillDefault)
+        var sConfig = default(SWelsSvcCodingParam);
+        sConfig.FillDefault();
+        if (sConfig.ParamBaseTranscode(bas) != 0)
         {
-            throw new NotSupportedException("api=base: CWelsH264SVCEncoder::Initialize comes with the encoder API (E8).");
+            return cmInitParaError;
         }
+        return InitializeInternal(&sConfig);
+    }
+
+    /// <summary>CWelsH264SVCEncoder::InitializeExt. Returns the API's code.</summary>
+    public int InitializeExt(SEncParamExt ext)
+    {
         _iPicWidth = ext.iPicWidth;
         _iPicHeight = ext.iPicHeight;
 
@@ -127,12 +134,18 @@ internal sealed unsafe class EncoderDriver : IDisposable
         {
             return cmInitParaError;
         }
-        int iRet = ParamSetEncoder.InitializeInternalChecks(&sConfig);
+        return InitializeInternal(&sConfig);
+    }
+
+    /// <summary>CWelsH264SVCEncoder::InitializeInternal.</summary>
+    private int InitializeInternal(SWelsSvcCodingParam* pCfg)
+    {
+        int iRet = ParamSetEncoder.InitializeInternalChecks(pCfg);
         if (iRet != 0)
         {
             return iRet;
         }
-        return WelsInitEncoderExt(&sConfig) != 0 ? cmInitParaError : cmResultSuccess;
+        return WelsInitEncoderExt(pCfg) != 0 ? cmInitParaError : cmResultSuccess;
     }
 
     /// <summary>
@@ -288,13 +301,11 @@ internal sealed unsafe class EncoderDriver : IDisposable
             return iRet;
         }
 
-        // What the port codes by E5b.
+        // What the port codes by E7.
         Require(pCodingParam->iUsageType == EUsageType.CAMERA_VIDEO_REAL_TIME, "screen content (Phase 4)");
         Require(pCodingParam->iEntropyCodingModeFlag == 0, "CABAC");
-        Require(pCodingParam->iSpatialLayerNum == 1 && !pCodingParam->bSimulcastAVC, "more than one spatial layer (E7)");
-        Require(!pCodingParam->bPrefixNalAddingCtrl, "AddPrefixNal (E7)");
+        Require(pCodingParam->iSpatialLayerNum == 1 && !pCodingParam->bSimulcastAVC, "more than one spatial layer (Phase 4)");
         Require(pCodingParam->iMultipleThreadIdc == 1, "threading (Phase 4)");
-        Require(!pCodingParam->bEnableDenoise, "the denoiser (E7)");
         Require(pCodingParam->sSpatialLayers[0].sSliceArgument.uiSliceMode != SliceModeEnum.SM_SIZELIMITED_SLICE,
                 "SM_SIZELIMITED_SLICE (Phase 4)");
 
@@ -322,14 +333,14 @@ internal sealed unsafe class EncoderDriver : IDisposable
         // WelsCabacInit: CAVLC only.
         WelsRcInitModule(pCtx, pCtx->pSvcParam->iRCMode);
 
-        // CWelsPreProcess::CreatePreProcess (CWelsPreProcessVideo; its VP interface's VAA
-        // strategy, which WelsPreprocessCreate makes on the first frame upstream) and
-        // AllocSpatialPictures.
-        _vaaCalculation = new CVAACalculation(0);
-        _complexityAnalysis = new CComplexityAnalysis(0);
-        if (AllocSpatialPictures() != 0)
+        pCtx->pVpp = CWelsPreProcess.CreatePreProcess(pCtx);
+        if (pCtx->pVpp == null)
         {
             return 1;
+        }
+        if ((iRet = pCtx->pVpp->AllocSpatialPictures(pCtx, pCtx->pSvcParam)) != 0)
+        {
+            return iRet;
         }
 
         pCtx->uiLastTimestamp = -1;
@@ -605,574 +616,6 @@ internal sealed unsafe class EncoderDriver : IDisposable
         return 0;
     }
 
-    // ---- preprocessing: CWelsPreProcess (CWelsPreProcessVideo), spatial layer 0 ----
-
-    /// <summary>
-    /// CWelsPreProcess::AllocSpatialPictures: 2 + max (iHighestTemporalId, 1) pictures for the
-    /// temporal structure (the current one last) and one per long term reference.
-    /// </summary>
-    private int AllocSpatialPictures()
-    {
-        SWelsSvcCodingParam* pParam = _ctx->pSvcParam;
-        int kiPicWidth = pParam->sSpatialLayers[0].iVideoWidth;
-        int kiPicHeight = pParam->sSpatialLayers[0].iVideoHeight;
-        byte kuiLayerInTemporal = (byte)(2 + Math.Max((int)pParam->sDependencyLayers[0].iHighestTemporalId, 1));
-        byte kuiRefNumInTemporal = (byte)(kuiLayerInTemporal + pParam->iLTRRefNum);
-
-        _spatialPicNum = kuiRefNumInTemporal;
-        for (int i = 0; i < kuiRefNumInTemporal; i++)
-        {
-            SPicture* pPic = AllocPicture(_pMa, kiPicWidth, kiPicHeight, false, 0);
-            if (pPic == null)
-            {
-                return 1;
-            }
-            _spatialPic[i] = pPic;
-        }
-        _spatialLayersInTemporal = kuiLayerInTemporal;    // camera content
-        return 0;
-    }
-
-    /// <summary>CWelsPreProcess::FreeSpatialPictures.</summary>
-    private void FreeSpatialPictures()
-    {
-        for (int i = 0; i < _spatialPicNum; i++)
-        {
-            if (_spatialPic[i] != null)
-            {
-                SPicture* p = _spatialPic[i];
-                FreePicture(_pMa, &p);
-                _spatialPic[i] = null;
-            }
-        }
-        _spatialLayersInTemporal = 0;
-    }
-
-    /// <summary>CWelsPreProcessVideo::GetCurrentOrigFrame.</summary>
-    private SPicture* GetCurrentOrigFrame() => _spatialPic[_spatialLayersInTemporal - 1];
-
-    /// <summary>CWelsPreProcess::InitLastSpatialPictures (camera content).</summary>
-    private void InitLastSpatialPictures()
-    {
-        _lastSpatialPic0 = _spatialPic[_spatialLayersInTemporal - 2];
-        _lastSpatialPic1 = null;
-    }
-
-    /// <summary>CWelsPreProcess::WelsPreprocessReset, without scaling (WelsInitScaledPic).</summary>
-    private int WelsPreprocessReset(int iWidth, int iHeight)
-    {
-        SWelsSvcCodingParam* pSvcParam = _ctx->pSvcParam;
-        //init source width and height
-        pSvcParam->SUsedPicRect.iLeft = 0;
-        pSvcParam->SUsedPicRect.iTop = 0;
-        pSvcParam->SUsedPicRect.iWidth = iWidth;
-        pSvcParam->SUsedPicRect.iHeight = iHeight;
-        if (iWidth < 16 || iHeight < 16)
-        {
-            return -1;
-        }
-        // FreeScaledPic: there is none.
-        InitLastSpatialPictures();
-        // WelsInitScaledPic: JudgeNeedOfScaling.
-        SSpatialLayerInternal* pTop = &pSvcParam->sDependencyLayers[pSvcParam->iSpatialLayerNum - 1];
-        Require(pTop->iActualWidth >= iWidth && pTop->iActualHeight >= iHeight, "downsampling the input (E7)");
-        return 0;
-    }
-
-    /// <summary>CWelsPreProcess::BuildSpatialPicList.</summary>
-    private int BuildSpatialPicList(SSourcePicture* kpSrcPic, int* pSpatialNum)
-    {
-        sWelsEncCtx* pCtx = _ctx;
-        SWelsSvcCodingParam* pSvcParam = pCtx->pSvcParam;
-        int iWidth = (kpSrcPic->iPicWidth >> 1) << 1;
-        int iHeight = (kpSrcPic->iPicHeight >> 1) << 1;
-        *pSpatialNum = 0;
-
-        if (!_preprocessInitDone)
-        {
-            // WelsPreprocessCreate: the VP interface was made at init.
-            if (WelsPreprocessReset(iWidth, iHeight) != 0)
-            {
-                return ENC_RETURN_MEMALLOCERR;
-            }
-            // m_iAvaliableRefInSpatialPicList: screen content only.
-            _preprocessInitDone = true;
-        }
-        else if (iWidth != pSvcParam->SUsedPicRect.iWidth || iHeight != pSvcParam->SUsedPicRect.iHeight)
-        {
-            if (WelsPreprocessReset(iWidth, iHeight) != 0)
-            {
-                return ENC_RETURN_MEMALLOCERR;
-            }
-        }
-
-        pCtx->pVaa->bSceneChangeFlag = pCtx->pVaa->bIdrPeriodFlag = false;
-
-        return SingleLayerPreprocess(kpSrcPic, pSpatialNum);
-    }
-
-    /// <summary>
-    /// CWelsPreProcess::SingleLayerPreprocess for one spatial layer without the denoiser or
-    /// scaling (rejected at init).
-    /// </summary>
-    private int SingleLayerPreprocess(SSourcePicture* kpSrc, int* pSpatialNum)
-    {
-        sWelsEncCtx* pCtx = _ctx;
-        SWelsSvcCodingParam* pSvcParam = pCtx->pSvcParam;
-        int iDependencyId = pSvcParam->iSpatialLayerNum - 1;
-        int iSpatialNum = 0;
-
-        SSpatialLayerInternal* pDlayerParamInternal = &pSvcParam->sDependencyLayers[iDependencyId];
-        SSpatialLayerConfig* pDlayerParam = &pSvcParam->sSpatialLayers[iDependencyId];
-        int iTargetWidth = pDlayerParam->iVideoWidth;
-        int iTargetHeight = pDlayerParam->iVideoHeight;
-        int iSrcWidth = pSvcParam->SUsedPicRect.iWidth;
-        int iSrcHeight = pSvcParam->SUsedPicRect.iHeight;
-        if (pSvcParam->uiIntraPeriod != 0)
-        {
-            pCtx->pVaa->bIdrPeriodFlag = 1 + pDlayerParamInternal->iFrameIndex >= (int)pSvcParam->uiIntraPeriod;
-        }
-
-        *pSpatialNum = 0;
-        SPicture* pSrcPic = GetCurrentOrigFrame();   // no pScaledInputPicture
-        int iRet = WelsMoveMemoryWrapper(pSvcParam, pSrcPic, kpSrc, iSrcWidth, iSrcHeight);
-        if (iRet != ENC_RETURN_SUCCESS)
-        {
-            return iRet;
-        }
-        // BilateralDenoising: the denoiser is rejected at init.
-
-        // different scaling in between input picture and dst highest spatial picture.
-        int iShrinkWidth = iSrcWidth;
-        int iShrinkHeight = iSrcHeight;
-        SPicture* pDstPic = pSrcPic;
-        DownsamplePadding(pSrcPic, pDstPic, iSrcWidth, iSrcHeight, iShrinkWidth, iShrinkHeight, iTargetWidth, iTargetHeight,
-                          false);
-
-        if (pSvcParam->bEnableSceneChangeDetect && !pCtx->pVaa->bIdrPeriodFlag)
-        {
-            // camera content
-            if (!pDlayerParamInternal->bEncCurFrmAsIdrFlag
-                && (pDlayerParamInternal->iCodingIndex & (pSvcParam->uiGopSize - 1)) == 0)
-            {
-                Require(false, "scene change detection (E7)");
-            }
-        }
-
-        for (int i = 0; i < pSvcParam->iSpatialLayerNum; i++)
-        {
-            SSpatialLayerInternal* p = &pSvcParam->sDependencyLayers[i];
-            if (p->uiCodingIdx2TemporalId[p->iCodingIndex & (pSvcParam->uiGopSize - 1)] != INVALID_TEMPORAL_ID)
-            {
-                ++iSpatialNum;
-            }
-        }
-
-        pDlayerParamInternal = &pSvcParam->sDependencyLayers[iDependencyId];
-        int iTemporalId = pDlayerParamInternal->uiCodingIdx2TemporalId[pDlayerParamInternal->iCodingIndex & (pSvcParam->uiGopSize - 1)];
-        int iActualSpatialNum = iSpatialNum - 1;
-        if (iTemporalId != INVALID_TEMPORAL_ID)
-        {
-            // WelsUpdateSpatialIdxMap
-            pCtx->sSpatialIndexMap[iActualSpatialNum].pSrc = pDstPic;
-            pCtx->sSpatialIndexMap[iActualSpatialNum].iDid = iDependencyId;
-            --iActualSpatialNum;
-        }
-
-        _lastSpatialPic1 = GetCurrentOrigFrame();
-        // The other spatial layers: one only.
-
-        *pSpatialNum = iSpatialNum;
-        return ENC_RETURN_SUCCESS;
-    }
-
-    /// <summary>
-    /// CWelsPreProcess::DownsamplePadding without the downsampler or the forced copy (several
-    /// spatial layers): the source is the destination, padded to the target.
-    /// </summary>
-    private static void DownsamplePadding(SPicture* pSrc, SPicture* pDstPic, int iSrcWidth, int iSrcHeight,
-                                          int iShrinkWidth, int iShrinkHeight, int iTargetWidth, int iTargetHeight,
-                                          bool bForceCopy)
-    {
-        Require(iSrcWidth == iShrinkWidth && iSrcHeight == iShrinkHeight && !bForceCopy, "downsampling (E7)");
-        // sDstPicMap = sSrcPixMap
-        // get rid of odd line
-        iShrinkWidth -= iShrinkWidth & 1;
-        iShrinkHeight -= iShrinkHeight & 1;
-        Padding(pSrc->pData[0], pSrc->pData[1], pSrc->pData[2], pSrc->iLineSize[0], pSrc->iLineSize[1], iShrinkWidth,
-                iTargetWidth, iShrinkHeight, iTargetHeight);
-    }
-
-    /// <summary>CWelsPreProcess::AnalyzeSpatialPic (camera content).</summary>
-    private int AnalyzeSpatialPic(int kiDidx)
-    {
-        sWelsEncCtx* pCtx = _ctx;
-        SWelsSvcCodingParam* pSvcParam = pCtx->pSvcParam;
-        bool bNeededMbAq = pSvcParam->bEnableAdaptiveQuant && pCtx->eSliceType == EWelsSliceType.P_SLICE;
-        bool bCalculateBGD = pCtx->eSliceType == EWelsSliceType.P_SLICE && pSvcParam->bEnableBackgroundDetection;
-        SSpatialLayerInternal* pParamInternal = &pSvcParam->sDependencyLayers[kiDidx];
-        int iCurTemporalIdx = _spatialLayersInTemporal - 1;
-
-        int iRefTemporalIdx = g_kuiRefTemporalIdx[pSvcParam->iDecompStages][pParamInternal->iCodingIndex &
-                              (pSvcParam->uiGopSize - 1)];
-        if (pCtx->uiTemporalId == 0 && pCtx->pLtr[pCtx->uiDependencyId].bReceivedT0LostFlag)
-        {
-            iRefTemporalIdx = _spatialLayersInTemporal + pCtx->pVaa->uiValidLongTermPicIdx;
-        }
-
-        SPicture* pCurPic = _spatialPic[iCurTemporalIdx];
-        bool bCalculateVar = pSvcParam->iRCMode >= RC_MODES.RC_BITRATE_MODE && pCtx->eSliceType == EWelsSliceType.I_SLICE;
-
-        SPicture* pRefPic = _spatialPic[iRefTemporalIdx];   // GetBestRefPic (kiDidx, iRefTemporalIdx)
-        SPicture* pLastPic = _lastSpatialPic0;
-        bool bCalculateSQDiff = (byte*)pLastPic->pData[0] == (byte*)pRefPic->pData[0] && bNeededMbAq;
-
-        VaaCalculation(pCtx->pVaa, pCurPic, pRefPic, bCalculateSQDiff, bCalculateVar, bCalculateBGD);
-
-        if (pSvcParam->bEnableBackgroundDetection)
-        {
-            BackgroundDetection(pCtx->pVaa, pCurPic, pRefPic, bCalculateBGD && pRefPic->iPictureType != (int)EWelsSliceType.I_SLICE);
-        }
-
-        if (bNeededMbAq)
-        {
-            Require(false, "adaptive quantisation (E7)");   // AdaptiveQuantCalculation (last[1], last[0])
-        }
-        return 0;
-    }
-
-    /// <summary>
-    /// CWelsPreProcess::VaaCalculation, through the VP interface's VAA strategy
-    /// (CVpFrameWork::CheckValid passes the encoder's own I420 pictures).
-    /// </summary>
-    private void VaaCalculation(SVAAFrameInfo* pVaaInfo, SPicture* pCurPicture, SPicture* pRefPicture,
-                                bool bCalculateSQDiff, bool bCalculateVar, bool bCalculateBGD)
-    {
-        pVaaInfo->sVaaCalcInfo.pCurY = pCurPicture->pData[0];
-        pVaaInfo->sVaaCalcInfo.pRefY = pRefPicture->pData[0];
-
-        int iMethodIdx = (int)EMethods.METHOD_VAA_STATISTICS;
-        SPixMap sCurPixMap = default;
-        SPixMap sRefPixMap = default;
-        SVAACalcParam calc_param = default;
-
-        sCurPixMap.pPixel[0] = pCurPicture->pData[0];
-        sCurPixMap.iSizeInBits = 8;     // g_kiPixMapSizeInBits
-        sCurPixMap.sRect.iRectWidth = pCurPicture->iWidthInPixel;
-        sCurPixMap.sRect.iRectHeight = pCurPicture->iHeightInPixel;
-        sCurPixMap.iStride[0] = pCurPicture->iLineSize[0];
-        sCurPixMap.eFormat = EVideoFormat.VIDEO_FORMAT_I420;
-
-        sRefPixMap.pPixel[0] = pRefPicture->pData[0];
-        sRefPixMap.iSizeInBits = 8;
-        sRefPixMap.sRect.iRectWidth = pRefPicture->iWidthInPixel;
-        sRefPixMap.sRect.iRectHeight = pRefPicture->iHeightInPixel;
-        sRefPixMap.iStride[0] = pRefPicture->iLineSize[0];
-        sRefPixMap.eFormat = EVideoFormat.VIDEO_FORMAT_I420;
-
-        calc_param.iCalcVar = bCalculateVar ? 1 : 0;
-        calc_param.iCalcBgd = bCalculateBGD ? 1 : 0;
-        calc_param.iCalcSsd = bCalculateSQDiff ? 1 : 0;
-        calc_param.pCalcResult = &pVaaInfo->sVaaCalcInfo;
-
-        _vaaCalculation.Set(iMethodIdx, &calc_param);
-        _vaaCalculation.Process(iMethodIdx, &sCurPixMap, &sRefPixMap);
-    }
-
-    /// <summary>CWelsPreProcess::SetRefMbType.</summary>
-    private static void SetRefMbType(sWelsEncCtx* pCtx, uint** pRefMbTypeArray)
-    {
-        byte uiTid = pCtx->uiTemporalId;
-        byte uiDid = pCtx->uiDependencyId;
-        SRefList* pRefPicLlist = pCtx->ppRefPicListExt[uiDid];
-        SLTRState* pLtr = &pCtx->pLtr[uiDid];
-
-        if (pCtx->pSvcParam->bEnableLongTermReference && pLtr->bReceivedT0LostFlag && uiTid == 0)
-        {
-            for (byte i = 0; i < pRefPicLlist->uiLongRefCount; i++)
-            {
-                SPicture* pRef = pRefPicLlist->pLongRefList[i];
-                if (pRef != null && pRef->uiRecieveConfirmed == 1 /*RECIEVE_SUCCESS*/)
-                {
-                    *pRefMbTypeArray = pRef->uiRefMbType;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            for (byte i = 0; i < pRefPicLlist->uiShortRefCount; i++)
-            {
-                SPicture* pRef = pRefPicLlist->pShortRefList[i];
-                if (pRef != null && pRef->bUsedAsRef && pRef->iFramePoc >= 0 && pRef->uiTemporalId <= uiTid)
-                {
-                    *pRefMbTypeArray = pRef->uiRefMbType;
-                    break;
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// CWelsPreProcess::AnalyzePictureComplexity (camera content), through the VP interface's
-    /// complexity strategy (CVpFrameWork::CheckValid passes the encoder's own I420 pictures,
-    /// with or without a reference).
-    /// </summary>
-    private void AnalyzePictureComplexity(SPicture* pCurPicture, SPicture* pRefPicture, int kiDependencyId,
-                                          bool bCalculateBGD)
-    {
-        sWelsEncCtx* pCtx = _ctx;
-        SWelsSvcCodingParam* pSvcParam = pCtx->pSvcParam;
-        int iComplexityAnalysisMode;
-
-        SVAAFrameInfo* pVaaInfo = pCtx->pVaa;
-        SComplexityAnalysisParam* sComplexityAnalysisParam = &pVaaInfo->sComplexityAnalysisParam;
-        SWelsSvcRc* pWelsSvcRc = &pCtx->pWelsSvcRc[kiDependencyId];
-
-        if (pSvcParam->iRCMode == RC_MODES.RC_QUALITY_MODE && pCtx->eSliceType == EWelsSliceType.P_SLICE)
-        {
-            iComplexityAnalysisMode = (int)EComplexityAnalysisMode.FRAME_SAD;
-        }
-        else if ((pSvcParam->iRCMode == RC_MODES.RC_BITRATE_MODE || pSvcParam->iRCMode == RC_MODES.RC_TIMESTAMP_MODE)
-                 && pCtx->eSliceType == EWelsSliceType.P_SLICE)
-        {
-            iComplexityAnalysisMode = (int)EComplexityAnalysisMode.GOM_SAD;
-        }
-        else if ((pSvcParam->iRCMode == RC_MODES.RC_BITRATE_MODE || pSvcParam->iRCMode == RC_MODES.RC_TIMESTAMP_MODE)
-                 && pCtx->eSliceType == EWelsSliceType.I_SLICE)
-        {
-            iComplexityAnalysisMode = (int)EComplexityAnalysisMode.GOM_VAR;
-        }
-        else
-        {
-            return;
-        }
-
-        sComplexityAnalysisParam->iComplexityAnalysisMode = iComplexityAnalysisMode;
-        sComplexityAnalysisParam->pCalcResult = &pVaaInfo->sVaaCalcInfo;
-        sComplexityAnalysisParam->pBackgroundMbFlag = pVaaInfo->pVaaBackgroundMbFlag;
-        if (pRefPicture != null)
-        {
-            SetRefMbType(pCtx, &sComplexityAnalysisParam->uiRefMbType);
-        }
-        sComplexityAnalysisParam->iCalcBgd = bCalculateBGD ? 1 : 0;
-        sComplexityAnalysisParam->iFrameComplexity = 0;
-
-        new Span<int>(pWelsSvcRc->pGomForegroundBlockNum, pWelsSvcRc->iGomSize).Clear();
-        if (iComplexityAnalysisMode != (int)EComplexityAnalysisMode.FRAME_SAD)
-        {
-            new Span<int>(pWelsSvcRc->pCurrentFrameGomSad, pWelsSvcRc->iGomSize).Clear();
-        }
-
-        sComplexityAnalysisParam->pGomComplexity = pWelsSvcRc->pCurrentFrameGomSad;
-        sComplexityAnalysisParam->pGomForegroundBlockNum = pWelsSvcRc->pGomForegroundBlockNum;
-        sComplexityAnalysisParam->iMbNumInGom = pWelsSvcRc->iNumberMbGom;
-
-        int iMethodIdx = (int)EMethods.METHOD_COMPLEXITY_ANALYSIS;
-        SPixMap sSrcPixMap = default;
-        SPixMap sRefPixMap = default;
-
-        sSrcPixMap.pPixel[0] = pCurPicture->pData[0];
-        sSrcPixMap.iSizeInBits = 8;     // g_kiPixMapSizeInBits
-        sSrcPixMap.iStride[0] = pCurPicture->iLineSize[0];
-        sSrcPixMap.sRect.iRectWidth = pCurPicture->iWidthInPixel;
-        sSrcPixMap.sRect.iRectHeight = pCurPicture->iHeightInPixel;
-        sSrcPixMap.eFormat = EVideoFormat.VIDEO_FORMAT_I420;
-
-        if (pRefPicture != null)
-        {
-            sRefPixMap.pPixel[0] = pRefPicture->pData[0];
-            sRefPixMap.iSizeInBits = 8;
-            sRefPixMap.iStride[0] = pRefPicture->iLineSize[0];
-            sRefPixMap.sRect.iRectWidth = pRefPicture->iWidthInPixel;
-            sRefPixMap.sRect.iRectHeight = pRefPicture->iHeightInPixel;
-        }
-        sRefPixMap.eFormat = EVideoFormat.VIDEO_FORMAT_I420;
-
-        _complexityAnalysis.Set(iMethodIdx, sComplexityAnalysisParam);
-        EResult iRet = _complexityAnalysis.Process(iMethodIdx, &sSrcPixMap, &sRefPixMap);
-        if (iRet == 0)
-        {
-            _complexityAnalysis.Get(iMethodIdx, sComplexityAnalysisParam);
-        }
-    }
-
-    /// <summary>CWelsPreProcess::BackgroundDetection: the detection itself comes with E7.</summary>
-    private static void BackgroundDetection(SVAAFrameInfo* pVaaInfo, SPicture* pCurPicture, SPicture* pRefPicture,
-                                            bool bDetectFlag)
-    {
-        Require(!bDetectFlag, "background detection (E7)");
-        int iPicWidthInMb = (pCurPicture->iWidthInPixel + 15) >> 4;
-        int iPicHeightInMb = (pCurPicture->iHeightInPixel + 15) >> 4;
-        new Span<byte>(pVaaInfo->pVaaBackgroundMbFlag, iPicWidthInMb * iPicHeightInMb).Clear();
-    }
-
-    /// <summary>CWelsPreProcess::UpdateSpatialPictures (camera content).</summary>
-    private int UpdateSpatialPictures(int iCurTid, int kiDidx)
-    {
-        sWelsEncCtx* pCtx = _ctx;
-        SWelsSvcCodingParam* pParam = pCtx->pSvcParam;
-        Require(kiDidx == 0, "more than one spatial layer (E7)");
-
-        WelsExchangeSpatialPictures(ref _lastSpatialPic1, ref _lastSpatialPic0);
-
-        int kiCurPos = _spatialLayersInTemporal - 1;     // GetCurPicPosition
-        if (iCurTid < kiCurPos || pParam->iDecompStages == 0)
-        {
-            if (iCurTid >= MAX_TEMPORAL_LEVEL || kiCurPos > MAX_TEMPORAL_LEVEL)
-            {
-                InitLastSpatialPictures();
-                return 1;
-            }
-            if (pCtx->bRefOfCurTidIsLtr[kiDidx * MAX_TEMPORAL_LEVEL + iCurTid])
-            {
-                int kiAvailableLtrPos = _spatialLayersInTemporal + pCtx->pVaa->uiMarkLongTermPicIdx;
-                WelsExchangeSpatialPictures(ref _spatialPic[kiAvailableLtrPos], ref _spatialPic[iCurTid]);
-                pCtx->bRefOfCurTidIsLtr[kiDidx * MAX_TEMPORAL_LEVEL + iCurTid] = false;
-            }
-            WelsExchangeSpatialPictures(ref _spatialPic[kiCurPos], ref _spatialPic[iCurTid]);
-        }
-        return 0;
-    }
-
-    /// <summary>CWelsPreProcess::WelsExchangeSpatialPictures.</summary>
-    private static void WelsExchangeSpatialPictures(ref SPicture* ppPic1, ref SPicture* ppPic2)
-    {
-        SPicture* tmp = ppPic1;
-        ppPic1 = ppPic2;
-        ppPic2 = tmp;
-    }
-
-    /// <summary>CWelsPreProcess::WelsMoveMemoryWrapper.</summary>
-    private static int WelsMoveMemoryWrapper(SWelsSvcCodingParam* pSvcParam, SPicture* pDstPic, SSourcePicture* kpSrc,
-                                             int kiTargetWidth, int kiTargetHeight)
-    {
-        if ((int)EVideoFormatType.videoFormatI420 != (kpSrc->iColorFormat & ~unchecked((int)EVideoFormatType.videoFormatVFlip)))
-        {
-            return ENC_RETURN_INVALIDINPUT;
-        }
-
-        int iSrcWidth = kpSrc->iPicWidth;
-        int iSrcHeight = kpSrc->iPicHeight;
-        if (iSrcHeight > kiTargetHeight)
-        {
-            iSrcHeight = kiTargetHeight;
-        }
-        if (iSrcWidth > kiTargetWidth)
-        {
-            iSrcWidth = kiTargetWidth;
-        }
-        // copy from fr26 to fix the odd uiSize failed issue
-        if ((iSrcWidth & 0x1) != 0)
-        {
-            --iSrcWidth;
-        }
-        if ((iSrcHeight & 0x1) != 0)
-        {
-            --iSrcHeight;
-        }
-
-        int kiSrcTopOffsetY = pSvcParam->SUsedPicRect.iTop;
-        int kiSrcTopOffsetUV = kiSrcTopOffsetY >> 1;
-        int kiSrcLeftOffsetY = pSvcParam->SUsedPicRect.iLeft;
-        int kiSrcLeftOffsetUV = kiSrcLeftOffsetY >> 1;
-        byte* pSrcY = kpSrc->pData[0] + kpSrc->iStride[0] * kiSrcTopOffsetY + kiSrcLeftOffsetY;
-        byte* pSrcU = kpSrc->pData[1] + kpSrc->iStride[1] * kiSrcTopOffsetUV + kiSrcLeftOffsetUV;
-        byte* pSrcV = kpSrc->pData[2] + kpSrc->iStride[2] * kiSrcTopOffsetUV + kiSrcLeftOffsetUV;
-        int kiSrcStrideY = kpSrc->iStride[0];
-        int kiSrcStrideU = kpSrc->iStride[1];
-        int kiSrcStrideV = kpSrc->iStride[2];
-
-        byte* pDstY = pDstPic->pData[0];
-        byte* pDstU = pDstPic->pData[1];
-        byte* pDstV = pDstPic->pData[2];
-        int kiDstStrideY = pDstPic->iLineSize[0];
-        int kiDstStrideU = pDstPic->iLineSize[1];
-        int kiDstStrideV = pDstPic->iLineSize[2];
-
-        if (iSrcWidth <= 0 || iSrcHeight <= 0)
-        {
-            return ENC_RETURN_INVALIDINPUT;
-        }
-        if (iSrcWidth > pDstPic->iWidthInPixel || iSrcHeight > pDstPic->iHeightInPixel)
-        {
-            return ENC_RETURN_INVALIDINPUT;
-        }
-        if (kiSrcTopOffsetY >= iSrcHeight || kiSrcLeftOffsetY >= iSrcWidth || iSrcWidth > kiSrcStrideY
-            || (iSrcWidth >> 1) > kiSrcStrideU || (iSrcWidth >> 1) > kiSrcStrideV)
-        {
-            return ENC_RETURN_INVALIDINPUT;
-        }
-        if (kiTargetWidth <= 0 || kiTargetHeight <= 0)
-        {
-            return ENC_RETURN_INVALIDINPUT;
-        }
-        if (kiTargetWidth > pDstPic->iWidthInPixel || kiTargetHeight > pDstPic->iHeightInPixel)
-        {
-            return ENC_RETURN_INVALIDINPUT;
-        }
-        if (kiTargetWidth > kiDstStrideY || (kiTargetWidth >> 1) > kiDstStrideU || (kiTargetWidth >> 1) > kiDstStrideV)
-        {
-            return ENC_RETURN_INVALIDINPUT;
-        }
-
-        // WelsMoveMemory_c (i420_to_i420_c)
-        for (int j = iSrcHeight; j != 0; j--)
-        {
-            Buffer.MemoryCopy(pSrcY, pDstY, iSrcWidth, iSrcWidth);
-            pDstY += kiDstStrideY;
-            pSrcY += kiSrcStrideY;
-        }
-        for (int j = iSrcHeight >> 1; j != 0; j--)
-        {
-            Buffer.MemoryCopy(pSrcU, pDstU, iSrcWidth >> 1, iSrcWidth >> 1);
-            Buffer.MemoryCopy(pSrcV, pDstV, iSrcWidth >> 1, iSrcWidth >> 1);
-            pDstU += kiDstStrideU;
-            pDstV += kiDstStrideV;
-            pSrcU += kiSrcStrideU;
-            pSrcV += kiSrcStrideV;
-        }
-
-        //in VP Process
-        if (kiTargetWidth > iSrcWidth || kiTargetHeight > iSrcHeight)
-        {
-            Padding(pDstPic->pData[0], pDstPic->pData[1], pDstPic->pData[2], kiDstStrideY, kiDstStrideU, iSrcWidth,
-                    kiTargetWidth, iSrcHeight, kiTargetHeight);
-        }
-        return ENC_RETURN_SUCCESS;
-    }
-
-    /// <summary>CWelsPreProcess::Padding.</summary>
-    private static void Padding(byte* pSrcY, byte* pSrcU, byte* pSrcV, int iStrideY, int iStrideUV,
-                                int iActualWidth, int iPaddingWidth, int iActualHeight, int iPaddingHeight)
-    {
-        if (iPaddingHeight > iActualHeight)
-        {
-            for (int i = iActualHeight; i < iPaddingHeight; i++)
-            {
-                new Span<byte>(pSrcY + i * iStrideY, iActualWidth).Fill(0);
-                if ((i & 1) == 0)
-                {
-                    new Span<byte>(pSrcU + i / 2 * iStrideUV, iActualWidth / 2).Fill(0x80);
-                    new Span<byte>(pSrcV + i / 2 * iStrideUV, iActualWidth / 2).Fill(0x80);
-                }
-            }
-        }
-
-        if (iPaddingWidth > iActualWidth)
-        {
-            for (int i = 0; i < iPaddingHeight; i++)
-            {
-                new Span<byte>(pSrcY + i * iStrideY + iActualWidth, iPaddingWidth - iActualWidth).Fill(0);
-                if ((i & 1) == 0)
-                {
-                    new Span<byte>(pSrcU + i / 2 * iStrideUV + iActualWidth / 2, (iPaddingWidth - iActualWidth) / 2).Fill(0x80);
-                    new Span<byte>(pSrcV + i / 2 * iStrideUV + iActualWidth / 2, (iPaddingWidth - iActualWidth) / 2).Fill(0x80);
-                }
-            }
-        }
-    }
-
     // ---- frame: WelsEncoderEncodeExt ----
 
     /// <summary>
@@ -1276,7 +719,7 @@ internal sealed unsafe class EncoderDriver : IDisposable
             pFbi->sLayerInfo[iNalIdx].iNalCount = 0;
         }
         // perform csc/denoise/downsample/padding, generate spatial layers
-        int iRet = BuildSpatialPicList(pSrcPic, &iSpatialNum);
+        int iRet = pCtx->pVpp->BuildSpatialPicList(pCtx, pSrcPic, &iSpatialNum);
         if (iRet != ENC_RETURN_SUCCESS)
         {
             return iRet;
@@ -1325,7 +768,7 @@ internal sealed unsafe class EncoderDriver : IDisposable
             pCtx->uiDependencyId = (byte)iCurDid;
 
             InitFrameCoding(pCtx, eFrameType, iCurDid);
-            AnalyzeSpatialPic(iCurDid);
+            pCtx->pVpp->AnalyzeSpatialPic(pCtx, iCurDid);
 
             SPicture* pEncPic = pCtx->sSpatialIndexMap[iSpatialIdx].pSrc;
             pCtx->pEncPic = pEncPic;
@@ -1402,7 +845,7 @@ internal sealed unsafe class EncoderDriver : IDisposable
             }
             if (pSvcParam->iRCMode != RC_MODES.RC_OFF_MODE)
             {
-                AnalyzePictureComplexity(pCtx->pEncPic,
+                pCtx->pVpp->AnalyzePictureComplexity(pCtx, pCtx->pEncPic,
                     (pCtx->eSliceType == EWelsSliceType.P_SLICE && pCtx->iNumRef0 > 0) ? pCtx->pRefList0[0] : null, iCurDid,
                     pCtx->eSliceType == EWelsSliceType.P_SLICE && pSvcParam->bEnableBackgroundDetection);
             }
@@ -1416,7 +859,18 @@ internal sealed unsafe class EncoderDriver : IDisposable
             {
                 SSlice* pCurSlice = &pCtx->pCurDqLayer->sSliceBufferInfo[0].pSliceBuffer[0];
 
-                Require(!pCtx->bNeedPrefixNalFlag, "AddPrefixNal (E7)");
+                if (pCtx->bNeedPrefixNalFlag)
+                {
+                    int iPayloadSize = 0;
+                    pCtx->iEncoderError = AddPrefixNal(pCtx, pLayerBsInfo, &pLayerBsInfo->pNalLengthInByte[0], &iNalIdxInLayer,
+                                                       eNalType, eNalRefIdc, ref iPayloadSize);
+                    if (pCtx->iEncoderError != ENC_RETURN_SUCCESS)
+                    {
+                        return pCtx->iEncoderError;
+                    }
+                    iLayerSize += iPayloadSize;
+                }
+
                 WelsLoadNal(pCtx->pOut, (int)eNalType, (int)eNalRefIdc);
                 Debug.Assert(0 == pCurSlice->iSliceIdx);
                 pCtx->iEncoderError = SetSliceBoundaryInfo(pCtx->pCurDqLayer, pCurSlice, 0);
@@ -1463,7 +917,18 @@ internal sealed unsafe class EncoderDriver : IDisposable
                 iSliceCount = GetCurrentSliceNum(pCtx->pCurDqLayer);
                 while (iSliceIdx < iSliceCount)
                 {
-                    Require(!bNeedPrefix, "AddPrefixNal (E7)");
+                    if (bNeedPrefix)
+                    {
+                        int iPayloadSize = 0;
+                        pCtx->iEncoderError = AddPrefixNal(pCtx, pLayerBsInfo, &pLayerBsInfo->pNalLengthInByte[0], &iNalIdxInLayer,
+                                                           eNalType, eNalRefIdc, ref iPayloadSize);
+                        if (pCtx->iEncoderError != ENC_RETURN_SUCCESS)
+                        {
+                            return pCtx->iEncoderError;
+                        }
+                        iLayerSize += iPayloadSize;
+                    }
+
                     WelsLoadNal(pCtx->pOut, (int)eNalType, (int)eNalRefIdc);
 
                     SSlice* pCurSlice = &pCtx->pCurDqLayer->sSliceBufferInfo[0].pSliceBuffer[iSliceIdx];
@@ -1594,7 +1059,7 @@ internal sealed unsafe class EncoderDriver : IDisposable
 
             // WelsSwapDqLayers: several spatial layers only.
 
-            if (UpdateSpatialPictures(iCurTid, iCurDid) != 0)
+            if (pCtx->pVpp->UpdateSpatialPictures(pCtx, pSvcParam, (sbyte)iCurTid, iCurDid) != 0)
             {
                 ForceCodingIDR(pCtx);
                 // Logic Error Found in Preprocess updating. ForceCodingIDR!
@@ -1620,7 +1085,7 @@ internal sealed unsafe class EncoderDriver : IDisposable
 
         if (ENC_RETURN_CORRECTED == pCtx->iEncoderError)
         {
-            UpdateSpatialPictures(iCurTid, pCtx->sSpatialIndexMap[iSpatialIdx].iDid);
+            pCtx->pVpp->UpdateSpatialPictures(pCtx, pSvcParam, (sbyte)iCurTid, pCtx->sSpatialIndexMap[iSpatialIdx].iDid);
             ForceCodingIDR(pCtx);
             // Logic Error Found in temporal level. ForceCodingIDR!
             pFbi->eFrameType = eFrameType;
@@ -1665,8 +1130,12 @@ internal sealed unsafe class EncoderDriver : IDisposable
         CMemoryAlign* pMa = _pMa;
         SWelsSvcCodingParam* pParam = pCtx->pSvcParam;
 
-        // WelsUninitEncoderExt: the preprocessing's spatial pictures, then FreeMemorySvc.
-        FreeSpatialPictures();
+        // WelsUninitEncoderExt: the preprocessing, then FreeMemorySvc.
+        if (pCtx->pVpp != null)
+        {
+            pCtx->pVpp->FreeSpatialPictures(pCtx);
+            CWelsPreProcess.DeletePreProcess(ref pCtx->pVpp);
+        }
         if (pCtx->pStrideTab != null)
         {
             if (!pCtx->pStrideTab->pStrideDecBlockOffset[0][1].IsNull)

@@ -13,7 +13,8 @@
 // FreeDqLayer/FreeRefList they fail through), GetTemporalLevel,
 // WelsInitCurrentLayer, PreprocessSliceCoding (I and, from E5, P slices;
 // screen content throws until Phase 4), WelsSwapDqLayers and
-// PrefetchReferencePicture, and (E5b) GetMvMvdRange.
+// PrefetchReferencePicture, (E5b) GetMvMvdRange, (E6) WritePadding and (E7)
+// AddPrefixNal.
 // RequestMemorySvc, WelsInitEncoderExt and WelsEncoderEncodeExt come with E8.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
@@ -34,6 +35,7 @@
 // 26 Nov 2026  Claude          The P-slice pointers in PreprocessSliceCoding (E5).
 // 26 Nov 2026  Claude          GetMvMvdRange (E5b).
 // 26 Nov 2026  Claude          WritePadding (E6).
+// 27 Nov 2026  Claude          AddPrefixNal (E7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -975,7 +977,58 @@ internal static unsafe partial class WelsEnc
         return ENC_RETURN_SUCCESS;
     }
 
-    // AddPrefixNal comes with E7.
+    public static int32_t AddPrefixNal(sWelsEncCtx* pCtx,
+                                       SLayerBSInfo* pLayerBsInfo,
+                                       int32_t* pNalLen,
+                                       int32_t* pNalIdxInLayer,
+                                       EWelsNalUnitType keNalType,
+                                       EWelsNalRefIdc keNalRefIdc,
+                                       ref int32_t iPayloadSize)
+    {
+        int32_t iReturn = ENC_RETURN_SUCCESS;
+        iPayloadSize = 0;
+
+        if (keNalRefIdc != EWelsNalRefIdc.NRI_PRI_LOWEST)
+        {
+            WelsLoadNal(pCtx->pOut, (int32_t)EWelsNalUnitType.NAL_UNIT_PREFIX, (int32_t)keNalRefIdc);
+
+            WelsWriteSVCPrefixNal(&pCtx->pOut->sBsWrite, (int32_t)keNalRefIdc, (EWelsNalUnitType.NAL_UNIT_CODED_SLICE_IDR == keNalType));
+
+            WelsUnloadNal(pCtx->pOut);
+
+            iReturn = WelsEncodeNal(&pCtx->pOut->sNalList[pCtx->pOut->iNalIndex - 1],
+                                    &pCtx->pCurDqLayer->sLayerInfo.sNalHeaderExt,
+                                    pCtx->iFrameBsSize - pCtx->iPosBsBuffer,
+                                    pCtx->pFrameBs + pCtx->iPosBsBuffer,
+                                    &pNalLen[*pNalIdxInLayer]);
+            if (iReturn != ENC_RETURN_SUCCESS) return iReturn; // WELS_VERIFY_RETURN_IFNEQ
+            iPayloadSize = pNalLen[*pNalIdxInLayer];
+
+            pCtx->iPosBsBuffer += iPayloadSize;
+
+            (*pNalIdxInLayer)++;
+        }
+        else
+        { // No Prefix NAL Unit RBSP syntax here, but need add NAL Unit Header extension
+            WelsLoadNal(pCtx->pOut, (int32_t)EWelsNalUnitType.NAL_UNIT_PREFIX, (int32_t)keNalRefIdc);
+            // No need write any syntax of prefix NAL Unit RBSP here
+            WelsUnloadNal(pCtx->pOut);
+
+            iReturn = WelsEncodeNal(&pCtx->pOut->sNalList[pCtx->pOut->iNalIndex - 1],
+                                    &pCtx->pCurDqLayer->sLayerInfo.sNalHeaderExt,
+                                    pCtx->iFrameBsSize - pCtx->iPosBsBuffer,
+                                    pCtx->pFrameBs + pCtx->iPosBsBuffer,
+                                    &pNalLen[*pNalIdxInLayer]);
+            if (iReturn != ENC_RETURN_SUCCESS) return iReturn; // WELS_VERIFY_RETURN_IFNEQ
+            iPayloadSize = pNalLen[*pNalIdxInLayer];
+
+            pCtx->iPosBsBuffer += iPayloadSize;
+
+            (*pNalIdxInLayer)++;
+        }
+
+        return ENC_RETURN_SUCCESS;
+    }
 
     public static int32_t WritePadding(sWelsEncCtx* pCtx, int32_t iLen, ref int32_t iSize)
     {

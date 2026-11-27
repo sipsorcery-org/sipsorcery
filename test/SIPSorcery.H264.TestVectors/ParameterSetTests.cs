@@ -24,6 +24,7 @@
 // 26 Nov 2026  Claude          The iLTRRefNum and iLtrMarkPeriod settings, for the stream tests (E5b).
 // 26 Nov 2026  Claude          The iPaddingFlag, bFixRCOverShoot and iIdrBitrateRatio settings,
 //                              for the rate control tests (E6).
+// 27 Nov 2026  Claude          The bPrefixNalAddingCtrl setting, for the preprocessing tests (E7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -639,6 +640,7 @@ internal sealed unsafe class ParamSetEncoder : IDisposable
             case "iPaddingFlag": e.iPaddingFlag = (int)v; break;
             case "bFixRCOverShoot": e.bFixRCOverShoot = v != 0; break;
             case "iIdrBitrateRatio": e.iIdrBitrateRatio = (int)v; break;
+            case "bPrefixNalAddingCtrl": e.bPrefixNalAddingCtrl = v != 0; break;
             default: return false;
         }
         return true;

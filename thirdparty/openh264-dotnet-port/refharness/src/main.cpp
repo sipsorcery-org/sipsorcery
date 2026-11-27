@@ -33,6 +33,11 @@
 //                                   table of configurations (rate control modes, frame
 //                                   skip, padding, timestamps).
 //   h264ref rc-dump <name> <out>    That stream for one configuration, to a file.
+//   h264ref preprocess              E7: camera streams with the preprocessing on (scene
+//                                   change and background detection, adaptive
+//                                   quantisation, denoising, downsampling).
+//   h264ref preprocess-dump <name> <out>
+//                                   That stream for one configuration, to a file.
 //
 // The decode loop and hashing copy upstream's test/api/BaseDecoderTest.cpp and
 // decoder_test.cpp exactly (input split on 4-byte start codes, DecodeFrame2,
@@ -69,6 +74,8 @@ int Stream();
 int StreamDump (const char* name, const char* outPath);
 int Rc();
 int RcDump (const char* name, const char* outPath);
+int Preprocess();
+int PreprocessDump (const char* name, const char* outPath);
 
 namespace {
 
@@ -516,6 +523,12 @@ int Kernels() {
   KernelsSvcEncodePSlice();
   KernelsVaaCalc();
   KernelsComplexity();
+  KernelsScd();
+  KernelsBgd();
+  KernelsAq();
+  KernelsDenoise();
+  KernelsDownsample();
+  KernelsVpFrameWork();
   return 0;
 }
 
@@ -542,6 +555,11 @@ int main (int argc, char** argv) {
     return Rc();
   }
   if (argc == 4 && std::string (argv[1]) == "rc-dump") return RcDump (argv[2], argv[3]);
+  if (argc == 2 && std::string (argv[1]) == "preprocess") {
+    BinaryStdout();
+    return Preprocess();
+  }
+  if (argc == 4 && std::string (argv[1]) == "preprocess-dump") return PreprocessDump (argv[2], argv[3]);
   if (argc < 3) return Usage();
   std::string cmd = argv[1];
   if (cmd == "conformance") return Conformance (argv[2]);

@@ -44,6 +44,7 @@
     <None Include="..\..\thirdparty\openh264-dotnet-port\reference\stream.tsv" Link="stream.tsv" CopyToOutputDirectory="PreserveNewest" />
     <!-- Rate controlled streams (h264ref rc), see RcTests.cs. -->
     <None Include="..\..\thirdparty\openh264-dotnet-port\reference\rc.tsv" Link="rc.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\preprocess.tsv" Link="preprocess.tsv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

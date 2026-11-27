@@ -23,6 +23,7 @@
 // 26 Nov 2026  Claude          The MVD cost table fields and pVaa (E5).
 // 26 Nov 2026  Claude          SLTRState, pReferenceStrategy, pLtr and bRefOfCurTidIsLtr (E5b).
 // 26 Nov 2026  Claude          The rate control check window fields (E6).
+// 27 Nov 2026  Claude          pVpp (E7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -181,7 +182,7 @@ internal unsafe struct sWelsEncCtx
     public int32_t iGlobalQp;                   // global qp
 
     public SVAAFrameInfo* pVaa;                 // VAA information of reference
-    // CWelsPreProcess* pVpp comes with E7.
+    public CWelsPreProcess* pVpp;
 
     public SWelsSPS* pSpsArray;                 // MAX_SPS_COUNT by standard compatible
     public SWelsSPS* pSps;
