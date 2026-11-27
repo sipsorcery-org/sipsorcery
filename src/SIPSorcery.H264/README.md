@@ -75,8 +75,8 @@ starts a new stream with a key frame. The SDP offers `profile-level-id=42e01f`.
 SIPSorcery doesn't answer a receiver's key frame request on its own: call
 `ForceKeyFrame` when `RTCPeerConnection.OnReceiveReport` brings an RTCP PLI or
 FIR. The
-[`WebRTCGetStartedH264Net`](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCGetStartedH264Net)
-example does all of this. The CLI, built from source, takes it as
+[`WebRTCGetStartedCodecs`](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCGetStartedCodecs)
+example does all of this when run with `--library h264.net`. The CLI, built from source, takes it as
 `--encoder h264.net`.
 
 The port runs OpenH264's portable C code, without its assembly. On one desktop

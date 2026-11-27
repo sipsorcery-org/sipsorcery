@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Video Codecs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        h1 {
+            font-size: 1.25rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.4rem 0.6rem;
+            border-bottom: 1px solid #ddd;
+            vertical-align: top;
+        }
+        td:last-child {
+            font-family: monospace;
+            word-break: break-all;
+        }
+        a {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Video codecs this browser can receive</h1>
+        <p>
+            From <code>RTCRtpReceiver.getCapabilities("video")</code>. The example sends one codec,
+            chosen with <code>--codec</code>, and the browser needs to be able to receive it. H265,
+            and sometimes AV1, depend on the browser and the hardware.
+        </p>
+        <table id="codecs">
+            <thead>
+                <tr><th>Codec</th><th>Format parameters</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <p><a href="./">Back</a></p>
+    </div>
+    <script>
+        // Retransmission and error correction formats rather than codecs.
+        const NOT_CODECS = ["video/rtx", "video/red", "video/ulpfec", "video/flexfec-03"];
+
+        const tbody = document.querySelector("#codecs tbody");
+        const capabilities = RTCRtpReceiver.getCapabilities?.("video");
+
+        if (!capabilities) {
+            const cell = tbody.insertRow().insertCell();
+            cell.colSpan = 2;
+            cell.textContent = "This browser doesn't have RTCRtpReceiver.getCapabilities.";
+        }
+        else {
+            for (const codec of capabilities.codecs.filter(c => !NOT_CODECS.includes(c.mimeType.toLowerCase()))) {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = codec.mimeType.replace("video/", "");
+                row.insertCell().textContent = codec.sdpFmtpLine ?? "";
+            }
+        }
+    </script>
+</body>
+</html>

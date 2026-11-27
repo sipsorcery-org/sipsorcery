@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Get Started Codecs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 1.25rem;
+            margin: 0.25rem 0 1rem;
+        }
+        video {
+            width: 640px;
+            height: 480px;
+            background: #000;
+            border-radius: 8px;
+            max-width: 100%;
+            max-height: 100vh;
+        }
+        #stats {
+            font-family: monospace;
+            min-height: 1.2em;
+            margin: 0.5rem 0 1rem;
+            color: #333;
+        }
+        .controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: stretch;
+        }
+        .button-group {
+            display: flex;
+            flex-direction: row;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 0.5rem;
+        }
+        input[type="text"] {
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-width: 0;
+        }
+        button {
+            padding: 1rem 2rem;
+            font-size: 1.25rem;
+            min-width: 120px;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button.btn-start {
+            background: #28a745;
+        }
+        button.btn-start:active {
+            background: #218838;
+        }
+        button.btn-close {
+            background: #dc3545;
+        }
+        button.btn-close:active {
+            background: #b52a37;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        a {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="title">WebRTC Get Started Codecs</h1>
+        <video controls autoplay id="videoCtl" playsinline width="640" height="480"></video>
+        <div id="stats"></div>
+        <form class="controls" onsubmit="return false;">
+            <input type="text" id="websockurl" autocomplete="off" inputmode="url" placeholder="WebSocket URL" />
+            <div class="button-group">
+                <button type="button" id="startBtn" class="btn-start" onclick="start();">Start</button>
+                <button type="button" id="closeBtn" class="btn-close" onclick="closePeer();" disabled>Close</button>
+            </div>
+        </form>
+        <p><a href="codecs.html">Which video codecs can this browser receive?</a></p>
+    </div>
+    <script>
+        const STUN_URL = "stun:stun.cloudflare.com";
+
+        let pc, ws, statsTimer;
+
+        // The server's web socket, on the same host as this page.
+        function getWebSocketUrl() {
+            const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+            return `${protocol}//${location.host}/ws`;
+        }
+
+        function setButtonStates(startEnabled, closeEnabled) {
+            document.getElementById("startBtn").disabled = !startEnabled;
+            document.getElementById("closeBtn").disabled = !closeEnabled;
+        }
+
+        // Shows which codec and library the server was started with.
+        async function showConfig() {
+            try {
+                const config = await (await fetch("config")).json();
+                document.getElementById("title").textContent = `WebRTC Get Started: ${config.codec} from ${config.library}`;
+            }
+            catch (err) {
+                console.warn("Could not read the server's config.", err);
+            }
+        }
+
+        // Shows what the browser is decoding.
+        async function showStats() {
+            if (!pc) {
+                return;
+            }
+
+            const stats = await pc.getStats();
+            let text = "";
+            stats.forEach(report => {
+                if (report.type === "inbound-rtp" && report.kind === "video") {
+                    const codec = stats.get(report.codecId)?.mimeType ?? "";
+                    const size = report.frameWidth ? `${report.frameWidth}x${report.frameHeight}` : "";
+                    text = `${codec} ${size} ${Math.round(report.framesPerSecond ?? 0)} fps, ${report.framesDecoded ?? 0} frames decoded`;
+                }
+            });
+            document.getElementById("stats").textContent = text;
+        }
+
+        function start() {
+            setButtonStates(false, false);
+
+            pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+
+            pc.ontrack = evt => {
+                console.log(`Adding ${evt.track.kind} track to the video control.`);
+                document.querySelector("#videoCtl").srcObject = evt.streams[0];
+            };
+
+            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+
+            pc.onconnectionstatechange = () => {
+                console.log(`Peer connection state changed to ${pc.connectionState}.`);
+                if (pc.connectionState === "failed") {
+                    closePeer();
+                }
+            };
+
+            ws = new WebSocket(document.querySelector("#websockurl").value, []);
+
+            ws.onopen = () => setButtonStates(false, true);
+
+            // The server sends the offer and its ICE candidates; the page answers.
+            ws.onmessage = async evt => {
+                const obj = JSON.parse(evt.data);
+                if (obj?.candidate) {
+                    await pc.addIceCandidate(obj);
+                }
+                else if (obj?.sdp) {
+                    await pc.setRemoteDescription(new RTCSessionDescription(obj));
+                    await pc.setLocalDescription(await pc.createAnswer());
+                    ws.send(JSON.stringify(pc.localDescription));
+                }
+            };
+
+            ws.onclose = evt => console.log(`Web socket closed, code ${evt.code}.`);
+
+            ws.onerror = evt => {
+                console.error("Web socket error.", evt);
+                closePeer();
+            };
+
+            statsTimer = setInterval(showStats, 1000);
+        }
+
+        function closePeer() {
+            clearInterval(statsTimer);
+            pc?.close();
+            ws?.close();
+            pc = ws = undefined;
+            setButtonStates(true, false);
+        }
+
+        document.querySelector("#websockurl").value = getWebSocketUrl();
+        showConfig();
+    </script>
+</body>
+</html>
