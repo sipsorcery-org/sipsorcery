@@ -16,6 +16,7 @@
 // History:
 // 27 Nov 2026  Claude          Created (P5.2).
 // 27 Nov 2026  Claude          Narrow loads and stores, packs and averaging for MC (P5.3).
+// 27 Nov 2026  Claude          Byte interleaves for the deblocking transposes (P5.4).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -98,6 +99,16 @@ internal static unsafe class Simd
     public static Vector128<short> Diff4(uint8_t* p1, uint8_t* p2) =>
         (Vector128.WidenLower(Vector128.CreateScalar(Unsafe.ReadUnaligned<uint>(p1)).AsByte()) -
          Vector128.WidenLower(Vector128.CreateScalar(Unsafe.ReadUnaligned<uint>(p2)).AsByte())).AsInt16();
+
+    /// <summary>Lanes 0 to 7 of a and b interleaved: a0 b0 a1 b1 ... a7 b7.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<byte> ZipLow(Vector128<byte> a, Vector128<byte> b) =>
+        Sse2.IsSupported ? Sse2.UnpackLow(a, b) : AdvSimd.Arm64.IsSupported ? AdvSimd.Arm64.ZipLow(a, b) : throw new PlatformNotSupportedException();
+
+    /// <summary>Lanes 8 to 15 of a and b interleaved.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<byte> ZipHigh(Vector128<byte> a, Vector128<byte> b) =>
+        Sse2.IsSupported ? Sse2.UnpackHigh(a, b) : AdvSimd.Arm64.IsSupported ? AdvSimd.Arm64.ZipHigh(a, b) : throw new PlatformNotSupportedException();
 
     /// <summary>Lanes 0 to 3 of a and b interleaved: a0 b0 a1 b1 a2 b2 a3 b3.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

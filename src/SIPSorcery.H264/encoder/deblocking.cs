@@ -11,7 +11,9 @@
 //
 // The encoder builds with SINGLE_REF_FRAME (as264_common.h), so the
 // reference index test in DeblockingBSMarginalMBAvcbase is compiled out, and
-// only the _c paths of DeblockingInit and WelsBlockFuncInit are ported. Unlike
+// only the _c paths of WelsBlockFuncInit and DeblockingBSCalc are ported
+// (DeblockingInit chooses the SIMD edge filters of
+// common/deblocking_common_simd.cs where upstream has its own). Unlike
 // the decoder's, the encoder's alpha, beta and tc0 tables have their 12 pad
 // entries at the end and the index is clipped to [0, 51].
 //
@@ -20,6 +22,7 @@
 //
 // History:
 // 26 Nov 2026  Claude          Created (E4b).
+// 27 Nov 2026  Claude          DeblockingInit chooses the SIMD edge filters (P5.4).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -854,6 +857,20 @@ internal static unsafe partial class WelsEnc
 
         pFunc->pfDeblockingBSCalc = &DeblockingBSCalc_c;
 
-        // The X86_ASM, NEON, AArch64, MMI, MSA and LSX versions are not ported (C only).
+        // In place of the X86_ASM, NEON and AArch64 edge filters, the ones in
+        // common/deblocking_common_simd.cs. The SIMD DeblockingBSCalc and the MMI,
+        // MSA and LSX versions are not ported.
+        if (WelsCpuHasSimd128((uint32_t)iCpu))
+        {
+            pFunc->pfLumaDeblockingLT4Ver = &DeblockLumaLt4V_simd;
+            pFunc->pfLumaDeblockingEQ4Ver = &DeblockLumaEq4V_simd;
+            pFunc->pfLumaDeblockingLT4Hor = &DeblockLumaLt4H_simd;
+            pFunc->pfLumaDeblockingEQ4Hor = &DeblockLumaEq4H_simd;
+
+            pFunc->pfChromaDeblockingLT4Ver = &DeblockChromaLt4V_simd;
+            pFunc->pfChromaDeblockingEQ4Ver = &DeblockChromaEq4V_simd;
+            pFunc->pfChromaDeblockingLT4Hor = &DeblockChromaLt4H_simd;
+            pFunc->pfChromaDeblockingEQ4Hor = &DeblockChromaEq4H_simd;
+        }
     }
 }

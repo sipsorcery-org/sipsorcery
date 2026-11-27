@@ -8,15 +8,17 @@
 //
 // The loop filter edge kernels shared by the encoder and decoder: luma and
 // chroma, bS < 4 and bS == 4, across vertical and horizontal edges, and the
-// interleaved-chroma (CbCr) variants. C kernels only; the SIMD variants and
-// their transpose wrappers are not ported. The function-pointer table that
-// selects them (SDeblockingFunc) is decoder state and comes with the decoder.
+// interleaved-chroma (CbCr) variants. Upstream's SIMD variants and their
+// transpose wrappers are not ported; deblocking_common_simd.cs has kernels of
+// its own in their place. The function-pointer tables that select them are the
+// decoder's and the encoder's (their DeblockingInit).
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 24 Nov 2026  Claude          Created.
+// 27 Nov 2026  Claude          Header: the SIMD kernels are in deblocking_common_simd.cs (P5.4).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

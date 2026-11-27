@@ -10,7 +10,8 @@
 // and tc0 tables, the P slice strength derivation (4x4 and 8x8 transforms),
 // the edge filters, the intra and inter macroblock filters, WelsDeblockingMb,
 // the slice loop and the per-macroblock entry points the threaded decoder
-// uses, and DeblockingInit with the C kernels only. The B slice strength
+// uses, and DeblockingInit (with the SIMD kernels of
+// common/deblocking_common_simd.cs where upstream has its own). The B slice strength
 // functions (DeblockingBSliceBsMarginalMBAvcbase and
 // DeblockingBSliceBSInsideMBNormal) throw: B slices are not ported yet, and
 // this port's B macroblock parser fails on a slice's first macroblock, so a B
@@ -25,6 +26,7 @@
 //
 // History:
 // 25 Nov 2026  Claude          Created (D5).
+// 27 Nov 2026  Claude          DeblockingInit chooses the SIMD edge filters (P5.4).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -1231,6 +1233,24 @@ internal static unsafe partial class WelsDec
         pFunc->pfChromaDeblockingLT4Hor2 = &DeblockChromaLt4H2_c;
         pFunc->pfChromaDeblockingEQ4Hor2 = &DeblockChromaEq4H2_c;
 
-        // The X86_ASM, NEON, AArch64, MMI, MSA and LSX kernels are not ported.
+        // In place of the X86_ASM, NEON and AArch64 kernels, the ones in
+        // common/deblocking_common_simd.cs. MMI, MSA and LSX: not ported.
+        if (WelsCpuHasSimd128((uint32_t)iCpu))
+        {
+            pFunc->pfLumaDeblockingLT4Ver = &DeblockLumaLt4V_simd;
+            pFunc->pfLumaDeblockingEQ4Ver = &DeblockLumaEq4V_simd;
+            pFunc->pfLumaDeblockingLT4Hor = &DeblockLumaLt4H_simd;
+            pFunc->pfLumaDeblockingEQ4Hor = &DeblockLumaEq4H_simd;
+
+            pFunc->pfChromaDeblockingLT4Ver = &DeblockChromaLt4V_simd;
+            pFunc->pfChromaDeblockingEQ4Ver = &DeblockChromaEq4V_simd;
+            pFunc->pfChromaDeblockingLT4Hor = &DeblockChromaLt4H_simd;
+            pFunc->pfChromaDeblockingEQ4Hor = &DeblockChromaEq4H_simd;
+
+            pFunc->pfChromaDeblockingLT4Ver2 = &DeblockChromaLt4V2_simd;
+            pFunc->pfChromaDeblockingEQ4Ver2 = &DeblockChromaEq4V2_simd;
+            pFunc->pfChromaDeblockingLT4Hor2 = &DeblockChromaLt4H2_simd;
+            pFunc->pfChromaDeblockingEQ4Hor2 = &DeblockChromaEq4H2_simd;
+        }
     }
 }

@@ -35,6 +35,7 @@ was kept for the VP8 encoder.
 | P5.1 Benchmarks and profile | **Done** (27 Nov) | New `benchmarks/SIPSorcery.H264/H264Benchmarks`: BenchmarkDotNet encode and decode benchmarks at 640x480, 1280x720 and 1920x1080 on generated camera-like frames, with the memory diagnoser, and a `run` mode that encodes or decodes flat out in one process, for a profiler. The encoder is set up as `H264Codec` sets it up but stamps frames 1/30 s apart, so the rate control skips nothing and the output is the same every run. Baseline with the C kernels: encoding 37.5, 11.5 and 5.3 frames a second, decoding 281, 88 and 38. **The allocation check: after warm-up the encoder and decoder allocate nothing a frame.** The only per-frame allocations are the ones `H264Codec`'s `IVideoEncoder` return types bring (see the notes). The profile (see the notes) set the order of the steps after it. |
 | P5.2 SIMD groundwork, SAD and SATD | **Done** (27 Nov) | `common/cpu.cs`: `WelsCPUFeatureDetect` from .NET's instruction set classes, masked by `WelsCpuFeatureMask` (0 gives the C kernels throughout), and `WelsCpuHasSimd128` (SSE2 on x86 and x64, AdvSimd on Arm64). The encoder, the decoder and the preprocessing now call it where upstream does, reporting no core count, as the C-only build. `common/simd.cs` (load, interleave and SAD helpers), `common/sad_common_simd.cs` (the 7 SAD sizes and the 7 four-neighbour variants) and `encoder/sample_simd.cs` (the 7 SATD sizes), all Vector128 with x86 and Arm branches where it has no portable form. `WelsInitSampleSadFunc` and scene change detection choose them in place of upstream's X86_ASM and HAVE_NEON blocks. The Combined3 slots stay NULL, as on upstream's C path. New `sad_common_simd_unittest` and `sample_simd_unittest`: every `sad` and SATD fixture row gives the C build's hash through the SIMD kernel, and each kernel equals the C# C kernel over 1500 random and extreme blocks at random strides. **Every table, hash and test still passes, now through the SIMD kernels where the API is used.** 6 planted bugs each fail rows (see the notes). Encoding is 2.5 to 2.7 times as fast: 97.0, 30.7 and 13.3 frames a second at 480p, 720p and 1080p (`video-bench`: 169, 52 and 27, from E8's 65, 23 and 12), so 720p is real time. UnitTest: 8963. TestVectors: 832. |
 | P5.3 SIMD motion compensation | **Done** (27 Nov) | `common/mc_simd.cs`: the three half-pel filters, the twelve quarter-pel positions built from them as the C kernels build them, `PixelAvg`, the 16-wide copy, and chroma at 8 and 4 wide. All Vector128, with x86 and Arm branches where it has no portable form (the saturating packs, `pmaddwd` and the rounded average, now in `common/simd.cs`). `InitMcFunc` chooses them in place of upstream's X86_ASM and HAVE_NEON blocks. They take any width, in strips of 16, 8 and 4 columns, the last overlapping the one before when the width isn't made of those (the encoder's 17 and 9). New `mc_simd_unittest`: every `mc` fixture row gives the C build's hash through the SIMD table, and every slot equals the C# C slot, the samples round the block included, at every width and height its callers use and every fractional position. **Every table, hash and test still passes.** 8 planted bugs each fail rows (see the notes). Encoding is 1.6 times as fast again: 152, 48.9 and 21.3 frames a second at 480p, 720p and 1080p (`video-bench`: 216, 77 and 33). Decoding is 1.65 to 1.85 times as fast: 516, 146 and 66.9 (from 281, 88 and 38; `video-bench` 720p: 119). UnitTest: 9645. TestVectors: 832. |
+| P5.4 SIMD deblocking | **Done** (27 Nov) | `common/deblocking_common_simd.cs`: the 12 loop filter edge kernels, luma and chroma, bS < 4 and bS = 4, across horizontal and vertical edges, and the single-plane chroma ones. Branchless: every sample along the edge is worked out in 16-bit lanes and the edge decisions pick between filtered and unfiltered. The vertical edges transpose 16 rows to columns and back, reading and writing only the columns C does. Both `DeblockingInit`s choose them in place of upstream's X86_ASM and HAVE_NEON blocks; the encoder's `DeblockingBSCalc` stays C. `expand_pic` gets no SIMD version: it is 0.5% of the decode, and its copies and fills are already the runtime's vectorised `CopyBlockUnaligned` and `InitBlockUnaligned`. New `deblocking_common_simd_unittest`: every edge filter `deblock` fixture row gives the C build's hash through the SIMD kernel; each kernel equals the C# C kernel over 3000 edges of every kind with random alpha, beta and tc0, the whole plane compared; and each table slot holds its own kernel. **Every table, hash and test still passes.** 11 planted bugs each fail tests (see the notes). Decoding is 1.6 times as fast, back to back with P5.3's build: 924, 291 and 126 frames a second at 480p, 720p and 1080p, from 585, 178 and 78.6 (`video-bench` 720p: 154 and 155 in two runs, from 119 and 124). Encoding is 10 to 14% faster: 175, 56.3 and 24.2, from 157, 49.2 and 22.0 (`video-bench`: 259, 82 and 38, from 222, 77 and 33). UnitTest: 10036. TestVectors: 832. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -1581,6 +1582,86 @@ Notes from P5.3:
   the transforms and quantisation (P5.5) are about 30%.
 - Under the profiler the 720p decode read 168 frames a second, against 146
   without it, so runs here can differ by 15%.
+
+Notes from P5.4:
+
+- **The arithmetic.** Each of p3..q3 is widened to 16-bit lanes, 8 samples a
+  vector, two vectors for the 16 samples along a luma edge. Every sum the C
+  kernels form is exact there. The bS < 4 delta, `((q0 - p0) * 4 + p1 - q1 +
+  4) >> 3`, lies in -160..159 before its clip to tc. The saturating pack back
+  to bytes clips as `WelsClip1` does. The one result C writes without
+  `WelsClip1`, p1 (and q1) plus its clipped delta, is already in 0..255: the
+  delta takes p1 to the average of p2 and `(p0 + q0 + 1) >> 1` at most.
+- **Branchless.** The C kernels decide sample by sample whether to filter
+  (`|p0 - q0| < alpha`, `|p1 - p0| < beta`, `|q1 - q0| < beta`, tc0 at least
+  0 for luma and over 0 for chroma), whether p1 and q1 move (`|p2 - p0| <
+  beta`), and at bS = 4 whether it's the strong filter (`|p0 - q0| <
+  (alpha >> 2) + 2`). Here each decision is a mask, and the masks select
+  between the filtered and unfiltered values. Where C leaves a sample alone,
+  the same value is written back.
+- **tc0.** Each of the four tc0 values covers 4 luma samples, or 2 Cb and 2 Cr
+  samples. Chroma has Cb in lanes 0-7 and Cr in lanes 8-15, which share tc0.
+  The single-plane chroma kernels (the decoder's `...V2`, `...H2`) run the
+  two-plane kernels with the plane given twice. Both halves of each vector work
+  out the same results, so the second store repeats the first.
+- **The layout.** The V kernels filter across a horizontal edge, so each of
+  p3..q3 is one row, loaded as it is. The H kernels filter across a vertical
+  edge. They load 16 rows of 8 bytes, transpose them into 8 columns of 16
+  with byte, word, dword and qword interleaves, filter as V does, and
+  transpose back. They read and write only the columns C may:
+  - luma bS < 4 reads -3..2 and writes -2..1.
+  - luma bS = 4 reads -4..3 and writes -3..2.
+  - chroma reads -2..1 and writes -1..0.
+- **`expand_pic`.** `ExpandPictureLuma_c` and `ExpandPictureChroma_c` take
+  0.5% of the 720p decode. Their row copies and edge fills are
+  `Unsafe.CopyBlockUnaligned` and `InitBlockUnaligned`, which the runtime
+  already vectorises, so there is no SIMD version.
+- **Not ported.** The encoder's `DeblockingBSCalc` (upstream has SSE2 and NEON)
+  is 0.9% of the encode. The decoder's `DeblockingBsMarginalMBAvcbase` is C
+  upstream too, and is now 5.8% of the decode.
+- **Planted bugs.** Each was planted one at a time and restored from a copy,
+  checked by md5. The unit and test vector tests that fail:
+  - Luma bS < 4 not raising tc for q1: 53 and 336.
+  - Luma bS < 4 filtering where tc0 is -1: 35 and 318.
+  - Chroma tc0 not spread two samples each: 147 and 367.
+  - Luma bS = 4's strong limit one low: 6 and 286.
+  - Luma bS = 4's p2 missing a p2 term: 34 and 363.
+  - The 16 x 8 transpose swapping rows 2 and 3: 128 and 374.
+  - Luma bS < 4 H writing rows 8-11 to rows 4-7: 43 and 382.
+  - Luma bS = 4 H storing the wrong q1 and q2: 22 and 369.
+  - Chroma H writing Cb's results to Cr: 65 and 365.
+  - The encoder's table giving `LT4Hor` the V kernel: 1 and 313. It passed
+    the unit tests at first: the table test only checked that the SIMD
+    slots differ from the C ones. It now checks that each slot holds its own
+    kernel.
+  - The decoder's table giving `EQ4Hor2` the V2 kernel: 1 and 1. Only one
+    vector reaches that slot, so here the table test is the check.
+- **The profile after**, 1280x720. Decoding:
+  - `WelsDeblockingFilterSlice` and all it calls: 21.7% of the samples,
+    from 44.3%. Both counts include the 14% that encodes the benchmark's
+    clip, so deblocking was about half the decode and is now a quarter.
+  - The rest: `WelsResidualBlockCavlc` 8.3%, `IdctResAddPred_c` 6.2%
+    (`IdctFourResAddPred_` another 1.9%), `McHorVer22_simd` 5.9%,
+    `DeblockingBsMarginalMBAvcbase` 5.8%,
+    `WelsActualDecodeMbCavlcPSlice` 5.7%, `DeblockLumaLt4H_simd` 5.4%,
+    `DeblockChromaLt4H_simd` 1.8%.
+  - The V kernels barely show. They have no loop and no call, so the
+    sampler, which stops a thread at a safe point, counts their time in
+    their callers (`DeblockingInterMb`, `WelsDeblockingMb`,
+    `FilteringEdgeLuma*`).
+
+  Encoding:
+  - Deblocking: 5.2% from 13.6%.
+  - The rest: `VAACalcSadBgd_c` 16.2%, `WelsDctT4_c` 11.8%,
+    `WelsQuantFour4x4Max_c` 11.5%, `WelsIDctT4Rec_c` 6.8%,
+    `WelsSampleSatd16x16_simd` 4.3%, `WelsI16x16LumaPredPlane_c` 3.0%.
+
+  P5.5's transforms and quantisation are now 30% of the encode and 8% of the
+  decode. P5.6's `VAACalcSadBgd_c` is the encoder's biggest kernel.
+- **The baselines.** Built from P5.3's commit and run back to back with
+  P5.4's, the 720p decode reads 178 frames a second. P5.3's notes measured
+  146 on a slower run, so the speed-ups here are against the back-to-back
+  numbers.
 
 ## 1. Goal
 
