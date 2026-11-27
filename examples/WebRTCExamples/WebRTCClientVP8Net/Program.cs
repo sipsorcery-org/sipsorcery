@@ -154,9 +154,6 @@ namespace demo
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
-        /// </summary>
-        /// <summary>
         /// Copies a decoded 24 bits per pixel frame into a bitmap this application owns and displays it,
         /// returning the bitmap so the caller can re-use it for the next frame.
         /// </summary>
@@ -211,7 +208,9 @@ namespace demo
             return displayBmp;
         }
 
-
+        /// <summary>
+        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// </summary>
         private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
         {
             var seriLogger = new LoggerConfiguration()
