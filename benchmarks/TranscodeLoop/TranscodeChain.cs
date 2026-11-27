@@ -484,7 +484,9 @@ internal sealed class TranscodeChain : IDisposable
             if (encoded == null || encoded.Length == 0)
             {
                 // The encoder took the frame and gave nothing back: its rate control dropped it
-                // (av1.net and h264.net do when over their bitrate). Page B counts it as missing too.
+                // (h264.net's frame skipping and av1.net's frame dropping are off, see
+                // Codecs.Create, so this is an encoder starting up or one that drops on its own).
+                // Page B counts it as missing too.
                 _encodeNoOutput++;
                 continue;
             }

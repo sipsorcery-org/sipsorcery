@@ -131,7 +131,9 @@ Counts on a tile include everything lost upstream of it, so read them left to ri
 - **Decoded, "skipped"**: decoded frames the encoder had no time for. Up to 3 wait; beyond that
   the oldest is skipped, so a slow encoder shows as skips rather than a growing delay.
 - **Decoded, "dropped by encoder"**: frames the encoder took and gave nothing back for: its rate
-  control dropped them to hold the bitrate. Only shown when there are some.
+  control dropped them to hold the bitrate. Only shown when there are some. h264.net's frame
+  skipping is turned off here and av1.net's frame dropping is off by default, so the managed
+  encoders encode every frame they're given and a frame they can't keep up with shows as skipped.
 - **Output, "missing"**: frame numbers page B's decoder never produced, read from the decoded
   frames themselves (not from what the display showed, which drops frames to fit its refresh
   rate). Frames the page had no time to read are counted as "not read", not as missing; frames

@@ -181,12 +181,15 @@ internal static class Codecs
     /// <summary>
     /// A new codec instance. SIPSorcery's codecs do both directions in one class; each chain makes
     /// one to decode and one to encode. A bitrate of 0 leaves the implementation's default.
+    /// h264.net's frame skipping is off (av1.net's frame dropping is off by default), so every
+    /// frame that reaches an encoder is encoded and a frame missing at page B is one the chain
+    /// couldn't keep up with, not one a rate control chose to skip.
     /// </summary>
     public static IVideoEncoder Create(string impl, int bitrateKbps) => impl switch
     {
         Vp8Net => new Vpx.Net.VP8Codec(),
         Av1Net => bitrateKbps > 0 ? new AV1VideoEncoder(new Av1rt.Av1EncoderOptions { TargetBitrateKbps = bitrateKbps }) : new AV1VideoEncoder(),
-        H264Net => bitrateKbps > 0 ? new H264Codec { TargetBitrateKbps = bitrateKbps } : new H264Codec(),
+        H264Net => new H264Codec { TargetBitrateKbps = Math.Max(0, bitrateKbps), FrameSkip = false },
         Ffmpeg => CreateFfmpeg(bitrateKbps),
         _ => throw new ArgumentException($"Unknown codec implementation {impl}"),
     };
