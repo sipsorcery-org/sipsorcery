@@ -1,9 +1,10 @@
 //-----------------------------------------------------------------------------
 // Filename: simd.cs
 //
-// Description: Helpers for the SIMD kernels (Phase 5): unaligned loads of 4, 8
-// and 16 samples, the interleaves Vector128 has no portable form of, and the
-// SAD step. Not a port: upstream's SIMD kernels are assembly.
+// Description: Helpers for the SIMD kernels (Phase 5): unaligned loads and
+// stores of 4, 8 and 16 samples, the interleaves, saturating packs and rounded
+// average Vector128 has no portable form of, and the SAD step. Not a port:
+// upstream's SIMD kernels are assembly.
 //
 // The kernels are put in the function tables only where WelsCpuHasSimd128 holds,
 // that is with SSE2 on x86 and x64 or AdvSimd on Arm64, so each helper has a
@@ -14,6 +15,7 @@
 //
 // History:
 // 27 Nov 2026  Claude          Created (P5.2).
+// 27 Nov 2026  Claude          Narrow loads and stores, packs and averaging for MC (P5.3).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -127,4 +129,91 @@ internal static unsafe class Simd
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int32_t SumWidened(Vector128<ushort> v) =>
         (int32_t)Vector128.Sum(Vector128.WidenLower(v) + Vector128.WidenUpper(v));
+
+    /// <summary>8 samples in the low lanes, the rest 0.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<byte> Load8(uint8_t* p) => Vector128.CreateScalar(Unsafe.ReadUnaligned<ulong>(p)).AsByte();
+
+    /// <summary>4 samples in the low lanes, the rest 0.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<byte> Load4(uint8_t* p) => Vector128.CreateScalar(Unsafe.ReadUnaligned<uint>(p)).AsByte();
+
+    /// <summary>Lanes 0 to 7.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Store8(uint8_t* p, Vector128<byte> v) => Unsafe.WriteUnaligned(p, v.AsUInt64().ToScalar());
+
+    /// <summary>Lanes 0 to 3.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Store4(uint8_t* p, Vector128<byte> v) => Unsafe.WriteUnaligned(p, v.AsUInt32().ToScalar());
+
+    /// <summary>Lanes 4 to 7.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Store4High(uint8_t* p, Vector128<byte> v) => Unsafe.WriteUnaligned(p, v.AsUInt32().GetElement(1));
+
+    /// <summary>Lanes 0 to 7 widened to 16 bits.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<short> Lo16(Vector128<byte> v) => Vector128.WidenLower(v).AsInt16();
+
+    /// <summary>Lanes 8 to 15 widened to 16 bits.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<short> Hi16(Vector128<byte> v) => Vector128.WidenUpper(v).AsInt16();
+
+    /// <summary>8 samples widened to 16 bits.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<short> Load8W(uint8_t* p) => Lo16(Load8(p));
+
+    /// <summary>Two rows of 4 samples, each read as one uint, widened to 16 bits: a in lanes 0 to 3, b in 4 to 7.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<short> Rows4x2W(uint a, uint b) => Lo16(Vector128.CreateScalar(a | ((ulong)b << 32)).AsByte());
+
+    /// <summary>
+    /// 16-bit lanes to bytes, saturating to 0..255 as WelsClip1 does: <paramref name="lo"/> to
+    /// lanes 0 to 7 and <paramref name="hi"/> to 8 to 15.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<byte> PackUs(Vector128<short> lo, Vector128<short> hi)
+    {
+        if (Sse2.IsSupported)
+        {
+            return Sse2.PackUnsignedSaturate(lo, hi);
+        }
+        if (AdvSimd.Arm64.IsSupported)
+        {
+            return AdvSimd.ExtractNarrowingSaturateUnsignedUpper(AdvSimd.ExtractNarrowingSaturateUnsignedLower(lo), hi);
+        }
+        Vector128<short> max = Vector128.Create((short)255);
+        return Vector128.Narrow(Vector128.Min(Vector128.Max(lo, Vector128<short>.Zero), max).AsUInt16(),
+                                Vector128.Min(Vector128.Max(hi, Vector128<short>.Zero), max).AsUInt16());
+    }
+
+    /// <summary>32-bit lanes to 16 bits, saturating: <paramref name="lo"/> to lanes 0 to 3 and <paramref name="hi"/> to 4 to 7.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<short> PackSs(Vector128<int> lo, Vector128<int> hi)
+    {
+        if (Sse2.IsSupported)
+        {
+            return Sse2.PackSignedSaturate(lo, hi);
+        }
+        if (AdvSimd.Arm64.IsSupported)
+        {
+            return AdvSimd.ExtractNarrowingSaturateUpper(AdvSimd.ExtractNarrowingSaturateLower(lo), hi);
+        }
+        Vector128<int> min = Vector128.Create((int)short.MinValue), max = Vector128.Create((int)short.MaxValue);
+        return Vector128.Narrow(Vector128.Min(Vector128.Max(lo, min), max), Vector128.Min(Vector128.Max(hi, min), max));
+    }
+
+    /// <summary>(a + b + 1) >> 1, lane by lane.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<byte> Avg(Vector128<byte> a, Vector128<byte> b)
+    {
+        if (Sse2.IsSupported)
+        {
+            return Sse2.Average(a, b);
+        }
+        if (AdvSimd.IsSupported)
+        {
+            return AdvSimd.FusedAddRoundedHalving(a, b);
+        }
+        return (a | b) - Vector128.ShiftRightLogical(a ^ b, 1);
+    }
 }

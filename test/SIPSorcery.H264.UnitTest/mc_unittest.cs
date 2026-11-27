@@ -38,10 +38,19 @@ public unsafe class mc_unittest
     [MemberData(nameof(Rows))]
     public void Mc_MatchesCBuild(string kernel, string kase, string sha1)
     {
-        var row = new KernelFixture("mc", kernel, kase, sha1);
+        Assert.Equal(sha1, Run(new KernelFixture("mc", kernel, kase, sha1), 0));
+    }
+
+    /// <summary>
+    /// A fixture row through the table InitMcFunc fills for <paramref name="uiCpuFlag"/>, giving
+    /// the destination's hash.
+    /// </summary>
+    internal static string Run(KernelFixture row, uint uiCpuFlag)
+    {
+        string kernel = row.Kernel;
         int w = row.Param("w"), h = row.Param("h");
         SMcFunc mc;
-        InitMcFunc(&mc, 0);
+        InitMcFunc(&mc, uiCpuFlag);
 
         var r = new FixtureRng((uint)row.Param("seed"));
         using var src = new NativeBuffer(SrcStride * SrcRows);
@@ -76,10 +85,10 @@ public unsafe class mc_unittest
                 }
                 break;
             default:
-                throw new ArgumentException($"No C# case for {kernel} ({kase}).");
+                throw new ArgumentException($"No C# case for {kernel} ({row.Case}).");
         }
 
-        Assert.Equal(sha1, FixtureHasher.Of(dst.Span));
+        return FixtureHasher.Of(dst.Span);
     }
 
     [Fact]

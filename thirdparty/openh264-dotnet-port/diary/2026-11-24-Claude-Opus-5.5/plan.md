@@ -34,6 +34,7 @@ was kept for the VP8 encoder.
 | E8 API and wire-up | **Done** (27 Nov) | `welsEncoderExt`'s `CWelsH264SVCEncoder` whole (`Initialize`, `InitializeExt`, `EncodeFrame`, `EncodeParameterSets`, `ForceIntraFrame`, every `SetOption` and `GetOption` case, the statistics), the rest of `encoder_ext` that a single layer, single thread, CAVLC camera encoder runs (`WelsInitEncoderExt` and `WelsUninitEncoderExt`, `RequestMemorySvc` and `FreeMemorySvc`, the frame loop `WelsEncoderEncodeExt`, `WelsEncoderParamAdjust`, `ForceCodingIDR`, the rate and LTR setters) and `ref_list_mgr_svc`'s LTR feedback filters. Configurations the port doesn't code are refused at init. ~2.1k lines ported. `EncoderDriver` is now a thin wrapper over the API, and every earlier table and the four upstream hashes still match through it. New `h264ref api` mode (`reference/api.tsv`): 61 configurations, 994 scripted operations of frames, forced IDRs, parameter sets, re-inits, size changes and every option the camera encoder takes. **All match** native row by row. The three E5b survivors that needed the API now fail rows. `H264Codec` encodes (I420, NV12 and packed RGB through a new BT.601 `RgbToI420`, set up as libwebrtc sets up OpenH264), with 21 new tests of round trips, key frames, sizes, formats, bitrate and frame rate. The CLI's `--encoder h264.net` (whip, loopback, browser-test, video-bench), with a guard that stops the CLI tool package from shipping it. New example `examples/WebRTCExamples/WebRTCGetStartedH264Net`, and `TranscodeLoop` encodes with it. **Chromium decodes the stream** (`browser-test --encoder h264.net`, 640x360 at 30 fps, 440 of 440 frames, and a PLI answered with an IDR). Firefox and Safari aren't checked. About 65 frames a second at 640x480 on one thread. Of 17 planted bugs, 15 fail rows, three of them only after a driver check and two tests were added. The other two are equivalent (see the notes). UnitTest: 8758. TestVectors: 832. CLI UnitTest: 261. |
 | P5.1 Benchmarks and profile | **Done** (27 Nov) | New `benchmarks/SIPSorcery.H264/H264Benchmarks`: BenchmarkDotNet encode and decode benchmarks at 640x480, 1280x720 and 1920x1080 on generated camera-like frames, with the memory diagnoser, and a `run` mode that encodes or decodes flat out in one process, for a profiler. The encoder is set up as `H264Codec` sets it up but stamps frames 1/30 s apart, so the rate control skips nothing and the output is the same every run. Baseline with the C kernels: encoding 37.5, 11.5 and 5.3 frames a second, decoding 281, 88 and 38. **The allocation check: after warm-up the encoder and decoder allocate nothing a frame.** The only per-frame allocations are the ones `H264Codec`'s `IVideoEncoder` return types bring (see the notes). The profile (see the notes) set the order of the steps after it. |
 | P5.2 SIMD groundwork, SAD and SATD | **Done** (27 Nov) | `common/cpu.cs`: `WelsCPUFeatureDetect` from .NET's instruction set classes, masked by `WelsCpuFeatureMask` (0 gives the C kernels throughout), and `WelsCpuHasSimd128` (SSE2 on x86 and x64, AdvSimd on Arm64). The encoder, the decoder and the preprocessing now call it where upstream does, reporting no core count, as the C-only build. `common/simd.cs` (load, interleave and SAD helpers), `common/sad_common_simd.cs` (the 7 SAD sizes and the 7 four-neighbour variants) and `encoder/sample_simd.cs` (the 7 SATD sizes), all Vector128 with x86 and Arm branches where it has no portable form. `WelsInitSampleSadFunc` and scene change detection choose them in place of upstream's X86_ASM and HAVE_NEON blocks. The Combined3 slots stay NULL, as on upstream's C path. New `sad_common_simd_unittest` and `sample_simd_unittest`: every `sad` and SATD fixture row gives the C build's hash through the SIMD kernel, and each kernel equals the C# C kernel over 1500 random and extreme blocks at random strides. **Every table, hash and test still passes, now through the SIMD kernels where the API is used.** 6 planted bugs each fail rows (see the notes). Encoding is 2.5 to 2.7 times as fast: 97.0, 30.7 and 13.3 frames a second at 480p, 720p and 1080p (`video-bench`: 169, 52 and 27, from E8's 65, 23 and 12), so 720p is real time. UnitTest: 8963. TestVectors: 832. |
+| P5.3 SIMD motion compensation | **Done** (27 Nov) | `common/mc_simd.cs`: the three half-pel filters, the twelve quarter-pel positions built from them as the C kernels build them, `PixelAvg`, the 16-wide copy, and chroma at 8 and 4 wide. All Vector128, with x86 and Arm branches where it has no portable form (the saturating packs, `pmaddwd` and the rounded average, now in `common/simd.cs`). `InitMcFunc` chooses them in place of upstream's X86_ASM and HAVE_NEON blocks. They take any width, in strips of 16, 8 and 4 columns, the last overlapping the one before when the width isn't made of those (the encoder's 17 and 9). New `mc_simd_unittest`: every `mc` fixture row gives the C build's hash through the SIMD table, and every slot equals the C# C slot, the samples round the block included, at every width and height its callers use and every fractional position. **Every table, hash and test still passes.** 8 planted bugs each fail rows (see the notes). Encoding is 1.6 times as fast again: 152, 48.9 and 21.3 frames a second at 480p, 720p and 1080p (`video-bench`: 216, 77 and 33). Decoding is 1.65 to 1.85 times as fast: 516, 146 and 66.9 (from 281, 88 and 38; `video-bench` 720p: 119). UnitTest: 9645. TestVectors: 832. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -1521,6 +1522,65 @@ Notes from P5.2:
   `WelsI16x16LumaPredPlane_c` 1.9%, `WelsSampleSad16x16_simd` 1.4%. MC is
   now about a third of the encode, and the transforms and quantisation about
   a fifth. Runs on this machine vary by about 10% from one to the next.
+
+Notes from P5.3:
+
+- **The arithmetic.** The 6-tap filter of 8-bit samples lies in
+  -2550..10710, so 16-bit lanes hold it exactly, and `(x + 16) >> 5` with a
+  saturating pack to bytes is `WelsClip1`'s. The centre position keeps
+  `McHorVer22_c`'s order: the column filter kept at 16 bits, as its
+  `int16_t iTmp` is, then the row filter of those in 32 bits. On x86 that is
+  `pmaddwd`: `a05 - 5 a14` from the pair sums interleaved, and `20 a23 + 512`
+  from `a23` interleaved with 512. `(x + 512) >> 10` lies in -210..464, so
+  the 32-to-16 and 16-to-8 saturating packs give `WelsClip1`'s result.
+  Chroma's four weights add up to 64, so its sums fit 16 bits (16352 at
+  most).
+- **The layout.** The row filter loads the six shifted runs of 16, 8 or 4
+  samples directly, so it widens six vectors for 8 outputs and shuffles
+  nothing else. The column filter goes down 8-column strips with its six rows
+  widened in registers, one new load a row; a 16-column strip would need
+  twelve registers for the rows. The 4-wide strips put two rows in a vector.
+  The centre runs the column pass over the whole block into a 24 x 17 stack
+  buffer before the row pass, so the row pass's unaligned loads read stores
+  made well before them (the reason, not measured against the alternative).
+- **Widths.** The encoder's sub-pel refinement asks for 17 and 9 columns and
+  17 and 9 rows. The last strip overlaps the one before it and writes the
+  same values again. That is safe because no filter can run in place, nor
+  can the C kernels. `PixelAvg_c` can, so its leftover columns go one by
+  one. Blocks under 4 wide, the centre past `McHorVer22_c`'s 17 columns or
+  past 17 rows, and 2-wide chroma go to the C kernels.
+- **Reads.** Each kernel reads only the samples its C kernel reads. Under 8
+  wide, the centre's row pass works out lanes past the width from the rest
+  of its own buffer, and doesn't store them.
+- **Planted bugs.** Each was planted one at a time and restored from a
+  copy, checked by md5. The unit and test vector tests that fail:
+  - `Round5` adding 15: 124 and 346.
+  - The centre rounding with 511: 3 and 170. It differs only where the sum
+    is 512 more than a multiple of 1024.
+  - The last 8-column strip one column late: 27 and none. It writes an 18th
+    column into the encoder's refinement buffer, which nothing reads, and
+    the decoder never asks for a width that needs it. The unit tests see the
+    stray column in the samples round the block.
+  - The centre under 8 wide reading one column early: 24 and 83.
+  - 4-wide chroma carrying the wrong row down: 127 and 306.
+  - The 4-wide column filter carrying the wrong row down: 32 and 74.
+  - The 8-wide average ignoring its second source: 41 and 295.
+  - The quarter-pel table swapping (1,2) and (1,3): 15 and 269.
+- **The profile after**, 1280x720. Encoding: `VAACalcSadBgd_c` 15.4%,
+  `WelsDctT4_c` 11.6%, `WelsQuantFour4x4Max_c` 10.3%, `WelsIDctT4Rec_c`
+  7.2%, the luma deblocking edges 8.2%, `WelsSampleSatd16x16_simd` 4.1%,
+  `WelsI16x16LumaPredPlane_c` 3.2%, the chroma deblocking edges 2.5%, and MC
+  about 7% (the centre 3.8%, `McChroma_simd` 1.2%, the column filter 1.1%),
+  from about a third. Decoding: `DeblockLumaLt4V_c` 15.9%,
+  `DeblockLumaLt4H_c` 15.0%, the chroma deblocking edges 8.8%,
+  `WelsResidualBlockCavlc` 6.2%, `IdctResAddPred_c` and
+  `IdctFourResAddPred_` 6.2%, `DeblockingBsMarginalMBAvcbase` 5.1%, and MC
+  15.4% (`GetInterPred` with what it calls), from about half. Deblocking is
+  now nearly half the decode, so P5.4 comes next, as planned. In the encode,
+  `VAACalcSadBgd_c`, which is P5.6, is now bigger than any other kernel, and
+  the transforms and quantisation (P5.5) are about 30%.
+- Under the profiler the 720p decode read 168 frames a second, against 146
+  without it, so runs here can differ by 15%.
 
 ## 1. Goal
 

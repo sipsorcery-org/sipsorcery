@@ -4,7 +4,8 @@
 // Description: Port of the C paths of:
 //  - codec/common/inc/mc.h
 //  - codec/common/src/mc.cpp (lines 1-380 and InitMcFunc; the rest of the
-//    file is SSE2/SSSE3/AVX2/NEON/MMI/MSA/LSX wrappers, not ported)
+//    file is SSE2/SSSE3/AVX2/NEON/MMI/MSA/LSX wrappers, not ported: InitMcFunc
+//    chooses the SIMD kernels of mc_simd.cs in their place)
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // Luma quarter-pel interpolation (the 6-tap filter and its averages), chroma
@@ -23,6 +24,7 @@
 //
 // History:
 // 24 Nov 2026  Claude          Created.
+// 27 Nov 2026  Claude          InitMcFunc chooses the SIMD kernels (P5.3).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -482,6 +484,16 @@ internal static unsafe partial class WelsCommon
         pMcFuncs->pfSampleAveraging = &PixelAvg_c;
         pMcFuncs->pMcChromaFunc = &McChroma_c;
         pMcFuncs->pMcLumaFunc = &McLuma_c;
-        // X86_ASM / HAVE_NEON / HAVE_NEON_AARCH64 / HAVE_MMI / HAVE_MSA / HAVE_LSX variants: not ported.
+        // In place of the X86_ASM / HAVE_NEON / HAVE_NEON_AARCH64 blocks, the kernels in
+        // mc_simd.cs. HAVE_MMI / HAVE_MSA / HAVE_LSX: not ported.
+        if (WelsCpuHasSimd128(uiCpuFlag))
+        {
+            pMcFuncs->pfLumaHalfpelHor = &McHorVer20_simd;
+            pMcFuncs->pfLumaHalfpelVer = &McHorVer02_simd;
+            pMcFuncs->pfLumaHalfpelCen = &McHorVer22_simd;
+            pMcFuncs->pfSampleAveraging = &PixelAvg_simd;
+            pMcFuncs->pMcChromaFunc = &McChroma_simd;
+            pMcFuncs->pMcLumaFunc = &McLuma_simd;
+        }
     }
 }

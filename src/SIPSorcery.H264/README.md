@@ -82,10 +82,11 @@ example does all of this when H264 from h264.net is picked on its page. The CLI,
 The port runs OpenH264's portable C code, without its assembly. In its place
 are SIMD kernels written with `System.Runtime.Intrinsics`, for x86 and x64
 with SSE2 and for Arm64, so far for SAD and SATD, which motion estimation
-spends most of its time in. On one desktop thread it encodes about 170 frames
-a second at 640x480, 50 at 1280x720 and 27 at 1920x1080 (the CLI's
-`video-bench`), so it keeps up in real time up to 1280x720 at 30 frames a
-second.
+spends most of its time in, and for motion compensation, which was half of
+decoding. On one desktop thread it encodes about 215 frames a second at
+640x480, 75 at 1280x720 and 33 at 1920x1080 (the CLI's `video-bench`), and
+decodes about 145 a second at 1280x720 (`H264Benchmarks`), so it keeps up in
+real time at 1280x720 and 30 frames a second with room to spare.
 
 ## Port conventions
 
