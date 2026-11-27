@@ -16,8 +16,9 @@
 // counted in use when it freed its memory.
 //
 // Configurations the port does not code (CABAC, screen content, several
-// spatial layers, SM_SIZELIMITED_SLICE, threads) fail Initialize with
-// cmInitParaError and an error log naming them.
+// spatial layers, SM_SIZELIMITED_SLICE) fail Initialize with
+// cmInitParaError and an error log naming them. SliceMbCounts (P5.7) reads
+// the slices' sizes for the load balancing test.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
@@ -34,6 +35,7 @@
 // 27 Nov 2026  Claude          A thin wrapper over the library's CWelsH264SVCEncoder in place of
 //                              the hand driven init, frame loop and release (E8). Checks
 //                              iFrameSizeInBytes against the NAL units.
+// 27 Nov 2026  Claude          SliceMbCounts; threads are no longer refused (P5.7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -260,6 +262,21 @@ internal sealed unsafe partial class EncoderDriver : IDisposable
             new ReadOnlySpan<byte>((byte*)pDecPic->pData[plane] + r * pDecPic->iLineSize[plane], w).CopyTo(a.AsSpan(r * w));
         }
         return a;
+    }
+
+    /// <summary>
+    /// The macroblock count of each slice of the base layer, as the last frame coded them: the
+    /// load balancing moves them (P5.7).
+    /// </summary>
+    public int[] SliceMbCounts()
+    {
+        SDqLayer* pDq = Ctx->ppDqLayerList[0];
+        var counts = new int[pDq->sSliceEncCtx.iSliceNumInFrame];
+        for (int i = 0; i < counts.Length; i++)
+        {
+            counts[i] = pDq->pCountMbNumInSlice[i];
+        }
+        return counts;
     }
 
     internal static string Sha1(ReadOnlySpan<byte> d) => Convert.ToHexString(SHA1.HashData(d)).ToLowerInvariant();

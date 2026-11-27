@@ -9,7 +9,8 @@
 // SetSliceBoundaryInfo), then (E4b) the slice header writers,
 // WelsCodeOneSlice and the slice lists (InitSliceInLayer and what it calls).
 // Then (E5) the P-slice coder: WelsCodePSlice, WelsPSliceMdEnc,
-// WelsMdInterMbLoop and the inter macroblock encode and reconstruction. The
+// WelsMdInterMbLoop and the inter macroblock encode and reconstruction. Then
+// (P5.7) InitOneSliceInThread for the slice threads. The
 // SM_SIZELIMITED_SLICE coders and buffer growth follow in Phase 4.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
@@ -23,6 +24,7 @@
 // 26 Nov 2026  Claude          Created (E4).
 // 26 Nov 2026  Claude          Slice headers, WelsCodeOneSlice and the slice lists (E4b).
 // 26 Nov 2026  Claude          The P-slice coder (E5).
+// 27 Nov 2026  Claude          InitOneSliceInThread (P5.7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -964,8 +966,35 @@ internal static unsafe partial class WelsEnc
         return ENC_RETURN_SUCCESS;
     }
 
-    // InitAllSlicesInThread and InitOneSliceInThread are for the threaded slice coders, which come
-    // with the threading work.
+    // InitAllSlicesInThread: for SM_SIZELIMITED_SLICE's threads (Phase 4).
+
+    public static int32_t InitOneSliceInThread(sWelsEncCtx* pCtx,
+                                               ref SSlice* pSlice,
+                                               int32_t kiSlcBuffIdx,
+                                               int32_t kiDlayerIdx,
+                                               int32_t kiSliceIdx)
+    {
+        if (pCtx->pCurDqLayer->bThreadSlcBufferFlag)
+        {
+            int32_t kiCodedNumInThread = pCtx->pCurDqLayer->sSliceBufferInfo[kiSlcBuffIdx].iCodedSliceNum;
+            Debug.Assert(kiCodedNumInThread <= pCtx->pCurDqLayer->sSliceBufferInfo[kiSlcBuffIdx].iMaxSliceNum - 1);
+            pSlice = &pCtx->pCurDqLayer->sSliceBufferInfo[kiSlcBuffIdx].pSliceBuffer[kiCodedNumInThread];
+        }
+        else
+        {
+            pSlice = &pCtx->pCurDqLayer->sSliceBufferInfo[0].pSliceBuffer[kiSliceIdx];
+        }
+        pSlice->iSliceIdx = kiSliceIdx;
+        pSlice->uiBufferIdx = (uint32_t)kiSlcBuffIdx;
+
+        // Initialize slice bs buffer info
+        pSlice->sSliceBs.uiBsPos = 0;
+        pSlice->sSliceBs.iNalIndex = 0;
+        pSlice->sSliceBs.pBsBuffer = pCtx->pSliceThreading->pThreadBsBuffer[kiSlcBuffIdx];
+        pSlice->sSliceBs.uiSize = (uint32_t)pCtx->iFrameBsSize;
+
+        return ENC_RETURN_SUCCESS;
+    }
 
     public static int32_t InitSliceThreadInfo(sWelsEncCtx* pCtx,
                                               SDqLayer* pDqLayer,

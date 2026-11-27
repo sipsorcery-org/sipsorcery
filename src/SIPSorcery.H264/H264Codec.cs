@@ -12,6 +12,7 @@
 // History:
 // 25 Nov 2026  Claude          Created (D7).
 // 27 Nov 2026  Claude          The encoder (E8).
+// 27 Nov 2026  Claude          EncoderThreads (P5.7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -45,18 +46,20 @@ namespace SIPSorcery.H264;
 /// </para>
 /// <para>
 /// The encoder is set up as libwebrtc sets up OpenH264: camera content, bitrate mode rate
-/// control that may drop a frame to hold the bitrate, one slice a picture and one thread. Every
-/// IDR access unit starts with the sequence and picture parameter sets, so a receiver can join
-/// at any key frame. The stream's level is the lowest that fits the frame size, frame rate and
-/// bitrate; a receiver that signals level 3.1 still decodes the higher levels of larger frames
-/// in practice, as browsers do. The encoder is created on the first frame and re-created,
-/// starting with a key frame, whenever the frame size changes. A frame's width and height must
-/// be at least 16; an odd width or height loses its last column or row, as in OpenH264.
+/// control that may drop a frame to hold the bitrate, and one slice a picture on one thread,
+/// unless <see cref="EncoderThreads"/> asks for more. Every IDR access unit starts with the
+/// sequence and picture parameter sets, so a receiver can join at any key frame. The stream's
+/// level is the lowest that fits the frame size, frame rate and bitrate; a receiver that
+/// signals level 3.1 still decodes the higher levels of larger frames in practice, as browsers
+/// do. The encoder is created on the first frame and re-created, starting with a key frame,
+/// whenever the frame size or the thread count changes. A frame's width and height must be at
+/// least 16; an odd width or height loses its last column or row, as in OpenH264.
 /// </para>
 /// <para>
-/// The port runs OpenH264's portable C code, without its assembly. On one desktop core it
-/// encodes about 65 frames a second at 640x480 and 23 at 1280x720, so it keeps up in real time
-/// up to about 640x480 at 30 frames a second.
+/// The port runs OpenH264's portable C code, with SIMD kernels in place of its assembly. On one
+/// desktop core it encodes camera-like video at about 370 frames a second at 640x480, 120 at
+/// 1280x720 and 50 at 1920x1080, and on four <see cref="EncoderThreads"/> at about 730, 270 and
+/// 120, so one thread keeps up in real time at 1280x720 and 30 frames a second.
 /// </para>
 /// <para>
 /// I420 frames are encoded as they are. NV12 frames have their chroma planes split, and packed
@@ -130,6 +133,7 @@ public sealed unsafe class H264Codec : IVideoEncoder
     private int _targetBitrateKbps;
     private int _frameRate = DEFAULT_FRAME_RATE;
     private int _keyframeIntervalFrames = DEFAULT_KEYFRAME_INTERVAL_FRAMES;
+    private int _encoderThreads = 1;
     private bool _forceKeyFrame;
 
     private bool _disposed;
@@ -220,6 +224,37 @@ public sealed unsafe class H264Codec : IVideoEncoder
                 {
                     int interval = value;
                     _encoder->SetOption(ENCODER_OPTION_IDR_INTERVAL, &interval);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The number of threads the encoder codes a picture on, from 1 to 4, each coding one slice
+    /// of it: the calling thread and up to three thread pool threads. The default, 1, codes one
+    /// slice a picture on the calling thread, as libwebrtc sets OpenH264 up. More threads encode
+    /// a large frame faster but compress a little less well, as no slice predicts from another
+    /// and the edges between slices are not deblocked. The slices start out the same size and
+    /// are resized from picture to picture, as OpenH264 does, so that each thread takes about as
+    /// long, which also means the same frames do not always give the same stream. A small frame
+    /// is coded in fewer slices, on as many threads, as OpenH264 sets them: one slice for 128x96
+    /// (48 macroblocks) or smaller, and no more than its macroblock rows allow. A change starts
+    /// a new stream, with a key frame, from the next frame.
+    /// </summary>
+    public int EncoderThreads
+    {
+        get => _encoderThreads;
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(value, WelsEnc.MAX_THREADS_NUM);
+            lock (_lock)
+            {
+                if (_encoderThreads != value)
+                {
+                    _encoderThreads = value;
+                    // The encoder is initialised again on the next frame.
+                    _encWidth = _encHeight = 0;
                 }
             }
         }
@@ -693,7 +728,7 @@ public sealed unsafe class H264Codec : IVideoEncoder
         param.uiMaxNalSize = 0;
         // The same parameter set ids for the whole stream, rather than new ones at each IDR.
         param.eSpsPpsIdStrategy = SPS_LISTING;
-        param.iMultipleThreadIdc = 1;
+        param.iMultipleThreadIdc = (ushort)_encoderThreads;
         param.iSpatialLayerNum = 1;
         param.iTemporalLayerNum = 1;
         ref SSpatialLayerConfig layer = ref param.sSpatialLayers[0];
@@ -702,7 +737,19 @@ public sealed unsafe class H264Codec : IVideoEncoder
         layer.fFrameRate = _frameRate;
         layer.iSpatialBitrate = bitrate;
         layer.iMaxSpatialBitrate = UNSPECIFIED_BIT_RATE;
-        layer.sSliceArgument.uiSliceMode = SM_SINGLE_SLICE;
+        uint slices = EncoderSlices(width, height, _encoderThreads);
+        if (slices > 1)
+        {
+            // A slice for each thread, resized from picture to picture (bUseLoadBalancing, on by
+            // default) so the threads take about as long. OpenH264 runs as many threads as
+            // there are slices.
+            layer.sSliceArgument.uiSliceMode = SM_FIXEDSLCNUM_SLICE;
+            layer.sSliceArgument.uiSliceNum = slices;
+        }
+        else
+        {
+            layer.sSliceArgument.uiSliceMode = SM_SINGLE_SLICE;
+        }
 
         _encWidth = _encHeight = 0;
         int rv = _encoder->InitializeExt(&param);
@@ -714,6 +761,28 @@ public sealed unsafe class H264Codec : IVideoEncoder
         _encHeight = height;
         // Whatever key frame was asked for, a new stream starts with one.
         _forceKeyFrame = false;
+    }
+
+    /// <summary>
+    /// The number of slices, one a thread, a frame is coded in: as many as OpenH264 takes for
+    /// the size under rate control, where a frame of 48 macroblocks or fewer is one slice
+    /// (MIN_NUM_MB_PER_SLICE) and each slice must be at least a row group (GOM) of macroblocks.
+    /// Where that brings the count down it comes down to an even number, and where it comes
+    /// down to 1, which OpenH264 would refuse rather than code, the frame is one slice on one
+    /// thread.
+    /// </summary>
+    internal static uint EncoderSlices(int width, int height, int threads)
+    {
+        int mbWidth = (width + 15) >> 4, mbHeight = (height + 15) >> 4;
+        if (threads <= 1 || mbWidth * mbHeight <= WelsEnc.MIN_NUM_MB_PER_SLICE)
+        {
+            return 1;
+        }
+        // SliceArgumentValidationFixedSliceMode's checks under rate control.
+        SSliceArgument slicing = default;
+        slicing.uiSliceNum = (uint)threads;
+        WelsEnc.GomValidCheckSliceNum(mbWidth, mbHeight, &slicing.uiSliceNum);
+        return slicing.uiSliceNum > 1 && WelsEnc.GomValidCheckSliceMbNum(mbWidth, mbHeight, &slicing) ? slicing.uiSliceNum : 1;
     }
 
     private static void OnEncoderLog(void* ctx, int level, string message)

@@ -27,6 +27,7 @@
 // 26 Nov 2026  Claude          The rate control check window fields (E6).
 // 27 Nov 2026  Claude          pVpp (E7).
 // 27 Nov 2026  Claude          The statistics fields and the port's pLastFsnr (E8).
+// 27 Nov 2026  Claude          pSliceThreading, pTaskManage and mutexEncoderError's comment (P5.7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -146,7 +147,10 @@ internal unsafe struct sWelsEncCtx
     public SStrideTables* pStrideTab;           // stride tables for internal coding used
     public SWelsFuncPtrList* pFuncList;
 
-    // pSliceThreading and pTaskManage come with the threading work.
+    public SSliceThreading* pSliceThreading;
+    // IWelsTaskManage* upstream: a GCHandle to the managed task manager (see
+    // wels_task_management.cs). Its value is 0 when there is none.
+    public nint pTaskManage;                    //was planning to put it under CWelsH264SVCEncoder but it may be updated (lock/no lock) when param is changed
     public IWelsReferenceStrategy* pReferenceStrategy;
 
     // pointers
@@ -230,7 +234,8 @@ internal unsafe struct sWelsEncCtx
     public int64_t iLastStatisticsLogTs;
 
     public int32_t iEncoderError;
-    // mutexEncoderError guards iEncoderError between slice threads, which the port does not run.
+    // mutexEncoderError guards iEncoderError between slice threads: the slice tasks OR into it
+    // with Interlocked.Or instead (wels_task_encoder.cs).
     public bool bDeliveryFlag;
     // sWelsCabacContexts comes with CABAC (Phase 4).
 

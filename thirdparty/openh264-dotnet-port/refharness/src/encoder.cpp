@@ -1716,6 +1716,50 @@ const ApiConfig kApiConfigs[] = {
   {"bad-input", "pan", API_BASE, "F:fmt=23 F:8x8 F:16x8 F F:fmt=22 F"},
   {"memory-error", "mixed", API_RC "iRCMode=2;iTargetBitrate=128000;iMinQp=24;iMaxQp=40",
    "F*12 I G:idr S:idr=3 R F*2 G:stats"},
+
+  // Slice threads (P5.7). With more than one thread each slice is coded and deblocked in
+  // a task of its own (bDeblockingParallelFlag), and an iLoopFilterDisableIdc of 0 becomes
+  // 2. The thread count is the smaller of the one asked for and the slice count, and at
+  // most MAX_THREADS_NUM (4). Load balancing resizes fixed slices from their coding times
+  // when there are at least as many threads as slices, which no table can reproduce, so
+  // those rows turn it off; with fewer threads than slices, or raster slices, it changes
+  // nothing and stays on.
+#define API_MT API_BASE "iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4;"
+  {"threads-fixed-4", "pan", API_MT, "F*6 I F*3"},
+  {"threads-fixed-4-2-threads", "pan", API_BASE "iMultipleThreadIdc=2;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4",
+   "F*6 I F*3"},
+  {"threads-fixed-4-3-threads", "pan", API_BASE "iMultipleThreadIdc=3;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4",
+   "F*6 I F*3"},
+  {"threads-fixed-4-2-threads-balancing", "pan", API_BASE "iMultipleThreadIdc=2;L0.uiSliceMode=1;L0.uiSliceNum=4",
+   "F*6 I F*3"},
+  {"threads-fixed-3-noise", "noise", API_BASE "iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=3",
+   "F*4"},
+  {"threads-fixed-7", "subpel", API_BASE "iMultipleThreadIdc=4;L0.uiSliceMode=1;L0.uiSliceNum=7;iComplexityMode=2", "F*4"},
+  {"threads-raster-rows", "subpel", API_BASE "iMultipleThreadIdc=2;L0.uiSliceMode=2", "F*5"},
+  {"threads-raster-mbs", "block", API_BASE "iMultipleThreadIdc=4;L0.uiSliceMode=2;L0.uiSliceMbNum=10,30,59", "F*5"},
+  {"threads-single-slice", "pan", API_BASE "iMultipleThreadIdc=4", "F*4"},
+  {"threads-loop-filter-off", "pan", API_MT "iLoopFilterDisableIdc=1", "F*4"},
+  {"threads-loop-filter-2", "pan", API_MT "iLoopFilterDisableIdc=2", "F*4"},
+  // One thread, the same slices and loop filter: the same stream as the two above.
+  {"threads-one-thread-loop-filter-2", "pan", API_BASE "L0.uiSliceMode=1;L0.uiSliceNum=4;iLoopFilterDisableIdc=2",
+   "F*4"},
+  {"threads-loop-filter-offsets", "pan", API_MT "iLoopFilterAlphaC0Offset=4;iLoopFilterBetaOffset=-3", "F*4"},
+  {"threads-prefix", "pan", API_MT "bPrefixNalAddingCtrl=1", "F*3 I F*2"},
+  {"threads-temporal-3", "pan", API_MT "iTemporalLayerNum=3", "F*9"},
+  {"threads-ltr", "pan", API_MT "bEnableLongTermReference=1;iLtrMarkPeriod=3", "F*4 S:ltrfb=4:1:3:0 F*4"},
+  {"threads-rate-control", "mixed", API_RC "iRCMode=1;iTargetBitrate=256000;iMultipleThreadIdc=4;bUseLoadBalancing=0;"
+   "L0.uiSliceMode=1;L0.uiSliceNum=4", "F*12 I F*6"},
+  {"threads-preprocess", "camera", API_PP "iRCMode=1;iTargetBitrate=200000;iMultipleThreadIdc=4;bUseLoadBalancing=0;"
+   "L0.uiSliceMode=1;L0.uiSliceNum=4", "F*10"},
+  {"threads-cropped", "subpel", API_MT "iPicWidth=200;iPicHeight=120", "F*4"},
+  {"threads-640x480", "camera", API_PP "iRCMode=1;iTargetBitrate=1000000;iMultipleThreadIdc=4;bUseLoadBalancing=0;"
+   "L0.uiSliceMode=1;L0.uiSliceNum=4;iPicWidth=640;iPicHeight=480", "F*6"},
+  {"threads-lifecycle", "pan", API_MT,
+   "F*2 U F R F*2 S:ext=iPicWidth:160+iPicHeight:96+L0.iVideoWidth:160+L0.iVideoHeight:96 F*2 G:ext"},
+  {"threads-set-on", "pan", API_BASE,
+   "F*2 S:ext=iMultipleThreadIdc:4+bUseLoadBalancing:0+L0.uiSliceMode:1+L0.uiSliceNum:4 F*3 G:ext"},
+  {"threads-set-off", "pan", API_MT, "F*2 S:ext=iMultipleThreadIdc:1 F*3 G:ext"},
+#undef API_MT
 };
 #undef API_PP
 #undef API_RC

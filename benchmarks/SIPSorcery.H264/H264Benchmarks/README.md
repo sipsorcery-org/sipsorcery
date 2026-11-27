@@ -24,7 +24,8 @@ dotnet run -c Release -- --filter *
 ```
 
 - `EncodeBenchmarks.EncodeFrame`: one frame an operation, at 640x480, 1280x720
-  and 1920x1080, with a key frame a second.
+  and 1920x1080, with a key frame a second, on one thread and on four (a slice
+  a thread, as `H264Codec.EncoderThreads` sets it up).
 - `DecodeBenchmarks.DecodeFrame`: one access unit an operation, round and round
   a clip of an IDR and P frames, to the decoder's I420 picture.
 - `DecodeBenchmarks.DecodeFrameToBgr`: the same through
@@ -37,13 +38,16 @@ The memory diagnoser is on, so the tables show what each operation allocates.
 ```
 dotnet run -c Release -- run encode 1280x720 10
 dotnet run -c Release -- run decode 1280x720 10 --c
+dotnet run -c Release -- run encode 1920x1080 10 --threads 4
 ```
 
 `run` encodes or decodes flat out for the given number of seconds (10 by
 default) after a second of warm-up. It reports the frame rate, the bitrate,
 any frames the rate control skipped, and what was allocated. `--c` turns the
 SIMD kernels off (`WelsCpuFeatureMask = 0`), for comparing them with the C
-kernels.
+kernels. `--threads n` encodes on n threads, from 1 to 4, a slice each, as
+`H264Codec.EncoderThreads` does. The allocations are the whole process's, so
+the slice threads' count too.
 
 It runs in one process, so a sampling profiler can watch it. Without any tool
 installed, the runtime's EventPipe can write a trace:

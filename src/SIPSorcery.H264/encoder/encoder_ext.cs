@@ -18,9 +18,14 @@
 // thread, CAVLC camera encoder runs: the frame rate, bit rate and LTR
 // setters, AcquireLayersNals, RequestMemorySvc and FreeMemorySvc,
 // WelsInitEncoderExt and WelsUninitEncoderExt, ForceCodingIDR, the frame
-// loop WelsEncoderEncodeExt and WelsEncoderParamAdjust. Configurations the
-// port does not code are refused at init (PortUnsupportedConfiguration);
-// the slice thread and dynamic slice branches throw NotSupportedException.
+// loop WelsEncoderEncodeExt and WelsEncoderParamAdjust. P5.7 adds the slice
+// threads' branches: RequestMtResource and ReleaseMtResource in the memory
+// set up, the task manager's InitFrame, and in the frame loop the load
+// balancing (AdjustBaseLayer, AdjustEnhanceLayer, CalcSliceComplexRatio)
+// and the threaded slice coding (ExecuteTasks, AppendSliceToFrameBs).
+// Configurations the port does not code are refused at init
+// (PortUnsupportedConfiguration); the dynamic slice branches throw
+// NotSupportedException.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // WelsCPUFeatureDetect (common/cpu.cs) reports the instruction sets the
@@ -44,6 +49,7 @@
 // 27 Nov 2026  Claude          AddPrefixNal (E7).
 // 27 Nov 2026  Claude          The init, memory, frame loop and parameter changes (E8).
 // 27 Nov 2026  Claude          WelsCPUFeatureDetect in GetMultipleThreadIdc (P5.2).
+// 27 Nov 2026  Claude          The slice threads and their load balancing (P5.7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -2294,8 +2300,10 @@ internal static unsafe partial class WelsEnc
             pCurDq->bBaseLayerAvailableFlag = false;
         }
 
-        // if (pCtx->pTaskManage) pCtx->pTaskManage->InitFrame (kiCurDid): the task manager comes with the
-        // threading work.
+        if (pCtx->pTaskManage != 0)
+        {
+            IWelsTaskManage.From(pCtx->pTaskManage).InitFrame(kiCurDid);
+        }
     }
 
     public static void PreprocessSliceCoding(sWelsEncCtx* pCtx)
@@ -2752,10 +2760,11 @@ internal static unsafe partial class WelsEnc
             throw new NotSupportedException("RequestMemorySvc: SM_SIZELIMITED_SLICE with CABAC is not ported (Phase 4).");
         }
         // for pSlice bs buffers
-        if (pParam->iMultipleThreadIdc > 1)
+        if (pParam->iMultipleThreadIdc > 1
+            && RequestMtResource(ppCtx, pParam, iCountBsLen, iMaxSliceBufferSize, bDynamicSlice) != 0)
         {
-            // RequestMtResource: WelsInitEncoderExt rejects threads.
-            throw new NotSupportedException("RequestMemorySvc: threading is not ported (Phase 4).");
+            WelsLog(&(*ppCtx)->sLogCtx, WELS_LOG_WARNING, "RequestMemorySvc(), RequestMtResource failed!");
+            return 1;
         }
 
         (*ppCtx)->pReferenceStrategy = IWelsReferenceStrategy.CreateReferenceStrategy((*ppCtx), pParam->iUsageType,
@@ -2954,7 +2963,8 @@ internal static unsafe partial class WelsEnc
                 pCtx->pOut = null;
             }
 
-            // ReleaseMtResource: iMultipleThreadIdc > 1 is rejected at init.
+            if (pParam != null && pParam->iMultipleThreadIdc > 1)
+                ReleaseMtResource(ppCtx);
 
             if (null != pCtx->pReferenceStrategy)
             {
@@ -3159,7 +3169,9 @@ internal static unsafe partial class WelsEnc
         WelsLog(&(*ppCtx)->sLogCtx, WELS_LOG_INFO,
                 $"WelsUninitEncoderExt(), pCtx= 0x{(nint)(*ppCtx):X}, iMultipleThreadIdc= {(*ppCtx)->pSvcParam->iMultipleThreadIdc}.");
 
-        // The slice threads' join: iMultipleThreadIdc > 1 is rejected at init.
+        // The slice threads' join: upstream joins pSliceThreading->pThreadHandles, which only the
+        // threads before the task manager set. The task manager's helpers are done when
+        // ExecuteTasks returns, so there is nothing to join.
 
         if ((*ppCtx)->pVpp != null)
         {
@@ -3293,8 +3305,9 @@ internal static unsafe partial class WelsEnc
     /// <summary>
     /// Port addition for SIPSorcery: rejects, with an error log, the configurations whose
     /// code is not ported: screen content, CABAC, more than one spatial layer or simulcast,
-    /// slice threads and SM_SIZELIMITED_SLICE (Phase 4). The API's Initialize then returns
-    /// cmInitParaError, as for any other configuration WelsInitEncoderExt refuses.
+    /// and SM_SIZELIMITED_SLICE (Phase 4). The API's Initialize then returns
+    /// cmInitParaError, as for any other configuration WelsInitEncoderExt refuses. The
+    /// slice threads came with P5.7.
     /// </summary>
     public static int32_t PortUnsupportedConfiguration(SLogContext* pLogCtx, SWelsSvcCodingParam* pCodingParam)
     {
@@ -3305,8 +3318,6 @@ internal static unsafe partial class WelsEnc
             what = "CABAC (iEntropyCodingModeFlag != 0)";
         else if (pCodingParam->iSpatialLayerNum != 1 || pCodingParam->bSimulcastAVC)
             what = "more than one spatial layer or simulcast";
-        else if (pCodingParam->iMultipleThreadIdc != 1)
-            what = $"slice threads (iMultipleThreadIdc = {pCodingParam->iMultipleThreadIdc})";
         else if (pCodingParam->sSpatialLayers[0].sSliceArgument.uiSliceMode == SM_SIZELIMITED_SLICE)
             what = "SM_SIZELIMITED_SLICE";
         if (what == null)
@@ -3630,8 +3641,10 @@ internal static unsafe partial class WelsEnc
                          && pSvcParam->iMultipleThreadIdc >= pSvcParam->sSpatialLayers[iCurDid].sSliceArgument.uiSliceNum)
                        )
                     {
-                        // AdjustEnhanceLayer/AdjustBaseLayer (slice_multi_threading): threads are rejected at init.
-                        throw new NotSupportedException("WelsEncoderEncodeExt: the slice threads' load balancing is not ported (Phase 4).");
+                        if (iCurDid > 0)
+                            AdjustEnhanceLayer(pCtx, iCurDid);
+                        else
+                            AdjustBaseLayer(pCtx);
                     }
 
                     break;
@@ -3771,8 +3784,46 @@ internal static unsafe partial class WelsEnc
                 // THREAD_FULLY_FIRE_MODE/THREAD_PICK_UP_MODE for any mode of non-SM_SIZELIMITED_SLICE
                 if ((SM_SIZELIMITED_SLICE != pParam->sSliceArgument.uiSliceMode) && (pSvcParam->iMultipleThreadIdc > 1))
                 {
-                    // pTaskManage->ExecuteTasks and AppendSliceToFrameBs: threads are rejected at init.
-                    throw new NotSupportedException("WelsEncoderEncodeExt: slice threads are not ported (Phase 4).");
+                    iSliceCount = GetCurrentSliceNum(pCtx->pCurDqLayer);
+                    if (iLayerNum + 1 >= MAX_LAYER_NUM_OF_FRAME) // check available layer_bs_info for further writing as followed
+                    {
+                        WelsLog(pLogCtx, WELS_LOG_ERROR,
+                                $"WelsEncoderEncodeExt(), iLayerNum({iLayerNum}) overflow(max:{MAX_LAYER_NUM_OF_FRAME}) at iDid= {iCurDid} uiSliceMode= {(int)pParam->sSliceArgument.uiSliceMode}, iSliceCount= {iSliceCount}!");
+                        return ENC_RETURN_UNSUPPORTED_PARA;
+                    }
+                    if (iSliceCount <= 1)
+                    {
+                        WelsLog(pLogCtx, WELS_LOG_ERROR,
+                                $"WelsEncoderEncodeExt(), iSliceCount({iSliceCount}) from GetCurrentSliceNum() is untrusted due stack/heap crupted!");
+                        return ENC_RETURN_UNEXPECTED;
+                    }
+                    //note: the old codes are removed at commit: 3e0ee69
+                    pLayerBsInfo->pBsBuf = pCtx->pFrameBs + pCtx->iPosBsBuffer;
+                    pLayerBsInfo->uiLayerType = (uint8_t)VIDEO_CODING_LAYER;
+                    pLayerBsInfo->uiSpatialId = pCtx->uiDependencyId;
+                    pLayerBsInfo->uiTemporalId = pCtx->uiTemporalId;
+                    pLayerBsInfo->uiQualityId = 0;
+                    pLayerBsInfo->iNalCount = 0;
+                    pLayerBsInfo->eFrameType = eFrameType;
+                    pLayerBsInfo->iSubSeqId = GetSubSequenceId(pCtx, eFrameType);
+
+                    IWelsTaskManage.From(pCtx->pTaskManage).ExecuteTasks();
+                    if (pCtx->iEncoderError != 0)
+                    {
+                        WelsLog(pLogCtx, WELS_LOG_ERROR,
+                                $"WelsEncoderEncodeExt(), multi-slice (mode {(int)pParam->sSliceArgument.uiSliceMode}) encoding error!");
+                        return pCtx->iEncoderError;
+                    }
+
+                    iLayerSize = AppendSliceToFrameBs(pCtx, pLayerBsInfo, iSliceCount);
+                    if (pCtx->iEncoderError != ENC_RETURN_SUCCESS) return pCtx->iEncoderError;
+
+                    // Port addition: the slice tasks deblocked their slices on the frames the
+                    // one-thread path deblocks (WelsInitCurrentLayer picks the slice deblocker on
+                    // the same test, with the loop filter's idc besides).
+                    pCtx->bLastFsnrDeblocked = eNalRefIdc != NRI_PRI_LOWEST
+                                               && (pSvcParam->sDependencyLayers[iCurDid].iHighestTemporalId == 0
+                                                   || iCurTid < pSvcParam->sDependencyLayers[iCurDid].iHighestTemporalId);
                 }
                 // THREAD_FULLY_FIRE_MODE && SM_SIZELIMITED_SLICE
                 else if ((SM_SIZELIMITED_SLICE == pParam->sSliceArgument.uiSliceMode) && (pSvcParam->iMultipleThreadIdc > 1))
@@ -3985,8 +4036,7 @@ internal static unsafe partial class WelsEnc
                 && pSvcParam->iMultipleThreadIdc > 1 &&
                 pSvcParam->iMultipleThreadIdc >= pParam->sSliceArgument.uiSliceNum)
             {
-                // CalcSliceComplexRatio (slice_multi_threading): threads are rejected at init.
-                throw new NotSupportedException("WelsEncoderEncodeExt: the slice threads' load balancing is not ported (Phase 4).");
+                CalcSliceComplexRatio(pCtx->pCurDqLayer);
             }
 
             pCtx->eLastNalPriority[iCurDid] = eNalRefIdc;

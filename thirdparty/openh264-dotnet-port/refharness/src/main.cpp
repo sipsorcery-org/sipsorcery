@@ -535,6 +535,7 @@ int Kernels() {
   KernelsDenoise();
   KernelsDownsample();
   KernelsVpFrameWork();
+  KernelsSliceMt();
   return 0;
 }
 

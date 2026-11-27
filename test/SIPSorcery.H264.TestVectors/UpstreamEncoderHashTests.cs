@@ -3,11 +3,14 @@
 //
 // Description: E7 acceptance: openh264's own encoder conformance hashes
 // (test/api/encoder_test.cpp, EncoderOutputTest.CompareOutput, at 78783f19)
-// for camera content, SM_SINGLE_SLICE, one spatial layer and CAVLC: the
-// three without the denoiser, which go through Initialize (SEncParamBase,
+// for camera content, one spatial layer and CAVLC: the three SM_SINGLE_SLICE
+// rows without the denoiser, which go through Initialize (SEncParamBase,
 // so the quality mode and the default scene change detection, background
 // detection and adaptive quantisation), and the one with it, which goes
-// through InitializeExt. As upstream's BaseEncoderTest does, every frame of
+// through InitializeExt. P5.7 adds the SM_RASTER_SLICE row (a slice per
+// macroblock row), which also goes through InitializeExt and which
+// BaseEncoderTest codes on two slice threads. As upstream's BaseEncoderTest
+// does, every frame of
 // the file is encoded with timestamp 0 and the SHA1 covers the bytes of
 // every frame that is not a skip.
 //
@@ -19,6 +22,7 @@
 //
 // History:
 // 27 Nov 2026  Claude          Created (E7).
+// 27 Nov 2026  Claude          The SM_RASTER_SLICE row on two threads (P5.7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -42,19 +46,21 @@ public class UpstreamEncoderHashTests
 
     public UpstreamEncoderHashTests(ITestOutputHelper output) => _output = output;
 
-    // kFileParamArray's rows for CAMERA_VIDEO_REAL_TIME, SM_SINGLE_SLICE, one layer, no
-    // lossless link, no LTR and CAVLC: file, hash, width, height, frame rate, denoise.
+    // kFileParamArray's rows for CAMERA_VIDEO_REAL_TIME, one layer, no lossless link, no LTR
+    // and CAVLC, other than SM_SIZELIMITED_SLICE: file, hash, width, height, frame rate,
+    // slice mode (a string: SliceModeEnum is internal), denoise.
     public static IEnumerable<object[]> Rows => new[]
     {
-        new object[] { "CiscoVT2people_320x192_12fps.yuv", "672a52fb6b6e6d52b5b3f3480d13d44e88481fb9", 320, 192, 12.0f, false },
-        new object[] { "CiscoVT2people_160x96_6fps.yuv", "08ade1853e4e49d50be675393780e75519586143", 160, 96, 6.0f, false },
-        new object[] { "Static_152_100.yuv", "e60f12e3c24500d4306d812b0811d3c21855dd1c", 152, 100, 6.0f, false },
-        new object[] { "CiscoVT2people_320x192_12fps.yuv", "913e49c787a0abdb378e9bc55bcffc27da89b965", 320, 192, 12.0f, true },
+        new object[] { "CiscoVT2people_320x192_12fps.yuv", "672a52fb6b6e6d52b5b3f3480d13d44e88481fb9", 320, 192, 12.0f, "SM_SINGLE_SLICE", false },
+        new object[] { "CiscoVT2people_160x96_6fps.yuv", "08ade1853e4e49d50be675393780e75519586143", 160, 96, 6.0f, "SM_SINGLE_SLICE", false },
+        new object[] { "Static_152_100.yuv", "e60f12e3c24500d4306d812b0811d3c21855dd1c", 152, 100, 6.0f, "SM_SINGLE_SLICE", false },
+        new object[] { "CiscoVT2people_320x192_12fps.yuv", "266de2d059a00ad2f28304e7eb378543ea7d85ab", 320, 192, 12.0f, "SM_RASTER_SLICE", false },
+        new object[] { "CiscoVT2people_320x192_12fps.yuv", "913e49c787a0abdb378e9bc55bcffc27da89b965", 320, 192, 12.0f, "SM_SINGLE_SLICE", true },
     };
 
     [Theory]
     [MemberData(nameof(Rows))]
-    public void CompareOutput(string fileName, string hash, int width, int height, float frameRate, bool denoise)
+    public void CompareOutput(string fileName, string hash, int width, int height, float frameRate, string sliceMode, bool denoise)
     {
         string res = Environment.GetEnvironmentVariable(ResEnvironmentVariable);
         if (string.IsNullOrEmpty(res))
@@ -66,7 +72,7 @@ public class UpstreamEncoderHashTests
         Assert.True(File.Exists(path), $"{path} not found ({ResEnvironmentVariable}={res}).");
 
         using var encoder = new EncoderDriver();
-        Assert.Equal(0, InitWithParam(encoder, width, height, frameRate, denoise));
+        Assert.Equal(0, InitWithParam(encoder, width, height, frameRate, Enum.Parse<SliceModeEnum>(sliceMode), denoise));
 
         // I420: 1(Y) + 1/4(U) + 1/4(V)
         int frameSize = width * height * 3 / 2;
@@ -93,10 +99,11 @@ public class UpstreamEncoderHashTests
     }
 
     /// <summary>BaseEncoderTest.cpp's InitWithParam for these rows.</summary>
-    private static unsafe int InitWithParam(EncoderDriver encoder, int width, int height, float frameRate, bool denoise)
+    private static unsafe int InitWithParam(EncoderDriver encoder, int width, int height, float frameRate, SliceModeEnum sliceMode,
+                                            bool denoise)
     {
         // bBaseParamFlag: SM_SINGLE_SLICE, no denoiser, one layer, no lossless link, no LTR, CAVLC.
-        if (!denoise)
+        if (sliceMode == SliceModeEnum.SM_SINGLE_SLICE && !denoise)
         {
             SEncParamBase param = default;  // memset (&param, 0, sizeof (SEncParamBase))
             param.iUsageType = EUsageType.CAMERA_VIDEO_REAL_TIME;
@@ -116,11 +123,14 @@ public class UpstreamEncoderHashTests
             param.iPicWidth = width;
             param.iPicHeight = height;
             param.iTargetBitrate = 5000000;
-            param.bEnableDenoise = true;
+            param.bEnableDenoise = denoise;
             param.iSpatialLayerNum = 1;
             param.bIsLosslessLink = false;
             param.bEnableLongTermReference = false;
             param.iEntropyCodingModeFlag = 0;
+            if (sliceMode != SliceModeEnum.SM_SINGLE_SLICE
+                && sliceMode != SliceModeEnum.SM_SIZELIMITED_SLICE) //SM_SIZELIMITED_SLICE don't support multi-thread now
+                param.iMultipleThreadIdc = 2;
 
             for (int i = 0; i < param.iSpatialLayerNum; i++)
             {
@@ -129,7 +139,7 @@ public class UpstreamEncoderHashTests
                 sl.iVideoHeight = height >> (param.iSpatialLayerNum - 1 - i);
                 sl.fFrameRate = frameRate;
                 sl.iSpatialBitrate = param.iTargetBitrate;
-                sl.sSliceArgument.uiSliceMode = SliceModeEnum.SM_SINGLE_SLICE;
+                sl.sSliceArgument.uiSliceMode = sliceMode;
             }
             param.iTargetBitrate *= param.iSpatialLayerNum;
             return encoder.InitializeExt(param);

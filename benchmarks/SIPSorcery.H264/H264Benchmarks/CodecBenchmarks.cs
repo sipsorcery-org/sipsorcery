@@ -9,6 +9,7 @@
 //
 // History:
 // 27 Nov 2026  Claude          Created (Phase 5).
+// 27 Nov 2026  Claude          EncodeBenchmarks.Threads (P5.7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -22,7 +23,7 @@ namespace H264Benchmarks;
 
 /// <summary>
 /// Encodes one frame an operation, in a stream with a key frame a second, as H264Codec sets the
-/// encoder up.
+/// encoder up, on one thread or on four (a slice each, as H264Codec.EncoderThreads).
 /// </summary>
 [MemoryDiagnoser]
 public class EncodeBenchmarks
@@ -31,6 +32,9 @@ public class EncodeBenchmarks
 
     [Params("640x480", "1280x720", "1920x1080")]
     public string Resolution { get; set; } = "640x480";
+
+    [Params(1, 4)]
+    public int Threads { get; set; } = 1;
 
     private byte[][] _frames = null!;
     private BenchEncoder _encoder = null!;
@@ -41,7 +45,7 @@ public class EncodeBenchmarks
     {
         var (width, height) = Resolutions.Parse(Resolution);
         _frames = TestFrames.Generate(width, height, FRAMES);
-        _encoder = new BenchEncoder(width, height);
+        _encoder = new BenchEncoder(width, height, threads: Threads);
     }
 
     [GlobalCleanup]

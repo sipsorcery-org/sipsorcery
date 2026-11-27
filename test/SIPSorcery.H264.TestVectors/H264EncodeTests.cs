@@ -6,13 +6,15 @@
 // packets and SIPSorcery's H264Depacketiser, start each key frame with the
 // parameter sets, follow the key frame interval, size, bitrate and frame rate
 // settings, set before the first frame or changed mid-stream, and give the same
-// stream from every pixel format of the same picture.
+// stream from every pixel format of the same picture. P5.7 adds the encoder
+// threads: a slice a thread, decoding cleanly and holding the bitrate.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 27 Nov 2026  Claude          Created (E8).
+// 27 Nov 2026  Claude          The EncoderThreads tests (P5.7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -149,6 +151,106 @@ public class H264EncodeTests
         _output.WriteLine($"{width}x{height}: {encoded} of {frames} frames, average luma PSNR {psnr:F2} dB.");
         Assert.True(encoded >= frames * 9 / 10, $"Only {encoded} of {frames} frames were encoded.");
         Assert.True(psnr > 30, $"Average luma PSNR {psnr:F2} dB.");
+    }
+
+    // The slice NAL units of an access unit.
+    private static int SliceCount(byte[] au) => NalTypes(au).Count(t => t is NAL_SLICE or NAL_IDR);
+
+    /// <summary>
+    /// More encoder threads code a slice each, and the stream still decodes cleanly to much the
+    /// same picture at much the same bitrate as one thread's. A small frame gets fewer slices, as
+    /// OpenH264 sets them under rate control: one for 48 macroblocks or fewer, and otherwise
+    /// no more than its rows allow a row group (GOM) each, brought down to an even count. 640x32
+    /// would be refused more than one, so it is one slice rather than an error.
+    /// </summary>
+    [Theory]
+    [InlineData(640, 360, 2, 2)]
+    [InlineData(640, 360, 3, 3)]
+    [InlineData(640, 360, 4, 4)]
+    [InlineData(176, 144, 4, 4)]
+    [InlineData(144, 96, 4, 2)]
+    [InlineData(128, 96, 4, 1)]
+    [InlineData(100, 50, 3, 1)]
+    [InlineData(640, 32, 4, 1)]
+    [InlineData(16, 16, 4, 1)]
+    public void Encode_ThreadsCodeASliceEach(int width, int height, int threads, int slices)
+    {
+        using var single = new H264Codec();
+        using var encoder = new H264Codec { EncoderThreads = threads };
+        using var decoder = new H264Codec();
+        int frames = 60, encoded = 0, singleEncoded = 0;
+        long bytes = 0, singleBytes = 0;
+        double psnrSum = 0;
+        var sliceCounts = new SortedSet<int>();
+
+        for (int i = 0; i < frames; i++)
+        {
+            byte[] src = I420Frame(width, height, i);
+            byte[] au = encoder.EncodeVideo(width, height, src, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264);
+            byte[] singleAu = single.EncodeVideo(width, height, src, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264);
+            if (i == 0)
+            {
+                Assert.NotNull(au);
+                Assert.True(IsIdr(au));
+            }
+            if (singleAu != null)
+            {
+                ++singleEncoded;
+                singleBytes += singleAu.Length;
+                Assert.Equal(1, SliceCount(singleAu));
+            }
+            if (au == null)
+            {
+                continue;
+            }
+            ++encoded;
+            bytes += au.Length;
+            sliceCounts.Add(SliceCount(au));
+
+            VideoSample pic = Assert.Single(decoder.DecodeVideo(au, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264));
+            Assert.False(decoder.KeyFrameRequired, $"Frame {i} did not decode cleanly.");
+            Assert.Equal(((uint)width, (uint)height), (pic.Width, pic.Height));
+            psnrSum += PsnrY(Luma(src, width, height, width, height), pic.Sample, width, height);
+        }
+
+        double psnr = psnrSum / encoded;
+        _output.WriteLine($"{width}x{height} on {threads} threads: {encoded} of {frames} frames ({singleEncoded} on one), " +
+                          $"{bytes} bytes ({singleBytes} on one), {string.Join("/", sliceCounts)} slices, average luma PSNR {psnr:F2} dB.");
+        Assert.Equal(new[] { slices }, sliceCounts);
+        // Each slice's header, and prediction that stops at its edges, take bits the rate control
+        // makes up for: four slices of 640x360 drop a few more frames than one.
+        Assert.True(encoded >= singleEncoded - frames / 10, $"Only {encoded} of {frames} frames were encoded, {singleEncoded} on one thread.");
+        Assert.InRange(bytes, singleBytes * 0.85, singleBytes * 1.15);
+        Assert.True(psnr > 30, $"Average luma PSNR {psnr:F2} dB.");
+    }
+
+    /// <summary>
+    /// A thread count set mid-stream starts a new stream with a key frame, the decoder follows
+    /// it, and setting the count it already has changes nothing.
+    /// </summary>
+    [Fact]
+    public void Encode_EncoderThreadsChangeStartsWithAKeyFrame()
+    {
+        const int width = 320, height = 240;
+        using var encoder = new H264Codec();
+        using var decoder = new H264Codec();
+
+        foreach (var (threads, i) in new[] { (1, 0), (1, 1), (3, 2), (3, 3), (3, 4), (1, 5), (1, 6), (4, 7), (2, 8) })
+        {
+            encoder.EncoderThreads = threads;
+            Assert.Equal(threads, encoder.EncoderThreads);
+            byte[] au = encoder.EncodeVideo(width, height, I420Frame(width, height, i), VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264);
+            bool newStream = i is 0 or 2 or 5 or 7 or 8;
+            if (au == null && !newStream)
+            {
+                // The rate control dropped a frame after a key frame.
+                continue;
+            }
+            Assert.Equal(newStream, IsIdr(au));
+            Assert.Equal(threads, SliceCount(au));
+            VideoSample pic = Assert.Single(decoder.DecodeVideo(au, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264));
+            Assert.False(decoder.KeyFrameRequired, $"Frame {i} did not decode cleanly.");
+        }
     }
 
     /// <summary>OpenH264 codes the even size below an odd one, losing the last column and row.</summary>
@@ -458,11 +560,13 @@ public class H264EncodeTests
     /// The rate control holds the target over a few seconds of video, and a lower target set
     /// mid-stream brings the rate down.
     /// </summary>
-    [Fact]
-    public void Encode_HoldsTheTargetBitrate()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(4)]
+    public void Encode_HoldsTheTargetBitrate(int threads)
     {
         const int width = 640, height = 480, fps = 30;
-        using var encoder = new H264Codec { TargetBitrateKbps = 800, FrameRate = fps, KeyframeIntervalFrames = 60 };
+        using var encoder = new H264Codec { TargetBitrateKbps = 800, FrameRate = fps, KeyframeIntervalFrames = 60, EncoderThreads = threads };
 
         long Bytes(int from, int count)
         {
@@ -478,7 +582,7 @@ public class H264EncodeTests
         encoder.TargetBitrateKbps = 300;
         Bytes(120, 30);
         double second = Bytes(150, 120) * 8.0 / (120.0 / fps) / 1000;
-        _output.WriteLine($"800 kbps target: {first:F0} kbps; 300 kbps target: {second:F0} kbps.");
+        _output.WriteLine($"{threads} thread(s), 800 kbps target: {first:F0} kbps; 300 kbps target: {second:F0} kbps.");
 
         Assert.InRange(first, 800 * 0.6, 800 * 1.3);
         Assert.InRange(second, 300 * 0.6, 300 * 1.3);
@@ -520,12 +624,15 @@ public class H264EncodeTests
     /// <summary>
     /// Through RTP: each access unit packetised as SIPSorcery sends it (STAP-A for the parameter
     /// sets, FU-A for slices over the payload limit) and put back together by H264Depacketiser.
+    /// On four threads an access unit is four slices.
     /// </summary>
-    [Fact]
-    public void Encode_RtpRoundTripDecodesCleanly()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(4)]
+    public void Encode_RtpRoundTripDecodesCleanly(int threads)
     {
         const int width = 640, height = 360;
-        using var encoder = new H264Codec { TargetBitrateKbps = 1500 };
+        using var encoder = new H264Codec { TargetBitrateKbps = 1500, EncoderThreads = threads };
         using var direct = new H264Codec();
         using var viaRtp = new H264Codec();
         var depacketiser = new H264Depacketiser();
@@ -576,12 +683,16 @@ public class H264EncodeTests
         Assert.Throws<ArgumentOutOfRangeException>(() => codec.FrameRate = 0);
         Assert.Throws<ArgumentOutOfRangeException>(() => codec.FrameRate = 61);
         Assert.Throws<ArgumentOutOfRangeException>(() => codec.KeyframeIntervalFrames = -1);
+        Assert.Throws<ArgumentOutOfRangeException>(() => codec.EncoderThreads = 0);
+        Assert.Throws<ArgumentOutOfRangeException>(() => codec.EncoderThreads = 5);
 
         Assert.NotNull(codec.EncodeVideo(176, 144, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264));
         // Settings change on a running encoder.
         codec.TargetBitrateKbps = 500;
         codec.FrameRate = 15;
         codec.KeyframeIntervalFrames = 5;
+        codec.EncoderThreads = 2;
+        Assert.NotNull(codec.EncodeVideo(176, 144, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264));
         codec.Dispose();
         codec.Dispose();
         Assert.Throws<ObjectDisposedException>(() => codec.EncodeVideo(176, 144, frame, VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264));

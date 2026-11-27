@@ -5,8 +5,8 @@
 // port's own API.
 //
 // The encoder is set up as H264Codec sets it up (libwebrtc's settings: bitrate
-// mode rate control with frame skipping, one slice, one thread, H264Codec's
-// automatic bitrate). The difference is the timestamps: H264Codec stamps each
+// mode rate control with frame skipping, one slice on one thread unless more
+// threads are asked for, H264Codec's automatic bitrate). The difference is the timestamps: H264Codec stamps each
 // frame with the time it arrives, so a benchmark encoding faster than real time
 // would look to the rate control like a higher frame rate, and it would skip
 // frames. Here frame n is stamped n / FRAME_RATE seconds, so the rate control
@@ -18,6 +18,7 @@
 //
 // History:
 // 27 Nov 2026  Claude          Created (Phase 5).
+// 27 Nov 2026  Claude          Encoder threads (P5.7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -54,7 +55,7 @@ internal sealed unsafe class BenchEncoder : IDisposable
     private readonly int _height;
     private long _frames;
 
-    public BenchEncoder(int width, int height, int keyframeIntervalFrames = FRAME_RATE)
+    public BenchEncoder(int width, int height, int keyframeIntervalFrames = FRAME_RATE, int threads = 1)
     {
         _width = width;
         _height = height;
@@ -84,7 +85,7 @@ internal sealed unsafe class BenchEncoder : IDisposable
         param.uiIntraPeriod = (uint)keyframeIntervalFrames;
         param.uiMaxNalSize = 0;
         param.eSpsPpsIdStrategy = EParameterSetStrategy.SPS_LISTING;
-        param.iMultipleThreadIdc = 1;
+        param.iMultipleThreadIdc = (ushort)threads;
         param.iSpatialLayerNum = 1;
         param.iTemporalLayerNum = 1;
         ref SSpatialLayerConfig layer = ref param.sSpatialLayers[0];
@@ -93,7 +94,10 @@ internal sealed unsafe class BenchEncoder : IDisposable
         layer.fFrameRate = FRAME_RATE;
         layer.iSpatialBitrate = bitrate;
         layer.iMaxSpatialBitrate = UNSPECIFIED_BIT_RATE;
-        layer.sSliceArgument.uiSliceMode = SliceModeEnum.SM_SINGLE_SLICE;
+        // As H264Codec.EncoderThreads: a slice a thread, as many as OpenH264 takes for the size.
+        uint slices = H264Codec.EncoderSlices(width, height, threads);
+        layer.sSliceArgument.uiSliceMode = slices > 1 ? SliceModeEnum.SM_FIXEDSLCNUM_SLICE : SliceModeEnum.SM_SINGLE_SLICE;
+        layer.sSliceArgument.uiSliceNum = slices > 1 ? slices : 0;
 
         int rv = _encoder->InitializeExt(&param);
         if (rv != (int)CM_RETURN.cmResultSuccess)

@@ -108,5 +108,7 @@ void KernelsAq();
 void KernelsDenoise();
 void KernelsDownsample();
 void KernelsVpFrameWork();
+// The slice threads' load balancing, in kernels_slice_mt.cpp (P5.7).
+void KernelsSliceMt();
 
 #endif  // H264REF_FIXTURE_H

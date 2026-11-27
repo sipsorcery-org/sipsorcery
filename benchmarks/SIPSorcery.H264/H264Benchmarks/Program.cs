@@ -5,17 +5,19 @@
 //
 //   H264Benchmarks [BenchmarkDotNet options]
 //       Runs the BenchmarkDotNet benchmarks, for example --filter *Encode*.
-//   H264Benchmarks run encode|decode <width>x<height> [seconds] [--c]
+//   H264Benchmarks run encode|decode <width>x<height> [seconds] [--c] [--threads n]
 //       Encodes or decodes flat out for a while (10 s by default) and reports
 //       the frame rate and what was allocated once warmed up. Without
 //       BenchmarkDotNet's process juggling, for a profiler (see the README).
-//       --c turns the SIMD kernels off.
+//       --c turns the SIMD kernels off. --threads encodes on n threads, a
+//       slice each, as H264Codec.EncoderThreads does.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 27 Nov 2026  Claude          Created (Phase 5).
+// 27 Nov 2026  Claude          --threads (P5.7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -37,10 +39,17 @@ return 0;
 static int Run(string[] args)
 {
     bool cKernels = args.Contains("--c");
-    args = args.Where(a => a != "--c").ToArray();
+    int threads = 1;
+    int threadsAt = Array.IndexOf(args, "--threads");
+    if (threadsAt >= 0 && (threadsAt + 1 >= args.Length || !int.TryParse(args[threadsAt + 1], out threads) || threads < 1 || threads > 4))
+    {
+        Console.Error.WriteLine("--threads takes a count from 1 to 4.");
+        return 1;
+    }
+    args = args.Where((a, i) => a != "--c" && (threadsAt < 0 || (i != threadsAt && i != threadsAt + 1))).ToArray();
     if (args.Length < 3 || (args[1] != "encode" && args[1] != "decode"))
     {
-        Console.Error.WriteLine("Usage: H264Benchmarks run encode|decode <width>x<height> [seconds] [--c]");
+        Console.Error.WriteLine("Usage: H264Benchmarks run encode|decode <width>x<height> [seconds] [--c] [--threads n]");
         return 1;
     }
     if (cKernels)
@@ -54,7 +63,7 @@ static int Run(string[] args)
     Console.WriteLine($"Generating {EncodeBenchmarks.FRAMES} {width}x{height} frames ...");
     byte[][] frames = TestFrames.Generate(width, height, EncodeBenchmarks.FRAMES);
 
-    using var encoder = new BenchEncoder(width, height);
+    using var encoder = new BenchEncoder(width, height, threads: threads);
     using var decoder = new BenchDecoder();
     List<byte[]>? clip = encode ? null : Clips.Encode(width, height, frames);
     long index = 0;
@@ -78,7 +87,8 @@ static int Run(string[] args)
     }
 
     long startFrames = index;
-    long startAllocated = GC.GetAllocatedBytesForCurrentThread();
+    // The whole process's, so the encoder's slice threads count too.
+    long startAllocated = GC.GetTotalAllocatedBytes(true);
     int startGen0 = GC.CollectionCount(0);
     int startSkipped = encoder.Skipped;
     var sw = Stopwatch.StartNew();
@@ -88,9 +98,10 @@ static int Run(string[] args)
     }
     sw.Stop();
     long done = index - startFrames;
-    long allocated = GC.GetAllocatedBytesForCurrentThread() - startAllocated;
+    long allocated = GC.GetTotalAllocatedBytes(true) - startAllocated;
 
-    string kernels = cKernels ? "C kernels" : "SIMD kernels where there are some";
+    string kernels = (cKernels ? "C kernels" : "SIMD kernels where there are some") +
+        (encode && threads > 1 ? $", {threads} threads" : "");
     Console.WriteLine($"{(encode ? "Encoded" : "Decoded")} {done} {width}x{height} frames in {sw.Elapsed.TotalSeconds:0.00} s ({kernels}): " +
         $"{done / sw.Elapsed.TotalSeconds:0.0} frames a second, {sw.Elapsed.TotalMilliseconds / done:0.00} ms a frame.");
     if (encode)

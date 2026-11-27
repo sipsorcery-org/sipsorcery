@@ -15,7 +15,7 @@ OpenH264 (see
 | Path | State |
 |---|---|
 | **Decoder** (Constrained Baseline) | Done and wired into SIPSorcery. All 35 Constrained Baseline conformance vectors decode to OpenH264's own SHA1s, fed whole or one access unit at a time, and also after an RTP round trip through SIPSorcery's `H264Depacketiser`. Damaged copies of them decode as the C decoder does, error concealment and decoder resets included (all but one copy, whose damage turns a slice into a B slice, which is not ported). It decodes a browser's live H.264 stream, and asks for a key frame when packets are lost. CABAC and B slices (Main and High profile) are not ported. |
-| **Encoder** (Constrained Baseline, WebRTC realtime) | Done and wired into SIPSorcery, for camera content in one spatial layer on one thread. The whole encoder API is ported (`InitializeExt`, `EncodeFrame`, `ForceIntraFrame`, every `SetOption` and `GetOption`), with parameter validation, SPS/PPS writing, I and P slice coding (CAVLC), long-term references, rate control (the quality, bit rate, buffer based and timestamp modes, with frame skipping and padding) and the camera preprocessing (scene change and background detection, adaptive quantisation, the denoiser and downsampling). It reproduces OpenH264's own encoder test hashes for camera content with one slice and one layer, and matches the C encoder byte for byte, frame by frame, over 66 parameter set configurations, 57 fixed QP streams, 94 rate controlled streams, 63 preprocessed streams and 61 scripts of API calls. Chromium decodes its stream live. Screen content, CABAC, several spatial layers and threads are refused at initialisation. |
+| **Encoder** (Constrained Baseline, WebRTC realtime) | Done and wired into SIPSorcery, for camera content in one spatial layer, on one thread or on up to four slice threads. The whole encoder API is ported (`InitializeExt`, `EncodeFrame`, `ForceIntraFrame`, every `SetOption` and `GetOption`), with parameter validation, SPS/PPS writing, I and P slice coding (CAVLC), long-term references, rate control (the quality, bit rate, buffer based and timestamp modes, with frame skipping and padding), slice threads with OpenH264's load balancing, and the camera preprocessing (scene change and background detection, adaptive quantisation, the denoiser and downsampling). It reproduces OpenH264's own encoder test hashes for camera content in one layer, one of them on two slice threads, and matches the C encoder byte for byte, frame by frame, over 66 parameter set configurations, 57 fixed QP streams, 94 rate controlled streams, 63 preprocessed streams and 84 scripts of API calls, 23 of them threaded. Chromium decodes its stream live. Screen content, CABAC, several spatial layers and size-limited slices on more than one thread are refused at initialisation. |
 
 The target throughout is the profile WebRTC uses, Constrained Baseline
 (`profile-level-id=42e01f`). Other profiles come later, and only if needed.
@@ -70,7 +70,9 @@ It is set up as libwebrtc sets up OpenH264: bitrate mode rate control that
 may drop a frame to hold the bitrate, one slice, one thread. Set
 `TargetBitrateKbps`, `FrameRate` and `KeyframeIntervalFrames` at any time; with
 no bitrate set it picks one from the frame size and rate. A new frame size
-starts a new stream with a key frame. The SDP offers `profile-level-id=42e01f`.
+starts a new stream with a key frame. `EncoderThreads`, from 1 to 4, codes each
+frame as that many slices, one a thread, for large frames; it compresses a
+little less well, and a change also starts a new stream. The SDP offers `profile-level-id=42e01f`.
 
 SIPSorcery doesn't answer a receiver's key frame request on its own: call
 `ForceKeyFrame` when `RTCPeerConnection.OnReceiveReport` brings an RTCP PLI or
@@ -92,7 +94,10 @@ with SSE2 and for Arm64. So far they cover:
 On one desktop thread it encodes about 380 frames a second at 640x480, 140 at
 1280x720 and 60 at 1920x1080 (the CLI's `video-bench`). It decodes about 280 a
 second at 1280x720 (`H264Benchmarks`). So at 30 frames a second it keeps up in
-real time at 1280x720 with room to spare, and at 1920x1080 with some.
+real time at 1280x720 with room to spare, and at 1920x1080 with some. On four
+threads (`EncoderThreads = 4`) it encodes `H264Benchmarks`' harder content 2 to
+2.4 times as fast: about 730 frames a second at 640x480, 270 at 1280x720 and
+120 at 1920x1080, from 370, 120 and 50 on one.
 
 ## Port conventions
 

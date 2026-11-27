@@ -15,7 +15,7 @@
 // destructor; the methods are called through the CWelsH264SVCEncoder*.
 //
 // What the port does not code yet (screen content, CABAC, several spatial
-// layers or simulcast, slice threads, SM_SIZELIMITED_SLICE) is refused by
+// layers or simulcast, SM_SIZELIMITED_SLICE) is refused by
 // WelsInitEncoderExt with an error log, so Initialize, InitializeExt and the
 // SetOption calls that reinitialise return cmInitParaError for it.
 //
@@ -27,6 +27,7 @@
 //
 // History:
 // 27 Nov 2026  Claude          Created (E8).
+// 27 Nov 2026  Claude          Slice threads are no longer refused (P5.7).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

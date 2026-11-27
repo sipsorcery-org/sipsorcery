@@ -38,6 +38,7 @@ was kept for the VP8 encoder.
 | P5.4 SIMD deblocking | **Done** (27 Nov) | `common/deblocking_common_simd.cs`: the 12 loop filter edge kernels, luma and chroma, bS < 4 and bS = 4, across horizontal and vertical edges, and the single-plane chroma ones. Branchless: every sample along the edge is worked out in 16-bit lanes and the edge decisions pick between filtered and unfiltered. The vertical edges transpose 16 rows to columns and back, reading and writing only the columns C does. Both `DeblockingInit`s choose them in place of upstream's X86_ASM and HAVE_NEON blocks; the encoder's `DeblockingBSCalc` stays C. `expand_pic` gets no SIMD version: it is 0.5% of the decode, and its copies and fills are already the runtime's vectorised `CopyBlockUnaligned` and `InitBlockUnaligned`. New `deblocking_common_simd_unittest`: every edge filter `deblock` fixture row gives the C build's hash through the SIMD kernel; each kernel equals the C# C kernel over 3000 edges of every kind with random alpha, beta and tc0, the whole plane compared; and each table slot holds its own kernel. **Every table, hash and test still passes.** 11 planted bugs each fail tests (see the notes). Decoding is 1.6 times as fast, back to back with P5.3's build: 924, 291 and 126 frames a second at 480p, 720p and 1080p, from 585, 178 and 78.6 (`video-bench` 720p: 154 and 155 in two runs, from 119 and 124). Encoding is 10 to 14% faster: 175, 56.3 and 24.2, from 157, 49.2 and 22.0 (`video-bench`: 259, 82 and 38, from 222, 77 and 33). UnitTest: 10036. TestVectors: 832. |
 | P5.5 SIMD transforms and quantisation | **Done** (27 Nov) | `common/transform_simd.cs`: the 4x4 inverse transform, two blocks at a time, which the encoder and decoder share. `encoder/encode_mb_aux_simd.cs`: the forward DCTs (one block and four), the 4x4 DC Hadamard and the four quantisers, `QuantFour4x4Max` included. `encoder/decode_mb_aux_simd.cs`: the dequantisers, the inverse DC Hadamard and the three reconstructions (one block, four, and the I16x16 DC-only one). `decoder/decode_mb_aux_simd.cs`: `IdctResAddPred` and the four-block version, which keeps the C test that skips a block with nothing to add. `WelsInitEncodingFuncs`, `WelsInitReconstructionFuncs` and the decoder's `InitPredFunc` choose them in place of upstream's X86_ASM and HAVE_NEON blocks. The 8x8 IDCT stays C, as upstream's does. All of them are exact: the notes say where 16 bits are enough and where the IDCT needs 32. `common/simd.cs` gains an unsigned high multiply and an upper 8-byte store. New `encode_mb_aux_simd_unittest`, `enc_decode_mb_aux_simd_unittest` and `decode_mb_aux_simd_unittest`: every fixture row of these kernels gives the C build's hash through the SIMD kernel; each kernel equals the C# C kernel over 3000 trials, with coefficients of every kind (any int16, extremes, typical, sparse), the tables' FF and MF and any others, and predictions of every kind at random strides, the buffers round the block compared; and each table slot holds its own kernel. **Every table, hash and test still passes.** 17 planted bugs each fail tests (see the notes). Encoding is 1.4 times as fast, back to back with P5.4's build: 248, 77.2 to 81.5 and 33.5 frames a second at 480p, 720p and 1080p, from 172, 55.0 to 55.1 and 23.8 (`video-bench`: 391, 130 and 54, from 239, 85 and 38). Decoding is 3 to 8% faster: 941, 309 and 130, from 914, 287 and 124 (`video-bench` 720p: 169 and 173 in two runs, from 153 and 157). UnitTest: 10790. TestVectors: 832. |
 | P5.6 SIMD VAA and intra prediction | **Done** (27 Nov) | `processing/vaacalcfuncs_simd.cs`: the five VAA kernels the encoder's preprocessing calls (the 8x8 SADs alone; with the 16x16 sums and square sums; with the squared differences too; with the 8x8 sums of differences and largest differences; and all of them), one body inlined with constant flags. `InitVaaFuncs` chooses them in place of upstream's X86_ASM and HAVE_NEON versions. `common/intra_pred_common_simd.cs`: the 16x16 V and H predictors, and the helpers from which `encoder/get_intra_predictor_simd.cs` and `decoder/get_intra_predictor_simd.cs` build the 16x16 plane, DC, DC left, DC top and DC 128 predictors and the chroma plane predictor. `WelsInitIntraPredFuncs` and the decoder's `InitPredFunc` choose them. The other chroma predictors, the 4x4 ones and the decoder's 8x8 ones stay C (see the notes). `common/simd.cs` gains half sums, square sums and absolute differences. New `vaacalc_simd_unittest` and `get_intra_predictor_simd_unittest`: every fixture row of these kernels gives the C build's hash through the SIMD kernel, `CVAACalculation`'s rows included. Each kernel equals the C# C kernel over 3000 trials: the VAA at random sizes (widths 1 to 80, heights 1 to 64) and strides, every output compared, and the predictors with neighbours of 8 kinds, the plane's extremes included. Each table slot holds its own kernel. **Every table, hash and test still passes.** 22 planted bugs each fail tests (see the notes). Encoding is 1.5 times as fast, back to back with P5.5's build: 347 to 368, 115 to 117 and 50 frames a second at 480p, 720p and 1080p, from 231 to 238, 79 and 34. `video-bench`, whose frames and timestamps differ, gains 8 to 15%: 366 to 399, 133 to 141 and 58 to 60, from 342 to 364, 116 to 123 and 51 to 52. Decoding doesn't change (879 to 921, 275 to 290 and 115 to 124, from 888 to 899, 274 to 283 and 117 to 124): the 16x16 predictors were under 0.5% of it. UnitTest: 11084. TestVectors: 832. |
+| P5.7 Slice threads | **Done** (27 Nov) | New `encoder/slice_multi_threading.cs`: the slice threading resources (`RequestMtResource`, `ReleaseMtResource`, the per-thread slice bitstream buffers), `WriteSliceBs`, `AppendSliceToFrameBs`, and the load balancing (`CalcSliceComplexRatio`, `NeedDynamicAdjust`, `DynamicAdjustSlicing`, `AdjustBaseLayer`, `AdjustEnhanceLayer`, `UpdateMbListNeighborParallel`). New `wels_task_base.cs`, `wels_task_encoder.cs` (the slice encoding task, its load balancing variant that times each slice, and the update map task) and `wels_task_management.cs` (`CWelsTaskManageBase`, on the .NET thread pool rather than `WelsThreadLib`, see the notes). `svc_encode_slice` gains `InitOneSliceInThread`, and `encoder_ext` the threaded branch of `WelsEncoderEncodeExt`, the slice adjustment before each layer and the ratios after it. Threads are no longer refused; threaded `SM_SIZELIMITED_SLICE` still is (Phase 4). `H264Codec.EncoderThreads`, 1 to 4, default 1: a slice a thread with load balancing on, small frames getting the slices OpenH264 takes for them. `H264Benchmarks` gains `--threads` and an encode benchmark on 4 threads. Harness: 23 threaded api scripts (2, 3 and 4 threads, fixed and raster slices, the loop filter modes, prefix NALs, temporal layers, LTR, rate control, preprocessing, cropping, set on and off mid-stream, re-initialisation) and a `slice_mt` kernel group, 1440 rows of the load balancing functions on made-up slice times. **All 23 match** the C build byte for byte, and all 1440 rows. Upstream's one threaded camera hash (`CiscoVT2people` with `SM_RASTER_SLICE` on 2 threads, 266de2d0) passes. New `SliceThreadTests`: a threaded stream equals the one-thread stream with loop filter idc 2 and the same slices over 14 configurations; with load balancing on, the slice at the noisy end shrinks, whichever end it is, and every frame decodes to the reconstruction; the same stream on every run; 12 threaded encoders at once each give their own stream. `H264EncodeTests` gains the thread count's slices, its bitrate and a change mid-stream. 14 planted bugs each fail tests (see the notes). On four threads encoding is 2 to 2.4 times as fast, back to back: 370 to 732, 121 to 272 and 50 to 120 frames a second at 480p, 720p and 1080p. UnitTest: 12525. TestVectors: 890. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -1843,6 +1844,133 @@ Notes from P5.6:
   spread over the mode decision and parsing code, and is no longer a few
   kernels. P5.7, slice threading, is the step after.
 
+Notes from P5.7:
+
+- **What upstream does with threads.** `iMultipleThreadIdc` is clipped to 1
+  to 4 and then to the most slices any layer has, so one slice is one thread
+  whatever is asked for. With more than one, `bDeblockingParallelFlag` is
+  set: each slice task deblocks its own slice as soon as it is coded
+  (`pfDeblockingFilterSlice`, the Null one for `NRI_PRI_LOWEST` and the top
+  temporal layer), so the frame-level deblocking is skipped, and an
+  `iLoopFilterDisableIdc` of 0 becomes 2, because a slice can't filter
+  across an edge whose other side may not be coded yet. A threaded stream
+  is therefore the one-thread stream with idc 2 and the same slices, byte
+  for byte. The C build says so (`threads-loop-filter-2` and
+  `threads-one-thread-loop-filter-2` have the same hash), and so does
+  `SliceThreadTests` for the port, over 14 configurations.
+- **Load balancing.** With `SM_FIXEDSLCNUM_SLICE`, more than one thread,
+  `bUseLoadBalancing` (on by default) and at least as many threads as
+  slices, upstream times each slice with `WelsTime` and resizes the slices
+  for the next frame so each takes about as long: `CalcSliceComplexRatio`
+  after the layer, then `NeedDynamicAdjust` (the RMSE of the ratios against
+  a threshold for 2, 4 or 8 cores) and `DynamicAdjustSlicing` (an even slice
+  count only), and the update map tasks that redo the macroblocks'
+  neighbour flags. The timings make the stream differ from run to run, so
+  no table can hold it. The functions themselves are deterministic given
+  the times, so the harness's new `slice_mt` group runs them on made-up
+  times: 1440 rows over 2 to 8 slices, frame sizes, the RC modes and
+  previous adjustments, every output compared. The api rows turn load
+  balancing off, other than `threads-fixed-4-2-threads-balancing` and the
+  raster rows, where it can't run. `SliceThreadTests` checks it on, on
+  lopsided content: a quarter of the picture, at the top or the bottom, is
+  new noise every frame and the rest is still. The slice at the noisy end
+  shrinks (on 4 slices of QCIF to one macroblock row, with the other end's
+  slice taking 66 of the 99 macroblocks), and every frame decodes to the
+  encoder's reconstruction.
+- **The task manager.** Upstream's `CWelsTaskManageBase` puts the slice
+  tasks on a process-wide `CWelsThreadPool` of `WelsThreadLib` threads and
+  waits on an event. Rule 7 said `Task`; the port uses the .NET thread
+  pool more directly. The calling thread runs tasks as well, and up to
+  `iMultipleThreadIdc - 1` helpers queued with
+  `ThreadPool.UnsafeQueueUserWorkItem` take the rest. The manager is the
+  `IThreadPoolWorkItem` itself, so a frame allocates nothing, where a
+  `Task` a slice would. Each task list has a claim counter
+  (`Interlocked.Increment`), the waiting count goes down with
+  `Interlocked.Decrement`, and the caller waits on a `ManualResetEventSlim`
+  only when a helper finished the last task. The helper count is bounded,
+  so no more tasks run at once than there are slice bitstream buffers. A
+  helper's exception is caught and rethrown on the caller. The claim
+  counter is reset with a release store, as the list is published: a helper
+  still holding the list from the run before can claim from it straight
+  away, and must see the new run's count and frame state. Upstream's
+  mutexes become `Interlocked` operations: the thread buffers are claimed
+  with `CompareExchange` and the slice errors OR into `iEncoderError` with
+  `Interlocked.Or`. The handle `sWelsEncCtx.pTaskManage` is a `GCHandle`
+  in an `nint`, since the context is unmanaged.
+- **Differences from upstream.** `GetThreadPoolThreadNum` is the encoder's
+  thread count, where upstream's is the shared pool's, which the first
+  encoder sizes. Upstream gives the slice bitstream buffers
+  `min(GetThreadPoolThreadNum, 4)`, which is the same once the thread count
+  is clipped. Each encoder has its own helpers, so two encoders on four
+  threads each can run eight tasks at once on the .NET pool, where
+  upstream's pool would hold them to four. `CWelsTaskManageOne` (for
+  builds without threads) and the `MT_DEBUG` tracking aren't ported.
+  Threaded `SM_SIZELIMITED_SLICE` (`CWelsConstrainedSizeSlicingEncodingTask`,
+  `InitAllSlicesInThread`) stays with Phase 4's size-limited slices, and
+  init refuses it.
+- **H264Codec.** `EncoderThreads`, 1 to 4, default 1, so the default
+  stream is unchanged and libwebrtc's one-slice set-up stays the default.
+  More than one gives `SM_FIXEDSLCNUM_SLICE` with a slice a thread and load
+  balancing on. Under rate control upstream wants each slice to be at
+  least a row group (GOM) of macroblocks, brings the count down to an even
+  one where it must, and refuses some sizes outright (640x32 with 4, say).
+  The codec asks upstream's own checks (`GomValidCheckSliceNum`,
+  `GomValidCheckSliceMbNum`, `MIN_NUM_MB_PER_SLICE`) first and codes a
+  frame that would be refused as one slice, so a size that works on one
+  thread works on four. A change re-creates the encoder with a key frame,
+  as a size change does. On 640x360 the rate control holds the target on 4
+  threads as on 1 (799 and 296 kbps for 800 and 300), and drops a few more
+  frames: 51 or 52 of 60 against 55, at 0.3 to 0.9 dB lower luma PSNR. That
+  is the compression the slices cost.
+- **The harness.** Three of the new api rows named content `scene`, which
+  the C harness doesn't know and quietly treats as `subpel`, where the C#
+  side throws. They now say `subpel`; only the configuration lines of
+  api.tsv changed.
+- **Upstream's hashes.** `kFileParamArray` has one threaded row for camera
+  content, `CiscoVT2people_320x192_12fps.yuv` with `SM_RASTER_SLICE`, which
+  `BaseEncoderTest` codes on two threads. It gives upstream's hash
+  (266de2d0) and is now in `UpstreamEncoderHashTests`.
+- **Planted bugs.** Each was planted one at a time and restored from a copy,
+  checked by md5. The unit and test vector tests that fail:
+  - The slice ratios' rounding dropped: 125 and 0. A slice a macroblock
+    bigger or smaller still decodes, so only the kernel rows see it.
+  - `NeedDynamicAdjust`'s 4-core threshold 0.0315 for 0.0215: 3 and 0.
+  - The last slice's run a macroblock short: 320 and 3.
+  - Every task given thread buffer 0: 0 and 48.
+  - The slices appended last first: 0 and 36.
+  - The slice deblocker always the Null one: 0 and 37.
+  - An `iLoopFilterDisableIdc` of 0 left at 0 on threads: 0 and 34.
+  - The neighbour update stopping a macroblock short: 40 and 4.
+  - Every slice timed at 1000 µs: 0 and 3.
+  - `EncoderThreads` not re-creating the encoder: 0 and 1.
+  - `H264Codec` asking for a slice a thread whatever the frame size: 0 and
+    1 (640x32 on 4 threads is refused).
+  - The caller not waiting for the helpers: the test host crashes.
+  - `CalcSliceComplexRatio` never called: at first 0 and 0. The ratios stay
+    0, so every slice but the last shrinks to its least, and the last takes
+    the rest. For noise at the top, the only content the test had, that is
+    the right answer. The load balancing test now also puts the noise at the
+    bottom and checks that the slice at the noisy end shrinks: 3.
+  - The ratios taken from the slice times alone, so every slice's is the
+    same: 294 and 2.
+- **Speed.** On this machine (a 10-core i9-10900), `H264Benchmarks run
+  encode` back to back on 1, 2, 3 and 4 threads gives these frame rates:
+
+  | Size | 1 | 2 | 3 | 4 |
+  |---|---|---|---|---|
+  | 480p | 370 | 523 | 651 | 732 |
+  | 720p | 121 | 181 | 235 | 272 |
+  | 1080p | 50 | 75 | 99 | 120 |
+
+  Four threads are 2 to 2.4 times as fast, more at the larger sizes, where
+  the frame-level work that stays on one thread is a smaller share: the
+  preprocessing, the rate control, gathering the slices and expanding the
+  reference picture. The slices cost some bits at the same bitrate. The
+  rate control skipped up to 145 of 5208 frames on threads, where it skipped
+  1 on one thread. On threads the process allocates about 1 KB in 8 s, none
+  of it per frame. `video-bench` codes through `H264Codec` on its default
+  one thread, so its numbers don't change.
+
 ## 1. Goal
 
 A pure managed H.264 encoder and decoder in `src/SIPSorcery.H264`, ported from
@@ -2161,7 +2289,7 @@ is a bug.
 
 - **`H264Codec : IVideoEncoder, IDisposable`** handles encode and decode, like
   `VP8Codec`. It exposes `TargetBitrateKbps`, `FrameRate`,
-  `KeyframeIntervalFrames` and `ForceKeyFrame()`. It has `byte[]`,
+  `KeyframeIntervalFrames`, `EncoderThreads` (P5.7) and `ForceKeyFrame()`. It has `byte[]`,
   `IBufferWriter<byte>` and span-plus-stride overloads, and it implements
   `EncodeVideoFaster`/`DecodeVideoFaster`.
 - **Encoder output** is an Annex B access unit with SPS/PPS before every IDR,

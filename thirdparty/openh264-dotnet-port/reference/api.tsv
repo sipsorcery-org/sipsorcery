@@ -1180,3 +1180,238 @@ op	memory-error	16	F	3	skip	-	-	-	0
 op	memory-error	17	F	3	invalid	-	-	-	0
 op	memory-error	18	G:stats	4	-
 stream	memory-error	6c8e7631211459313676b92dc500c1ab65c837ea	60423
+config	threads-fixed-4	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4;	F*6 I F*3
+init	threads-fixed-4	0
+op	threads-fixed-4	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2626:7b63134c,2376:72d2ae01,2637:20e5f510,3037:5e61f9ca	adc80eacaa475cdb90f6b017a1343b8b7f577dda	10701
+op	threads-fixed-4	1	F	0	P	0	V=1544:c43ca84d,1742:8c38f48c,1596:db0287e2,3281:1e308828	87cabd366d6774b548ea886c6f888779602aa444	8163
+op	threads-fixed-4	2	F	0	P	0	V=1100:80a75391,1442:40eaefcf,1178:8142952e,1762:c78c6965	7635259383b099b38d26e3c0c8804407f3a5d5a1	5482
+op	threads-fixed-4	3	F	0	P	0	V=1101:fde1c06b,1127:cbf6a89d,1117:bcf93d77,1555:f49450cf	e3ceb4457ec4bd3fe2f386e3dda0a758e7d7c49e	4900
+op	threads-fixed-4	4	F	0	P	0	V=949:468a18c5,1017:1092907b,947:bb467d9b,1294:e6ab9d83	8a48313bf130f1a447abd093d294e9c5ad88457b	4207
+op	threads-fixed-4	5	F	0	P	0	V=1086:d14b5c11,1178:9e100d4b,1116:1dcf68a5,1482:881a2fb0	f019a1e5efe9fa5a1668ccefe006c26cbb596891	4862
+op	threads-fixed-4	6	I	0	-
+op	threads-fixed-4	7	F	0	IDR	0	N=17:d76fa0e0,8:ad3775d1|V=3547:7b5c82c7,3822:e0def61a,3444:0e523748,4045:27983af6	950e1ea963ab050676fbdc4e92c28a5b3acc5a52	14883
+op	threads-fixed-4	8	F	0	P	0	V=1239:f5d62fbc,1313:418f1618,1229:7c8961c2,2564:bfdd0b12	43a4fe7be1e5f1216c64e2f59367c8bcf0fd1e88	6345
+op	threads-fixed-4	9	F	0	P	0	V=983:98b37dc6,1000:cec2db6d,912:1dc653b6,1321:afbbdd2f	d4af65baf615d29ad2d7efd995bbdf1d3b00b49e	4216
+stream	threads-fixed-4	e5d2aa0ff2b5201dbaf31c90a3bdcdd33ed0e260	63759
+config	threads-fixed-4-2-threads	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=2;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4	F*6 I F*3
+init	threads-fixed-4-2-threads	0
+op	threads-fixed-4-2-threads	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2626:7b63134c,2376:72d2ae01,2637:20e5f510,3037:5e61f9ca	adc80eacaa475cdb90f6b017a1343b8b7f577dda	10701
+op	threads-fixed-4-2-threads	1	F	0	P	0	V=1544:c43ca84d,1742:8c38f48c,1596:db0287e2,3281:1e308828	87cabd366d6774b548ea886c6f888779602aa444	8163
+op	threads-fixed-4-2-threads	2	F	0	P	0	V=1100:80a75391,1442:40eaefcf,1178:8142952e,1762:c78c6965	7635259383b099b38d26e3c0c8804407f3a5d5a1	5482
+op	threads-fixed-4-2-threads	3	F	0	P	0	V=1101:fde1c06b,1127:cbf6a89d,1117:bcf93d77,1555:f49450cf	e3ceb4457ec4bd3fe2f386e3dda0a758e7d7c49e	4900
+op	threads-fixed-4-2-threads	4	F	0	P	0	V=949:468a18c5,1017:1092907b,947:bb467d9b,1294:e6ab9d83	8a48313bf130f1a447abd093d294e9c5ad88457b	4207
+op	threads-fixed-4-2-threads	5	F	0	P	0	V=1086:d14b5c11,1178:9e100d4b,1116:1dcf68a5,1482:881a2fb0	f019a1e5efe9fa5a1668ccefe006c26cbb596891	4862
+op	threads-fixed-4-2-threads	6	I	0	-
+op	threads-fixed-4-2-threads	7	F	0	IDR	0	N=17:d76fa0e0,8:ad3775d1|V=3547:7b5c82c7,3822:e0def61a,3444:0e523748,4045:27983af6	950e1ea963ab050676fbdc4e92c28a5b3acc5a52	14883
+op	threads-fixed-4-2-threads	8	F	0	P	0	V=1239:f5d62fbc,1313:418f1618,1229:7c8961c2,2564:bfdd0b12	43a4fe7be1e5f1216c64e2f59367c8bcf0fd1e88	6345
+op	threads-fixed-4-2-threads	9	F	0	P	0	V=983:98b37dc6,1000:cec2db6d,912:1dc653b6,1321:afbbdd2f	d4af65baf615d29ad2d7efd995bbdf1d3b00b49e	4216
+stream	threads-fixed-4-2-threads	e5d2aa0ff2b5201dbaf31c90a3bdcdd33ed0e260	63759
+config	threads-fixed-4-3-threads	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=3;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4	F*6 I F*3
+init	threads-fixed-4-3-threads	0
+op	threads-fixed-4-3-threads	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2626:7b63134c,2376:72d2ae01,2637:20e5f510,3037:5e61f9ca	adc80eacaa475cdb90f6b017a1343b8b7f577dda	10701
+op	threads-fixed-4-3-threads	1	F	0	P	0	V=1544:c43ca84d,1742:8c38f48c,1596:db0287e2,3281:1e308828	87cabd366d6774b548ea886c6f888779602aa444	8163
+op	threads-fixed-4-3-threads	2	F	0	P	0	V=1100:80a75391,1442:40eaefcf,1178:8142952e,1762:c78c6965	7635259383b099b38d26e3c0c8804407f3a5d5a1	5482
+op	threads-fixed-4-3-threads	3	F	0	P	0	V=1101:fde1c06b,1127:cbf6a89d,1117:bcf93d77,1555:f49450cf	e3ceb4457ec4bd3fe2f386e3dda0a758e7d7c49e	4900
+op	threads-fixed-4-3-threads	4	F	0	P	0	V=949:468a18c5,1017:1092907b,947:bb467d9b,1294:e6ab9d83	8a48313bf130f1a447abd093d294e9c5ad88457b	4207
+op	threads-fixed-4-3-threads	5	F	0	P	0	V=1086:d14b5c11,1178:9e100d4b,1116:1dcf68a5,1482:881a2fb0	f019a1e5efe9fa5a1668ccefe006c26cbb596891	4862
+op	threads-fixed-4-3-threads	6	I	0	-
+op	threads-fixed-4-3-threads	7	F	0	IDR	0	N=17:d76fa0e0,8:ad3775d1|V=3547:7b5c82c7,3822:e0def61a,3444:0e523748,4045:27983af6	950e1ea963ab050676fbdc4e92c28a5b3acc5a52	14883
+op	threads-fixed-4-3-threads	8	F	0	P	0	V=1239:f5d62fbc,1313:418f1618,1229:7c8961c2,2564:bfdd0b12	43a4fe7be1e5f1216c64e2f59367c8bcf0fd1e88	6345
+op	threads-fixed-4-3-threads	9	F	0	P	0	V=983:98b37dc6,1000:cec2db6d,912:1dc653b6,1321:afbbdd2f	d4af65baf615d29ad2d7efd995bbdf1d3b00b49e	4216
+stream	threads-fixed-4-3-threads	e5d2aa0ff2b5201dbaf31c90a3bdcdd33ed0e260	63759
+config	threads-fixed-4-2-threads-balancing	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=2;L0.uiSliceMode=1;L0.uiSliceNum=4	F*6 I F*3
+init	threads-fixed-4-2-threads-balancing	0
+op	threads-fixed-4-2-threads-balancing	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2626:7b63134c,2376:72d2ae01,2637:20e5f510,3037:5e61f9ca	adc80eacaa475cdb90f6b017a1343b8b7f577dda	10701
+op	threads-fixed-4-2-threads-balancing	1	F	0	P	0	V=1544:c43ca84d,1742:8c38f48c,1596:db0287e2,3281:1e308828	87cabd366d6774b548ea886c6f888779602aa444	8163
+op	threads-fixed-4-2-threads-balancing	2	F	0	P	0	V=1100:80a75391,1442:40eaefcf,1178:8142952e,1762:c78c6965	7635259383b099b38d26e3c0c8804407f3a5d5a1	5482
+op	threads-fixed-4-2-threads-balancing	3	F	0	P	0	V=1101:fde1c06b,1127:cbf6a89d,1117:bcf93d77,1555:f49450cf	e3ceb4457ec4bd3fe2f386e3dda0a758e7d7c49e	4900
+op	threads-fixed-4-2-threads-balancing	4	F	0	P	0	V=949:468a18c5,1017:1092907b,947:bb467d9b,1294:e6ab9d83	8a48313bf130f1a447abd093d294e9c5ad88457b	4207
+op	threads-fixed-4-2-threads-balancing	5	F	0	P	0	V=1086:d14b5c11,1178:9e100d4b,1116:1dcf68a5,1482:881a2fb0	f019a1e5efe9fa5a1668ccefe006c26cbb596891	4862
+op	threads-fixed-4-2-threads-balancing	6	I	0	-
+op	threads-fixed-4-2-threads-balancing	7	F	0	IDR	0	N=17:d76fa0e0,8:ad3775d1|V=3547:7b5c82c7,3822:e0def61a,3444:0e523748,4045:27983af6	950e1ea963ab050676fbdc4e92c28a5b3acc5a52	14883
+op	threads-fixed-4-2-threads-balancing	8	F	0	P	0	V=1239:f5d62fbc,1313:418f1618,1229:7c8961c2,2564:bfdd0b12	43a4fe7be1e5f1216c64e2f59367c8bcf0fd1e88	6345
+op	threads-fixed-4-2-threads-balancing	9	F	0	P	0	V=983:98b37dc6,1000:cec2db6d,912:1dc653b6,1321:afbbdd2f	d4af65baf615d29ad2d7efd995bbdf1d3b00b49e	4216
+stream	threads-fixed-4-2-threads-balancing	e5d2aa0ff2b5201dbaf31c90a3bdcdd33ed0e260	63759
+config	threads-fixed-3-noise	noise	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=3	F*4
+init	threads-fixed-3-noise	0
+op	threads-fixed-3-noise	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=8776:e2b62e67,8744:659b0611,8767:c7d4a974	91c159527dbb1e49244c96f934503b4c5a54e4e9	26312
+op	threads-fixed-3-noise	1	F	0	P	0	V=5498:f72027f5,6728:1b12f1a7,6390:21cc253f	1a266a6e0144f3b49278f9375377837c032014fa	18616
+op	threads-fixed-3-noise	2	F	0	P	0	V=4943:fe6c563a,4421:1d016819,4802:d5b63f70	702f038326b161a802b48eaba80632c1ac5f16e0	14166
+op	threads-fixed-3-noise	3	F	0	P	0	V=3636:7f8ede53,2713:31977b60,3232:af8e4a41	45cff7806522c62beaca469c1fddb9920379e1ce	9581
+stream	threads-fixed-3-noise	0977d07261a5bae3af7b419542673492b2048c3f	68675
+config	threads-fixed-7	subpel	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;L0.uiSliceMode=1;L0.uiSliceNum=7;iComplexityMode=2	F*4
+init	threads-fixed-7	0
+op	threads-fixed-7	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=380:04456e5a,385:1bbc1d11,393:dce05f8b,414:6171e143,374:9db6d4c6,374:affa3443,392:eea3a88a	ee09cd2ac32a68b25b61a3737f1c58a5301e133f	2737
+op	threads-fixed-7	1	F	0	P	0	V=32:d15db88d,38:e2793ea7,32:8d4ce3c0,36:a2ab54d9,34:793cb168,33:29b626f3,40:309cc15a	48edf55c9947ed903a1bef02f43da6fc76ea4302	245
+op	threads-fixed-7	2	F	0	P	0	V=31:075f146e,33:d5d8818a,34:670e9555,39:ca3ca8c1,32:e7783635,27:28789d00,45:f7a99f78	61f8aaa3f4fa3f1504844db58f0edc5d0a3689f3	241
+op	threads-fixed-7	3	F	0	P	0	V=31:75b74352,33:225b9b36,41:c38203a6,31:19c6a6da,34:4b25f7a4,35:f6930b70,50:23e68601	3a193a2731a4d125c6cd928d4c3659bc896a5ebe	255
+stream	threads-fixed-7	3b4eb28c1d34d564570a30a14d3618975fba6aaf	3478
+config	threads-raster-rows	subpel	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=2;L0.uiSliceMode=2	F*5
+init	threads-raster-rows	0
+op	threads-raster-rows	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=366:cad2841e,364:587ae900,360:7f9e4128,380:6260106f,367:75820d10,364:360a2687,360:ecc0a6d5,380:ea9ce67c,367:a1eb60a9	9a39ce78617f7efbda3349e5fbd2522f96f3c488	3333
+op	threads-raster-rows	1	F	0	P	0	V=22:47f4feb9,26:d18f05d5,23:16c8bb0d,27:492327ba,23:79cf38b8,26:ebd3133b,23:ed4548f2,27:27794fd3,23:e8592452	a750c389c4f43e7faf2ac618371689951fbf7c30	220
+op	threads-raster-rows	2	F	0	P	0	V=23:af6ac0ac,22:e2e8cbe8,24:e5bb2aeb,23:0dba6d55,24:acef758b,22:08a40d75,24:6a84d424,23:f8900e1a,24:d349c075	b3ca7cfba25935fbf8a3af7f867ddba669604740	209
+op	threads-raster-rows	3	F	0	P	0	V=27:41a87dbd,22:d5f67b78,31:201c58c6,32:a80995ff,26:f82e7308,22:6d8dd159,32:c842ab32,32:6aa14423,27:21cbc8d8	f2c10bcb5253bcd07f69231ccd0012b279c1d9b0	251
+op	threads-raster-rows	4	F	0	P	0	V=34:b88db095,34:f4459e3e,30:357e0be4,29:02f2096c,31:5211f3eb,34:d28dc503,31:23bf0c37,30:5832869c,33:61a95a9f	76df26f969a3d4658fb0aeee1e0af4ebf61ec718	286
+stream	threads-raster-rows	e8f64b54e38234bc69d38956c5d26b434bc1059a	4299
+config	threads-raster-mbs	block	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;L0.uiSliceMode=2;L0.uiSliceMbNum=10,30,59	F*5
+init	threads-raster-mbs	0
+op	threads-raster-mbs	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=1279:a81633a3,3354:b2ba8c16,6566:c6d0e044	efeae5e153f2ad233579e1c0d287b27bf6153ba6	11224
+op	threads-raster-mbs	1	F	0	P	0	V=450:1cfdd5ef,423:4a26875b,16:ad394a1e	434918ea3df9d425211f286820b8e54824d0e56c	889
+op	threads-raster-mbs	2	F	0	P	0	V=211:92376e43,571:0a45f4d1,13:c62b6d69	7065260bbe6fdb86050dca40efedc3fe330d23dd	795
+op	threads-raster-mbs	3	F	0	P	0	V=143:c11d32fb,608:914f4142,13:56e73332	b70b64ce7cda1d7e81071676afff50d795c30a06	764
+op	threads-raster-mbs	4	F	0	P	0	V=129:aca618cb,727:d3fb5d85,13:991dced8	acb89d875abc7f876dcfa331b620b07e64f494ac	869
+stream	threads-raster-mbs	50eb66d312a8871a40e84d5a701da833b80f3560	14541
+config	threads-single-slice	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4	F*4
+init	threads-single-slice	0
+op	threads-single-slice	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+op	threads-single-slice	1	F	0	P	0	V=6019:91128291	9112829130b6f25399e0a28495cb38078f912185	6019
+op	threads-single-slice	2	F	0	P	0	V=4931:47b06157	47b06157b94dd6025b1c8414c5ccc0cbe59e274f	4931
+op	threads-single-slice	3	F	0	P	0	V=4826:ddea5e1a	ddea5e1abf273c43bdcc6d269259545f6a4ab969	4826
+stream	threads-single-slice	d3050e0241b6613af62c7b9e057531b8d7defcfb	26523
+config	threads-loop-filter-off	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4;iLoopFilterDisableIdc=1	F*4
+init	threads-loop-filter-off	0
+op	threads-loop-filter-off	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2626:2265b50c,2377:2ef47629,2637:8120d69f,3038:a95eaafd	920bfd77c0dd51c368a9c85ed9f3bee87d09548c	10703
+op	threads-loop-filter-off	1	F	0	P	0	V=1545:548a6667,1741:fba1ea6c,1595:1a34dfa3,3279:2e1f0c29	57d217b229552c09100128f2f9536a83b89fb6de	8160
+op	threads-loop-filter-off	2	F	0	P	0	V=1101:b2f81d05,1429:32df9b2a,1172:17e458d5,1763:b07a6d32	1327069a94ef9e385d74af9c8c6e4ba64f0e095c	5465
+op	threads-loop-filter-off	3	F	0	P	0	V=1102:3bf2d5ab,1128:7f3a358a,1114:59ddcda9,1553:90899dc2	53a45ce49550365a990a76bc52c34b2cec17c457	4897
+stream	threads-loop-filter-off	195953d72e72c7d83e7d52e79e43861732701e89	29225
+config	threads-loop-filter-2	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4;iLoopFilterDisableIdc=2	F*4
+init	threads-loop-filter-2	0
+op	threads-loop-filter-2	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2626:7b63134c,2376:72d2ae01,2637:20e5f510,3037:5e61f9ca	adc80eacaa475cdb90f6b017a1343b8b7f577dda	10701
+op	threads-loop-filter-2	1	F	0	P	0	V=1544:c43ca84d,1742:8c38f48c,1596:db0287e2,3281:1e308828	87cabd366d6774b548ea886c6f888779602aa444	8163
+op	threads-loop-filter-2	2	F	0	P	0	V=1100:80a75391,1442:40eaefcf,1178:8142952e,1762:c78c6965	7635259383b099b38d26e3c0c8804407f3a5d5a1	5482
+op	threads-loop-filter-2	3	F	0	P	0	V=1101:fde1c06b,1127:cbf6a89d,1117:bcf93d77,1555:f49450cf	e3ceb4457ec4bd3fe2f386e3dda0a758e7d7c49e	4900
+stream	threads-loop-filter-2	30102797f22f6add8478f5338ae51cf53887195b	29246
+config	threads-one-thread-loop-filter-2	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.uiSliceMode=1;L0.uiSliceNum=4;iLoopFilterDisableIdc=2	F*4
+init	threads-one-thread-loop-filter-2	0
+op	threads-one-thread-loop-filter-2	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2626:7b63134c,2376:72d2ae01,2637:20e5f510,3037:5e61f9ca	adc80eacaa475cdb90f6b017a1343b8b7f577dda	10701
+op	threads-one-thread-loop-filter-2	1	F	0	P	0	V=1544:c43ca84d,1742:8c38f48c,1596:db0287e2,3281:1e308828	87cabd366d6774b548ea886c6f888779602aa444	8163
+op	threads-one-thread-loop-filter-2	2	F	0	P	0	V=1100:80a75391,1442:40eaefcf,1178:8142952e,1762:c78c6965	7635259383b099b38d26e3c0c8804407f3a5d5a1	5482
+op	threads-one-thread-loop-filter-2	3	F	0	P	0	V=1101:fde1c06b,1127:cbf6a89d,1117:bcf93d77,1555:f49450cf	e3ceb4457ec4bd3fe2f386e3dda0a758e7d7c49e	4900
+stream	threads-one-thread-loop-filter-2	30102797f22f6add8478f5338ae51cf53887195b	29246
+config	threads-loop-filter-offsets	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4;iLoopFilterAlphaC0Offset=4;iLoopFilterBetaOffset=-3	F*4
+init	threads-loop-filter-offsets	0
+op	threads-loop-filter-offsets	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2629:56c534e8,2378:5ae6b998,2639:52e086c6,3038:900b85d9	42a21b45ae5245574b158026d5fd12a5537d6bbb	10709
+op	threads-loop-filter-offsets	1	F	0	P	0	V=1542:0adb4c2f,1741:862e1ad2,1593:a8f51f20,2658:65575b95	93227bf139e5dd955a41a057e7a45b10e1baecde	7534
+op	threads-loop-filter-offsets	2	F	0	P	0	V=1102:e18d2d68,1438:09d6f2e0,1173:29c6a45b,1610:215b952d	2e091c2bf3beb3bf5402fd9630c32198a07ee2be	5323
+op	threads-loop-filter-offsets	3	F	0	P	0	V=1103:938ead86,1129:a99d6701,1122:c1879512,1557:0dea08ca	1b571c60d989c8fd237e6af19a43ef0915374283	4911
+stream	threads-loop-filter-offsets	12c9749e7c3fa806a4fdfc3f5a7061c87a729e43	28477
+config	threads-prefix	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4;bPrefixNalAddingCtrl=1	F*3 I F*2
+init	threads-prefix	0
+op	threads-prefix	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=9:dfc86b4e,2626:7b63134c,9:dfc86b4e,2376:72d2ae01,9:dfc86b4e,2637:20e5f510,9:dfc86b4e,3037:5e61f9ca	6ebef3fdd8461e869b9f30ea5d344cc2c21af44f	10737
+op	threads-prefix	1	F	0	P	0	V=9:e1b1a269,1544:c43ca84d,9:e1b1a269,1742:8c38f48c,9:e1b1a269,1596:db0287e2,9:e1b1a269,3281:1e308828	6cd3404b524c25472ae5a1157abb83eddc3eb6b3	8199
+op	threads-prefix	2	F	0	P	0	V=9:e1b1a269,1100:80a75391,9:e1b1a269,1442:40eaefcf,9:e1b1a269,1178:8142952e,9:e1b1a269,1762:c78c6965	62fad9aa3849c477e589c61e0015961c9bf02b5a	5518
+op	threads-prefix	3	I	0	-
+op	threads-prefix	4	F	0	IDR	0	N=17:d76fa0e0,8:ad3775d1|V=9:dfc86b4e,3557:7721ad38,9:dfc86b4e,3580:125875ae,9:dfc86b4e,3482:02693061,9:dfc86b4e,4397:4ec29e88	6c851e9e4d73f242210b0df0a2d0ad6e734528c3	15077
+op	threads-prefix	5	F	0	P	0	V=9:e1b1a269,1005:da7a6f77,9:e1b1a269,1027:f98bbb4b,9:e1b1a269,952:6578a6b5,9:e1b1a269,1690:cf9b725b	80a7ace0b40d5952c3056c93681bf86e8a39dad1	4710
+stream	threads-prefix	0f5ade072b13b0370794ee243d02e4438d390342	44241
+config	threads-temporal-3	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4;iTemporalLayerNum=3	F*9
+init	threads-temporal-3	0
+op	threads-temporal-3	0	F	0	IDR	0	N=17:34f6a795,8:b5da713a|V=3187:9b13b6b3,2837:b46e2215,3127:77a4176f,3647:ec218c41	74f5bca54dbfa7b36403e19bdd3f9f3ff48d8bf3	12823
+op	threads-temporal-3	1	F	0	P	2	V=1553:09a4d50a,1785:c54bed2c,1592:5c5692fb,2655:5bb3b995	e664a10172094bfa412df7ab656ac629bea78070	7585
+op	threads-temporal-3	2	F	0	P	1	V=913:a1cfc82e,1131:53f26fec,2388:c32971a0,2948:647b26d6	83e4488c153b941b73985870744a4d19d03b5bc1	7380
+op	threads-temporal-3	3	F	0	P	2	V=1119:3930d170,1136:d6db05f8,1281:6f5ccb2a,1753:4e4d8a6c	b0268ba6878a183f97a3e5150abff3516e330501	5289
+op	threads-temporal-3	4	F	0	P	0	V=824:803c04bd,3196:7ce3cd40,651:d1f3eedf,3027:1f597bbc	406e727ca1f947892a9252b75a0026eaca0f8b1f	7698
+op	threads-temporal-3	5	F	0	P	2	V=1090:c4e4fff2,1187:ffaa09ef,1122:6ca872c4,1989:952c38d7	3d3a8b288f90941bc4ada0ebf0028d4793dcbf28	5388
+op	threads-temporal-3	6	F	0	P	1	V=184:7a3b8a2d,663:c604c0ec,206:808b19eb,1441:b07b4efe	5dc9e011a98d71f5a5a35975a7428759c60aa17d	2494
+op	threads-temporal-3	7	F	0	P	2	V=1238:c2052336,1311:787e2eb7,1226:591bcbbf,1580:a606782d	0b5803d7b824394b0947b51244c8b3164640ff2e	5355
+op	threads-temporal-3	8	F	0	P	0	V=427:3c5d54e2,1794:e873635a,398:6d523cc5,1658:8fa25038	ea6a1c7e803f9cd16fc544aa3dab821296d2900d	4277
+stream	threads-temporal-3	5112dde4e6eda14b5b8670fba3c561f76110bad7	58289
+config	threads-ltr	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4;bEnableLongTermReference=1;iLtrMarkPeriod=3	F*4 S:ltrfb=4:1:3:0 F*4
+init	threads-ltr	0
+op	threads-ltr	0	F	0	IDR	0	N=17:cfef6d02,8:b5da713a|V=2626:24501ccf,2376:9e354536,2637:f7e0f17a,3037:cd901d84	d4c4fa6bab5a1092019f3772c0cfc678a7b70576	10701
+op	threads-ltr	1	F	0	P	0	V=1544:42988f83,1742:4a947342,1596:e843e9c2,3281:baa58ce4	7c54a7e4728cbc6866f729186bad79b15e11c938	8163
+op	threads-ltr	2	F	0	P	0	V=1100:80a75391,1442:40eaefcf,1178:8142952e,1762:c78c6965	7635259383b099b38d26e3c0c8804407f3a5d5a1	5482
+op	threads-ltr	3	F	0	P	0	V=1101:fde1c06b,1127:cbf6a89d,1117:bcf93d77,1555:f49450cf	e3ceb4457ec4bd3fe2f386e3dda0a758e7d7c49e	4900
+op	threads-ltr	4	S:ltrfb=4:1:3:0	0	-
+op	threads-ltr	5	F	0	P	0	V=949:468a18c5,1017:1092907b,947:bb467d9b,1294:e6ab9d83	8a48313bf130f1a447abd093d294e9c5ad88457b	4207
+op	threads-ltr	6	F	0	P	0	V=1088:dde8b414,1180:1018bc51,1118:a565f023,1485:24a403c4	819ca828c602c6f787dfdca92aadf68d256c4553	4871
+op	threads-ltr	7	F	0	P	0	V=1206:d99e30ea,1299:ce28f132,1203:f1de4c89,1618:0c91709c	d45de972894fa281e3bc595152a0b0c1d1b602b6	5326
+op	threads-ltr	8	F	0	P	0	V=1234:bc0bd765,1293:0f31a47d,1210:06552841,1576:c55a1998	93908b3ec97dd5a050892c98762717bd90581700	5313
+stream	threads-ltr	be72c7882823cddf9e5be4ae2fdcbd7b7c9ee9e8	48963
+config	threads-rate-control	mixed	api=ext;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iRCMode=1;iTargetBitrate=256000;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4	F*12 I F*6
+init	threads-rate-control	0
+op	threads-rate-control	0	F	0	IDR	0	N=17:7bc4023e,8:b5da713a|V=2051:1dfc8a4e,2160:b4536f22,2359:31ff0933,3217:f98d32e4	6a219337af9f58e4480f4c5619b0b9c24f2a76cd	9812
+op	threads-rate-control	1	F	0	skip	-	-	-	0
+op	threads-rate-control	2	F	0	P	0	V=419:3c89f100,1195:c7d12bd9,1214:ad9fbb79,1309:0584aba9	3c8354e9868bbfce95c0c66bd47affc4a44031bc	4137
+op	threads-rate-control	3	F	0	skip	-	-	-	0
+op	threads-rate-control	4	F	0	P	0	V=273:0d932d48,192:13f3ccb3,460:35870c32,380:bfe2f228	06bd3ccb89fed383ab3cd758c1ef2656f99cb3a0	1305
+op	threads-rate-control	5	F	0	skip	-	-	-	0
+op	threads-rate-control	6	F	0	P	0	V=110:e1cfcadd,154:bfc3d39b,254:bb7ead94,463:4dae075e	3c8d2143bd619c5224a47f97220e45985af4da0f	981
+op	threads-rate-control	7	F	0	skip	-	-	-	0
+op	threads-rate-control	8	F	0	P	0	V=111:d87ee6d7,67:1e033642,77:f45f582f,274:fc2f2629	fb81af806030c3832df4f6ef40b923dabcd32b28	529
+op	threads-rate-control	9	F	0	skip	-	-	-	0
+op	threads-rate-control	10	F	0	P	0	V=2778:bb684ac8,2785:d7e4fc02,2790:07f893f8,4168:56549edc	e489921c8aaa41561c72ab543deff9f7be6f6bf5	12521
+op	threads-rate-control	11	F	0	skip	-	-	-	0
+op	threads-rate-control	12	I	0	-
+op	threads-rate-control	13	F	0	IDR	0	N=17:23953649,8:ad3775d1|V=3704:8eede1aa,3689:29d7da9f,3704:62304fe2,5581:2602af8d	89e1cbdd489c6322d1fd1885ce33a557c12d4d48	16703
+op	threads-rate-control	14	F	0	skip	-	-	-	0
+op	threads-rate-control	15	F	0	P	0	V=1198:0629191a,1239:d2989c96,1242:ab69730e,1868:028f117b	a8422c0a28e9abd0e58d2c28dce5769df54ea976	5547
+op	threads-rate-control	16	F	0	skip	-	-	-	0
+op	threads-rate-control	17	F	0	skip	-	-	-	0
+op	threads-rate-control	18	F	0	skip	-	-	-	0
+stream	threads-rate-control	2554f6dfc8f123556b51580fcdc288caf2137e2a	51535
+config	threads-preprocess	camera	api=ext;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iRCMode=1;iTargetBitrate=200000;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4	F*10
+init	threads-preprocess	0
+op	threads-preprocess	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2582:5bdf854f,2164:bcbf3468,2360:b7c0e0d3,3196:3421f993	38ff4a9b10e15add4f1da6b3cd92053eac9ee283	10327
+op	threads-preprocess	1	F	0	skip	-	-	-	0
+op	threads-preprocess	2	F	0	P	0	V=887:2d03237a,13:b846b3d0,15:c8836246,15:291f83a1	e099166c1d3f609b8395edd5d8778de02f89cff1	930
+op	threads-preprocess	3	F	0	skip	-	-	-	0
+op	threads-preprocess	4	F	0	P	0	V=206:306a1572,142:66e5e946,13:ed7dce0f,14:abaacc3a	410b85ac5091ae860cdf03996a57495e0304b081	375
+op	threads-preprocess	5	F	0	skip	-	-	-	0
+op	threads-preprocess	6	F	0	P	0	V=197:ec8d9c50,359:f881767c,13:809a2864,14:e1826d8a	f0b1d5e64f2ae42da4b61882f47eb6904ac4281e	583
+op	threads-preprocess	7	F	0	skip	-	-	-	0
+op	threads-preprocess	8	F	0	P	0	V=288:32eaed25,452:c26fd1e0,13:d443c5d4,14:ce4b75c8	26787e2de6e2d9a6d25988c44c86560292de7679	767
+op	threads-preprocess	9	F	0	skip	-	-	-	0
+stream	threads-preprocess	5e9573910b2c90131f38a8db44a22f34caca58ca	12982
+config	threads-cropped	subpel	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4;iPicWidth=200;iPicHeight=120	F*4
+init	threads-cropped	0
+op	threads-cropped	0	F	0	IDR	0	N=18:e18b415b,8:b5da713a|V=543:83027a3d,535:f572a0c9,544:dce078de,657:ede29bc9	8dd28b861f33a7f400fddc5b8d78a3faf08ed5dd	2305
+op	threads-cropped	1	F	0	P	0	V=46:3cca1f47,36:e5244972,37:fc51155d,41:94caed6e	d72cffa462e5392cee2fd1b031c1e4cb7bb260d6	160
+op	threads-cropped	2	F	0	P	0	V=47:140621cf,46:200d3109,42:7f125d60,39:30c07487	82909e59719ed45c3bbd798d924285c5cf14273c	174
+op	threads-cropped	3	F	0	P	0	V=63:24764872,58:aa165d6b,61:36d575b3,41:08d180c7	69426c5c5b8692c5a917604377d47c9a47f9ab28	223
+stream	threads-cropped	f0c05aa0c42a53725d2e0b9f864b21a4df52e3a9	2862
+config	threads-640x480	camera	api=ext;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iRCMode=1;iTargetBitrate=1000000;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4;iPicWidth=640;iPicHeight=480	F*6
+init	threads-640x480	0
+op	threads-640x480	0	F	0	IDR	0	N=18:422c8cd9,8:b5da713a|V=31446:25e4b85a,30599:55fcb6da,31168:c34c13d3,22625:4b180f8c	6ddea7d08dd48e3ac6c267136f6818313856aa23	115864
+op	threads-640x480	1	F	0	skip	-	-	-	0
+op	threads-640x480	2	F	0	skip	-	-	-	0
+op	threads-640x480	3	F	0	skip	-	-	-	0
+op	threads-640x480	4	F	0	skip	-	-	-	0
+op	threads-640x480	5	F	0	skip	-	-	-	0
+stream	threads-640x480	6ddea7d08dd48e3ac6c267136f6818313856aa23	115864
+config	threads-lifecycle	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4;	F*2 U F R F*2 S:ext=iPicWidth:160+iPicHeight:96+L0.iVideoWidth:160+L0.iVideoHeight:96 F*2 G:ext
+init	threads-lifecycle	0
+op	threads-lifecycle	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2626:7b63134c,2376:72d2ae01,2637:20e5f510,3037:5e61f9ca	adc80eacaa475cdb90f6b017a1343b8b7f577dda	10701
+op	threads-lifecycle	1	F	0	P	0	V=1544:c43ca84d,1742:8c38f48c,1596:db0287e2,3281:1e308828	87cabd366d6774b548ea886c6f888779602aa444	8163
+op	threads-lifecycle	2	U	0	-
+op	threads-lifecycle	3	F	1	invalid	-	-	-	0
+op	threads-lifecycle	4	R	0	-
+op	threads-lifecycle	5	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=3557:ac442850,3580:b16a47f7,3482:3a14bd25,4396:1103a9a6	fe3b9879af386181b08222275be00e266cbd48d8	15040
+op	threads-lifecycle	6	F	0	P	0	V=1005:061098b9,1027:4786ad21,952:d6a96aba,1690:79cabbcf	2a686afc6fe4ab826ba2baa6fb8a3eacc8f4a803	4674
+op	threads-lifecycle	7	S:ext=iPicWidth:160+iPicHeight:96+L0.iVideoWidth:160+L0.iVideoHeight:96	0	-
+op	threads-lifecycle	8	F	0	IDR	0	N=17:15e6f04c,8:ad3775d1|V=2514:b2527696,2358:08e03939,2485:53b85064,2385:a6be126a	040453daf93be1c7343abb1163b52a94545b36c1	9767
+op	threads-lifecycle	9	F	0	P	0	V=785:654859ad,778:e145a48b,800:10cf0c61,937:c725b211	fc565954862fa10bd8f53ee02d1ccc45438ca3ec	3300
+op	threads-lifecycle	10	G:ext	0	iUsageType=0;iPicWidth=160;iPicHeight=96;iTargetBitrate=0;iRCMode=-1;fMaxFrameRate=30;iTemporalLayerNum=1;iSpatialLayerNum=1;iComplexityMode=0;uiIntraPeriod=0;iNumRefFrame=1;eSpsPpsIdStrategy=1;bPrefixNalAddingCtrl=0;bEnableSSEI=0;bSimulcastAVC=0;iPaddingFlag=0;iEntropyCodingModeFlag=0;bEnableFrameSkip=1;iMaxBitrate=0;iMaxQp=51;iMinQp=0;uiMaxNalSize=0;bEnableLongTermReference=0;iLTRRefNum=0;iLtrMarkPeriod=30;iMultipleThreadIdc=4;bUseLoadBalancing=0;iLoopFilterDisableIdc=2;iLoopFilterAlphaC0Offset=0;iLoopFilterBetaOffset=0;bEnableDenoise=0;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableFrameCroppingFlag=1;bEnableSceneChangeDetect=0;bIsLosslessLink=0;bFixRCOverShoot=1;iIdrBitrateRatio=400;bPsnrY=0;bPsnrU=0;bPsnrV=0;L0.iVideoWidth=160;L0.iVideoHeight=96;L0.fFrameRate=30;L0.iSpatialBitrate=0;L0.iMaxSpatialBitrate=0;L0.uiProfileIdc=66;L0.uiLevelIdc=11;L0.iDLayerQp=26;L0.uiSliceMode=1;L0.uiSliceNum=4;L0.uiSliceSizeConstraint=0;L0.uiSliceMbNum0=15;L0.bVideoSignalTypePresent=0;L0.uiVideoFormat=5;L0.bFullRange=0;L0.bColorDescriptionPresent=0;L0.uiColorPrimaries=2;L0.uiTransferCharacteristics=2;L0.uiColorMatrix=2;L0.bAspectRatioPresent=0;L0.eAspectRatio=0;L0.sAspectRatioExtWidth=0;L0.sAspectRatioExtHeight=0;L1.iVideoWidth=0;L1.iVideoHeight=0;L1.fFrameRate=60;L1.iSpatialBitrate=0;L1.iMaxSpatialBitrate=0;L1.uiProfileIdc=0;L1.uiLevelIdc=0;L1.iDLayerQp=26;L1.uiSliceMode=0;L1.uiSliceNum=0;L1.uiSliceSizeConstraint=1500;L1.uiSliceMbNum0=0;L1.bVideoSignalTypePresent=0;L1.uiVideoFormat=5;L1.bFullRange=0;L1.bColorDescriptionPresent=0;L1.uiColorPrimaries=2;L1.uiTransferCharacteristics=2;L1.uiColorMatrix=2;L1.bAspectRatioPresent=0;L1.eAspectRatio=0;L1.sAspectRatioExtWidth=0;L1.sAspectRatioExtHeight=0;L2.iVideoWidth=0;L2.iVideoHeight=0;L2.fFrameRate=60;L2.iSpatialBitrate=0;L2.iMaxSpatialBitrate=0;L2.uiProfileIdc=0;L2.uiLevelIdc=0;L2.iDLayerQp=26;L2.uiSliceMode=0;L2.uiSliceNum=0;L2.uiSliceSizeConstraint=1500;L2.uiSliceMbNum0=0;L2.bVideoSignalTypePresent=0;L2.uiVideoFormat=5;L2.bFullRange=0;L2.bColorDescriptionPresent=0;L2.uiColorPrimaries=2;L2.uiTransferCharacteristics=2;L2.uiColorMatrix=2;L2.bAspectRatioPresent=0;L2.eAspectRatio=0;L2.sAspectRatioExtWidth=0;L2.sAspectRatioExtHeight=0;L3.iVideoWidth=0;L3.iVideoHeight=0;L3.fFrameRate=60;L3.iSpatialBitrate=0;L3.iMaxSpatialBitrate=0;L3.uiProfileIdc=0;L3.uiLevelIdc=0;L3.iDLayerQp=26;L3.uiSliceMode=0;L3.uiSliceNum=0;L3.uiSliceSizeConstraint=1500;L3.uiSliceMbNum0=0;L3.bVideoSignalTypePresent=0;L3.uiVideoFormat=5;L3.bFullRange=0;L3.bColorDescriptionPresent=0;L3.uiColorPrimaries=2;L3.uiTransferCharacteristics=2;L3.uiColorMatrix=2;L3.bAspectRatioPresent=0;L3.eAspectRatio=0;L3.sAspectRatioExtWidth=0;L3.sAspectRatioExtHeight=0
+stream	threads-lifecycle	7ab4bafe321d7f5be06be6845d63ba539770361b	51645
+config	threads-set-on	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;	F*2 S:ext=iMultipleThreadIdc:4+bUseLoadBalancing:0+L0.uiSliceMode:1+L0.uiSliceNum:4 F*3 G:ext
+init	threads-set-on	0
+op	threads-set-on	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+op	threads-set-on	1	F	0	P	0	V=6019:91128291	9112829130b6f25399e0a28495cb38078f912185	6019
+op	threads-set-on	2	S:ext=iMultipleThreadIdc:4+bUseLoadBalancing:0+L0.uiSliceMode:1+L0.uiSliceNum:4	0	-
+op	threads-set-on	3	F	0	IDR	0	N=17:d76fa0e0,8:ad3775d1|V=3497:e9958a2b,3408:bb491eb6,3411:b70e7db4,4282:4c0e89c6	92cfe2492cb5d152aa98b8897b2aa3cf70bae9db	14623
+op	threads-set-on	4	F	0	P	0	V=1441:74c77802,1740:4cfd5909,1278:94648efe,1944:947e3d24	f26c57e74a4c1ebbce097fa925188d412c3e0aad	6403
+op	threads-set-on	5	F	0	P	0	V=963:4abaab6c,1207:d4b2b7b0,956:ce8deb2e,1305:167d64d1	9970a26b04b4f0b591befce3cef3474f46baac19	4431
+op	threads-set-on	6	G:ext	0	iUsageType=0;iPicWidth=176;iPicHeight=144;iTargetBitrate=0;iRCMode=-1;fMaxFrameRate=30;iTemporalLayerNum=1;iSpatialLayerNum=1;iComplexityMode=0;uiIntraPeriod=0;iNumRefFrame=1;eSpsPpsIdStrategy=1;bPrefixNalAddingCtrl=0;bEnableSSEI=0;bSimulcastAVC=0;iPaddingFlag=0;iEntropyCodingModeFlag=0;bEnableFrameSkip=1;iMaxBitrate=0;iMaxQp=51;iMinQp=0;uiMaxNalSize=0;bEnableLongTermReference=0;iLTRRefNum=0;iLtrMarkPeriod=30;iMultipleThreadIdc=4;bUseLoadBalancing=0;iLoopFilterDisableIdc=2;iLoopFilterAlphaC0Offset=0;iLoopFilterBetaOffset=0;bEnableDenoise=0;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableFrameCroppingFlag=1;bEnableSceneChangeDetect=0;bIsLosslessLink=0;bFixRCOverShoot=1;iIdrBitrateRatio=400;bPsnrY=0;bPsnrU=0;bPsnrV=0;L0.iVideoWidth=176;L0.iVideoHeight=144;L0.fFrameRate=30;L0.iSpatialBitrate=0;L0.iMaxSpatialBitrate=0;L0.uiProfileIdc=66;L0.uiLevelIdc=11;L0.iDLayerQp=26;L0.uiSliceMode=1;L0.uiSliceNum=4;L0.uiSliceSizeConstraint=0;L0.uiSliceMbNum0=24;L0.bVideoSignalTypePresent=0;L0.uiVideoFormat=5;L0.bFullRange=0;L0.bColorDescriptionPresent=0;L0.uiColorPrimaries=2;L0.uiTransferCharacteristics=2;L0.uiColorMatrix=2;L0.bAspectRatioPresent=0;L0.eAspectRatio=0;L0.sAspectRatioExtWidth=0;L0.sAspectRatioExtHeight=0;L1.iVideoWidth=0;L1.iVideoHeight=0;L1.fFrameRate=60;L1.iSpatialBitrate=0;L1.iMaxSpatialBitrate=0;L1.uiProfileIdc=0;L1.uiLevelIdc=0;L1.iDLayerQp=26;L1.uiSliceMode=0;L1.uiSliceNum=0;L1.uiSliceSizeConstraint=1500;L1.uiSliceMbNum0=0;L1.bVideoSignalTypePresent=0;L1.uiVideoFormat=5;L1.bFullRange=0;L1.bColorDescriptionPresent=0;L1.uiColorPrimaries=2;L1.uiTransferCharacteristics=2;L1.uiColorMatrix=2;L1.bAspectRatioPresent=0;L1.eAspectRatio=0;L1.sAspectRatioExtWidth=0;L1.sAspectRatioExtHeight=0;L2.iVideoWidth=0;L2.iVideoHeight=0;L2.fFrameRate=60;L2.iSpatialBitrate=0;L2.iMaxSpatialBitrate=0;L2.uiProfileIdc=0;L2.uiLevelIdc=0;L2.iDLayerQp=26;L2.uiSliceMode=0;L2.uiSliceNum=0;L2.uiSliceSizeConstraint=1500;L2.uiSliceMbNum0=0;L2.bVideoSignalTypePresent=0;L2.uiVideoFormat=5;L2.bFullRange=0;L2.bColorDescriptionPresent=0;L2.uiColorPrimaries=2;L2.uiTransferCharacteristics=2;L2.uiColorMatrix=2;L2.bAspectRatioPresent=0;L2.eAspectRatio=0;L2.sAspectRatioExtWidth=0;L2.sAspectRatioExtHeight=0;L3.iVideoWidth=0;L3.iVideoHeight=0;L3.fFrameRate=60;L3.iSpatialBitrate=0;L3.iMaxSpatialBitrate=0;L3.uiProfileIdc=0;L3.uiLevelIdc=0;L3.iDLayerQp=26;L3.uiSliceMode=0;L3.uiSliceNum=0;L3.uiSliceSizeConstraint=1500;L3.uiSliceMbNum0=0;L3.bVideoSignalTypePresent=0;L3.uiVideoFormat=5;L3.bFullRange=0;L3.bColorDescriptionPresent=0;L3.uiColorPrimaries=2;L3.uiTransferCharacteristics=2;L3.uiColorMatrix=2;L3.bAspectRatioPresent=0;L3.eAspectRatio=0;L3.sAspectRatioExtWidth=0;L3.sAspectRatioExtHeight=0
+stream	threads-set-on	46efea87131f8e2728454fc16e9d6ca2c1569183	42223
+config	threads-set-off	pan	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iMultipleThreadIdc=4;bUseLoadBalancing=0;L0.uiSliceMode=1;L0.uiSliceNum=4;	F*2 S:ext=iMultipleThreadIdc:1 F*3 G:ext
+init	threads-set-off	0
+op	threads-set-off	0	F	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2626:7b63134c,2376:72d2ae01,2637:20e5f510,3037:5e61f9ca	adc80eacaa475cdb90f6b017a1343b8b7f577dda	10701
+op	threads-set-off	1	F	0	P	0	V=1544:c43ca84d,1742:8c38f48c,1596:db0287e2,3281:1e308828	87cabd366d6774b548ea886c6f888779602aa444	8163
+op	threads-set-off	2	S:ext=iMultipleThreadIdc:1	0	-
+op	threads-set-off	3	F	0	IDR	0	N=17:d76fa0e0,8:ad3775d1|V=3497:e9958a2b,3408:bb491eb6,3411:b70e7db4,4282:4c0e89c6	92cfe2492cb5d152aa98b8897b2aa3cf70bae9db	14623
+op	threads-set-off	4	F	0	P	0	V=1441:74c77802,1740:4cfd5909,1278:94648efe,1944:947e3d24	f26c57e74a4c1ebbce097fa925188d412c3e0aad	6403
+op	threads-set-off	5	F	0	P	0	V=963:4abaab6c,1207:d4b2b7b0,956:ce8deb2e,1305:167d64d1	9970a26b04b4f0b591befce3cef3474f46baac19	4431
+op	threads-set-off	6	G:ext	0	iUsageType=0;iPicWidth=176;iPicHeight=144;iTargetBitrate=0;iRCMode=-1;fMaxFrameRate=30;iTemporalLayerNum=1;iSpatialLayerNum=1;iComplexityMode=0;uiIntraPeriod=0;iNumRefFrame=1;eSpsPpsIdStrategy=1;bPrefixNalAddingCtrl=0;bEnableSSEI=0;bSimulcastAVC=0;iPaddingFlag=0;iEntropyCodingModeFlag=0;bEnableFrameSkip=1;iMaxBitrate=0;iMaxQp=51;iMinQp=0;uiMaxNalSize=0;bEnableLongTermReference=0;iLTRRefNum=0;iLtrMarkPeriod=30;iMultipleThreadIdc=1;bUseLoadBalancing=0;iLoopFilterDisableIdc=2;iLoopFilterAlphaC0Offset=0;iLoopFilterBetaOffset=0;bEnableDenoise=0;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableFrameCroppingFlag=1;bEnableSceneChangeDetect=0;bIsLosslessLink=0;bFixRCOverShoot=1;iIdrBitrateRatio=400;bPsnrY=0;bPsnrU=0;bPsnrV=0;L0.iVideoWidth=176;L0.iVideoHeight=144;L0.fFrameRate=30;L0.iSpatialBitrate=0;L0.iMaxSpatialBitrate=0;L0.uiProfileIdc=66;L0.uiLevelIdc=11;L0.iDLayerQp=26;L0.uiSliceMode=1;L0.uiSliceNum=4;L0.uiSliceSizeConstraint=0;L0.uiSliceMbNum0=24;L0.bVideoSignalTypePresent=0;L0.uiVideoFormat=5;L0.bFullRange=0;L0.bColorDescriptionPresent=0;L0.uiColorPrimaries=2;L0.uiTransferCharacteristics=2;L0.uiColorMatrix=2;L0.bAspectRatioPresent=0;L0.eAspectRatio=0;L0.sAspectRatioExtWidth=0;L0.sAspectRatioExtHeight=0;L1.iVideoWidth=0;L1.iVideoHeight=0;L1.fFrameRate=60;L1.iSpatialBitrate=0;L1.iMaxSpatialBitrate=0;L1.uiProfileIdc=0;L1.uiLevelIdc=0;L1.iDLayerQp=26;L1.uiSliceMode=0;L1.uiSliceNum=0;L1.uiSliceSizeConstraint=1500;L1.uiSliceMbNum0=0;L1.bVideoSignalTypePresent=0;L1.uiVideoFormat=5;L1.bFullRange=0;L1.bColorDescriptionPresent=0;L1.uiColorPrimaries=2;L1.uiTransferCharacteristics=2;L1.uiColorMatrix=2;L1.bAspectRatioPresent=0;L1.eAspectRatio=0;L1.sAspectRatioExtWidth=0;L1.sAspectRatioExtHeight=0;L2.iVideoWidth=0;L2.iVideoHeight=0;L2.fFrameRate=60;L2.iSpatialBitrate=0;L2.iMaxSpatialBitrate=0;L2.uiProfileIdc=0;L2.uiLevelIdc=0;L2.iDLayerQp=26;L2.uiSliceMode=0;L2.uiSliceNum=0;L2.uiSliceSizeConstraint=1500;L2.uiSliceMbNum0=0;L2.bVideoSignalTypePresent=0;L2.uiVideoFormat=5;L2.bFullRange=0;L2.bColorDescriptionPresent=0;L2.uiColorPrimaries=2;L2.uiTransferCharacteristics=2;L2.uiColorMatrix=2;L2.bAspectRatioPresent=0;L2.eAspectRatio=0;L2.sAspectRatioExtWidth=0;L2.sAspectRatioExtHeight=0;L3.iVideoWidth=0;L3.iVideoHeight=0;L3.fFrameRate=60;L3.iSpatialBitrate=0;L3.iMaxSpatialBitrate=0;L3.uiProfileIdc=0;L3.uiLevelIdc=0;L3.iDLayerQp=26;L3.uiSliceMode=0;L3.uiSliceNum=0;L3.uiSliceSizeConstraint=1500;L3.uiSliceMbNum0=0;L3.bVideoSignalTypePresent=0;L3.uiVideoFormat=5;L3.bFullRange=0;L3.bColorDescriptionPresent=0;L3.uiColorPrimaries=2;L3.uiTransferCharacteristics=2;L3.uiColorMatrix=2;L3.bAspectRatioPresent=0;L3.eAspectRatio=0;L3.sAspectRatioExtWidth=0;L3.sAspectRatioExtHeight=0
+stream	threads-set-off	5e39ca80f3239bbfe4187f81c64643e9e52bdde5	44321
