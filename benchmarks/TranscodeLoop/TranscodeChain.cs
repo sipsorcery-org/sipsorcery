@@ -2,7 +2,7 @@
 //
 //   page A (browser encodes) ══ leg A ══► RTCPeerConnection A (recvonly)
 //        → depacketise → decode (vp8.net | h264.net | ffmpeg) → BGR frame
-//        → encode (vp8.net | av1.net | ffmpeg)
+//        → encode (vp8.net | av1.net | h264.net | ffmpeg)
 //   RTCPeerConnection B (sendonly) ══ leg B ══► page B (browser decodes and shows)
 //
 // Keyframe requests are part of what's tested: page B's PLI/FIR forces a keyframe from our
@@ -484,7 +484,7 @@ internal sealed class TranscodeChain : IDisposable
             if (encoded == null || encoded.Length == 0)
             {
                 // The encoder took the frame and gave nothing back: its rate control dropped it
-                // (av1.net does when it's over its bitrate). Page B counts it as missing too.
+                // (av1.net and h264.net do when over their bitrate). Page B counts it as missing too.
                 _encodeNoOutput++;
                 continue;
             }

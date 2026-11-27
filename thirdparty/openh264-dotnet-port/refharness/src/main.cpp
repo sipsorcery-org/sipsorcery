@@ -38,6 +38,10 @@
 //                                   quantisation, denoising, downsampling).
 //   h264ref preprocess-dump <name> <out>
 //                                   That stream for one configuration, to a file.
+//   h264ref api                     E8: scripted encoder API calls (ForceIntraFrame,
+//                                   SetOption, GetOption, the life cycle) between
+//                                   the frames, for a table of configurations.
+//   h264ref api-dump <name> <out>   That configuration's output, to a file.
 //
 // The decode loop and hashing copy upstream's test/api/BaseDecoderTest.cpp and
 // decoder_test.cpp exactly (input split on 4-byte start codes, DecodeFrame2,
@@ -76,6 +80,8 @@ int Rc();
 int RcDump (const char* name, const char* outPath);
 int Preprocess();
 int PreprocessDump (const char* name, const char* outPath);
+int Api();
+int ApiDump (const char* name, const char* outPath);
 
 namespace {
 
@@ -560,6 +566,11 @@ int main (int argc, char** argv) {
     return Preprocess();
   }
   if (argc == 4 && std::string (argv[1]) == "preprocess-dump") return PreprocessDump (argv[2], argv[3]);
+  if (argc == 2 && std::string (argv[1]) == "api") {
+    BinaryStdout();
+    return Api();
+  }
+  if (argc == 4 && std::string (argv[1]) == "api-dump") return ApiDump (argv[2], argv[3]);
   if (argc < 3) return Usage();
   std::string cmd = argv[1];
   if (cmd == "conformance") return Conformance (argv[2]);

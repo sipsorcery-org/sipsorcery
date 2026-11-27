@@ -5,7 +5,7 @@
 // the conformance vectors one access unit at a time, as an RTP receiver feeds
 // it, and must still produce upstream's SHA1s; the same again through RTP
 // packets and SIPSorcery's H264Depacketiser. Also the output formats, the key
-// frame signalling and H264NetVideoEndPoint.
+// frame signalling and H264NetVideoEndPoint. The encoder is in H264EncodeTests.cs.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
@@ -226,14 +226,12 @@ public class H264CodecTests
     }
 
     [Fact]
-    public void Codec_RejectsBadArgumentsAndEncoding()
+    public void Codec_RejectsBadDecodeArguments()
     {
         var codec = new H264Codec();
         Assert.Throws<ArgumentNullException>(() => codec.DecodeVideo(null, VideoPixelFormatsEnum.Bgr, VideoCodecsEnum.H264));
         Assert.Throws<NotSupportedException>(() => codec.DecodeVideo(new byte[] { 0, 0, 0, 1, 0x67 }, VideoPixelFormatsEnum.Bgr, VideoCodecsEnum.VP8));
         Assert.Empty(codec.DecodeVideo(Array.Empty<byte>(), VideoPixelFormatsEnum.Bgr, VideoCodecsEnum.H264));
-        Assert.Throws<NotSupportedException>(() => codec.EncodeVideo(16, 16, new byte[16 * 16 * 3 / 2], VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264));
-        Assert.Throws<NotSupportedException>(() => codec.EncodeVideoFaster(new RawImage(), VideoCodecsEnum.H264));
         codec.ForceKeyFrame();
 
         var format = Assert.Single(codec.SupportedFormats);

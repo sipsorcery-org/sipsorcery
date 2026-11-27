@@ -9,8 +9,8 @@
 // WelsMarkPicScreen, LTRMarkProcessScreen, UpdateBlockStatic and the source
 // list updates) read the preprocessor's screen state and come with Phase 4;
 // the strategy methods that would call them throw. FilterLTRRecoveryRequest
-// and FilterLTRMarkingFeedback handle the API's LTR feedback options and come
-// with the API (E8). LONG_TERM_REF_DUMP's DumpRef is debug only.
+// and FilterLTRMarkingFeedback, which handle the API's LTR feedback options,
+// came with the API (E8). LONG_TERM_REF_DUMP's DumpRef is debug only.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
 // The C++ interface IWelsReferenceStrategy and its three classes share one
@@ -23,6 +23,7 @@
 //
 // History:
 // 26 Nov 2026  Claude          Created (E5b).
+// 27 Nov 2026  Claude          FilterLTRRecoveryRequest and FilterLTRMarkingFeedback (E8).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -753,7 +754,89 @@ internal static unsafe partial class WelsEnc
         WelsMarkMMCORefInfo(pCtx, pLtr, pCtx->pCurDqLayer->ppSliceInLayer, kiCountSliceNum);
     }
 
-    // FilterLTRRecoveryRequest and FilterLTRMarkingFeedback come with the API (E8).
+    public static int32_t FilterLTRRecoveryRequest(sWelsEncCtx* pCtx, SLTRRecoverRequest* pLTRRecoverRequest)
+    {
+        //if disable LTR, force IDR
+        if (!pCtx->pSvcParam->bEnableLongTermReference)
+        {
+            for (int32_t iDid = 0; iDid < pCtx->pSvcParam->iSpatialLayerNum; iDid++)
+            {
+                SSpatialLayerInternal* pParamInternal = &pCtx->pSvcParam->sDependencyLayers[iDid];
+                pParamInternal->bEncCurFrmAsIdrFlag = true;
+            }
+        }
+        else
+        {
+            SLTRRecoverRequest* pRequest = pLTRRecoverRequest;
+            int32_t iLayerId = pLTRRecoverRequest->iLayerId;
+            if ((iLayerId < 0) || (iLayerId >= pCtx->pSvcParam->iSpatialLayerNum))
+                return 0; // false
+
+            SLTRState* pLtr = &pCtx->pLtr[iLayerId];
+            int32_t iMaxFrameNumPlus1 = (1 << (int32_t)pCtx->pSps->uiLog2MaxFrameNum);
+            SSpatialLayerInternal* pParamInternal = &pCtx->pSvcParam->sDependencyLayers[iLayerId];
+            if (pRequest->uiFeedbackType == (uint32_t)LTR_RECOVERY_REQUEST && pRequest->uiIDRPicId == pParamInternal->uiIdrPicId)
+            {
+                if (pRequest->iLastCorrectFrameNum == -1)
+                {
+                    pParamInternal->bEncCurFrmAsIdrFlag = true;
+                    return 1; // true
+                }
+                else if (pRequest->iCurrentFrameNum == -1)
+                {
+                    pLtr->bReceivedT0LostFlag = true;
+                    return 1; // true
+                }
+                else if ((CompareFrameNum(pLtr->iLastRecoverFrameNum, pRequest->iLastCorrectFrameNum,
+                                          iMaxFrameNumPlus1) & (FRAME_NUM_EQUAL | FRAME_NUM_SMALLER)) != 0 // t0 lost
+                         || ((CompareFrameNum(pLtr->iLastRecoverFrameNum, pRequest->iCurrentFrameNum,
+                                              iMaxFrameNumPlus1) & (FRAME_NUM_EQUAL | FRAME_NUM_SMALLER)) != 0 &&
+                             CompareFrameNum(pLtr->iLastRecoverFrameNum, pRequest->iLastCorrectFrameNum,
+                                             iMaxFrameNumPlus1) == FRAME_NUM_BIGGER)) // recovery failed
+                {
+                    pLtr->bReceivedT0LostFlag = true;
+                    pLtr->iLastCorFrameNumDec = pRequest->iLastCorrectFrameNum;
+                    pLtr->iCurFrameNumInDec = pRequest->iCurrentFrameNum;
+                    WelsLog(&pCtx->sLogCtx, WELS_LOG_INFO,
+                            $"Receive valid LTR recovery pRequest,feedback_type = {pRequest->uiFeedbackType} ,uiIdrPicId = {pRequest->uiIDRPicId} , current_frame_num = {pRequest->iCurrentFrameNum} , last correct frame num = {pRequest->iLastCorrectFrameNum}");
+                }
+
+                WelsLog(&pCtx->sLogCtx, WELS_LOG_INFO,
+                        $"Receive LTR recovery pRequest,feedback_type = {pRequest->uiFeedbackType} ,uiIdrPicId = {pRequest->uiIDRPicId} , current_frame_num = {pRequest->iCurrentFrameNum} , last correct frame num = {pRequest->iLastCorrectFrameNum}");
+            }
+        }
+
+        return 1; // true
+    }
+
+    public static void FilterLTRMarkingFeedback(sWelsEncCtx* pCtx, SLTRMarkingFeedback* pLTRMarkingFeedback)
+    {
+        int32_t iLayerId = pLTRMarkingFeedback->iLayerId;
+        if ((iLayerId < 0) || (iLayerId >= pCtx->pSvcParam->iSpatialLayerNum))
+        {
+            return;
+        }
+        SLTRState* pLtr = &pCtx->pLtr[iLayerId];
+        Debug.Assert(pLTRMarkingFeedback != null);
+        if (pCtx->pSvcParam->bEnableLongTermReference)
+        {
+            SSpatialLayerInternal* pParamInternal = &pCtx->pSvcParam->sDependencyLayers[iLayerId];
+            if (pLTRMarkingFeedback->uiIDRPicId == pParamInternal->uiIdrPicId
+                && (pLTRMarkingFeedback->uiFeedbackType == (uint32_t)LTR_MARKING_SUCCESS
+                    || pLTRMarkingFeedback->uiFeedbackType == (uint32_t)LTR_MARKING_FAILED)) // avoid error pData
+            {
+                pLtr->uiLtrMarkState = pLTRMarkingFeedback->uiFeedbackType;
+                pLtr->iLtrMarkFbFrameNum = pLTRMarkingFeedback->iLTRFrameNum;
+                WelsLog(&pCtx->sLogCtx, WELS_LOG_INFO,
+                        $"Receive valid LTR marking feedback, feedback_type = {pLTRMarkingFeedback->uiFeedbackType} , uiIdrPicId = {pLTRMarkingFeedback->uiIDRPicId} , LTR_frame_num = {pLTRMarkingFeedback->iLTRFrameNum} , cur_idr_pic_id = {pParamInternal->uiIdrPicId}");
+            }
+            else
+            {
+                WelsLog(&pCtx->sLogCtx, WELS_LOG_INFO,
+                        $"Receive LTR marking feedback, feedback_type = {pLTRMarkingFeedback->uiFeedbackType} , uiIdrPicId = {pLTRMarkingFeedback->uiIDRPicId} , LTR_frame_num = {pLTRMarkingFeedback->iLTRFrameNum} , cur_idr_pic_id = {pParamInternal->uiIdrPicId}");
+            }
+        }
+    }
 
     /*
      *  build reference picture list

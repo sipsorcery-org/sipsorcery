@@ -8,7 +8,8 @@ again and sends it to a second browser page, and the three pictures are shown si
  page A ── leg A ──► RTCPeerConnection A ─► decode ─► BGR ─► encode ─► RTCPeerConnection B ── leg B ──► page B
  (browser encodes)   (recvonly)             vp8.net          vp8.net   (sendonly)             (browser decodes)
                                             h264.net         av1.net
-                                            ffmpeg           ffmpeg
+                                            ffmpeg           h264.net
+                                                             ffmpeg
 ```
 
 The browser does what browsers do well (capture, encode, decode, show) and SIPSorcery does
@@ -38,7 +39,7 @@ has just the one codec, so the browser has to use it. What does the work in SIPS
 |---|---|---|
 | **vp8.net** (SIPSorcery.VP8, managed) | VP8 | VP8 |
 | **av1.net** (SIPSorcery.AV1, managed port of libaom's realtime encoder) | | AV1 |
-| **h264.net** (SIPSorcery.H264, managed port of OpenH264; its encoder isn't ported yet) | H264 (Constrained Baseline, as WebRTC sends) | |
+| **h264.net** (SIPSorcery.H264, managed port of OpenH264) | H264 (Constrained Baseline, as WebRTC sends) | H264 (Constrained Baseline) |
 | **ffmpeg** (SIPSorceryMedia.FFmpeg) | VP8, VP9, H264, H265, AV1 (dav1d) | VP8 (libvpx), VP9 (libvpx-vp9), H264 (libx264), H265 (libx265), AV1 (SVT-AV1) |
 
 The pickers name FFmpeg's own codec, as found in the FFmpeg build that's loaded.
@@ -189,7 +190,7 @@ TranscodeLoop.exe --exit-after 15 --stats run.json --capture run.png --capture-a
 | `--size 640x480`, `--fps 30` | the source's size (up to `3840x2160`) and frame rate |
 | `--mode transcode\|relay` | decode and encode, or pass frames through |
 | `--codec-in`, `--codec-out` | `VP8`, `VP9`, `H264`, `H265` (out only, with `--try-h265`) or `AV1`. A codec a leg can't use isn't swapped for another: the run doesn't start, and a scripted one exits with `refused` in its stats |
-| `--decoder`, `--encoder` | `vp8.net` or `ffmpeg`; `h264.net` decodes H264 and `av1.net` encodes AV1 |
+| `--decoder`, `--encoder` | `vp8.net` or `ffmpeg`; `h264.net` decodes and encodes H264, and `av1.net` encodes AV1 |
 | `--try-h265` | offer H265 out though WebView2 can't receive it (it crashes WebView2 158) |
 | `--browser-kbps`, `--encoder-kbps` | bitrates for page A's encoder and SIPSorcery's (default: picked for the size) |
 | `--drop-a <percent>` | leg A frames dropped before decode |

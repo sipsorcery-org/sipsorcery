@@ -64,6 +64,7 @@
 //
 // History:
 // 27 Oct 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 27 Nov 2026	Claude		--encoder h264.net for --mode echo, and key frames on the browser's PLI or FIR.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -90,6 +91,10 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
     private const string DEFAULT_PRESET = "360p";
     private const uint VIDEO_CLOCK_RATE = 90000;
     private const double BITS_PER_PIXEL_PER_FRAME = 0.1;
+
+    /// <summary>The --encoder names for --mode echo.</summary>
+    public const string ENCODER_FFMPEG = "ffmpeg";
+    public const string ENCODER_H264_NET = LibraryVideoPublisher.ENCODER_H264_NET;
 
     // The echo send loop waits this long after "connected" before the first frame so the browser has
     // finished installing its receive context and does not discard the opening keyframe (the same
@@ -178,6 +183,13 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
             Description = "Open the test page in the default browser instead of printing the URL to open by hand."
         };
 
+        var encoderOption = new Option<string>("--encoder")
+        {
+            Description = "The --mode echo encoder: ffmpeg (SIPSorceryMedia.FFmpeg, the default) or h264.net (the managed " +
+                          "SIPSorcery.H264 encoder, no native deps; it sends H264, so it pins --video-codec h264).",
+            DefaultValueFactory = _ => ENCODER_FFMPEG
+        };
+
         var ffmpegPathOption = new Option<string?>("--ffmpeg-path")
         {
             Description = "Directory containing the FFmpeg shared libraries, used by the --mode echo encoder. Defaults to the system path."
@@ -193,6 +205,7 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
         command.Options.Add(fpsOption);
         command.Options.Add(videoCodecOption);
         command.Options.Add(openOption);
+        command.Options.Add(encoderOption);
         command.Options.Add(ffmpegPathOption);
         AddCommonOptions(command);
 
@@ -205,6 +218,7 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
             parseResult.GetValue(fpsOption),
             parseResult.GetValue(videoCodecOption),
             parseResult.GetValue(openOption),
+            parseResult.GetValue(encoderOption)!,
             parseResult.GetValue(ffmpegPathOption),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
@@ -277,8 +291,39 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
         return true;
     }
 
+    /// <summary>
+    /// Resolves --encoder. h264.net only sends H264, so it pins --video-codec h264 when none is
+    /// given and refuses any other.
+    /// </summary>
+    public static bool TryResolveEncoder(string? requested, ref string? videoCodec, out string encoder, out string? error)
+    {
+        encoder = string.IsNullOrWhiteSpace(requested) ? ENCODER_FFMPEG : requested.Trim().ToLowerInvariant();
+        error = null;
+
+        if (encoder == ENCODER_H264_NET)
+        {
+            if (string.IsNullOrWhiteSpace(videoCodec))
+            {
+                videoCodec = "h264";
+            }
+            else if (!string.Equals(videoCodec.Trim(), "h264", StringComparison.OrdinalIgnoreCase))
+            {
+                error = $"The {ENCODER_H264_NET} encoder only sends H264, not {CodecSelection.VIDEO_OPTION} {videoCodec.Trim()}.";
+                return false;
+            }
+            return true;
+        }
+
+        if (encoder != ENCODER_FFMPEG)
+        {
+            error = $"Unknown --encoder \"{requested}\". Expected {ENCODER_FFMPEG} or {ENCODER_H264_NET}.";
+            return false;
+        }
+        return true;
+    }
+
     private static async Task<int> RunAsync(int port, string mode, int durationSeconds, string preset, string? size,
-        int fps, string? videoCodec, bool open, string? ffmpegPath, int timeoutSeconds, bool asJson, bool verbose,
+        int fps, string? videoCodec, bool open, string encoderName, string? ffmpegPath, int timeoutSeconds, bool asJson, bool verbose,
         CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
@@ -286,6 +331,11 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
 
         mode = (mode ?? string.Empty).Trim().ToLowerInvariant();
         string url = $"http://localhost:{port}/";
+
+        if (!TryResolveEncoder(encoderName, ref videoCodec, out encoderName, out string? encoderError))
+        {
+            return WriteResult(asJson, Fail(url, mode, videoCodec, encoderError), ExitCodes.InvalidArgument);
+        }
 
         if (!TryValidate(mode, port, durationSeconds, preset, size, fps, videoCodec,
                 out int width, out int height, out string? browserMimeType, out string? validationError))
@@ -304,10 +354,26 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
             return WriteResult(asJson, Fail(url, mode, videoCodec, codecError), ExitCodes.InvalidArgument);
         }
 
-        // Echo mode encodes in-process, which needs the FFmpeg shared libraries. Fail here with the
-        // install hint rather than after a browser has already connected.
+        // Echo mode encodes in-process. The managed H264 encoder offers its own format, Constrained
+        // Baseline, which is what it sends.
         IVideoEncoder? encoder = null;
-        if (echo)
+        if (echo && encoderName == ENCODER_H264_NET)
+        {
+            offeredVideoFormats = new List<VideoFormat>
+            {
+                new VideoFormat(VideoCodecsEnum.H264, SIPSorcery.H264.H264Codec.H264_SUGGESTED_FORMAT_ID,
+                                VideoFormat.DEFAULT_CLOCK_RATE, SIPSorcery.H264.H264Codec.H264_FORMAT_PARAMETERS)
+            };
+            encoder = new SIPSorcery.H264.H264Codec
+            {
+                FrameRate = Math.Clamp(fps, 1, 60),
+                TargetBitrateKbps = Math.Max(1, (int)(width * (long)height * fps * BITS_PER_PIXEL_PER_FRAME / 1000)),
+                KeyframeIntervalFrames = fps,
+            };
+        }
+        // The FFmpeg encoder needs the FFmpeg shared libraries. Fail here with the install hint
+        // rather than after a browser has already connected.
+        else if (echo)
         {
             try
             {
@@ -458,6 +524,20 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
             {
                 return new SendResult(0, 0, 0);
             }
+
+            // The browser asks for a key frame when it can't decode (a PLI, or a FIR); its count of
+            // them is in the result, and answering keeps one lost key frame from freezing the rest.
+            pc.OnReceiveReport += (_, _, report) =>
+            {
+                // The session has no audio, so any feedback is about the video.
+                if (report.FeedbackMessages.Any(f =>
+                        f.Header.PacketType == RTCPReportTypesEnum.PSFB &&
+                        f.Header.PayloadFeedbackMessageType is PSFBFeedbackTypesEnum.PLI or PSFBFeedbackTypesEnum.FIR))
+                {
+                    logger.LogDebug("The browser asked for a key frame.");
+                    encoder.ForceKeyFrame();
+                }
+            };
 
             var card = new TestCardPattern(width, height, fps);
             byte[] raw = new byte[card.I420Size];

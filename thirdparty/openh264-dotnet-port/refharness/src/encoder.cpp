@@ -54,6 +54,16 @@
 //
 //   h264ref preprocess-dump <name> <out>
 //       Writes that configuration's stream to <out>.
+//
+//   h264ref api
+//       E8: scripted calls of the encoder API for a table of configurations
+//       (kApiConfigs, reference/api.tsv): ForceIntraFrame, EncodeParameterSets,
+//       SetOption and GetOption for each option, Uninitialize and Initialize
+//       again, and bad inputs, between the frames. The C# test is ApiTests.cs.
+//
+//   h264ref api-dump <name> <out>
+//       Writes that configuration's EncodeFrame and EncodeParameterSets
+//       output to <out>.
 
 #include <cfloat>
 #include <cstdio>
@@ -1561,4 +1571,526 @@ int Preprocess() {
 
 int PreprocessDump (const char* name, const char* outPath) {
   return DumpStream (kPreprocessConfigs, sizeof kPreprocessConfigs / sizeof kPreprocessConfigs[0], name, outPath);
+}
+
+// ---------------------------------------------------------------------------
+// api
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// E8: scripted calls of the encoder API. Each configuration is settings (as kStreamConfigs,
+// ts. keys included), content (StreamSample) and a script of space separated operations,
+// where op*n repeats an operation n times:
+//   F            EncodeFrame of the next frame of the content, at the schedule's timestamp
+//   F:fmt=n      the same with iColorFormat n
+//   F:WxH        the same with a W x H picture (the next frame of the content at that size)
+//   I / i        ForceIntraFrame (true) / ForceIntraFrame (false)
+//   P            EncodeParameterSets
+//   U            Uninitialize
+//   R            Initialize or InitializeExt again with the configuration's settings
+//   S:key=value  SetOption, see ApiSet
+//   G:key        GetOption, see ApiGet
+// For each operation the harness prints the return code and what it produced: for F and P
+// the frame type, the temporal ids, the layers, the SHA1 and size of the output, for G the
+// value. The C# test (ApiTests.cs) runs the same script on its port and compares.
+struct ApiConfig {
+  const char* name;
+  const char* content;
+  const char* settings;
+  const char* script;
+};
+
+#define API_BASE "api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;" \
+  "bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;"
+#define API_RC "api=ext;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;" \
+  "bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;"
+#define API_PP "api=ext;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;"
+const ApiConfig kApiConfigs[] = {
+  // ForceIntraFrame: IDRs mid stream and mid GOP, with the coding index, the reference
+  // lists, the LTR state, the rate control and the parameter set ids following.
+  {"force-idr", "pan", API_BASE, "F*3 I F*2 I I F*3"},
+  {"force-idr-first", "pan", API_BASE, "I F*3"},
+  {"force-p", "pan", API_BASE, "F*2 i F*2"},
+  {"force-idr-temporal-3", "pan", API_BASE "iTemporalLayerNum=3", "F*5 I F*6 I F*3"},
+  {"force-idr-temporal-4-intra-8", "block", API_BASE "iTemporalLayerNum=4;uiIntraPeriod=8", "F*3 I F*12"},
+  {"force-idr-intra-period-4", "pan", API_BASE "uiIntraPeriod=4", "F*2 I F*7"},
+  {"force-idr-ltr", "pan", API_BASE "bEnableLongTermReference=1;iLtrMarkPeriod=3", "F*4 I F*6"},
+  {"force-idr-ref-4", "pan", API_BASE "iNumRefFrame=4", "F*5 I F*4"},
+  {"force-idr-slices", "pan", API_BASE "L0.uiSliceMode=1;L0.uiSliceNum=4", "F*2 I F*3"},
+  {"force-idr-prefix", "pan", API_BASE "bPrefixNalAddingCtrl=1", "F*2 I F*2"},
+  {"force-idr-strategy-increasing", "pan", API_BASE "eSpsPpsIdStrategy=1", "F I F I F*2 I F"},
+  {"force-idr-strategy-sps-listing", "pan", API_BASE "eSpsPpsIdStrategy=2", "F I F*2 I F"},
+  {"force-idr-strategy-sps-pps-listing", "pan", API_BASE "eSpsPpsIdStrategy=6", "F I F*2 I F"},
+  {"force-idr-bitrate", "mixed", API_RC "iRCMode=1;iTargetBitrate=256000", "F*8 I F*8 I F*4"},
+  {"force-idr-quality", "mixed", API_RC "iRCMode=0;iTargetBitrate=128000", "F*12 I F*10"},
+  {"force-idr-timestamp", "mixed", API_RC "iRCMode=3;iTargetBitrate=128000", "F*10 I F*10"},
+  {"force-idr-preprocess", "camera", API_PP "iRCMode=1;iTargetBitrate=200000", "F*6 I F*8"},
+  {"parameter-sets", "pan", API_BASE "eSpsPpsIdStrategy=1", "P F P F I F P"},
+
+  // SetOption and GetOption, one group of options at a time.
+  {"set-idr-interval", "pan", API_BASE, "G:idr F*2 S:idr=3 G:idr F*5 S:idr=0 F*3 S:idr=-5 G:idr F S:idr=4 S:idr=4 F*4"},
+  {"set-bitrate", "mixed", API_RC "iRCMode=1;iTargetBitrate=256000",
+   "F*10 S:br=4:64000 F*10 S:br=0:500000 F*10 G:br=4 G:br=0 G:maxbr=4 S:br=7:1000 S:br=4:0 G:br=9"},
+  {"set-max-bitrate", "mixed", API_RC "iRCMode=1;iTargetBitrate=256000;iMaxBitrate=400000",
+   "F*8 S:maxbr=4:300000 F*8 S:maxbr=0:260000 F*8 G:maxbr=4 G:maxbr=0 S:maxbr=4:100000 G:ext"},
+  {"set-frame-rate", "mixed", API_RC "iRCMode=1;iTargetBitrate=256000",
+   "F*10 S:fps=15 G:fps F*10 S:fps=0 S:fps=100 G:fps S:fps=7.5 G:fps F*5 G:ext"},
+  {"set-rc-mode", "mixed", API_RC "iRCMode=0;iTargetBitrate=200000", "F*8 S:rc=1 F*8 S:rc=3 F*8 S:rc=-1 F*4 S:rc=1 F*4"},
+  {"set-frame-skip", "mixed", API_RC "iRCMode=1;iTargetBitrate=64000", "F*10 S:skip=0 F*10 S:skip=1 F*10"},
+  {"set-frame-skip-rc-off", "pan", API_BASE, "S:skip=0 F*2"},
+  {"set-padding", "static", API_RC "iRCMode=1;iTargetBitrate=400000", "F*6 S:pad=1 F*10 S:pad=0 F*4"},
+  {"set-ltr", "pan", API_BASE, "F*3 S:ltr=1:2 G:ext F*6 S:ltr=0:0 G:ext F*3"},
+  {"set-ltr-period", "pan", API_BASE "bEnableLongTermReference=1;iLtrMarkPeriod=5", "F*3 S:ltrperiod=2 F*8"},
+  {"set-ltr-feedback", "block", API_BASE "bEnableLongTermReference=1;iLtrMarkPeriod=3",
+   "F*4 S:ltrfb=4:0:0:0 F*3 S:ltrfb=5:0:3:0 F*2 S:ltrreq=1:0:2:5:0 F*3 S:ltrreq=2:0:0:0:0 F*3 S:ltrreq=0:0:0:0:0 F*2"},
+  {"set-ltr-feedback-wrong-idr", "block", API_BASE "bEnableLongTermReference=1;iLtrMarkPeriod=3",
+   "F*4 S:ltrfb=4:7:0:0 F*3 S:ltrreq=1:7:2:5:0 F*3 S:ltrreq=1:0:-1:5:0 F*2"},
+  // IDRs mid GOP that ForceCodingIDR does not start, so only DecideFrameType resets the
+  // coding index: an IDR request, and an IDR interval that is not a multiple of the GOP
+  // (SetOption does not check it, as InitializeExt does).
+  {"set-idr-request-temporal-3", "pan", API_BASE "iTemporalLayerNum=3", "F*5 S:ltrreq=2:0:0:0:0 F*7 S:ltrreq=1:0:3:6:0 F*5"},
+  {"set-ltr-idr-request-temporal-3", "pan", API_BASE "iTemporalLayerNum=3;bEnableLongTermReference=1",
+   "F*5 S:ltrreq=1:0:-1:6:0 F*6 S:ltrreq=1:1:-1:6:0 F*6 S:ltrreq=1:2:-1:3:0 F*3"},
+  {"set-idr-interval-temporal-3", "pan", API_BASE "iTemporalLayerNum=3", "F*2 S:idr=3 F*11"},
+  {"set-ltr-feedback-temporal-2", "block", API_BASE "iTemporalLayerNum=2;bEnableLongTermReference=1;iLtrMarkPeriod=2",
+   "F*3 S:ltrfb=4:0:0:0 F*3 S:ltrfb=4:0:2:0 F*3 S:ltrfb=5:0:4:0 F*2 S:ltrreq=1:0:2:9:0 F*4"},
+  // Feedback that matches: the first IDR's idr_pic_id is 0 and the encoder's is 1 after it.
+  // Successful markings move the LTR index round (LONG_TERM_REF_NUM), a recovery request
+  // after one makes the next frames reference the LTR, and with the preprocessing on the
+  // VAA reads the LTR's source picture.
+  {"ltr-marking-success", "pan", API_BASE "bEnableLongTermReference=1;iLtrMarkPeriod=3",
+   "F*4 S:ltrfb=4:1:3:0 F*3 S:ltrfb=4:1:6:0 F*3 S:ltrfb=4:1:9:0 F*3 S:ltrfb=4:1:12:0 F*3 S:ltrfb=5:1:15:0 F*3"},
+  {"ltr-marking-success-temporal-2", "block", API_BASE "iTemporalLayerNum=2;bEnableLongTermReference=1;iLtrMarkPeriod=2",
+   "F*3 S:ltrfb=4:1:1:0 F*2 S:ltrfb=4:1:2:0 F*2 S:ltrfb=4:1:3:0 F*2 S:ltrfb=4:1:4:0 F*2 S:ltrfb=4:1:5:0 F*3"},
+  {"ltr-recovery", "pan", API_BASE "bEnableLongTermReference=1;iLtrMarkPeriod=3",
+   "F*4 S:ltrfb=4:1:3:0 F*4 S:ltrreq=1:1:3:7:0 F*4 S:ltrfb=4:1:9:0 F*2 S:ltrreq=1:1:8:11:0 F*3 S:ltrreq=1:1:20:22:0 F*2"},
+  {"ltr-recovery-preprocess", "camera", API_PP "iRCMode=-1;bEnableLongTermReference=1;iLtrMarkPeriod=3",
+   "F*4 S:ltrfb=4:1:3:0 F*4 S:ltrreq=1:1:3:7:0 F*4 S:ltrfb=4:1:9:0 F*2 S:ltrreq=1:1:8:11:0 F*4"},
+  {"ltr-recovery-preprocess-temporal-2", "camera",
+   API_PP "iRCMode=1;iTargetBitrate=300000;iTemporalLayerNum=2;bEnableLongTermReference=1;iLtrMarkPeriod=2",
+   "F*4 S:ltrfb=4:1:2:0 F*3 S:ltrreq=1:1:2:4:0 F*5 S:ltrfb=4:1:6:0 F*2 S:ltrreq=1:1:5:8:0 F*5"},
+  {"ltr-recovery-failed", "block", API_BASE "bEnableLongTermReference=1;iLtrMarkPeriod=3",
+   "F*4 S:ltrfb=5:1:3:0 F*3 S:ltrreq=1:1:0:5:0 F*3 S:ltrreq=1:1:4:-1:0 F*3"},
+  {"set-strategy", "pan", API_BASE, "F S:strategy=1 F I F S:strategy=2 S:strategy=5 F S:strategy=0 F I F G:ext"},
+  {"set-strategy-listing", "pan", API_BASE "eSpsPpsIdStrategy=2", "F S:strategy=0 S:strategy=3 S:strategy=2 F I F"},
+  {"set-profile-level", "pan", API_BASE,
+   "S:profile=0:77 S:level=0:31 G:ext F I F S:profile=5:66 S:level=-1:30 S:profile=0:100 S:level=0:9 G:ext F"},
+  {"set-number-ref", "pan", API_BASE, "F S:nref=4 G:ext F*3 S:nref=0 G:ext F*2"},
+  {"set-delivery", "mixed", API_RC "iRCMode=1;iTargetBitrate=128000", "F*4 S:delivery=0:0:0 F*4 S:delivery=1:0:0 F*4"},
+  {"set-complexity", "pan", API_BASE, "F*2 S:complexity=2 G:complexity F*3 S:complexity=1 G:complexity F*2"},
+  {"set-misc", "pan", API_BASE,
+   "S:ssei=1 S:prefix=1 F I F S:prefix=0 F S:lossless=1 S:vary=50 S:vary=150 S:fmt=0 S:fmt=23 G:fmt S:interpred=1 "
+   "G:interpred S:getstats=0 S:statint=1000 G:statint F G:ext"},
+  {"set-unknown", "pan", API_BASE, "S:unknown=0 G:unknown G:ltr F"},
+
+  // Reconfiguration: SVC_ENCODE_PARAM_BASE and _EXT, with and without a reset, and the
+  // resolution changes the statistics count.
+  {"set-base-resize", "pan", "api=base;iUsageType=0;iPicWidth=176;iPicHeight=144;iTargetBitrate=300000;iRCMode=1;"
+   "fMaxFrameRate=30", "F*3 S:base=iPicWidth:160+iPicHeight:96 G:base F*3 S:base=iPicWidth:176+iPicHeight:144 F*2 G:stats"},
+  {"set-base-bitrate", "mixed", "api=base;iUsageType=0;iPicWidth=176;iPicHeight=144;iTargetBitrate=300000;iRCMode=1;"
+   "fMaxFrameRate=30", "F*6 S:base=iTargetBitrate:100000 G:base F*6 S:base=fMaxFrameRate:15 G:base F*6"},
+  {"set-ext-resize", "pan", API_BASE,
+   "F*3 S:ext=iPicWidth:160+iPicHeight:96+L0.iVideoWidth:160+L0.iVideoHeight:96 F*3 "
+   "S:ext=iPicWidth:176+iPicHeight:144+L0.iVideoWidth:176+L0.iVideoHeight:144 F*2 G:stats G:ext"},
+  {"set-ext-resize-sps-listing", "pan", API_BASE "eSpsPpsIdStrategy=2",
+   "F*3 S:ext=iPicWidth:160+iPicHeight:96+L0.iVideoWidth:160+L0.iVideoHeight:96 F*3 "
+   "S:ext=iPicWidth:176+iPicHeight:144+L0.iVideoWidth:176+L0.iVideoHeight:144 F*2"},
+  {"set-ext-resize-sps-pps-listing", "pan", API_BASE "eSpsPpsIdStrategy=6",
+   "F*3 S:ext=iPicWidth:160+iPicHeight:96+L0.iVideoWidth:160+L0.iVideoHeight:96 F*3 "
+   "S:ext=iPicWidth:176+iPicHeight:144+L0.iVideoWidth:176+L0.iVideoHeight:144 F*2"},
+  {"set-ext-no-reset", "mixed", API_RC "iRCMode=1;iTargetBitrate=256000",
+   "F*6 S:ext=iTargetBitrate:128000+L0.iSpatialBitrate:128000 G:ext F*6 S:ext=iMaxQp:40+iMinQp:20 F*6"},
+  {"set-ext-reset", "pan", API_BASE,
+   "F*3 S:ext=iTemporalLayerNum:3 F*5 S:ext=L0.uiSliceMode:1+L0.uiSliceNum:2 F*3 S:ext=iLoopFilterDisableIdc:1 F*2 G:ext"},
+  {"set-ext-errors", "pan", API_BASE, "F S:ext=iSpatialLayerNum:0 S:ext=iSpatialLayerNum:5 S:ext=uiIntraPeriod:3+iTemporalLayerNum:3 F"},
+
+  // Statistics, with the log interval short enough to update the frame and bit rates.
+  {"statistics", "mixed", API_RC "iRCMode=1;iTargetBitrate=200000;fMaxFrameRate=5;ts.num=200;ts.den=1",
+   "S:statint=500 G:stats F*12 G:stats F*12 G:stats I F*6 G:stats"},
+  {"statistics-skips", "mixed", API_RC "iRCMode=1;iTargetBitrate=32000;fMaxFrameRate=5;ts.num=200;ts.den=1",
+   "S:statint=300 F*25 G:stats"},
+
+  // The life cycle: calls after Uninitialize, Initialize again, and the bad inputs.
+  {"lifecycle", "pan", API_BASE, "F U F I i G:idr S:idr=3 S:fps=10 P R F*2 R F G:stats U U R F"},
+  {"bad-input", "pan", API_BASE, "F:fmt=23 F:8x8 F:16x8 F F:fmt=22 F"},
+  {"memory-error", "mixed", API_RC "iRCMode=2;iTargetBitrate=128000;iMinQp=24;iMaxQp=40",
+   "F*12 I G:idr S:idr=3 R F*2 G:stats"},
+};
+#undef API_PP
+#undef API_RC
+#undef API_BASE
+
+// Parses "a:b:c" into up to n integers.
+int ApiInts (const std::string& v, long long* out, int n) {
+  std::stringstream ss (v);
+  std::string part;
+  int i = 0;
+  while (i < n && std::getline (ss, part, ':')) out[i++] = strtoll (part.c_str(), NULL, 10);
+  return i;
+}
+
+std::string ApiFloat (float x) {
+  char b[64];
+  snprintf (b, sizeof b, "%.9g", x);
+  return b;
+}
+
+// Applies "k:v+k:v" to the parameters, as ApplySetting.
+bool ApiApply (SEncParamExt& e, SEncParamBase& b, bool base, const std::string& v) {
+  std::stringstream ss (v);
+  std::string item;
+  while (std::getline (ss, item, '+')) {
+    size_t colon = item.find (':');
+    if (!ApplySetting (e, b, base, item.substr (0, colon), item.substr (colon + 1))) return false;
+  }
+  return true;
+}
+
+// SetOption: key=value. Returns SetOption's code; *pOk is false for an unknown key.
+int ApiSet (ISVCEncoder* encoder, const std::string& key, const std::string& v, bool* pOk) {
+  *pOk = true;
+  long long n[5] = {0, 0, 0, 0, 0};
+  ApiInts (v, n, 5);
+  const int i = (int)n[0];
+  if (key == "idr") return encoder->SetOption (ENCODER_OPTION_IDR_INTERVAL, (void*)&i);
+  if (key == "rc") return encoder->SetOption (ENCODER_OPTION_RC_MODE, (void*)&i);
+  if (key == "pad") return encoder->SetOption (ENCODER_PADDING_PADDING, (void*)&i);
+  if (key == "strategy") return encoder->SetOption (ENCODER_OPTION_SPS_PPS_ID_STRATEGY, (void*)&i);
+  if (key == "nref") return encoder->SetOption (ENCODER_OPTION_NUMBER_REF, (void*)&i);
+  if (key == "complexity") return encoder->SetOption (ENCODER_OPTION_COMPLEXITY, (void*)&i);
+  if (key == "statint") return encoder->SetOption (ENCODER_OPTION_STATISTICS_LOG_INTERVAL, (void*)&i);
+  if (key == "vary") return encoder->SetOption (ENCODER_OPTION_BITS_VARY_PERCENTAGE, (void*)&i);
+  if (key == "fmt") return encoder->SetOption (ENCODER_OPTION_DATAFORMAT, (void*)&i);
+  if (key == "interpred") return encoder->SetOption (ENCODER_OPTION_INTER_SPATIAL_PRED, (void*)&i);
+  if (key == "unknown") return encoder->SetOption ((ENCODER_OPTION)99, (void*)&i);
+  if (key == "ltrperiod") {
+    unsigned int u = (unsigned int)n[0];
+    return encoder->SetOption (ENCODER_LTR_MARKING_PERIOD, &u);
+  }
+  if (key == "fps") {
+    float f = (float)strtod (v.c_str(), NULL);
+    return encoder->SetOption (ENCODER_OPTION_FRAME_RATE, &f);
+  }
+  if (key == "skip" || key == "ssei" || key == "prefix" || key == "lossless") {
+    bool b = i != 0;
+    return encoder->SetOption (key == "skip" ? ENCODER_OPTION_RC_FRAME_SKIP : key == "ssei" ? ENCODER_OPTION_ENABLE_SSEI :
+                               key == "prefix" ? ENCODER_OPTION_ENABLE_PREFIX_NAL_ADDING : ENCODER_OPTION_IS_LOSSLESS_LINK, &b);
+  }
+  if (key == "br" || key == "maxbr") {
+    SBitrateInfo info;
+    info.iLayer = (LAYER_NUM)n[0];
+    info.iBitrate = (int)n[1];
+    return encoder->SetOption (key == "br" ? ENCODER_OPTION_BITRATE : ENCODER_OPTION_MAX_BITRATE, &info);
+  }
+  if (key == "ltr") {
+    SLTRConfig c;
+    c.bEnableLongTermReference = n[0] != 0;
+    c.iLTRRefNum = (int)n[1];
+    return encoder->SetOption (ENCODER_OPTION_LTR, &c);
+  }
+  if (key == "ltrreq") {
+    SLTRRecoverRequest r;
+    r.uiFeedbackType = (unsigned int)n[0];
+    r.uiIDRPicId = (unsigned int)n[1];
+    r.iLastCorrectFrameNum = (int)n[2];
+    r.iCurrentFrameNum = (int)n[3];
+    r.iLayerId = (int)n[4];
+    return encoder->SetOption (ENCODER_LTR_RECOVERY_REQUEST, &r);
+  }
+  if (key == "ltrfb") {
+    SLTRMarkingFeedback f;
+    f.uiFeedbackType = (unsigned int)n[0];
+    f.uiIDRPicId = (unsigned int)n[1];
+    f.iLTRFrameNum = (int)n[2];
+    f.iLayerId = (int)n[3];
+    return encoder->SetOption (ENCODER_LTR_MARKING_FEEDBACK, &f);
+  }
+  if (key == "profile") {
+    SProfileInfo p;
+    p.iLayer = (int)n[0];
+    p.uiProfileIdc = (EProfileIdc)n[1];
+    return encoder->SetOption (ENCODER_OPTION_PROFILE, &p);
+  }
+  if (key == "level") {
+    SLevelInfo l;
+    l.iLayer = (int)n[0];
+    l.uiLevelIdc = (ELevelIdc)n[1];
+    return encoder->SetOption (ENCODER_OPTION_LEVEL, &l);
+  }
+  if (key == "delivery") {
+    SDeliveryStatus d;
+    d.bDeliveryFlag = n[0] != 0;
+    d.iDropFrameType = (int)n[1];
+    d.iDropFrameSize = (int)n[2];
+    return encoder->SetOption (ENCODER_OPTION_DELIVERY_STATUS, &d);
+  }
+  if (key == "getstats") {
+    SEncoderStatistics s;
+    memset (&s, 0, sizeof s);
+    return encoder->SetOption (ENCODER_OPTION_GET_STATISTICS, &s);
+  }
+  if (key == "base") {
+    // The current parameters (zeroed when GetOption fails), with the changes.
+    SEncParamBase b;
+    SEncParamExt e;
+    memset (&b, 0, sizeof b);
+    encoder->GetOption (ENCODER_OPTION_SVC_ENCODE_PARAM_BASE, &b);
+    if (!ApiApply (e, b, true, v)) return *pOk = false, 0;
+    return encoder->SetOption (ENCODER_OPTION_SVC_ENCODE_PARAM_BASE, &b);
+  }
+  if (key == "ext") {
+    SEncParamBase b;
+    SEncParamExt e;
+    memset (&e, 0, sizeof e);
+    encoder->GetOption (ENCODER_OPTION_SVC_ENCODE_PARAM_EXT, &e);
+    if (!ApiApply (e, b, false, v)) return *pOk = false, 0;
+    return encoder->SetOption (ENCODER_OPTION_SVC_ENCODE_PARAM_EXT, &e);
+  }
+  *pOk = false;
+  return 0;
+}
+
+// GetOption: key. Returns GetOption's code; the value goes to *pValue ("-" on failure).
+int ApiGet (ISVCEncoder* encoder, const std::string& key, std::string* pValue, bool* pOk) {
+  *pOk = true;
+  *pValue = "-";
+  int rv;
+  const size_t eq = key.find ('=');
+  const std::string k = key.substr (0, eq);
+  if (k == "idr" || k == "statint" || k == "complexity" || k == "fmt" || k == "interpred" || k == "unknown" || k == "ltr") {
+    int i = 0x5a5a5a5a;
+    rv = encoder->GetOption (k == "idr" ? ENCODER_OPTION_IDR_INTERVAL : k == "statint" ? ENCODER_OPTION_STATISTICS_LOG_INTERVAL :
+                             k == "complexity" ? ENCODER_OPTION_COMPLEXITY : k == "fmt" ? ENCODER_OPTION_DATAFORMAT :
+                             k == "interpred" ? ENCODER_OPTION_INTER_SPATIAL_PRED : k == "ltr" ? ENCODER_OPTION_LTR :
+                             (ENCODER_OPTION)99, &i);
+    if (rv == 0) *pValue = std::to_string (i);
+    return rv;
+  }
+  if (k == "fps") {
+    float f = -1;
+    rv = encoder->GetOption (ENCODER_OPTION_FRAME_RATE, &f);
+    if (rv == 0) *pValue = ApiFloat (f);
+    return rv;
+  }
+  if (k == "br" || k == "maxbr") {
+    SBitrateInfo info;
+    info.iLayer = (LAYER_NUM)strtol (key.substr (eq + 1).c_str(), NULL, 10);
+    info.iBitrate = -1;
+    rv = encoder->GetOption (k == "br" ? ENCODER_OPTION_BITRATE : ENCODER_OPTION_MAX_BITRATE, &info);
+    if (rv == 0) *pValue = std::to_string (info.iBitrate);
+    return rv;
+  }
+  if (k == "ext") {
+    SEncParamExt e;
+    memset (&e, 0, sizeof e);
+    rv = encoder->GetOption (ENCODER_OPTION_SVC_ENCODE_PARAM_EXT, &e);
+    if (rv == 0) *pValue = DumpParamExt (e);
+    return rv;
+  }
+  if (k == "base") {
+    SEncParamBase b;
+    memset (&b, 0, sizeof b);
+    rv = encoder->GetOption (ENCODER_OPTION_SVC_ENCODE_PARAM_BASE, &b);
+    if (rv == 0)
+      *pValue = "iUsageType=" + std::to_string (b.iUsageType) + ";iPicWidth=" + std::to_string (b.iPicWidth) +
+                ";iPicHeight=" + std::to_string (b.iPicHeight) + ";iTargetBitrate=" + std::to_string (b.iTargetBitrate) +
+                ";iRCMode=" + std::to_string (b.iRCMode) + ";fMaxFrameRate=" + ApiFloat (b.fMaxFrameRate);
+    return rv;
+  }
+  if (k == "stats") {
+    // fAverageFrameSpeedInMs is the encoder's own timing, so it is left out.
+    SEncoderStatistics s;
+    memset (&s, 0, sizeof s);
+    rv = encoder->GetOption (ENCODER_OPTION_GET_STATISTICS, &s);
+    if (rv == 0)
+      *pValue = "uiWidth=" + std::to_string (s.uiWidth) + ";uiHeight=" + std::to_string (s.uiHeight) +
+                ";fAverageFrameRate=" + ApiFloat (s.fAverageFrameRate) + ";fLatestFrameRate=" + ApiFloat (s.fLatestFrameRate) +
+                ";uiBitRate=" + std::to_string (s.uiBitRate) + ";uiAverageFrameQP=" + std::to_string (s.uiAverageFrameQP) +
+                ";uiInputFrameCount=" + std::to_string (s.uiInputFrameCount) +
+                ";uiSkippedFrameCount=" + std::to_string (s.uiSkippedFrameCount) +
+                ";uiResolutionChangeTimes=" + std::to_string (s.uiResolutionChangeTimes) +
+                ";uiIDRReqNum=" + std::to_string (s.uiIDRReqNum) + ";uiIDRSentNum=" + std::to_string (s.uiIDRSentNum) +
+                ";uiLTRSentNum=" + std::to_string (s.uiLTRSentNum);
+    return rv;
+  }
+  *pOk = false;
+  return 0;
+}
+
+// The script, with op*n expanded.
+std::vector<std::string> ApiOps (const char* script) {
+  std::vector<std::string> ops;
+  std::stringstream ss (script);
+  std::string op;
+  while (ss >> op) {
+    const size_t star = op.rfind ('*');
+    int n = 1;
+    if (star != std::string::npos) {
+      n = (int)strtol (op.substr (star + 1).c_str(), NULL, 10);
+      op = op.substr (0, star);
+    }
+    for (int i = 0; i < n; i++) ops.push_back (op);
+  }
+  return ops;
+}
+
+// Runs one configuration's script. Returns the first Initialize's code; an op row per
+// operation goes to *pRows (when not NULL) and the outputs of F and P to *pStream.
+int RunApi (const ApiConfig& c, std::vector<std::string>* pRows, std::vector<unsigned char>* pStream) {
+  ISVCEncoder* encoder = NULL;
+  if (WelsCreateSVCEncoder (&encoder) != 0) return -1;
+  int iTraceLevel = WELS_LOG_QUIET;
+  encoder->SetOption (ENCODER_OPTION_TRACE_LEVEL, &iTraceLevel);
+
+  SEncParamExt ext;
+  SEncParamBase base;
+  memset (&base, 0, sizeof base);
+  encoder->GetDefaultParams (&ext);
+  TimestampSchedule ts;
+  bool isBase = false;
+  std::stringstream ss (c.settings);
+  std::string item;
+  while (std::getline (ss, item, ';')) {
+    if (item.empty()) continue;
+    size_t eq = item.find ('=');
+    std::string k = item.substr (0, eq), v = item.substr (eq + 1);
+    if (k == "api") {
+      isBase = v == "base";
+      continue;
+    }
+    if (k.compare (0, 3, "ts.") == 0 ? !ts.Apply (k, v) : !ApplySetting (ext, base, isBase, k, v)) {
+      fprintf (stderr, "%s: unknown setting %s\n", c.name, k.c_str());
+      exit (1);
+    }
+  }
+  const SEncParamExt ext0 = ext;
+  const SEncParamBase base0 = base;
+
+  int initRv = isBase ? encoder->Initialize (&base) : encoder->InitializeExt (&ext);
+  int w = isBase ? base.iPicWidth : ext.iPicWidth, h = isBase ? base.iPicHeight : ext.iPicHeight;
+  int frame = 0;
+  std::vector<unsigned char> buf;
+  const std::vector<std::string> ops = ApiOps (c.script);
+  for (size_t i = 0; i < ops.size(); i++) {
+    const std::string& op = ops[i];
+    int rv = 0;
+    std::string detail = "-";
+    bool frameOut = false;
+    SFrameBSInfo info;
+    memset (&info, 0, sizeof info);
+    if (op[0] == 'F') {
+      int pw = w, ph = h, fmt = videoFormatI420;
+      if (op.compare (0, 6, "F:fmt=") == 0) fmt = (int)strtol (op.c_str() + 6, NULL, 10);
+      else if (op.size() > 2) sscanf (op.c_str() + 2, "%dx%d", &pw, &ph);
+      FillFrame (buf, pw, ph, c.content, frame);
+      SSourcePicture pic;
+      memset (&pic, 0, sizeof pic);
+      pic.iPicWidth = pw;
+      pic.iPicHeight = ph;
+      pic.iColorFormat = fmt;
+      pic.iStride[0] = pw;
+      pic.iStride[1] = pic.iStride[2] = pw >> 1;
+      pic.pData[0] = buf.data();
+      pic.pData[1] = pic.pData[0] + pw * ph;
+      pic.pData[2] = pic.pData[1] + (pw >> 1) * (ph >> 1);
+      pic.uiTimeStamp = ts.At (frame);
+      rv = encoder->EncodeFrame (&pic, &info);
+      frame++;
+      frameOut = true;
+    } else if (op == "P") {
+      rv = encoder->EncodeParameterSets (&info);
+      frameOut = true;
+    } else if (op == "I" || op == "i") {
+      rv = encoder->ForceIntraFrame (op == "I");
+    } else if (op == "U") {
+      rv = encoder->Uninitialize();
+    } else if (op == "R") {
+      SEncParamExt e = ext0;
+      SEncParamBase b = base0;
+      rv = isBase ? encoder->Initialize (&b) : encoder->InitializeExt (&e);
+      w = isBase ? b.iPicWidth : e.iPicWidth;
+      h = isBase ? b.iPicHeight : e.iPicHeight;
+    } else if (op.compare (0, 2, "S:") == 0) {
+      const size_t eq = op.find ('=');
+      const std::string k = op.substr (2, eq - 2), v = op.substr (eq + 1);
+      bool ok;
+      rv = ApiSet (encoder, k, v, &ok);
+      if (!ok) {
+        fprintf (stderr, "%s: unknown op %s\n", c.name, op.c_str());
+        exit (1);
+      }
+      if (rv == 0 && (k == "base" || k == "ext")) {
+        // The frames follow the new size.
+        SEncParamExt e;
+        memset (&e, 0, sizeof e);
+        encoder->GetOption (ENCODER_OPTION_SVC_ENCODE_PARAM_EXT, &e);
+        w = e.iPicWidth;
+        h = e.iPicHeight;
+      }
+    } else if (op.compare (0, 2, "G:") == 0) {
+      bool ok;
+      rv = ApiGet (encoder, op.substr (2), &detail, &ok);
+      if (!ok) {
+        fprintf (stderr, "%s: unknown op %s\n", c.name, op.c_str());
+        exit (1);
+      }
+    } else {
+      fprintf (stderr, "%s: unknown op %s\n", c.name, op.c_str());
+      exit (1);
+    }
+    if (frameOut) {
+      std::vector<unsigned char> bytes;
+      std::string tid;
+      for (int j = 0; j < info.iLayerNum; j++) {
+        const SLayerBSInfo& l = info.sLayerInfo[j];
+        if (l.uiLayerType == VIDEO_CODING_LAYER) tid += (tid.empty() ? "" : ",") + std::to_string (l.uiTemporalId);
+        int n = 0;
+        for (int k = 0; k < l.iNalCount; k++) n += l.pNalLengthInByte[k];
+        bytes.insert (bytes.end(), l.pBsBuf, l.pBsBuf + n);
+      }
+      pStream->insert (pStream->end(), bytes.begin(), bytes.end());
+      detail = std::string (FrameTypeName (info.eFrameType)) + "\t" + (tid.empty() ? "-" : tid) + "\t" + Layers (info) + "\t" +
+               (bytes.empty() ? "-" : Sha1Hex (bytes.data(), (int)bytes.size())) + "\t" + std::to_string (bytes.size());
+    }
+    if (pRows)
+      pRows->push_back (std::string ("op\t") + c.name + "\t" + std::to_string (i) + "\t" + op + "\t" + std::to_string (rv) +
+                        "\t" + detail);
+  }
+  WelsDestroySVCEncoder (encoder);
+  return initRv;
+}
+
+}  // namespace
+
+int Api() {
+  printf ("# %s, C-only reference build. Scripted encoder API calls per configuration, see refharness/src/encoder.cpp.\n",
+          g_strCodecVer);
+  printf ("# config\t<name>\t<content>\t<settings>\t<script>\n");
+  printf ("# init\t<name>\t<Initialize or InitializeExt>\n");
+  printf ("# op\t<name>\t<index>\t<op>\t<return code>\t<frame type, temporal ids, layers, sha1, size | value | ->\n");
+  printf ("# stream\t<name>\t<sha1 of the F and P outputs>\t<size>\n");
+  for (const ApiConfig& c : kApiConfigs) {
+    printf ("config\t%s\t%s\t%s\t%s\n", c.name, c.content, c.settings, c.script);
+    std::vector<unsigned char> stream;
+    std::vector<std::string> rows;
+    printf ("init\t%s\t%d\n", c.name, RunApi (c, &rows, &stream));
+    for (const std::string& r : rows) printf ("%s\n", r.c_str());
+    printf ("stream\t%s\t%s\t%d\n", c.name, stream.empty() ? "-" : Sha1Hex (stream.data(), (int)stream.size()).c_str(),
+            (int)stream.size());
+  }
+  return 0;
+}
+
+int ApiDump (const char* name, const char* outPath) {
+  for (const ApiConfig& c : kApiConfigs) {
+    if (std::string (c.name) != name) continue;
+    std::vector<unsigned char> stream;
+    RunApi (c, NULL, &stream);
+    std::ofstream out (outPath, std::ios::binary);
+    out.write ((const char*)stream.data(), (std::streamsize)stream.size());
+    return out ? 0 : 1;
+  }
+  fprintf (stderr, "no api configuration %s\n", name);
+  return 1;
 }

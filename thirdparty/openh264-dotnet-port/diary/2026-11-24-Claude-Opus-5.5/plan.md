@@ -31,6 +31,7 @@ was kept for the VP8 encoder.
 | E5b The P stream through the frame loop | **Done** (26 Nov) | The rest of E5. `ref_list_mgr_svc` for camera content: the `IWelsReferenceStrategy` (`CWelsReference_TemporalLayer`), the list reset, update and build, `WelsMarkPic` with the MMCO and LTR marking, `WelsUpdateRefSyntax` and `PrefetchNextBuffer`. Also `encoder`'s `DecideFrameType`, `encoder_ext`'s `GetMvMvdRange`, and `processing`'s VAA statistics (the five `vaacalcfuncs` C kernels and `CVAACalculation`). ~1.9k lines. `IdrTests.cs`'s `IdrEncoder` became `EncoderDriver.cs`, with the reference strategy, the LTR state, the VAA buffers, the MVD cost table, a hand port of the camera half of `CWelsPreProcess` for one spatial layer, and `WelsEncoderEncodeExt`'s whole frame loop (see the notes). New `vaacalc` kernel group (`refharness/src/kernels_processing.cpp`, 177 rows). New `h264ref stream` mode (`reference/stream.tsv`): 57 configurations, 506 frames (429 P) of eight kinds of moving content. They cover the complexity modes, QP 0 to 51, IDR periods, two to four temporal layers, LTR marking, reference counts, the slice modes, odd and cropped sizes, the deblocking modes, three id strategies and the Main profile. **All match** native byte for byte, frame by frame. Every reconstruction the encoder deblocked equals the C# decoder's picture, and every row frees all it allocates. Of 12 planted bugs, 9 fail rows. The other three can't be reached before E7 or E8 (see the notes). UnitTest: 8034. TestVectors: 586. |
 | E6 Rate control | **Done** (26 Nov) | `ratectl` for camera content: the off, quality, bit rate (with and without post skip), buffer based and timestamp modes, the frame skip decisions, the two shifted max bit rate check windows and padding, with `encoder_ext`'s `WritePadding`. Also the camera half of `processing`'s complexity analysis (`CComplexityAnalysis`), which the GOM rate control reads. ~1.9k lines. `EncoderDriver` gains the frame loop's rate control hooks and a hand port of `AnalyzePictureComplexity` (see the notes). New `complexity` kernel group (361 rows; `kernels.tsv` 7281). New `h264ref rc` mode (`reference/rc.tsv`): 94 configurations, 4848 frames (2808 P, 1871 skipped) over the four modes. They run at 16 kbps to 2 Mbps, with timestamp schedules that pause, step back, jump to 0 and jitter. **All match** native byte for byte, frame by frame, with E5b's decoder check. Of 19 planted bugs, 14 fail rows. Four are equivalent and one can't be pinned (see the notes). UnitTest: 8395. TestVectors: 681. |
 | E7 Preprocessing | **Done** (27 Nov) | The camera half of `processing`: `CVpFrameWork` with `CheckValid`, scene change detection for video, background detection, adaptive quantisation, the denoiser and the downsampler, with the processing allocator and constants (`memory`, `util`). The camera half of `wels_preprocess`: `CWelsPreProcess` with `CWelsPreProcessVideo` (the scaled pictures, `BuildSpatialPicList`, `SingleLayerPreprocess`, `DownsamplePadding`, `AnalyzeSpatialPic`, `UpdateSpatialPictures`), which replaces `EncoderDriver`'s hand ports. Also `encoder_ext`'s `AddPrefixNal` and `encoder`'s `InitPic`. ~3.9k lines. **The three upstream encoder hashes pass (`672a52fb…`, `08ade185…`, `e60f12e3…`), and so does the denoiser's (`913e49c7…`)**, through the base API and `InitializeExt` (`UpstreamEncoderHashTests`, which needs `OPENH264_RES`). New kernel groups (`refharness/src/kernels_processing.cpp`): 40 `scd`, 30 `bgd`, 93 `aq`, 65 `denoise`, 40 `downsample` and 95 `vpframework` rows (`kernels.tsv` 7644). New `h264ref preprocess` mode (`reference/preprocess.tsv`): 63 configurations, 1469 frames (900 P, 77 IDR with 14 mid stream, 465 skipped). They cover scene change detection, background detection, the denoiser and downsampling (half, quarter, general and odd sizes), alone and together, at fixed QP and in every rate control mode, with temporal layers, intra periods, LTR, slices, prefix NAL units and the base API. **All match** native byte for byte, frame by frame, with the decoder check at the coded size. Adaptive quantisation can't change a stream, as upstream's `ParamValidation` turns it off. Of 20 planted bugs, 18 fail rows, one of them only after two `vpframework` mutations were added. The other two are equivalent (see the notes). UnitTest: 8758. TestVectors: 749. |
+| E8 API and wire-up | **Done** (27 Nov) | `welsEncoderExt`'s `CWelsH264SVCEncoder` whole (`Initialize`, `InitializeExt`, `EncodeFrame`, `EncodeParameterSets`, `ForceIntraFrame`, every `SetOption` and `GetOption` case, the statistics), the rest of `encoder_ext` that a single layer, single thread, CAVLC camera encoder runs (`WelsInitEncoderExt` and `WelsUninitEncoderExt`, `RequestMemorySvc` and `FreeMemorySvc`, the frame loop `WelsEncoderEncodeExt`, `WelsEncoderParamAdjust`, `ForceCodingIDR`, the rate and LTR setters) and `ref_list_mgr_svc`'s LTR feedback filters. Configurations the port doesn't code are refused at init. ~2.1k lines ported. `EncoderDriver` is now a thin wrapper over the API, and every earlier table and the four upstream hashes still match through it. New `h264ref api` mode (`reference/api.tsv`): 61 configurations, 994 scripted operations of frames, forced IDRs, parameter sets, re-inits, size changes and every option the camera encoder takes. **All match** native row by row. The three E5b survivors that needed the API now fail rows. `H264Codec` encodes (I420, NV12 and packed RGB through a new BT.601 `RgbToI420`, set up as libwebrtc sets up OpenH264), with 21 new tests of round trips, key frames, sizes, formats, bitrate and frame rate. The CLI's `--encoder h264.net` (whip, loopback, browser-test, video-bench), with a guard that stops the CLI tool package from shipping it. New example `examples/WebRTCExamples/WebRTCGetStartedH264Net`, and `TranscodeLoop` encodes with it. **Chromium decodes the stream** (`browser-test --encoder h264.net`, 640x360 at 30 fps, 440 of 440 frames, and a PLI answered with an IDR). Firefox and Safari aren't checked. About 65 frames a second at 640x480 on one thread. Of 17 planted bugs, 15 fail rows, three of them only after a driver check and two tests were added. The other two are equivalent (see the notes). UnitTest: 8758. TestVectors: 832. CLI UnitTest: 261. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -547,8 +548,9 @@ Notes from D7:
   with no camera, and shows the browser's outbound codec, key frame and PLI
   counts. In `SIPSorcery.slnx`, with a `.slnf`.
 - **Not done.** No `-pre` package: `IsPackable` stays false until the patent
-  decision in section 8. The CLI's `h264.net` option waits for the encoder
-  (E8), since the CLI's receive paths already have FFmpeg's decoder.
+  decision in section 8. The CLI's `h264.net` option waited for the encoder
+  (E8), since the CLI's receive paths already have FFmpeg's decoder. E8 added
+  it, decoder included, to `video-bench`.
 
 Notes from E1:
 
@@ -1013,7 +1015,8 @@ Notes from E5b:
   - The VAA reference for the fourth frame of an 8-frame GOP: 1. A VAA bug
     only shows where an 8x8 SAD crosses the fine partition threshold.
 
-  The three that pass can't be reached before E7 or E8:
+  The three that pass can't be reached before E7 or E8 (all three fail
+  `api.tsv` rows since E8):
   - The LTR index wrap in `HandleLTRMarkFeedback` needs the API's LTR
     marking feedback (E8).
   - `DecideFrameType` resetting `iCodingIndex` on an IDR. The IDR period
@@ -1031,7 +1034,8 @@ Notes from E6:
   complexity throws for it (Phase 4). Background detection, adaptive
   quantisation and scene change detection stay off (E7). `SetOption`'s bit
   rate and frame rate changes come with the API (E8). `RcJudgeBitrateFpsUpdate`
-  is ported and runs every frame, but nothing changes the rates yet.
+  is ported and runs every frame, but nothing changes the rates yet. (E8's
+  `set-bitrate`, `set-max-bitrate` and `set-frame-rate` rows change them.)
 - **What is ported.** `ratectl.cs` has every camera mode:
   - off, quality, bit rate (with and without post skip), buffer based and
     timestamp;
@@ -1257,7 +1261,156 @@ Notes from E7:
   IDR, still passes with the reset taken out of the scene change branch.
   Scene change detection runs only at the start of a GOP, so its IDRs land
   where the index is already a multiple of the GOP size. Only
-  `ForceIntraFrame` (E8) can put an IDR mid-GOP.
+  `ForceIntraFrame` (E8) can put an IDR mid-GOP. (Since E8 it fails three
+  `api.tsv` rows.)
+
+Notes from E8:
+
+- **Scope.** The API and the frame loop for one spatial layer, one thread,
+  CAVLC and camera content, which ends Phase 3. `PortUnsupportedConfiguration`
+  refuses at init, with an error in the log and `cmInitParaError`, what the
+  port doesn't code: screen content, CABAC, more than one spatial layer or
+  simulcast, more than one thread, and `SM_SIZELIMITED_SLICE`. The slice
+  thread and dynamic slice branches that a refused configuration would reach
+  throw `NotSupportedException`.
+- **What is ported.**
+  - `welsEncoderExt.cs`: `CWelsH264SVCEncoder` whole, as a native struct like
+    E7's classes: `GetDefaultParams`, `Initialize`, `InitializeExt`,
+    `Uninitialize`, `EncodeFrame`, `EncodeParameterSets`, `ForceIntraFrame`,
+    every `SetOption` and `GetOption` case, `UpdateStatistics` and
+    `LogStatistics`, with `WelsCreateSVCEncoder` and `WelsDestroySVCEncoder`.
+    The trace callback is a `delegate*<void*, int, string, void>`. One port
+    addition, `EncContext`, which the tests read.
+  - `encoder_ext`: the frame rate, bit rate and LTR setters,
+    `AcquireLayersNals`, `RequestMemorySvc` and `FreeMemorySvc`,
+    `WelsInitEncoderExt` and `WelsUninitEncoderExt`, `ForceCodingIDR`,
+    `StackBackEncoderStatus`, `ClearFrameBsInfo`, the frame loop
+    `WelsEncoderEncodeExt` and `WelsEncoderParamAdjust`. About 2k lines.
+  - `ref_list_mgr_svc`: `FilterLTRRecoveryRequest` and
+    `FilterLTRMarkingFeedback`.
+- **The driver.** `EncoderDriver` is now a thin wrapper over
+  `CWelsH264SVCEncoder`, and E5b to E7's hand driven init, frame loop and
+  release are gone. Every table (`idr`, `stream`, `rc`, `preprocess`,
+  `paramsets`) and the four upstream hashes go through the API, and all
+  still match byte for byte. The driver reads the memory left after
+  `Uninitialize` from `FreeMemorySvc`'s log line, and checks that each
+  frame's `iFrameSizeInBytes` is the size of its NAL units (added for a
+  planted bug, below).
+- **The table.** `h264ref api` (`reference/api.tsv`) has 61 configurations
+  and 994 scripted operations: frames (in I420 and other formats, and at
+  other sizes), forced IDRs, `EncodeParameterSets`, `Uninitialize` and
+  re-init, and `SetOption`/`GetOption` of every option the camera encoder
+  takes. The options are the IDR interval, the bit rates and max bit rates,
+  the frame rate, the rate control mode, frame skip, padding, LTR with
+  marking feedback and recovery requests, the id strategies, profile and
+  level, the reference count, the complexity, the statistics, and base and
+  extended parameter changes with and without a reset, plus bad arguments
+  and an allocation failure. **All 61 match** native row by row: the return
+  code, the frame type, the temporal ids, every NAL unit's hash, and the
+  stream. Two native runs give the same table. `ApiTests` runs each script,
+  decodes the stream with the port's decoder and checks that the release
+  frees everything. Two streams (`parameter-sets`, `set-number-ref`) don't
+  decode cleanly, in the port's decoder and in native `h264ref hash` alike,
+  so the test expects it.
+- **Upstream behaviours that shaped the table.**
+  - `uiIdrPicId` is 1 after the first IDR, so LTR feedback and recovery
+    requests have to give `uiIDRPicId=1` to count.
+  - A recovery request makes an IDR only with LTR off, or with
+    `LTR_RECOVERY_REQUEST` and `iLastCorrectFrameNum == -1`.
+  - `SetOption(ENCODER_OPTION_IDR_INTERVAL)` doesn't check the value against
+    the GOP size, so periodic IDRs can come mid-GOP. A forced IDR restarts
+    the interval.
+  - `ENC_RETURN_CORRECTED` (`cmUnknownReason`, an IDR frame type and no
+    output) is reached by `ltr-recovery`'s op 22.
+  - `WelsRcPostFrameSkipping` always returns false, so
+    `StackBackEncoderStatus` never runs.
+- **`H264Codec`'s encoder.** Set up as libwebrtc sets up OpenH264: camera
+  content, `RC_BITRATE_MODE` with frame skip, no max bit rate, one slice,
+  one thread, one temporal layer, and `SPS_LISTING` in place of the default
+  `INCREASING_ID`, so every IDR carries the same parameter sets, ids
+  included. The encoder is created on the first frame, and again, from an
+  IDR, when the size changes. I420 goes in from the caller's planes and
+  strides, NV12 has its chroma split, and BGRA, RGBA, BGR and RGB go through
+  the new `RgbToI420` (libyuv's BT.601 limited range weights, chroma from the
+  2x2 average), not AV1's `I420Converter`, which is internal to its own
+  package. Timestamps count in ms from the first frame. Counted from the
+  process start, they made the encoder log an input frame rate of 6.99. With no
+  `TargetBitrateKbps`, the bitrate is 0.1 bits a pixel per frame, at least
+  100 kbps, and follows the frame rate. Bitrate, frame rate and key frame
+  interval changes after the first frame go through `SetOption`, and
+  `ForceKeyFrame` through `ForceIntraFrame`. The output is the access unit,
+  every layer's NAL units in order. The SDP stays `42e01f`, as for FFmpeg's
+  encoder, and the SPS signals the lowest level that fits.
+  `H264EncodeTests` (21 cases) decodes the output with the port's decoder,
+  directly and through RTP packets (STAP-A and FU-A, as SIPSorcery sends
+  them) and `H264Depacketiser`. It checks
+  the key frames at the interval, when forced, after a size change and
+  after an interval change, the parameter sets at each IDR, the odd size
+  crop, the same stream from every pixel format and method, the libyuv
+  colours, and the bitrate held through bitrate and frame rate changes.
+- **The CLI.** `--encoder h264.net` for `webrtc whip` and `loopback`
+  (`LibraryVideoPublisher`), a new `--encoder ffmpeg|h264.net` for
+  `browser-test`'s echo mode, whose send loop now answers PLIs and FIRs with
+  a key frame (SIPSorcery doesn't on its own), and `video-bench`'s encode
+  stage, decoder
+  and clip encoder. The CLI now references SIPSorcery.H264, which isn't
+  packable, so a `RefuseToPackH264Net` target fails `dotnet pack` of the CLI
+  tool unless `AllowH264NetInToolPackage=true`. That holds until the patent
+  decision in section 8. `nuget.yml` packs the CLI on `v*` tags, so the next
+  release tag needs that decision, the property or the reference taken out.
+- **The example.** `examples/WebRTCExamples/WebRTCGetStartedH264Net`, from
+  `WebRTCGetStarted`: a test pattern to a browser through `H264Codec`, with
+  PLIs and FIRs answered with a key frame. In `SIPSorcery.slnx`, with a
+  `.slnf`.
+- **Interop.** In the desktop app's built-in Chromium, `webrtc browser-test
+  --encoder h264.net` echoes 640x360 at 30 fps back. One run: 590 of 590
+  frames received, 574 decoded, 16 dropped at the start, one PLI answered
+  with an IDR, no freezes and no loss. Another: 440 of 440 decoded, none
+  dropped, no PLI. libx264 through the same path: 590 of 590. FFmpeg's
+  decoder decodes every frame of an `h264.net` clip (`video-bench`).
+  `benchmarks/TranscodeLoop` now takes `--encoder h264.net` too. With VP8 in
+  and H.264 out at 640x480 for 20 s, its WebView2 page decoded 570 frames
+  with no freezes, drops, loss or PLIs, and the verdict passed. The median
+  encode took 4.7 ms.
+  Firefox and Safari aren't on this machine, so they aren't checked.
+- **Speed.** `video-bench`, one thread, the C paths: encoding at 65 frames a
+  second at 480p, 23 at 720p and 12 at 1080p; decoding 720p at 117. Real
+  time up to about 480p. More needs Phase 5.
+- **Planted bugs.** Each was planted one at a time and restored from a
+  copy, checked by md5. Before `H264Codec`, the three E5b survivors that
+  needed the API:
+  - `DecideFrameType` not resetting `iCodingIndex` on an IDR: 3 rows,
+    `set-idr-request-temporal-3`, `set-ltr-idr-request-temporal-3` and
+    `set-idr-interval-temporal-3`.
+  - The LTR index wrap in `HandleLTRMarkFeedback`: 2, `ltr-recovery` and
+    `ltr-recovery-preprocess`.
+  - `UpdateSpatialPictures` not keeping an LTR's source picture: 4
+    `ltr-recovery` rows.
+
+  Then 17 in E8's code. The rows that fail, of 61 API scripts, the E4b to
+  E7 tables, the upstream hashes and `H264EncodeTests`:
+  - `ForceCodingIDR` not flagging the IDR: 22 scripts and 2 encode tests.
+  - `WelsEncoderParamAdjust` not carrying `uiMaxIdrPicId`: 8.
+  - `SetOption`'s frame rate without `WelsEncoderApplyFrameRate`: 1.
+  - The IDR interval set one more: 2. Read back one more: 1.
+  - The target bit rate halved: 1 script and the bitrate test.
+  - No `UpdateStatistics`: 5 scripts and 5 `rc` rows.
+  - `ForceCodingIDR` not clearing `bCheckWindowStatusRefreshFlag`: 1.
+  - `iFrameSizeInBytes` left at 0: 324 rows of every table, after the
+    driver's check was added. Before it, nothing read the field.
+  - `H264Codec` copying only the first layer: 10 encode tests.
+  - `H264Codec` not passing on a bitrate change: the bitrate test. A frame
+    rate or key frame interval change: no test, until
+    `Encode_FrameRateChangeSharesTheBitrateOutAgain` and
+    `Encode_KeyFrameIntervalChangeAppliesFromTheNextFrame` were added. The
+    automatic bitrate not following the frame rate: the first of them.
+  - `RgbToI420`'s green weight 128 for 129: 1 of the 5 libyuv rows, white.
+
+  Two are equivalent:
+  - `ForceCodingIDR` not resetting `iFrameNum` (or `iPOC`):
+    `InitFrameCoding` resets both again for every IDR.
+  - `StackBackEncoderStatus` not winding `uiIdrPicId` back: it never runs,
+    as upstream.
 
 ## 1. Goal
 
@@ -1534,6 +1687,9 @@ merges. Approximate C# sizes are in brackets.
   `SetOption`), then `H264Codec.EncodeVideo`, the profile-level-id, the CLI's
   `--encoder h264.net`, an example, and interop with Chrome, Firefox and Safari.
   *[~3k]*
+  **Done**: `welsEncoderExt` and the rest of `encoder_ext`, ~2.1k lines, with
+  61 API scripts matching, `H264Codec`'s encoder, the CLI option and an
+  example. Chromium decodes the stream. Firefox and Safari aren't checked.
 
 That makes about 22 PRs to the end of Phase 3.
 
@@ -1566,10 +1722,13 @@ That makes about 22 PRs to the end of Phase 3.
   `H264Depacketiser` already produces (Annex B).
 - **SDP:** advertise `packetization-mode=1;profile-level-id=42e01f`, as the
   FFmpeg helper does, and raise the level byte to match the level openh264
-  chooses from resolution and frame rate (`au_set`).
+  chooses from resolution and frame rate (`au_set`). *E8 kept `42e01f`: the
+  SPS carries the level, and a format parameter that changed with the frame
+  size would need renegotiating.*
 - **Pixel formats:** I420 natively. Reuse AV1's `I420Converter` for BGR/RGB
   input. It is a candidate to move into Abstractions so VP8, AV1 and H.264 share
-  one copy.
+  one copy. *E8 wrote `RgbToI420` instead, as AV1's is internal to its
+  package. Moving one copy to Abstractions is still open.*
 - **CLI:** add `h264.net` next to `ENCODER_VP8_NET` and `ENCODER_AV1_NET` in
   `LibraryVideoPublisher` and `WebRtcVideoBenchCommand`, and feed it the bitrate
   the same way `AV1VideoEncoder.TargetBitrateKbps` gets it.

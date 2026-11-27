@@ -53,6 +53,8 @@ refharness/build/Release/h264ref rc > reference/rc.tsv                 # rate co
 refharness/build/Release/h264ref rc-dump <name> <out.264>         # one rc row's bytes
 refharness/build/Release/h264ref preprocess > reference/preprocess.tsv # preprocessed streams, frame by frame
 refharness/build/Release/h264ref preprocess-dump <name> <out.264> # one preprocess row's bytes
+refharness/build/Release/h264ref api > reference/api.tsv               # scripted encoder API calls, op by op
+refharness/build/Release/h264ref api-dump <name> <out.264>        # one api row's bytes
 ```
 
 `conformance` copies upstream's `test/api/BaseDecoderTest.cpp` decode loop and
@@ -185,6 +187,27 @@ reach it. `preprocess-dump` writes one row's stream.
 `test/SIPSorcery.H264.TestVectors/PreprocessTests.cs` reads the table through
 the shared check, which compares reconstructions at the coded size.
 
+`api` runs a script of encoder API calls for each of a table of
+configurations (`kApiConfigs`), with the settings and contents of the tables
+above. The script's operations are space separated, and `op*n` repeats one:
+`F` is `EncodeFrame` of the next frame (`F:fmt=n` in another colour format,
+`F:WxH` at another size), `I` and `i` are `ForceIntraFrame(true)` and
+`(false)`, `P` is `EncodeParameterSets`, `U` is `Uninitialize`, `R` is the
+configuration's `Initialize` or `InitializeExt` again, and `S:key=value` and
+`G:key` are `SetOption` and `GetOption` (`ApiSet` and `ApiGet` list the keys).
+The configurations cover forced IDRs in every mode, and every option the
+camera encoder takes changed mid-stream: the IDR interval, the bit rates, the
+frame rate, the rate control mode, frame skip, padding, LTR with marking
+feedback and recovery requests, the id strategies, profile and level, the
+reference count, the complexity, the statistics, base and extended parameter
+changes, bad arguments and an allocation failure. For each operation it
+prints the return code and what came out: for `F` and `P` the frame type,
+the temporal ids, each layer's NAL lengths and short SHA1s and the output's
+SHA1 and size, and for `G` the value. Then it prints the whole stream's SHA1
+and size. `api-dump` writes one row's output. The test is
+`test/SIPSorcery.H264.TestVectors/ApiTests.cs`, whose script runner mirrors
+the C++ one, so the two must stay in step.
+
 ## Reference results (`reference/`)
 
 - **`decoder-conformance.tsv`** is the output of `h264ref conformance` on the
@@ -254,3 +277,8 @@ the shared check, which compares reconstructions at the coded size.
   buffer overflow uninitialises the encoder, in two rows). Read by
   `PreprocessTests` (E7),
   with the same decoder check. All 63 match, and no two write the same stream.
+- **`api.tsv`** is the output of `h264ref api`: 61 scripted configurations
+  and 994 operations. Read by `ApiTests` (E8), which compares every operation,
+  then the stream, then decodes the stream with the ported decoder and checks
+  that the release frees everything. All 61 match. From E8 on, every table
+  above runs through the ported API (`EncoderDriver`) too.

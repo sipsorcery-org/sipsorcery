@@ -2,55 +2,79 @@
 // Filename: H264Codec.cs
 //
 // Description: SIPSorcery's IVideoEncoder for the pure C# OpenH264 port. It
-// decodes the Annex B access units SIPSorcery's H264 depacketiser produces to
-// I420, BGR or RGB. Decode only for now: the encoder follows the decoder in the
-// port. Not part of the OpenH264 port itself.
+// encodes I420, NV12 and packed RGB frames to Annex B access units, and
+// decodes the access units SIPSorcery's H264 depacketiser produces to I420,
+// BGR or RGB. Not part of the OpenH264 port itself.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 25 Nov 2026  Claude          Created (D7).
+// 27 Nov 2026  Claude          The encoder (E8).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.H264.Decoder;
+using SIPSorcery.H264.Encoder;
 using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.H264;
 
 /// <summary>
-/// A pure C# H.264 decoder for SIPSorcery, ported from Cisco's OpenH264. Each call to
-/// <see cref="DecodeVideo"/> takes one access unit in Annex B format (start code delimited
-/// NAL units, as <c>H264Depacketiser</c> and <c>RTCPeerConnection.OnVideoFrameReceived</c>
-/// deliver them) and returns the picture it decodes to, if any.
+/// A pure C# H.264 encoder and decoder for SIPSorcery, ported from Cisco's OpenH264. Each
+/// encoded frame is one access unit in Annex B format (start code delimited NAL units), ready
+/// for SIPSorcery's H264 packetiser. Each call to <see cref="DecodeVideo"/> takes one access
+/// unit in the same format, as <c>H264Depacketiser</c> and
+/// <c>RTCPeerConnection.OnVideoFrameReceived</c> deliver them, and returns the picture it
+/// decodes to, if any.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The port covers the profile WebRTC uses, Constrained Baseline (<c>profile-level-id=42e01f</c>),
-/// at any level. Its output is checked bit for bit against OpenH264's own on the conformance
-/// streams. Streams using CABAC or B slices (Main and High profile) are not decoded: their
-/// slices fail and are concealed.
+/// The port covers the profile WebRTC uses, Constrained Baseline (<c>profile-level-id=42e01f</c>).
+/// Its encoder and decoder output is checked bit for bit against OpenH264's own. Streams using
+/// CABAC or B slices (Main and High profile) are not decoded: their slices fail and are
+/// concealed.
 /// </para>
 /// <para>
-/// Pictures are output as soon as their access unit is decoded, with no reordering delay, which
-/// Constrained Baseline allows. Damaged or missing data is concealed by copying from the
-/// previous picture, and <see cref="KeyFrameRequired"/> says when the receiver should ask the
-/// sender for a key frame to recover.
+/// The encoder is set up as libwebrtc sets up OpenH264: camera content, bitrate mode rate
+/// control that may drop a frame to hold the bitrate, one slice a picture and one thread. Every
+/// IDR access unit starts with the sequence and picture parameter sets, so a receiver can join
+/// at any key frame. The stream's level is the lowest that fits the frame size, frame rate and
+/// bitrate; a receiver that signals level 3.1 still decodes the higher levels of larger frames
+/// in practice, as browsers do. The encoder is created on the first frame and re-created,
+/// starting with a key frame, whenever the frame size changes. A frame's width and height must
+/// be at least 16; an odd width or height loses its last column or row, as in OpenH264.
 /// </para>
 /// <para>
-/// BGR and RGB output is converted with the colour matrix and range the stream signals in its
-/// sequence parameter set: BT.709 or BT.601, full or limited range. A stream that signals
-/// nothing is taken to be BT.601 limited range, as browsers take it.
+/// The port runs OpenH264's portable C code, without its assembly. On one desktop core it
+/// encodes about 65 frames a second at 640x480 and 23 at 1280x720, so it keeps up in real time
+/// up to about 640x480 at 30 frames a second.
 /// </para>
 /// <para>
-/// Decode only for now: the encode methods throw <see cref="NotSupportedException"/>. Calls are
-/// serialised internally. Dispose the codec to release the decoder's native memory.
+/// I420 frames are encoded as they are. NV12 frames have their chroma planes split, and packed
+/// RGB frames (BGRA, RGBA, BGR and RGB) are converted with BT.601 limited range, which is what
+/// the decoder and browsers take a stream that signals no colour to be.
+/// </para>
+/// <para>
+/// Decoded pictures are output as soon as their access unit is decoded, with no reordering
+/// delay, which Constrained Baseline allows. Damaged or missing data is concealed by copying
+/// from the previous picture, and <see cref="KeyFrameRequired"/> says when the receiver should
+/// ask the sender for a key frame to recover. BGR and RGB output is converted with the colour
+/// matrix and range the stream signals in its sequence parameter set: BT.709 or BT.601, full or
+/// limited range. A stream that signals nothing is taken to be BT.601 limited range, as
+/// browsers take it.
+/// </para>
+/// <para>
+/// Calls are serialised internally. Dispose the codec to release the encoder's and decoder's
+/// native memory.
 /// </para>
 /// </remarks>
 public sealed unsafe class H264Codec : IVideoEncoder
@@ -59,10 +83,24 @@ public sealed unsafe class H264Codec : IVideoEncoder
     public const int H264_SUGGESTED_FORMAT_ID = 100;
 
     /// <summary>
-    /// The SDP format parameters for what the decoder handles: Constrained Baseline, packetization
-    /// mode 1 (single NAL unit, STAP-A and FU-A packets), and any level from the sender.
+    /// The SDP format parameters: Constrained Baseline, packetization mode 1 (single NAL unit,
+    /// STAP-A and FU-A packets), and level 3.1, with any level accepted from the sender.
     /// </summary>
     public const string H264_FORMAT_PARAMETERS = "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f";
+
+    /// <summary>The key frame interval of a new codec: one a second at 30 frames a second.</summary>
+    public const int DEFAULT_KEYFRAME_INTERVAL_FRAMES = 30;
+
+    /// <summary>The frame rate of a new codec.</summary>
+    public const int DEFAULT_FRAME_RATE = 30;
+
+    // With no target bitrate set, the bitrate is picked from the frame size and rate: 0.1 bits a
+    // pixel per frame, a little under 1 Mbps for 640x480 at 30 frames a second.
+    private const double AUTO_BITS_PER_PIXEL = 0.1;
+    private const int MIN_AUTO_BITRATE_BPS = 100_000;
+
+    // The smallest frame OpenH264 encodes.
+    private const int MIN_ENCODE_DIMENSION = 16;
 
     private static readonly ILogger logger = LogFactory.CreateLogger<H264Codec>();
 
@@ -76,17 +114,116 @@ public sealed unsafe class H264Codec : IVideoEncoder
     // DecodeVideoFaster's output, re-used for every picture.
     private byte* _rawBuffer;
     private int _rawBufferSize;
+
+    private CWelsH264SVCEncoder* _encoder;
+    // The size _encoder was initialised for, 0 when it needs initialising.
+    private int _encWidth;
+    private int _encHeight;
+    // The encoder's output description, too large for the stack to want it on every frame.
+    private SFrameBSInfo* _bsInfo;
+    // The I420 planes of converted (RGB) or split (NV12) input.
+    private byte* _yuvBuffer;
+    private int _yuvBufferSize;
+    private readonly ArrayBufferWriter<byte> _output = new(1 << 16);
+    // When the first frame was encoded, 0 before then: the encoder's timestamps count from it.
+    private long _firstFrameTicks;
+    private int _targetBitrateKbps;
+    private int _frameRate = DEFAULT_FRAME_RATE;
+    private int _keyframeIntervalFrames = DEFAULT_KEYFRAME_INTERVAL_FRAMES;
+    private bool _forceKeyFrame;
+
     private bool _disposed;
 
-    /// <summary>Creates a codec. The decoder itself is created on the first access unit.</summary>
+    /// <summary>Creates a codec. The encoder and decoder are created when they are first used.</summary>
     public H264Codec()
     { }
 
-    /// <summary>Releases the decoder if the codec was not disposed.</summary>
+    /// <summary>Releases the encoder and decoder if the codec was not disposed.</summary>
     ~H264Codec() => Release();
 
     /// <inheritdoc/>
     public List<VideoFormat> SupportedFormats => _supportedFormats;
+
+    /// <summary>
+    /// The encoder's target bitrate in kilobits per second. 0, the default, picks it from the
+    /// frame size and <see cref="FrameRate"/>: 0.1 bits a pixel per frame, at least 100 kbps.
+    /// Changes apply from the next frame.
+    /// </summary>
+    public int TargetBitrateKbps
+    {
+        get => _targetBitrateKbps;
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
+            lock (_lock)
+            {
+                _targetBitrateKbps = value;
+                if (_encWidth != 0)
+                {
+                    SBitrateInfo info = default;
+                    info.iLayer = SPATIAL_LAYER_ALL;
+                    info.iBitrate = TargetBitrateBps(_encWidth, _encHeight);
+                    _encoder->SetOption(ENCODER_OPTION_BITRATE, &info);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The rate frames are expected at, from 1 to 60, which the rate control shares the bitrate
+    /// out by. The default is 30. Changes apply from the next frame.
+    /// </summary>
+    public int FrameRate
+    {
+        get => _frameRate;
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(value, WelsEnc.MIN_FRAME_RATE);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(value, WelsEnc.MAX_FRAME_RATE);
+            lock (_lock)
+            {
+                _frameRate = value;
+                if (_encWidth != 0)
+                {
+                    float fps = value;
+                    _encoder->SetOption(ENCODER_OPTION_FRAME_RATE, &fps);
+                    if (_targetBitrateKbps == 0)
+                    {
+                        // The automatic bitrate follows the frame rate.
+                        SBitrateInfo info = default;
+                        info.iLayer = SPATIAL_LAYER_ALL;
+                        info.iBitrate = TargetBitrateBps(_encWidth, _encHeight);
+                        _encoder->SetOption(ENCODER_OPTION_BITRATE, &info);
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The number of frames from one key frame (an IDR picture) to the next, counted from the
+    /// last one, forced or not. 0 sends only the first, and then key frames only when
+    /// <see cref="ForceKeyFrame"/> asks for one. The default is 30, one a second at 30 frames a
+    /// second, so a receiver that loses one recovers without having to ask. Changes apply from
+    /// the next frame.
+    /// </summary>
+    public int KeyframeIntervalFrames
+    {
+        get => _keyframeIntervalFrames;
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
+            lock (_lock)
+            {
+                _keyframeIntervalFrames = value;
+                if (_encWidth != 0)
+                {
+                    int interval = value;
+                    _encoder->SetOption(ENCODER_OPTION_IDR_INTERVAL, &interval);
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// True when the last access unit decoded was not clean: parameter sets were missing, a
@@ -96,6 +233,95 @@ public sealed unsafe class H264Codec : IVideoEncoder
     /// False after an access unit that decodes cleanly.
     /// </summary>
     public bool KeyFrameRequired { get; private set; }
+
+    /// <summary>Makes the next encoded frame a key frame (an IDR picture, with the parameter sets).</summary>
+    public void ForceKeyFrame()
+    {
+        lock (_lock)
+        {
+            _forceKeyFrame = true;
+        }
+    }
+
+    /// <summary>Encodes one frame.</summary>
+    /// <param name="width">The frame width, at least 16.</param>
+    /// <param name="height">The frame height, at least 16.</param>
+    /// <param name="sample">The frame, tightly packed; for I420 and NV12 the chroma plane(s) follow the luma rows.</param>
+    /// <param name="pixelFormat">I420, NV12, BGRA, RGBA, BGR or RGB.</param>
+    /// <param name="codec">Must be <see cref="VideoCodecsEnum.H264"/>.</param>
+    /// <returns>The access unit, in Annex B format, or null if the rate control dropped the frame.</returns>
+    public byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
+    {
+        ArgumentNullException.ThrowIfNull(sample);
+        CheckCodec(codec);
+        lock (_lock)
+        {
+            _output.ResetWrittenCount();
+            int length = EncodeVideo(width, height, sample, RgbToI420.PackedStride(pixelFormat, width), pixelFormat, _output);
+            return length == 0 ? null : _output.WrittenSpan.ToArray();
+        }
+    }
+
+    /// <summary>Encodes one frame from a <see cref="RawImage"/>.</summary>
+    /// <param name="rawImage">
+    /// The frame, in I420, NV12, BGRA, RGBA, BGR or RGB. Its stride is that of the luma plane or
+    /// the packed pixels, 0 for tightly packed; for I420 and NV12 the chroma plane(s) follow the
+    /// luma rows.
+    /// </param>
+    /// <param name="codec">Must be <see cref="VideoCodecsEnum.H264"/>.</param>
+    /// <returns>The access unit, in Annex B format, or null if the rate control dropped the frame.</returns>
+    public byte[] EncodeVideoFaster(RawImage rawImage, VideoCodecsEnum codec)
+    {
+        ArgumentNullException.ThrowIfNull(rawImage);
+        if (rawImage.Sample == IntPtr.Zero)
+        {
+            throw new ArgumentException("The image has no pixel data.", nameof(rawImage));
+        }
+        CheckCodec(codec);
+        int stride = rawImage.Stride > 0 ? rawImage.Stride : RgbToI420.PackedStride(rawImage.PixelFormat, rawImage.Width);
+        CheckFrame(rawImage.Width, rawImage.Height, stride, rawImage.PixelFormat, nameof(rawImage));
+        lock (_lock)
+        {
+            _output.ResetWrittenCount();
+            int length = Encode(rawImage.Width, rawImage.Height, (byte*)rawImage.Sample, stride, rawImage.PixelFormat, _output);
+            return length == 0 ? null : _output.WrittenSpan.ToArray();
+        }
+    }
+
+    /// <summary>
+    /// Encodes one frame into a caller-supplied writer, without allocating a result array.
+    /// </summary>
+    /// <param name="width">The frame width, at least 16.</param>
+    /// <param name="height">The frame height, at least 16.</param>
+    /// <param name="sample">The frame; for I420 and NV12 the chroma plane(s) follow the luma rows.</param>
+    /// <param name="stride">
+    /// Bytes between rows of the luma plane or of the packed pixels, 0 for tightly packed. I420's
+    /// chroma rows are half that, rounded up, and NV12's are the same.
+    /// </param>
+    /// <param name="pixelFormat">I420, NV12, BGRA, RGBA, BGR or RGB.</param>
+    /// <param name="output">Receives the access unit, in Annex B format.</param>
+    /// <returns>The number of bytes written, 0 if the rate control dropped the frame.</returns>
+    public int EncodeVideo(int width, int height, ReadOnlySpan<byte> sample, int stride, VideoPixelFormatsEnum pixelFormat,
+                           IBufferWriter<byte> output)
+    {
+        ArgumentNullException.ThrowIfNull(output);
+        if (stride <= 0)
+        {
+            stride = RgbToI420.PackedStride(pixelFormat, width);
+        }
+        CheckFrame(width, height, stride, pixelFormat, nameof(stride));
+        if (sample.Length < RgbToI420.SourceSize(pixelFormat, stride, width, height))
+        {
+            throw new ArgumentException($"The sample is too small for a {width}x{height} {pixelFormat} frame.", nameof(sample));
+        }
+        lock (_lock)
+        {
+            fixed (byte* src = sample)
+            {
+                return Encode(width, height, src, stride, pixelFormat, output);
+            }
+        }
+    }
 
     /// <summary>
     /// Decodes one access unit.
@@ -216,18 +442,6 @@ public sealed unsafe class H264Codec : IVideoEncoder
         }
     }
 
-    /// <summary>Not supported yet: the H.264 encoder has not been ported.</summary>
-    public byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec) =>
-        throw new NotSupportedException("SIPSorcery.H264 only decodes so far; the encoder has not been ported yet.");
-
-    /// <summary>Not supported yet: the H.264 encoder has not been ported.</summary>
-    public byte[] EncodeVideoFaster(RawImage rawImage, VideoCodecsEnum codec) =>
-        throw new NotSupportedException("SIPSorcery.H264 only decodes so far; the encoder has not been ported yet.");
-
-    /// <summary>Does nothing until the encoder is ported, so a key frame request can't break a receive-only session.</summary>
-    public void ForceKeyFrame()
-    { }
-
     /// <inheritdoc/>
     public void Dispose()
     {
@@ -256,6 +470,266 @@ public sealed unsafe class H264Codec : IVideoEncoder
         NativeMemory.Free(_rawBuffer);
         _rawBuffer = null;
         _rawBufferSize = 0;
+
+        if (_encoder != null)
+        {
+            _encoder->Uninitialize();
+            WelsEnc.WelsDestroySVCEncoder(_encoder);
+            _encoder = null;
+        }
+        _encWidth = _encHeight = 0;
+
+        NativeMemory.Free(_bsInfo);
+        _bsInfo = null;
+        NativeMemory.Free(_yuvBuffer);
+        _yuvBuffer = null;
+        _yuvBufferSize = 0;
+    }
+
+    private static void CheckCodec(VideoCodecsEnum codec)
+    {
+        if (codec != VideoCodecsEnum.H264)
+        {
+            throw new NotSupportedException($"SIPSorcery.H264 encodes H264, not {codec}.");
+        }
+    }
+
+    private static void CheckFrame(int width, int height, int stride, VideoPixelFormatsEnum pixelFormat, string strideName)
+    {
+        if (!RgbToI420.IsSupported(pixelFormat))
+        {
+            throw new NotSupportedException($"SIPSorcery.H264 does not encode {pixelFormat} frames; use I420, NV12, BGRA, RGBA, BGR or RGB.");
+        }
+        if (width < MIN_ENCODE_DIMENSION || height < MIN_ENCODE_DIMENSION)
+        {
+            throw new ArgumentException($"A {width}x{height} frame is too small to encode; the width and height must be at least {MIN_ENCODE_DIMENSION}.");
+        }
+        if (stride < RgbToI420.MinStride(pixelFormat, width))
+        {
+            throw new ArgumentException($"A stride of {stride} is too small for a {width} pixel wide {pixelFormat} frame.", strideName);
+        }
+    }
+
+    // Now, in milliseconds since the first frame, the unit the encoder's timestamps take. Counted
+    // from the first frame rather than from the codec's creation, so time spent waiting for a
+    // peer to connect does not show in the encoder's measure of the frame rate.
+    private long ArrivalTimeMs()
+    {
+        if (_firstFrameTicks == 0)
+        {
+            _firstFrameTicks = Stopwatch.GetTimestamp();
+        }
+        return (long)Stopwatch.GetElapsedTime(_firstFrameTicks).TotalMilliseconds;
+    }
+
+    private int TargetBitrateBps(int width, int height)
+    {
+        if (_targetBitrateKbps > 0)
+        {
+            return (int)Math.Min((long)_targetBitrateKbps * 1000, int.MaxValue);
+        }
+        double auto = (double)width * height * _frameRate * AUTO_BITS_PER_PIXEL;
+        return (int)Math.Clamp(auto, MIN_AUTO_BITRATE_BPS, int.MaxValue);
+    }
+
+    /// <summary>
+    /// Encodes the frame at <paramref name="src"/> and writes the access unit to
+    /// <paramref name="output"/>. Called under the lock with the frame checked.
+    /// </summary>
+    private int Encode(int width, int height, byte* src, int stride, VideoPixelFormatsEnum pixelFormat, IBufferWriter<byte> output)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureEncoder(width, height);
+
+        SSourcePicture pic = default;
+        pic.iColorFormat = (int)videoFormatI420;
+        pic.iPicWidth = width;
+        pic.iPicHeight = height;
+        pic.uiTimeStamp = ArrivalTimeMs();
+
+        int uvStride = (width + 1) >> 1;
+        int chromaSize = uvStride * ((height + 1) >> 1);
+        switch (pixelFormat)
+        {
+            case VideoPixelFormatsEnum.I420:
+            {
+                int srcUvStride = (stride + 1) >> 1;
+                byte* u = src + (long)stride * height;
+                pic.iStride[0] = stride;
+                pic.iStride[1] = pic.iStride[2] = srcUvStride;
+                pic.pData[0] = src;
+                pic.pData[1] = u;
+                pic.pData[2] = u + (long)srcUvStride * ((height + 1) >> 1);
+                break;
+            }
+            case VideoPixelFormatsEnum.NV12:
+            {
+                byte* u = EnsureYuvBuffer(2 * chromaSize);
+                byte* v = u + chromaSize;
+                RgbToI420.SplitNv12(src, stride, width, height, u, v, uvStride);
+                pic.iStride[0] = stride;
+                pic.iStride[1] = pic.iStride[2] = uvStride;
+                pic.pData[0] = src;
+                pic.pData[1] = u;
+                pic.pData[2] = v;
+                break;
+            }
+            default:
+            {
+                int lumaSize = width * height;
+                byte* y = EnsureYuvBuffer(lumaSize + 2 * chromaSize);
+                byte* u = y + lumaSize;
+                byte* v = u + chromaSize;
+                RgbToI420.ConvertRgb(src, stride, pixelFormat, width, height, y, width, u, v, uvStride);
+                pic.iStride[0] = width;
+                pic.iStride[1] = pic.iStride[2] = uvStride;
+                pic.pData[0] = y;
+                pic.pData[1] = u;
+                pic.pData[2] = v;
+                break;
+            }
+        }
+
+        if (_forceKeyFrame)
+        {
+            _forceKeyFrame = false;
+            _encoder->ForceIntraFrame(true);
+        }
+
+        SFrameBSInfo* info = _bsInfo;
+        int rv = _encoder->EncodeFrame(&pic, info);
+        if (rv != (int)cmResultSuccess)
+        {
+            logger.LogWarning("H264 encode of a {Width}x{Height} frame failed with {Result}.", width, height, (CM_RETURN)rv);
+            if (rv == (int)cmMallocMemeError)
+            {
+                // The encoder freed its context; initialise it again, with a key frame, next time.
+                _encWidth = _encHeight = 0;
+            }
+            return 0;
+        }
+
+        if (info->eFrameType == videoFrameTypeSkip || info->eFrameType == videoFrameTypeInvalid)
+        {
+            return 0;
+        }
+
+        // The layers' NAL units, each with its start code, in order: the access unit.
+        int length = 0;
+        for (int i = 0; i < info->iLayerNum; i++)
+        {
+            ref SLayerBSInfo layer = ref info->sLayerInfo[i];
+            int layerSize = 0;
+            for (int n = 0; n < layer.iNalCount; n++)
+            {
+                layerSize += layer.pNalLengthInByte[n];
+            }
+            if (layerSize > 0)
+            {
+                new ReadOnlySpan<byte>(layer.pBsBuf, layerSize).CopyTo(output.GetSpan(layerSize));
+                output.Advance(layerSize);
+                length += layerSize;
+            }
+        }
+        return length;
+    }
+
+    private byte* EnsureYuvBuffer(int size)
+    {
+        if (_yuvBufferSize < size)
+        {
+            NativeMemory.Free(_yuvBuffer);
+            _yuvBuffer = null;
+            _yuvBufferSize = 0;
+            _yuvBuffer = (byte*)NativeMemory.Alloc((nuint)size);
+            _yuvBufferSize = size;
+        }
+        return _yuvBuffer;
+    }
+
+    /// <summary>
+    /// Creates the encoder if there is none yet, and initialises it for the frame size if it
+    /// is not already, as libwebrtc's H264EncoderImpl sets OpenH264 up.
+    /// </summary>
+    private void EnsureEncoder(int width, int height)
+    {
+        if (_encoder == null)
+        {
+            CWelsH264SVCEncoder* encoder = null;
+            if (WelsEnc.WelsCreateSVCEncoder(&encoder) != 0 || encoder == null)
+            {
+                throw new InvalidOperationException("The H.264 encoder could not be created.");
+            }
+
+            // The encoder's own log lines go to the codec's logger.
+            delegate*<void*, int, string, void> callback = &OnEncoderLog;
+            encoder->SetOption(ENCODER_OPTION_TRACE_CALLBACK, &callback);
+            int level = logger.IsEnabled(LogLevel.Trace) ? WELS_LOG_INFO :
+                logger.IsEnabled(LogLevel.Debug) ? WELS_LOG_WARNING : WELS_LOG_ERROR;
+            encoder->SetOption(ENCODER_OPTION_TRACE_LEVEL, &level);
+
+            _encoder = encoder;
+            _bsInfo = (SFrameBSInfo*)NativeMemory.AllocZeroed((nuint)sizeof(SFrameBSInfo));
+        }
+
+        if (_encWidth == width && _encHeight == height)
+        {
+            return;
+        }
+
+        SEncParamExt param = default;
+        _encoder->GetDefaultParams(&param);
+        int bitrate = TargetBitrateBps(width, height);
+        param.iUsageType = CAMERA_VIDEO_REAL_TIME;
+        param.iPicWidth = width;
+        param.iPicHeight = height;
+        param.iTargetBitrate = bitrate;
+        // As libwebrtc: OpenH264's maximum bitrate is not the session's, so it is left unset.
+        param.iMaxBitrate = UNSPECIFIED_BIT_RATE;
+        param.iRCMode = RC_BITRATE_MODE;
+        param.fMaxFrameRate = _frameRate;
+        param.bEnableFrameSkip = true;
+        param.uiIntraPeriod = (uint)_keyframeIntervalFrames;
+        param.uiMaxNalSize = 0;
+        // The same parameter set ids for the whole stream, rather than new ones at each IDR.
+        param.eSpsPpsIdStrategy = SPS_LISTING;
+        param.iMultipleThreadIdc = 1;
+        param.iSpatialLayerNum = 1;
+        param.iTemporalLayerNum = 1;
+        ref SSpatialLayerConfig layer = ref param.sSpatialLayers[0];
+        layer.iVideoWidth = width;
+        layer.iVideoHeight = height;
+        layer.fFrameRate = _frameRate;
+        layer.iSpatialBitrate = bitrate;
+        layer.iMaxSpatialBitrate = UNSPECIFIED_BIT_RATE;
+        layer.sSliceArgument.uiSliceMode = SM_SINGLE_SLICE;
+
+        _encWidth = _encHeight = 0;
+        int rv = _encoder->InitializeExt(&param);
+        if (rv != (int)cmResultSuccess)
+        {
+            throw new InvalidOperationException($"The H.264 encoder could not be initialised for a {width}x{height} frame ({(CM_RETURN)rv}).");
+        }
+        _encWidth = width;
+        _encHeight = height;
+        // Whatever key frame was asked for, a new stream starts with one.
+        _forceKeyFrame = false;
+    }
+
+    private static void OnEncoderLog(void* ctx, int level, string message)
+    {
+        if (level <= WELS_LOG_ERROR)
+        {
+            logger.LogWarning("H264 encoder: {Message}", message);
+        }
+        else if (level <= WELS_LOG_WARNING)
+        {
+            logger.LogDebug("H264 encoder: {Message}", message);
+        }
+        else
+        {
+            logger.LogTrace("H264 encoder: {Message}", message);
+        }
     }
 
     private static void Validate(byte[] encodedSample, VideoCodecsEnum codec)

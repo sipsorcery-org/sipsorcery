@@ -125,6 +125,7 @@
     <Project Path="examples/WebRTCExamples/WebRTCGetStarted/WebRTCGetStarted.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCGetStartedDataChannel/WebRTCGetStartedDataChannel.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCGetStartedFFmpeg/WebRTCGetStartedFFmpeg.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCGetStartedH264Net/WebRTCGetStartedH264Net.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCGetStartedLibvpx/WebRTCGetStartedLibvpx.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCMaxHeadroom/WebRTCMaxHeadroom.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCMp4Source/WebRTCMp4Source.csproj" />

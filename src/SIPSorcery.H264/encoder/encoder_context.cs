@@ -5,7 +5,9 @@
 // SRefList, SLTRState, SSpatialPicIndex, SStrideTables and the sWelsEncCtx
 // fields that parameter set generation and writing (E1), the CAVLC
 // macroblock writer (E3), the I-slice macroblock coder (E4), the frame set-up
-// (E4b), the P-slice coder (E5) and the reference list manager (E5b) use. The
+// (E4b), the P-slice coder (E5), the reference list manager (E5b), the rate
+// control (E6), the preprocessing (E7) and the init, frame loop and
+// statistics (E8) use. The
 // remaining fields arrive with the code that reads them, in the upstream
 // order. The port never copies or
 // memsets the context as a whole, so its layout only needs to hold these
@@ -24,6 +26,7 @@
 // 26 Nov 2026  Claude          SLTRState, pReferenceStrategy, pLtr and bRefOfCurTidIsLtr (E5b).
 // 26 Nov 2026  Claude          The rate control check window fields (E6).
 // 27 Nov 2026  Claude          pVpp (E7).
+// 27 Nov 2026  Claude          The statistics fields and the port's pLastFsnr (E8).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -220,8 +223,26 @@ internal unsafe struct sWelsEncCtx
     public SParaSetOffset* pPSOVector;
     public CMemoryAlign* pMemAlign;
 
+    //related to Statistics
+    public int64_t uiStartTimestamp;
+    public InlineArray4<SEncoderStatistics> sEncoderStatistics; // [MAX_DEPENDENCY_LAYER]
+    public int32_t iStatisticsLogInterval;
+    public int64_t iLastStatisticsLogTs;
+
     public int32_t iEncoderError;
+    // mutexEncoderError guards iEncoderError between slice threads, which the port does not run.
     public bool bDeliveryFlag;
+    // sWelsCabacContexts comes with CABAC (Phase 4).
 
     public int64_t uiLastTimestamp;
+    // pDynamicBsBuffer comes with the threaded dynamic slicing.
+
+    // Port addition for SIPSorcery: the reconstruction of the last coded
+    // layer. WelsEncoderEncodeExt sets these where upstream's frame dump
+    // writes fsnr, since pDecPic has moved on to the next buffer by the time
+    // EncodeFrame returns. bLastFsnrDeblocked is false when the encoder left
+    // the picture unfiltered: a non-reference frame of the top temporal
+    // layer, or a frame that was not coded.
+    public SPicture* pLastFsnr;
+    public bool bLastFsnrDeblocked;
 }

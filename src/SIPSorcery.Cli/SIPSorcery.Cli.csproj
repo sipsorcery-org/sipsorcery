@@ -74,6 +74,9 @@
     <!-- Managed AV1 encoder (av1rt, no native deps) for the route "video-encoder av1.net" test
          pattern and the webrtc video-bench av1.net stage. -->
     <ProjectReference Include="..\SIPSorcery.AV1\SIPSorcery.AV1.csproj" />
+    <!-- Managed H.264 encoder (the OpenH264 port, no native deps): the h264.net encoder of the webrtc
+         publishing verbs, browser-test echo and video-bench. See RefuseToPackH264Net below. -->
+    <ProjectReference Include="..\SIPSorcery.H264\SIPSorcery.H264.csproj" />
     <!-- WebRTC client for the OpenAI Realtime API, used by the "bridge web openai" agent endpoint.
          No longer published as its own NuGet package; the source lives with the OpenAI examples
          and is bundled into the CLI tool package. -->
@@ -85,5 +88,13 @@
     <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
     <None Include="..\SIPSorcery\icon.png" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
+
+  <!-- SIPSorcery.H264 is not published until the H.264 patent question is settled (its IsPackable is
+       false; see thirdparty/openh264-dotnet-port/diary/2026-11-24-Claude-Opus-5.5/plan.md), and the tool
+       package would bundle it. So packing the tool stops here until that is decided: then set the
+       AllowH264NetInToolPackage property to true, on the command line or in this file. -->
+  <Target Name="RefuseToPackH264Net" BeforeTargets="GenerateNuspec" Condition="'$(AllowH264NetInToolPackage)' != 'true'">
+    <Error Text="The sipsorcery tool references SIPSorcery.H264, which is not published until the H.264 patent question is settled. Pass -p:AllowH264NetInToolPackage=true to pack it anyway, or remove the reference." />
+  </Target>
 
 </Project>
