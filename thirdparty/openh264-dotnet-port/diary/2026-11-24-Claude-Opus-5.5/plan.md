@@ -37,6 +37,7 @@ was kept for the VP8 encoder.
 | P5.3 SIMD motion compensation | **Done** (27 Nov) | `common/mc_simd.cs`: the three half-pel filters, the twelve quarter-pel positions built from them as the C kernels build them, `PixelAvg`, the 16-wide copy, and chroma at 8 and 4 wide. All Vector128, with x86 and Arm branches where it has no portable form (the saturating packs, `pmaddwd` and the rounded average, now in `common/simd.cs`). `InitMcFunc` chooses them in place of upstream's X86_ASM and HAVE_NEON blocks. They take any width, in strips of 16, 8 and 4 columns, the last overlapping the one before when the width isn't made of those (the encoder's 17 and 9). New `mc_simd_unittest`: every `mc` fixture row gives the C build's hash through the SIMD table, and every slot equals the C# C slot, the samples round the block included, at every width and height its callers use and every fractional position. **Every table, hash and test still passes.** 8 planted bugs each fail rows (see the notes). Encoding is 1.6 times as fast again: 152, 48.9 and 21.3 frames a second at 480p, 720p and 1080p (`video-bench`: 216, 77 and 33). Decoding is 1.65 to 1.85 times as fast: 516, 146 and 66.9 (from 281, 88 and 38; `video-bench` 720p: 119). UnitTest: 9645. TestVectors: 832. |
 | P5.4 SIMD deblocking | **Done** (27 Nov) | `common/deblocking_common_simd.cs`: the 12 loop filter edge kernels, luma and chroma, bS < 4 and bS = 4, across horizontal and vertical edges, and the single-plane chroma ones. Branchless: every sample along the edge is worked out in 16-bit lanes and the edge decisions pick between filtered and unfiltered. The vertical edges transpose 16 rows to columns and back, reading and writing only the columns C does. Both `DeblockingInit`s choose them in place of upstream's X86_ASM and HAVE_NEON blocks; the encoder's `DeblockingBSCalc` stays C. `expand_pic` gets no SIMD version: it is 0.5% of the decode, and its copies and fills are already the runtime's vectorised `CopyBlockUnaligned` and `InitBlockUnaligned`. New `deblocking_common_simd_unittest`: every edge filter `deblock` fixture row gives the C build's hash through the SIMD kernel; each kernel equals the C# C kernel over 3000 edges of every kind with random alpha, beta and tc0, the whole plane compared; and each table slot holds its own kernel. **Every table, hash and test still passes.** 11 planted bugs each fail tests (see the notes). Decoding is 1.6 times as fast, back to back with P5.3's build: 924, 291 and 126 frames a second at 480p, 720p and 1080p, from 585, 178 and 78.6 (`video-bench` 720p: 154 and 155 in two runs, from 119 and 124). Encoding is 10 to 14% faster: 175, 56.3 and 24.2, from 157, 49.2 and 22.0 (`video-bench`: 259, 82 and 38, from 222, 77 and 33). UnitTest: 10036. TestVectors: 832. |
 | P5.5 SIMD transforms and quantisation | **Done** (27 Nov) | `common/transform_simd.cs`: the 4x4 inverse transform, two blocks at a time, which the encoder and decoder share. `encoder/encode_mb_aux_simd.cs`: the forward DCTs (one block and four), the 4x4 DC Hadamard and the four quantisers, `QuantFour4x4Max` included. `encoder/decode_mb_aux_simd.cs`: the dequantisers, the inverse DC Hadamard and the three reconstructions (one block, four, and the I16x16 DC-only one). `decoder/decode_mb_aux_simd.cs`: `IdctResAddPred` and the four-block version, which keeps the C test that skips a block with nothing to add. `WelsInitEncodingFuncs`, `WelsInitReconstructionFuncs` and the decoder's `InitPredFunc` choose them in place of upstream's X86_ASM and HAVE_NEON blocks. The 8x8 IDCT stays C, as upstream's does. All of them are exact: the notes say where 16 bits are enough and where the IDCT needs 32. `common/simd.cs` gains an unsigned high multiply and an upper 8-byte store. New `encode_mb_aux_simd_unittest`, `enc_decode_mb_aux_simd_unittest` and `decode_mb_aux_simd_unittest`: every fixture row of these kernels gives the C build's hash through the SIMD kernel; each kernel equals the C# C kernel over 3000 trials, with coefficients of every kind (any int16, extremes, typical, sparse), the tables' FF and MF and any others, and predictions of every kind at random strides, the buffers round the block compared; and each table slot holds its own kernel. **Every table, hash and test still passes.** 17 planted bugs each fail tests (see the notes). Encoding is 1.4 times as fast, back to back with P5.4's build: 248, 77.2 to 81.5 and 33.5 frames a second at 480p, 720p and 1080p, from 172, 55.0 to 55.1 and 23.8 (`video-bench`: 391, 130 and 54, from 239, 85 and 38). Decoding is 3 to 8% faster: 941, 309 and 130, from 914, 287 and 124 (`video-bench` 720p: 169 and 173 in two runs, from 153 and 157). UnitTest: 10790. TestVectors: 832. |
+| P5.6 SIMD VAA and intra prediction | **Done** (27 Nov) | `processing/vaacalcfuncs_simd.cs`: the five VAA kernels the encoder's preprocessing calls (the 8x8 SADs alone; with the 16x16 sums and square sums; with the squared differences too; with the 8x8 sums of differences and largest differences; and all of them), one body inlined with constant flags. `InitVaaFuncs` chooses them in place of upstream's X86_ASM and HAVE_NEON versions. `common/intra_pred_common_simd.cs`: the 16x16 V and H predictors, and the helpers from which `encoder/get_intra_predictor_simd.cs` and `decoder/get_intra_predictor_simd.cs` build the 16x16 plane, DC, DC left, DC top and DC 128 predictors and the chroma plane predictor. `WelsInitIntraPredFuncs` and the decoder's `InitPredFunc` choose them. The other chroma predictors, the 4x4 ones and the decoder's 8x8 ones stay C (see the notes). `common/simd.cs` gains half sums, square sums and absolute differences. New `vaacalc_simd_unittest` and `get_intra_predictor_simd_unittest`: every fixture row of these kernels gives the C build's hash through the SIMD kernel, `CVAACalculation`'s rows included. Each kernel equals the C# C kernel over 3000 trials: the VAA at random sizes (widths 1 to 80, heights 1 to 64) and strides, every output compared, and the predictors with neighbours of 8 kinds, the plane's extremes included. Each table slot holds its own kernel. **Every table, hash and test still passes.** 22 planted bugs each fail tests (see the notes). Encoding is 1.5 times as fast, back to back with P5.5's build: 347 to 368, 115 to 117 and 50 frames a second at 480p, 720p and 1080p, from 231 to 238, 79 and 34. `video-bench`, whose frames and timestamps differ, gains 8 to 15%: 366 to 399, 133 to 141 and 58 to 60, from 342 to 364, 116 to 123 and 51 to 52. Decoding doesn't change (879 to 921, 275 to 290 and 115 to 124, from 888 to 899, 274 to 283 and 117 to 124): the 16x16 predictors were under 0.5% of it. UnitTest: 11084. TestVectors: 832. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -1750,6 +1751,97 @@ Notes from P5.5:
 
   P5.6's `VAACalcSadBgd_c` is now nearly a quarter of the encode, and
   `WelsI16x16LumaPredPlane_c` is the biggest of the intra predictors.
+
+Notes from P5.6:
+
+- **What it takes.** All five VAA kernels, of which the encoder's
+  preprocessing calls `VAACalcSadBgd_c` most. Then the seven 16x16 luma
+  intra predictors of the encoder and the decoder, the plane one the biggest,
+  and the chroma plane predictor of each.
+- **The VAA kernels.** One row of a macroblock is one vector, and its two
+  8-byte halves are the two 8x8 blocks side by side. The SAD instruction
+  (on Arm64, absolute differences and pairwise widening adds) sums each half
+  on its own. That gives the 8x8 SADs, and against zero the sums of the
+  current and reference samples, whose difference is C's sum of differences.
+  The squares go into 32-bit lanes: a macroblock's are at most 256·65025.
+  The largest difference is a byte maximum down the rows, then across each
+  half by 64-bit shifts of 32, 16 and 8. The five kernels share one body,
+  inlined with constant flags, so each does only the work it needs. The rows
+  step as C's do, `(stride << 4) - iPicWidth` after each row of macroblocks,
+  which matters when the width isn't a multiple of 16.
+- **The plane predictors.** For 16x16, b and c lie within ±717, and for the
+  chroma 8x8 within ±1355. Every `a + b·x + c·y + 16` lies within
+  -11456..19648, so 16-bit lanes are exact. The arithmetic shift by 5 and
+  the unsigned saturating pack are `WelsClip1`. The gradient sums H and V
+  stay scalar, as in C: they are 8 or 4 multiplies. The chroma version does
+  two rows a vector.
+- **The DC predictors.** The top sum is the SAD instruction against zero.
+  The left sum is a column, so it stays a scalar loop. The fill is 16
+  stores. The encoder writes its prediction packed at stride 16 and the
+  decoder in place, through the same helpers.
+- **Left C.** The other chroma predictors, the 4x4 ones and the decoder's
+  8x8 ones (only High profile streams use them): each of their rows is one
+  8 or 4 byte store already, and upstream's MMX versions of some are no
+  wider. The `Combined3` intra cost kernels stay NULL as in the C build:
+  upstream has them only in assembly, and without them the encoder predicts
+  and costs each mode on its own. The rest of the tail stays C as well:
+  `WelsCalculateSingleCtr4x4_c` 1.6% of the encode, `DeblockingBSCalc_c`
+  1.3%, `CavlcParamCal_c` 1.1%, `WelsCopy16x16_c` 0.6%, `WelsNonZeroCount_c`
+  0.2%, the scans, `WelsGetNoneZeroCount_c` and the 2x2 chroma DC.
+- **Planted bugs.** Each was planted one at a time and restored from a copy,
+  checked by md5. The unit and test vector tests that fail:
+  - The VAA's left 8x8 SAD given the right one: 151 and 193.
+  - The left sum of differences negated: 68 and 4.
+  - The largest difference missing its last step: 23 and 6.
+  - The right largest difference taken from the wrong byte: 18 and 4.
+  - The squared differences taken from the current samples: 84 and 0. The
+    test vectors' streams don't depend on the squared differences.
+  - The rows stepped from the whole macroblocks' width: 23 and 0. Every
+    test vector's width is a multiple of 16.
+  - 7 rows a block: 175 and 164.
+  - `SquareAdd` multiplying the upper 8 bytes by the lower: 119 and 1.
+  - `SadHalves` taking the upper half from the wrong lane: 151 and 229.
+  - The 16x16 plane's last column one step short: 14 and 391.
+  - The 16x16 plane rounding with 15: 14 and 396.
+  - The 16x16 plane's left half shifted unsigned: 2 and 16. Only a
+    negative value shows it.
+  - The chroma plane stepping one row at a time where it holds two: 14 and
+    429.
+  - The chroma plane's b rounded with 15: 2 and 217.
+  - The 16x16 H predictor writing its rows at stride 16: 7 and 301.
+  - The DC left sum missing the last row: 28 and 422.
+  - The DC top sum starting from the corner: 26 and 389.
+  - The encoder's DC rounding with 15: 1 and 159.
+  - The decoder's DC top summing the left column: 7 and 254.
+  - The encoder's table giving DC left the DC top predictor: 1 and 298.
+  - The decoder's table putting the chroma plane in the DC slot: 1 and
+    363.
+  - The VAA table keeping `VAACalcSadBgd_c`: 1 and 0. The output is the
+    same by design, so the table test is the check.
+- **The profile after**, 1280x720. Encoding:
+  - The VAA: 1.4% of the samples (`VAACalcSadBgd_simd` 1.0% and `VaaFrame`,
+    their shared body, 0.4% where it ran outside them), from 23.1%
+    (`VAACalcSadBgd_c` 22.5% and `VAACalcSadVar_c` 0.6%).
+  - The 16x16 predictors: 2.0% (the plane one 0.9%, H 0.5%, DC 0.4%, V
+    0.2%), from 5.8% (the plane one 4.4%, H 0.6%, DC 0.5%, V 0.3%). The
+    plane one's gradient sums are what's left of it.
+  - The rest: `WelsSampleSatd16x16_simd` 10.0%, `WelsMdInterMbLoop` 6.9%,
+    `McHorVer22_simd` 5.8%, `WelsEncInterY` 4.5%,
+    `McHorVer22ColumnStrip8_simd` 3.1%, `WelsSampleSad16x16_simd` 2.7%.
+    The benchmark's own frame rendering is 4.8%.
+  - The C tail: `WelsCalculateSingleCtr4x4_c` 2.0%, `DeblockingBSCalc_c`
+    1.6%, `CavlcParamCal_c` 1.3%, `WelsCopy16x16_c` 0.8%,
+    `WelsNonZeroCount_c` 0.4%. No C kernel is above 2% of the encode now.
+
+  Decoding is as it was: `WelsResidualBlockCavlc` 8.0%, `McHorVer22_simd`
+  6.6%, `WelsActualDecodeMbCavlcPSlice` 6.2%, `DeblockingBsMarginalMBAvcbase`
+  6.2%, `DeblockLumaLt4H_simd` 5.9%, `IdctFourResAddPred_simd` 4.3%. Most
+  of it is now the CAVLC parsing, the motion compensation already in SIMD,
+  and the per-macroblock control code around them.
+
+  With that, Phase 5's kernel steps are done. What's left of the profile is
+  spread over the mode decision and parsing code, and is no longer a few
+  kernels. P5.7, slice threading, is the step after.
 
 ## 1. Goal
 

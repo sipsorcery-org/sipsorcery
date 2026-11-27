@@ -4,7 +4,7 @@
 // Description: Helpers for the SIMD kernels (Phase 5): unaligned loads and
 // stores of 4, 8 and 16 samples, the interleaves, saturating packs, rounded
 // average and unsigned high multiply Vector128 has no portable form of, and the
-// SAD step. Not a port:
+// SAD, sum and square sum steps. Not a port:
 // upstream's SIMD kernels are assembly.
 //
 // The kernels are put in the function tables only where WelsCpuHasSimd128 holds,
@@ -19,6 +19,7 @@
 // 27 Nov 2026  Claude          Narrow loads and stores, packs and averaging for MC (P5.3).
 // 27 Nov 2026  Claude          Byte interleaves for the deblocking transposes (P5.4).
 // 27 Nov 2026  Claude          The upper 8 byte store and the unsigned high multiply (P5.5).
+// 27 Nov 2026  Claude          Half sums, square sums and absolute differences for the VAA (P5.6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -50,9 +51,11 @@ internal static unsafe class Simd
 
     /// <summary>
     /// <paramref name="acc"/> plus the absolute differences of <paramref name="a"/> and
-    /// <paramref name="b"/>. Where they land in the lanes differs between the x86 and Arm
-    /// branches; <see cref="SadTotal"/> adds them up either way. Each lane takes at most 2040 a
-    /// step, so 32 steps can't overflow it.
+    /// <paramref name="b"/>. Each 64-bit half of the accumulator takes the differences of its
+    /// own 8 bytes, but where they land in its lanes differs between the x86 and Arm branches;
+    /// <see cref="SadTotal"/> and <see cref="SadHalves"/> add them up either way. Each lane takes
+    /// at most 2040 a step, so 32 steps can't overflow it. With <paramref name="b"/> zero, it
+    /// sums <paramref name="a"/>.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector128<ushort> SadAdd(Vector128<ushort> acc, Vector128<byte> a, Vector128<byte> b)
@@ -66,8 +69,9 @@ internal static unsafe class Simd
         {
             return AdvSimd.AddPairwiseWideningAndAdd(acc, AdvSimd.AbsoluteDifference(a, b));
         }
-        Vector128<byte> d = Vector128.Max(a, b) - Vector128.Min(a, b);
-        return acc + Vector128.WidenLower(d) + Vector128.WidenUpper(d);
+        // Pairs of neighbouring bytes, as the Arm branch.
+        Vector128<ushort> d = (Vector128.Max(a, b) - Vector128.Min(a, b)).AsUInt16();
+        return acc + (d & Vector128.Create((ushort)0xFF)) + Vector128.ShiftRightLogical(d, 8);
     }
 
     /// <summary>The sum of the lanes of a <see cref="SadAdd"/> accumulator.</summary>
@@ -79,6 +83,70 @@ internal static unsafe class Simd
             return acc.GetElement(0) + acc.GetElement(4);
         }
         return (int32_t)Vector128.Sum(Vector128.WidenLower(acc) + Vector128.WidenUpper(acc));
+    }
+
+    /// <summary>
+    /// The sums of each 64-bit half of a <see cref="SadAdd"/> accumulator: of the steps' bytes 0
+    /// to 7 in <paramref name="iLo"/> and 8 to 15 in <paramref name="iHi"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void SadHalves(Vector128<ushort> acc, out int32_t iLo, out int32_t iHi)
+    {
+        if (Sse2.IsSupported)
+        {
+            iLo = acc.GetElement(0);
+            iHi = acc.GetElement(4);
+            return;
+        }
+        Vector128<uint> w = AddPairs(acc);
+        iLo = (int32_t)(w.GetElement(0) + w.GetElement(1));
+        iHi = (int32_t)(w.GetElement(2) + w.GetElement(3));
+    }
+
+    /// <summary>Neighbouring pairs of 16-bit lanes added into 32-bit lanes.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<uint> AddPairs(Vector128<ushort> v)
+    {
+        if (AdvSimd.IsSupported)
+        {
+            return AdvSimd.AddPairwiseWidening(v);
+        }
+        Vector128<uint> u = v.AsUInt32();
+        return (u & Vector128.Create(0xFFFFu)) + Vector128.ShiftRightLogical(u, 16);
+    }
+
+    /// <summary>
+    /// <paramref name="acc"/> plus the squares of the 16 bytes of <paramref name="v"/>, in
+    /// 32-bit lanes. Which lane takes which square differs between the branches; sum all four.
+    /// Each lane takes at most 4 * 65025 a step.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<int> SquareAdd(Vector128<int> acc, Vector128<byte> v)
+    {
+        if (Sse2.IsSupported)
+        {
+            Vector128<short> lo = Lo16(v), hi = Hi16(v);
+            return Sse2.Add(acc, Sse2.Add(Sse2.MultiplyAddAdjacent(lo, lo), Sse2.MultiplyAddAdjacent(hi, hi)));
+        }
+        if (AdvSimd.IsSupported)
+        {
+            // A byte's square fits 16 bits.
+            Vector128<uint> a = AdvSimd.AddPairwiseWideningAndAdd(acc.AsUInt32(), AdvSimd.MultiplyWideningLower(v.GetLower(), v.GetLower()));
+            return AdvSimd.AddPairwiseWideningAndAdd(a, AdvSimd.MultiplyWideningUpper(v, v)).AsInt32();
+        }
+        Vector128<ushort> wl = Vector128.WidenLower(v), wh = Vector128.WidenUpper(v);
+        return acc + (AddPairs(wl * wl) + AddPairs(wh * wh)).AsInt32();
+    }
+
+    /// <summary>|a - b|, lane by lane.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<byte> AbsDiff(Vector128<byte> a, Vector128<byte> b)
+    {
+        if (AdvSimd.IsSupported)
+        {
+            return AdvSimd.AbsoluteDifference(a, b);
+        }
+        return Vector128.Max(a, b) - Vector128.Min(a, b);
     }
 
     /// <summary>The differences of 8 samples of each row, as 16-bit lanes.</summary>

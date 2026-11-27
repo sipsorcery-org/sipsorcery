@@ -11,6 +11,7 @@
 //
 // History:
 // 25 Nov 2026  Claude          Created.
+// 27 Nov 2026  Claude          The n x n runner shared with the SIMD tests (P5.6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -86,31 +87,36 @@ public unsafe class get_intra_predictor_unittest
     public void Predictor_MatchesCBuild(string kernel, string kase, string sha1)
     {
         var row = new KernelFixture("get_intra_predictor", kernel, kase, sha1);
+        var (f, n) = Pred(kernel);
+        if (f != 0)
+        {
+            Assert.Equal(sha1, Hash((delegate*<byte*, int, void>)f, n, row));
+            return;
+        }
+
+        delegate*<byte*, int, bool, bool, void> f8 = Pred8x8(kernel);
+        Assert.True(f8 != null, $"No C# kernel {kernel}.");
+        var r = new FixtureRng((uint)row.Param("seed"));
+        int stride = row.Param("stride");
+        using var plane = new NativeBuffer(stride * 10);
+        r.Fill(plane.Span);
+
+        f8(plane.Ptr + stride + 4, stride, row.Param("tl") != 0, row.Param("tr") != 0);
+
+        Assert.Equal(sha1, FixtureHasher.Of(plane.Span));
+    }
+
+    // A random plane of n + 2 rows, the n x n block at row 1, column 4, predicted in place.
+    internal static string Hash(delegate*<byte*, int, void> f, int n, KernelFixture row)
+    {
         int stride = row.Param("stride");
         var r = new FixtureRng((uint)row.Param("seed"));
-
-        // A random plane of n + 2 rows, the block at row 1, column 4.
-        var (f, n) = Pred(kernel);
-        delegate*<byte*, int, bool, bool, void> f8 = null;
-        if (f == 0)
-        {
-            f8 = Pred8x8(kernel);
-            Assert.True(f8 != null, $"No C# kernel {kernel}.");
-            n = 8;
-        }
         using var plane = new NativeBuffer(stride * (n + 2));
         r.Fill(plane.Span);
 
-        if (f != 0)
-        {
-            ((delegate*<byte*, int, void>)f)(plane.Ptr + stride + 4, stride);
-        }
-        else
-        {
-            f8(plane.Ptr + stride + 4, stride, row.Param("tl") != 0, row.Param("tr") != 0);
-        }
+        f(plane.Ptr + stride + 4, stride);
 
-        Assert.Equal(sha1, FixtureHasher.Of(plane.Span));
+        return FixtureHasher.Of(plane.Span);
     }
 
     [Fact]

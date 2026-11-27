@@ -8,15 +8,18 @@
 // stride 16) from the reconstructed neighbours at pRef/kiStride.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
-// C kernels only; the SIMD variants are not ported. The I16x16 V and H
-// predictors are the shared ones in common/intra_pred_common.cs. The C
-// stack arrays (uiSrc, kuiVec1, kuiTopMean, ...) are stackalloc here.
+// The I16x16 V and H predictors are the shared ones in
+// common/intra_pred_common.cs. The C stack arrays (uiSrc, kuiVec1,
+// kuiTopMean, ...) are stackalloc here. With SIMD, WelsInitIntraPredFuncs
+// puts the 16x16 and chroma plane predictors of get_intra_predictor_simd.cs
+// in the table (P5.6).
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 26 Nov 2026  Claude          Created (E2).
+// 27 Nov 2026  Claude          The SIMD predictors in WelsInitIntraPredFuncs (P5.6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -693,6 +696,20 @@ internal static unsafe partial class WelsEnc
         pFuncList->pfGetChromaPred[C_PRED_DC_T] = &WelsIChromaPredDcTop_c;
         pFuncList->pfGetChromaPred[C_PRED_DC_128] = &WelsIChromaPredDcNA_c;
 
-        // The X86_ASM, NEON, MMI and LSX overrides are not ported (C kernels only).
+        // In place of the X86_ASM and NEON overrides, the 16x16 and chroma plane predictors in
+        // get_intra_predictor_simd.cs and common/intra_pred_common_simd.cs. The other chroma
+        // and the 4x4 predictors stay C (see that file), as do the MMI and LSX overrides.
+        if (WelsCpuHasSimd128(kuiCpuFlag))
+        {
+            pFuncList->pfGetLumaI16x16Pred[I16_PRED_V] = &WelsI16x16LumaPredV_simd;
+            pFuncList->pfGetLumaI16x16Pred[I16_PRED_H] = &WelsI16x16LumaPredH_simd;
+            pFuncList->pfGetLumaI16x16Pred[I16_PRED_DC] = &WelsI16x16LumaPredDc_simd;
+            pFuncList->pfGetLumaI16x16Pred[I16_PRED_P] = &WelsI16x16LumaPredPlane_simd;
+            pFuncList->pfGetLumaI16x16Pred[I16_PRED_DC_L] = &WelsI16x16LumaPredDcLeft_simd;
+            pFuncList->pfGetLumaI16x16Pred[I16_PRED_DC_T] = &WelsI16x16LumaPredDcTop_simd;
+            pFuncList->pfGetLumaI16x16Pred[I16_PRED_DC_128] = &WelsI16x16LumaPredDcNA_simd;
+
+            pFuncList->pfGetChromaPred[C_PRED_P] = &WelsIChromaPredPlane_simd;
+        }
     }
 }

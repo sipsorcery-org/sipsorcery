@@ -10,6 +10,7 @@
 //
 // History:
 // 24 Nov 2026  Claude          Created.
+// 27 Nov 2026  Claude          The runner shared with the SIMD tests (P5.6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -37,10 +38,14 @@ public unsafe class intra_pred_common_unittest
             _ => throw new ArgumentException($"No C# kernel {kernel}."),
         };
         var row = new KernelFixture("intra_pred", kernel, kase, sha1);
-        int stride = row.Param("stride");
+        Assert.Equal(sha1, Hash(f, row));
+    }
 
-        // Reference: 18 rows, the block at row 1, column 1. Prediction: 16x16 at
-        // stride 16 with 16 guard bytes either side.
+    // Reference: 18 rows, the block at row 1, column 1. Prediction: 16x16 at
+    // stride 16 with 16 guard bytes either side.
+    internal static string Hash(delegate*<byte*, byte*, int, void> f, KernelFixture row)
+    {
+        int stride = row.Param("stride");
         var r = new FixtureRng((uint)row.Param("seed"));
         using var refPlane = new NativeBuffer(stride * 18);
         using var pred = new NativeBuffer(256 + 32);
@@ -49,6 +54,6 @@ public unsafe class intra_pred_common_unittest
 
         f(pred.Ptr + 16, refPlane.Ptr + stride + 1, stride);
 
-        Assert.Equal(sha1, FixtureHasher.Of(pred.Span));
+        return FixtureHasher.Of(pred.Span);
     }
 }

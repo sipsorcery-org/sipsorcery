@@ -29,6 +29,7 @@
 // 25 Nov 2026  Claude          D6: decoder init/teardown, WelsDecodeBs, statistics.
 // 27 Nov 2026  Claude          P5.2: WelsCPUFeatureDetect.
 // 27 Nov 2026  Claude          P5.5: the SIMD inverse transforms in InitPredFunc.
+// 27 Nov 2026  Claude          P5.6: the SIMD intra predictors in InitPredFunc.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -1173,12 +1174,24 @@ internal static unsafe partial class WelsDec
         pCtx->pIdctResAddPredFunc8x8 = &IdctResAddPred8x8_c;
 
         // In place of the HAVE_NEON and X86_ASM inverse transforms, the ones in
-        // decoder/decode_mb_aux_simd.cs. The 8x8 one is High profile only, so stays C. The
-        // intra predictors, MMI, MSA and LSX: not ported.
+        // decoder/decode_mb_aux_simd.cs. The 8x8 one is High profile only, so stays C. In
+        // place of their intra predictors, the 16x16 and chroma plane ones in
+        // decoder/get_intra_predictor_simd.cs; the other chroma, 4x4 and 8x8 ones stay C (see
+        // that file). MMI, MSA and LSX: not ported.
         if (WelsCpuHasSimd128(uiCpuFlag))
         {
             pCtx->pIdctResAddPredFunc = &IdctResAddPred_simd;
             pCtx->pIdctFourResAddPredFunc = &IdctFourResAddPred_simd;
+
+            pCtx->pGetI16x16LumaPredFunc[I16_PRED_V] = &WelsI16x16LumaPredV_simd;
+            pCtx->pGetI16x16LumaPredFunc[I16_PRED_H] = &WelsI16x16LumaPredH_simd;
+            pCtx->pGetI16x16LumaPredFunc[I16_PRED_DC] = &WelsI16x16LumaPredDc_simd;
+            pCtx->pGetI16x16LumaPredFunc[I16_PRED_P] = &WelsI16x16LumaPredPlane_simd;
+            pCtx->pGetI16x16LumaPredFunc[I16_PRED_DC_L] = &WelsI16x16LumaPredDcLeft_simd;
+            pCtx->pGetI16x16LumaPredFunc[I16_PRED_DC_T] = &WelsI16x16LumaPredDcTop_simd;
+            pCtx->pGetI16x16LumaPredFunc[I16_PRED_DC_128] = &WelsI16x16LumaPredDcNA_simd;
+
+            pCtx->pGetIChromaPredFunc[C_PRED_P] = &WelsIChromaPredPlane_simd;
         }
     }
 

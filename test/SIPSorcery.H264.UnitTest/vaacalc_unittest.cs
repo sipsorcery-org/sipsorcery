@@ -14,6 +14,7 @@
 // History:
 // 26 Nov 2026  Claude          Created (E5b).
 // 26 Nov 2026  Claude          The pictures, outputs and pixel map shared with complexity_unittest (E6).
+// 27 Nov 2026  Claude          The runners shared with the SIMD tests (P5.6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -53,40 +54,53 @@ public unsafe class vaacalc_unittest
         Assert.Equal(sha1, hash.Hex());
     }
 
-    private static void Kernel(KernelFixture row, FixtureHasher hash)
+    // The kernel named by the row, or with simd its SIMD twin.
+    internal static void Kernel(KernelFixture row, FixtureHasher hash, bool simd = false)
     {
         int w = row.Param("w"), h = row.Param("h"), stride = row.Param("stride");
         var r = new FixtureRng((uint)row.Param("seed"));
         using var pics = new Pictures(ref r, w, h, stride, row.Param("kind"));
         using var o = new Outputs(ref r, w, h);
-        int* sad = o.Sad8x8, sum = o.Sum16x16, sq = o.SqSum16x16, ssd = o.Ssd16x16, sd = o.Sd8x8;
-        byte* mad = o.Mad8x8;
         int frameSad = o.FrameSad;
-        switch (row.Kernel)
-        {
-            case nameof(WelsVP.VAACalcSad_c):
-                WelsVP.VAACalcSad_c(pics.Cur, pics.Ref, w, h, stride, &frameSad, sad);
-                break;
-            case nameof(WelsVP.VAACalcSadVar_c):
-                WelsVP.VAACalcSadVar_c(pics.Cur, pics.Ref, w, h, stride, &frameSad, sad, sum, sq);
-                break;
-            case nameof(WelsVP.VAACalcSadSsd_c):
-                WelsVP.VAACalcSadSsd_c(pics.Cur, pics.Ref, w, h, stride, &frameSad, sad, sum, sq, ssd);
-                break;
-            case nameof(WelsVP.VAACalcSadBgd_c):
-                WelsVP.VAACalcSadBgd_c(pics.Cur, pics.Ref, w, h, stride, &frameSad, sad, sd, mad);
-                break;
-            case nameof(WelsVP.VAACalcSadSsdBgd_c):
-                WelsVP.VAACalcSadSsdBgd_c(pics.Cur, pics.Ref, w, h, stride, &frameSad, sad, sum, sq, ssd, sd, mad);
-                break;
-            default:
-                throw new ArgumentException($"No C# kernel {row.Kernel}.");
-        }
+        Run(row.Kernel, simd, pics.Cur, pics.Ref, w, h, stride, &frameSad, o);
         o.FrameSad = frameSad;
         o.HashInto(hash);
     }
 
-    private static void Process(KernelFixture row, FixtureHasher hash)
+    // Runs the kernel (or its SIMD twin) on the outputs.
+    internal static void Run(string kernel, bool simd, byte* cur, byte* @ref, int w, int h, int stride, int* frameSad, Outputs o)
+    {
+        int* sad = o.Sad8x8, sum = o.Sum16x16, sq = o.SqSum16x16, ssd = o.Ssd16x16, sd = o.Sd8x8;
+        byte* mad = o.Mad8x8;
+        switch (kernel)
+        {
+            case nameof(WelsVP.VAACalcSad_c):
+                (simd ? (delegate*<byte*, byte*, int, int, int, int*, int*, void>)&WelsVP.VAACalcSad_simd : &WelsVP.VAACalcSad_c)(
+                    cur, @ref, w, h, stride, frameSad, sad);
+                break;
+            case nameof(WelsVP.VAACalcSadVar_c):
+                (simd ? (delegate*<byte*, byte*, int, int, int, int*, int*, int*, int*, void>)&WelsVP.VAACalcSadVar_simd : &WelsVP.VAACalcSadVar_c)(
+                    cur, @ref, w, h, stride, frameSad, sad, sum, sq);
+                break;
+            case nameof(WelsVP.VAACalcSadSsd_c):
+                (simd ? (delegate*<byte*, byte*, int, int, int, int*, int*, int*, int*, int*, void>)&WelsVP.VAACalcSadSsd_simd : &WelsVP.VAACalcSadSsd_c)(
+                    cur, @ref, w, h, stride, frameSad, sad, sum, sq, ssd);
+                break;
+            case nameof(WelsVP.VAACalcSadBgd_c):
+                (simd ? (delegate*<byte*, byte*, int, int, int, int*, int*, int*, byte*, void>)&WelsVP.VAACalcSadBgd_simd : &WelsVP.VAACalcSadBgd_c)(
+                    cur, @ref, w, h, stride, frameSad, sad, sd, mad);
+                break;
+            case nameof(WelsVP.VAACalcSadSsdBgd_c):
+                (simd ? (delegate*<byte*, byte*, int, int, int, int*, int*, int*, int*, int*, int*, byte*, void>)&WelsVP.VAACalcSadSsdBgd_simd
+                      : &WelsVP.VAACalcSadSsdBgd_c)(cur, @ref, w, h, stride, frameSad, sad, sum, sq, ssd, sd, mad);
+                break;
+            default:
+                throw new ArgumentException($"No C# kernel {kernel}.");
+        }
+    }
+
+    // Through CVAACalculation, its kernels chosen for iCpuFlag (0 gives the C ones).
+    internal static void Process(KernelFixture row, FixtureHasher hash, int iCpuFlag = 0)
     {
         int w = row.Param("w"), h = row.Param("h"), stride = row.Param("stride");
         var r = new FixtureRng((uint)row.Param("seed"));
@@ -98,7 +112,7 @@ public unsafe class vaacalc_unittest
         param.iCalcBgd = row.Param("bgd");
         param.iCalcSsd = row.Param("ssd");
         param.pCalcResult = &res;
-        var calc = new CVAACalculation(0);
+        var calc = new CVAACalculation(iCpuFlag);
         SPixMap cur = PixMap(pics.Cur, w, h, stride), refMap = PixMap(pics.Ref, w, h, stride);
         hash.AddI32((int)calc.Set((int)EMethods.METHOD_VAA_STATISTICS, &param));
         hash.AddI32((int)calc.Process((int)EMethods.METHOD_VAA_STATISTICS, &cur, &refMap));
@@ -108,7 +122,7 @@ public unsafe class vaacalc_unittest
         o.HashInto(hash);
     }
 
-    private static void Invalid(FixtureHasher hash)
+    internal static void Invalid(FixtureHasher hash, int iCpuFlag = 0)
     {
         const int w = 16, h = 16, stride = 16;
         var r = new FixtureRng(200);
@@ -116,7 +130,7 @@ public unsafe class vaacalc_unittest
         using var o = new Outputs(ref r, w, h);
         SVAACalcResult res = o.Result();
         SVAACalcParam param = default;
-        var calc = new CVAACalculation(0);
+        var calc = new CVAACalculation(iCpuFlag);
         hash.AddI32((int)calc.Set((int)EMethods.METHOD_VAA_STATISTICS, null));
         hash.AddI32((int)calc.Set((int)EMethods.METHOD_VAA_STATISTICS, &param));
         param.pCalcResult = &res;

@@ -3,8 +3,9 @@
 //
 // Description: Port of codec/processing/src/vaacalc/vaacalculation.h and
 // vaacalculation.cpp (E5b): the VAA statistics method (CVAACalculation),
-// which picks one of the vaacalcfuncs kernels by the statistics asked for.
-// Only the C kernels are ported. CVAACalculation is a native struct, as the
+// which picks one of the vaacalcfuncs kernels by the statistics asked for:
+// the C kernels, or with SIMD the ones in vaacalcfuncs_simd.cs (P5.6), which
+// give the same results. CVAACalculation is a native struct, as the
 // port's other C++ classes are; of its IStrategy base it holds m_eMethod, and
 // CVpFrameWork (WelsFrameWork.cs) holds it and dispatches to it.
 // OpenH264 commit 78783f19 (v2.7.0-1).
@@ -15,6 +16,7 @@
 // History:
 // 26 Nov 2026  Claude          Created (E5b).
 // 27 Nov 2026  Claude          Header: CVpFrameWork exists (E7).
+// 27 Nov 2026  Claude          The SIMD kernels in InitVaaFuncs (P5.6).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -92,14 +94,24 @@ internal unsafe struct CVAACalculation
         InitVaaFuncs(ref m_sVaaFuncs, m_iCPUFlag);
     }
 
-    // The SIMD versions (X86_ASM, HAVE_NEON, ...) are not ported: the reference is the C-only build.
-    private static void InitVaaFuncs(ref SVaaFuncs sVaaFuncs, int32_t iCpuFlag)
+    internal static void InitVaaFuncs(ref SVaaFuncs sVaaFuncs, int32_t iCpuFlag)
     {
         sVaaFuncs.pfVAACalcSad = &WelsVP.VAACalcSad_c;
         sVaaFuncs.pfVAACalcSadBgd = &WelsVP.VAACalcSadBgd_c;
         sVaaFuncs.pfVAACalcSadSsd = &WelsVP.VAACalcSadSsd_c;
         sVaaFuncs.pfVAACalcSadSsdBgd = &WelsVP.VAACalcSadSsdBgd_c;
         sVaaFuncs.pfVAACalcSadVar = &WelsVP.VAACalcSadVar_c;
+
+        // In place of the X86_ASM (SSE2, AVX2) and HAVE_NEON versions, the kernels in
+        // vaacalcfuncs_simd.cs. The MMI and LASX versions have no counterpart.
+        if (WelsCpuHasSimd128((uint32_t)iCpuFlag))
+        {
+            sVaaFuncs.pfVAACalcSad = &WelsVP.VAACalcSad_simd;
+            sVaaFuncs.pfVAACalcSadBgd = &WelsVP.VAACalcSadBgd_simd;
+            sVaaFuncs.pfVAACalcSadSsd = &WelsVP.VAACalcSadSsd_simd;
+            sVaaFuncs.pfVAACalcSadSsdBgd = &WelsVP.VAACalcSadSsdBgd_simd;
+            sVaaFuncs.pfVAACalcSadVar = &WelsVP.VAACalcSadVar_simd;
+        }
     }
 
     public EResult Process(int32_t iType, SPixMap* pSrcPixMap, SPixMap* pRefPixMap)
