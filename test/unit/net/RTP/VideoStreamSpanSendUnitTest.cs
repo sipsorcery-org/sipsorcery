@@ -68,7 +68,10 @@ namespace SIPSorcery.Net.UnitTests
         [InlineData("H264_RandomBytes")]
         [InlineData("H265_ParameterSetsAndIdr")]
         [InlineData("VP9_KeyAndInterFrames")]
+        [InlineData("VP9_Sizes")]
         [InlineData("AV1_TemporalUnits")]
+        [InlineData("AV1_FragmentationAndAggregation")]
+        [InlineData("AV1_ObuForms")]
         [InlineData("MJPEG_Frames")]
         public void SendVideo_SpanInsideLargerBufferOrOnTheStack_MatchesGoldenWireOutput(string scenarioName)
         {
@@ -104,6 +107,9 @@ namespace SIPSorcery.Net.UnitTests
         [InlineData("H264", "H264_SpsPpsIdr")]
         [InlineData("H265", "H265_ParameterSetsAndIdr")]
         [InlineData("VP9", "VP9_KeyAndInterFrames")]
+        [InlineData("VP9", "VP9_Sizes")]
+        [InlineData("AV1", "AV1_TemporalUnits")]
+        [InlineData("AV1", "AV1_FragmentationAndAggregation")]
         public void SendVideo_SampleReusedAfterReturn_PacketsAlreadyHandedToTransportAreUnchanged(string codec, string scenarioName)
         {
             var scenario = VideoRtpGoldenScenario.Get(scenarioName);
@@ -162,6 +168,35 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
+        /// The VP9 and AV1 array methods send a null frame as no packets, as they do an empty one, without throwing
+        /// and without moving the timestamp on.
+        /// </summary>
+        [Theory]
+        [InlineData("VP9")]
+        [InlineData("AV1")]
+        public void SendVideo_NullFrame_SentAsNoPackets(string codec)
+        {
+            var stream = CreateStream(codec, 96);
+            var channel = new RetainingRtpChannel();
+            stream.AddRtpChannel(channel);
+            try
+            {
+                uint timestamp = stream.LocalTrack.Timestamp;
+
+                Assert.Null(Record.Exception(() => stream.SendVideo(3000, (byte[])null)));
+                Assert.Null(Record.Exception(() => stream.SendVideoAt(9000, (byte[])null)));
+                Assert.Null(Record.Exception(() => stream.SendVideo(3000, ReadOnlySpan<byte>.Empty)));
+
+                Assert.Empty(channel.Packets);
+                Assert.Equal(timestamp, stream.LocalTrack.Timestamp);
+            }
+            finally
+            {
+                channel.Close("test complete");
+            }
+        }
+
+        /// <summary>
         /// A SocketException from the transport is logged rather than thrown, the same for each codec whose frames are
         /// packetised here.
         /// </summary>
@@ -169,6 +204,8 @@ namespace SIPSorcery.Net.UnitTests
         [InlineData("VP8")]
         [InlineData("H264")]
         [InlineData("H265")]
+        [InlineData("VP9")]
+        [InlineData("AV1")]
         public void SendVideo_TransportSocketException_NotThrown(string codec)
         {
             var stream = CreateStream(codec, 96);
@@ -176,9 +213,12 @@ namespace SIPSorcery.Net.UnitTests
             stream.AddRtpChannel(channel);
             try
             {
-                byte[] frame = (codec == "VP8") ?
-                    new byte[3000] :
-                    new byte[] { 0x00, 0x00, 0x00, 0x01, (codec == "H264") ? (byte)0x65 : (byte)0x26, 0x01, 0xAA };
+                byte[] frame = codec switch
+                {
+                    "VP8" or "VP9" => new byte[3000],
+                    "AV1" => Av1FrameObu(3000),
+                    _ => new byte[] { 0x00, 0x00, 0x00, 0x01, (codec == "H264") ? (byte)0x65 : (byte)0x26, 0x01, 0xAA },
+                };
 
                 Assert.Null(Record.Exception(() => stream.SendVideo(3000, frame)));
                 Assert.Null(Record.Exception(() => stream.SendVideo(3000, new ReadOnlySpan<byte>(frame))));
@@ -204,10 +244,21 @@ namespace SIPSorcery.Net.UnitTests
         [InlineData("H264", 60_000, true)]
         [InlineData("H265", 60_000, false)]
         [InlineData("H265", 60_000, true)]
+        [InlineData("VP9", 60_000, false)]
+        [InlineData("VP9", 60_000, true)]
+        [InlineData("VP9", 8_000, true)]
+        [InlineData("AV1", 60_000, false)]
+        [InlineData("AV1", 60_000, true)]
+        [InlineData("AV1", 8_000, true)]
         public void SendVideo_AllocatesLittleMoreThanTheWireBuffers(string codec, int frameLength, bool fromSpan)
         {
             var frame = new byte[frameLength];
             new Random(1).NextBytes(frame);
+            if (codec == "AV1")
+            {
+                // One frame OBU, its size field included, filling the temporal unit.
+                frame = Av1FrameObu(frameLength);
+            }
             if (codec == "H264" || codec == "H265")
             {
                 // No accidental start codes.
@@ -282,6 +333,13 @@ namespace SIPSorcery.Net.UnitTests
                 // The wire buffers themselves plus a small per packet allowance for the array object headers and the
                 // RTP header object.
                 long budget = wireBytes + packets * 160;
+                if (codec == "AV1")
+                {
+                    // AV1 payloads go into a buffer rented from the shared array pool, which can let its arrays go (a
+                    // gen 2 collection trims them), so allow for one rent of a new one: at most twice the frame and
+                    // the room the send asks for on top of it.
+                    budget += 2L * (frameLength + 2 * 1200);
+                }
                 Assert.True(allocated <= budget,
                     $"{codec}: allocated {allocated} bytes for {packets} packets of {wireBytes} wire bytes ({allocated / (double)wireBytes:F2}x); budget {budget}.");
             }
@@ -343,6 +401,22 @@ namespace SIPSorcery.Net.UnitTests
                 sender.Dispose();
                 receiver.Dispose();
             }
+        }
+
+        /// <summary>
+        /// An AV1 temporal unit of <paramref name="length"/> bytes holding one frame OBU with a size field.
+        /// </summary>
+        private static byte[] Av1FrameObu(int length)
+        {
+            int sizeFieldLength = AV1Packetiser.WriteLeb128(length).Length;
+            int payloadLength = length - 1 - sizeFieldLength;
+            byte[] sizeField = AV1Packetiser.WriteLeb128(payloadLength);
+            Assert.Equal(sizeFieldLength, sizeField.Length);
+
+            var payload = new byte[payloadLength];
+            new Random(length).NextBytes(payload);
+            byte header = (byte)(((int)AV1Packetiser.AV1ObuType.Frame << 3) | 0x02);
+            return new[] { header }.Concat(sizeField).Concat(payload).ToArray();
         }
 
         private static VideoStream CreateStream(string codec, int payloadType)
