@@ -323,7 +323,7 @@ Sample test results are shown below. They were generated with [`run-video-bench.
 - `sipsorcery webrtc video-bench` times one encoder or decoder alone, in-process, as fast as it will go. It gives the encode and decode tables: each figure is the maximum rate of that component on its own, so they are not achievable together in one call.
 - `sipsorcery webrtc loopback` runs a real WebRTC session in one process. It gives the WebRTC pipeline table: the transport ceiling with no codec, and the maximum rate an app can send at (encode), receive at (decode), or do both in a full call.
 
-The `h264.net` columns are the managed [H.264 port](src/SIPSorcery.H264/), which is for educational use only and is never packaged, so the published tool leaves it out; the script builds the CLI from source with it to measure it. It runs on one thread by default, as libwebrtc runs OpenH264, and its decoder gets the same FFmpeg (libx264 Constrained Baseline) clip as the FFmpeg H264 decoder.
+The `h264.net` columns are the managed [H.264 port](src/SIPSorcery.H264/), which is for educational use only and is never packaged, so the published tool leaves it out; the script builds the CLI from source with it to measure it. It runs on one thread by default, as libwebrtc runs OpenH264, with its frame skipping off so that it encodes every frame as the other encoders do, and its decoder gets the same FFmpeg (libx264 Constrained Baseline) clip as the FFmpeg H264 decoder.
 
 ### Machine
 
@@ -339,32 +339,32 @@ _All measurements are maximum frames per second (FPS). For real-time communicati
 
 | Preset | vp8.net | av1.net | h264.net | h264.net (4 threads) | ffmpeg H264 | ffmpeg VP8 | ffmpeg VP9 | ffmpeg H265 | ffmpeg AV1 |
 |---|---|---|---|---|---|---|---|---|---|
-| 480p | 86.4 | 150.3 | 315.8 | 662 | 965.6 | 364.7 | 199.4 | 203.6 | 141 |
-| 720p | 30.9 | 44.5 | 99.5 | 234.5 | 351.2 | 123.8 | 91.4 | 87.2 | 59.2 |
-| 1080p | 12.5 | 28.1 | 48.9 | 102.5 | 186.6 | 54.3 | 47.4 | 49.9 | 28.4 |
-| 1440p | 6.8 | 17.7 | 27.3 | 63.4 | 111.4 | 40.9 | 29.3 | 29.2 | 14.7 |
-| 4k | 2.6 | 7.1 | 16.9 | 38.1 | 49.5 | 34.6 | 14.1 | 14.2 | 6.5 |
+| 480p | 87.8 | 123.2 | 294 | 524.8 | 853.5 | 326.6 | 153.4 | 177.6 | 130 |
+| 720p | 30.4 | 43.1 | 92.1 | 205.3 | 350.9 | 126.6 | 96.6 | 82 | 58.6 |
+| 1080p | 12.3 | 28.6 | 40.3 | 90.6 | 179.8 | 52.5 | 45.3 | 48.2 | 28.3 |
+| 1440p | 6.7 | 17.6 | 22.9 | 47.3 | 104.8 | 39.8 | 29.7 | 30.8 | 15.6 |
+| 4k | 2.6 | 7.6 | 10.3 | 23.6 | 49.7 | 35.4 | 14.3 | 14 | 7.6 |
 
 **Decode** (the decoder alone, on a pre-encoded clip):
 
 | Preset | H264 (ffmpeg) | VP8 (ffmpeg) | VP9 (ffmpeg) | H265 (ffmpeg) | AV1 (ffmpeg) | VP8 (vp8.net) | H264 (h264.net) |
 |---|---|---|---|---|---|---|---|
-| 480p | 2241.4 | 930.6 | 958.7 | 1103.4 | 575.9 | 186.2 | 501.8 |
-| 720p | 840 | 303.5 | 422.5 | 472.2 | 193.7 | 60.1 | 165.2 |
-| 1080p | 389.8 | 133.1 | 186.3 | 231.4 | 182.3 | 26.8 | 76.7 |
-| 1440p | 214.3 | 71 | 113 | 152.5 | 100 | 15 | 44.2 |
-| 4k | 101 | 30.4 | 50.5 | 75.2 | 70.6 | 6.8 | 20 |
+| 480p | 2199.9 | 899.3 | 852.2 | 999.4 | 530.3 | 174.2 | 475.1 |
+| 720p | 825.4 | 300.8 | 401.7 | 457.4 | 183.3 | 59.4 | 172.1 |
+| 1080p | 369.3 | 131.2 | 184.6 | 252.3 | 183.1 | 26.8 | 77.8 |
+| 1440p | 216.8 | 73.4 | 115.4 | 149.9 | 100.6 | 13 | 42.8 |
+| 4k | 99.5 | 33.1 | 52.5 | 78.3 | 69.6 | 6.9 | 19 |
 
 **WebRTC pipeline** (H264 with the ffmpeg encoder and decoder, over a real WebRTC session in one process):
 
 | Preset | Transport (no codec) | Send (encode) | Receive (decode) | Full call (encode + decode) |
 |---|---|---|---|---|
-| 480p | 6537.2 | 888.3 | 962 | 721 |
-| 720p | 2045.6 | 291.4 | 693 | 281 |
-| 1080p | 1279.2 | 171 | 334 | 143 |
-| 1440p | 775.8 | 94.4 | 176 | 79 |
-| 4k | 405.9 | 39.5 | 90 | 36 |
+| 480p | 5502.4 | 728.7 | 981 | 728 |
+| 720p | 2168.5 | 292.8 | 651 | 273 |
+| 1080p | 1259.5 | 165.5 | 291 | 144 |
+| 1440p | 679.5 | 97 | 185 | 78 |
+| 4k | 425.2 | 44.4 | 84 | 39 |
 
 Transport sends pre-encoded frames flat out with no codec. Send encodes live and the receiver discards the frames, the case for an app that only sends. Receive decodes a pre-encoded stream, the case for an app that only receives. Full call does both. Receive and full call are the highest rates (to within 5%) at which no more than 2% of frames are lost or fail to decode. Both ends run on the one machine, so a one-way figure also carries the other end's (small) transport cost.
 
-_Generated 2026-11-27 22:27; duration 6s/run, 1 run(s)/point._
+_Generated 2026-11-27 23:25; duration 6s/run, 1 run(s)/point._

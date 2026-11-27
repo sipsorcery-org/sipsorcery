@@ -12,8 +12,10 @@
       ENCODE  - "video-bench --encoder <e> --codec <c>": the encoder runs flat out on a moving test
                 pattern at the preset's bitrate. achievedFps is its maximum rate (RTP packetisation
                 included). Measured for the managed vp8.net, av1.net and h264.net encoders (h264.net
-                on 1 thread, as libwebrtc runs OpenH264, and on 4) and the ffmpeg encoder on H264,
-                VP8, VP9, H265 and AV1.
+                on 1 thread, as libwebrtc runs OpenH264, and on 4, with frame skipping off) and the
+                ffmpeg encoder on H264, VP8, VP9, H265 and AV1. A run where more than 5% of the
+                frames give no output (an encoder skipping frames) is reported as n/a: a skipped
+                frame costs almost nothing, so its rate would not be an encode rate.
 
       DECODE  - "video-bench --decoder <d> --codec <c>": a short clip is encoded once, untimed, then
                 the decoder alone decodes it in a loop flat out. achievedFps is its maximum rate.
@@ -157,6 +159,12 @@ function Invoke-Cli([string[]] $cliArgs) {
 # that decoded to no picture, an encoder error) does not.
 function Get-BenchFps($r) {
     if (-not $r -or $null -eq $r.achievedFps -or [int]$r.framesProcessed -le 0) { return [double]::NaN }
+    # An encoder that skips frames (its rate control dropping them) looks faster than it is: a skipped
+    # frame costs almost nothing. A few frames without output (an encoder's start-up delay) are fine.
+    if ($null -ne $r.framesWithoutOutput -and [double]$r.framesWithoutOutput -gt 0.05 * [double]$r.framesProcessed) {
+        Write-Host "      $($r.framesWithoutOutput) of $($r.framesProcessed) frames gave no output, so the rate is not an encode rate" -ForegroundColor Yellow
+        return [double]::NaN
+    }
     if ($r.success -or ($r.error -match 'only reached .* below the')) { return [double]$r.achievedFps }
     Write-Host "      failed: $($r.error)" -ForegroundColor Yellow
     return [double]::NaN

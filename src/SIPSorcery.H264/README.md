@@ -80,7 +80,9 @@ may drop a frame to hold the bitrate, one slice, one thread. Set
 no bitrate set it picks one from the frame size and rate. A new frame size
 starts a new stream with a key frame. `EncoderThreads`, from 1 to 4, codes each
 frame as that many slices, one a thread, for large frames; it compresses a
-little less well, and a change also starts a new stream. The SDP offers `profile-level-id=42e01f`.
+little less well, and a change also starts a new stream. `FrameSkip = false`
+stops the rate control dropping frames, so every frame is encoded and the
+bitrate can run over instead. The SDP offers `profile-level-id=42e01f`.
 
 SIPSorcery doesn't answer a receiver's key frame request on its own: call
 `ForceKeyFrame` when `RTCPeerConnection.OnReceiveReport` brings an RTCP PLI or
@@ -98,9 +100,10 @@ with SSE2 and for Arm64. So far they cover:
 - The encoder's preprocessing statistics and the 16x16 intra predictors,
   which were then over a quarter of encoding.
 
-On one desktop thread it encodes about 380 frames a second at 640x480, 140 at
-1280x720 and 60 at 1920x1080 (measured with the CLI's `video-bench`, before
-h264.net was taken out of the CLI). It decodes about 280 a
+On one desktop thread it encodes about 290 frames a second at 640x480, 90 at
+1280x720 and 40 at 1920x1080 (the CLI's `video-bench` in a source build, see
+the [benchmarks README](../SIPSorcery.Cli/benchmarks/README.md), with frame
+skipping off so that every frame is encoded). It decodes about 280 a
 second at 1280x720 (`H264Benchmarks`). So at 30 frames a second it keeps up in
 real time at 1280x720 with room to spare, and at 1920x1080 with some. On four
 threads (`EncoderThreads = 4`) it encodes `H264Benchmarks`' harder content 2 to

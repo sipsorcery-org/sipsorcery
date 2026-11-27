@@ -15,6 +15,7 @@
 // History:
 // 27 Nov 2026  Claude          Created (E8).
 // 27 Nov 2026  Claude          The EncoderThreads tests (P5.7).
+// 27 Nov 2026  Claude          The FrameSkip test.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -586,6 +587,54 @@ public class H264EncodeTests
 
         Assert.InRange(first, 800 * 0.6, 800 * 1.3);
         Assert.InRange(second, 300 * 0.6, 300 * 1.3);
+    }
+
+    /// <summary>
+    /// <see cref="H264Codec.FrameSkip"/>, on by default, lets the rate control skip frames to
+    /// hold a bitrate too low for the picture, giving no output for them. Off, every frame is
+    /// coded and the bitrate runs over instead, whether it is turned off before the first frame
+    /// or mid-stream.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Encode_FrameSkipOffCodesEveryFrame(bool offFromTheStart)
+    {
+        const int width = 640, height = 480;
+        using var encoder = new H264Codec { TargetBitrateKbps = 100, KeyframeIntervalFrames = 60 };
+        Assert.True(encoder.FrameSkip);
+
+        int Skipped(int from, int count)
+        {
+            int skipped = 0;
+            for (int i = from; i < from + count; i++)
+            {
+                var au = encoder.EncodeVideo(width, height, I420Frame(width, height, i), VideoPixelFormatsEnum.I420, VideoCodecsEnum.H264);
+                if (au == null || au.Length == 0)
+                {
+                    skipped++;
+                }
+            }
+            return skipped;
+        }
+
+        if (offFromTheStart)
+        {
+            encoder.FrameSkip = false;
+            int skipped = Skipped(0, 90);
+            _output.WriteLine($"Off from the start: {skipped} of 90 frames skipped.");
+            Assert.Equal(0, skipped);
+        }
+        else
+        {
+            int skippedOn = Skipped(0, 90);
+            encoder.FrameSkip = false;
+            Assert.False(encoder.FrameSkip);
+            int skippedOff = Skipped(90, 90);
+            _output.WriteLine($"On: {skippedOn} of 90 frames skipped; then off: {skippedOff} of 90.");
+            Assert.True(skippedOn > 0, "At 100 kbps the rate control should skip frames.");
+            Assert.Equal(0, skippedOff);
+        }
     }
 
     /// <summary>

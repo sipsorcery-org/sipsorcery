@@ -39,7 +39,8 @@
 // 22 Nov 2026	Aaron Clauson	AV1 decode clips use a resolution based tile layout; the ffmpeg
 //                              encode stage honours --bitrate.
 // 27 Nov 2026	Claude		The h264.net encode stage and decoder, in source builds only
-//                              (SIPSorcery.H264 is for educational use and never packaged).
+//                              (SIPSorcery.H264 is for educational use and never packaged),
+//                              with frame skipping off; framesWithoutOutput in the result.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -130,7 +131,14 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         int FrameBytes,
         double ThroughputMbps,
         long DurationMs,
-        string? Error);
+        string? Error)
+    {
+        /// <summary>
+        /// Encoded frames that gave no output, as when a rate control skips a frame. A skipped frame
+        /// costs almost nothing, so many of them make AchievedFps more than the frames encoded a second.
+        /// </summary>
+        public int FramesWithoutOutput { get; init; }
+    }
 
     public WebRtcVideoBenchCommand() : base(DEFAULT_DURATION_SECONDS)
     { }
@@ -557,10 +565,8 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
 #if H264NET
     /// <summary>
     /// Stage 3c: the managed SIPSorcery.H264 encoder (a port of OpenH264), set up as libwebrtc sets
-    /// up OpenH264, on --threads threads (1 when left at 0). Encodes the synthetic I420 frames flat
-    /// out at the --bitrate target. Its bitrate mode rate control shares the bits out by the --fps
-    /// frame rate, not by the frames' arrival, so it spends the same bits per frame however fast the
-    /// loop runs.
+    /// up OpenH264 but with frame skipping off, on --threads threads (1 when left at 0). Encodes the
+    /// synthetic I420 frames flat out at the --bitrate target.
     /// </summary>
     private static int RunH264Encode(int width, int height, int fps, int durationSeconds, int bitrate, string codec,
         FfmpegTuning tuning, bool asJson, ILogger logger, CancellationToken ct)
@@ -581,12 +587,16 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
     }
 
     // A key frame a second, as the publishing verbs' managed encoders; the frame rate range is 1 to 60.
+    // Frame skipping is off, so every frame is encoded, as the other stages' encoders encode every
+    // frame: with it on, the rate control skips from 5% to nearly half of the frames flat out, and a
+    // skipped frame costs almost nothing, so the frame rate would count frames that weren't encoded.
     private static SIPSorcery.H264.H264Codec CreateH264NetEncoder(int fps, int bitrate, int threads) => new()
     {
         FrameRate = Math.Clamp(fps, 1, 60),
         TargetBitrateKbps = Math.Max(1, bitrate / 1000),
         KeyframeIntervalFrames = Math.Max(1, fps),
         EncoderThreads = threads > 0 ? Math.Min(threads, 4) : 1,
+        FrameSkip = false,
     };
 #endif
 
@@ -1042,6 +1052,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         uint timestamp = 0;
 
         int frames = 0;
+        int framesWithoutOutput = 0;
         long totalPackets = 0;
         long rtpBytes = 0;
         long encodedBytes = 0;
@@ -1074,6 +1085,10 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             encodedBytes += encoded?.Length ?? 0;
             totalPackets += packets;
             timestamp += rtpDuration;
+            if (packets == 0)
+            {
+                framesWithoutOutput++;
+            }
             frames++;
         }
 
@@ -1093,7 +1108,10 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             frames, Math.Round(achievedFps, 1), Math.Round(avgMs, 4), Math.Round(p95Ms, 4), Math.Round(maxMs, 4),
             avgPackets, avgEncodedSize, Math.Round(throughputMbps, 2), sw.ElapsedMilliseconds,
             frames == 0 ? "The encoder produced no frames."
-                        : success ? null : $"The {stage} encoder only reached {achievedFps:0} fps, below the {fps} fps target.");
+                        : success ? null : $"The {stage} encoder only reached {achievedFps:0} fps, below the {fps} fps target.")
+        {
+            FramesWithoutOutput = framesWithoutOutput,
+        };
 
         return result;
     }
@@ -1492,6 +1510,11 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
                 $"{result.AchievedFps:0} fps achieved vs {result.TargetFps} target — {verdict}. " +
                 $"Packetise {result.PerFrameMsAvg:0.###}/{result.PerFrameMsP95:0.###}/{result.PerFrameMsMax:0.###} ms avg/p95/max, " +
                 $"{result.PacketsPerFrame} pkts/frame ({result.FrameBytes} bytes), {result.ThroughputMbps} Mbps over {result.DurationMs}ms.");
+            if (result.FramesWithoutOutput > 0)
+            {
+                Console.WriteLine($"  {result.FramesWithoutOutput} of {result.FramesProcessed} frames gave no output (skipped by the " +
+                    "rate control?), so the rate counts frames that weren't encoded.");
+            }
         }
         else
         {

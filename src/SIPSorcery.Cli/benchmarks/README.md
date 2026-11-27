@@ -24,7 +24,11 @@ The encode and decode tables (`video-bench`):
   flat out on a moving test pattern and the reported `achievedFps` is its maximum rate (RTP
   packetisation included). Measured for the managed `vp8.net`, `av1.net` and `h264.net` encoders and
   the `ffmpeg` encoder on **H264, VP8, VP9, H265 and AV1**. `h264.net` is measured on one thread, as
-  libwebrtc runs OpenH264, and on four (`--threads 4`, one slice a thread).
+  libwebrtc runs OpenH264, and on four (`--threads 4`, one slice a thread), with its frame skipping
+  off so that it encodes every frame, as the other encoders do.
+  - Every encoder's result counts the frames that gave no output (`framesWithoutOutput`). A rate
+    control that skips frames makes an encoder look faster than it is, since a skipped frame costs
+    almost nothing, so a run where more than 5% of the frames give no output is reported as n/a.
 - **Decode** (`video-bench --decoder <d> --encoder <clip encoder> --codec <c>`): a two-second clip is
   encoded once, untimed, then the decoder alone decodes it in a loop flat out. The reported
   `achievedFps` is its maximum rate.
