@@ -6,14 +6,17 @@
 // residual to the prediction, and the 4x4 block offset table.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
-// C kernels only; the SIMD variants are not ported. The C keeps intermediate
-// values in int16_t arrays, so every store into one is a (short) cast here.
+// C kernels only; upstream's SIMD variants are assembly and not ported. The
+// port's own SIMD version of IdctResAddPred_c is in decode_mb_aux_simd.cs. The
+// C keeps intermediate values in int16_t arrays, so every store into one is a
+// (short) cast here.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 25 Nov 2026  Claude          Created.
+// 27 Nov 2026  Claude          The SIMD version is in decode_mb_aux_simd.cs (P5.5).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

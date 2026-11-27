@@ -28,6 +28,7 @@
 // 25 Nov 2026  Claude          D4: picture buffer memory.
 // 25 Nov 2026  Claude          D6: decoder init/teardown, WelsDecodeBs, statistics.
 // 27 Nov 2026  Claude          P5.2: WelsCPUFeatureDetect.
+// 27 Nov 2026  Claude          P5.5: the SIMD inverse transforms in InitPredFunc.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -1170,6 +1171,15 @@ internal static unsafe partial class WelsDec
         pCtx->pIdctFourResAddPredFunc = &IdctFourResAddPred_;
 
         pCtx->pIdctResAddPredFunc8x8 = &IdctResAddPred8x8_c;
+
+        // In place of the HAVE_NEON and X86_ASM inverse transforms, the ones in
+        // decoder/decode_mb_aux_simd.cs. The 8x8 one is High profile only, so stays C. The
+        // intra predictors, MMI, MSA and LSX: not ported.
+        if (WelsCpuHasSimd128(uiCpuFlag))
+        {
+            pCtx->pIdctResAddPredFunc = &IdctResAddPred_simd;
+            pCtx->pIdctFourResAddPredFunc = &IdctFourResAddPred_simd;
+        }
     }
 
     //reset decoder number related statistics info

@@ -7,7 +7,9 @@
 // cost and the non-zero count, and WelsInitEncodingFuncs.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
-// C kernels only; the SIMD variants are not ported. The C keeps several
+// C kernels only; upstream's SIMD variants are assembly and not ported.
+// WelsInitEncodingFuncs chooses the port's own, in encode_mb_aux_simd.cs, for
+// the transforms and quantisers where WelsCpuHasSimd128 holds. The C keeps several
 // intermediates in int16_t (WelsDctT4_c's pData and s, the 2x2 Hadamard's s
 // and pDct), so every store into one is a (short) cast here. The quantisation
 // macros read iSign from the caller's scope, so the helpers take it as a
@@ -18,6 +20,7 @@
 //
 // History:
 // 26 Nov 2026  Claude          Created (E2).
+// 27 Nov 2026  Claude          The SIMD kernels in WelsInitEncodingFuncs (P5.5).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -554,6 +557,21 @@ internal static unsafe partial class WelsEnc
         pFuncList->pfQuantizationFour4x4 = &WelsQuantFour4x4_c;
         pFuncList->pfQuantizationFour4x4Max = &WelsQuantFour4x4Max_c;
 
-        // The X86_ASM, NEON, MMI, MSA, LSX and LASX overrides are not ported (C kernels only).
+        // In place of the X86_ASM and NEON overrides of the transforms and quantisers, the
+        // kernels in encode_mb_aux_simd.cs. Not ported: the 2x2 chroma DC Hadamard (four
+        // values), the scans, WelsCalculateSingleCtr4x4 and WelsGetNoneZeroCount (P5.6 if the
+        // profile asks), the copies, and the MMI, MSA, LSX and LASX overrides.
+        if (WelsCpuHasSimd128(uiCpuFlag))
+        {
+            pFuncList->pfTransformHadamard4x4Dc = &WelsHadamardT4Dc_simd;
+
+            pFuncList->pfDctT4 = &WelsDctT4_simd;
+            pFuncList->pfDctFourT4 = &WelsDctFourT4_simd;
+
+            pFuncList->pfQuantization4x4 = &WelsQuant4x4_simd;
+            pFuncList->pfQuantizationDc4x4 = &WelsQuant4x4Dc_simd;
+            pFuncList->pfQuantizationFour4x4 = &WelsQuantFour4x4_simd;
+            pFuncList->pfQuantizationFour4x4Max = &WelsQuantFour4x4Max_simd;
+        }
     }
 }

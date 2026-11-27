@@ -36,6 +36,7 @@ was kept for the VP8 encoder.
 | P5.2 SIMD groundwork, SAD and SATD | **Done** (27 Nov) | `common/cpu.cs`: `WelsCPUFeatureDetect` from .NET's instruction set classes, masked by `WelsCpuFeatureMask` (0 gives the C kernels throughout), and `WelsCpuHasSimd128` (SSE2 on x86 and x64, AdvSimd on Arm64). The encoder, the decoder and the preprocessing now call it where upstream does, reporting no core count, as the C-only build. `common/simd.cs` (load, interleave and SAD helpers), `common/sad_common_simd.cs` (the 7 SAD sizes and the 7 four-neighbour variants) and `encoder/sample_simd.cs` (the 7 SATD sizes), all Vector128 with x86 and Arm branches where it has no portable form. `WelsInitSampleSadFunc` and scene change detection choose them in place of upstream's X86_ASM and HAVE_NEON blocks. The Combined3 slots stay NULL, as on upstream's C path. New `sad_common_simd_unittest` and `sample_simd_unittest`: every `sad` and SATD fixture row gives the C build's hash through the SIMD kernel, and each kernel equals the C# C kernel over 1500 random and extreme blocks at random strides. **Every table, hash and test still passes, now through the SIMD kernels where the API is used.** 6 planted bugs each fail rows (see the notes). Encoding is 2.5 to 2.7 times as fast: 97.0, 30.7 and 13.3 frames a second at 480p, 720p and 1080p (`video-bench`: 169, 52 and 27, from E8's 65, 23 and 12), so 720p is real time. UnitTest: 8963. TestVectors: 832. |
 | P5.3 SIMD motion compensation | **Done** (27 Nov) | `common/mc_simd.cs`: the three half-pel filters, the twelve quarter-pel positions built from them as the C kernels build them, `PixelAvg`, the 16-wide copy, and chroma at 8 and 4 wide. All Vector128, with x86 and Arm branches where it has no portable form (the saturating packs, `pmaddwd` and the rounded average, now in `common/simd.cs`). `InitMcFunc` chooses them in place of upstream's X86_ASM and HAVE_NEON blocks. They take any width, in strips of 16, 8 and 4 columns, the last overlapping the one before when the width isn't made of those (the encoder's 17 and 9). New `mc_simd_unittest`: every `mc` fixture row gives the C build's hash through the SIMD table, and every slot equals the C# C slot, the samples round the block included, at every width and height its callers use and every fractional position. **Every table, hash and test still passes.** 8 planted bugs each fail rows (see the notes). Encoding is 1.6 times as fast again: 152, 48.9 and 21.3 frames a second at 480p, 720p and 1080p (`video-bench`: 216, 77 and 33). Decoding is 1.65 to 1.85 times as fast: 516, 146 and 66.9 (from 281, 88 and 38; `video-bench` 720p: 119). UnitTest: 9645. TestVectors: 832. |
 | P5.4 SIMD deblocking | **Done** (27 Nov) | `common/deblocking_common_simd.cs`: the 12 loop filter edge kernels, luma and chroma, bS < 4 and bS = 4, across horizontal and vertical edges, and the single-plane chroma ones. Branchless: every sample along the edge is worked out in 16-bit lanes and the edge decisions pick between filtered and unfiltered. The vertical edges transpose 16 rows to columns and back, reading and writing only the columns C does. Both `DeblockingInit`s choose them in place of upstream's X86_ASM and HAVE_NEON blocks; the encoder's `DeblockingBSCalc` stays C. `expand_pic` gets no SIMD version: it is 0.5% of the decode, and its copies and fills are already the runtime's vectorised `CopyBlockUnaligned` and `InitBlockUnaligned`. New `deblocking_common_simd_unittest`: every edge filter `deblock` fixture row gives the C build's hash through the SIMD kernel; each kernel equals the C# C kernel over 3000 edges of every kind with random alpha, beta and tc0, the whole plane compared; and each table slot holds its own kernel. **Every table, hash and test still passes.** 11 planted bugs each fail tests (see the notes). Decoding is 1.6 times as fast, back to back with P5.3's build: 924, 291 and 126 frames a second at 480p, 720p and 1080p, from 585, 178 and 78.6 (`video-bench` 720p: 154 and 155 in two runs, from 119 and 124). Encoding is 10 to 14% faster: 175, 56.3 and 24.2, from 157, 49.2 and 22.0 (`video-bench`: 259, 82 and 38, from 222, 77 and 33). UnitTest: 10036. TestVectors: 832. |
+| P5.5 SIMD transforms and quantisation | **Done** (27 Nov) | `common/transform_simd.cs`: the 4x4 inverse transform, two blocks at a time, which the encoder and decoder share. `encoder/encode_mb_aux_simd.cs`: the forward DCTs (one block and four), the 4x4 DC Hadamard and the four quantisers, `QuantFour4x4Max` included. `encoder/decode_mb_aux_simd.cs`: the dequantisers, the inverse DC Hadamard and the three reconstructions (one block, four, and the I16x16 DC-only one). `decoder/decode_mb_aux_simd.cs`: `IdctResAddPred` and the four-block version, which keeps the C test that skips a block with nothing to add. `WelsInitEncodingFuncs`, `WelsInitReconstructionFuncs` and the decoder's `InitPredFunc` choose them in place of upstream's X86_ASM and HAVE_NEON blocks. The 8x8 IDCT stays C, as upstream's does. All of them are exact: the notes say where 16 bits are enough and where the IDCT needs 32. `common/simd.cs` gains an unsigned high multiply and an upper 8-byte store. New `encode_mb_aux_simd_unittest`, `enc_decode_mb_aux_simd_unittest` and `decode_mb_aux_simd_unittest`: every fixture row of these kernels gives the C build's hash through the SIMD kernel; each kernel equals the C# C kernel over 3000 trials, with coefficients of every kind (any int16, extremes, typical, sparse), the tables' FF and MF and any others, and predictions of every kind at random strides, the buffers round the block compared; and each table slot holds its own kernel. **Every table, hash and test still passes.** 17 planted bugs each fail tests (see the notes). Encoding is 1.4 times as fast, back to back with P5.4's build: 248, 77.2 to 81.5 and 33.5 frames a second at 480p, 720p and 1080p, from 172, 55.0 to 55.1 and 23.8 (`video-bench`: 391, 130 and 54, from 239, 85 and 38). Decoding is 3 to 8% faster: 941, 309 and 130, from 914, 287 and 124 (`video-bench` 720p: 169 and 173 in two runs, from 153 and 157). UnitTest: 10790. TestVectors: 832. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -1662,6 +1663,93 @@ Notes from P5.4:
   P5.4's, the 720p decode reads 178 frames a second. P5.3's notes measured
   146 on a slower run, so the speed-ups here are against the back-to-back
   numbers.
+
+Notes from P5.5:
+
+- **The inverse transform.** Two 4x4 blocks side by side go through at once,
+  a row of each in one vector of 8 int16 lanes. The row pass runs in 16
+  bits, which is what C does: it writes the row results back to the int16
+  coefficients. The column pass widens to 32 bits, because the sum of four
+  int16 values can need 18. After `(x + 32) >> 6` every value lies within
+  ±1792, so the saturating pack to 16 bits loses nothing. The prediction is
+  added in 16 bits and the unsigned saturating pack to bytes clips as
+  `WelsClip1` does. The encoder's reconstructions and the decoder's
+  `IdctResAddPred` use the same transform.
+- **The forward DCT.** The residuals lie in -255..255 and the outputs within
+  ±9180, so the whole transform is exact in 16 bits. The rows are
+  transposed into columns, put through the butterfly, transposed back and
+  put through it again.
+- **Quantisation.** C takes `((|x| + ff) * mf) >> 16` in 32 bits and puts the
+  sign back. Here |x| (32768 at most) and `|x| + ff` (65535 at most) are
+  unsigned 16-bit values, and the unsigned high multiply gives the top half
+  of the 32-bit product exactly. That equals C for every FF and MF in
+  0..32767, where C's product can't overflow; the tables' values all are.
+  `QuantFour4x4Max` reduces each block's largest |q| across the lanes with
+  interleaves, which leaves the four maxima side by side for one 8-byte store.
+- **The rest.** The dequantisers multiply in 16 bits and keep the low half,
+  as C's int16 assignments do. The inverse DC Hadamard wraps in 16 bits as
+  C's int16 temporaries do. The forward DC Hadamard gathers the 16 DCs from
+  their blocks and works in 32 bits; the signed saturating pack is C's clip.
+  The I16x16 DC-only reconstruction takes `(dc + 32) >> 6` in 32 bits and
+  spreads each DC across its block's four columns.
+- **The decoder's four blocks.** `IdctFourResAddPred_` skips a block when its
+  non-zero count and DC are both 0. The SIMD version makes the same test for
+  each block, runs the two-block transform when both blocks of a row need it
+  and the one-block transform otherwise.
+- **Not ported.** The encoder's 2x2 chroma DC Hadamard and quantiser (four
+  values), the scans, `WelsCalculateSingleCtr4x4_c` (1.6% of the encode),
+  `WelsGetNoneZeroCount_c` and the copies. Upstream has SSE2 versions of
+  most; P5.6 can take them if the profile asks. The decoder's 8x8 IDCT has no
+  SIMD version upstream either: only High profile streams use it, and the
+  encoder never makes them.
+- **Planted bugs.** Each was planted one at a time and restored from a copy,
+  checked by md5. The unit and test vector tests that fail:
+  - Quantisation taking |x| one low for negative x: 113 and 321.
+  - `QuantFour4x4Max` missing its last reduction step: 28 and 310.
+  - `QuantFour4x4` quantising block 1 twice and block 2 not at all: 81 and
+    321.
+  - The DCT's row 1 weights swapped (`s3 + s2 + s2`): 26 and 321.
+  - The two-block DCT storing the right block's rows 0 and 1 over rows 2
+    and 3: 13 and 326.
+  - The DC Hadamard leaving rows 1 and 3 unrounded: 12 and 87.
+  - The IDCT rounding with 31: 61 and 458.
+  - The IDCT halving c3 unsigned: 176 and 453.
+  - The IDCT's column sums kept to 16 bits: 30 and 2. Two real streams need
+    the 32-bit column pass too.
+  - The one-block IDCT storing row 3 to row 2: 123 and 455.
+  - The I16x16 DC reconstruction giving rows 12-15 the DCs of rows 8-11: 37
+    and 281.
+  - `DequantFour4x4` leaving the last 8 coefficients: 41 and 310.
+  - The inverse DC Hadamard's row pass negating t2: 33 and 313.
+  - The decoder's four blocks testing block 3 on block 2's count: 17 and 339.
+  - The decoder's right block, done alone, given the left block's
+    coefficients: 16 and 379.
+  - The encoder's table giving `pfDctT4` the four-block DCT: 1 and 0. Its
+    first block is the one-block DCT of the same pixels, and its other 48
+    outputs land in the macroblock's coefficient scratch, which the I4x4
+    coder doesn't read, so the stream can't change. Only the table test
+    sees it.
+  - The decoder's table keeping `IdctResAddPred_c`: 1 and 0. The output is
+    the same by design, so the table test is the check.
+- **The profile after**, 1280x720. Encoding:
+  - The transforms and quantisers: under 1% of the samples between them,
+    from 31.7% (`WelsDctT4_c` 11.8%, which includes the four-block DCT that
+    calls it, `WelsQuantFour4x4Max_c` 11.5%, `WelsIDctT4Rec_c` 6.8% and the
+    rest 1.6%). Some of their time is counted in their callers: they have
+    no loop and no call.
+  - The rest: `VAACalcSadBgd_c` 22.5%, `WelsSampleSatd16x16_simd` 6.6%,
+    `WelsMdInterMbLoop` 4.8%, `WelsI16x16LumaPredPlane_c` 4.4%,
+    `McHorVer22_simd` 4.2%, `WelsEncInterY` 3.1%.
+
+  Decoding:
+  - The IDCTs: `IdctFourResAddPred_simd` 3.6%, from 8.1% for the C ones
+    (`IdctResAddPred_c` 6.2% and `IdctFourResAddPred_` 1.9%).
+  - The rest: `WelsResidualBlockCavlc` 9.3%, `McHorVer22_simd` 7.3%,
+    `WelsActualDecodeMbCavlcPSlice` 6.6%, `DeblockLumaLt4H_simd` 5.6%,
+    `DeblockingBsMarginalMBAvcbase` 5.6%.
+
+  P5.6's `VAACalcSadBgd_c` is now nearly a quarter of the encode, and
+  `WelsI16x16LumaPredPlane_c` is the biggest of the intra predictors.
 
 ## 1. Goal
 

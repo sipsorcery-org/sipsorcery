@@ -85,11 +85,12 @@ with SSE2 and for Arm64. So far they cover:
 - SAD and SATD, where motion estimation spends most of its time.
 - Motion compensation, which was half of decoding.
 - The loop filter, which was then half of decoding again.
+- The transforms and quantisation, which were then a third of encoding.
 
-On one desktop thread it encodes about 260 frames a second at 640x480, 80 at
-1280x720 and 38 at 1920x1080 (the CLI's `video-bench`). It decodes about 290 a
-second at 1280x720 (`H264Benchmarks`). So it keeps up in real time at
-1280x720 and 30 frames a second, with room to spare.
+On one desktop thread it encodes about 390 frames a second at 640x480, 130 at
+1280x720 and 54 at 1920x1080 (the CLI's `video-bench`). It decodes about 300 a
+second at 1280x720 (`H264Benchmarks`). So at 30 frames a second it keeps up in
+real time at 1280x720 with room to spare, and at 1920x1080 with a little.
 
 ## Port conventions
 

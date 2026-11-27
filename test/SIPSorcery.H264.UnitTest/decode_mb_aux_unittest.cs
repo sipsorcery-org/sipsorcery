@@ -12,6 +12,7 @@
 //
 // History:
 // 25 Nov 2026  Claude          Created.
+// 27 Nov 2026  Claude          The runners shared with the SIMD tests (P5.5).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -57,7 +58,7 @@ public unsafe class decode_mb_aux_unittest
 
     // A random plane of n + 2 rows, the block at row 1, column 2; random
     // coefficients. The hash covers the plane and the coefficients.
-    private static string Idct(delegate*<byte*, int, short*, void> f, int n, KernelFixture row)
+    internal static string Idct(delegate*<byte*, int, short*, void> f, int n, KernelFixture row)
     {
         int stride = row.Param("stride");
         int range = row.Param("range");
@@ -78,11 +79,12 @@ public unsafe class decode_mb_aux_unittest
         return h.Hex();
     }
 
-    // Through InitPredFunc's table, as the C side. An 8x8 block at row 1,
+    // Through InitPredFunc's table, as the C side, filled for uiCpuFlag (0 gives
+    // the C kernels). An 8x8 block at row 1,
     // column 2 of a 10-row plane, the generator seeded with nzc. The decimal
     // digits of modes, block 0 first: all zero (0), zero at DC only (1) or
     // random (2) coefficients; pNzc[0, 1, 4, 5] are the bits of nzc.
-    private static string IdctFour(KernelFixture row)
+    internal static string IdctFour(KernelFixture row, uint uiCpuFlag = 0)
     {
         const int kFourStride = 24;
         int nzc = row.Param("nzc");
@@ -91,7 +93,7 @@ public unsafe class decode_mb_aux_unittest
         SWelsDecoderContext* pCtx = (SWelsDecoderContext*)NativeMemory.AllocZeroed((nuint)sizeof(SWelsDecoderContext));
         try
         {
-            InitPredFunc(pCtx, 0);
+            InitPredFunc(pCtx, uiCpuFlag);
             using var plane = new NativeBuffer(kFourStride * 10);
             short* rs = stackalloc short[64];
             r.Fill(plane.Span);

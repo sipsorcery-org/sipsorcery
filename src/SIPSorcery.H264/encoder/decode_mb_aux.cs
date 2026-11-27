@@ -7,15 +7,18 @@
 // prediction, plus WelsGetEncBlockStrideOffset and WelsInitReconstructionFuncs.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
-// C kernels only; the SIMD variants are not ported. The C keeps the
-// intermediates in int16_t (iTemp, kiSumU, ...) and dequantises in place
-// with `*=` on int16_t, so every store into one is an (int16_t) cast here.
+// C kernels only; upstream's SIMD variants are assembly and not ported.
+// WelsInitReconstructionFuncs chooses the port's own, in decode_mb_aux_simd.cs,
+// where WelsCpuHasSimd128 holds. The C keeps the intermediates in int16_t
+// (iTemp, kiSumU, ...) and dequantises in place with `*=` on int16_t, so every
+// store into one is an (int16_t) cast here.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 26 Nov 2026  Claude          Created (E2).
+// 27 Nov 2026  Claude          The SIMD kernels in WelsInitReconstructionFuncs (P5.5).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -304,6 +307,17 @@ internal static unsafe partial class WelsEnc
         pFuncList->pfIDctFourT4 = &WelsIDctFourT4Rec_c;
         pFuncList->pfIDctI16x16Dc = &WelsIDctRecI16x16Dc_c;
 
-        // The X86_ASM, NEON, MMI, MSA and LSX/LASX overrides are not ported (C kernels only).
+        // In place of the X86_ASM and NEON overrides, the kernels in decode_mb_aux_simd.cs.
+        // MMI, MSA and LSX/LASX: not ported.
+        if (WelsCpuHasSimd128(uiCpuFlag))
+        {
+            pFuncList->pfDequantization4x4 = &WelsDequant4x4_simd;
+            pFuncList->pfDequantizationFour4x4 = &WelsDequantFour4x4_simd;
+            pFuncList->pfDequantizationIHadamard4x4 = &WelsDequantIHadamard4x4_simd;
+
+            pFuncList->pfIDctT4 = &WelsIDctT4Rec_simd;
+            pFuncList->pfIDctFourT4 = &WelsIDctFourT4Rec_simd;
+            pFuncList->pfIDctI16x16Dc = &WelsIDctRecI16x16Dc_simd;
+        }
     }
 }
