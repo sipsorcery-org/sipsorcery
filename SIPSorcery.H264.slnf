@@ -1,0 +1,11 @@
+{
+  "solution": {
+    "path": "SIPSorcery.slnx",
+    "projects": [
+      "src\\SIPSorceryMedia.Abstractions\\SIPSorceryMedia.Abstractions.csproj",
+      "src\\SIPSorcery.H264\\SIPSorcery.H264.csproj",
+      "test\\SIPSorcery.H264.UnitTest\\SIPSorcery.H264.UnitTest.csproj",
+      "test\\SIPSorcery.H264.TestVectors\\SIPSorcery.H264.TestVectors.csproj"
+    ]
+  }
+}

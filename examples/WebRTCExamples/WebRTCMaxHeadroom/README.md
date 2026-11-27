@@ -227,7 +227,7 @@ Copy-Item .env.example .env       # optional; edit MAX_MODELS_ROOT for another l
 docker compose up --build
 ```
 
-Open <http://localhost:8080>. As in `WebRTCGetStartedFFmpeg`, SIPSorcery binds an
+Open <http://localhost:8080>. As in `WebRTCGetStartedCodecs`, SIPSorcery binds an
 OS-selected port and gathers all interface ICE candidates. Compose uses host networking,
 which makes the complete ephemeral UDP range available without a fixed WebRTC port, SDP
 candidate rewriting, or tens of thousands of Docker NAT mappings. Docker Desktop users

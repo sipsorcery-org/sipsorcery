@@ -1,0 +1,54 @@
+# OpenH264 version:2.7.0.2610, C-only reference build
+# result	CB	frames	errors	file	sha1	features
+PASS	yes	50	0	Adobe_PDF_sample_a_1024x768_50Frms.264	9aa9a4d9598eb3e1093311826844f37c43e4c521	profile=66 cs=c0 1024x768 pics=50 slices=IP
+PASS	yes	299	0	BA1_FT_C.264	418d152fb85709b6f172799dcb239038df437cfa	profile=66 cs=e0 352x288 pics=299 slices=IP +multislice
+PASS	yes	17	0	BA1_Sony_D.jsv	d94b5ceed5686a03ea682b53d415dee999d27eb6	profile=66 cs=e0 176x144 pics=17 slices=I
+PASS	yes	30	0	BAMQ1_JVC_C.264	613cf662c23e5d9e1d7da7fe880a3c427411d171	profile=66 cs=e0 176x144 pics=30 slices=I +multiref
+PASS	yes	30	0	BAMQ2_JVC_C.264	11bcf3713f520e606a8326d37e00e5fd6c9fd4a0	profile=66 cs=e0 176x144 pics=30 slices=IP +multiref
+PASS	yes	100	0	BA_MW_D.264	afd7a9765961ca241bb4bdf344b31397bec7465a	profile=66 cs=e0 176x144 pics=100 slices=IP +multiref
+PASS	yes	100	0	BANM_MW_D.264	92d924a857a1a7d7d9b224eaa3887830f15dee7f	profile=66 cs=e0 176x144 pics=100 slices=IP
+PASS	yes	4	0	BASQP1_Sony_C.jsv	3986c8c9d2876d2f0748b925101b152c6ec8b811	profile=66 cs=e0 176x144 pics=4 slices=I +multislice
+PASS	yes	291	0	CI1_FT_B.264	cbfec15e17a504678b19a1191992131c92a1ac26	profile=66 cs=e0 352x288 pics=291 slices=IP +multislice +cip
+PASS	yes	100	0	CI_MW_D.264	289f29a103c8d95adf2909c646466904be8b06d7	profile=66 cs=e0 176x144 pics=100 slices=IP +multiref +cip
+PASS	yes	50	0	CVFC1_Sony_C.jsv	4641abd7419a5580b97f16e83fd1d566339229d0	profile=66 cs=e0 352x288 pics=50 slices=IP +multislice +multiref
+PASS	yes	30	0	CVPCMNL1_SVA_C.264	c2b0d964de727c64b9fccb58f63b567c82bda95a	profile=77 cs=e0 352x288 pics=30 slices=I +multiref
+PASS	yes	1700	0	LS_SVA_D.264	72118f4d1674cf14e58bed7e67cb3aeed3df62b9	profile=66 cs=e0 176x144 pics=1700 slices=IP +multiref
+PASS	yes	100	0	MIDR_MW_D.264	9467030f4786f75644bf06a7fc809c36d1959827	profile=66 cs=e0 176x144 pics=100 slices=IP +multiref
+PASS	yes	150	0	MPS_MW_A.264	67f1cfbef0e8025ed60dedccf8d9558d0636be5f	profile=66 cs=e0 176x144 pics=150 slices=IP +multiref
+PASS	yes	62	0	MR1_BT_A.h264	6e585f8359667a16b03e5f49a06f5ceae8d991e0	profile=66 cs=e0 176x144 pics=62 slices=IP +multislice +multiref
+PASS	yes	150	0	MR1_MW_A.264	d9e2bf34e9314dcc171ddaea2c5015d0421479f2	profile=66 cs=e0 176x144 pics=150 slices=IP +multiref
+PASS	yes	300	0	MR2_MW_A.264	628b1d4eff04c2d277f7144e23484957dad63cbe	profile=66 cs=e0 176x144 pics=300 slices=IP +multiref
+PASS	yes	300	0	MR2_TANDBERG_E.264	74d618bc7d9d41998edf4c85d51aa06111db6609	profile=66 cs=a0 176x144 pics=300 slices=IP +multiref
+PASS	yes	17	0	NL1_Sony_D.jsv	e401e30669938443c2f02522fd4d5aa1382931a0	profile=66 cs=e0 176x144 pics=17 slices=I
+PASS	yes	30	0	NLMQ1_JVC_C.264	f3265c6ddf8db1b2bf604d8a2954f75532e28cda	profile=66 cs=e0 176x144 pics=30 slices=I +multiref
+PASS	yes	30	0	NLMQ2_JVC_C.264	350ae86ef9ba09390d63a09b7f9ff54184109ca8	profile=66 cs=e0 176x144 pics=30 slices=IP +multiref
+PASS	yes	100	0	NRF_MW_E.264	20732198c04cd2591350a361e4510892f6eed3f0	profile=66 cs=e0 176x144 pics=100 slices=IP +multiref
+PASS	no	2	0	QCIF_2P_I_allIPCM.264	8724c0866ebdba7ebb7209a0c0c3ae3ae38a0240	profile=100 cs=00 176x144 pics=2 slices=IP cabac +multiref
+PASS	yes	17	0	SVA_BA1_B.264	c4543b24823b16c424c673616c36c7f537089b2d	profile=66 cs=e0 176x144 pics=17 slices=I +multiref
+PASS	yes	17	0	SVA_BA2_D.264	98ff2d67860462d8d8bcc9352097c06cc401d97e	profile=66 cs=e0 176x144 pics=17 slices=IP +multiref
+PASS	yes	17	0	SVA_Base_B.264	91f514d81cd33de9f6fbf5dbefdb189cc2e7ecf4	profile=66 cs=e0 176x144 pics=17 slices=IP +multislice +multiref
+PASS	yes	50	0	SVA_CL1_E.264	4fe09ab6cdc965ea10a20f1d6dd38aca954412bb	profile=66 cs=e0 176x144 pics=50 slices=IP +multislice +multiref
+PASS	yes	17	0	SVA_FM1_E.264	fad08c4ff7cf2307b6579853d0f4652fc26645d3	profile=66 cs=e0 176x144 pics=17 slices=IP +multislice +multiref
+PASS	yes	17	0	SVA_NL1_B.264	6d63f72a0c0d833b1db0ba438afff3b4180fb3e6	profile=66 cs=e0 176x144 pics=17 slices=I +multiref
+PASS	yes	17	0	SVA_NL2_E.264	70453ef8097c94dd190d6d2d1d5cb83c67e66238	profile=66 cs=e0 176x144 pics=17 slices=IP +multiref
+PASS	yes	17	0	SarVui.264	98ff2d67860462d8d8bcc9352097c06cc401d97e	profile=66 cs=00 176x144 pics=17 slices=IP +multiref
+PASS	yes	10	0	Static.264	91dd4a7a796805b2cd015cae8fd630d96c663f42	profile=66 cs=00 160x112 pics=10 slices=IP +multiref
+PASS	yes	19	0	Zhling_1280x720.264	ad99f5eaa2d73ae3840e7da67313de8cfc866ce6	profile=66 cs=c0 1280x720 pics=19 slices=IP +multiref
+PASS	no	1	0	sps_subsetsps_bothVUI.264	d3a47032eb5dcc1963343a68e9bea12435bf1e4c	profile=66 cs=e0 160x96 pics=0 slices= svc +multiref
+PASS	no	300	0	test_cif_I_CABAC_PCM.264	95fdf21470d3bbcf95505abb2164042063a79d98	profile=77 cs=00 352x288 pics=300 slices=IP cabac +multislice +multiref
+PASS	no	300	0	test_cif_I_CABAC_slice.264	19121bc67f2b13fb8f030504fc0827e1ac6d0fdb	profile=77 cs=00 352x288 pics=300 slices=I cabac +multislice +multiref
+PASS	no	300	0	test_cif_P_CABAC_slice.264	521bbd0ba2422369b724c7054545cf107a56f959	profile=77 cs=00 352x288 pics=300 slices=IP cabac +multislice +multiref
+PASS	no	30	0	test_qcif_cabac.264	587d1d05943f3cd416bf69469975fdee05361e69	profile=77 cs=00 176x144 pics=30 slices=IP cabac
+PASS	no	5	0	test_scalinglist_jm.264	992a25b4ec98db4a16d61c097e614eb16afe3478	profile=100 cs=00 320x192 pics=5 slices=IP weighted scaling +multiref
+PASS	yes	9	0	test_vd_1d.264	5827d2338b79ff82cd091c707823e466197281d3	profile=66 cs=00 320x192 pics=9 slices=IP +multiref
+PASS	yes	9	0	test_vd_rc.264	eea02e97bfec89d0418593a8abaaf55d02eaa1ca	profile=66 cs=00 320x192 pics=9 slices=IP +multiref
+PASS	no	9	0	Cisco_Men_whisper_640x320_CABAC_Bframe_9.264	2b349c1bc806b6e0412008747b2463d77b576476	profile=77 cs=00 640x320 pics=9 slices=IB cabac +multiref
+PASS	no	9	0	Cisco_Men_whisper_640x320_CAVLC_Bframe_9.264	e5b76ff7e2f44e9b33906f8a4039d0d2bdb1580b	profile=77 cs=00 640x320 pics=9 slices=IB +multiref
+PASS	no	9	0	Cisco_Adobe_PDF_sample_a_1024x768_CAVLC_Bframe_9.264	9d758d9e6f4dead0d7b361f3ddf2ee009d0ea190	profile=77 cs=00 1024x768 pics=9 slices=IB +multiref
+PASS	no	151	0	VID_1280x544_cabac_temporal_direct.264	02299df3b9d83300d244b36601699859c57fe905	profile=100 cs=00 1280x544 pics=151 slices=IPB cabac weighted 8x8 +multiref
+PASS	no	300	0	VID_1280x720_cabac_temporal_direct.264	0ef0818cb23445d209b8a7632c13f1c7e820cc27	profile=100 cs=00 1280x720 pics=300 slices=IPB cabac weighted 8x8 +multiref
+PASS	no	54	0	VID_1920x1080_cabac_temporal_direct.264	ad2b1d1456919693e38a1e3e8cd9c21699688cec	profile=100 cs=00 1920x1088 pics=54 slices=IPB cabac weighted 8x8 +multiref
+PASS	no	151	0	VID_1280x544_cavlc_temporal_direct.264	71a12ff2b548b765a34c11f39eef1faa19b38d59	profile=100 cs=00 1280x544 pics=151 slices=IPB weighted 8x8 +multiref
+PASS	no	300	0	VID_1280x720_cavlc_temporal_direct.264	f39cecb32ba20ca4f3b3a385db9ef46ba340e41f	profile=100 cs=00 1280x720 pics=300 slices=IPB weighted 8x8 +multiref
+PASS	no	54	0	VID_1920x1080_cavlc_temporal_direct.264	6aae2d569a1ebbe5ae20e2dfc5e709cc05ab1a21	profile=100 cs=00 1920x1088 pics=54 slices=IPB weighted 8x8 +multiref
+# 51 passed, 0 failed, 0 missing; 35 vectors use only Constrained Baseline tools

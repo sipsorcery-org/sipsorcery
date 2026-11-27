@@ -1,0 +1,18 @@
+# OpenH264 version:2.7.0.2610, C-only reference build. Upstream test/api/encoder_test.cpp table.
+# result	frames	file	usage	size	fps	slices	denoise	layers	lossless	ltr	cabac	sha1	expected
+PASS	9	CiscoVT2people_320x192_12fps.yuv	camera	320x192	12	single	0	1	0	0	0	672a52fb6b6e6d52b5b3f3480d13d44e88481fb9	672a52fb6b6e6d52b5b3f3480d13d44e88481fb9
+PASS	5	CiscoVT2people_160x96_6fps.yuv	camera	160x96	6	single	0	1	0	0	0	08ade1853e4e49d50be675393780e75519586143	08ade1853e4e49d50be675393780e75519586143
+PASS	10	Static_152_100.yuv	camera	152x100	6	single	0	1	0	0	0	e60f12e3c24500d4306d812b0811d3c21855dd1c	e60f12e3c24500d4306d812b0811d3c21855dd1c
+PASS	9	CiscoVT2people_320x192_12fps.yuv	camera	320x192	12	raster	0	1	0	0	0	266de2d059a00ad2f28304e7eb378543ea7d85ab	266de2d059a00ad2f28304e7eb378543ea7d85ab
+PASS	9	CiscoVT2people_320x192_12fps.yuv	camera	320x192	12	single	1	1	0	0	0	913e49c787a0abdb378e9bc55bcffc27da89b965	913e49c787a0abdb378e9bc55bcffc27da89b965
+PASS	9	CiscoVT2people_320x192_12fps.yuv	camera	320x192	12	single	0	2	0	0	0	eb4adc831563ce4f02f2942f52c992da760b4113	e626f7efa3d54da15794407c15b7c694f7ddd383,eb4adc831563ce4f02f2942f52c992da760b4113
+PASS	5	Cisco_Absolute_Power_1280x720_30fps.yuv	camera	1280x720	30	sizelimited	0	1	0	0	0	53f5681a0c2b7068f4edc94538d6133a657df25d	53f5681a0c2b7068f4edc94538d6133a657df25d
+PASS	5	Cisco_Absolute_Power_1280x720_30fps.yuv	camera	1280x720	30	single	0	4	0	0	0	a32db3cfa66568e231d1f580d239d6468d26ce9a	0d4bf6a3b6f09d6de7bbce6daf8002c614ee6241,a32db3cfa66568e231d1f580d239d6468d26ce9a
+PASS	9	CiscoVT2people_320x192_12fps.yuv	screen	320x192	12	single	0	1	0	0	0	fd57470eebb9b334e8edcb8b47f7fb5b5868f111	fd57470eebb9b334e8edcb8b47f7fb5b5868f111
+PASS	5	CiscoVT2people_160x96_6fps.yuv	screen	160x96	6	single	0	1	0	0	0	5f63e723c3ec82fad186b48fcbcfb54730ce3b26	5f63e723c3ec82fad186b48fcbcfb54730ce3b26
+PASS	10	Static_152_100.yuv	screen	152x100	6	single	0	1	0	0	0	e77a5b0ffb48753556e617544616fb06a049e9be	e77a5b0ffb48753556e617544616fb06a049e9be
+PASS	5	Cisco_Absolute_Power_1280x720_30fps.yuv	screen	1280x720	30	sizelimited	0	1	0	0	0	f01e41426ca49932a8f1f67ad59a1700a3fa7fee	f01e41426ca49932a8f1f67ad59a1700a3fa7fee
+PASS	5	Cisco_Absolute_Power_1280x720_30fps.yuv	screen	1280x720	30	sizelimited	0	1	1	1	0	4684962979bc306e35de93bed58cc84938abcdee	4684962979bc306e35de93bed58cc84938abcdee
+PASS	9	CiscoVT2people_320x192_12fps.yuv	camera	320x192	12	single	0	1	0	0	1	d31a72395a4ca760c5b86a06901a2557e0373e76	d31a72395a4ca760c5b86a06901a2557e0373e76
+PASS	5	Cisco_Absolute_Power_1280x720_30fps.yuv	camera	1280x720	30	sizelimited	0	1	0	0	1	8bef37fa5965d5e650c1170d938423269f7406ac	8bef37fa5965d5e650c1170d938423269f7406ac
+PASS	5	Cisco_Absolute_Power_1280x720_30fps.yuv	camera	1280x720	30	fixedslcnum	0	1	0	0	1	c5cb4a6f55c10485aa90f8b237fcb8697ba70d43	c5cb4a6f55c10485aa90f8b237fcb8697ba70d43

@@ -1,0 +1,97 @@
+# OpenH264 version:2.7.0.2610, C-only reference build. First frame (IDR) per configuration, see refharness/src/encoder.cpp.
+# config	<name>	<content>	<settings>
+# idr	<name>	<InitializeExt>	<EncodeFrame>	<frame type>	<layers>	<sha1 of the frame>	<size>
+config	scene	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;
+idr	scene	0	0	IDR	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+config	gradient	gradient	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;
+idr	gradient	0	0	IDR	N=17:41eeb737,8:b5da713a|V=3178:c7c60f6e	d81d163c558da2a9200a34c1c3efc98d1b1a6676	3203
+config	noise	noise	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;
+idr	noise	0	0	IDR	N=17:41eeb737,8:b5da713a|V=26264:52359cf4	2a6f0801ed4dfd185d3f588ccd2adf702bced8ae	26289
+config	flat	flat	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;
+idr	flat	0	0	IDR	N=17:41eeb737,8:b5da713a|V=97:6bf2d9ed	0642b9db9298d9d35391cef6f2f3ad3bc5505192	122
+config	qp0-scene	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=0
+idr	qp0-scene	0	0	IDR	N=17:41eeb737,8:b5da713a|V=26378:97368986	d53549e8194d5f94555715f2ea4d8f6707a28d94	26403
+config	qp10-scene	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=10
+idr	qp10-scene	0	0	IDR	N=17:41eeb737,8:b5da713a|V=19817:76ecf4e2	ef913ca05766ad2ff65e11d15f9f433663c64bc9	19842
+config	qp18-noise	noise	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=18
+idr	qp18-noise	0	3	skip	-	-	0
+config	qp34-scene	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=34
+idr	qp34-scene	0	0	IDR	N=17:41eeb737,8:b5da713a|V=7745:5bc2c6a6	f873c381bbb33ed658783f9d3b20f8f959aad0c1	7770
+config	qp40-gradient	gradient	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=40
+idr	qp40-gradient	0	0	IDR	N=17:41eeb737,8:b5da713a|V=1718:b6f3ee66	57e2e912bb642cbb73d9309c0a62305ba2fb00a0	1743
+config	qp51-scene	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=51
+idr	qp51-scene	0	0	IDR	N=17:41eeb737,8:b5da713a|V=2651:23e4612f	af399741f0e7290e19b39bfddfc3423a70b83da4	2676
+config	qp51-noise	noise	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=51
+idr	qp51-noise	0	0	IDR	N=17:41eeb737,8:b5da713a|V=5828:99307eb4	80fd492480cffdacaa553de2d85262d33ef858b9	5853
+config	complexity-medium	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iComplexityMode=1
+idr	complexity-medium	0	0	IDR	N=17:41eeb737,8:b5da713a|V=10179:1abbcd13	3a1df7717ca139688bef053e609c0d1e242af13c	10204
+config	complexity-high	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iComplexityMode=2
+idr	complexity-high	0	0	IDR	N=17:41eeb737,8:b5da713a|V=10179:1abbcd13	3a1df7717ca139688bef053e609c0d1e242af13c	10204
+config	complexity-high-noise-qp20	noise	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iComplexityMode=2;L0.iDLayerQp=20
+idr	complexity-high-noise-qp20	0	3	skip	-	-	0
+config	complexity-high-gradient-qp30	gradient	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iComplexityMode=2;L0.iDLayerQp=30
+idr	complexity-high-gradient-qp30	0	0	IDR	N=17:41eeb737,8:b5da713a|V=2770:0a078f95	98e17f6309e52a843e89bbdb9e7b8d1e7be17bc7	2795
+config	16x16	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=16;iPicHeight=16
+idr	16x16	0	0	IDR	N=15:99c0c075,8:b5da713a|V=22:cc7514ea	e297088a00493e1582a1842a9f7a32b7279ded96	45
+config	48x32-noise	noise	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=48;iPicHeight=32
+idr	48x32-noise	0	0	IDR	N=16:5a0aa8bb,8:b5da713a|V=1599:199aa590	dbf66bb16c246e5e18d64f2339163c05d3ba5df4	1623
+config	33x17-odd	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=33;iPicHeight=17
+idr	33x17-odd	0	0	IDR	N=18:230fb393,8:b5da713a|V=67:2a7bdf9b	68b00a004f79b3fa8e7b7ecd9bde2c71f54fbf8a	93
+config	152x100	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=152;iPicHeight=100
+idr	152x100	0	0	IDR	N=18:9da02673,8:b5da713a|V=6621:95540d06	f1c63ec7a6c035939e95cd393b3efa93da9840b2	6647
+config	320x192	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=320;iPicHeight=192
+idr	320x192	0	0	IDR	N=17:39220e4b,8:b5da713a|V=25642:59ca5e64	43b560c5287d76fa0f76fc5c3e6136c92930fa2f	25667
+config	330x250	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=330;iPicHeight=250
+idr	330x250	0	0	IDR	N=19:ed6e9ce5,8:b5da713a|V=34975:a3e5e15f	970d23279d4f093043ac22f3defb9aba94166867	35002
+config	330x250-no-cropping	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=330;iPicHeight=250;bEnableFrameCroppingFlag=0
+idr	330x250-no-cropping	0	0	IDR	N=17:6abefab5,8:b5da713a|V=34975:a3e5e15f	6827a54ac2c6eabff32f25150a9370f434233c84	35000
+config	640x480-gradient	gradient	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=640;iPicHeight=480
+idr	640x480-gradient	0	0	IDR	N=18:422c8cd9,8:b5da713a|V=35617:0f644b1a	e64243d99fcd252b41b9af71a018823eb7127e19	35643
+config	1280x720	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=1280;iPicHeight=720;iComplexityMode=2
+idr	1280x720	0	0	IDR	N=18:8bddb6fc,8:b5da713a|V=355944:3f92f137	fabd13b9c6b776c5df169da18a8e5c5d700572de	355970
+config	slices-fixed-4	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.uiSliceMode=1;L0.uiSliceNum=4
+idr	slices-fixed-4	0	0	IDR	N=17:41eeb737,8:b5da713a|V=2626:21559199,2377:5949d319,2637:ee2a28d1,3038:83461e8f	c432da85a503afff14266d6ebb2eb5df1a46ce9d	10703
+config	slices-fixed-3-noise	noise	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.uiSliceMode=1;L0.uiSliceNum=3
+idr	slices-fixed-3-noise	0	0	IDR	N=17:41eeb737,8:b5da713a|V=8775:ff3a96bc,8744:91a6b576,8767:fbe9fdb7	2853eedc8e6891a8d7a13f9b6cff0575beda74ee	26311
+config	slices-fixed-7-320x192	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=320;iPicHeight=192;L0.uiSliceMode=1;L0.uiSliceNum=7;iComplexityMode=2
+idr	slices-fixed-7-320x192	0	0	IDR	N=17:39220e4b,8:b5da713a|V=3323:79bea8a5,3535:f6c8e6c6,3803:4b03398d,3179:c9092a01,3741:64faceb3,3229:068db1d1,3933:21c54df3	4f332441f8b3200ae3603fa0a315aed26e1355ee	24768
+config	slices-fixed-4-no-load-balancing	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.uiSliceMode=1;L0.uiSliceNum=4;bUseLoadBalancing=0
+idr	slices-fixed-4-no-load-balancing	0	0	IDR	N=17:41eeb737,8:b5da713a|V=2626:21559199,2377:5949d319,2637:ee2a28d1,3038:83461e8f	c432da85a503afff14266d6ebb2eb5df1a46ce9d	10703
+config	slices-raster-rows	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.uiSliceMode=2
+idr	slices-raster-rows	0	0	IDR	N=17:41eeb737,8:b5da713a|V=911:f08837c9,1314:269f731c,1305:e599ed7e,931:58acf632,1306:23393394,1303:3cc51644,927:7f92ceb1,1275:4dfa1760,1313:89010398	46afc17c6b96331194ca37953a9e785e85084a15	10610
+config	slices-raster-mbs	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.uiSliceMode=2;L0.uiSliceMbNum=10,30,59
+idr	slices-raster-mbs	0	0	IDR	N=17:41eeb737,8:b5da713a|V=885:bdcf3783,3170:5e245349,6567:b73d7400	52bbbc5e2a9639eaf5efb9fa49b149e300ae1bca	10647
+config	slices-raster-mbs-high	noise	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.uiSliceMode=2;L0.uiSliceMbNum=1,11,40,47;iComplexityMode=2
+idr	slices-raster-mbs-high	0	0	IDR	N=17:41eeb737,8:b5da713a|V=281:f4b0a363,2894:a1f8db0f,10638:77587a79,12466:b0530207	5bd7623789861facce8356b42c556bf7dc767c7b	26304
+config	deblock-off	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iLoopFilterDisableIdc=1
+idr	deblock-off	0	0	IDR	N=17:41eeb737,8:b5da713a|V=10722:249248ed	9e37f75f39165b674f35cb07290250be93b24357	10747
+config	deblock-idc2-single-slice	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iLoopFilterDisableIdc=2
+idr	deblock-idc2-single-slice	0	0	IDR	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+config	deblock-idc2-slices	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iLoopFilterDisableIdc=2;L0.uiSliceMode=1;L0.uiSliceNum=4
+idr	deblock-idc2-slices	0	0	IDR	N=17:41eeb737,8:b5da713a|V=2626:7b63134c,2376:72d2ae01,2637:20e5f510,3037:5e61f9ca	adc80eacaa475cdb90f6b017a1343b8b7f577dda	10701
+config	deblock-idc0-slices	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iLoopFilterDisableIdc=0;L0.uiSliceMode=2
+idr	deblock-idc0-slices	0	0	IDR	N=17:41eeb737,8:b5da713a|V=911:f08837c9,1314:269f731c,1305:e599ed7e,931:58acf632,1306:23393394,1303:3cc51644,927:7f92ceb1,1275:4dfa1760,1313:89010398	46afc17c6b96331194ca37953a9e785e85084a15	10610
+config	deblock-offsets-plus	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iLoopFilterAlphaC0Offset=6;iLoopFilterBetaOffset=6
+idr	deblock-offsets-plus	0	0	IDR	N=17:41eeb737,8:b5da713a|V=10724:76e162ff	815b4ab9552674cb43db4ef9c58dd10cdf49979d	10749
+config	deblock-offsets-minus	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iLoopFilterAlphaC0Offset=-6;iLoopFilterBetaOffset=-6
+idr	deblock-offsets-minus	0	0	IDR	N=17:41eeb737,8:b5da713a|V=10724:018a0c9c	15e6ec1cbfd2be80876328b3e53028f4969a8e4f	10749
+config	deblock-offsets-mixed-qp40	gradient	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iLoopFilterAlphaC0Offset=-3;iLoopFilterBetaOffset=4;L0.iDLayerQp=40
+idr	deblock-offsets-mixed-qp40	0	0	IDR	N=17:41eeb737,8:b5da713a|V=1720:301969ae	ce271601bffbc7327e19dd7636281957586b75b1	1745
+config	temporal-2	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iTemporalLayerNum=2
+idr	temporal-2	0	0	IDR	N=17:41eeb737,8:b5da713a|V=11882:2cc2c0cb	ed7c8beb5a0a29e0a904d3ff4baa79b5a068c671	11907
+config	temporal-3	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iTemporalLayerNum=3
+idr	temporal-3	0	0	IDR	N=17:34f6a795,8:b5da713a|V=12833:1e23c8b0	74eeaa7152c47450a7c7500bd196fba29be34d2e	12858
+config	temporal-4	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;iTemporalLayerNum=4
+idr	temporal-4	0	0	IDR	N=17:f8100f68,8:b5da713a|V=13471:c7e87be3	7c133dc17d17ea70419fbe01c24ca7945ba4a25c	13496
+config	ltr	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;bEnableLongTermReference=1
+idr	ltr	0	0	IDR	N=17:cfef6d02,8:b5da713a|V=10722:2de17f5a	c85dfc988cda7e168e180afcf3a1ad3ca149a546	10747
+config	strategy-increasing	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;eSpsPpsIdStrategy=1
+idr	strategy-increasing	0	0	IDR	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+config	strategy-sps-listing	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;eSpsPpsIdStrategy=2
+idr	strategy-sps-listing	0	0	IDR	N=17:41eeb737|N=8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+config	strategy-sps-pps-listing	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;eSpsPpsIdStrategy=6
+idr	strategy-sps-pps-listing	0	0	IDR	N=17:41eeb737|N=8:b5da713a,8:23dda111,8:8c6abbe2,8:864a8bf6,8:11180b01,8:1a115d49,8:77190fb8,8:f7c5d48e,8:e928e8c1,8:3be1e6a6,8:ea385ed4,8:019c1a56,8:3fc784dd,8:d3e87db0,8:31d982c2,9:ea56209e,9:6b317ee2,9:17cdab3d,9:104b389b,9:1a8620ad,9:34980f38,9:21508d5a,9:a91bbbc6,9:7f34822a,9:8c5728ad,9:b50b60b8,9:c652d4d1,9:85a4a2e8,9:2d23aa1e,9:cf629da6,9:6dab6e14,9:29679d44,9:3011d6f7,9:c7d64752,9:7d9e777a,9:ee58c565,9:19699335,9:102fd242,9:fe83c519,9:374cc266,9:78e5820e,9:d35d866a,9:a7011e5f,9:e81ddd9e,9:4b74b58c,9:b280ca57,9:d9b71d9c,9:a1d15218,9:da57351a,9:cbe4e5b4,9:8412c8c1,9:c066d8c2,9:ba942849,9:8c39aac7,9:b2a0046d,9:721710f1,9:f004479a|V=10722:f4635a51	af07156e167ff92cb3b0b43757e5cacc95e19ec8	11237
+config	features-off	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0
+idr	features-off	0	0	IDR	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+config	profile-main	scene	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;iPicWidth=176;iPicHeight=144;L0.uiProfileIdc=77
+idr	profile-main	0	0	IDR	N=17:61eff833,8:b5da713a|V=10722:f4635a51	b4446f4c79da2402f8a1658a4f4c76e7228b68e3	10747

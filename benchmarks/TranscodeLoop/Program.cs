@@ -75,13 +75,14 @@ internal sealed class Options
                 case "--fps": o.Page["fps"] = Next(ref i); break;
                 case "--mode": o.Page["mode"] = Next(ref i); break;              // transcode | relay
                 case "--codec-in": o.Page["in"] = Next(ref i); break;            // VP8 | VP9 | H264 | H265 | AV1
-                case "--decoder": o.Page["dec"] = Next(ref i); break;            // vp8.net | ffmpeg
+                case "--decoder": o.Page["dec"] = Next(ref i); break;            // vp8.net | h264.net | ffmpeg
                 case "--codec-out": o.Page["out"] = Next(ref i); break;
-                case "--encoder": o.Page["enc"] = Next(ref i); break;            // vp8.net | av1.net | ffmpeg
+                case "--encoder": o.Page["enc"] = Next(ref i); break;            // vp8.net | av1.net | h264.net | ffmpeg
                 case "--try-h265": o.Page["h265"] = "try"; break;               // offer H265 out though WebView2 lacks it
                 case "--browser-kbps": o.Page["kbps"] = Next(ref i); break;
                 case "--encoder-kbps": o.Page["enckbps"] = Next(ref i); break;
                 case "--drop-a": o.Page["dropA"] = Next(ref i); break;            // percent of leg A frames dropped before decode
+                case "--no-drop-pli": o.Page["pliOnDrop"] = "0"; break;          // leave recovery from a drop to the decoder
                 case "--loss-b": o.Page["lossB"] = Next(ref i); break;            // percent of leg B packets dropped
                 case "--no-decoded-view": o.Page["decoded"] = "0"; break;
                 case "--decoded-view": o.Page["decoded"] = "1"; break;           // on even above 1080p

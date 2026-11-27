@@ -1,0 +1,624 @@
+# OpenH264 version:2.7.0.2610, C-only reference build. Frame by frame P streams per configuration, see refharness/src/encoder.cpp.
+# config	<name>	<content>	<frames>	<settings>
+# frame	<name>	<index>	<EncodeFrame>	<frame type>	<temporal ids>	<layers>	<sha1 of the frame>	<size>
+# stream	<name>	<InitializeExt>	<sha1 of the stream>	<size>
+config	static	static	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;
+frame	static	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+frame	static	1	0	P	0	V=15:58fb2110	58fb2110c06551be56858b677c0b942896ebaed7	15
+frame	static	2	0	P	0	V=11:6b68ea00	6b68ea007f543d6580d54d11cc7d2b3c43331159	11
+frame	static	3	0	P	0	V=11:cac34d33	cac34d3388ed5c2cae5ee96e0aab40081a2dd2b7	11
+frame	static	4	0	P	0	V=11:b367c7a9	b367c7a984ba742fa65d27c05c638216142a7403	11
+frame	static	5	0	P	0	V=11:f5b2069e	f5b2069eb964e2eb065e0ccb9a3abc7d9198148a	11
+frame	static	6	0	P	0	V=11:7c52a17a	7c52a17a92d96dd91a1adc52d6855c0d586f314a	11
+frame	static	7	0	P	0	V=11:dbd92092	dbd9209253d4808598c0214cfb0c971bf9fe3ec1	11
+stream	static	0	2ff9fb64bcec62e817eac5af7d92c140c90e5b4c	10828
+config	pan	pan	10	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;
+frame	pan	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+frame	pan	1	0	P	0	V=6019:91128291	9112829130b6f25399e0a28495cb38078f912185	6019
+frame	pan	2	0	P	0	V=4931:47b06157	47b06157b94dd6025b1c8414c5ccc0cbe59e274f	4931
+frame	pan	3	0	P	0	V=4826:ddea5e1a	ddea5e1abf273c43bdcc6d269259545f6a4ab969	4826
+frame	pan	4	0	P	0	V=4104:c1c54d87	c1c54d870dfb15507ad845e947b3eaeece6fa1a0	4104
+frame	pan	5	0	P	0	V=4772:77fba39a	77fba39a697460a9480953595253443f5e6452fe	4772
+frame	pan	6	0	P	0	V=5256:e7a5d24b	e7a5d24b7c6ae716ddfc385f8faffd85dd5a32cd	5256
+frame	pan	7	0	P	0	V=5233:f71d6199	f71d619946c4875c4485772a15e8b9c8d6b08a8a	5233
+frame	pan	8	0	P	0	V=4040:9ebb6ee2	9ebb6ee238b35fcff9545f20ff05de6969b888cc	4040
+frame	pan	9	0	P	0	V=5303:89e4f78b	89e4f78b400dc5d80047770a1d8a30996692888f	5303
+stream	pan	0	2537439b2af2343b09b747f71392684ef2f2b6a9	55231
+config	block	block	10	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;
+frame	block	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=11268:df2252cf	de55047c5e13e7f950fb19fc5e6ec101ea9fac8c	11293
+frame	block	1	0	P	0	V=861:0b4ec770	0b4ec77042cfd0afe7bd4bbe3c28e0bd0a217c8b	861
+frame	block	2	0	P	0	V=568:087eac63	087eac63d93f8b748abe043cde8eb7bcf1ec9c5b	568
+frame	block	3	0	P	0	V=451:e1f82e8c	e1f82e8cdf70b415998bfaddba1fe280b5bd4f0b	451
+frame	block	4	0	P	0	V=623:7985c6c4	7985c6c42c6bdfa1794a351deea67da1f7bd4632	623
+frame	block	5	0	P	0	V=580:6aff5287	6aff528774b41de3a4f1e915039893f2459db965	580
+frame	block	6	0	P	0	V=599:f2b9b7d7	f2b9b7d73130fad5ea6714fc357f23208d46f11c	599
+frame	block	7	0	P	0	V=649:1bc45692	1bc456925ba8a3baf8485c78625aade74dc4c05e	649
+frame	block	8	0	P	0	V=437:4a438b50	4a438b5008e521eee3931fc65d728443dcf9888a	437
+frame	block	9	0	P	0	V=684:a220255b	a220255baefda6e6bbbd21000699e6e0f8157717	684
+stream	block	0	7b3cd480c0d1254991a3e0133b1295eec63bcf72	16745
+config	noise	noise	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;
+frame	noise	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=26264:52359cf4	2a6f0801ed4dfd185d3f588ccd2adf702bced8ae	26289
+frame	noise	1	0	P	0	V=12233:f575fe2f	f575fe2fb3fa351dafb7be3ca022772b2cff904f	12233
+frame	noise	2	0	P	0	V=11121:680d3429	680d3429651b7ab83194cac9858bb16fbdb302dd	11121
+frame	noise	3	0	P	0	V=9324:e29c003a	e29c003aa2124522423c732a865df59895d93f8b	9324
+frame	noise	4	0	P	0	V=8636:186926c6	186926c635f9133a7043ba7e56985413dc4bee66	8636
+frame	noise	5	0	P	0	V=8432:4088fba8	4088fba89376a5c6786b8be8b91ae5ad33ec04a2	8432
+frame	noise	6	0	P	0	V=8439:73247dae	73247daee263d89b4bcea7481affd0e02c68153b	8439
+frame	noise	7	0	P	0	V=8419:d1c8b1d0	d1c8b1d042b8379c2941c4580e98b1ca6569da5e	8419
+stream	noise	0	332dfe3b856339bc8c3ad66e9ffd1f4b4c10200b	92893
+config	random	random	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;
+frame	random	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=26240:6a073df5	e96d48147d1904ea804cf3c831ce1d2f7286882b	26265
+frame	random	1	0	P	0	V=26287:0bf9443a	0bf9443ab915d85f896fbc52c351f63b75d9b647	26287
+frame	random	2	0	P	0	V=26324:6ef414c8	6ef414c8be4ff137b897e73cc9453aa06d43693e	26324
+frame	random	3	0	P	0	V=26282:b11d4211	b11d4211e86106a9b64a151e7076be911174a8aa	26282
+frame	random	4	0	P	0	V=26265:ad0a684f	ad0a684fb3ce7c21e6fdca8f50257f8d1bbfe079	26265
+frame	random	5	0	P	0	V=26270:54435a5e	54435a5e279bf3af70d9fa446ab9685a1e2b6c40	26270
+stream	random	0	16765e34bd3902897a3d9848f47d4e750443944a	157693
+config	fade	fade	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;
+frame	fade	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+frame	fade	1	0	P	0	V=575:06f39d7b	06f39d7bb3e478b75105d812bd1c7094af4dc297	575
+frame	fade	2	0	P	0	V=1870:cbf136c5	cbf136c5dfc0944f8a9d13444a9b87198139d2f8	1870
+frame	fade	3	0	P	0	V=2723:98d59890	98d59890b2d545de3f415d829d815ff00eee23fc	2723
+frame	fade	4	0	P	0	V=2364:845495d9	845495d937e9ad7dd39de0aef3bd7614c8ff8652	2364
+frame	fade	5	0	P	0	V=2813:4752b5a4	4752b5a4144a748782ec97ee00725abc8433e97a	2813
+frame	fade	6	0	P	0	V=2599:def260fd	def260fd06a2ce054053f18ee0611a289c198d7d	2599
+frame	fade	7	0	P	0	V=2887:88230e4a	88230e4aaabe9c0e7b65cb07e4d0272faa77127d	2887
+stream	fade	0	bbc28db3b489a912b7879f0206ce03a41c9b65b0	26578
+config	cut	cut	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;
+frame	cut	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+frame	cut	1	0	P	0	V=15:58fb2110	58fb2110c06551be56858b677c0b942896ebaed7	15
+frame	cut	2	0	P	0	V=11:6b68ea00	6b68ea007f543d6580d54d11cc7d2b3c43331159	11
+frame	cut	3	0	P	0	V=11:cac34d33	cac34d3388ed5c2cae5ee96e0aab40081a2dd2b7	11
+frame	cut	4	0	P	0	V=16491:b7dddbc2	b7dddbc2cff0b65c72b50db1d4472d89402d63fe	16491
+frame	cut	5	0	P	0	V=246:6a67e44d	6a67e44d886fd51c731d46d49dcf7f1817c78c1f	246
+frame	cut	6	0	P	0	V=11:7c52a17a	7c52a17a92d96dd91a1adc52d6855c0d586f314a	11
+frame	cut	7	0	P	0	V=11:dbd92092	dbd9209253d4808598c0214cfb0c971bf9fe3ec1	11
+stream	cut	0	221ea33a9280269f98357b5187f1d69611e2e4f1	27543
+config	subpel	subpel	10	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;
+frame	subpel	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=1310:6528196d	b4a668d237697893fc6b12ade29b8617350955d5	1335
+frame	subpel	1	0	P	0	V=149:0df99059	0df99059266d0ddaf44866d00fda6b480f71ac11	149
+frame	subpel	2	0	P	0	V=209:d3ebf339	d3ebf339864aaf21e24d42feede095844ccfaedf	209
+frame	subpel	3	0	P	0	V=214:fa61c110	fa61c110bca4d48d0a244964cfb1308764c8ad92	214
+frame	subpel	4	0	P	0	V=253:ffb9c352	ffb9c3520682cb373e49eba5aff6b50004652d08	253
+frame	subpel	5	0	P	0	V=218:f6de0cd7	f6de0cd7835a0b53244f6ec1f02e4c0c2ff59723	218
+frame	subpel	6	0	P	0	V=147:38245d4a	38245d4a7599e17242c1e5c2250c36f91e951177	147
+frame	subpel	7	0	P	0	V=135:a6874fc8	a6874fc8972253b41180184967a149b7c4567ffd	135
+frame	subpel	8	0	P	0	V=162:7c9e18bf	7c9e18bf1ce17bdc4a694934a62b14667a85c19e	162
+frame	subpel	9	0	P	0	V=148:180f7154	180f7154be80152f13ed480f0fa4c11343603df3	148
+stream	subpel	0	0cb460f05b9d5bf7efd943957461daaca8ea8706	2970
+config	pan-medium	pan	10	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iComplexityMode=1
+frame	pan-medium	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10179:1abbcd13	3a1df7717ca139688bef053e609c0d1e242af13c	10204
+frame	pan-medium	1	0	P	0	V=6011:ea0352d2	ea0352d2d95e77f097b7ccd41fa231dbd2d6b2dd	6011
+frame	pan-medium	2	0	P	0	V=4913:84f69fa3	84f69fa311181881f5ffbaa574fc284b58452c5a	4913
+frame	pan-medium	3	0	P	0	V=4816:fab1a990	fab1a990d985fd138688e80c9990c11fd61c3a76	4816
+frame	pan-medium	4	0	P	0	V=4101:76d86441	76d86441174cc02e0a4a0be8a5af16be0ff575f7	4101
+frame	pan-medium	5	0	P	0	V=4781:4a917530	4a9175308a5d097074e5d81bc489834364afe5b6	4781
+frame	pan-medium	6	0	P	0	V=5240:c7990a88	c7990a88af54ed1250025bdcc01d793b1fca2f8d	5240
+frame	pan-medium	7	0	P	0	V=5235:3753dcb9	3753dcb96511dbcd02a3528e8c63733c325b8041	5235
+frame	pan-medium	8	0	P	0	V=4025:64e602a4	64e602a40efd5ffb0ab9e87bd889c8e9a5a90134	4025
+frame	pan-medium	9	0	P	0	V=5336:f8a15be8	f8a15be87bc2b01fa81f0a749dcd9f8db0ac4a98	5336
+stream	pan-medium	0	2fb6df3a8b3d5f2cda40193869432c29be1955f2	54662
+config	pan-high	pan	10	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iComplexityMode=2
+frame	pan-high	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10179:1abbcd13	3a1df7717ca139688bef053e609c0d1e242af13c	10204
+frame	pan-high	1	0	P	0	V=6011:ea0352d2	ea0352d2d95e77f097b7ccd41fa231dbd2d6b2dd	6011
+frame	pan-high	2	0	P	0	V=4913:84f69fa3	84f69fa311181881f5ffbaa574fc284b58452c5a	4913
+frame	pan-high	3	0	P	0	V=4816:fab1a990	fab1a990d985fd138688e80c9990c11fd61c3a76	4816
+frame	pan-high	4	0	P	0	V=4101:76d86441	76d86441174cc02e0a4a0be8a5af16be0ff575f7	4101
+frame	pan-high	5	0	P	0	V=4781:4a917530	4a9175308a5d097074e5d81bc489834364afe5b6	4781
+frame	pan-high	6	0	P	0	V=5240:c7990a88	c7990a88af54ed1250025bdcc01d793b1fca2f8d	5240
+frame	pan-high	7	0	P	0	V=5235:3753dcb9	3753dcb96511dbcd02a3528e8c63733c325b8041	5235
+frame	pan-high	8	0	P	0	V=4025:64e602a4	64e602a40efd5ffb0ab9e87bd889c8e9a5a90134	4025
+frame	pan-high	9	0	P	0	V=5336:f8a15be8	f8a15be87bc2b01fa81f0a749dcd9f8db0ac4a98	5336
+stream	pan-high	0	2fb6df3a8b3d5f2cda40193869432c29be1955f2	54662
+config	block-medium	block	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iComplexityMode=1
+frame	block-medium	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10733:818ceb85	10b90a5adcc170b15792d1f8982c54eabfdd4100	10758
+frame	block-medium	1	0	P	0	V=927:1a8169c5	1a8169c5fd8e7dd74a355c7b09247ad129a4c43e	927
+frame	block-medium	2	0	P	0	V=522:1b9adad1	1b9adad1574b7948a1e7a6c8bebcddc383d6ffad	522
+frame	block-medium	3	0	P	0	V=443:1b830d7c	1b830d7c90c2a9d7bbfb189d04614e135e6b0f2d	443
+frame	block-medium	4	0	P	0	V=574:97676084	97676084a1a854d91eab3cf7c6cb75ea6a1f4708	574
+frame	block-medium	5	0	P	0	V=642:7ca32cf0	7ca32cf05d1860ef7e4701d3cd17a50bc4cc51e8	642
+frame	block-medium	6	0	P	0	V=697:097865c6	097865c6c2953d6b6edb74643998fd2ab8062d18	697
+frame	block-medium	7	0	P	0	V=636:593307ee	593307eef89fa56dd46ef846264e3c76d0ecc938	636
+stream	block-medium	0	57a5b10007c46fae9969b99e9a41a0d3c74b3b2b	15199
+config	subpel-high	subpel	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iComplexityMode=2
+frame	subpel-high	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=975:9b3d1c06	12e252950a82ef03ac2d46d7bc8ff30ddb6f4bda	1000
+frame	subpel-high	1	0	P	0	V=341:0796a97a	0796a97afa71020ebede9f794a1808962fa21c44	341
+frame	subpel-high	2	0	P	0	V=227:7a9529c4	7a9529c4f838028f20957dc6da7246ecd52489fa	227
+frame	subpel-high	3	0	P	0	V=228:6152fbf9	6152fbf99a2b9deec0ffbfbab8af583c98144f87	228
+frame	subpel-high	4	0	P	0	V=257:1040944a	1040944abf104b6e80c2e7fe002ff49ee3e28e6b	257
+frame	subpel-high	5	0	P	0	V=252:ec92cd07	ec92cd0794c3964aa2692fab9cd996548c4b4dfe	252
+frame	subpel-high	6	0	P	0	V=169:823de060	823de060f38e764e91567cd30515df1cf532de31	169
+frame	subpel-high	7	0	P	0	V=196:67d63bb1	67d63bb13b34c75bba792ee16b611de99e4ac084	196
+stream	subpel-high	0	28f0827234104c7d160d52ab3d3dd4db95642607	2670
+config	block-high	block	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iComplexityMode=2
+frame	block-high	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10733:818ceb85	10b90a5adcc170b15792d1f8982c54eabfdd4100	10758
+frame	block-high	1	0	P	0	V=927:1a8169c5	1a8169c5fd8e7dd74a355c7b09247ad129a4c43e	927
+frame	block-high	2	0	P	0	V=522:1b9adad1	1b9adad1574b7948a1e7a6c8bebcddc383d6ffad	522
+frame	block-high	3	0	P	0	V=443:1b830d7c	1b830d7c90c2a9d7bbfb189d04614e135e6b0f2d	443
+frame	block-high	4	0	P	0	V=574:97676084	97676084a1a854d91eab3cf7c6cb75ea6a1f4708	574
+frame	block-high	5	0	P	0	V=642:7ca32cf0	7ca32cf05d1860ef7e4701d3cd17a50bc4cc51e8	642
+frame	block-high	6	0	P	0	V=697:097865c6	097865c6c2953d6b6edb74643998fd2ab8062d18	697
+frame	block-high	7	0	P	0	V=636:593307ee	593307eef89fa56dd46ef846264e3c76d0ecc938	636
+stream	block-high	0	57a5b10007c46fae9969b99e9a41a0d3c74b3b2b	15199
+config	noise-high	noise	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iComplexityMode=2
+frame	noise-high	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=26225:e70a5eee	e44e435fb8ea5d28978aab1cf46aff7856fdaac3	26250
+frame	noise-high	1	0	P	0	V=12211:ba5daaa5	ba5daaa55d9baadfcc8a3bf39487bb9f73d9adc7	12211
+frame	noise-high	2	0	P	0	V=11106:298f87fe	298f87fe8067c70ae70255938f643076c61e20f9	11106
+frame	noise-high	3	0	P	0	V=9328:b8dfe426	b8dfe426d5fd0300be7fec6f6e3706f07c3249b9	9328
+frame	noise-high	4	0	P	0	V=8650:ecb756be	ecb756be90569a31cf8c5a19e07a4f68cf43de6a	8650
+frame	noise-high	5	0	P	0	V=8435:df93fc85	df93fc85cda56b7325c6aaf9ab5301cc339d808a	8435
+stream	noise-high	0	459f7dcc7000c3df8471b1975713a32fa2899fba	75980
+config	cut-high	cut	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iComplexityMode=2
+frame	cut-high	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10179:1abbcd13	3a1df7717ca139688bef053e609c0d1e242af13c	10204
+frame	cut-high	1	0	P	0	V=15:58fb2110	58fb2110c06551be56858b677c0b942896ebaed7	15
+frame	cut-high	2	0	P	0	V=11:6b68ea00	6b68ea007f543d6580d54d11cc7d2b3c43331159	11
+frame	cut-high	3	0	P	0	V=11:cac34d33	cac34d3388ed5c2cae5ee96e0aab40081a2dd2b7	11
+frame	cut-high	4	0	P	0	V=15720:eed1b932	eed1b932c9496fd293ef7bf746810d9075bb889d	15720
+frame	cut-high	5	0	P	0	V=214:7da4680f	7da4680f8f17c11ff8e23c83786e43c805a0b9fa	214
+frame	cut-high	6	0	P	0	V=11:7c52a17a	7c52a17a92d96dd91a1adc52d6855c0d586f314a	11
+frame	cut-high	7	0	P	0	V=11:dbd92092	dbd9209253d4808598c0214cfb0c971bf9fe3ec1	11
+stream	cut-high	0	1e08d41adb5fb19b09f11aa7652a1fbdf3754731	26197
+config	fade-medium	fade	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iComplexityMode=1
+frame	fade-medium	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10179:1abbcd13	3a1df7717ca139688bef053e609c0d1e242af13c	10204
+frame	fade-medium	1	0	P	0	V=643:5d19bbe8	5d19bbe8a6340a39edd5bb2ff8bef359aef17556	643
+frame	fade-medium	2	0	P	0	V=1821:19f58e3e	19f58e3ea05159aaaa7bf96464499d9c7f99f7c2	1821
+frame	fade-medium	3	0	P	0	V=2733:126891a1	126891a1796d4e6f26b7f46cc6f1134057941b3b	2733
+frame	fade-medium	4	0	P	0	V=2271:f7a150c6	f7a150c62c693cd73a2ef6b96d55bc7e529759e6	2271
+frame	fade-medium	5	0	P	0	V=2842:90d743f7	90d743f781559e1a7e4ef79dedee144a02b3cafb	2842
+frame	fade-medium	6	0	P	0	V=2531:86e6f3eb	86e6f3eb9e0bd09b770198ae6caf86c7937c381b	2531
+frame	fade-medium	7	0	P	0	V=2897:712b5224	712b5224e6cc4d5b2741fa3a9741705485356928	2897
+stream	fade-medium	0	d085b4169c885f4bda2151155af021cb09a00184	25942
+config	pan-qp0	pan	4	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=0
+frame	pan-qp0	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=26378:97368986	d53549e8194d5f94555715f2ea4d8f6707a28d94	26403
+frame	pan-qp0	1	0	P	0	V=17139:960ef506	960ef506cd8edd901966509a838b29ae931c83f4	17139
+frame	pan-qp0	2	0	P	0	V=13919:ab90409c	ab90409cf8912a6af19c55decbe7249d9bfae8d4	13919
+frame	pan-qp0	3	0	P	0	V=14269:a41cfdf4	a41cfdf4ee42196c238a6b9e98e73acd611b8e06	14269
+stream	pan-qp0	0	d30b23e421ac1372d7be69ca949613fcf168604b	71730
+config	pan-qp12	pan	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=12
+frame	pan-qp12	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=18184:c07a27c1	82df8ce2475ec413af0d04c4078d76101778aa56	18209
+frame	pan-qp12	1	0	P	0	V=10964:295e0227	295e02278bb293b3252215d42bd9576aba4c2483	10964
+frame	pan-qp12	2	0	P	0	V=9152:637d4152	637d41521ae6656df9a45988720f5eecf9886b43	9152
+frame	pan-qp12	3	0	P	0	V=9112:1a25f11c	1a25f11cb5fa213772608dfd549af91052a6eada	9112
+frame	pan-qp12	4	0	P	0	V=7922:07ea8a34	07ea8a34d54d5cc3d7f29ce0612c599ce77a61d8	7922
+frame	pan-qp12	5	0	P	0	V=9087:88e31c01	88e31c0152777f77d45a74a69bb8ccded0513889	9087
+stream	pan-qp12	0	b26c212cbd730712732ed00ada55529ac8bbcf21	64446
+config	fade-qp20	fade	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=20
+frame	fade-qp20	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=14064:200b17eb	be45cace995a761f5dc3974c2de256f45409c94a	14089
+frame	fade-qp20	1	0	P	0	V=2621:b74008ab	b74008abfd84f238e41bb391e92360ba72b1b3a1	2621
+frame	fade-qp20	2	0	P	0	V=4012:c636ff3e	c636ff3e700c652d5898f4f0d83fd39f6746dacf	4012
+frame	fade-qp20	3	0	P	0	V=4371:02c6acce	02c6acce476faa206dba8dfa639fd3f54039da04	4371
+frame	fade-qp20	4	0	P	0	V=4394:bb620356	bb6203567620f4d9bc308175a7f84f7442fd7032	4394
+frame	fade-qp20	5	0	P	0	V=4461:cc63031c	cc63031cc8e15ce3c8560f0762dcf05ec975f094	4461
+stream	fade-qp20	0	12094b23b3842f6dccbca29b320dffea3d484f9f	33948
+config	subpel-qp20-high	subpel	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=20;iComplexityMode=2
+frame	subpel-qp20-high	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=1505:e597f8db	6527ef0a78a16b32c907322dee471a7377b2ad6d	1530
+frame	subpel-qp20-high	1	0	P	0	V=231:d2bc3c05	d2bc3c05347672b4d82cfc4d1ca11081adfcb2f6	231
+frame	subpel-qp20-high	2	0	P	0	V=211:a651dda1	a651dda1082ebd35e217487a3056b46ac305ddfb	211
+frame	subpel-qp20-high	3	0	P	0	V=333:d0aff087	d0aff0874360d86ca1aa442e021b1c8e15d05d12	333
+frame	subpel-qp20-high	4	0	P	0	V=307:e73d06ff	e73d06ff826c81115a48ea875af4859a10dfb549	307
+frame	subpel-qp20-high	5	0	P	0	V=296:972718cc	972718cc4ce948f8bf41a404f48c56bf590e510b	296
+stream	subpel-qp20-high	0	ea33672cddc14bedd395b040220115d683fadbc2	2908
+config	pan-qp40	pan	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=40
+frame	pan-qp40	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=5675:5c121c87	94ab5ef301310644e17d3dac580e3429d4f78b77	5700
+frame	pan-qp40	1	0	P	0	V=2943:56d18481	56d18481033225c9b01ece0550bfd6434da130e2	2943
+frame	pan-qp40	2	0	P	0	V=2300:1a6950a0	1a6950a06b0d69d60b12ce52e1efc1f6f5782e6d	2300
+frame	pan-qp40	3	0	P	0	V=2237:e4d0121f	e4d0121fe6c553e0112b3921b908484c257acb08	2237
+frame	pan-qp40	4	0	P	0	V=2140:1c2485cd	1c2485cdfb3ed69189c157e183838308497a9b9a	2140
+frame	pan-qp40	5	0	P	0	V=2168:dd9f580e	dd9f580e81aea61feb0eede6b336cf684828b71c	2168
+frame	pan-qp40	6	0	P	0	V=2468:07ea20e5	07ea20e53e981f7fbd6dba92c56a993b222a893e	2468
+frame	pan-qp40	7	0	P	0	V=2471:6b5b7229	6b5b7229eace29f165a63c22646a171f0de97ffe	2471
+stream	pan-qp40	0	667c22dfa17ec23855f8e6ef8aede6b239b935ae	22427
+config	pan-qp51	pan	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=51
+frame	pan-qp51	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2651:23e4612f	af399741f0e7290e19b39bfddfc3423a70b83da4	2676
+frame	pan-qp51	1	0	P	0	V=2078:3643d566	3643d56604ad42b61c7bdb140be7a71ab7f3bd72	2078
+frame	pan-qp51	2	0	P	0	V=1668:45d1c30a	45d1c30a75705a1d4a847866a8371a8790bd8675	1668
+frame	pan-qp51	3	0	P	0	V=1586:43ea0106	43ea0106df6065ab80d3ce113a597bfdc1788dce	1586
+frame	pan-qp51	4	0	P	0	V=1666:5a682f65	5a682f65566eee3404ae05d5618214a24a311c5a	1666
+frame	pan-qp51	5	0	P	0	V=1433:df480273	df48027367cd61cd9a2524f5250de4eb1dde401e	1433
+frame	pan-qp51	6	0	P	0	V=1741:4f4bcfcc	4f4bcfccb02089e23020e6dfa55245778e8d8375	1741
+frame	pan-qp51	7	0	P	0	V=1481:d6ccc65b	d6ccc65b627e3e29ee384cac862cc4f822bea707	1481
+stream	pan-qp51	0	9f0acb985841a93e3cb444a91c41ff21fdbae0a6	14329
+config	static-qp51	static	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.iDLayerQp=51
+frame	static-qp51	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2651:23e4612f	af399741f0e7290e19b39bfddfc3423a70b83da4	2676
+frame	static-qp51	1	0	P	0	V=102:7e24be0d	7e24be0d4b50bd1eaed80a1ad5cf246cdadada78	102
+frame	static-qp51	2	0	P	0	V=73:e04c9094	e04c9094099bd8ab5ed9615d31086f371f2c3ec5	73
+frame	static-qp51	3	0	P	0	V=13:944df46d	944df46d338c94c22b07d66f41f4f5b0b7b494b1	13
+frame	static-qp51	4	0	P	0	V=13:bbdbdaea	bbdbdaea102710bc76eeb11d4db0e0af34625807	13
+frame	static-qp51	5	0	P	0	V=13:fb24daff	fb24daff0efaa9c666bf8c9843b979c971c84dba	13
+stream	static-qp51	0	3fc84fe50331a8e35ce653cfb2b15708e30fc072	2890
+config	intra-period-4	pan	12	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;uiIntraPeriod=4
+frame	intra-period-4	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+frame	intra-period-4	1	0	P	0	V=6019:91128291	9112829130b6f25399e0a28495cb38078f912185	6019
+frame	intra-period-4	2	0	P	0	V=4931:47b06157	47b06157b94dd6025b1c8414c5ccc0cbe59e274f	4931
+frame	intra-period-4	3	0	P	0	V=4826:ddea5e1a	ddea5e1abf273c43bdcc6d269259545f6a4ab969	4826
+frame	intra-period-4	4	0	IDR	0	N=17:d76fa0e0,8:ad3775d1|V=11190:2e124bcd	31cf23b3f1ad9866303cd6b2437b258b5e0d718b	11215
+frame	intra-period-4	5	0	P	0	V=4837:cc058adc	cc058adca35b8ab5390ed2aa36daec7e289018f2	4837
+frame	intra-period-4	6	0	P	0	V=5297:6a6063e5	6a6063e56049930142b77bebece18ec56f288607	5297
+frame	intra-period-4	7	0	P	0	V=5254:0804bfc4	0804bfc44fccc144109ce978d6d4203eaeaef2a1	5254
+frame	intra-period-4	8	0	IDR	0	N=17:5ca076bd,8:0b3736d9|V=9603:604ee891	3f514b94c13ec4ac9b683ccf123e52cf04627521	9628
+frame	intra-period-4	9	0	P	0	V=5330:935b0499	935b04999ec49b44612e58decef3562413ddd754	5330
+frame	intra-period-4	10	0	P	0	V=4918:f8137d70	f8137d70867606f642ab970b453234b23b4f972d	4918
+frame	intra-period-4	11	0	P	0	V=4931:f14acf3d	f14acf3d8075105f4a9540c9d7f28c68724f4fd8	4931
+stream	intra-period-4	0	bd2820844a7c0991e62b83d125ba3a82d124f991	77933
+config	intra-period-3-high	subpel	10	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;uiIntraPeriod=3;iComplexityMode=2
+frame	intra-period-3-high	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=975:9b3d1c06	12e252950a82ef03ac2d46d7bc8ff30ddb6f4bda	1000
+frame	intra-period-3-high	1	0	P	0	V=341:0796a97a	0796a97afa71020ebede9f794a1808962fa21c44	341
+frame	intra-period-3-high	2	0	P	0	V=227:7a9529c4	7a9529c4f838028f20957dc6da7246ecd52489fa	227
+frame	intra-period-3-high	3	0	IDR	0	N=17:d76fa0e0,8:ad3775d1|V=1072:6d73ff77	868975b71eb231294e77a3dee08e43e3b339bcea	1097
+frame	intra-period-3-high	4	0	P	0	V=255:998aee6c	998aee6c56a018496622a61d5f83d17eb12603af	255
+frame	intra-period-3-high	5	0	P	0	V=251:624129d8	624129d8f3ec45744463406dd4cf6473e9cc64cc	251
+frame	intra-period-3-high	6	0	IDR	0	N=17:5ca076bd,8:0b3736d9|V=1573:34369d78	2db66726ac20e5fbee30ff9f0bb0737e424b61c8	1598
+frame	intra-period-3-high	7	0	P	0	V=163:3745c79c	3745c79ccd72395ffa674799ad3ae48753edc76c	163
+frame	intra-period-3-high	8	0	P	0	V=137:53374129	53374129e1420d8effb2810711d5defa5ba549f1	137
+frame	intra-period-3-high	9	0	IDR	0	N=17:20ed9380,9:47a04b81|V=1850:da076c97	a3e205167b7d2a646d1169b3fe6278730a409395	1876
+stream	intra-period-3-high	0	fbf11376bd8d2bc95524c1718e4c57c154ef97ab	6945
+config	intra-period-2-static	static	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;uiIntraPeriod=2
+frame	intra-period-2-static	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+frame	intra-period-2-static	1	0	P	0	V=15:58fb2110	58fb2110c06551be56858b677c0b942896ebaed7	15
+frame	intra-period-2-static	2	0	IDR	0	N=17:d76fa0e0,8:ad3775d1|V=10721:d723ae28	2ea5bf5a23f52f06b282237ad2dd46f3727cb7b3	10746
+frame	intra-period-2-static	3	0	P	0	V=15:300e9f15	300e9f1571ce7022ce29dae17acff7dce6133478	15
+frame	intra-period-2-static	4	0	IDR	0	N=17:5ca076bd,8:0b3736d9|V=10723:78c94ee6	befa7ac7fe16014a06256dcd771bd0711359119e	10748
+frame	intra-period-2-static	5	0	P	0	V=15:e6dc352f	e6dc352fb5fd2e8197c497d69521d2cfcead850b	15
+stream	intra-period-2-static	0	bd2550b637e944159faa4ce13f464b07cb70f3e9	32286
+config	temporal-2	pan	12	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iTemporalLayerNum=2
+frame	temporal-2	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=11882:2cc2c0cb	ed7c8beb5a0a29e0a904d3ff4baa79b5a068c671	11907
+frame	temporal-2	1	0	P	1	V=6013:315903b5	315903b5cf7486904a3527ae843c6c4badc6a989	6013
+frame	temporal-2	2	0	P	0	V=3231:fccb4645	fccb4645f96f0335e3206f1d5ee6ad9c8da8b0ce	3231
+frame	temporal-2	3	0	P	1	V=4829:e0d3be07	e0d3be07ad7e28b973a4434e3dd81128b10a6959	4829
+frame	temporal-2	4	0	P	0	V=1399:dd256181	dd256181dfc1d80f3e5881080ee6ab436b302321	1399
+frame	temporal-2	5	0	P	1	V=4806:13532088	1353208837b4e53843d36403b865da038983d451	4806
+frame	temporal-2	6	0	P	0	V=1421:e4708e9c	e4708e9c4538063972c54a95e89812b679eb78e8	1421
+frame	temporal-2	7	0	P	1	V=5288:4726b784	4726b7845a2e22446c486f75f4f365837b6d8984	5288
+frame	temporal-2	8	0	P	0	V=1075:616e137e	616e137ea14ed60d1ad62bdde185c4d69c5340c2	1075
+frame	temporal-2	9	0	P	1	V=5355:0b37c80b	0b37c80b455c13031837090fde308bf5acc6fa1d	5355
+frame	temporal-2	10	0	P	0	V=1320:7013db18	7013db184c8402ee5673f7a382bbef313c3bfc7e	1320
+frame	temporal-2	11	0	P	1	V=4895:7e1b2bf4	7e1b2bf4aacc00a3024418062768274dd7ee417d	4895
+stream	temporal-2	0	c2f4a42a200479411d0ad67e921821e597ff7ce6	51539
+config	temporal-3	pan	16	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iTemporalLayerNum=3
+frame	temporal-3	0	0	IDR	0	N=17:34f6a795,8:b5da713a|V=12833:1e23c8b0	74eeaa7152c47450a7c7500bd196fba29be34d2e	12858
+frame	temporal-3	1	0	P	2	V=6013:8bc1a136	8bc1a136f9d753b1320e21d4ad8f5a0c337239a9	6013
+frame	temporal-3	2	0	P	1	V=2956:e4787a4f	e4787a4f6300e0511e8b1b78539ab1196ff90fb1	2956
+frame	temporal-3	3	0	P	2	V=4902:d4c96c76	d4c96c76245fb764b4509a16516ee4faf8c59b2f	4902
+frame	temporal-3	4	0	P	0	V=2773:74337973	74337973574d5daf3dc6720a7cdadf4817f90b90	2773
+frame	temporal-3	5	0	P	2	V=4813:6ba715f6	6ba715f685704b54cb4f89d28a52a75518a10661	4813
+frame	temporal-3	6	0	P	1	V=1296:3fc454e3	3fc454e3e15e210f4cbd18e14dc90669649c7efc	1296
+frame	temporal-3	7	0	P	2	V=5304:6aafbb36	6aafbb36d9aef355c5af263f5a6934d96c20a04a	5304
+frame	temporal-3	8	0	P	0	V=1999:78e71c35	78e71c35a1b63d596022dd9dd19abad657668a9e	1999
+frame	temporal-3	9	0	P	2	V=5364:ae486e61	ae486e6128b22fd9b63bd6db94f705e27fb24cb1	5364
+frame	temporal-3	10	0	P	1	V=1201:19483b6f	19483b6f78c12e7627dce5dd1177b9833db92927	1201
+frame	temporal-3	11	0	P	2	V=5009:8a48487c	8a48487c77c9b4064caabf205a1677a462d506b2	5009
+frame	temporal-3	12	0	P	0	V=1821:c9bae7d8	c9bae7d8cad90afb8b1ed8dbf2d54c0ebcb1e5c5	1821
+frame	temporal-3	13	0	P	2	V=5005:600b06fb	600b06fbafef4bbbda3031aebf55db6c18d79d47	5005
+frame	temporal-3	14	0	P	1	V=1883:002a2f02	002a2f025a5a5e25ec527a4f0c2db9c8027d33c9	1883
+frame	temporal-3	15	0	P	2	V=5378:1a12dec7	1a12dec79925e52f81663530cf5d5d15cd6a6db3	5378
+stream	temporal-3	0	86944a33803d9feda2d30af662d8ff92d420b135	68575
+config	temporal-4	pan	18	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iTemporalLayerNum=4
+frame	temporal-4	0	0	IDR	0	N=17:f8100f68,8:b5da713a|V=13471:c7e87be3	7c133dc17d17ea70419fbe01c24ca7945ba4a25c	13496
+frame	temporal-4	1	0	P	3	V=6005:d5f738a3	d5f738a3a1ba14e61e420e18984d1e700044677e	6005
+frame	temporal-4	2	0	P	2	V=2938:3e973407	3e973407a29958e4960d2a957f390ba4419e3e17	2938
+frame	temporal-4	3	0	P	3	V=4897:9ccf76f6	9ccf76f61ad9a7a63a2c3f4b157cc0b58ce3de54	4897
+frame	temporal-4	4	0	P	1	V=2422:1a48a3bf	1a48a3bf6a0629606a3d6f31755d630b15fb95a7	2422
+frame	temporal-4	5	0	P	3	V=4798:d6454475	d6454475bd12e83b01bc1b24d2e2d08e01e5e114	4798
+frame	temporal-4	6	0	P	2	V=1298:e943a2ba	e943a2bad25b94426a55c598a8a89602f6275126	1298
+frame	temporal-4	7	0	P	3	V=5290:8b994c77	8b994c77ebf9d7e45b8e26e411eba9f1cf5d97fc	5290
+frame	temporal-4	8	0	P	0	V=13455:51ac3c59	51ac3c5917c22cd53215c7ea8a904a8a41d7985c	13455
+frame	temporal-4	9	0	P	3	V=5303:1107e9b8	1107e9b853ee3dd6df492d494f014cb3c8d827f1	5303
+frame	temporal-4	10	0	P	2	V=1200:142ecb78	142ecb78301c056212e5d486f259bbcd819e51ca	1200
+frame	temporal-4	11	0	P	3	V=4999:d4d99424	d4d99424ecd23fd3a9c8ca9140e3ebd068c9e4ee	4999
+frame	temporal-4	12	0	P	1	V=3499:459d2074	459d2074d0540773407c0c62a41b5617ac021714	3499
+frame	temporal-4	13	0	P	3	V=5409:0e7345a4	0e7345a4ae0d98df17e8617985dae0a082cc3aba	5409
+frame	temporal-4	14	0	P	2	V=2218:881ec26d	881ec26dc7457b07fee096dce97e9d92120ce1bb	2218
+frame	temporal-4	15	0	P	3	V=5413:3da76f9d	3da76f9de4db86e899d03a5803c6a602eac05f6d	5413
+frame	temporal-4	16	0	P	0	V=16275:5ff55cf5	5ff55cf57a877fb869e4f410da50ed86e70b3578	16275
+frame	temporal-4	17	0	P	3	V=7447:0a5617ba	0a5617ba677875a4cb165d31b25f93e9c4bb2e97	7447
+stream	temporal-4	0	c3a9fe83685eba3dfed8da66802c6c0b2bdd8fe7	106362
+config	temporal-3-high	subpel	12	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iTemporalLayerNum=3;iComplexityMode=2
+frame	temporal-3-high	0	0	IDR	0	N=17:34f6a795,8:b5da713a|V=1303:ebf69245	84416b02e20cb24442fdcdde7f863050f7766977	1328
+frame	temporal-3-high	1	0	P	2	V=117:e28c303a	e28c303a9836770e4371e4404c1056e7ae69e9b0	117
+frame	temporal-3-high	2	0	P	1	V=130:3d7b0f4a	3d7b0f4ae875bc770a4516d1a033a9ce33cc8a2f	130
+frame	temporal-3-high	3	0	P	2	V=140:b7cc19c3	b7cc19c3c78e309b1be5e6bff442e47cab5400fe	140
+frame	temporal-3-high	4	0	P	0	V=168:52ed719b	52ed719b1569d322416f541af3ed0d8da769d3e5	168
+frame	temporal-3-high	5	0	P	2	V=50:6b5470b5	6b5470b5656c429c0516f7a2433fb98d0ea15e7d	50
+frame	temporal-3-high	6	0	P	1	V=272:864002c5	864002c5eec1bdca853d31155d52e713faaaab71	272
+frame	temporal-3-high	7	0	P	2	V=110:aa15f26d	aa15f26df6ad463d15e4572109689c06f68ace69	110
+frame	temporal-3-high	8	0	P	0	V=234:fcab441a	fcab441afd126e147694bc746de91c059a308366	234
+frame	temporal-3-high	9	0	P	2	V=48:e92129b1	e92129b1ddca84722f1768c3d8727d70d8e0f2b2	48
+frame	temporal-3-high	10	0	P	1	V=219:3bba326a	3bba326acdc5a4cd41a99e6ba59cb2324746d0a7	219
+frame	temporal-3-high	11	0	P	2	V=118:2bb2a012	2bb2a01230b25f295484a2c00dfcf0bf417c1017	118
+stream	temporal-3-high	0	354fafaa66e5638a68653f96b57d4ea888b8ffb8	2934
+config	temporal-4-intra-period-8	block	18	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iTemporalLayerNum=4;uiIntraPeriod=8
+frame	temporal-4-intra-period-8	0	0	IDR	0	N=17:f8100f68,8:b5da713a|V=14161:cd0349c9	e5834e317126e0ae54f78d1a4a30452a9511db2f	14186
+frame	temporal-4-intra-period-8	1	0	P	3	V=856:a0f7c0f7	a0f7c0f7703ba7a74447d5e3813d1189abeffa4e	856
+frame	temporal-4-intra-period-8	2	0	P	2	V=1001:2f943868	2f943868f006dd96617d910bc92040c9975538d8	1001
+frame	temporal-4-intra-period-8	3	0	P	3	V=863:d773fe8e	d773fe8e003f605b95ce9395cdafc681be50a34d	863
+frame	temporal-4-intra-period-8	4	0	P	1	V=1042:f61c1683	f61c16835f15ecfe20d2b83b4e5948f4e0499136	1042
+frame	temporal-4-intra-period-8	5	0	P	3	V=890:2f28274c	2f28274cd6edbae1f6c938ff8a1aaee443802f49	890
+frame	temporal-4-intra-period-8	6	0	P	2	V=1061:defdb4f0	defdb4f0b347989ead13f772c7f4c5ed6ca0d18a	1061
+frame	temporal-4-intra-period-8	7	0	P	3	V=1011:845f66c5	845f66c59e902555373c8ba64783052661cfe3c4	1011
+frame	temporal-4-intra-period-8	8	0	IDR	0	N=18:d943887d,8:ad3775d1|V=13821:ea690878	253c4beceb9c4fb5c84e70a8535e423d6f8ee870	13847
+frame	temporal-4-intra-period-8	9	0	P	3	V=988:8c9a95b6	8c9a95b643a225c073d40a66ff17ad96ba89e2cb	988
+frame	temporal-4-intra-period-8	10	0	P	2	V=1252:bbb5c1a9	bbb5c1a991970ac5cb9ce461f0da3fa588f13558	1252
+frame	temporal-4-intra-period-8	11	0	P	3	V=1043:9ae87aa1	9ae87aa1ee4bd027873d6f6f9a6ffbcfd185a31c	1043
+frame	temporal-4-intra-period-8	12	0	P	1	V=1424:566143e6	566143e6b94b73794c3b11bf6d5a7b07d8d7187c	1424
+frame	temporal-4-intra-period-8	13	0	P	3	V=885:5c13dd15	5c13dd15efdbcd772c5d112817529d30453c89e1	885
+frame	temporal-4-intra-period-8	14	0	P	2	V=1081:4d226535	4d22653507b381439e863392a76e5df08b12cce8	1081
+frame	temporal-4-intra-period-8	15	0	P	3	V=966:93f9564a	93f9564ae55908c9a4504be8e2cf759d9409f889	966
+frame	temporal-4-intra-period-8	16	0	IDR	0	N=18:ef5ab619,8:0b3736d9|V=13673:0064da55	773eca4ea97cafdb7728a2d296a87151be604d10	13699
+frame	temporal-4-intra-period-8	17	0	P	3	V=957:c9af37ed	c9af37ed09251679b919b962be442f15034200b2	957
+stream	temporal-4-intra-period-8	0	073339773d59942dff8938f5d8cc9144e6ba715f	57052
+config	slices-fixed-4	pan	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.uiSliceMode=1;L0.uiSliceNum=4
+frame	slices-fixed-4	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2626:21559199,2377:5949d319,2637:ee2a28d1,3038:83461e8f	c432da85a503afff14266d6ebb2eb5df1a46ce9d	10703
+frame	slices-fixed-4	1	0	P	0	V=1544:1239ee42,1741:a0859ed8,1594:198669c9,2656:3d1061f1	23c417291e7e4651c89f39efc2bcdf4d81878616	7535
+frame	slices-fixed-4	2	0	P	0	V=1102:095f2a9b,1442:d61f639b,1171:12cee61b,1598:cbdbfb2a	ff364535cdf63c8dbe1066f9c8cc750b37d93df8	5313
+frame	slices-fixed-4	3	0	P	0	V=1098:8b274ad5,1131:41dfdd80,1111:568dea15,1553:dcbcfb81	8409e609668da798f6ab0a8a2bdbf645185232ba	4893
+frame	slices-fixed-4	4	0	P	0	V=949:42043141,1019:9e28dcc4,940:51da319c,1297:d0783c8c	dc35728b264372805d04148d39177e8f6bb3fdfe	4205
+frame	slices-fixed-4	5	0	P	0	V=1087:fdb81d82,1177:b6691415,1116:27a53ddd,1484:40029379	f95c0fab499291af54e951ad52795395dfc8212d	4864
+frame	slices-fixed-4	6	0	P	0	V=1206:f09ec3b3,1296:e4287790,1205:e4c1c2b2,1617:18ef3a74	07d5b6923e9b8540a5e41f83508bcbdfd8c8cc74	5324
+frame	slices-fixed-4	7	0	P	0	V=1233:8f080b61,1296:d0ed21f9,1215:c60ebfbd,1571:956c16ed	6a4209e7984c1c3fdf2c340ef912ea8b4d960d55	5315
+stream	slices-fixed-4	0	e43a202912d84cf2fabc4707bc9e23c2e0656b57	48152
+config	slices-fixed-3-high	subpel	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.uiSliceMode=1;L0.uiSliceNum=3;iComplexityMode=2
+frame	slices-fixed-3-high	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=500:190fe0c6,523:64036357,490:30e5027e	44543db8895ae883787b3c2daf0a309ddc747fc1	1538
+frame	slices-fixed-3-high	1	0	P	0	V=97:263dc470,92:3a114108,83:918aa199	31c153e4227d473c331f4d160e3147ec69d8575a	272
+frame	slices-fixed-3-high	2	0	P	0	V=85:085bfad7,96:1764b841,70:80ddb253	13ef75d1df6d5f4d21fead2bba68cc587c0832bc	251
+frame	slices-fixed-3-high	3	0	P	0	V=93:7ce4742a,87:a05b2306,64:7f1bea59	64380a5fafcd187f0a971fb0de473db2500dc159	244
+frame	slices-fixed-3-high	4	0	P	0	V=103:004f59cb,104:aa8c6975,97:673b8671	17e782fc2db48b7778bc6e12c9a16eeed8f1eaee	304
+frame	slices-fixed-3-high	5	0	P	0	V=82:45ba4e11,101:0c51ae71,86:23371cec	fda6ea0b1973297705cd67f6ffbb40450b815641	269
+frame	slices-fixed-3-high	6	0	P	0	V=56:96941295,78:263122c9,79:e698e66c	8913813da01722d4db9c3a8585aa875d6fb7a878	213
+frame	slices-fixed-3-high	7	0	P	0	V=59:0a2f831d,81:a77c74fa,88:cfc60fd3	383328f316efb3e30b6afdcde916cf841a0aa23c	228
+stream	slices-fixed-3-high	0	b5f89cec3d5af0b59e5544ecd52476ee742aff6f	3319
+config	slices-fixed-4-no-load-balancing	pan	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.uiSliceMode=1;L0.uiSliceNum=4;bUseLoadBalancing=0
+frame	slices-fixed-4-no-load-balancing	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2626:21559199,2377:5949d319,2637:ee2a28d1,3038:83461e8f	c432da85a503afff14266d6ebb2eb5df1a46ce9d	10703
+frame	slices-fixed-4-no-load-balancing	1	0	P	0	V=1544:1239ee42,1741:a0859ed8,1594:198669c9,2656:3d1061f1	23c417291e7e4651c89f39efc2bcdf4d81878616	7535
+frame	slices-fixed-4-no-load-balancing	2	0	P	0	V=1102:095f2a9b,1442:d61f639b,1171:12cee61b,1598:cbdbfb2a	ff364535cdf63c8dbe1066f9c8cc750b37d93df8	5313
+frame	slices-fixed-4-no-load-balancing	3	0	P	0	V=1098:8b274ad5,1131:41dfdd80,1111:568dea15,1553:dcbcfb81	8409e609668da798f6ab0a8a2bdbf645185232ba	4893
+frame	slices-fixed-4-no-load-balancing	4	0	P	0	V=949:42043141,1019:9e28dcc4,940:51da319c,1297:d0783c8c	dc35728b264372805d04148d39177e8f6bb3fdfe	4205
+frame	slices-fixed-4-no-load-balancing	5	0	P	0	V=1087:fdb81d82,1177:b6691415,1116:27a53ddd,1484:40029379	f95c0fab499291af54e951ad52795395dfc8212d	4864
+stream	slices-fixed-4-no-load-balancing	0	d3fe801701984dc15740b57c47eb6a1b61d4d2aa	37513
+config	slices-raster-rows	pan	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.uiSliceMode=2
+frame	slices-raster-rows	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=911:f08837c9,1314:269f731c,1305:e599ed7e,931:58acf632,1306:23393394,1303:3cc51644,927:7f92ceb1,1275:4dfa1760,1313:89010398	46afc17c6b96331194ca37953a9e785e85084a15	10610
+frame	slices-raster-rows	1	0	P	0	V=405:e580a275,1181:5f0f7b21,879:2e84f62a,433:8f6cb0aa,819:6251d332,869:1e5e4597,423:27208f07,807:6e579aa6,1557:647b50a6	df8f933a75255875292c6e3a8496f74a416fe4f2	7373
+frame	slices-raster-rows	2	0	P	0	V=355:2a7d7e90,782:59d999ee,618:9c06ca40,406:a96544bb,767:3dab97ea,628:e82456e7,391:4813b786,615:8caa1381,1015:bd9ffa8c	d04ccb9dfb4dba19225f3e8a4711699182ca4343	5577
+frame	slices-raster-rows	3	0	P	0	V=385:c0664164,619:3e6fc58e,591:051ace73,420:e074563c,610:46b8cbb9,589:22c6537c,399:722bac9e,604:dc9265c6,931:7c601a52	c0dd95145f6beceb9cbeea9a1f36918a80ed1dd2	5148
+frame	slices-raster-rows	4	0	P	0	V=375:88b3b96f,514:66165058,490:56339ecf,401:7f5cd07b,504:a7ff5deb,482:90031710,398:0df50058,501:c878a12e,643:987fb2eb	ac2cd89edb658382cb472bab9b6131c31b2a4f76	4308
+frame	slices-raster-rows	5	0	P	0	V=491:e4c1924d,538:d607a2bb,534:69a8d5ea,515:4f226783,529:4a4eec74,545:0d7e14a4,508:a0e682d9,511:5827a485,755:70871957	7043a28778d9b59a035949dedc70bab9e91765bc	4926
+frame	slices-raster-rows	6	0	P	0	V=568:9a2b1c56,572:93294197,584:8a8c9311,580:455b75ce,568:d4ffeb84,592:17b0925c,558:8dacd864,558:c0873609,824:b30db4e3	82fd58a2e466d20dff73a0e166d589576efbfe5c	5404
+frame	slices-raster-rows	7	0	P	0	V=568:ce0ccf4b,601:e6146312,560:c812e003,600:7d3eb14c,592:95a1ba41,555:dc80d66d,560:ec3d8c40,572:3b804862,753:c32f34ff	542ca649e76c5710bba91e40a1685bf957fa1fcb	5361
+stream	slices-raster-rows	0	d8df3bc5e43b5d6d59d2e4a01aa54d6e7080837c	48707
+config	slices-raster-mbs	block	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.uiSliceMode=2;L0.uiSliceMbNum=10,30,59
+frame	slices-raster-mbs	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=1278:0c4ecc16,3354:f402c673,6567:b73d7400	131eee8c87dc833ffbe912fb8ec0be93aeefd062	11224
+frame	slices-raster-mbs	1	0	P	0	V=450:0d4dd956,423:69a03c53,16:00f2f8f0	129b5624a197775dbf5a9a8d0f8c5b872e7cb109	889
+frame	slices-raster-mbs	2	0	P	0	V=211:35888382,570:07e7a324,12:b40fbf23	9d3a7adc77f4e57884bf77ca61bc54dc24aca302	793
+frame	slices-raster-mbs	3	0	P	0	V=143:8c7fb09e,608:b34cc846,12:bde699e3	0c4b7c9c23d3820191154bb63d621f5f6f6c5b8c	763
+frame	slices-raster-mbs	4	0	P	0	V=129:2c004e40,727:321689e3,12:fe9de0a5	912f67a2ab21f2a56ce833254712ba88acbce57a	868
+frame	slices-raster-mbs	5	0	P	0	V=121:05a63e7e,785:eed3b333,12:ec8c5626	b611065c52b891730c077e5735614a6700b20548	918
+frame	slices-raster-mbs	6	0	P	0	V=15:f741f872,929:0d0b8248,12:c817a4e3	5d88900734a3e5c69f7584c6cbaa2a0d70a0c8df	956
+frame	slices-raster-mbs	7	0	P	0	V=11:c80f96f8,1017:a1e9d0da,12:cde7b44c	3f0f617f480774e5415abf05772ad31c409ad38b	1040
+stream	slices-raster-mbs	0	f363ce95ac3064c756f01cc024d5e8462690e6fe	17451
+config	16x16	pan	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=16;iPicHeight=16
+frame	16x16	0	0	IDR	0	N=15:99c0c075,8:b5da713a|V=22:cc7514ea	e297088a00493e1582a1842a9f7a32b7279ded96	45
+frame	16x16	1	0	P	0	V=10:4349845d	4349845ddaba0f946164cf828006e458183b71ee	10
+frame	16x16	2	0	P	0	V=10:6d03033b	6d03033bcf460a10f31b77e836ecf3bc68d77539	10
+frame	16x16	3	0	P	0	V=17:8604d249	8604d249029a6a94f580e295b299be5c6235600c	17
+frame	16x16	4	0	P	0	V=35:6a3c8115	6a3c8115af737b770e606140d923bca46c31ff26	35
+frame	16x16	5	0	P	0	V=97:4b59768d	4b59768d2f2cd20b48626064dd9aef586c7c866f	97
+stream	16x16	0	dae1bfb76c41a3c6cb77672b65b73e75a4477bcb	214
+config	48x32	block	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=48;iPicHeight=32
+frame	48x32	0	0	IDR	0	N=16:5a0aa8bb,8:b5da713a|V=917:ff807121	07ff8ea88c786aae641890b7b0cd80d7cd0ab6a1	941
+frame	48x32	1	0	P	0	V=856:94c1e3a5	94c1e3a58ebdcd0376ebb96c2981ed8383b57347	856
+frame	48x32	2	0	P	0	V=568:27ae900a	27ae900a29fb116fe54d70e21f0f8b54db2b6491	568
+frame	48x32	3	0	P	0	V=387:8689ef47	8689ef4750312d14c5026ffcd3bdd13463f80794	387
+frame	48x32	4	0	P	0	V=445:ffa53b05	ffa53b05455939dd5b4bd20c9037eac438e2b17e	445
+frame	48x32	5	0	P	0	V=348:18ca3c28	18ca3c28f646630ba06fce1bdea6bb98b1da14a8	348
+frame	48x32	6	0	P	0	V=382:662e98b1	662e98b17ea6c32edea8ef8751fa16ec6c9cd031	382
+frame	48x32	7	0	P	0	V=296:a1b9b904	a1b9b904ce19ef8fdde52790e03da4077af67334	296
+stream	48x32	0	23c0f6408ddb2e2a2d6f851507ab40f6380ec2cc	4223
+config	33x17	pan	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=33;iPicHeight=17
+frame	33x17	0	0	IDR	0	N=18:230fb393,8:b5da713a|V=67:2a7bdf9b	68b00a004f79b3fa8e7b7ecd9bde2c71f54fbf8a	93
+frame	33x17	1	0	P	0	V=44:8495e6d2	8495e6d2846470f9a99126030e2675e5e20225df	44
+frame	33x17	2	0	P	0	V=49:9dfb54e0	9dfb54e040256a62380abefecd5f22487a093892	49
+frame	33x17	3	0	P	0	V=59:7067cd76	7067cd765b829ff54df9611a06d914afe03621ed	59
+frame	33x17	4	0	P	0	V=41:d0cc4058	d0cc405854681ed80f752a5d897b2f961575280c	41
+frame	33x17	5	0	P	0	V=180:1ee844d1	1ee844d11de24b06ed2d73aa466592f9f4d623e8	180
+frame	33x17	6	0	P	0	V=195:d46e859b	d46e859b7eda720ae78eabb594f8084e59b73854	195
+frame	33x17	7	0	P	0	V=204:ae19a9c5	ae19a9c5bfdcc96b870995dd5d576b7389caf11f	204
+stream	33x17	0	98780290eb18adfd3ab03fb9980a80aaa13f847b	865
+config	33x17-no-cropping	pan	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=33;iPicHeight=17;bEnableFrameCroppingFlag=0
+frame	33x17-no-cropping	0	0	IDR	0	N=16:5a0aa8bb,8:b5da713a|V=67:2a7bdf9b	65285da8ac5f5d8631c603aafe65cd5afa79da9a	91
+frame	33x17-no-cropping	1	0	P	0	V=44:8495e6d2	8495e6d2846470f9a99126030e2675e5e20225df	44
+frame	33x17-no-cropping	2	0	P	0	V=49:9dfb54e0	9dfb54e040256a62380abefecd5f22487a093892	49
+frame	33x17-no-cropping	3	0	P	0	V=59:7067cd76	7067cd765b829ff54df9611a06d914afe03621ed	59
+frame	33x17-no-cropping	4	0	P	0	V=41:d0cc4058	d0cc405854681ed80f752a5d897b2f961575280c	41
+frame	33x17-no-cropping	5	0	P	0	V=180:1ee844d1	1ee844d11de24b06ed2d73aa466592f9f4d623e8	180
+stream	33x17-no-cropping	0	1715dcdfec68524e85dc153a3c8bba7c7d50371f	464
+config	152x100	subpel	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=152;iPicHeight=100
+frame	152x100	0	0	IDR	0	N=18:9da02673,8:b5da713a|V=1126:25a91542	ab847f09d5191ac35ad914e1436b25b74eacf6ca	1152
+frame	152x100	1	0	P	0	V=97:6b17d916	6b17d916e55b7b9245106ff025ba38f1ad5cd8e4	97
+frame	152x100	2	0	P	0	V=123:6f9959a8	6f9959a8179c021beab23b63bfba5d6a6d47450f	123
+frame	152x100	3	0	P	0	V=125:89726f9e	89726f9ef5a6ae9f6077775276d0c96f7331a676	125
+frame	152x100	4	0	P	0	V=160:43f5a3d7	43f5a3d771fc4ce8280b4ded6cd59fd3dce139bd	160
+frame	152x100	5	0	P	0	V=143:e3ee4c64	e3ee4c64a3d261737e2ebd7dc738d614925242ea	143
+frame	152x100	6	0	P	0	V=136:2d33a141	2d33a141c3a3d43fdda021c2a22877be7b8b3385	136
+frame	152x100	7	0	P	0	V=96:5b384372	5b384372b494efc31d53b105921e316a9ed103ce	96
+stream	152x100	0	ac167626d9d834f727a9f943fa154eb16c283c90	2032
+config	320x192-high	pan	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=320;iPicHeight=192;iComplexityMode=2
+frame	320x192-high	0	0	IDR	0	N=17:39220e4b,8:b5da713a|V=24344:a0f5e498	85468cf83da8ca89562318445fc1bfe7a0d9da4e	24369
+frame	320x192-high	1	0	P	0	V=13427:bb22d7df	bb22d7df91dddf294da426418f344c8af5c758d9	13427
+frame	320x192-high	2	0	P	0	V=11660:a04f73e8	a04f73e8f07cf18b563e3c8cf202bbd8f15ded9b	11660
+frame	320x192-high	3	0	P	0	V=11514:49607f45	49607f4585160d2f76b1a7a9fcb1e472616984aa	11514
+frame	320x192-high	4	0	P	0	V=9909:c23f6011	c23f6011af2ad85e5ee88e316d8e5985d1c95994	9909
+frame	320x192-high	5	0	P	0	V=11216:75abc484	75abc484263dc4ee13b6e62cea35c170ec32cfd6	11216
+stream	320x192-high	0	2946ea458546f1272401bdc6a44a6733f4ca36ed	82095
+config	deblock-off	pan	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iLoopFilterDisableIdc=1
+frame	deblock-off	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10722:249248ed	9e37f75f39165b674f35cb07290250be93b24357	10747
+frame	deblock-off	1	0	P	0	V=6021:3f14e4da	3f14e4da29a5427e01a45c04dbfeccd9d4f434fc	6021
+frame	deblock-off	2	0	P	0	V=4894:ca02b55f	ca02b55f757768fac14c9092916a77644cb706e1	4894
+frame	deblock-off	3	0	P	0	V=4802:fba9da63	fba9da63b28a20e1013cd230d89e3413fb49a684	4802
+frame	deblock-off	4	0	P	0	V=4072:2ea3b11a	2ea3b11a841bf6518c033a9642999a853ea249aa	4072
+frame	deblock-off	5	0	P	0	V=4771:fbe034a7	fbe034a79565ca7d8efc636c4e8ef18da3ed1370	4771
+frame	deblock-off	6	0	P	0	V=5257:762a449f	762a449fd2f4426178bf15bbf546a1f7217679e5	5257
+frame	deblock-off	7	0	P	0	V=5242:3166ad53	3166ad53dd4e1cb142dedf98cf9eeb6f21adb9d6	5242
+stream	deblock-off	0	50c6402189082094516a057c6421202ee760bc10	45806
+config	deblock-idc2-slices	pan	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iLoopFilterDisableIdc=2;L0.uiSliceMode=1;L0.uiSliceNum=4
+frame	deblock-idc2-slices	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=2626:7b63134c,2376:72d2ae01,2637:20e5f510,3037:5e61f9ca	adc80eacaa475cdb90f6b017a1343b8b7f577dda	10701
+frame	deblock-idc2-slices	1	0	P	0	V=1544:c43ca84d,1742:8c38f48c,1596:db0287e2,3281:1e308828	87cabd366d6774b548ea886c6f888779602aa444	8163
+frame	deblock-idc2-slices	2	0	P	0	V=1100:80a75391,1442:40eaefcf,1178:8142952e,1762:c78c6965	7635259383b099b38d26e3c0c8804407f3a5d5a1	5482
+frame	deblock-idc2-slices	3	0	P	0	V=1101:fde1c06b,1127:cbf6a89d,1117:bcf93d77,1555:f49450cf	e3ceb4457ec4bd3fe2f386e3dda0a758e7d7c49e	4900
+frame	deblock-idc2-slices	4	0	P	0	V=949:468a18c5,1017:1092907b,947:bb467d9b,1294:e6ab9d83	8a48313bf130f1a447abd093d294e9c5ad88457b	4207
+frame	deblock-idc2-slices	5	0	P	0	V=1086:d14b5c11,1178:9e100d4b,1116:1dcf68a5,1482:881a2fb0	f019a1e5efe9fa5a1668ccefe006c26cbb596891	4862
+frame	deblock-idc2-slices	6	0	P	0	V=1206:b9044381,1298:9f7831ce,1202:3c4d4e11,1618:0cc5eec6	65390fe77c83dc817513384eb8b7a0d5138f3f25	5324
+frame	deblock-idc2-slices	7	0	P	0	V=1234:bc0bd765,1293:0f31a47d,1210:06552841,1576:c55a1998	93908b3ec97dd5a050892c98762717bd90581700	5313
+stream	deblock-idc2-slices	0	ba869caab609f837ab6d770a404bd0e78bc77c7f	48952
+config	deblock-offsets-plus	subpel	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iLoopFilterAlphaC0Offset=6;iLoopFilterBetaOffset=6
+frame	deblock-offsets-plus	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=1312:e340660b	e26e497dd4506ee53eca387e1d0c02f117bf3716	1337
+frame	deblock-offsets-plus	1	0	P	0	V=185:6158d2f8	6158d2f82d56806a286adc839737b270e3a38f0d	185
+frame	deblock-offsets-plus	2	0	P	0	V=171:66289d6a	66289d6aa81a7ab3ce3ea9fb980cb6e36873965a	171
+frame	deblock-offsets-plus	3	0	P	0	V=170:d939a728	d939a728efddf9e745ac711e9dc62eb0dd56ac15	170
+frame	deblock-offsets-plus	4	0	P	0	V=232:d69332a7	d69332a734d8221aa9921a038b9277dd55e8e71e	232
+frame	deblock-offsets-plus	5	0	P	0	V=207:87c02b4e	87c02b4e6be7f811384d7863024264fe6107ca71	207
+stream	deblock-offsets-plus	0	315715529f6b17668d21bb7114a791984e61d47b	2302
+config	deblock-offsets-minus-qp40	block	6	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iLoopFilterAlphaC0Offset=-6;iLoopFilterBetaOffset=-6;L0.iDLayerQp=40
+frame	deblock-offsets-minus-qp40	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=5971:54c0c3a0	27de700501dc9fe22fbb293415a0dce59a3c6ae4	5996
+frame	deblock-offsets-minus-qp40	1	0	P	0	V=456:482ad2f4	482ad2f42f882fb988ddd9b24dce95aae185944e	456
+frame	deblock-offsets-minus-qp40	2	0	P	0	V=501:ccaa0dfb	ccaa0dfbbafbabfd5f0fc362d33a3477213d5ab0	501
+frame	deblock-offsets-minus-qp40	3	0	P	0	V=434:6c04bf3e	6c04bf3e6b7b182c9bc392e1498bd5138785cb58	434
+frame	deblock-offsets-minus-qp40	4	0	P	0	V=483:59c78335	59c78335d1dd55dafb77b08b72c5579b09cea8e7	483
+frame	deblock-offsets-minus-qp40	5	0	P	0	V=464:a9eb0b0d	a9eb0b0de0c8925e63e1477a821abc231638f22e	464
+stream	deblock-offsets-minus-qp40	0	42b545cafefca1788c98a1bda4256f6288106590	8334
+config	ltr	pan	10	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;bEnableLongTermReference=1
+frame	ltr	0	0	IDR	0	N=17:cfef6d02,8:b5da713a|V=10722:2de17f5a	c85dfc988cda7e168e180afcf3a1ad3ca149a546	10747
+frame	ltr	1	0	P	0	V=6020:398e69a3	398e69a317bf253aae388750c60b60b1d1ece28e	6020
+frame	ltr	2	0	P	0	V=4931:47b06157	47b06157b94dd6025b1c8414c5ccc0cbe59e274f	4931
+frame	ltr	3	0	P	0	V=4826:ddea5e1a	ddea5e1abf273c43bdcc6d269259545f6a4ab969	4826
+frame	ltr	4	0	P	0	V=4104:c1c54d87	c1c54d870dfb15507ad845e947b3eaeece6fa1a0	4104
+frame	ltr	5	0	P	0	V=4772:77fba39a	77fba39a697460a9480953595253443f5e6452fe	4772
+frame	ltr	6	0	P	0	V=5256:e7a5d24b	e7a5d24b7c6ae716ddfc385f8faffd85dd5a32cd	5256
+frame	ltr	7	0	P	0	V=5233:f71d6199	f71d619946c4875c4485772a15e8b9c8d6b08a8a	5233
+frame	ltr	8	0	P	0	V=4040:9ebb6ee2	9ebb6ee238b35fcff9545f20ff05de6969b888cc	4040
+frame	ltr	9	0	P	0	V=5303:89e4f78b	89e4f78b400dc5d80047770a1d8a30996692888f	5303
+stream	ltr	0	d10126b8a100f05c57d30e3a8d137bd0e71ecf5c	55232
+config	ltr-mark-3	pan	12	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;bEnableLongTermReference=1;iLtrMarkPeriod=3
+frame	ltr-mark-3	0	0	IDR	0	N=17:cfef6d02,8:b5da713a|V=10722:2de17f5a	c85dfc988cda7e168e180afcf3a1ad3ca149a546	10747
+frame	ltr-mark-3	1	0	P	0	V=6020:398e69a3	398e69a317bf253aae388750c60b60b1d1ece28e	6020
+frame	ltr-mark-3	2	0	P	0	V=4931:47b06157	47b06157b94dd6025b1c8414c5ccc0cbe59e274f	4931
+frame	ltr-mark-3	3	0	P	0	V=4826:ddea5e1a	ddea5e1abf273c43bdcc6d269259545f6a4ab969	4826
+frame	ltr-mark-3	4	0	P	0	V=4104:c1c54d87	c1c54d870dfb15507ad845e947b3eaeece6fa1a0	4104
+frame	ltr-mark-3	5	0	P	0	V=4775:459326af	459326afe05a2fca819a12e2c8a14822da5a6900	4775
+frame	ltr-mark-3	6	0	P	0	V=5257:63d16ccf	63d16ccf7fb6da5571a64c3ac77a4a4d62781ff6	5257
+frame	ltr-mark-3	7	0	P	0	V=5233:f71d6199	f71d619946c4875c4485772a15e8b9c8d6b08a8a	5233
+frame	ltr-mark-3	8	0	P	0	V=4040:9ebb6ee2	9ebb6ee238b35fcff9545f20ff05de6969b888cc	4040
+frame	ltr-mark-3	9	0	P	0	V=5303:89e4f78b	89e4f78b400dc5d80047770a1d8a30996692888f	5303
+frame	ltr-mark-3	10	0	P	0	V=4884:c4c6fdac	c4c6fdac1567746bc8c660e42475c9cd145ed3c3	4884
+frame	ltr-mark-3	11	0	P	0	V=4885:bf76260f	bf76260fe516e6ec1a1809327cc20c88ca7e89c2	4885
+stream	ltr-mark-3	0	722a5de498eb2600248e8ca4cca81562d9d8142b	65005
+config	ltr-mark-2-temporal-2	block	12	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;bEnableLongTermReference=1;iLtrMarkPeriod=2;iTemporalLayerNum=2
+frame	ltr-mark-2-temporal-2	0	0	IDR	0	N=17:cfef6d02,8:b5da713a|V=12520:1d6a4ce7	487fc3658a2dd94b256d90d61f766d16f7986583	12545
+frame	ltr-mark-2-temporal-2	1	0	P	1	V=855:acf9bd9c	acf9bd9ca8d54815e0e77e19a0324f69b6c7136a	855
+frame	ltr-mark-2-temporal-2	2	0	P	0	V=1088:0fa63f7c	0fa63f7cae89fbd1b7a279de2c68cf739c5decfc	1088
+frame	ltr-mark-2-temporal-2	3	0	P	1	V=864:a9f186ae	a9f186ae4129678c9cbc3cf1c0dc90b18272591b	864
+frame	ltr-mark-2-temporal-2	4	0	P	0	V=1008:f9c9172e	f9c9172e293c67f7d4c57cdcf966fa53b446e8a5	1008
+frame	ltr-mark-2-temporal-2	5	0	P	1	V=889:960552ff	960552ffa8a005fd1d6fca0a8bef035bbe8195e0	889
+frame	ltr-mark-2-temporal-2	6	0	P	0	V=1129:cd2b6a66	cd2b6a66573e70e94db54b8c5f85091991c3dc36	1129
+frame	ltr-mark-2-temporal-2	7	0	P	1	V=1014:e6a20f22	e6a20f22bfa46ba6018b64ae9a1783dc384a1a9d	1014
+frame	ltr-mark-2-temporal-2	8	0	P	0	V=1031:b7a11203	b7a11203f4bee7ec3a7e9cd8a3f2085e35890324	1031
+frame	ltr-mark-2-temporal-2	9	0	P	1	V=989:7f580346	7f5803466566decb7521a26dd7f9f7c886ec212c	989
+frame	ltr-mark-2-temporal-2	10	0	P	0	V=1336:4d561468	4d5614683425bd74fee91e391b950dddced9f9d5	1336
+frame	ltr-mark-2-temporal-2	11	0	P	1	V=1045:15a9d42c	15a9d42ce9d6d25df6cf89e2e73377d7d0df4a3e	1045
+stream	ltr-mark-2-temporal-2	0	4737fcb51dcdb6abba05db4c02aa166c7d28db24	23793
+config	ltr-mark-4-temporal-3-high	subpel	12	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;bEnableLongTermReference=1;iLtrMarkPeriod=4;iTemporalLayerNum=3;iComplexityMode=2
+frame	ltr-mark-4-temporal-3-high	0	0	IDR	0	N=17:f8100f68,8:b5da713a|V=1303:b4c01d5a	447d18c57e62a656046decbd5b486c2b61ca050d	1328
+frame	ltr-mark-4-temporal-3-high	1	0	P	2	V=118:e1bce8ec	e1bce8ec78abf8b2790d1653e8b3200800b3a079	118
+frame	ltr-mark-4-temporal-3-high	2	0	P	1	V=131:f205e511	f205e5119743ce8ce6bcd7940bb55e30fa99cb2f	131
+frame	ltr-mark-4-temporal-3-high	3	0	P	2	V=140:b7cc19c3	b7cc19c3c78e309b1be5e6bff442e47cab5400fe	140
+frame	ltr-mark-4-temporal-3-high	4	0	P	0	V=168:7ece963d	7ece963d3f8430173ceb9b60b38bd03e3bb03e4d	168
+frame	ltr-mark-4-temporal-3-high	5	0	P	2	V=50:6b5470b5	6b5470b5656c429c0516f7a2433fb98d0ea15e7d	50
+frame	ltr-mark-4-temporal-3-high	6	0	P	1	V=272:864002c5	864002c5eec1bdca853d31155d52e713faaaab71	272
+frame	ltr-mark-4-temporal-3-high	7	0	P	2	V=110:aa15f26d	aa15f26df6ad463d15e4572109689c06f68ace69	110
+frame	ltr-mark-4-temporal-3-high	8	0	P	0	V=234:fcab441a	fcab441afd126e147694bc746de91c059a308366	234
+frame	ltr-mark-4-temporal-3-high	9	0	P	2	V=48:e92129b1	e92129b1ddca84722f1768c3d8727d70d8e0f2b2	48
+frame	ltr-mark-4-temporal-3-high	10	0	P	1	V=219:3bba326a	3bba326acdc5a4cd41a99e6ba59cb2324746d0a7	219
+frame	ltr-mark-4-temporal-3-high	11	0	P	2	V=118:2bb2a012	2bb2a01230b25f295484a2c00dfcf0bf417c1017	118
+stream	ltr-mark-4-temporal-3-high	0	f76b13a4d21b99d5c128f4280452a68016194d37	2936
+config	ltr-intra-period-5	pan	12	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;bEnableLongTermReference=1;iLtrMarkPeriod=3;uiIntraPeriod=5
+frame	ltr-intra-period-5	0	0	IDR	0	N=17:cfef6d02,8:b5da713a|V=10722:2de17f5a	c85dfc988cda7e168e180afcf3a1ad3ca149a546	10747
+frame	ltr-intra-period-5	1	0	P	0	V=6020:398e69a3	398e69a317bf253aae388750c60b60b1d1ece28e	6020
+frame	ltr-intra-period-5	2	0	P	0	V=4931:47b06157	47b06157b94dd6025b1c8414c5ccc0cbe59e274f	4931
+frame	ltr-intra-period-5	3	0	P	0	V=4826:ddea5e1a	ddea5e1abf273c43bdcc6d269259545f6a4ab969	4826
+frame	ltr-intra-period-5	4	0	P	0	V=4104:c1c54d87	c1c54d870dfb15507ad845e947b3eaeece6fa1a0	4104
+frame	ltr-intra-period-5	5	0	IDR	0	N=18:d93f5313,8:ad3775d1|V=15560:46005144	e028e9e9a73f42c6e22eabf71aac18e95a747f66	15586
+frame	ltr-intra-period-5	6	0	P	0	V=5325:fe51011a	fe51011a04ac6c29e5f5e0e6e317f73a688ce6a7	5325
+frame	ltr-intra-period-5	7	0	P	0	V=5213:0f08f589	0f08f589946223c2cd6303430409e37f016ba1cd	5213
+frame	ltr-intra-period-5	8	0	P	0	V=4008:68cf18ca	68cf18ca597ef1b9e2803f2e02910f8f15250713	4008
+frame	ltr-intra-period-5	9	0	P	0	V=5305:45d21d38	45d21d3811718a5a69f283642627eb79379b5758	5305
+frame	ltr-intra-period-5	10	0	IDR	0	N=18:cf2c3d86,8:0b3736d9|V=14413:d814c155	2124db3fc4dfcea8b5a1a9a1644a447402f1dc0b	14439
+frame	ltr-intra-period-5	11	0	P	0	V=5708:0a6ad475	0a6ad475b78ab979a398a6eac0b542ca5bb158dc	5708
+stream	ltr-intra-period-5	0	711eec035f6dbe1149c455322bb5b98d127e525a	86212
+config	ref-4	pan	10	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iNumRefFrame=4
+frame	ref-4	0	0	IDR	0	N=17:f8100f68,8:b5da713a|V=10722:f4635a51	5ad6d83a7654dec8a131a41e4f526fd8bb111e68	10747
+frame	ref-4	1	0	P	0	V=6019:91128291	9112829130b6f25399e0a28495cb38078f912185	6019
+frame	ref-4	2	0	P	0	V=4931:47b06157	47b06157b94dd6025b1c8414c5ccc0cbe59e274f	4931
+frame	ref-4	3	0	P	0	V=4826:ddea5e1a	ddea5e1abf273c43bdcc6d269259545f6a4ab969	4826
+frame	ref-4	4	0	P	0	V=4104:c1c54d87	c1c54d870dfb15507ad845e947b3eaeece6fa1a0	4104
+frame	ref-4	5	0	P	0	V=4772:77fba39a	77fba39a697460a9480953595253443f5e6452fe	4772
+frame	ref-4	6	0	P	0	V=5256:e7a5d24b	e7a5d24b7c6ae716ddfc385f8faffd85dd5a32cd	5256
+frame	ref-4	7	0	P	0	V=5233:f71d6199	f71d619946c4875c4485772a15e8b9c8d6b08a8a	5233
+frame	ref-4	8	0	P	0	V=4040:9ebb6ee2	9ebb6ee238b35fcff9545f20ff05de6969b888cc	4040
+frame	ref-4	9	0	P	0	V=5303:89e4f78b	89e4f78b400dc5d80047770a1d8a30996692888f	5303
+stream	ref-4	0	6e7f2e2e27ed3d6dc6293f5506d4aa4c584ab9d5	55231
+config	ref-2-temporal-2	pan	10	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;iNumRefFrame=2;iTemporalLayerNum=2
+frame	ref-2-temporal-2	0	0	IDR	0	N=17:34f6a795,8:b5da713a|V=11882:2cc2c0cb	75dd8f6c53dc35ce704eddc7cae9f5afcec6fc20	11907
+frame	ref-2-temporal-2	1	0	P	1	V=6013:315903b5	315903b5cf7486904a3527ae843c6c4badc6a989	6013
+frame	ref-2-temporal-2	2	0	P	0	V=3231:fccb4645	fccb4645f96f0335e3206f1d5ee6ad9c8da8b0ce	3231
+frame	ref-2-temporal-2	3	0	P	1	V=4829:e0d3be07	e0d3be07ad7e28b973a4434e3dd81128b10a6959	4829
+frame	ref-2-temporal-2	4	0	P	0	V=1399:dd256181	dd256181dfc1d80f3e5881080ee6ab436b302321	1399
+frame	ref-2-temporal-2	5	0	P	1	V=4806:13532088	1353208837b4e53843d36403b865da038983d451	4806
+frame	ref-2-temporal-2	6	0	P	0	V=1421:e4708e9c	e4708e9c4538063972c54a95e89812b679eb78e8	1421
+frame	ref-2-temporal-2	7	0	P	1	V=5288:4726b784	4726b7845a2e22446c486f75f4f365837b6d8984	5288
+frame	ref-2-temporal-2	8	0	P	0	V=1075:616e137e	616e137ea14ed60d1ad62bdde185c4d69c5340c2	1075
+frame	ref-2-temporal-2	9	0	P	1	V=5355:0b37c80b	0b37c80b455c13031837090fde308bf5acc6fa1d	5355
+stream	ref-2-temporal-2	0	809cf229e8d189f15710c332baf1a8f1a590f8d2	45324
+config	strategy-increasing	pan	10	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;eSpsPpsIdStrategy=1;uiIntraPeriod=3
+frame	strategy-increasing	0	0	IDR	0	N=17:41eeb737,8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+frame	strategy-increasing	1	0	P	0	V=6019:91128291	9112829130b6f25399e0a28495cb38078f912185	6019
+frame	strategy-increasing	2	0	P	0	V=4931:47b06157	47b06157b94dd6025b1c8414c5ccc0cbe59e274f	4931
+frame	strategy-increasing	3	0	IDR	0	N=17:d76fa0e0,8:ad3775d1|V=14855:e81d4785	3d490e2e49f917fe779509b058d562fee32c867f	14880
+frame	strategy-increasing	4	0	P	0	V=4232:b43e1e14	b43e1e14bf6f4f236bae2ec7210b35739d4cd72d	4232
+frame	strategy-increasing	5	0	P	0	V=4810:af78af6f	af78af6f514e39500159170d54fc7a8c1d018051	4810
+frame	strategy-increasing	6	0	IDR	0	N=17:5ca076bd,8:0b3736d9|V=14608:6058cb1f	17631ce69d5d63b410c3174a1f6b71a1443c12b4	14633
+frame	strategy-increasing	7	0	P	0	V=5292:32fcfe2d	32fcfe2d92a369b9d28378c0acb06900abf1d9f6	5292
+frame	strategy-increasing	8	0	P	0	V=4047:c70b6b1e	c70b6b1e335ec2880a743d9f6f6c7d31fc006969	4047
+frame	strategy-increasing	9	0	IDR	0	N=17:20ed9380,9:47a04b81|V=15736:628eec0f	9eca7782cdd985cee63f6a42c85af383a2d51c44	15762
+stream	strategy-increasing	0	cb473b11b281343a0385b6310d90d02ef62aa77f	85353
+config	strategy-sps-listing	pan	10	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;eSpsPpsIdStrategy=2;uiIntraPeriod=3
+frame	strategy-sps-listing	0	0	IDR	0	N=17:41eeb737|N=8:b5da713a|V=10722:f4635a51	a143350f678d4047a69bec91153fe5e0d5a92153	10747
+frame	strategy-sps-listing	1	0	P	0	V=6019:91128291	9112829130b6f25399e0a28495cb38078f912185	6019
+frame	strategy-sps-listing	2	0	P	0	V=4931:47b06157	47b06157b94dd6025b1c8414c5ccc0cbe59e274f	4931
+frame	strategy-sps-listing	3	0	IDR	0	N=17:41eeb737|N=8:b5da713a|V=14855:d9f29537	47f3f66569d9742c8b137ce3c5768c7747935196	14880
+frame	strategy-sps-listing	4	0	P	0	V=4232:9f809abd	9f809abdfe7ef9ae9b823a20e30c8c0a04136f53	4232
+frame	strategy-sps-listing	5	0	P	0	V=4809:752191e0	752191e0dea4c9dca1f31c65eb90bcd1e61f15b2	4809
+frame	strategy-sps-listing	6	0	IDR	0	N=17:41eeb737|N=8:b5da713a|V=14606:2edc8396	8f8ed67856f93ca89788de1f08d6b364df4f4782	14631
+frame	strategy-sps-listing	7	0	P	0	V=5292:20010117	200101172ff1980c3edace8945afc4962347dcdb	5292
+frame	strategy-sps-listing	8	0	P	0	V=4047:597d3817	597d3817e6d179ee4f5cbf6ba63940750ed07f1b	4047
+frame	strategy-sps-listing	9	0	IDR	0	N=17:41eeb737|N=8:b5da713a|V=15735:50695e2d	97ded18a79ecdf5871a08bd2825148c1128615d7	15760
+stream	strategy-sps-listing	0	3da5ab90cd3fc0b7293dfc10a8aa4adb13b77599	85348
+config	strategy-sps-pps-listing	pan	10	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;eSpsPpsIdStrategy=6;uiIntraPeriod=3
+frame	strategy-sps-pps-listing	0	0	IDR	0	N=17:41eeb737|N=8:b5da713a,8:23dda111,8:8c6abbe2,8:864a8bf6,8:11180b01,8:1a115d49,8:77190fb8,8:f7c5d48e,8:e928e8c1,8:3be1e6a6,8:ea385ed4,8:019c1a56,8:3fc784dd,8:d3e87db0,8:31d982c2,9:ea56209e,9:6b317ee2,9:17cdab3d,9:104b389b,9:1a8620ad,9:34980f38,9:21508d5a,9:a91bbbc6,9:7f34822a,9:8c5728ad,9:b50b60b8,9:c652d4d1,9:85a4a2e8,9:2d23aa1e,9:cf629da6,9:6dab6e14,9:29679d44,9:3011d6f7,9:c7d64752,9:7d9e777a,9:ee58c565,9:19699335,9:102fd242,9:fe83c519,9:374cc266,9:78e5820e,9:d35d866a,9:a7011e5f,9:e81ddd9e,9:4b74b58c,9:b280ca57,9:d9b71d9c,9:a1d15218,9:da57351a,9:cbe4e5b4,9:8412c8c1,9:c066d8c2,9:ba942849,9:8c39aac7,9:b2a0046d,9:721710f1,9:f004479a|V=10722:f4635a51	af07156e167ff92cb3b0b43757e5cacc95e19ec8	11237
+frame	strategy-sps-pps-listing	1	0	P	0	V=6019:91128291	9112829130b6f25399e0a28495cb38078f912185	6019
+frame	strategy-sps-pps-listing	2	0	P	0	V=4931:47b06157	47b06157b94dd6025b1c8414c5ccc0cbe59e274f	4931
+frame	strategy-sps-pps-listing	3	0	IDR	0	N=17:41eeb737|N=8:b5da713a,8:23dda111,8:8c6abbe2,8:864a8bf6,8:11180b01,8:1a115d49,8:77190fb8,8:f7c5d48e,8:e928e8c1,8:3be1e6a6,8:ea385ed4,8:019c1a56,8:3fc784dd,8:d3e87db0,8:31d982c2,9:ea56209e,9:6b317ee2,9:17cdab3d,9:104b389b,9:1a8620ad,9:34980f38,9:21508d5a,9:a91bbbc6,9:7f34822a,9:8c5728ad,9:b50b60b8,9:c652d4d1,9:85a4a2e8,9:2d23aa1e,9:cf629da6,9:6dab6e14,9:29679d44,9:3011d6f7,9:c7d64752,9:7d9e777a,9:ee58c565,9:19699335,9:102fd242,9:fe83c519,9:374cc266,9:78e5820e,9:d35d866a,9:a7011e5f,9:e81ddd9e,9:4b74b58c,9:b280ca57,9:d9b71d9c,9:a1d15218,9:da57351a,9:cbe4e5b4,9:8412c8c1,9:c066d8c2,9:ba942849,9:8c39aac7,9:b2a0046d,9:721710f1,9:f004479a|V=14855:e81d4785	1bca14c2fb2b4c9323d7fdcb1f2a9616a72de38e	15370
+frame	strategy-sps-pps-listing	4	0	P	0	V=4232:b43e1e14	b43e1e14bf6f4f236bae2ec7210b35739d4cd72d	4232
+frame	strategy-sps-pps-listing	5	0	P	0	V=4810:af78af6f	af78af6f514e39500159170d54fc7a8c1d018051	4810
+frame	strategy-sps-pps-listing	6	0	IDR	0	N=17:41eeb737|N=8:b5da713a,8:23dda111,8:8c6abbe2,8:864a8bf6,8:11180b01,8:1a115d49,8:77190fb8,8:f7c5d48e,8:e928e8c1,8:3be1e6a6,8:ea385ed4,8:019c1a56,8:3fc784dd,8:d3e87db0,8:31d982c2,9:ea56209e,9:6b317ee2,9:17cdab3d,9:104b389b,9:1a8620ad,9:34980f38,9:21508d5a,9:a91bbbc6,9:7f34822a,9:8c5728ad,9:b50b60b8,9:c652d4d1,9:85a4a2e8,9:2d23aa1e,9:cf629da6,9:6dab6e14,9:29679d44,9:3011d6f7,9:c7d64752,9:7d9e777a,9:ee58c565,9:19699335,9:102fd242,9:fe83c519,9:374cc266,9:78e5820e,9:d35d866a,9:a7011e5f,9:e81ddd9e,9:4b74b58c,9:b280ca57,9:d9b71d9c,9:a1d15218,9:da57351a,9:cbe4e5b4,9:8412c8c1,9:c066d8c2,9:ba942849,9:8c39aac7,9:b2a0046d,9:721710f1,9:f004479a|V=14608:6058cb1f	067f8e66ef8fdef149ec391ec428422839970303	15123
+frame	strategy-sps-pps-listing	7	0	P	0	V=5292:32fcfe2d	32fcfe2d92a369b9d28378c0acb06900abf1d9f6	5292
+frame	strategy-sps-pps-listing	8	0	P	0	V=4047:c70b6b1e	c70b6b1e335ec2880a743d9f6f6c7d31fc006969	4047
+frame	strategy-sps-pps-listing	9	0	IDR	0	N=17:41eeb737|N=8:b5da713a,8:23dda111,8:8c6abbe2,8:864a8bf6,8:11180b01,8:1a115d49,8:77190fb8,8:f7c5d48e,8:e928e8c1,8:3be1e6a6,8:ea385ed4,8:019c1a56,8:3fc784dd,8:d3e87db0,8:31d982c2,9:ea56209e,9:6b317ee2,9:17cdab3d,9:104b389b,9:1a8620ad,9:34980f38,9:21508d5a,9:a91bbbc6,9:7f34822a,9:8c5728ad,9:b50b60b8,9:c652d4d1,9:85a4a2e8,9:2d23aa1e,9:cf629da6,9:6dab6e14,9:29679d44,9:3011d6f7,9:c7d64752,9:7d9e777a,9:ee58c565,9:19699335,9:102fd242,9:fe83c519,9:374cc266,9:78e5820e,9:d35d866a,9:a7011e5f,9:e81ddd9e,9:4b74b58c,9:b280ca57,9:d9b71d9c,9:a1d15218,9:da57351a,9:cbe4e5b4,9:8412c8c1,9:c066d8c2,9:ba942849,9:8c39aac7,9:b2a0046d,9:721710f1,9:f004479a|V=15736:628eec0f	9ffe0fdf53cc0477f5028aa6bf8618461b723f17	16251
+stream	strategy-sps-pps-listing	0	23907430d819d7a2a31e0ddd989b39a6fad1e498	87312
+config	profile-main	pan	8	api=ext;iRCMode=-1;iMultipleThreadIdc=1;fMaxFrameRate=30;bEnableBackgroundDetection=0;bEnableAdaptiveQuant=0;bEnableSceneChangeDetect=0;iPicWidth=176;iPicHeight=144;L0.uiProfileIdc=77
+frame	profile-main	0	0	IDR	0	N=17:61eff833,8:b5da713a|V=10722:f4635a51	b4446f4c79da2402f8a1658a4f4c76e7228b68e3	10747
+frame	profile-main	1	0	P	0	V=6019:91128291	9112829130b6f25399e0a28495cb38078f912185	6019
+frame	profile-main	2	0	P	0	V=4931:47b06157	47b06157b94dd6025b1c8414c5ccc0cbe59e274f	4931
+frame	profile-main	3	0	P	0	V=4826:ddea5e1a	ddea5e1abf273c43bdcc6d269259545f6a4ab969	4826
+frame	profile-main	4	0	P	0	V=4104:c1c54d87	c1c54d870dfb15507ad845e947b3eaeece6fa1a0	4104
+frame	profile-main	5	0	P	0	V=4772:77fba39a	77fba39a697460a9480953595253443f5e6452fe	4772
+frame	profile-main	6	0	P	0	V=5256:e7a5d24b	e7a5d24b7c6ae716ddfc385f8faffd85dd5a32cd	5256
+frame	profile-main	7	0	P	0	V=5233:f71d6199	f71d619946c4875c4485772a15e8b9c8d6b08a8a	5233
+stream	profile-main	0	f3a749f8bc18b962380f8dc5a46ced6db8232724	45888

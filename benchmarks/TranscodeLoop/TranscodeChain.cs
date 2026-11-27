@@ -1,7 +1,8 @@
 // One stream's trip through SIPSorcery:
 //
 //   page A (browser encodes) ══ leg A ══► RTCPeerConnection A (recvonly)
-//        → depacketise → decode (vp8.net | ffmpeg) → BGR frame → encode (vp8.net | ffmpeg)
+//        → depacketise → decode (vp8.net | h264.net | ffmpeg) → BGR frame
+//        → encode (vp8.net | av1.net | h264.net | ffmpeg)
 //   RTCPeerConnection B (sendonly) ══ leg B ══► page B (browser decodes and shows)
 //
 // Keyframe requests are part of what's tested: page B's PLI/FIR forces a keyframe from our
@@ -19,6 +20,7 @@
 // requests from page B go on to page A. It's the baseline: the plumbing without the codecs.
 
 using System.Collections.Concurrent;
+using SIPSorcery.H264;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
@@ -331,25 +333,28 @@ internal sealed class TranscodeChain : IDisposable
                     continue;
                 }
                 foreach (var p in pictures) OnDecoded(f, p.Bgr, p.W, p.H);
+                // h264.net outputs a concealed picture for damaged or missing data rather than
+                // none, and says the stream needs a keyframe to recover.
+                if (_decoder is H264Codec { KeyFrameRequired: true }) RequestKeyframeA("decoder concealed damage");
             }
         }
         catch (OperationCanceledException) { /* the chain stopped */ }
         catch (InvalidOperationException) { /* the queue was completed as the chain closed */ }
     }
 
-    /// <summary>The decoder's pictures as tightly packed BGR (both implementations give BGR).</summary>
+    /// <summary>The decoder's pictures as tightly packed BGR (every implementation gives BGR).</summary>
     private unsafe List<(byte[] Bgr, int W, int H)> Decode(byte[] frame)
     {
         var codec = Codecs.Codec(_cfg.CodecIn);
         var list = new List<(byte[], int, int)>();
-        if (_decoder is FFmpegVideoEncoder ff)
+        if (_decoder is FFmpegVideoEncoder or H264Codec)
         {
-            foreach (var raw in ff.DecodeVideoFaster(frame, VideoPixelFormatsEnum.Bgr, codec))
+            foreach (var raw in _decoder.DecodeVideoFaster(frame, VideoPixelFormatsEnum.Bgr, codec))
             {
-                // FFmpeg's picture is its own, reused on the next decode, so it's copied out, into
-                // a frame buffer kept for reuse: a fresh one per frame would be a large-object
-                // allocation 30 times a second, and the GC pauses it caused would be this app's,
-                // not the pipeline's. (vp8.net's decoder allocates its own frames.)
+                // FFmpeg's and h264.net's picture is their own, reused on the next decode, so it's
+                // copied out, into a frame buffer kept for reuse: a fresh one per frame would be a
+                // large-object allocation 30 times a second, and the GC pauses it caused would be
+                // this app's, not the pipeline's. (vp8.net's decoder allocates its own frames.)
                 int row = raw.Width * 3;
                 var bgr = RentFrame(row * raw.Height);
                 fixed (byte* dst = bgr)
@@ -433,10 +438,10 @@ internal sealed class TranscodeChain : IDisposable
         return new byte[size];
     }
 
-    /// <summary>Back to the pool, if it came from it (only the FFmpeg decoder's frames do); others are left to the GC.</summary>
+    /// <summary>Back to the pool, if it came from it (only the FFmpeg and h264.net decoders' frames do); others are left to the GC.</summary>
     private void ReturnFrame(byte[] bgr)
     {
-        if (_decoder is FFmpegVideoEncoder && _framePool.Count < EncodeQueueMax + 4) _framePool.Enqueue(bgr);
+        if (_decoder is FFmpegVideoEncoder or H264Codec && _framePool.Count < EncodeQueueMax + 4) _framePool.Enqueue(bgr);
     }
 
     // ---- Encode ----
@@ -479,7 +484,7 @@ internal sealed class TranscodeChain : IDisposable
             if (encoded == null || encoded.Length == 0)
             {
                 // The encoder took the frame and gave nothing back: its rate control dropped it
-                // (av1.net does when it's over its bitrate). Page B counts it as missing too.
+                // (av1.net and h264.net do when over their bitrate). Page B counts it as missing too.
                 _encodeNoOutput++;
                 continue;
             }

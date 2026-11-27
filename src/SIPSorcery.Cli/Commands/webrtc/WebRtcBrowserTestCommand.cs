@@ -64,6 +64,7 @@
 //
 // History:
 // 27 Oct 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 27 Nov 2026	Claude		--mode echo answers the browser's PLI or FIR with a key frame.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -458,6 +459,20 @@ public sealed class WebRtcBrowserTestCommand : CommandBase
             {
                 return new SendResult(0, 0, 0);
             }
+
+            // The browser asks for a key frame when it can't decode (a PLI, or a FIR); its count of
+            // them is in the result, and answering keeps one lost key frame from freezing the rest.
+            pc.OnReceiveReport += (_, _, report) =>
+            {
+                // The session has no audio, so any feedback is about the video.
+                if (report.FeedbackMessages.Any(f =>
+                        f.Header.PacketType == RTCPReportTypesEnum.PSFB &&
+                        f.Header.PayloadFeedbackMessageType is PSFBFeedbackTypesEnum.PLI or PSFBFeedbackTypesEnum.FIR))
+                {
+                    logger.LogDebug("The browser asked for a key frame.");
+                    encoder.ForceKeyFrame();
+                }
+            };
 
             var card = new TestCardPattern(width, height, fps);
             byte[] raw = new byte[card.I420Size];

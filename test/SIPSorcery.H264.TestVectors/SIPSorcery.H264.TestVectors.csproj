@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>SIPSorcery.H264.TestVectors</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SIPSorcery.H264\SIPSorcery.H264.csproj" />
+    <!-- For the RTP round trip through SIPSorcery's H264Depacketiser (H264CodecTests.cs). -->
+    <ProjectReference Include="..\..\src\SIPSorcery\SIPSorcery.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The Constrained Baseline conformance vectors from openh264's res/ (the only ones in scope). -->
+    <None Include="TestVectors\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Results of the C-only reference build (thirdparty/openh264-dotnet-port/refharness):
+         one row per upstream decoder_test.cpp vector, with its SHA1 and coding-tool classification. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\decoder-conformance.tsv" Link="decoder-conformance.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Size and SHA1 of each vector's parser header dump (h264ref headers), see HeaderDump.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\headers.tsv" Link="headers.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\headers-damaged.tsv" Link="headers-damaged.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Size and SHA1 of each vector's macroblock parse dump (h264ref mbs), see HeaderDump.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\mbs.tsv" Link="mbs.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\mbs-damaged.tsv" Link="mbs-damaged.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Decoded output of the same damaged streams through the full decoder API (h264ref decode-damaged), see DecodeDamagedTests.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\decode-damaged.tsv" Link="decode-damaged.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Encoder parameter validation and SPS/PPS output for a table of configurations (h264ref paramsets), see ParameterSetTests.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\paramsets.tsv" Link="paramsets.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The first frame (an IDR at a fixed QP) for a table of configurations and synthetic pictures (h264ref idr), see IdrTests.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\idr.tsv" Link="idr.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\stream.tsv" Link="stream.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Rate controlled streams (h264ref rc), see RcTests.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\rc.tsv" Link="rc.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\preprocess.tsv" Link="preprocess.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Scripted encoder API calls between the frames (h264ref api), see ApiTests.cs. -->
+    <None Include="..\..\thirdparty\openh264-dotnet-port\reference\api.tsv" Link="api.tsv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net8.0 and net9.0 too, as the other SIPSorcery libraries. -->
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <!-- The port relies on C# 12: inline arrays, aliases for pointer types, function pointers.
+         The repo-wide Directory.Build.props pins 8.0, so override it here. -->
+    <LangVersion>12.0</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsTrimmable>true</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <RootNamespace>SIPSorcery.H264</RootNamespace>
+    <!-- Ported code keeps openh264's names (lower-case types, Hungarian prefixes, C-style
+         constants), so the naming and documentation analyzers are noise here. -->
+    <NoWarn>$(NoWarn);CS1570;CS1573;CS1591;CS1587;CS8981;IDE1006</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Copyright>Copyright © 2026 Aaron Clauson. Portions copyright © 2013 Cisco Systems (OpenH264).</Copyright>
+    <Company>SIP Sorcery PTY LTD</Company>
+    <Product>SIPSorcery.H264</Product>
+    <NeutralLanguage>en</NeutralLanguage>
+    <!-- Never packed or published. The port is for educational purposes only, and H.264 is covered
+         by patents that Cisco's royalty arrangement doesn't extend to it: see README.md. -->
+    <IsPackable>false</IsPackable>
+    <AssemblyVersion>10.0.19</AssemblyVersion>
+    <FileVersion>10.0.19</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorceryMedia.Abstractions\SIPSorceryMedia.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="SIPSorcery.H264.UnitTest" />
+    <InternalsVisibleTo Include="SIPSorcery.H264.TestVectors" />
+    <InternalsVisibleTo Include="H264Benchmarks" />
+  </ItemGroup>
+
+</Project>
