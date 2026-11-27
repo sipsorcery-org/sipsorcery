@@ -9,6 +9,7 @@
     "examples/WebRTCExamples/SIPToWebRtcBridgeVideo/SIPToWebRtcBridgeVideo.csproj",
     "examples/WebRTCExamples/WebRTCAspNetMvc/WebRTCAspNet.csproj",
     "examples/WebRTCExamples/WebRTCClient/WebRTCClient.csproj",
+    "examples/WebRTCExamples/WebRTCClientCodecs/WebRTCClientCodecs.csproj",
     "examples/WebRTCExamples/WebRTCDaemon/WebRTCDaemon.csproj",
     "examples/WebRTCExamples/WebRTCEchoClient/WebRTCEchoClient.csproj",
     "examples/WebRTCExamples/WebRTCEchoServer/WebRTCEchoServer.csproj",

@@ -7,8 +7,7 @@
 // (publish to any endpoint) and "webrtc whip-server --publish" (an in-process
 // self publish to the server's own listener). The encoder is selectable:
 // vp8.net (managed Vpx.Net VP8, no native deps), av1.net (managed SIPSorcery.AV1,
-// no native deps), h264.net (managed SIPSorcery.H264, no native deps) or ffmpeg
-// (SIPSorceryMedia.FFmpeg: h264, h265, vp8, vp9 or av1).
+// no native deps) or ffmpeg (SIPSorceryMedia.FFmpeg: h264, h265, vp8, vp9 or av1).
 // Frames are sent paced to a target rate, or flat out
 // (MaxRate) to find the send-pipeline ceiling.
 //
@@ -24,7 +23,6 @@
 // 15 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
 // 24 Oct 2026	Aaron Clauson	Added the testcard pattern.
 // 21 Nov 2026	Aaron Clauson	Added the av1.net encoder.
-// 27 Nov 2026	Claude		Added the h264.net encoder.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -116,9 +114,6 @@ public static class LibraryVideoPublisher
     /// <summary>The --encoder name of the managed SIPSorcery.AV1 (av1rt) encoder.</summary>
     public const string ENCODER_AV1_NET = "av1.net";
 
-    /// <summary>The --encoder name of the managed SIPSorcery.H264 (OpenH264 port) encoder.</summary>
-    public const string ENCODER_H264_NET = "h264.net";
-
     private const string ENCODER_VP8_NET = "vp8.net";
     private const string ENCODER_FFMPEG = "ffmpeg";
 
@@ -151,16 +146,6 @@ public static class LibraryVideoPublisher
                 TargetBitrateKbps = Math.Max(1, effectiveBitrate / 1000),
                 KeyFrameInterval = Math.Max(1, settings.Fps),
             });
-        }
-        else if (cfg.Encoder == ENCODER_H264_NET)
-        {
-            // A key frame a second too, for the same reason; the encoder's frame rate range is 1 to 60.
-            videoEncoder = new SIPSorcery.H264.H264Codec
-            {
-                FrameRate = Math.Clamp(settings.Fps, 1, 60),
-                TargetBitrateKbps = Math.Max(1, effectiveBitrate / 1000),
-                KeyframeIntervalFrames = Math.Max(1, settings.Fps),
-            };
         }
         else
         {
@@ -451,21 +436,6 @@ public static class LibraryVideoPublisher
             codec = VideoCodecsEnum.AV1;
             videoFormat = LibraryVideoFormat(codec);
         }
-        else if (encoder == ENCODER_H264_NET)
-        {
-            if (codecArg != null && codecArg != "h264")
-            {
-                error = "The h264.net encoder only supports --codec h264.";
-                return false;
-            }
-
-            // OpenH264 drops an odd last column or row, so the frame is kept even.
-            (width, height) = (RoundUpToEven(width), RoundUpToEven(height));
-            codec = VideoCodecsEnum.H264;
-            // Constrained Baseline, what the encoder produces, rather than FFmpeg's H264 format.
-            videoFormat = new VideoFormat(VideoCodecsEnum.H264, SIPSorcery.H264.H264Codec.H264_SUGGESTED_FORMAT_ID,
-                                          VideoFormat.DEFAULT_CLOCK_RATE, SIPSorcery.H264.H264Codec.H264_FORMAT_PARAMETERS);
-        }
         else if (encoder == ENCODER_VP8_NET)
         {
             if (codecArg != null && codecArg != "vp8")
@@ -515,7 +485,7 @@ public static class LibraryVideoPublisher
         }
         else
         {
-            error = $"Unknown --encoder \"{settings.Encoder}\". Expected vp8.net, av1.net, h264.net or ffmpeg.";
+            error = $"Unknown --encoder \"{settings.Encoder}\". Expected vp8.net, av1.net or ffmpeg.";
             return false;
         }
 

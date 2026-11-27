@@ -7,6 +7,10 @@ to managed C# in [`src/SIPSorcery.H264`](../../src/SIPSorcery.H264).
 - **Scope:** Constrained Baseline (`profile-level-id=42e01f`, the profile WebRTC
   uses), decoder first, then encoder. Other profiles only if needed.
 - **Plan and progress:** [`diary/2026-11-24-Claude-Opus-5.5/plan.md`](diary/2026-11-24-Claude-Opus-5.5/plan.md).
+- **Use:** for educational purposes only, and not packaged or published.
+  H.264 is covered by patents, and anyone wishing to use the port in a live
+  application should check their patent exposure first. See
+  [`src/SIPSorcery.H264/README.md`](../../src/SIPSorcery.H264/README.md).
 
 ## Reference harness (`refharness/`)
 

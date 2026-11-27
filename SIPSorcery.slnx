@@ -120,8 +120,7 @@
     <Project Path="examples/WebRTCExamples/SIPToWebRtcBridgeVideo/SIPToWebRtcBridgeVideo.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCAudioScope/WebRTCAudioScope.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCClient/WebRTCClient.csproj" />
-    <Project Path="examples/WebRTCExamples/WebRTCClientH264Net/WebRTCClientH264Net.csproj" />
-    <Project Path="examples/WebRTCExamples/WebRTCClientVP8Net/WebRTCClientVP8Net.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCClientCodecs/WebRTCClientCodecs.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCDaemon/WebRTCDaemon.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCEchoClient/WebRTCEchoClient.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCEchoServer/WebRTCEchoServer.csproj" />

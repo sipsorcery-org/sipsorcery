@@ -5,9 +5,17 @@ A **pure C# H.264 video codec** for the
 communications library, ported from Cisco's
 [OpenH264](https://github.com/cisco/openh264). No native binaries, no PInvoke.
 
+> **For educational purposes only.** The port and its code are here to learn
+> from, not to ship. H.264 is covered by patents, and Cisco's royalty
+> arrangement covers only the OpenH264 binaries that Cisco itself distributes,
+> not this port or anything built from it. Anyone wishing to use it in a live
+> application should check their patent exposure first. For that reason it
+> isn't packaged or published: there's no NuGet package, and the sipsorcery
+> CLI tool doesn't include it.
+
 ## Status
 
-**The decoder and the encoder work. Not published yet.** The port was built
+**The decoder and the encoder work.** The port was built
 as a series of small PRs, each one checked bit-exact against a C-only build of
 OpenH264 (see
 [`thirdparty/openh264-dotnet-port`](https://github.com/sipsorcery-org/sipsorcery/tree/master/thirdparty/openh264-dotnet-port)).
@@ -38,8 +46,8 @@ pc.OnVideoFormatsNegotiated += formats => videoSink.SetVideoSinkFormat(formats.F
 Handle `OnKeyFrameRequired` by sending the sender an RTCP PLI. The decoder
 raises it when it starts mid-stream or data is lost, and browsers send a key
 frame only when asked. The
-[`WebRTCClientH264Net`](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCClientH264Net)
-example does all of this.
+[`WebRTCClientCodecs`](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCClientCodecs)
+example does all of this when its page picks h264.net.
 
 `H264Codec` is the `IVideoEncoder` underneath, for decoding without an
 endpoint. `DecodeVideo` takes one Annex B access unit and returns the picture
@@ -78,8 +86,7 @@ SIPSorcery doesn't answer a receiver's key frame request on its own: call
 `ForceKeyFrame` when `RTCPeerConnection.OnReceiveReport` brings an RTCP PLI or
 FIR. The
 [`WebRTCGetStartedCodecs`](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCGetStartedCodecs)
-example does all of this when H264 from h264.net is picked on its page. The CLI, built from source, takes it as
-`--encoder h264.net`.
+example does all of this when H264 from h264.net is picked on its page.
 
 The port runs OpenH264's portable C code, without its assembly. In its place
 are SIMD kernels written with `System.Runtime.Intrinsics`, for x86 and x64
@@ -92,7 +99,8 @@ with SSE2 and for Arm64. So far they cover:
   which were then over a quarter of encoding.
 
 On one desktop thread it encodes about 380 frames a second at 640x480, 140 at
-1280x720 and 60 at 1920x1080 (the CLI's `video-bench`). It decodes about 280 a
+1280x720 and 60 at 1920x1080 (measured with the CLI's `video-bench`, before
+h264.net was taken out of the CLI). It decodes about 280 a
 second at 1280x720 (`H264Benchmarks`). So at 30 frames a second it keeps up in
 real time at 1280x720 with room to spare, and at 1920x1080 with some. On four
 threads (`EncoderThreads = 4`) it encodes `H264Benchmarks`' harder content 2 to
@@ -114,9 +122,9 @@ threads (`EncoderThreads = 4`) it encodes `H264Benchmarks`' harder content 2 to
 ## License
 
 BSD 3-Clause License, see [LICENSE](https://github.com/sipsorcery-org/sipsorcery/blob/master/LICENSE.md).
-The ported OpenH264 code is also covered by Cisco's BSD 2-Clause license,
-included in the package as `OPENH264_LICENSE`.
+The ported OpenH264 code is also covered by Cisco's BSD 2-Clause license, in
+[`OPENH264_LICENSE`](OPENH264_LICENSE).
 
 H.264 is covered by patents. Cisco pays the royalties only for the OpenH264
-binaries that Cisco itself distributes, so this package is **not** covered by
-that arrangement.
+binaries that Cisco itself distributes, so this port is **not** covered by
+that arrangement. It's for educational purposes only: see the note at the top.

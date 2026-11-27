@@ -553,7 +553,9 @@ Notes from D7:
   only H.264 42e01f, `H264NetVideoEndPoint` into a picture box, PLIs on
   `OnKeyFrameRequired`. Its `capture.html` falls back to a canvas test pattern
   with no camera, and shows the browser's outbound codec, key frame and PLI
-  counts. In `SIPSorcery.slnx`, with a `.slnf`.
+  counts. In `SIPSorcery.slnx`, with a `.slnf`. Later folded, with
+  `WebRTCClientVP8Net`, into the ASP.NET example `WebRTCClientCodecs`, where
+  it's the h264.net decoder.
 - **Not done.** No `-pre` package: `IsPackable` stays false until the patent
   decision in section 8. The CLI's `h264.net` option waited for the encoder
   (E8), since the CLI's receive paths already have FFmpeg's decoder. E8 added
@@ -2306,7 +2308,11 @@ is a bug.
   package. Moving one copy to Abstractions is still open.*
 - **CLI:** add `h264.net` next to `ENCODER_VP8_NET` and `ENCODER_AV1_NET` in
   `LibraryVideoPublisher` and `WebRtcVideoBenchCommand`, and feed it the bitrate
-  the same way `AV1VideoEncoder.TargetBitrateKbps` gets it.
+  the same way `AV1VideoEncoder.TargetBitrateKbps` gets it. *E8 did, in the
+  publishing verbs, browser-test's echo mode and video-bench, behind a target
+  that refused to pack the tool. Taken out again on 27 Nov 2026 with the patent
+  decision (section 8), so the published tool never contains the port.
+  browser-test's echo loop keeps answering PLIs and FIRs, which E8 added too.*
 
 ## 8. Risks and open decisions
 
@@ -2320,6 +2326,13 @@ is a bug.
    remaining pool patents to expire in the markets that matter. That is a legal
    question rather than an engineering one, and the port doesn't have to wait
    for the answer.
+   **Decided (Aaron, 27 Nov 2026): source only, for educational purposes.**
+   SIPSorcery.H264 is never packed or published. Its package metadata, version
+   and pack items are gone, and `IsPackable` stays false. h264.net is out of the
+   sipsorcery CLI, so the `RefuseToPackH264Net` guard went with it. The README
+   says the port and code are for educational purposes only, and that anyone
+   wishing to use it in a live application should check their patent exposure.
+   The examples, benchmarks and TranscodeLoop still use it from source.
 2. **Decided: decoder first, Constrained Baseline only** (Aaron, 24 Nov 2026).
    The hashed Constrained Baseline vectors prove the parts of `common` (MC,
    intra prediction, IDCT, deblocking) that the encoder reuses, and the C#

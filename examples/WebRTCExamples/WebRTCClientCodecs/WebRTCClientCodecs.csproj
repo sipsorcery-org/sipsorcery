@@ -1,24 +1,25 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <!-- Windows, for the window that shows the decoded video. -->
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <DisableWinExeOutputInference>true</DisableWinExeOutputInference>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Serilog.Extensions.Logging" />
-    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.AspNetCore" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
+    <!-- vp8.net, h264.net and ffmpeg. -->
+    <ProjectReference Include="..\..\..\src\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
     <ProjectReference Include="..\..\..\src\SIPSorcery.H264\SIPSorcery.H264.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="capture.html" CopyToOutputDirectory="PreserveNewest" />
+    <ProjectReference Include="..\..\..\src\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
   </ItemGroup>
 
 </Project>

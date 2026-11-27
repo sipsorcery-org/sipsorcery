@@ -85,9 +85,10 @@ The repository includes two end-to-end demos that use this package:
   WebRTCGetStartedVP8Net; promoted to be the canonical getting-started
   example now that the pure C# VP8 path is the default for in-tree
   WebRTC video.)
-- **[WebRTCClientVP8Net](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCClientVP8Net)**
-  -- pure C# WebRTC client receiving a VP8 stream from a browser and
-  decoding it locally.
+- **[WebRTCClientCodecs](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCClientCodecs)**
+  -- WebRTC client receiving a browser's video and decoding it locally,
+  with vp8.net as the managed VP8 decoder. (Originally
+  WebRTCClientVP8Net.)
 
 ## Performance characteristics
 

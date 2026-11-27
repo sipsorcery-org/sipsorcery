@@ -16,8 +16,7 @@
 //                                    external ffmpeg process (vp8/vp9 via IVF).
 //   Stage 3 (--encoder vp8.net):     the managed Vpx.Net VP8 codec.
 //   Stage 3b (--encoder av1.net):    the managed SIPSorcery.AV1 (av1rt) AV1 encoder.
-//   Stage 3c (--encoder h264.net):   the managed SIPSorcery.H264 (OpenH264 port) encoder.
-//   Stage 4 (--decoder ffmpeg|vp8.net|h264.net): a decoder on its own. A short clip is
+//   Stage 4 (--decoder ffmpeg|vp8.net): a decoder on its own. A short clip is
 //                                    encoded first (untimed), then only the
 //                                    decoding of it, looped, is timed.
 //
@@ -37,7 +36,6 @@
 // 21 Nov 2026	Aaron Clauson	Added the av1.net stage and the --decoder stage.
 // 22 Nov 2026	Aaron Clauson	AV1 decode clips use a resolution based tile layout; the ffmpeg
 //                              encode stage honours --bitrate.
-// 27 Nov 2026	Claude		Added the h264.net encode stage and decoder.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -85,9 +83,6 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
 
     /// <summary>The --encoder name of the managed SIPSorcery.AV1 stage.</summary>
     private const string AV1_NET_STAGE = "av1.net";
-
-    /// <summary>The --encoder and --decoder name of the managed SIPSorcery.H264 codec.</summary>
-    private const string H264_NET_STAGE = "h264.net";
 
     /// <summary>Seconds of frames (at --fps, at least 30 frames) in the clip the --decoder stage loops.</summary>
     private const int DECODE_CLIP_SECONDS = 2;
@@ -167,18 +162,18 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         var encoderOption = new Option<string>("--encoder")
         {
             Description = "The pipeline stage to test: none (packetise only), ffmpeg (SIPSorceryMedia.FFmpeg in-process encoder), " +
-                          "ffmpeg-piped (external ffmpeg process), vp8.net (managed Vpx.Net codec), av1.net (managed SIPSorcery.AV1 " +
-                          "encoder) or h264.net (managed SIPSorcery.H264 encoder). The none stage packetises a frame " +
+                          "ffmpeg-piped (external ffmpeg process), vp8.net (managed Vpx.Net codec) or av1.net (managed SIPSorcery.AV1 " +
+                          "encoder). The none stage packetises a frame " +
                           "sized from --bitrate/--fps, so it is independent of resolution (width/height are reported for context only).",
             DefaultValueFactory = _ => "none"
         };
 
-        // No default value: left out, it is av1 for the av1.net stage, h264 for h264.net and vp8 for the rest (see Run).
+        // No default value: left out, it is av1 for the av1.net stage and vp8 for the rest (see Run).
         var codecOption = new Option<string?>("--codec", CodecSelection.VIDEO_OPTION)
         {
             Description = "The video codec to encode/packetise as: vp8, vp9, h264, h265 (alias hevc) or av1. The in-process " +
-                          "ffmpeg encoder supports all five; vp8.net is VP8 only, av1.net is AV1 only, h264.net is H264 only and " +
-                          "ffmpeg-piped supports vp8 and vp9 (IVF) only. Defaults to av1 for av1.net, h264 for h264.net (encoder or decoder) and vp8 otherwise."
+                          "ffmpeg encoder supports all five; vp8.net is VP8 only, av1.net is AV1 only and ffmpeg-piped supports " +
+                          "vp8 and vp9 (IVF) only. Defaults to av1 for av1.net and vp8 otherwise."
         };
 
         var ffmpegPathOption = new Option<string?>("--ffmpeg-path")
@@ -220,10 +215,9 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
 
         var decoderOption = new Option<string?>("--decoder")
         {
-            Description = "Benchmark a decoder instead of an encoder: ffmpeg (SIPSorceryMedia.FFmpeg, any codec), vp8.net " +
-                          "(managed Vpx.Net, VP8 only) or h264.net (managed SIPSorcery.H264, H264 only). A short --codec clip is " +
-                          "encoded first, untimed, by --encoder (left as none, ffmpeg, the native encoders a remote WebRTC peer " +
-                          "most likely uses; or vp8.net, av1.net or h264.net), then " +
+            Description = "Benchmark a decoder instead of an encoder: ffmpeg (SIPSorceryMedia.FFmpeg, any codec) or vp8.net " +
+                          "(managed Vpx.Net, VP8 only). A short --codec clip is encoded first, untimed, by --encoder (left as " +
+                          "none, ffmpeg, the native encoders a remote WebRTC peer most likely uses; or vp8.net or av1.net), then " +
                           "only the decoding of it, looped, is timed. Decoded pictures are converted to BGR as a receiver's are."
         };
 
@@ -291,9 +285,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
     {
         string codec = !string.IsNullOrWhiteSpace(codecArg)
             ? codecArg!
-            : string.Equals(encoder, AV1_NET_STAGE, StringComparison.OrdinalIgnoreCase) ? "av1"
-            : string.Equals(encoder, H264_NET_STAGE, StringComparison.OrdinalIgnoreCase)
-              || string.Equals(decoder?.Trim(), H264_NET_STAGE, StringComparison.OrdinalIgnoreCase) ? "h264" : "vp8";
+            : string.Equals(encoder, AV1_NET_STAGE, StringComparison.OrdinalIgnoreCase) ? "av1" : "vp8";
 
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(WebRtcVideoBenchCommand));
@@ -379,15 +371,6 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
                 }
                 return RunAv1Encode(width, height, fps, durationSeconds, bitrate, codec, asJson, logger, ct);
 
-            case H264_NET_STAGE:
-                if (codecEnum != VideoCodecsEnum.H264)
-                {
-                    return WriteResult(asJson, Empty(encoder, codec, width, height, fps,
-                        $"The h264.net managed encoder only supports --codec h264. Use --encoder ffmpeg for {codec.ToLowerInvariant()}."),
-                        ExitCodes.InvalidArgument);
-                }
-                return RunH264Encode(width, height, fps, durationSeconds, bitrate, codec, asJson, logger, ct);
-
             case "ffmpeg":
                 return RunNativeFfmpegEncode(width, height, fps, durationSeconds, bitrate, codec, codecEnum, ffmpegPath, tuning, asJson, logger, ct);
 
@@ -396,7 +379,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
 
             default:
                 return WriteResult(asJson, Empty(encoder, codec, width, height, fps,
-                    $"Unknown --encoder \"{encoder}\". Expected none, ffmpeg, ffmpeg-piped, vp8.net, av1.net or h264.net."),
+                    $"Unknown --encoder \"{encoder}\". Expected none, ffmpeg, ffmpeg-piped, vp8.net or av1.net."),
                     ExitCodes.InvalidArgument);
         }
     }
@@ -538,38 +521,6 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
     }
 
     /// <summary>
-    /// Stage 3c: the managed SIPSorcery.H264 encoder (a port of OpenH264), set up as libwebrtc sets
-    /// up OpenH264. Encodes the synthetic I420 frames flat out at the --bitrate target. Its bitrate
-    /// mode rate control shares the bits out by the --fps frame rate, not by the frames' arrival,
-    /// so it spends the same bits per frame however fast the loop runs.
-    /// </summary>
-    private static int RunH264Encode(int width, int height, int fps, int durationSeconds, int bitrate, string codec,
-        bool asJson, ILogger logger, CancellationToken ct)
-    {
-        int encWidth = RoundUpToEven(width);
-        int encHeight = RoundUpToEven(height);
-
-        if (encWidth != width || encHeight != height)
-        {
-            Console.Error.WriteLine($"Rounded {width}x{height} up to {encWidth}x{encHeight} (OpenH264 drops an odd last column or row).");
-        }
-
-        byte[][] ring = GenerateRing(encWidth, encHeight);
-        using var encoder = CreateH264NetEncoder(fps, bitrate);
-
-        var result = RunEncoderLoop(H264_NET_STAGE, encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, VideoCodecsEnum.H264, logger, ct);
-        return WriteResult(asJson, result, result.Success ? ExitCodes.Ok : ExitCodes.Failed);
-    }
-
-    // A key frame a second, as the publishing verbs' managed encoders; the frame rate range is 1 to 60.
-    private static SIPSorcery.H264.H264Codec CreateH264NetEncoder(int fps, int bitrate) => new()
-    {
-        FrameRate = Math.Clamp(fps, 1, 60),
-        TargetBitrateKbps = Math.Max(1, bitrate / 1000),
-        KeyframeIntervalFrames = Math.Max(1, fps),
-    };
-
-    /// <summary>
     /// Stage 4 (--decoder): a decoder on its own. A clip of <see cref="DECODE_CLIP_SECONDS"/> of
     /// frames is encoded up front, untimed, then decoded flat out in a loop and only that is timed.
     /// The clip starts with the encoder's first frame, a key frame, so each pass restarts cleanly and
@@ -583,16 +534,10 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
     {
         decoderName = decoderName.Trim().ToLowerInvariant();
         string stage = $"decode:{decoderName}";
-        if (decoderName != "ffmpeg" && decoderName != "vp8.net" && decoderName != H264_NET_STAGE)
+        if (decoderName != "ffmpeg" && decoderName != "vp8.net")
         {
             return WriteResult(asJson, Empty(stage, codec, width, height, fps,
-                $"Unknown --decoder \"{decoderName}\". Expected ffmpeg, vp8.net or h264.net."), ExitCodes.InvalidArgument);
-        }
-        if (decoderName == H264_NET_STAGE && codecEnum != VideoCodecsEnum.H264)
-        {
-            return WriteResult(asJson, Empty(stage, codec, width, height, fps,
-                $"The h264.net decoder only supports --codec h264. Use --decoder ffmpeg for {codec.ToLowerInvariant()}."),
-                ExitCodes.InvalidArgument);
+                $"Unknown --decoder \"{decoderName}\". Expected ffmpeg or vp8.net."), ExitCodes.InvalidArgument);
         }
         if (decoderName == "vp8.net" && codecEnum != VideoCodecsEnum.VP8)
         {
@@ -613,9 +558,8 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             "ffmpeg" => null,
             "vp8.net" when codecEnum != VideoCodecsEnum.VP8 => "The vp8.net encoder only supports --codec vp8.",
             AV1_NET_STAGE when codecEnum != VideoCodecsEnum.AV1 => "The av1.net encoder only supports --codec av1.",
-            H264_NET_STAGE when codecEnum != VideoCodecsEnum.H264 => "The h264.net encoder only supports --codec h264.",
-            "vp8.net" or AV1_NET_STAGE or H264_NET_STAGE => null,
-            _ => $"--encoder {clipEncoder} cannot encode the clip for --decoder. Use ffmpeg, vp8.net, av1.net or h264.net, or leave it as none.",
+            "vp8.net" or AV1_NET_STAGE => null,
+            _ => $"--encoder {clipEncoder} cannot encode the clip for --decoder. Use ffmpeg, vp8.net or av1.net, or leave it as none.",
         };
         if (clipError != null)
         {
@@ -663,12 +607,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         long clipBytes = clip.Sum(f => (long)f.Length);
         int avgFrameBytes = (int)(clipBytes / clip.Count);
 
-        using IVideoEncoder decoder = decoderName switch
-        {
-            "vp8.net" => new VP8Codec(),
-            H264_NET_STAGE => new SIPSorcery.H264.H264Codec(),
-            _ => new FFmpegVideoEncoder(),
-        };
+        using IVideoEncoder decoder = decoderName == "vp8.net" ? new VP8Codec() : new FFmpegVideoEncoder();
 
         // Decodes one frame, returning whether it produced a picture.
         bool Decode(byte[] frame) =>
@@ -773,10 +712,6 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             }
             case "vp8.net":
                 encoder = new VP8Codec();
-                encode = raw => encoder.EncodeVideo(encWidth, encHeight, raw, VideoPixelFormatsEnum.I420, codecEnum);
-                break;
-            case H264_NET_STAGE:
-                encoder = CreateH264NetEncoder(fps, bitrate);
                 encode = raw => encoder.EncodeVideo(encWidth, encHeight, raw, VideoPixelFormatsEnum.I420, codecEnum);
                 break;
             default:
