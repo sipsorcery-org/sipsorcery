@@ -80,6 +80,21 @@
     <ProjectReference Include="..\..\examples\OpenAIExamples\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
   </ItemGroup>
 
+  <!-- The managed H.264 port (SIPSorcery.H264, h264.net) is for educational use only and is never
+       packaged, so the tool leaves it out. A source build can put it back in, for the video-bench
+       h264.net stage that benchmarks/run-video-bench.ps1 measures: pass -p:IncludeH264Net=true. -->
+  <PropertyGroup Condition="'$(IncludeH264Net)' == 'true'">
+    <DefineConstants>$(DefineConstants);H264NET</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IncludeH264Net)' == 'true'">
+    <ProjectReference Include="..\SIPSorcery.H264\SIPSorcery.H264.csproj" />
+  </ItemGroup>
+
+  <Target Name="RefuseToPackH264Net" BeforeTargets="GenerateNuspec" Condition="'$(IncludeH264Net)' == 'true'">
+    <Error Text="IncludeH264Net is for source builds only: SIPSorcery.H264 is for educational use and is never packaged. Pack the tool without it." />
+  </Target>
+
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />

@@ -134,6 +134,7 @@ public sealed unsafe class H264Codec : IVideoEncoder
     private int _frameRate = DEFAULT_FRAME_RATE;
     private int _keyframeIntervalFrames = DEFAULT_KEYFRAME_INTERVAL_FRAMES;
     private int _encoderThreads = 1;
+    private bool _frameSkip = true;
     private bool _forceKeyFrame;
 
     private bool _disposed;
@@ -224,6 +225,30 @@ public sealed unsafe class H264Codec : IVideoEncoder
                 {
                     int interval = value;
                     _encoder->SetOption(ENCODER_OPTION_IDR_INTERVAL, &interval);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether the rate control may skip a frame to keep to the bitrate, in which case the frame
+    /// gives no output. On by default, as libwebrtc sets OpenH264 up (its frame dropping). Off,
+    /// every frame is encoded and the bitrate can run over, as when timing the encoder: a
+    /// skipped frame costs almost nothing, so frames per second counted with skipping on are not
+    /// frames encoded per second. Changes apply from the next frame.
+    /// </summary>
+    public bool FrameSkip
+    {
+        get => _frameSkip;
+        set
+        {
+            lock (_lock)
+            {
+                _frameSkip = value;
+                if (_encWidth != 0)
+                {
+                    bool skip = value;
+                    _encoder->SetOption(ENCODER_OPTION_RC_FRAME_SKIP, &skip);
                 }
             }
         }
@@ -723,7 +748,7 @@ public sealed unsafe class H264Codec : IVideoEncoder
         param.iMaxBitrate = UNSPECIFIED_BIT_RATE;
         param.iRCMode = RC_BITRATE_MODE;
         param.fMaxFrameRate = _frameRate;
-        param.bEnableFrameSkip = true;
+        param.bEnableFrameSkip = _frameSkip;
         param.uiIntraPeriod = (uint)_keyframeIntervalFrames;
         param.uiMaxNalSize = 0;
         // The same parameter set ids for the whole stream, rather than new ones at each IDR.

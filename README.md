@@ -36,6 +36,7 @@ Some performance mesaurements of the various codecs can be found [below](#video-
 |---------|---------|-----------|-------------|---------|
 | **SIPSorcery.VP8** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | C# port of VP8 codec from [libvpx](https://chromium.googlesource.com/webm/libvpx) | [README](src/SIPSorcery.VP8/README.md) |
 | **SIPSorcery.AV1** |  |  | C# port of AV1 encoder from [libaom](https://aomedia.org/blog%20posts/Libaom-v3_15-is-now-available/) - thanks to [@lostmsu](https://github.com/lostmsu) | [README](src/SIPSorcery.AV1/README.md) |
+| **SIPSorcery.H264** |  |  | C# port of Cisco's [OpenH264](https://github.com/cisco/openh264) codec. ***Note that H264 is still patent constrained in some jurisdictions.*** This port is provided for demonstration purposes only. | [README](src/SIPSorcery.H264/README.md) |
 
 ### Demo Softphone
 
@@ -322,6 +323,8 @@ Sample test results are shown below. They were generated with [`run-video-bench.
 - `sipsorcery webrtc video-bench` times one encoder or decoder alone, in-process, as fast as it will go. It gives the encode and decode tables: each figure is the maximum rate of that component on its own, so they are not achievable together in one call.
 - `sipsorcery webrtc loopback` runs a real WebRTC session in one process. It gives the WebRTC pipeline table: the transport ceiling with no codec, and the maximum rate an app can send at (encode), receive at (decode), or do both in a full call.
 
+The `h264.net` columns are the managed [H.264 port](src/SIPSorcery.H264/), which is for educational use only and is never packaged, so the published tool leaves it out; the script builds the CLI from source with it to measure it. It runs on one thread by default, as libwebrtc runs OpenH264, with its frame skipping off so that it encodes every frame as the other encoders do, and its decoder gets the same FFmpeg (libx264 Constrained Baseline) clip as the FFmpeg H264 decoder.
+
 ### Machine
 
 | CPU | Cores | Logical processors | Memory |
@@ -334,34 +337,34 @@ _All measurements are maximum frames per second (FPS). For real-time communicati
 
 **Encode** (the encoder alone):
 
-| Preset | vp8.net | av1.net | ffmpeg H264 | ffmpeg VP8 | ffmpeg VP9 | ffmpeg H265 | ffmpeg AV1 |
-|---|---|---|---|---|---|---|---|
-| 480p | 83.9 | 151.5 | 973.4 | 369.9 | 192.1 | 212.8 | 147.3 |
-| 720p | 29.6 | 57.1 | 365.9 | 129.3 | 98.6 | 92.2 | 65 |
-| 1080p | 12.6 | 34.5 | 191.4 | 56.4 | 51.8 | 49.3 | 30 |
-| 1440p | 6.9 | 20.7 | 109.3 | 41.2 | 32.3 | 31.2 | 16.4 |
-| 4k | 2.8 | 7.7 | 47.4 | 35.6 | 17.2 | 14.6 | 8.3 |
+| Preset | vp8.net | av1.net | h264.net | h264.net (4 threads) | ffmpeg H264 | ffmpeg VP8 | ffmpeg VP9 | ffmpeg H265 | ffmpeg AV1 |
+|---|---|---|---|---|---|---|---|---|---|
+| 480p | 87.8 | 123.2 | 294 | 524.8 | 853.5 | 326.6 | 153.4 | 177.6 | 130 |
+| 720p | 30.4 | 43.1 | 92.1 | 205.3 | 350.9 | 126.6 | 96.6 | 82 | 58.6 |
+| 1080p | 12.3 | 28.6 | 40.3 | 90.6 | 179.8 | 52.5 | 45.3 | 48.2 | 28.3 |
+| 1440p | 6.7 | 17.6 | 22.9 | 47.3 | 104.8 | 39.8 | 29.7 | 30.8 | 15.6 |
+| 4k | 2.6 | 7.6 | 10.3 | 23.6 | 49.7 | 35.4 | 14.3 | 14 | 7.6 |
 
 **Decode** (the decoder alone, on a pre-encoded clip):
 
-| Preset | H264 (ffmpeg) | VP8 (ffmpeg) | VP9 (ffmpeg) | H265 (ffmpeg) | AV1 (ffmpeg) | VP8 (vp8.net) |
-|---|---|---|---|---|---|---|
-| 480p | 2209.1 | 948.1 | 844.3 | 1094.5 | 577.4 | 167.9 |
-| 720p | 861.2 | 301 | 391.8 | 435.3 | 208.8 | 58.2 |
-| 1080p | 389.4 | 136.8 | 200.7 | 241.5 | 213.5 | 25.7 |
-| 1440p | 221.2 | 74.2 | 119.9 | 155.5 | 118.4 | 14.5 |
-| 4k | 99.7 | 33.6 | 54.8 | 76.5 | 72.7 | 6.6 |
+| Preset | H264 (ffmpeg) | VP8 (ffmpeg) | VP9 (ffmpeg) | H265 (ffmpeg) | AV1 (ffmpeg) | VP8 (vp8.net) | H264 (h264.net) |
+|---|---|---|---|---|---|---|---|
+| 480p | 2199.9 | 899.3 | 852.2 | 999.4 | 530.3 | 174.2 | 475.1 |
+| 720p | 825.4 | 300.8 | 401.7 | 457.4 | 183.3 | 59.4 | 172.1 |
+| 1080p | 369.3 | 131.2 | 184.6 | 252.3 | 183.1 | 26.8 | 77.8 |
+| 1440p | 216.8 | 73.4 | 115.4 | 149.9 | 100.6 | 13 | 42.8 |
+| 4k | 99.5 | 33.1 | 52.5 | 78.3 | 69.6 | 6.9 | 19 |
 
 **WebRTC pipeline** (H264 with the ffmpeg encoder and decoder, over a real WebRTC session in one process):
 
 | Preset | Transport (no codec) | Send (encode) | Receive (decode) | Full call (encode + decode) |
 |---|---|---|---|---|
-| 480p | 7177.7 | 944.4 | 949 | 885 |
-| 720p | 2539.4 | 318.4 | 680 | 298 |
-| 1080p | 1456.8 | 172.5 | 307 | 150 |
-| 1440p | 827.9 | 90.7 | 182 | 87 |
-| 4k | 485.3 | 46.2 | 91 | 41 |
+| 480p | 5502.4 | 728.7 | 981 | 728 |
+| 720p | 2168.5 | 292.8 | 651 | 273 |
+| 1080p | 1259.5 | 165.5 | 291 | 144 |
+| 1440p | 679.5 | 97 | 185 | 78 |
+| 4k | 425.2 | 44.4 | 84 | 39 |
 
 Transport sends pre-encoded frames flat out with no codec. Send encodes live and the receiver discards the frames, the case for an app that only sends. Receive decodes a pre-encoded stream, the case for an app that only receives. Full call does both. Receive and full call are the highest rates (to within 5%) at which no more than 2% of frames are lost or fail to decode. Both ends run on the one machine, so a one-way figure also carries the other end's (small) transport cost.
 
-_Generated 2026-11-22 11:29; duration 6s/run, 1 run(s)/point._
+_Generated 2026-11-27 23:25; duration 6s/run, 1 run(s)/point._

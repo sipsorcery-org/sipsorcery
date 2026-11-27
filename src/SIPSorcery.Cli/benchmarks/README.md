@@ -22,8 +22,13 @@ The encode and decode tables (`video-bench`):
 
 - **Encode** (`video-bench --encoder <e> --codec <c> --bitrate <preset bitrate>`): the encoder runs
   flat out on a moving test pattern and the reported `achievedFps` is its maximum rate (RTP
-  packetisation included). Measured for the managed `vp8.net` and `av1.net` encoders and the `ffmpeg`
-  encoder on **H264, VP8, VP9, H265 and AV1**.
+  packetisation included). Measured for the managed `vp8.net`, `av1.net` and `h264.net` encoders and
+  the `ffmpeg` encoder on **H264, VP8, VP9, H265 and AV1**. `h264.net` is measured on one thread, as
+  libwebrtc runs OpenH264, and on four (`--threads 4`, one slice a thread), with its frame skipping
+  off so that it encodes every frame, as the other encoders do.
+  - Every encoder's result counts the frames that gave no output (`framesWithoutOutput`). A rate
+    control that skips frames makes an encoder look faster than it is, since a skipped frame costs
+    almost nothing, so a run where more than 5% of the frames give no output is reported as n/a.
 - **Decode** (`video-bench --decoder <d> --encoder <clip encoder> --codec <c>`): a two-second clip is
   encoded once, untimed, then the decoder alone decodes it in a loop flat out. The reported
   `achievedFps` is its maximum rate.
@@ -33,6 +38,13 @@ The encode and decode tables (`video-bench`):
   - **Decode VP8 (vp8.net)**: the managed Vpx.Net VP8 decoder, on a **vp8.net** clip. It must use its
     own encoder's bitstream: the managed decoder crashes on FFmpeg-encoded VP8 (a Vpx.Net
     inter-prediction bug).
+  - **Decode H264 (h264.net)**: the managed SIPSorcery.H264 decoder, on the same FFmpeg H264 clip
+    (libx264 Constrained Baseline) as the FFmpeg decoder, so the two are compared on one stream.
+
+`h264.net`, the managed OpenH264 port, is for educational use only (H.264 is covered by patents; see
+its [README](../../SIPSorcery.H264/README.md)) and is never packaged, so the published tool leaves it
+out. The script builds the CLI from source with `-p:IncludeH264Net=true` to measure it, and
+`-SkipH264Net` leaves it out.
 
 The WebRTC pipeline table (`loopback`, ffmpeg encoder and decoder, H264 by default):
 
@@ -74,6 +86,7 @@ Useful parameters (all optional):
 | `-Runs` | `1` | Runs per point; the median is taken. Increase for less noise. |
 | `-FfmpegPath` | (PATH) | FFmpeg shared-library directory. |
 | `-OutputDir` | `./results` | Where `results.json` and `RESULTS.md` are written. |
+| `-SkipH264Net` | off | Leaves out the `h264.net` columns and builds the CLI without SIPSorcery.H264, as it is published. |
 
 The CLI is published to a temp directory once at the start, then invoked per run, so build/JIT noise
 is out of the measurement loop.
@@ -82,6 +95,12 @@ To measure one cell by hand, run the same command the script does, for example:
 
 ```powershell
 dotnet run -c Release --project src/SIPSorcery.Cli -- webrtc video-bench --preset 1080p --decoder ffmpeg --codec av1 --json
+```
+
+The `h264.net` cells need the source build flag:
+
+```powershell
+dotnet run -c Release --property:IncludeH264Net=true --project src/SIPSorcery.Cli -- webrtc video-bench --preset 1080p --encoder h264.net --threads 4 --json
 ```
 
 ## Output
@@ -101,3 +120,7 @@ dotnet run -c Release --project src/SIPSorcery.Cli -- webrtc video-bench --prese
   different rates on clips from different encoders, AV1 tiling especially.
 - **`vp8.net` is single-threaded managed** and caps low, especially at high resolutions; the high
   rates come from the `ffmpeg` encoder.
+- **The managed encoders and libx264 aren't doing the same work.** libx264 runs on every core
+  with its own speed settings; `h264.net` and `vp8.net` follow libwebrtc's set-up of OpenH264 and
+  libvpx. The managed columns compare the ports with each other and show the headroom over 30 fps,
+  rather than measuring how far each is from its C original.

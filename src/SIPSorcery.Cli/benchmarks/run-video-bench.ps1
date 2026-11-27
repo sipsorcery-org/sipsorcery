@@ -11,15 +11,23 @@
 
       ENCODE  - "video-bench --encoder <e> --codec <c>": the encoder runs flat out on a moving test
                 pattern at the preset's bitrate. achievedFps is its maximum rate (RTP packetisation
-                included). Measured for the managed vp8.net and av1.net encoders and the ffmpeg
-                encoder on H264, VP8, VP9, H265 and AV1.
+                included). Measured for the managed vp8.net, av1.net and h264.net encoders (h264.net
+                on 1 thread, as libwebrtc runs OpenH264, and on 4, with frame skipping off) and the
+                ffmpeg encoder on H264, VP8, VP9, H265 and AV1. A run where more than 5% of the
+                frames give no output (an encoder skipping frames) is reported as n/a: a skipped
+                frame costs almost nothing, so its rate would not be an encode rate.
 
       DECODE  - "video-bench --decoder <d> --codec <c>": a short clip is encoded once, untimed, then
                 the decoder alone decodes it in a loop flat out. achievedFps is its maximum rate.
                 Measured for the FFmpeg decoder on H264, VP8, VP9, H265 and AV1 (clips from the
-                FFmpeg encoder; AV1 clips use a resolution based tile layout), and for the managed
+                FFmpeg encoder; AV1 clips use a resolution based tile layout), for the managed
                 vp8.net decoder on VP8 (clips from the vp8.net encoder, since it cannot decode
-                FFmpeg's VP8).
+                FFmpeg's VP8), and for the managed h264.net decoder on the FFmpeg H264 clip (libx264
+                Constrained Baseline), the same clip the FFmpeg H264 decoder gets.
+
+    h264.net, the managed OpenH264 port, is for educational use only and is never packaged, so the
+    published tool leaves it out. This script publishes the CLI from source with
+    -p:IncludeH264Net=true to measure it; -SkipH264Net leaves it out.
 
     "webrtc loopback" runs a real WebRTC session in one process, publishing to an in-process WHIP
     receiver, for the PIPELINE table (ffmpeg encoder and decoder, -PipelineCodec):
@@ -72,16 +80,20 @@ param(
     [int]      $Runs = 1,
     [string]   $FfmpegPath = '',
     [int]      $Port = 8080,
-    [string]   $OutputDir = (Join-Path $PSScriptRoot 'results')
+    [string]   $OutputDir = (Join-Path $PSScriptRoot 'results'),
+    # Leaves out the h264.net columns, and builds the CLI as it is published, without SIPSorcery.H264.
+    [switch]   $SkipH264Net
 )
 
 $ErrorActionPreference = 'Stop'
 $listenUrl = "http://localhost:$Port/whip"
 
-# Encode configs (label, video-bench --encoder, --codec).
+# Encode configs (label, video-bench --encoder, --codec, and any other arguments).
 $encodeConfigs = @(
     @{ Label = 'vp8.net';     Encoder = 'vp8.net'; Codec = 'vp8'  },
     @{ Label = 'av1.net';     Encoder = 'av1.net'; Codec = 'av1'  },
+    @{ Label = 'h264.net';    Encoder = 'h264.net'; Codec = 'h264' },
+    @{ Label = 'h264.net (4 threads)'; Encoder = 'h264.net'; Codec = 'h264'; Extra = @('--threads', '4') },
     @{ Label = 'ffmpeg H264'; Encoder = 'ffmpeg';  Codec = 'h264' },
     @{ Label = 'ffmpeg VP8';  Encoder = 'ffmpeg';  Codec = 'vp8'  },
     @{ Label = 'ffmpeg VP9';  Encoder = 'ffmpeg';  Codec = 'vp9'  },
@@ -96,8 +108,13 @@ $decodeConfigs = @(
     @{ Label = 'VP9 (ffmpeg)';  Decoder = 'ffmpeg';  Codec = 'vp9';  ClipEncoder = 'ffmpeg'  },
     @{ Label = 'H265 (ffmpeg)'; Decoder = 'ffmpeg';  Codec = 'h265'; ClipEncoder = 'ffmpeg'  },
     @{ Label = 'AV1 (ffmpeg)';  Decoder = 'ffmpeg';  Codec = 'av1';  ClipEncoder = 'ffmpeg'  },
-    @{ Label = 'VP8 (vp8.net)'; Decoder = 'vp8.net'; Codec = 'vp8';  ClipEncoder = 'vp8.net' }
+    @{ Label = 'VP8 (vp8.net)'; Decoder = 'vp8.net'; Codec = 'vp8';  ClipEncoder = 'vp8.net' },
+    @{ Label = 'H264 (h264.net)'; Decoder = 'h264.net'; Codec = 'h264'; ClipEncoder = 'ffmpeg' }
 )
+if ($SkipH264Net) {
+    $encodeConfigs = @($encodeConfigs | Where-Object { $_.Encoder -ne 'h264.net' })
+    $decodeConfigs = @($decodeConfigs | Where-Object { $_.Decoder -ne 'h264.net' })
+}
 
 # ---------------------------------------------------------------------------
 # Build the CLI once in Release so per-run JIT/build noise is out of the loop.
@@ -106,7 +123,10 @@ $proj = Join-Path $PSScriptRoot '..' 'SIPSorcery.Cli.csproj'
 # Publish to temp (not the output dir) so the results folder holds only the committable report.
 $binDir = Join-Path ([System.IO.Path]::GetTempPath()) 'sipsorcery-vbench-bin'
 Write-Host "Publishing CLI (Release) ..." -ForegroundColor Cyan
-dotnet publish $proj -c Release -o $binDir --nologo | Out-Null
+$publishArgs = @($proj, '-c', 'Release', '-o', $binDir, '--nologo')
+if (-not $SkipH264Net) { $publishArgs += '-p:IncludeH264Net=true' }
+dotnet publish @publishArgs | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "Publishing the CLI failed." }
 $exe = Join-Path $binDir 'SIPSorcery.Cli.exe'
 if (-not (Test-Path $exe)) { throw "Published CLI not found at $exe." }
 
@@ -139,6 +159,12 @@ function Invoke-Cli([string[]] $cliArgs) {
 # that decoded to no picture, an encoder error) does not.
 function Get-BenchFps($r) {
     if (-not $r -or $null -eq $r.achievedFps -or [int]$r.framesProcessed -le 0) { return [double]::NaN }
+    # An encoder that skips frames (its rate control dropping them) looks faster than it is: a skipped
+    # frame costs almost nothing. A few frames without output (an encoder's start-up delay) are fine.
+    if ($null -ne $r.framesWithoutOutput -and [double]$r.framesWithoutOutput -gt 0.05 * [double]$r.framesProcessed) {
+        Write-Host "      $($r.framesWithoutOutput) of $($r.framesProcessed) frames gave no output, so the rate is not an encode rate" -ForegroundColor Yellow
+        return [double]::NaN
+    }
     if ($r.success -or ($r.error -match 'only reached .* below the')) { return [double]$r.achievedFps }
     Write-Host "      failed: $($r.error)" -ForegroundColor Yellow
     return [double]::NaN
@@ -246,7 +272,9 @@ foreach ($preset in $Presets) {
 
     foreach ($cfg in $encodeConfigs) {
         Write-Host "  encode $($cfg.Label) ..."
-        $row["enc:$($cfg.Label)"] = Measure-Bench @('--encoder', $cfg.Encoder, '--codec', $cfg.Codec) $preset
+        $benchArgs = @('--encoder', $cfg.Encoder, '--codec', $cfg.Codec)
+        if ($cfg.Extra) { $benchArgs += $cfg.Extra }
+        $row["enc:$($cfg.Label)"] = Measure-Bench $benchArgs $preset
     }
     foreach ($cfg in $decodeConfigs) {
         Write-Host "  decode $($cfg.Label) ..."
