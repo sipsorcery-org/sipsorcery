@@ -36,6 +36,7 @@ Some performance mesaurements of the various codecs can be found [below](#video-
 |---------|---------|-----------|-------------|---------|
 | **SIPSorcery.VP8** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | C# port of VP8 codec from [libvpx](https://chromium.googlesource.com/webm/libvpx) | [README](src/SIPSorcery.VP8/README.md) |
 | **SIPSorcery.AV1** |  |  | C# port of AV1 encoder from [libaom](https://aomedia.org/blog%20posts/Libaom-v3_15-is-now-available/) - thanks to [@lostmsu](https://github.com/lostmsu) | [README](src/SIPSorcery.AV1/README.md) |
+| **SIPSorcery.H264** |  |  | C# port of Cisco's [OpenH264](https://github.com/cisco/openh264) codec. ***Note that H264 is still patent constrained in some jurisdictions.*** This port is provided for demonstration purposes only. | [README](src/SIPSorcery.H264/README.md) |
 
 ### Demo Softphone
 
