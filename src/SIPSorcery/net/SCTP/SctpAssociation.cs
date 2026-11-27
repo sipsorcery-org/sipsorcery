@@ -423,7 +423,7 @@ namespace SIPSorcery.Net
                         case SctpChunkType.DATA:
                             var dataChunk = chunk as SctpDataChunk;
 
-                            if (dataChunk.UserData == null || dataChunk.UserData.Length == 0)
+                            if (dataChunk.UserData == null || dataChunk.UserDataLength == 0)
                             {
                                 // Fatal condition:
                                 // - If an endpoint receives a DATA chunk with no user data (i.e., the
@@ -433,7 +433,7 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                logger.LogTrace("SCTP data chunk received on ID {ID} with TSN {TSN}, payload length {PayloadLength}, flags {Flags}.", ID, dataChunk.TSN, dataChunk.UserData.Length, dataChunk.ChunkFlags);
+                                logger.LogTrace("SCTP data chunk received on ID {ID} with TSN {TSN}, payload length {PayloadLength}, flags {Flags}.", ID, dataChunk.TSN, dataChunk.UserDataLength, dataChunk.ChunkFlags);
 
                                 // A received data chunk can result in multiple data frames becoming available.
                                 // For example if a stream has out of order frames already received and the next
