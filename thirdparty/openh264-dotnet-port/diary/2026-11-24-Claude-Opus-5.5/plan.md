@@ -1363,7 +1363,7 @@ Notes from E8:
   PLIs and FIRs answered with a key frame. In `SIPSorcery.slnx`, with a
   `.slnf`. Later folded, with `WebRTCGetStartedFFmpeg` and
   `WebRTCGetStartedLibvpx`, into the ASP.NET example `WebRTCGetStartedCodecs`,
-  where it's `--library h264.net`.
+  where h264.net is one of the encoders its page offers.
 - **Interop.** In the desktop app's built-in Chromium, `webrtc browser-test
   --encoder h264.net` echoes 640x360 at 30 fps back. One run: 590 of 590
   frames received, 574 decoded, 16 dropped at the start, one PLI answered

@@ -2,17 +2,14 @@
 // Filename: Program.cs
 //
 // Description: Sends a test pattern and music to a browser over WebRTC, with the
-// video codec, and the library that encodes it, chosen on the command line:
+// video codec, and the library that encodes it, picked on the page before it
+// connects. vp8.net, h264.net and av1.net are managed, so they always work. FFmpeg,
+// when its shared libraries are installed, adds H264, H265, VP8, VP9 and AV1.
 //
-//   dotnet run                                    VP8 from vp8.net
-//   dotnet run -- --library h264.net              H264 from h264.net
-//   dotnet run -- --codec av1                     AV1 from av1.net
-//   dotnet run -- --library ffmpeg --codec h265   H265 from FFmpeg
-//
-// ASP.NET serves the page and the web socket used for signalling, so once it's
-// running open http://localhost:8080 and press Start. dotnet run -- --help lists
-// the libraries and options. WebRTCGetStarted is the simpler example, with just
-// vp8.net.
+// ASP.NET serves the page and the web socket used for signalling. Run it with
+// dotnet run, open http://localhost:8080, pick a codec and press Start.
+// dotnet run -- --help lists the options. WebRTCGetStarted is the simpler
+// example, with just vp8.net.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -23,6 +20,7 @@
 // 06 Apr 2025  Aaron Clauson   Created WebRTCGetStartedFFmpeg, Dublin, Ireland.
 // 27 Nov 2026  Claude          Combined WebRTCGetStartedFFmpeg, WebRTCGetStartedLibvpx and
 //                              WebRTCGetStartedH264Net into WebRTCGetStartedCodecs.
+// 27 Nov 2026  Claude          The page picks the codec and library, not the command line.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -31,7 +29,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -61,13 +58,33 @@ class Program
     // For the libraries that take a bitrate: h264.net, av1.net and ffmpeg.
     private const int BITRATE_KBPS = 1000;
 
-    /// <summary>
-    /// A library that can encode the test pattern, and the codecs it encodes. The first codec
-    /// is the one it sends when --codec isn't given.
-    /// </summary>
-    private sealed record Library(string Name, string Description, VideoCodecsEnum[] Codecs, Func<IVideoEncoder> CreateEncoder);
+    private const string USAGE =
+        """
+        Usage: dotnet run -- [options]
 
-    // Without --library a codec is sent with the first library here that encodes it.
+        The page picks the video codec and the library that encodes it.
+
+          --urls <url>        Where the web server listens. The default is http://localhost:8080.
+          --stun <url>        A STUN server for the ICE candidates, e.g. stun:stun.cloudflare.com.
+          --turn <url>        A TURN server, as url;username;password.
+          --bind-port <port>  The UDP port for the media. The default lets the OS choose.
+          --ffmpeg-path <dir> Where the FFmpeg shared libraries are, if they aren't found on their own.
+        """;
+
+    /// <summary>
+    /// A library that can encode the test pattern, and the codecs it encodes. Unavailable says
+    /// why it can't be used on this machine, or is null if it can.
+    /// </summary>
+    private sealed record Library(string Name, string Description, VideoCodecsEnum[] Codecs, Func<IVideoEncoder> CreateEncoder)
+    {
+        public string? Unavailable { get; set; }
+    }
+
+    // The codecs the page offers, in its order.
+    private static readonly VideoCodecsEnum[] _codecs =
+        [VideoCodecsEnum.VP8, VideoCodecsEnum.VP9, VideoCodecsEnum.H264, VideoCodecsEnum.H265, VideoCodecsEnum.AV1];
+
+    // The page offers a codec's libraries in this order, the first available one picked.
     private static readonly Library[] _libraries =
     [
         new("vp8.net", "SIPSorcery.VP8, managed, no native libraries.",
@@ -89,7 +106,7 @@ class Program
                 TargetBitrateKbps = BITRATE_KBPS,
                 KeyFrameInterval = KEY_FRAME_INTERVAL,
             })),
-        new("ffmpeg", "SIPSorceryMedia.FFmpeg, needs the FFmpeg shared libraries.",
+        new("ffmpeg", "SIPSorceryMedia.FFmpeg, with the FFmpeg shared libraries.",
             [VideoCodecsEnum.H264, VideoCodecsEnum.H265, VideoCodecsEnum.VP8, VideoCodecsEnum.VP9, VideoCodecsEnum.AV1],
             () =>
             {
@@ -107,22 +124,14 @@ class Program
 
         if (args.Any(a => a is "-h" or "--help" or "-?" or "/?"))
         {
-            Console.WriteLine(Usage());
+            Console.WriteLine(USAGE);
             return 0;
         }
 
-        // ASP.NET's configuration reads the options from the command line (--library h264.net or
-        // --library=h264.net), and also from environment variables and appsettings.json.
+        // ASP.NET's configuration reads the options from the command line (--stun x or
+        // --stun=x), and also from environment variables and appsettings.json.
         var builder = WebApplication.CreateBuilder(args);
         var config = builder.Configuration;
-
-        if (!TryChooseLibrary(config["library"], config["codec"], out var library, out var codec, out string error))
-        {
-            Console.Error.WriteLine(error);
-            Console.WriteLine();
-            Console.WriteLine(Usage());
-            return 1;
-        }
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
@@ -136,17 +145,16 @@ class Program
         SIPSorcery.LogFactory.Set(factory);
         _logger = factory.CreateLogger<Program>();
 
-        if (library.Name == "ffmpeg")
+        // Without FFmpeg the page still offers the managed libraries.
+        var ffmpeg = _libraries.Single(l => l.Name == "ffmpeg");
+        try
         {
-            try
-            {
-                FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_WARNING, config["ffmpeg-path"], _logger);
-            }
-            catch (Exception excp)
-            {
-                _logger.LogError("Could not load FFmpeg: {Error} Install its shared libraries or pass --ffmpeg-path.", excp.Message);
-                return 1;
-            }
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_WARNING, config["ffmpeg-path"], _logger);
+        }
+        catch (Exception excp)
+        {
+            ffmpeg.Unavailable = $"FFmpeg's shared libraries couldn't be loaded: {excp.Message.Split('\n')[0]}";
+            _logger.LogWarning("{Unavailable} Install them, or pass --ffmpeg-path, to use the ffmpeg encoders.", ffmpeg.Unavailable);
         }
 
         var iceServers = new List<RTCIceServer>();
@@ -173,39 +181,61 @@ class Program
         app.UseStaticFiles();
         app.UseWebSockets();
 
-        // The page shows what it's being sent.
-        app.MapGet("/config", () => new { library = library.Name, codec = codec.ToString() });
-
-        Task<RTCPeerConnection> createPeerConnection(RTCConfiguration pcConfig) =>
-            CreatePeerConnection(pcConfig, iceServers, bindPort, library, codec);
-
-        app.Map("/ws", async context =>
+        // What the page offers.
+        app.MapGet("/libraries", () => new
         {
-            if (!context.WebSockets.IsWebSocketRequest)
+            codecs = _codecs.Select(c => c.ToString()),
+            libraries = _libraries.Select(l => new
             {
-                context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                return;
-            }
-
-            var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-
-            var webSocketPeer = new WebRTCWebSocketPeerAspNet(
-                webSocket,
-                createPeerConnection,
-                new RTCConfiguration { X_ICEIncludeAllInterfaceAddresses = true },
-                RTCSdpType.offer);
-
-            await webSocketPeer.Run();
-
-            _logger.LogDebug("Web socket closed with the peer connection {State}.", webSocketPeer.RTCPeerConnection?.connectionState);
+                name = l.Name,
+                description = l.Description,
+                codecs = l.Codecs.Select(c => c.ToString()),
+                unavailable = l.Unavailable,
+            }),
         });
 
+        app.Map("/ws", context => HandleWebSocket(context, iceServers, bindPort));
+
         app.Lifetime.ApplicationStarted.Register(() =>
-            _logger.LogInformation("Sending {Codec} from {Library}. Open {Urls} in a browser and press Start.",
-                codec, library.Name, string.Join(" or ", app.Urls)));
+            _logger.LogInformation("Open {Urls} in a browser, pick a codec and press Start.", string.Join(" or ", app.Urls)));
 
         await app.RunAsync();
         return 0;
+    }
+
+    /// <summary>
+    /// Runs the signalling for one browser. The page puts its choice in the query string,
+    /// /ws?codec=H264&amp;library=h264.net.
+    /// </summary>
+    private static async Task HandleWebSocket(HttpContext context, List<RTCIceServer> iceServers, int bindPort)
+    {
+        if (!context.WebSockets.IsWebSocketRequest)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
+        if (!TryChooseLibrary(context.Request.Query["library"], context.Request.Query["codec"], out var library, out var codec, out string error))
+        {
+            _logger.LogWarning("Web socket refused: {Error}", error);
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsync(error);
+            return;
+        }
+
+        _logger.LogInformation("Sending {Codec} from {Library}.", codec, library.Name);
+
+        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+
+        var webSocketPeer = new WebRTCWebSocketPeerAspNet(
+            webSocket,
+            pcConfig => CreatePeerConnection(pcConfig, iceServers, bindPort, library, codec),
+            new RTCConfiguration { X_ICEIncludeAllInterfaceAddresses = true },
+            RTCSdpType.offer);
+
+        await webSocketPeer.Run();
+
+        _logger.LogDebug("Web socket closed with the peer connection {State}.", webSocketPeer.RTCPeerConnection?.connectionState);
     }
 
     private static Task<RTCPeerConnection> CreatePeerConnection(RTCConfiguration config, List<RTCIceServer> iceServers,
@@ -272,7 +302,7 @@ class Program
             {
                 if (!videoNegotiated)
                 {
-                    _logger.LogWarning("The browser didn't accept {Codec}, so only audio is sent. The page's codec list shows what it can receive.", codec);
+                    _logger.LogWarning("The browser didn't accept {Codec}, so only audio is sent.", codec);
                 }
 
                 await audioSource.StartAudio();
@@ -295,8 +325,8 @@ class Program
     }
 
     /// <summary>
-    /// Picks the library and codec from --library and --codec. Either may be left out: a library
-    /// sends its first codec, and a codec is sent by the first library that encodes it.
+    /// Picks the library and codec the page asked for. Either may be left out: a library sends
+    /// its first codec, and a codec is sent by the first available library that encodes it.
     /// </summary>
     private static bool TryChooseLibrary(string? libraryArg, string? codecArg, out Library library, out VideoCodecsEnum codec, out string error)
     {
@@ -304,15 +334,14 @@ class Program
         codec = library.Codecs[0];
         error = string.Empty;
 
-        var allCodecs = _libraries.SelectMany(l => l.Codecs).Distinct().ToList();
         VideoCodecsEnum? wantCodec = null;
 
         if (!string.IsNullOrWhiteSpace(codecArg))
         {
-            wantCodec = allCodecs.Cast<VideoCodecsEnum?>().FirstOrDefault(c => c.ToString()!.Equals(codecArg, StringComparison.OrdinalIgnoreCase));
+            wantCodec = _codecs.Cast<VideoCodecsEnum?>().FirstOrDefault(c => c.ToString()!.Equals(codecArg, StringComparison.OrdinalIgnoreCase));
             if (wantCodec == null)
             {
-                error = $"Unknown --codec {codecArg}. Expected {string.Join(", ", allCodecs.Select(c => c.ToString().ToLowerInvariant()))}.";
+                error = $"Unknown codec {codecArg}. Expected {string.Join(", ", _codecs)}.";
                 return false;
             }
         }
@@ -322,7 +351,7 @@ class Program
             var named = _libraries.FirstOrDefault(l => l.Name.Equals(libraryArg, StringComparison.OrdinalIgnoreCase));
             if (named == null)
             {
-                error = $"Unknown --library {libraryArg}. Expected {string.Join(", ", _libraries.Select(l => l.Name))}.";
+                error = $"Unknown library {libraryArg}. Expected {string.Join(", ", _libraries.Select(l => l.Name))}.";
                 return false;
             }
             if (wantCodec != null && !named.Codecs.Contains(wantCodec.Value))
@@ -334,31 +363,18 @@ class Program
         }
         else if (wantCodec != null)
         {
-            library = _libraries.First(l => l.Codecs.Contains(wantCodec.Value));
+            library = _libraries.FirstOrDefault(l => l.Unavailable == null && l.Codecs.Contains(wantCodec.Value))
+                ?? _libraries.First(l => l.Codecs.Contains(wantCodec.Value));
+        }
+
+        if (library.Unavailable != null)
+        {
+            error = $"{library.Name} isn't available. {library.Unavailable}";
+            return false;
         }
 
         codec = wantCodec ?? library.Codecs[0];
         return true;
-    }
-
-    private static string Usage()
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine("Usage: dotnet run -- [--library <name>] [--codec <name>] [options]");
-        sb.AppendLine();
-        sb.AppendLine("  --library <name>    The library that encodes the video. The default is vp8.net, or with");
-        sb.AppendLine("                      --codec the first one below that encodes it:");
-        foreach (var library in _libraries)
-        {
-            sb.AppendLine($"                        {library.Name,-9} {string.Join(", ", library.Codecs),-26} {library.Description}");
-        }
-        sb.AppendLine("  --codec <name>      The video codec. The default is the library's first one above.");
-        sb.AppendLine($"  --urls <url>        Where the web server listens. The default is {DEFAULT_URL}.");
-        sb.AppendLine("  --stun <url>        A STUN server for the ICE candidates, e.g. stun:stun.cloudflare.com.");
-        sb.AppendLine("  --turn <url>        A TURN server, as url;username;password.");
-        sb.AppendLine("  --bind-port <port>  The UDP port for the media. The default lets the OS choose.");
-        sb.AppendLine("  --ffmpeg-path <dir> Where the FFmpeg shared libraries are, if they aren't found on their own.");
-        return sb.ToString();
     }
 
     private static RTCIceServer ParseIceServer(string server)
