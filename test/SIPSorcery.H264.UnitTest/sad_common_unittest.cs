@@ -11,6 +11,7 @@
 //
 // History:
 // 24 Nov 2026  Claude          Created.
+// 27 Nov 2026  Claude          Run and Lookup shared with the SIMD tests (P5.2).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -33,6 +34,14 @@ public unsafe class sad_common_unittest
     {
         var row = new KernelFixture("sad", kernel, kase, sha1);
         Lookup(kernel, out int h, out delegate*<byte*, int, byte*, int, int> sad, out delegate*<byte*, int, byte*, int, int*, void> four);
+        Assert.Equal(sha1, Run(row, h, sad, four));
+    }
+
+    // The row's hash, from the SAD kernel or the four-neighbours one (the other null). Also
+    // run with the SIMD kernels, by sad_common_simd_unittest.
+    internal static string Run(KernelFixture row, int h, delegate*<byte*, int, byte*, int, int> sad,
+                               delegate*<byte*, int, byte*, int, int*, void> four)
+    {
         int s1 = row.Param("stride1"), s2 = row.Param("stride2");
 
         // Both planes have h + 4 rows with the block at (row 2, column 2).
@@ -58,13 +67,13 @@ public unsafe class sad_common_unittest
                 hash.AddI32(pSad[i]);
             }
         }
-        Assert.Equal(sha1, hash.Hex());
+        return hash.Hex();
     }
 
     // Out parameters rather than a tuple: function pointers can't be generic
     // arguments. Only the height matters for the buffers; the strides cover
     // the widest block.
-    private static void Lookup(string kernel, out int h, out delegate*<byte*, int, byte*, int, int> sad,
+    internal static void Lookup(string kernel, out int h, out delegate*<byte*, int, byte*, int, int> sad,
                                out delegate*<byte*, int, byte*, int, int*, void> four)
     {
         sad = null;

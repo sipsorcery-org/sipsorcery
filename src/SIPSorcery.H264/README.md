@@ -79,9 +79,12 @@ FIR. The
 example does all of this when H264 from h264.net is picked on its page. The CLI, built from source, takes it as
 `--encoder h264.net`.
 
-The port runs OpenH264's portable C code, without its assembly. On one desktop
-thread it encodes about 65 frames a second at 640x480, 23 at 1280x720 and 12
-at 1920x1080, so it keeps up in real time up to about 640x480 at 30 frames a
+The port runs OpenH264's portable C code, without its assembly. In its place
+are SIMD kernels written with `System.Runtime.Intrinsics`, for x86 and x64
+with SSE2 and for Arm64, so far for SAD and SATD, which motion estimation
+spends most of its time in. On one desktop thread it encodes about 170 frames
+a second at 640x480, 50 at 1280x720 and 27 at 1920x1080 (the CLI's
+`video-bench`), so it keeps up in real time up to 1280x720 at 30 frames a
 second.
 
 ## Port conventions
@@ -91,9 +94,10 @@ second.
   can be read side by side with the C++.
 - **Native memory.** Codec state is unmanaged structs in native memory, reached
   through pointers as upstream does, so the GC never moves or scans it.
-- **Plain C kernels only.** The C# ports the `_c` reference kernels behind
-  OpenH264's function tables. The tables are kept so SIMD versions can be added
-  later.
+- **C kernels, and SIMD ones beside them.** The C# ports the `_c` reference
+  kernels behind OpenH264's function tables. SIMD versions go in the same
+  slots where the machine has the instructions for them. Each is checked to
+  give its C kernel's results, so the output is the same either way.
 
 ## License
 

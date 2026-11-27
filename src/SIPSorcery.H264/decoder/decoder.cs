@@ -14,9 +14,10 @@
 // the API layer needs: WelsDecoderDefaults, WelsOpenDecoder/WelsCloseDecoder,
 // DecoderConfigParam, WelsInitDecoder/WelsEndDecoder, InitDecFuncs,
 // WelsDecodeBs and the decoder statistics updates. InitPredFunc and
-// InitDecFuncs fill only the C kernels; the SIMD branches and
-// WelsCPUFeatureDetect are not ported, so uiCpuFlag stays 0. The threaded
-// decoder and parse-only mode are not ported.
+// InitDecFuncs fill the C kernels, and the port's own SIMD kernels where
+// WelsCPUFeatureDetect (common/cpu.cs) reports the instruction sets for them
+// (Phase 5). Upstream's SIMD branches are assembly and are not ported, nor are
+// the threaded decoder and parse-only mode.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
@@ -26,6 +27,7 @@
 // 25 Nov 2026  Claude          D3: InitPredFunc.
 // 25 Nov 2026  Claude          D4: picture buffer memory.
 // 25 Nov 2026  Claude          D6: decoder init/teardown, WelsDecodeBs, statistics.
+// 27 Nov 2026  Claude          P5.2: WelsCPUFeatureDetect.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -390,8 +392,8 @@ internal static unsafe partial class WelsDec
         pCtx->bAuReadyFlag = false;                  // au data is not ready
         pCtx->bCabacInited = false;
 
-        // pCtx->uiCpuFlag = WelsCPUFeatureDetect (&iCpuCores): cpu.cpp is not
-        // ported and only the C kernels are, so no CPU features are reported.
+        // WelsCPUFeatureDetect (&iCpuCores): the core count isn't used.
+        pCtx->uiCpuFlag = WelsCPUFeatureDetect(null);
 
         pCtx->iImgWidthInPixel = 0;
         pCtx->iImgHeightInPixel = 0;                  // alloc picture data when picture size is available

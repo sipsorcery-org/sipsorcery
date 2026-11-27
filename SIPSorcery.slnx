@@ -32,6 +32,9 @@
     <Project Path="benchmarks/SIPSorcery/IceBenchmarks/IceBenchmarks.csproj" />
     <Project Path="benchmarks/SIPSorcery/SdpBenchmarks/SdpBenchmarks.csproj" />
   </Folder>
+  <Folder Name="/benchmarks/SIPSorcery.H264/">
+    <Project Path="benchmarks/SIPSorcery.H264/H264Benchmarks/H264Benchmarks.csproj" />
+  </Folder>
   <Folder Name="/benchmarks/SIPSorceryMedia.Abstractions/">
     <Project Path="benchmarks/SIPSorceryMedia.Abstractions/PixelConverterBenchmarks/PixelConverterBenchmarks.csproj" />
   </Folder>

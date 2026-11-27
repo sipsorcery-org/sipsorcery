@@ -24,6 +24,7 @@
 //
 // History:
 // 27 Nov 2026  Claude          Created (E7).
+// 27 Nov 2026  Claude          WelsCPUFeatureDetect (P5.2).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -153,8 +154,8 @@ internal unsafe struct CVpFrameWork
     /// <summary>CVpFrameWork::CVpFrameWork (uint32_t uiThreadsNum, EResult&amp; eReturn).</summary>
     public void CVpFrameWork_ctor(uint32_t uiThreadsNum, ref EResult eReturn)
     {
-        // WelsCPUFeatureDetect (&iCoreNum): C-only build, no features.
-        uint32_t uiCPUFlag = 0;
+        // WelsCPUFeatureDetect (&iCoreNum): no core count, as the C-only build.
+        uint32_t uiCPUFlag = WelsCPUFeatureDetect(null);
 
         m_cDenoiser = new CDenoiser((int32_t)uiCPUFlag);
         m_cSceneChangeDetectionVideo = new CSceneChangeDetectionVideo(EMethods.METHOD_SCENE_CHANGE_DETECTION_VIDEO, (int32_t)uiCPUFlag);

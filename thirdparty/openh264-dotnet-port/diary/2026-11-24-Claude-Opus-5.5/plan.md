@@ -32,6 +32,8 @@ was kept for the VP8 encoder.
 | E6 Rate control | **Done** (26 Nov) | `ratectl` for camera content: the off, quality, bit rate (with and without post skip), buffer based and timestamp modes, the frame skip decisions, the two shifted max bit rate check windows and padding, with `encoder_ext`'s `WritePadding`. Also the camera half of `processing`'s complexity analysis (`CComplexityAnalysis`), which the GOM rate control reads. ~1.9k lines. `EncoderDriver` gains the frame loop's rate control hooks and a hand port of `AnalyzePictureComplexity` (see the notes). New `complexity` kernel group (361 rows; `kernels.tsv` 7281). New `h264ref rc` mode (`reference/rc.tsv`): 94 configurations, 4848 frames (2808 P, 1871 skipped) over the four modes. They run at 16 kbps to 2 Mbps, with timestamp schedules that pause, step back, jump to 0 and jitter. **All match** native byte for byte, frame by frame, with E5b's decoder check. Of 19 planted bugs, 14 fail rows. Four are equivalent and one can't be pinned (see the notes). UnitTest: 8395. TestVectors: 681. |
 | E7 Preprocessing | **Done** (27 Nov) | The camera half of `processing`: `CVpFrameWork` with `CheckValid`, scene change detection for video, background detection, adaptive quantisation, the denoiser and the downsampler, with the processing allocator and constants (`memory`, `util`). The camera half of `wels_preprocess`: `CWelsPreProcess` with `CWelsPreProcessVideo` (the scaled pictures, `BuildSpatialPicList`, `SingleLayerPreprocess`, `DownsamplePadding`, `AnalyzeSpatialPic`, `UpdateSpatialPictures`), which replaces `EncoderDriver`'s hand ports. Also `encoder_ext`'s `AddPrefixNal` and `encoder`'s `InitPic`. ~3.9k lines. **The three upstream encoder hashes pass (`672a52fb…`, `08ade185…`, `e60f12e3…`), and so does the denoiser's (`913e49c7…`)**, through the base API and `InitializeExt` (`UpstreamEncoderHashTests`, which needs `OPENH264_RES`). New kernel groups (`refharness/src/kernels_processing.cpp`): 40 `scd`, 30 `bgd`, 93 `aq`, 65 `denoise`, 40 `downsample` and 95 `vpframework` rows (`kernels.tsv` 7644). New `h264ref preprocess` mode (`reference/preprocess.tsv`): 63 configurations, 1469 frames (900 P, 77 IDR with 14 mid stream, 465 skipped). They cover scene change detection, background detection, the denoiser and downsampling (half, quarter, general and odd sizes), alone and together, at fixed QP and in every rate control mode, with temporal layers, intra periods, LTR, slices, prefix NAL units and the base API. **All match** native byte for byte, frame by frame, with the decoder check at the coded size. Adaptive quantisation can't change a stream, as upstream's `ParamValidation` turns it off. Of 20 planted bugs, 18 fail rows, one of them only after two `vpframework` mutations were added. The other two are equivalent (see the notes). UnitTest: 8758. TestVectors: 749. |
 | E8 API and wire-up | **Done** (27 Nov) | `welsEncoderExt`'s `CWelsH264SVCEncoder` whole (`Initialize`, `InitializeExt`, `EncodeFrame`, `EncodeParameterSets`, `ForceIntraFrame`, every `SetOption` and `GetOption` case, the statistics), the rest of `encoder_ext` that a single layer, single thread, CAVLC camera encoder runs (`WelsInitEncoderExt` and `WelsUninitEncoderExt`, `RequestMemorySvc` and `FreeMemorySvc`, the frame loop `WelsEncoderEncodeExt`, `WelsEncoderParamAdjust`, `ForceCodingIDR`, the rate and LTR setters) and `ref_list_mgr_svc`'s LTR feedback filters. Configurations the port doesn't code are refused at init. ~2.1k lines ported. `EncoderDriver` is now a thin wrapper over the API, and every earlier table and the four upstream hashes still match through it. New `h264ref api` mode (`reference/api.tsv`): 61 configurations, 994 scripted operations of frames, forced IDRs, parameter sets, re-inits, size changes and every option the camera encoder takes. **All match** native row by row. The three E5b survivors that needed the API now fail rows. `H264Codec` encodes (I420, NV12 and packed RGB through a new BT.601 `RgbToI420`, set up as libwebrtc sets up OpenH264), with 21 new tests of round trips, key frames, sizes, formats, bitrate and frame rate. The CLI's `--encoder h264.net` (whip, loopback, browser-test, video-bench), with a guard that stops the CLI tool package from shipping it. New example `examples/WebRTCExamples/WebRTCGetStartedH264Net`, and `TranscodeLoop` encodes with it. **Chromium decodes the stream** (`browser-test --encoder h264.net`, 640x360 at 30 fps, 440 of 440 frames, and a PLI answered with an IDR). Firefox and Safari aren't checked. About 65 frames a second at 640x480 on one thread. Of 17 planted bugs, 15 fail rows, three of them only after a driver check and two tests were added. The other two are equivalent (see the notes). UnitTest: 8758. TestVectors: 832. CLI UnitTest: 261. |
+| P5.1 Benchmarks and profile | **Done** (27 Nov) | New `benchmarks/SIPSorcery.H264/H264Benchmarks`: BenchmarkDotNet encode and decode benchmarks at 640x480, 1280x720 and 1920x1080 on generated camera-like frames, with the memory diagnoser, and a `run` mode that encodes or decodes flat out in one process, for a profiler. The encoder is set up as `H264Codec` sets it up but stamps frames 1/30 s apart, so the rate control skips nothing and the output is the same every run. Baseline with the C kernels: encoding 37.5, 11.5 and 5.3 frames a second, decoding 281, 88 and 38. **The allocation check: after warm-up the encoder and decoder allocate nothing a frame.** The only per-frame allocations are the ones `H264Codec`'s `IVideoEncoder` return types bring (see the notes). The profile (see the notes) set the order of the steps after it. |
+| P5.2 SIMD groundwork, SAD and SATD | **Done** (27 Nov) | `common/cpu.cs`: `WelsCPUFeatureDetect` from .NET's instruction set classes, masked by `WelsCpuFeatureMask` (0 gives the C kernels throughout), and `WelsCpuHasSimd128` (SSE2 on x86 and x64, AdvSimd on Arm64). The encoder, the decoder and the preprocessing now call it where upstream does, reporting no core count, as the C-only build. `common/simd.cs` (load, interleave and SAD helpers), `common/sad_common_simd.cs` (the 7 SAD sizes and the 7 four-neighbour variants) and `encoder/sample_simd.cs` (the 7 SATD sizes), all Vector128 with x86 and Arm branches where it has no portable form. `WelsInitSampleSadFunc` and scene change detection choose them in place of upstream's X86_ASM and HAVE_NEON blocks. The Combined3 slots stay NULL, as on upstream's C path. New `sad_common_simd_unittest` and `sample_simd_unittest`: every `sad` and SATD fixture row gives the C build's hash through the SIMD kernel, and each kernel equals the C# C kernel over 1500 random and extreme blocks at random strides. **Every table, hash and test still passes, now through the SIMD kernels where the API is used.** 6 planted bugs each fail rows (see the notes). Encoding is 2.5 to 2.7 times as fast: 97.0, 30.7 and 13.3 frames a second at 480p, 720p and 1080p (`video-bench`: 169, 52 and 27, from E8's 65, 23 and 12), so 720p is real time. UnitTest: 8963. TestVectors: 832. |
 
 Conventions settled in P0.2 (they refine section 4):
 
@@ -1414,6 +1416,112 @@ Notes from E8:
   - `StackBackEncoderStatus` not winding `uiIdrPicId` back: it never runs,
     as upstream.
 
+Notes from P5.1:
+
+- **The content.** `TestFrames` generates the frames: value-noise textures,
+  a background panning 1.37 by 0.61 pixels a frame, a block a quarter of the
+  frame moving -3.3 by 1.7, and noise of +-2 levels. 32 frames, played
+  forwards then backwards. It is harder to code than `video-bench`'s
+  pattern, which moves 8 whole pixels a frame, so the frame rates are lower
+  than that tool's. `H264Codec`'s automatic bitrate gives 0.92, 2.8 and 6.2
+  Mbps.
+- **The timestamps.** `H264Codec` stamps each frame with its arrival time.
+  Encoding flat out, faster than real time, that looks to the rate control
+  like a higher frame rate, and it skips frames. `BenchEncoder` drives
+  `CWelsH264SVCEncoder` with `H264Codec`'s parameters and stamps frame n at
+  n / 30 s. No frame is skipped, and the output is the same every run.
+  `video-bench` uses `H264Codec`, so its decode clip depends on how fast the
+  encoder ran: after P5.2 its 720p decode reads 88 frames a second, against
+  117 at E8, while `H264Benchmarks`' fixed clip decodes at the same speed
+  with and without the SIMD kernels.
+- **Allocations.** Over a 10 s run after a second of warm-up,
+  `GC.GetAllocatedBytesForCurrentThread` grows by 40 bytes, the run loop's
+  own, at every size, encoding and decoding. BenchmarkDotNet's memory
+  diagnoser shows nothing for `EncodeFrame` and `DecodeFrame`. The
+  allocation pass is done, for the codec. What `H264Codec` allocates a frame
+  is what the `IVideoEncoder` return types bring. `EncodeVideo` returns a new
+  array; the `IBufferWriter` overload allocates nothing. `DecodeVideo`
+  returns a new picture. `DecodeVideoFaster` costs 168 bytes: the
+  `List<RawImage>`, the `RawImage` and the enumerator a `foreach` over the
+  `IEnumerable` boxes. They are left as they are; only an API change would
+  remove them.
+- **The profile.** EventPipe's sample profiler (the environment variables in
+  the benchmark README), over 10 s of `run`. The share of the samples whose
+  stack is in the codec, by the method on top. Encoding 1280x720 with the C
+  kernels:
+
+  | Kernel | Share |
+  |---|---|
+  | `WelsSampleSatd4x4_c`, nearly all from `WelsSampleSatd16x16_c` in `MeRefineFracPixel` | 25.2% |
+  | `WelsSampleSad8x8_c`, from the 16x16 and four-neighbour SADs of the motion search, and from scene change detection | 25.0% |
+  | `McHorVer22_c` | 6.8% |
+  | `VAACalcSadBgd_c` | 3.8% |
+  | `WelsDctT4_c` | 3.1% |
+  | `WelsQuantFour4x4Max_c` | 3.0% |
+  | the other luma MC positions, `PixelAvg_c` and `McChroma_c` | 8.0% |
+  | `WelsIDctT4Rec_c` | 1.9% |
+  | the luma deblocking edges | 2.1% |
+
+  Decoding 1280x720:
+
+  | Kernel | Share |
+  |---|---|
+  | `McHorVer22_c` | 28.8% |
+  | the other luma MC positions and `McChroma_c` | 22.5% |
+  | `DeblockLumaLt4V_c` and `DeblockLumaLt4H_c` | 17.5% |
+  | the chroma deblocking edges | 4.8% |
+  | `DeblockingBsMarginalMBAvcbase` | 2.6% |
+  | `WelsResidualBlockCavlc` | 3.3% |
+  | `IdctResAddPred_c` and `IdctFourResAddPred_` | 3.8% |
+
+Notes from P5.2:
+
+- **The flags.** Upstream's flags, from `cpu_core.h`: SSE2 and up from
+  `Sse2.IsSupported` and the rest, or ARMv7, VFPv3 and NEON from
+  `AdvSimd.Arm64.IsSupported`. The Arm bits reuse the x86 ones, as upstream
+  builds for one or the other, so `WelsCpuHasSimd128` tests whichever the
+  machine has. Nothing reads the flags but the function table set-ups, and no
+  cache line flag is reported, so `iCacheLineSize` stays 16 as before. Only
+  the API reaches `WelsCPUFeatureDetect`. The fixture tests that build
+  function tables by hand pass 0, so they keep testing the C kernels, and the
+  API tables (`stream`, `rc`, `preprocess`, `api`, the upstream hashes) now
+  run through the SIMD ones.
+- **The SATD kernels.** Four rows of 8 samples, two 4x4 blocks side by side,
+  go through at a time: the butterfly down the columns lane by lane, a
+  transpose by three rounds of interleaves, then the butterfly across the
+  rows lane by lane. The 2D transform is linear and exact in 16 bits, so its
+  coefficients don't depend on the order. Every coefficient of a block is a
+  +-1 sum of all 16 of its differences, so all 16 share that sum's parity and
+  their absolute sum is even. So upstream's `(sum + 1) >> 1` for each block
+  is the halving of the total, done once at the end.
+- **The SAD kernels.** `psadbw` on x86, `uabd` with `uadalp` on Arm. The
+  16-wide four-neighbour kernels share the source rows and the up and down
+  reference rows between the four sums. Each kernel reads only the samples
+  its C kernel reads.
+- **The Combined3 slots** stay NULL. Upstream's SSE2, SSSE3 and SSE4.1 builds
+  fill some of them, which takes the intra mode decision down a different
+  path, and the port is checked against the C path.
+- **Not in the tables.** Scene change detection keeps its own 8x8 SAD
+  pointer. After the table was switched it was still 5.8% of the 720p
+  encode, so it takes the SIMD kernel too, where upstream takes
+  `WelsSampleSad8x8_sse21`.
+- **Planted bugs.** Each was planted one at a time and restored from a
+  copy, checked by md5. The unit and test vector tests that fail:
+  - SATD's transpose taking column 3 from the wrong half: 91 and 264.
+  - SATD 16x16's right half one column left: 19 and 268.
+  - SAD 16xN's odd rows against the even reference rows: 10 and 309.
+  - The 16-wide four-neighbour SAD swapping up and down: 10 and 260.
+  - The 8x8 SAD slot given the 8x4 kernel: 1 (the table test) and 307.
+  - Scene change detection given the 8x4 SAD: 1 and 6.
+- **The profile after**, encoding 1280x720: `McHorVer22_c` 16.3%,
+  `VAACalcSadBgd_c` 10.2%, `WelsDctT4_c` 7.9%, `WelsQuantFour4x4Max_c`
+  6.9%, `PixelAvg_c` 4.9%, `WelsIDctT4Rec_c` 4.8%, `McHorVer02_c` 4.5%,
+  the luma deblocking edges 5.2%, `McHorVer20_c` 3.4%,
+  `WelsSampleSatd16x16_simd` 3.3%, `McChroma_c` 2.7%,
+  `WelsI16x16LumaPredPlane_c` 1.9%, `WelsSampleSad16x16_simd` 1.4%. MC is
+  now about a third of the encode, and the transforms and quantisation about
+  a fifth. Runs on this machine vary by about 10% from one to the next.
+
 ## 1. Goal
 
 A pure managed H.264 encoder and decoder in `src/SIPSorcery.H264`, ported from
@@ -1711,6 +1819,22 @@ That makes about 22 PRs to the end of Phase 3.
   DCT/IDCT, deblocking, intra prediction and `expand_pic`. Each goes behind the
   function tables with a test that it equals the C kernel.
 - Slice-level threading and a BenchmarkDotNet project.
+
+Broken into steps (27 Nov), in the order the P5.1 profile puts them. Each
+SIMD step keeps every existing table, hash and test passing with the new
+kernels in the tables, and adds tests that each new kernel equals its C
+kernel. The streams can't change: a kernel that doesn't equal its C kernel
+is a bug.
+
+| Step | What | Why first |
+|---|---|---|
+| P5.1 | `benchmarks/SIPSorcery.H264/H264Benchmarks`: BenchmarkDotNet encode and decode benchmarks at 480p, 720p and 1080p on camera-like content, a `run` mode for a profiler, and the baseline profile. The allocation check. | Measures everything after it. |
+| P5.2 | The SIMD groundwork: `WelsCPUFeatureDetect` from .NET's ISA flags, a mask that turns the SIMD kernels off for tests and benchmarks, the kernel equality tests. Then SAD (7 sizes and the 7 four-neighbour variants) and SATD (7 sizes). | Half the encoder's time at 720p. |
+| P5.3 | Motion compensation: the luma half-pel filters and quarter-pel positions, chroma, `PixelAvg`, the copies. | Over half the decoder's time, and a third of the encoder's once P5.2 is in. |
+| P5.4 | Deblocking: the luma and chroma edge filters, both directions, and `expand_pic`. | A quarter of the decoder's time. |
+| P5.5 | Transforms and quantisation: the encoder's DCTs, IDCT reconstruction, quantisers and Hadamard, and the decoder's `IdctResAddPred`. | A tenth of the encoder's time. |
+| P5.6 | What's left in the profile then: the VAA and preprocessing kernels, intra prediction. | |
+| P5.7 | Slice-level threading in the encoder, with `Task` (rule 7). Needs more than one slice, which is Phase 4's `SM_FIXEDSLCNUM_SLICE`, and costs some compression. libwebrtc asks OpenH264 for one slice. | Only after the single thread is fast. |
 
 ## 7. SIPSorcery integration
 

@@ -11,6 +11,7 @@
 //
 // History:
 // 26 Nov 2026  Claude          Created (E2).
+// 27 Nov 2026  Claude          Satd shared with the SIMD tests (P5.2).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -59,7 +60,7 @@ public unsafe class sample_unittest
 
     // Random planes, the block at their origin; the second plane is the first
     // plus noise (noise < 256) or independent (noise 256).
-    private static string Satd(delegate*<byte*, int, byte*, int, int> f, int w, int hgt, KernelFixture row)
+    internal static string Satd(delegate*<byte*, int, byte*, int, int> f, int w, int hgt, KernelFixture row)
     {
         int s1 = row.Param("s1"), s2 = row.Param("s2"), noise = row.Param("noise");
         var r = new FixtureRng((uint)row.Param("seed"));

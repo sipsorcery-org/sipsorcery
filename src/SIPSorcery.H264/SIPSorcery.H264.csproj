@@ -55,6 +55,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="SIPSorcery.H264.UnitTest" />
     <InternalsVisibleTo Include="SIPSorcery.H264.TestVectors" />
+    <InternalsVisibleTo Include="H264Benchmarks" />
   </ItemGroup>
 
 </Project>

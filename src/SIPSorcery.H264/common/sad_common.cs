@@ -9,13 +9,15 @@
 // Sum of absolute differences at each partition size, and the "four" variants
 // that score the four one-sample neighbours (up, down, left, right) of a
 // reference position in one call. The encoder's motion search uses them; the
-// decoder does not. C kernels only; the SIMD variants are not ported.
+// decoder does not. C kernels only; upstream's SIMD variants are assembly and
+// are not ported. The port's own SIMD kernels (P5.2) are in sad_common_simd.cs.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 24 Nov 2026  Claude          Created.
+// 27 Nov 2026  Claude          Pointed at the SIMD versions (P5.2).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

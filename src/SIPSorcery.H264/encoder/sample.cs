@@ -7,15 +7,18 @@
 // common/sad_common.cs.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
-// C kernels only; the SIMD variants are not ported. Upstream's C path
-// leaves the five Combined3 pointers NULL; the encoder only calls them
-// when a SIMD build sets them.
+// Upstream's SIMD variants are assembly and are not ported. The port's own
+// SIMD SAD and SATD kernels (P5.2) are in sample_simd.cs and
+// common/sad_common_simd.cs. Upstream's C path leaves the five Combined3
+// pointers NULL, and so does the port on every machine; the encoder only
+// calls them when a SIMD build sets them.
 //
 // Author(s):
 // Claude Opus 5.5 (Anthropic AI assistant, model: claude-opus-5-5), commissioned by Aaron Clauson
 //
 // History:
 // 26 Nov 2026  Claude          Created (E2).
+// 27 Nov 2026  Claude          The SIMD SAD and SATD kernels in WelsInitSampleSadFunc (P5.2).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -406,6 +409,35 @@ internal static unsafe partial class WelsEnc
         pFuncList->sSampleDealingFuncs.pfIntra16x16Combined3Satd = null;
         pFuncList->sSampleDealingFuncs.pfIntra16x16Combined3Sad = null;
 
-        // The X86_ASM, NEON, MMI, MSA and LSX/LASX overrides are not ported (C kernels only).
+        // In place of the X86_ASM and HAVE_NEON overrides: the SIMD kernels (P5.2), which give
+        // the C kernels' results. The Combined3 slots stay NULL. Upstream's SIMD builds fill
+        // some of them, which takes the mode decision down another path, and the port is
+        // checked against the C path. The MMI, MSA and LSX/LASX overrides have no counterpart.
+        if (WelsCpuHasSimd128(uiCpuFlag))
+        {
+            pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_16x16] = &WelsSampleSad16x16_simd;
+            pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_16x8] = &WelsSampleSad16x8_simd;
+            pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_8x16] = &WelsSampleSad8x16_simd;
+            pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_8x8] = &WelsSampleSad8x8_simd;
+            pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_4x4] = &WelsSampleSad4x4_simd;
+            pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_8x4] = &WelsSampleSad8x4_simd;
+            pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_4x8] = &WelsSampleSad4x8_simd;
+
+            pFuncList->sSampleDealingFuncs.pfSampleSatd[BLOCK_16x16] = &WelsSampleSatd16x16_simd;
+            pFuncList->sSampleDealingFuncs.pfSampleSatd[BLOCK_16x8] = &WelsSampleSatd16x8_simd;
+            pFuncList->sSampleDealingFuncs.pfSampleSatd[BLOCK_8x16] = &WelsSampleSatd8x16_simd;
+            pFuncList->sSampleDealingFuncs.pfSampleSatd[BLOCK_8x8] = &WelsSampleSatd8x8_simd;
+            pFuncList->sSampleDealingFuncs.pfSampleSatd[BLOCK_4x4] = &WelsSampleSatd4x4_simd;
+            pFuncList->sSampleDealingFuncs.pfSampleSatd[BLOCK_8x4] = &WelsSampleSatd8x4_simd;
+            pFuncList->sSampleDealingFuncs.pfSampleSatd[BLOCK_4x8] = &WelsSampleSatd4x8_simd;
+
+            pFuncList->sSampleDealingFuncs.pfSample4Sad[BLOCK_16x16] = &WelsSampleSadFour16x16_simd;
+            pFuncList->sSampleDealingFuncs.pfSample4Sad[BLOCK_16x8] = &WelsSampleSadFour16x8_simd;
+            pFuncList->sSampleDealingFuncs.pfSample4Sad[BLOCK_8x16] = &WelsSampleSadFour8x16_simd;
+            pFuncList->sSampleDealingFuncs.pfSample4Sad[BLOCK_8x8] = &WelsSampleSadFour8x8_simd;
+            pFuncList->sSampleDealingFuncs.pfSample4Sad[BLOCK_4x4] = &WelsSampleSadFour4x4_simd;
+            pFuncList->sSampleDealingFuncs.pfSample4Sad[BLOCK_8x4] = &WelsSampleSadFour8x4_simd;
+            pFuncList->sSampleDealingFuncs.pfSample4Sad[BLOCK_4x8] = &WelsSampleSadFour4x8_simd;
+        }
     }
 }

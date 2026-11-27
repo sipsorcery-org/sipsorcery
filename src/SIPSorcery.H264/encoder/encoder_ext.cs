@@ -23,8 +23,9 @@
 // the slice thread and dynamic slice branches throw NotSupportedException.
 // OpenH264 commit 78783f19 (v2.7.0-1).
 //
-// The reference is the C-only build, where WelsCPUFeatureDetect returns 0
-// and leaves the core count at 0, so the core count always comes from
+// WelsCPUFeatureDetect (common/cpu.cs) reports the instruction sets the
+// SIMD kernels use (P5.2). Like the C-only build that is the reference, it
+// leaves the core count at 0, so the core count always comes from
 // DynamicDetectCpuCores. That is Environment.ProcessorCount here; upstream
 // on Windows it is GetSystemInfo's dwNumberOfProcessors, which can differ
 // when the process affinity is restricted. Only iMultipleThreadIdc == 0 and
@@ -42,6 +43,7 @@
 // 26 Nov 2026  Claude          WritePadding (E6).
 // 27 Nov 2026  Claude          AddPrefixNal (E7).
 // 27 Nov 2026  Claude          The init, memory, frame loop and parameter changes (E8).
+// 27 Nov 2026  Claude          WelsCPUFeatureDetect in GetMultipleThreadIdc (P5.2).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -816,7 +818,7 @@ internal static unsafe partial class WelsEnc
         // for cpu features detection, Only detect once??
         int32_t uiCpuCores =
           0; // number of logic processors on physical processor package, zero logic processors means HTT not supported
-        uiCpuFeatureFlags = 0; // WelsCPUFeatureDetect (&uiCpuCores): C-only build, no features and no core count
+        uiCpuFeatureFlags = WelsCPUFeatureDetect(&uiCpuCores); // detect cpu capacity features; no core count (see the file header)
 
         // #ifdef X86_ASM ... #else
         iCacheLineSize = 16; // 16 bytes aligned in default

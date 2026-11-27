@@ -17,6 +17,7 @@
 //
 // History:
 // 27 Nov 2026  Claude          Created (E7).
+// 27 Nov 2026  Claude          The SIMD 8x8 SAD (P5.2).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -103,10 +104,15 @@ internal unsafe struct CSceneChangeDetectorVideo
     private float m_fSceneChangeMotionRatioLarge;
     private float m_fSceneChangeMotionRatioMedium;
 
-    // The SIMD versions (X86_ASM, HAVE_NEON, ...) are not ported: the reference is the C-only build.
     public CSceneChangeDetectorVideo(int32_t iCpuFlag)
     {
         m_pfSad = &WelsSampleSad8x8_c;
+        // In place of the X86_ASM and HAVE_NEON versions: the SIMD kernel (P5.2), which gives
+        // the C kernel's results. The MMI and LASX versions have no counterpart.
+        if (WelsCpuHasSimd128((uint32_t)iCpuFlag))
+        {
+            m_pfSad = &WelsSampleSad8x8_simd;
+        }
         m_fSceneChangeMotionRatioLarge = WelsVP.SCENE_CHANGE_MOTION_RATIO_LARGE_VIDEO;
         m_fSceneChangeMotionRatioMedium = WelsVP.SCENE_CHANGE_MOTION_RATIO_MEDIUM;
     }
